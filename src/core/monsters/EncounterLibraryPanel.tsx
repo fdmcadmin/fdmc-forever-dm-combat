@@ -624,14 +624,37 @@ export function EncounterLibraryPanel({
         <div style={{ display: "flex", gap: 6 }}>
           {activeTab === "library" && (
             <div style={{ display: "flex", gap: 4 }}>
+              {/* Create a new blank monster template (individual stat block) */}
+              <button type="button"
+                onClick={() => {
+                  const blank: import("./runtime/mainMonsterRuntime").MainMonsterTemplate = {
+                    templateId: `custom-${Date.now().toString(36)}`,
+                    name: "New Monster",
+                    stats: { kind: "monster", ac: 12, maxHp: 20, speed: "30 ft" },
+                    abilities: [
+                      { label: "STR", value: "10 (+0)" }, { label: "DEX", value: "12 (+1)" },
+                      { label: "CON", value: "12 (+1)" }, { label: "INT", value: "8 (-1)" },
+                      { label: "WIS", value: "10 (+0)" }, { label: "CHA", value: "8 (-1)" },
+                    ],
+                    traits: [], actions: [], reactions: [], resources: [], notes: [],
+                    visibility: { defaultState: "condition", hiddenName: "Unknown creature", revealedName: "" },
+                  };
+                  upsertMonsterTemplate(blank);
+                  setEditingMonsterTemplateId(blank.templateId);
+                  refreshLibrary();
+                }}
+                style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
+                title="Create a new blank monster stat block">
+                + New Monster
+              </button>
               <button type="button" onClick={() => handleCreateNew("dm")}
                 style={{ fontSize: 11, padding: "3px 8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
                 title="Create new encounter in My Library">
-                + Mine
+                + Encounter
               </button>
               {unlocked && (
                 <button type="button" onClick={() => handleCreateNew("campaign")}
-                  style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
+                  style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", color: "#7b68ee", border: "1px solid #7b68ee55", borderRadius: 3, cursor: "pointer" }}
                   title="Create new encounter in Campaign Library">
                   + Campaign
                 </button>
