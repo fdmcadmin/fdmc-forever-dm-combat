@@ -1284,8 +1284,13 @@ export default function App() {
     );
   }
 
-  // Show seat picker when: no actors yet OR player explicitly chose to browse (releaseSeat called)
-  if (isPlayerMode && (seatStatus === "no-seat" || seatStatus === "claiming" || seatStatus === "loading") && (seatActors.length === 0 || isBrowsing)) {
+  // Show seat picker when:
+  //  - no-seat: always (binding was removed — don't let cached actors block the picker)
+  //  - claiming/loading: only if no cached actors yet, or player explicitly browsing
+  if (isPlayerMode && (
+    seatStatus === "no-seat" ||
+    ((seatStatus === "claiming" || seatStatus === "loading") && (seatActors.length === 0 || isBrowsing))
+  )) {
     const availableSeats = Object.values(roomLiveState.seats).sort((a, b) => a.seatId.localeCompare(b.seatId));
     const boundSeatIds = new Set(Object.values(roomLiveState.seatBindings).map(b => b.seatId));
     const openSeats = availableSeats.filter(s => !boundSeatIds.has(s.seatId));
