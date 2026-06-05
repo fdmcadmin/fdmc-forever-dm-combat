@@ -9,6 +9,7 @@
 
 import React from "react";
 import ReactDOM from "react-dom/client";
+import OBR from "@owlbear-rodeo/sdk";
 import { MonsterActorCard } from "./core/ui/MonsterActorCard";
 import { useMonsterPopout } from "./core/monster-state/useMonsterPopout";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
@@ -62,11 +63,18 @@ function MonsterPopoutApp() {
   );
 }
 
-const root = document.getElementById("root");
-if (root) {
+function mountMonsterPopout() {
+  const root = document.getElementById("root");
+  if (!root) return;
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <MonsterPopoutApp />
     </React.StrictMode>
   );
+}
+
+if (OBR.isAvailable) {
+  OBR.onReady(mountMonsterPopout);
+} else {
+  mountMonsterPopout();
 }

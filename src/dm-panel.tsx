@@ -493,8 +493,16 @@ function DmPanelApp() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <DmPanelApp />
-  </React.StrictMode>
-);
+function mountDmPanel() {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <DmPanelApp />
+    </React.StrictMode>
+  );
+}
+
+if (OBR.isAvailable) {
+  OBR.onReady(mountDmPanel);
+} else {
+  mountDmPanel();
+}

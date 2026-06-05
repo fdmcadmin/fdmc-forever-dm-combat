@@ -10,6 +10,7 @@
  */
 
 import React, { useMemo } from "react";
+import OBR from "@owlbear-rodeo/sdk";
 import ReactDOM from "react-dom/client";
 import { ActorCard } from "./core/ui/ActorCard";
 import { useActorLiveState } from "./core/state/useActorLiveState";
@@ -144,8 +145,16 @@ function ActorPopout() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ActorPopout />
-  </React.StrictMode>
-);
+function mountActorPopout() {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <ActorPopout />
+    </React.StrictMode>
+  );
+}
+
+if (OBR.isAvailable) {
+  OBR.onReady(mountActorPopout);
+} else {
+  mountActorPopout();
+}

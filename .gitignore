@@ -27,6 +27,9 @@ Thumbs.db
 # TypeScript cache
 *.tsbuildinfo
 
+# Local dev scripts
+push.bat
+
 # Logs
 *.log
 npm-debug.log*
