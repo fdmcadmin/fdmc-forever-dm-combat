@@ -248,6 +248,7 @@ type ActionCardProps = {
   action: MonsterReaderAction;
   isUsed: boolean;
   isReaction?: boolean;
+  isDischarged?: boolean;   // recharge ability used this turn — locked until recharge succeeds
   committedRoll: CommittedRoll | null;
   attackCounter: ReturnType<typeof deriveMonsterActionCounter> | undefined;
   stepsUsed: number;
@@ -257,13 +258,29 @@ type ActionCardProps = {
   onClearRoll: () => void;
   onStepUsed: () => void;
   onStepReset: () => void;
+  onRecharge?: (action: MonsterReaderAction) => void;
 };
 
+function parseRechargeRange(recharge: string): [number, number] {
+  if (recharge.includes("-")) {
+    const [lo, hi] = recharge.split("-").map(Number);
+    return [lo, hi];
+  }
+  const n = Number(recharge);
+  return [n, 6];
+}
+
+function rollRecharge(recharge: string): { roll: number; success: boolean } {
+  const [lo, hi] = parseRechargeRange(recharge);
+  const roll = Math.floor(Math.random() * 6) + 1;
+  return { roll, success: roll >= lo && roll <= hi };
+}
+
 function ActionCard({
-  action, isUsed, isReaction = false, committedRoll,
+  action, isUsed, isReaction = false, isDischarged = false, committedRoll,
   attackCounter, stepsUsed,
   onUse, onRollResult, onCommit, onClearRoll,
-  onStepUsed, onStepReset,
+  onStepUsed, onStepReset, onRecharge,
 }: ActionCardProps) {
   const actionId = slugify(action.name);
   const isThisAction = committedRoll?.actionId === actionId;
@@ -271,16 +288,25 @@ function ActionCard({
     && typeof committedRoll?.naturalRoll === "number"
     && committedRoll.naturalRoll >= (committedRoll.critThreshold ?? 20);
   const isMultiattack = action.name.toLowerCase() === "multiattack";
-  const showRollButton = action.kind !== "trait" && !isUsed && !isThisAction;
+  // Multi-attack in-progress: action slot used but sub-attacks remain
+  const isMultiattackInProgress = isMultiattack && attackCounter && stepsUsed > 0 && stepsUsed < attackCounter.total;
+  const showRollButton = action.kind !== "trait" && !isUsed && !isThisAction && !isDischarged;
 
   const borderColor = isThisAction ? "#7b68ee66"
+    : isDischarged ? "#5a3a0066"
     : isReaction ? "#2a2a3e66"
     : "#2a2a3e";
+
+  const bgColor = isUsed ? "#0d0d0d"
+    : isDischarged ? "#1a0e00"
+    : isMultiattackInProgress ? "#1a1500"
+    : isReaction ? "#111"
+    : "#161622";
 
   return (
     <div style={{
       padding: "7px 10px", borderRadius: 4,
-      background: isUsed ? "#0d0d0d" : isReaction ? "#111" : "#161622",
+      background: bgColor,
       border: `1px solid ${borderColor}`,
       marginBottom: 4,
       opacity: isUsed ? 0.5 : 1,
@@ -289,7 +315,15 @@ function ActionCard({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: action.text ? 2 : 0 }}>
-            <strong style={{ fontSize: 12, color: isReaction ? "#888" : "#ddd" }}>{action.name}</strong>
+            <strong style={{ fontSize: 12, color: isDischarged ? "#e07b39" : isMultiattackInProgress ? "#f0c040" : isReaction ? "#888" : "#ddd" }}>{action.name}</strong>
+            {action.recharge && (
+              <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 8, background: isDischarged ? "#3a1a00" : "#1a1a2e", border: `1px solid ${isDischarged ? "#e07b3966" : "#444"}`, color: isDischarged ? "#e07b39" : "#666" }}>
+                Recharge {action.recharge}
+              </span>
+            )}
+            {isMultiattackInProgress && (
+              <span style={{ fontSize: 9, color: "#f0c040" }}>⚡ in progress</span>
+            )}
             {action.roll && (
               <span style={{ fontSize: 10, color: "#7b68ee" }}>⚔ {action.roll}</span>
             )}
@@ -306,19 +340,28 @@ function ActionCard({
             </p>
           )}
         </div>
-        {showRollButton && (
-          <button type="button" onClick={() => onUse(action)}
-            style={{
-              fontSize: 10, padding: "2px 9px",
-              background: isReaction ? "#2a2a2a" : "#7b68ee22",
-              border: `1px solid ${isReaction ? "#444" : "#7b68ee55"}`,
-              borderRadius: 3,
-              color: isReaction ? "#888" : "#7b68ee",
-              cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-            }}>
-            {action.roll ? "Roll" : action.save ? "Prompt" : action.damage ? "Effect" : "Use"}
-          </button>
-        )}
+        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+          {isDischarged && action.recharge && onRecharge && (
+            <button type="button" onClick={() => onRecharge(action)}
+              style={{ fontSize: 10, padding: "2px 8px", background: "#3a1a00", border: "1px solid #e07b3966", borderRadius: 3, color: "#e07b39", cursor: "pointer", whiteSpace: "nowrap" }}
+              title={`Roll 1d6 — needs ${action.recharge} to recharge`}>
+              🎲 Recharge
+            </button>
+          )}
+          {showRollButton && (
+            <button type="button" onClick={() => onUse(action)}
+              style={{
+                fontSize: 10, padding: "2px 9px",
+                background: isReaction ? "#2a2a2a" : "#7b68ee22",
+                border: `1px solid ${isReaction ? "#444" : "#7b68ee55"}`,
+                borderRadius: 3,
+                color: isReaction ? "#888" : "#7b68ee",
+                cursor: "pointer", whiteSpace: "nowrap",
+              }}>
+              {action.roll ? "Roll" : action.save ? "Prompt" : action.damage ? "Effect" : "Use"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Multiattack step tracker — inline, per this monster instance */}
@@ -428,8 +471,9 @@ export function MonsterActorCard({
   });
   const [committedRoll, setCommittedRoll] = useState<CommittedRoll | null>(null);
   const [usedActionIds, setUsedActionIds] = useState<Set<string>>(() => new Set());
+  // rechargedActionIds — actions with recharge that have been USED this turn and not yet recharged
+  const [dischargedActionIds, setDischargedActionIds] = useState<Set<string>>(() => new Set());
   const [traitsOpen, setTraitsOpen] = useState(false);
-  const [log, setLog] = useState<string[]>([]);
 
   // ── Sync live HP from parent (both current and max — hpVariant scaling) ────
   useEffect(() => {
@@ -500,7 +544,9 @@ export function MonsterActorCard({
 
   const hasBonusActions = bonusActions.length > 0;
 
-  function addLog(msg: string) { setLog(l => [msg, ...l].slice(0, 12)); }
+  // Log panel removed (P8) — addLog kept as no-op since the encounter log handles all tracking
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function addLog(_msg: string) { /* noop — log strip removed, tracked via encounter log */ }
 
   // ── HP controls ─────────────────────────────────────────────────────────────
   function adjustHp(delta: number) {
@@ -537,6 +583,10 @@ export function MonsterActorCard({
       broadcastMonsterEconomy(monster.instanceId, next);
       return next;
     });
+    // Mark recharge action as discharged — requires recharge roll to re-enable
+    if (action.recharge) {
+      setDischargedActionIds(prev => new Set([...prev, slugify(action.name)]));
+    }
     addLog(`${publicName} readies ${action.name}.`);
     if (attackFormula && onSendDicePlusRequest) {
       const req: DiceBridgeRollRequest = {
@@ -750,7 +800,7 @@ export function MonsterActorCard({
           <EconomyDot label="Reaction" used={economy.reactionUsed} onClick={() => { const next = { ...economy, reactionUsed: !economy.reactionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
           {/* Quick turn reset */}
           <button type="button"
-            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); addLog(`${publicName} turn reset.`); }}
+            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); /* discharged stays — recharge roll needed */ addLog(`${publicName} turn reset.`); }}
             style={{ marginLeft: "auto", fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#444", cursor: "pointer" }}>
             Reset Turn
           </button>
@@ -762,12 +812,18 @@ export function MonsterActorCard({
             <SectionLabel text="Actions" count={mainActions.length} />
             {mainActions.map(a => (
               <ActionCard key={a.name} action={a} isUsed={usedActionIds.has(slugify(a.name))}
+                isDischarged={dischargedActionIds.has(slugify(a.name))}
                 committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
                 attackCounter={actionCounter} stepsUsed={economy.stepsUsed}
                 onUse={handleUseAction} onRollResult={handleRollResult}
                 onCommit={handleCommit} onClearRoll={handleClearRoll}
                 onStepUsed={() => setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionCounter?.total ?? 1) }))}
                 onStepReset={() => setEconomy(e => ({ ...e, stepsUsed: 0 }))}
+                onRecharge={(action) => {
+                  const { roll, success } = rollRecharge(action.recharge ?? "6");
+                  addLog(`${publicName} recharge roll for ${action.name}: ${roll} — ${success ? "✓ recharged!" : "✗ failed"}`);
+                  if (success) setDischargedActionIds(prev => { const next = new Set(prev); next.delete(slugify(action.name)); return next; });
+                }}
               />
             ))}
           </>
@@ -779,6 +835,7 @@ export function MonsterActorCard({
             <SectionLabel text="Bonus Actions" count={bonusActions.length} />
             {bonusActions.map(a => (
               <ActionCard key={a.name} action={a} isUsed={usedActionIds.has(slugify(a.name))}
+                isDischarged={dischargedActionIds.has(slugify(a.name))}
                 committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
                 attackCounter={undefined} stepsUsed={0}
                 onUse={handleUseAction} onRollResult={handleRollResult}
@@ -795,6 +852,7 @@ export function MonsterActorCard({
             <SectionLabel text="Reactions" count={reactions.length} />
             {reactions.map(a => (
               <ActionCard key={a.name} action={a} isReaction isUsed={usedActionIds.has(slugify(a.name))}
+                isDischarged={dischargedActionIds.has(slugify(a.name))}
                 committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
                 attackCounter={undefined} stepsUsed={0}
                 onUse={handleUseAction} onRollResult={handleRollResult}
@@ -848,20 +906,6 @@ export function MonsterActorCard({
               </div>
             ))}
           </>
-        )}
-
-        {/* Compact log */}
-        {log.length > 0 && (
-          <details style={{ marginTop: 10 }}>
-            <summary style={{ fontSize: 9, color: "#333", cursor: "pointer", textTransform: "uppercase", letterSpacing: 1 }}>
-              Log ({log.length})
-            </summary>
-            <div style={{ marginTop: 3 }}>
-              {log.map((e, i) => (
-                <p key={i} style={{ margin: "1px 0", fontSize: 9, color: "#444" }}>{e}</p>
-              ))}
-            </div>
-          </details>
         )}
 
       </div>

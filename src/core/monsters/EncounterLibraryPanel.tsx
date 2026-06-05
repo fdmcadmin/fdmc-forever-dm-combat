@@ -165,6 +165,10 @@ function MonsterTemplateEditor({ template, onSave, onCancel }: MonsterTemplateEd
                 <span style={labelStyle}>Dmg</span>
                 <input value={a.damage ?? ""} onChange={e => updateAction(list, i, "damage", e.target.value)} placeholder="1d6+2" style={inputStyle} />
               </div>
+              <div style={{ flex: 1 }}>
+                <span style={labelStyle}>Recharge</span>
+                <input value={(a as MonsterReaderAction & { recharge?: string }).recharge ?? ""} onChange={e => updateAction(list, i, "recharge" as keyof MonsterReaderAction, e.target.value)} placeholder="5-6" style={inputStyle} title="Recharge range e.g. '6' or '5-6'" />
+              </div>
               <button type="button" onClick={() => removeAction(list, i)} style={{ alignSelf: "flex-end", fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
             </div>
             <div>

@@ -1639,6 +1639,13 @@ body,
   overflow-x: hidden;
 }
 
+/* DM main panel — always scrollable so DM can scroll actors/tracker/log
+   while an OBR popover (DM tools, monster card) has focus elsewhere */
+.fdmc-app {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
 .app-shell {
   width: 100%;
   max-width: 1180px;

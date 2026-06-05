@@ -108,11 +108,13 @@ export function useActionEconomyState(actors: Actor[]) {
   }, [actors]);
 
   const broadcastState = useCallback((state: ActorActionEconomyMap) => {
-    if (!OBR.isAvailable || !broadcastReadyRef.current) {
+    if (!OBR.isAvailable) {
       return;
     }
-
-    void OBR.broadcast.sendMessage(ACTION_STATE_CHANNEL, { type: "replace", state }, { destination: "REMOTE" }).catch(() => undefined);
+    // Removed broadcastReadyRef guard — timing issues caused silent drops on early clicks.
+    // OBR.isAvailable is the only guard needed; the listener may not be registered yet
+    // on the DM side but the message will still deliver since OBR queues broadcasts.
+    void OBR.broadcast.sendMessage(ACTION_STATE_CHANNEL, { type: "replace", state }, { destination: "ALL" }).catch(() => undefined);
   }, []);
 
   const setAndPersist = useCallback((updater: (current: ActorActionEconomyMap) => ActorActionEconomyMap) => {

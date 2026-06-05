@@ -64,7 +64,7 @@ import "./styles.css";
 
 // ─── Panel type ───────────────────────────────────────────────────────────────
 
-type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance";
+type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens";
 
 const PANEL_TITLES: Record<PanelId, string> = {
   editActors: "Edit Actors",
@@ -73,11 +73,13 @@ const PANEL_TITLES: Record<PanelId, string> = {
   equipment: "Equipment Library",
   tokens: "Token Assignment",
   maintenance: "Room Maintenance",
+  library: "Library",
+  seatTokens: "Seats & Tokens",
 };
 
 function getPanelFromUrl(): PanelId {
   const param = new URLSearchParams(window.location.search).get("panel");
-  const valid: PanelId[] = ["editActors", "seats", "monsters", "equipment", "tokens", "maintenance"];
+  const valid: PanelId[] = ["editActors", "seats", "monsters", "equipment", "tokens", "maintenance", "library", "seatTokens"];
   return valid.includes(param as PanelId) ? (param as PanelId) : "editActors";
 }
 
@@ -145,6 +147,13 @@ function DmPanelApp() {
   const [editingActorId, setEditingActorId] = useState<string | null>(null);
   const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  // Library tab: actors | monsters | equipment
+  const [libraryTab, setLibraryTab] = useState<"actors" | "monsters" | "equipment">("actors");
+  // Seats+Tokens tab
+  const [seatTokenTab, setSeatTokenTab] = useState<"seats" | "tokens">(
+    getPanelFromUrl() === "tokens" || getPanelFromUrl() === "seatTokens"
+      ? "tokens" : "seats"
+  );
 
   function handleSeedParty() {
     const result = seedBrokenChainParty(brokenChainActors);
@@ -487,6 +496,122 @@ function DmPanelApp() {
               onActorSnapshot={async () => ({ ok: true, mode: "empty" as const, actorCount: actors.length, bytes: 0, message: `${actors.length} actors in DM library.` })}
               onPurgeSeatMetadata={purgeAllSeatMetadata}
             />
+          </div>
+        )}
+
+        {/* ── Library (Actors / Monsters / Equipment tabs) ── */}
+        {panelId === "library" && (
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+            <div style={{ display: "flex", gap: 2, padding: "6px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
+              {(["actors", "monsters", "equipment"] as const).map(tab => (
+                <button key={tab} type="button" onClick={() => setLibraryTab(tab)}
+                  style={{ fontSize: 12, padding: "3px 12px", borderRadius: 4, border: "none", cursor: "pointer",
+                    background: libraryTab === tab ? "#7b68ee" : "transparent",
+                    color: libraryTab === tab ? "#fff" : "#666" }}>
+                  {tab === "actors" ? "Actors" : tab === "monsters" ? "Monsters" : "Equipment"}
+                </button>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              {libraryTab === "actors" && (
+                editingActorId === "__new__" ? (
+                  <ActorEditor mode="create-new" onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
+                ) : editingActorId ? (
+                  (() => {
+                    const actor = actors.find(a => a.id === editingActorId);
+                    if (!actor) return <p style={{ padding: 14 }}>Actor not found.</p>;
+                    return <ActorEditor actor={actor} mode="edit-current" onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
+                  })()
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+                    <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, color: "#888" }}>{actors.length} actor{actors.length === 1 ? "" : "s"}</span>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {actors.length > 0 && <button type="button" onClick={handleExport} style={{ fontSize: 11, padding: "3px 9px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 4, cursor: "pointer" }}>↓ Export</button>}
+                        <label style={{ fontSize: 11, padding: "3px 9px", background: "#2a2a3e", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer" }}>
+                          ↑ Import<input type="file" accept=".json" onChange={handleImportFile} style={{ display: "none" }} />
+                        </label>
+                        <button type="button" onClick={() => setEditingActorId("__new__")} style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>+ New</button>
+                      </div>
+                    </div>
+                    {importResult && (
+                      <div style={{ padding: "4px 14px", background: importResult.ok ? "#0d1a0d" : "#1a0a0a", fontSize: 11, color: importResult.ok ? "#4caf50" : "#ff9999", flexShrink: 0 }}>
+                        {importResult.ok ? "✓" : "✕"} {importResult.message}
+                        <button type="button" onClick={() => setImportResult(null)} style={{ marginLeft: 8, background: "transparent", border: "none", color: "#555", cursor: "pointer" }}>×</button>
+                      </div>
+                    )}
+                    <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
+                      {actors.map(actor => (
+                        <div key={actor.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#161622", borderRadius: 6, marginBottom: 6, border: "1px solid #2a2a3e" }}>
+                          <div>
+                            <span style={{ fontWeight: 500, fontSize: 13 }}>{actor.name}</span>
+                            <span style={{ fontSize: 11, color: "#555", marginLeft: 8 }}>AC {actor.stats.ac} · HP {actor.stats.hp.max} · Level {actor.level}</span>
+                          </div>
+                          <button type="button" onClick={() => setEditingActorId(actor.id)}
+                            style={{ fontSize: 11, padding: "3px 10px", background: "#2a2a3e", border: "1px solid #444", borderRadius: 4, color: "#aaa", cursor: "pointer" }}>Edit</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
+              {libraryTab === "monsters" && (
+                <EncounterLibraryPanel
+                  monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
+                  activeRosterCount={Object.keys(roomLiveState.monsterLiveState).length}
+                  onLoadEncounter={(instances) => {
+                    try {
+                      const existing = JSON.parse(window.localStorage.getItem("fdmc.dm.encounterLoadQueue.v1") ?? "[]") as unknown[];
+                      window.localStorage.setItem("fdmc.dm.encounterLoadQueue.v1", JSON.stringify([...existing, ...instances]));
+                    } catch { /* ok */ }
+                    if (OBR.isAvailable) {
+                      void OBR.broadcast.sendMessage("forever-dm-combat:encounter-load-request:v1", { type: "fdmc:encounter-load-request" }, { destination: "LOCAL" }).catch(() => undefined);
+                    }
+                  }}
+                  onClearRoster={() => undefined}
+                />
+              )}
+              {libraryTab === "equipment" && <EquipmentLibraryStandalone seats={Object.values(seats)} />}
+            </div>
+          </div>
+        )}
+
+        {/* ── Seats & Tokens (tabbed) ── */}
+        {(panelId === "seatTokens" || panelId === "seats" || panelId === "tokens") && (
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+            <div style={{ display: "flex", gap: 2, padding: "6px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
+              {(["seats", "tokens"] as const).map(tab => (
+                <button key={tab} type="button" onClick={() => setSeatTokenTab(tab)}
+                  style={{ fontSize: 12, padding: "3px 12px", borderRadius: 4, border: "none", cursor: "pointer",
+                    background: seatTokenTab === tab ? "#7b68ee" : "transparent",
+                    color: seatTokenTab === tab ? "#fff" : "#666" }}>
+                  {tab === "seats" ? "Seats" : "Tokens"}
+                </button>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              {seatTokenTab === "seats" && (
+                <SeatAssignmentPanel
+                  actors={actors}
+                  seats={seats}
+                  seatBindings={seatBindings}
+                  onAssignSeat={assignSeat}
+                  onPushActorsToSeat={pushActorsToSeat}
+                  onPushActorsToAllSeats={pushActorsToAllSeats}
+                  onKickFromSeat={(seatId) => {
+                    const next = { ...roomLiveState, seatBindings: { ...roomLiveState.seatBindings } };
+                    delete next.seatBindings[seatId];
+                    next.revision += 1;
+                    next.updatedAt = Date.now();
+                    void commitRoomState(next);
+                  }}
+                  onRemoveSeat={removeSeat}
+                />
+              )}
+              {seatTokenTab === "tokens" && (
+                <TokenAssignmentPanel tableId={roomLiveState.tableId} seats={roomLiveState.seats} activeMonsters={tokenPanelMonsters} />
+              )}
+            </div>
           </div>
         )}
 

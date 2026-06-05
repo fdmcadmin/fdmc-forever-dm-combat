@@ -23,6 +23,8 @@ export type MonsterReaderAction = {
   save?: string;
   text?: string;
   attackCount?: number;
+  /** Recharge range e.g. "6", "5-6", "4-6" — ability re-enables on successful 1d6 roll */
+  recharge?: string;
 };
 
 export type MonsterActionCounter = {

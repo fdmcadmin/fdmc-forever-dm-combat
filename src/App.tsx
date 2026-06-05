@@ -21,9 +21,14 @@ export type PlayerSafeMonster = {
   conditionLabel: string;
   activeConditions: string[];
   ac: string;
+  /** Action names — shown as read-only pills on player card (no DM data) */
+  actionNames: string[];
+  /** Reaction names — shown as read-only green pills */
+  reactionNames: string[];
 };
 import OBR from "@owlbear-rodeo/sdk";
 import { CombatLog } from "./core/combat-log/CombatLog";
+import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants } from "./core/ui/CombatTracker";
 import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
@@ -201,28 +206,43 @@ function PlayerMonsterRoster({
                   {m.conditionLabel || "—"}
                 </span>
               </button>
-              {/* Peek panel — 4 fields + debuffs, nothing else */}
+              {/* Peek panel — HP bar, conditions, action/reaction pills */}
               {peekId === m.instanceId && (
-                <div style={{ background: "#161622", border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: "2px 0 6px", fontSize: 12 }}>
-                  <div style={{ display: "flex", gap: 12, marginBottom: m.activeConditions.length > 0 ? 6 : 0 }}>
-                    <span style={{ color: "#aaa" }}><strong style={{ color: "#888" }}>Name</strong> {m.publicName}</span>
-                    {m.ac && <span style={{ color: "#aaa" }}><strong style={{ color: "#888" }}>AC</strong> {m.ac}</span>}
-                    <span style={{ color: condColor }}><strong style={{ color: "#888" }}>Condition</strong> {m.conditionLabel || "—"}</span>
+                <div style={{ background: "#161622", border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: "2px 0 6px", fontSize: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {m.ac && <span style={{ fontSize: 11, color: "#aaa" }}>AC {m.ac}</span>}
+                    <span style={{ fontSize: 11, color: condColor }}>{m.conditionLabel || "—"}</span>
                   </div>
                   {m.showHpBar && (
-                    <div style={{ marginBottom: m.activeConditions.length > 0 ? 6 : 0 }}>
-                      <div style={{ height: 6, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${Math.max(0, Math.min(100, m.hpRatio * 100))}%`, background: condColor, borderRadius: 3 }} />
-                      </div>
+                    <div style={{ height: 5, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.max(0, Math.min(100, m.hpRatio * 100))}%`, background: condColor, borderRadius: 3, transition: "width 0.3s" }} />
                     </div>
                   )}
                   {m.activeConditions.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {m.activeConditions.map(c => (
-                        <span key={c} style={{ fontSize: 10, padding: "1px 6px", background: "#2a1a2a", border: "1px solid #7b68ee55", borderRadius: 10, color: "#bb99ff" }}>
-                          {c}
-                        </span>
+                        <span key={c} style={{ fontSize: 10, padding: "1px 6px", background: "#2a1a2a", border: "1px solid #7b68ee55", borderRadius: 10, color: "#bb99ff" }}>{c}</span>
                       ))}
+                    </div>
+                  )}
+                  {m.actionNames.length > 0 && (
+                    <div>
+                      <p style={{ margin: "0 0 3px", fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Actions</p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                        {m.actionNames.map((name, i) => (
+                          <span key={i} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a2a4e", color: "#aaa" }}>{name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {m.reactionNames.length > 0 && (
+                    <div>
+                      <p style={{ margin: "0 0 3px", fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Reactions</p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                        {m.reactionNames.map((name, i) => (
+                          <span key={i} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#1a2a1a", border: "1px solid #2a4e2a", color: "#9be9a8" }}>{name}</span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -423,11 +443,11 @@ export default function App() {
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
     setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
     if (OBR.isAvailable) {
+      // Send dedicated rejection notice so player gets a toast + can resubmit
       void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
-        type: "fdmc:level-up-response",
+        type: "fdmc:level-up-rejected",
         actorId: request.actorId,
         seatId: request.seatId,
-        approved: false,
         reason,
       }, { destination: "REMOTE" });
     }
@@ -631,6 +651,8 @@ export default function App() {
         conditionLabel: vis !== "hidden" ? conditionLabel : "",
         activeConditions: vis !== "hidden" ? (m.usedActionNames ?? []) : [],
         ac: vis === "full" ? (m.ac ?? "") : "",
+        actionNames: vis !== "hidden" ? (m.actions ?? []).map(a => a.name).filter(Boolean) : [],
+        reactionNames: vis !== "hidden" ? (m.reactions ?? []).map(a => a.name).filter(Boolean) : [],
       };
     });
     void obrSend(
@@ -896,6 +918,7 @@ export default function App() {
   const [lootToast, setLootToast] = useState<string | null>(null);
   const [lootOffer, setLootOffer] = useState<import("./core/ui/EquipmentLibraryStandalone").LootOffer | null>(null);
   const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
+  const [levelUpRejectionToast, setLevelUpRejectionToast] = useState<string | null>(null);
 
   // ── Player: refresh + loot delivery via seat broadcast ───────────────────
   useEffect(() => {
@@ -924,6 +947,15 @@ export default function App() {
         setLootOffer(null);
         setLootToast(`✓ ${(msg as { itemName?: string }).itemName ?? "Item"} added to your equipment.`);
         setTimeout(() => setLootToast(null), 6000);
+      }
+      // Level-up rejection from DM
+      if ((msg as { type?: unknown; actorId?: string; seatId?: string; reason?: string }).type === "fdmc:level-up-rejected"
+        && (msg as { seatId?: string }).seatId === claimedSeatId) {
+        const reason = (msg as { reason?: string }).reason;
+        const text = reason ? `DM rejected level-up: ${reason}. You can revise and resubmit.` : "DM rejected your level-up request. You can revise and resubmit.";
+        setLevelUpRejectionToast(text);
+        addEntry({ actorName: "DM", actionName: "Level-Up Rejected", tabId: "system", message: text });
+        setTimeout(() => setLevelUpRejectionToast(null), 8000);
       }
     });
   }, [isDmMode, refreshFromRoom, claimedSeatId]);
@@ -1133,7 +1165,7 @@ export default function App() {
 
   // ── Open DM tool as OBR popover window ───────────────────────────────────
   // All known DM popover IDs — used for close-all
-  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance"] as const;
+  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens"] as const;
 
   const closeAllDmPanels = useCallback(async () => {
     if (!OBR.isAvailable) { setOpenPanel(null); return; }
@@ -1143,12 +1175,11 @@ export default function App() {
     ]);
   }, []);
 
-  const openDmPanel = useCallback(async (panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance") => {
+  const openDmPanel = useCallback(async (panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens") => {
     if (!OBR.isAvailable) {
-      // Fallback to inline panel when outside Owlbear
       const fallbackMap: Record<string, ToolPanelId> = {
-        editActors: "editActors", seats: "actorAssignments",
-        monsters: "monsterPanel", maintenance: "roomMaintenance",
+        editActors: "editActors", seats: "actorAssignments", library: "editActors",
+        monsters: "monsterPanel", maintenance: "roomMaintenance", seatTokens: "actorAssignments",
       };
       setOpenPanel(fallbackMap[panel] ?? null);
       return;
@@ -1161,7 +1192,10 @@ export default function App() {
       if (OBR.popover) {
         const sizes: Record<string, { width: number; height: number }> = {
           editActors: { width: 700, height: 860 },
+          library: { width: 700, height: 860 },
           seats: { width: 640, height: 800 },
+          seatTokens: { width: 640, height: 800 },
+          tokens: { width: 640, height: 800 },
           monsters: { width: 660, height: 820 },
           equipment: { width: 640, height: 780 },
           maintenance: { width: 560, height: 640 },
@@ -1315,8 +1349,8 @@ export default function App() {
           <PlayerMonsterRoster monsters={playerMonsters} />
         )}
 
-        {/* Combat log */}
-        <CombatLog entries={logEntries} onClear={() => undefined} />
+        {/* Recent events — compact player view (no full DM log) */}
+        <RecentEventsWidget entries={logEntries} />
       </main>
     );
   }
@@ -1473,9 +1507,10 @@ export default function App() {
         {isDmMode && (
           <header className="fdmc-dm-toolbar">
             <span className="fdmc-version-pill">{APP_VERSION}</span>
-            <button type="button" onClick={() => void openDmPanel("seats")}>Seats</button>
-            <button type="button" onClick={() => void openDmPanel("editActors")}>Edit Actors</button>
-            <button type="button" onClick={() => void openDmPanel("maintenance")}>Maintenance</button>
+            <button type="button" onClick={() => void openDmPanel("seatTokens")}>Seats & Tokens</button>
+            <button type="button" onClick={() => void openDmPanel("library")}>Library</button>
+            <button type="button" onClick={() => void openDmPanel("maintenance")}
+              style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#444", cursor: "pointer" }}>⚙</button>
             <button
               type="button"
               onClick={() => void closeAllDmPanels()}
@@ -1618,27 +1653,23 @@ export default function App() {
           <span className={`fdmc-budget-pill fdmc-budget-${budgetLabel.toLowerCase()}`}>
             {roomBytes}B {budgetLabel}
           </span>
+          {/* Approvals badge — only shows when requests are pending */}
           {levelUpRequests.length > 0 && (
             <button
               type="button"
               onClick={() => void openDmPanel("editActors")}
-              title="Open DM Approvals — pending level-up requests"
-              style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, border: "none", cursor: "pointer" }}
+              title={`${levelUpRequests.length} pending level-up request${levelUpRequests.length === 1 ? "" : "s"}`}
+              style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 9px", fontSize: 11, border: "none", cursor: "pointer", fontWeight: 600 }}
             >
-              ⬆ {levelUpRequests.length}
+              ⬆ {levelUpRequests.length} Approval{levelUpRequests.length === 1 ? "" : "s"}
             </button>
           )}
-          <button type="button" onClick={() => void openDmPanel("seats")}>Seats</button>
           <button
             type="button"
             onClick={() => {
               pushActorsToAllSeats();
               if (OBR.isAvailable) {
-                void obrSend(
-                  FDMC_SEAT_BROADCAST_CHANNEL,
-                  { type: "fdmc:seats-ready", seats: Object.values(seats) },
-                  { destination: "REMOTE" }
-                );
+                void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, { type: "fdmc:seats-ready", seats: Object.values(seats) }, { destination: "REMOTE" });
               }
             }}
             style={{ fontSize: 11, padding: "2px 8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
@@ -1646,14 +1677,13 @@ export default function App() {
           >
             ▶ Players Join
           </button>
-          <button type="button" onClick={() => void openDmPanel("editActors")}>Edit Actors</button>
-          <button type="button" onClick={() => void openDmPanel("monsters")}>
-            Monsters{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
+          {/* Seats & Tokens — single tabbed popout */}
+          <button type="button" onClick={() => void openDmPanel("seatTokens")}>Seats & Tokens</button>
+          {/* Library — Actors / Monsters / Equipment in one tabbed window */}
+          <button type="button" onClick={() => void openDmPanel("library")}>
+            Library{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
           </button>
-          <button type="button" onClick={() => void openDmPanel("equipment")}>Equipment</button>
-          <button type="button" onClick={() => void openDmPanel("tokens")}>Tokens</button>
           <button type="button" onClick={() => setOpenPanel("encounterCleanup")}>Cleanup</button>
-          <button type="button" onClick={() => void openDmPanel("maintenance")}>Maintenance</button>
           <button
             type="button"
             onClick={() => void closeAllDmPanels()}
@@ -1661,6 +1691,12 @@ export default function App() {
             title="Close all floating DM windows"
           >
             ✕ Close All
+          </button>
+          {/* Maintenance — secondary, muted — only needed when troubleshooting */}
+          <button type="button" onClick={() => void openDmPanel("maintenance")}
+            style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#444", cursor: "pointer" }}
+            title="Room Maintenance — only click if something is broken">
+            ⚙
           </button>
           {!tableBinding && (
             <button type="button" onClick={() => void claimTableBinding()}>Claim Table</button>
@@ -1752,6 +1788,13 @@ export default function App() {
         <div style={{ padding: "6px 14px", background: "#2a6e2a", fontSize: 12, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>🎁 {lootToast}</span>
           <button type="button" onClick={() => setLootToast(null)} style={{ fontSize: 11, background: "transparent", border: "none", color: "#aaa", cursor: "pointer" }}>×</button>
+        </div>
+      )}
+      {/* ── Player level-up rejection toast ── */}
+      {isPlayerMode && levelUpRejectionToast && (
+        <div style={{ padding: "6px 14px", background: "#3a1a1a", fontSize: 12, color: "#ff9999", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>↩ {levelUpRejectionToast}</span>
+          <button type="button" onClick={() => setLevelUpRejectionToast(null)} style={{ fontSize: 11, background: "transparent", border: "none", color: "#aaa", cursor: "pointer" }}>×</button>
         </div>
       )}
 
@@ -2164,8 +2207,11 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Combat log ── */}
-      <CombatLog entries={logEntries} onClear={clearEntries} />
+      {/* ── Combat log — DM sees full log; players see compact recent events ── */}
+      {isDmMode
+        ? <CombatLog entries={logEntries} onClear={clearEntries} />
+        : <RecentEventsWidget entries={logEntries} />
+      }
 
       {/* ── Tool panel layer ── */}
       <ToolPanelLayer
