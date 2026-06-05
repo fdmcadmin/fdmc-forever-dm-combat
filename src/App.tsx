@@ -44,6 +44,7 @@ import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 import { isObrReady, obrSend } from "./core/utils/obrReady";
+import { loadEquipmentLibrary } from "./core/ui/EquipmentBagEditor";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
@@ -636,6 +637,64 @@ export default function App() {
     });
   }, [isDmMode, roomLiveState.tableId]);
 
+  // ── DM: receive loot choice → attach item to actor → re-broadcast ───────
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, async (event) => {
+      const msg = event.data as { type?: string; offerId?: string; chosenItemId?: string; actorId?: string; seatId?: string } | undefined;
+      if (msg?.type !== "fdmc:loot-choice" || !msg.chosenItemId || !msg.actorId) return;
+
+      // Find the actor and add the item to their equipment tab
+      const actor = dmActors.find(a => a.id === msg.actorId);
+      if (!actor) return;
+
+      // Find the item from all libraries
+      const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
+      const item = allItems.find(i => i.id === msg.chosenItemId);
+      if (!item) return;
+
+      // Build the equipment action and add it
+      const equipAction = {
+        id: `equip-${item.id}-${Date.now().toString(36)}`,
+        label: item.name,
+        description: item.description,
+        actionKind: "equipment" as const,
+        logMode: item.isUsable ? "table-note" as const : "silent" as const,
+        displayMode: "compact" as const,
+        hasDefinedUse: item.isUsable,
+        category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
+        metadata: {
+          attack: item.attack,
+          damage: item.damage,
+          crit: item.crit,
+          range: item.range,
+          cost: item.isUsable ? "Action" : undefined,
+          details: [item.description, item.ac ? `AC ${item.ac}` : undefined, item.value].filter(Boolean).join(" · "),
+        },
+      };
+
+      const updatedActor = {
+        ...actor,
+        tabs: { ...actor.tabs, equipment: [...(actor.tabs.equipment ?? []), equipAction] },
+      };
+
+      // Save and broadcast
+      upsertActorInLibrary(updatedActor);
+      setActorLibrary(lib => ({ ...lib, [updatedActor.id]: updatedActor }));
+      pushActorsToSeat(msg.seatId ?? "");
+
+      // Notify player their item was attached
+      void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:loot-attached",
+        seatId: msg.seatId,
+        itemName: item.name,
+      }, { destination: "REMOTE" });
+
+      addEntry({ actorName: actor.name, actionName: "Item Equipped", tabId: "system", message: `${actor.name} received ${item.name}.` });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDmMode, dmActors]);
+
   // ── DM: respond to player roster request on join ─────────────────────────
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
@@ -821,8 +880,9 @@ export default function App() {
     return unsub;
   }, [isDmMode]);
 
-  // ── Player: loot delivery toast + level-up request UI ───────────────────
+  // ── Player: loot delivery toast + offer + level-up request UI ───────────
   const [lootToast, setLootToast] = useState<string | null>(null);
+  const [lootOffer, setLootOffer] = useState<import("./core/ui/EquipmentLibraryStandalone").LootOffer | null>(null);
   const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
 
   // ── Player: refresh + loot delivery via seat broadcast ───────────────────
@@ -834,12 +894,23 @@ export default function App() {
       if (msg.type === "fdmc:seats-ready") {
         void refreshFromRoom();
       }
-      // Loot delivery — show only if addressed to this player's seat
+      // Single loot delivery — auto-attach + toast
       if (msg.type === "fdmc:loot-delivery" && msg.seatId === claimedSeatId) {
         const itemName = msg.item?.name ?? "item";
         const text = msg.message?.trim() || `${itemName} delivered.`;
         setLootToast(text);
         addEntry({ actorName: "DM", actionName: "Loot Delivered", tabId: "system", message: text });
+        setTimeout(() => setLootToast(null), 6000);
+      }
+      // Loot offer — player must choose one item
+      if (msg.type === "fdmc:loot-offer" && msg.seatId === claimedSeatId) {
+        setLootOffer(msg as import("./core/ui/EquipmentLibraryStandalone").LootOffer);
+        addEntry({ actorName: "DM", actionName: "Loot Offer", tabId: "system", message: msg.message ?? "Boss drop — choose an item." });
+      }
+      // DM confirms choice was received and item attached
+      if (msg.type === "fdmc:loot-attached" && msg.seatId === claimedSeatId) {
+        setLootOffer(null);
+        setLootToast(`✓ ${(msg as { itemName?: string }).itemName ?? "Item"} added to your equipment.`);
         setTimeout(() => setLootToast(null), 6000);
       }
     });
@@ -1544,6 +1615,50 @@ export default function App() {
           >
             ↺ Sync Library
           </button>
+        </div>
+      )}
+
+      {/* ── Player loot offer — persistent pick-one panel ── */}
+      {isPlayerMode && lootOffer && actorToShow && (
+        <div style={{ margin: "8px 12px", padding: 12, background: "#0d0d14", border: "1px solid #7b68ee55", borderRadius: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#7b68ee" }}>🎁 {lootOffer.message}</span>
+            <span style={{ fontSize: 10, color: "#555" }}>Choose one</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {lootOffer.items.map(item => (
+              <div key={item.id} style={{ padding: "8px 10px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3 }}>
+                      <strong style={{ fontSize: 12 }}>{item.name}</strong>
+                      <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 5px", borderRadius: 6 }}>{item.category ?? item.type}</span>
+                      {item.tier && <span style={{ fontSize: 10, color: "#7b68ee66" }}>{item.tier}</span>}
+                      {item.attunementRequired && <span style={{ fontSize: 10, color: "#e07b39" }}>Attune</span>}
+                    </div>
+                    <p style={{ margin: 0, fontSize: 11, color: "#666", lineHeight: 1.4 }}>{item.description?.slice(0, 120)}</p>
+                    {item.mechanicsText && (
+                      <p style={{ margin: "3px 0 0", fontSize: 10, color: "#aaa", lineHeight: 1.4 }}>{item.mechanicsText.slice(0, 100)}</p>
+                    )}
+                  </div>
+                  <button type="button"
+                    onClick={() => {
+                      void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+                        type: "fdmc:loot-choice",
+                        seatId: claimedSeatId,
+                        offerId: lootOffer.offerId,
+                        chosenItemId: item.id,
+                        actorId: actorToShow.id,
+                      } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
+                      addEntry({ actorName: actorToShow.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow.name} chose ${item.name}.` });
+                    }}
+                    style={{ fontSize: 11, padding: "4px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", flexShrink: 0, fontWeight: 500 }}>
+                    Choose
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

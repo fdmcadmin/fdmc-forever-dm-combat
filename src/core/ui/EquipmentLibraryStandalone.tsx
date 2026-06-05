@@ -13,8 +13,9 @@ import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import type { ActorAction } from "../types/tabs";
 
-// ─── Loot delivery broadcast ──────────────────────────────────────────────────
+// ─── Loot broadcast types ─────────────────────────────────────────────────────
 
+/** DM sends a single item directly (existing flow) */
 export type LootDelivery = {
   type: "fdmc:loot-delivery";
   seatId: string;
@@ -23,8 +24,32 @@ export type LootDelivery = {
   message: string;
 };
 
+/** DM sends a list of items — player must pick one */
+export type LootOffer = {
+  type: "fdmc:loot-offer";
+  seatId: string;
+  offerId: string;
+  items: EquipmentItem[];
+  message: string;
+};
+
+/** Player broadcasts their chosen item back to DM */
+export type LootChoice = {
+  type: "fdmc:loot-choice";
+  seatId: string;
+  offerId: string;
+  chosenItemId: string;
+  actorId: string;
+};
+
 export function isLootDelivery(msg: unknown): msg is LootDelivery {
   return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:loot-delivery");
+}
+export function isLootOffer(msg: unknown): msg is LootOffer {
+  return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:loot-offer");
+}
+export function isLootChoice(msg: unknown): msg is LootChoice {
+  return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:loot-choice");
 }
 
 function itemToAction(item: EquipmentItem): ActorAction {
@@ -124,6 +149,7 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
   const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(null);
   const [lootTarget, setLootTarget] = useState<{ item: EquipmentItem; seatId: string } | null>(null);
+  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string } | null>(null);
   const [lootMessage, setLootMessage] = useState("");
   const [recentDelivery, setRecentDelivery] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<EquipmentImportResult | null>(null);
@@ -165,6 +191,22 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
     setTimeout(() => setRecentDelivery(null), 4000);
   }
 
+  async function handleSendLootOffer() {
+    if (!lootOffer || lootOffer.items.length === 0 || !OBR.isAvailable) return;
+    const offer: LootOffer = {
+      type: "fdmc:loot-offer",
+      seatId: lootOffer.seatId,
+      offerId: `offer-${Date.now().toString(36)}`,
+      items: lootOffer.items,
+      message: lootMessage.trim() || `Boss drop — choose one item.`,
+    };
+    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, offer, { destination: "REMOTE" });
+    setRecentDelivery(`Loot offer sent (${lootOffer.items.length} items) to ${seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId}`);
+    setLootOffer(null);
+    setLootMessage("");
+    setTimeout(() => setRecentDelivery(null), 6000);
+  }
+
   if (editingItem) {
     return (
       <ItemForm
@@ -202,6 +244,66 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
             ▶ Send Loot
           </button>
           <button type="button" onClick={() => setLootTarget(null)}
+            style={{ padding: "8px 14px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loot offer builder ───────────────────────────────────────────────────────
+  if (lootOffer) {
+    const seatLabel = seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId;
+    return (
+      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0 }}>Boss Loot Table</h3>
+          <span style={{ fontSize: 11, color: "#7b68ee" }}>→ {seatLabel}</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 12, color: "#666" }}>
+          Player will see all items and choose one. The chosen item attaches to their actor's equipment.
+        </p>
+        {/* Items in the offer */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {lootOffer.items.map(item => (
+            <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#161622", borderRadius: 6, border: "1px solid #2a3a2a" }}>
+              <div>
+                <span style={{ fontSize: 12, fontWeight: 500 }}>{item.name}</span>
+                <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>{item.category ?? item.type}</span>
+                {item.tier && <span style={{ fontSize: 10, color: "#7b68ee66", marginLeft: 4 }}>{item.tier}</span>}
+              </div>
+              <button type="button"
+                onClick={() => setLootOffer(o => o ? { ...o, items: o.items.filter(i => i.id !== item.id) } : null)}
+                style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
+                ✕
+              </button>
+            </div>
+          ))}
+          {lootOffer.items.length === 0 && (
+            <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No items added yet. Go back and click "+ Loot Table".</p>
+          )}
+        </div>
+        {/* Seat selector */}
+        <label style={{ fontSize: 12 }}>
+          Send to seat:
+          <select value={lootOffer.seatId} onChange={e => setLootOffer(o => o ? { ...o, seatId: e.target.value } : null)}
+            style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+            {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
+          </select>
+        </label>
+        <label style={{ fontSize: 12 }}>
+          Message (optional)
+          <input type="text" value={lootMessage} onChange={e => setLootMessage(e.target.value)}
+            placeholder="Boss drop — choose your reward..."
+            style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => void handleSendLootOffer()} disabled={lootOffer.items.length === 0}
+            style={{ flex: 1, padding: "8px", background: lootOffer.items.length > 0 ? "#7b68ee" : "#333", color: "#fff", border: "none", borderRadius: 6, cursor: lootOffer.items.length > 0 ? "pointer" : "default", fontWeight: 500 }}>
+            ▶ Send Loot Offer ({lootOffer.items.length} items)
+          </button>
+          <button type="button" onClick={() => setLootOffer(null)}
             style={{ padding: "8px 14px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
             Cancel
           </button>
@@ -255,10 +357,28 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
               {isPeeked ? "▲" : "▼"}
             </button>
             {seats.length > 0 && (
-              <button type="button" onClick={() => setLootTarget({ item, seatId: seats[0]?.seatId ?? "" })}
-                style={{ fontSize: 11, padding: "2px 8px", background: "#2a6e2a22", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>
-                Loot
-              </button>
+              <>
+                <button type="button" onClick={() => setLootTarget({ item, seatId: seats[0]?.seatId ?? "" })}
+                  style={{ fontSize: 11, padding: "2px 8px", background: "#2a6e2a22", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}
+                  title="Send this item directly to a player (they receive it automatically)">
+                  Loot
+                </button>
+                <button type="button"
+                  onClick={() => {
+                    if (lootOffer) {
+                      // Add to existing offer (if not already in it)
+                      if (!lootOffer.items.find(i => i.id === item.id)) {
+                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatId: seats[0]?.seatId ?? "" });
+                      }
+                    } else {
+                      setLootOffer({ items: [item], seatId: seats[0]?.seatId ?? "" });
+                    }
+                  }}
+                  style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+                  title="Add to loot table — player picks one item from the list">
+                  + Table
+                </button>
+              </>
             )}
             {!item.isLocked && (
               <>
@@ -286,6 +406,12 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
           🔒 {campaignLib.length} campaign · {dmLib.length} custom
         </p>
         <div style={{ display: "flex", gap: 6 }}>
+          {lootOffer !== null && (lootOffer as { items: EquipmentItem[] }).items.length > 0 && (
+            <button type="button" onClick={() => setLootOffer(o => o)}
+              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee33", border: "1px solid #7b68ee", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+              🎁 Table ({(lootOffer as { items: EquipmentItem[] }).items.length})
+            </button>
+          )}
           {dmLib.length > 0 && (
             <button type="button" onClick={() => exportEquipmentLibrary()}
               style={{ fontSize: 11, padding: "3px 8px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}
