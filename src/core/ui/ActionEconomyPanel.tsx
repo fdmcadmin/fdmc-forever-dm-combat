@@ -19,6 +19,7 @@ type ActionEconomyPanelProps = {
   state: ActorActionEconomyState;
   usedCostSlots?: ActionCost[];
   concentration: ActorConcentrationState;
+  isPlayerMode?: boolean;
   onResetTurn: () => void;
   onClearConcentration: () => void;
 };
@@ -58,6 +59,7 @@ export function ActionEconomyPanel({
   state,
   usedCostSlots = [],
   concentration,
+  isPlayerMode = false,
   onResetTurn,
   onClearConcentration,
 }: ActionEconomyPanelProps) {
@@ -109,15 +111,16 @@ export function ActionEconomyPanel({
         )}
       </div>
 
-      {/* Next Turn button */}
       <div className="economy-actions">
         {concentration && (
           <button className="secondary-button compact concentration-clear-button" type="button" onClick={onClearConcentration}>
             Clear Conc
           </button>
         )}
+        {/* Player: End My Turn broadcasts to DM — no local reset (reset comes from DM broadcast).
+            DM: Next Turn does full local reset + advances combat. */}
         <button className="secondary-button compact" type="button" onClick={onResetTurn}>
-          Next Turn
+          {isPlayerMode ? "End My Turn" : "Next Turn"}
         </button>
       </div>
     </section>

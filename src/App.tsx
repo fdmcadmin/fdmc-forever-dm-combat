@@ -320,6 +320,8 @@ export default function App() {
   // Uses roomLiveStateRef so the listener always reads current combat state.
   // handleNextTurnRef is set below after handleNextTurn is defined.
   const handleNextTurnRef = useRef<() => void>(() => undefined);
+  // Updated every render so the DM listener always calls the current closure
+  // (assigning to a ref during render is safe — refs don't trigger re-renders)
 
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
@@ -1029,7 +1031,6 @@ export default function App() {
   }
 
   function handleNextTurn() {
-    handleNextTurnRef.current = handleNextTurn; // keep ref current
     // Players broadcast a request — DM executes the actual state change
     if (isPlayerMode && OBR.isAvailable) {
       void OBR.broadcast.sendMessage(
@@ -1101,6 +1102,7 @@ export default function App() {
     }
     addEntry({ actorName: nextCombatant.name, actionName: "Turn Start", tabId: "system", message: `${nextCombatant.name}'s turn.` });
   }
+  handleNextTurnRef.current = handleNextTurn; // always keep ref current — safe to assign during render
 
   function handleEndCombat() {
     const next = patchCombat(roomLiveState, { phase: "setup", activeActorId: null, round: 1 });
@@ -1674,8 +1676,27 @@ export default function App() {
           </span>
           <button
             type="button"
-            onClick={() => { setActorLibrary(loadActorLibrary()); setActorOverrides(loadActorOverrides()); }}
+            onClick={() => {
+              // P8: reload from localStorage, repair room metadata HP, bust all seated player caches
+              const freshLib = loadActorLibrary();
+              const freshOverrides = loadActorOverrides();
+              setActorLibrary(freshLib);
+              setActorOverrides(freshOverrides);
+              // Repair room metadata HP for any actor whose max HP changed in the library
+              for (const actor of Object.values(freshLib)) {
+                const resolved = resolveActor(actor.id, freshLib, freshOverrides, roomLiveState);
+                if (!resolved) continue;
+                const liveHp = getActorHp(actor.id);
+                if (liveHp.max !== resolved.stats.hp.max) {
+                  // Preserve current HP ratio, update max
+                  const newCurrent = Math.min(liveHp.current, resolved.stats.hp.max);
+                  void setActorHp(actor.id, { current: newCurrent, max: resolved.stats.hp.max, temp: liveHp.temp });
+                }
+              }
+              pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
+            }}
             style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+            title="Reload actors from library and push to all seated players"
           >
             ↺ Sync Library
           </button>

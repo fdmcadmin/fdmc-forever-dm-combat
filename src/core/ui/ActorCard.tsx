@@ -2846,12 +2846,10 @@ export function ActorCard({
             )}
           </div>
           <div className="actor-header-tools">
-            <button className="initiative-button" type="button" onClick={() => void handleInitiative()}>
-              Initiative
-            </button>
-            {initiativeState && (
+            {/* P9: initiative roll button removed — roll from combat tracker 🎲 button instead */}
+            {initiativeState?.result && (
               <span className={`initiative-result-pill ${initiativeState.status}`}>
-                {initiativeState.result ?? (initiativeState.status === "pending" ? "rollingâ€¦" : initiativeState.formula)}
+                Init {initiativeState.result}
               </span>
             )}
             {!isPlayerMode && <span className="actor-kind-pill">{titleCaseKind(actor.kind)}</span>}
@@ -2965,7 +2963,8 @@ export function ActorCard({
           state={actionState}
           usedCostSlots={usedCostSlots}
           concentration={concentration}
-          onResetTurn={resetTurn}
+          isPlayerMode={isPlayerMode}
+          onResetTurn={isPlayerMode ? onResetTurn : resetTurn}
           onClearConcentration={onClearConcentration}
         />
       </div>
