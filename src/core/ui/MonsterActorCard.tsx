@@ -612,11 +612,21 @@ export function MonsterActorCard({
       || monster.visibilityState === "full"
       || monster.visibilityState === "condition";
 
+    const monsterActions = monster.actions ?? [];
+    const monsterReactions = monster.reactions ?? [];
+    const allPlayerActions = [...monsterActions, ...monsterReactions];
+
     return (
-      <article className="monster-actor-card player-safe"
-        style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", overflow: "hidden", fontFamily: "monospace" }}>
-        <div style={{ padding: "8px 12px", borderBottom: "1px solid #1a1a2e" }}>
+      <article
+        className="monster-actor-card player-safe"
+        style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", overflow: "hidden", fontFamily: "monospace", cursor: allPlayerActions.length > 0 ? "pointer" : "default" }}
+        onClick={() => { if (allPlayerActions.length > 0) setTraitsOpen(o => !o); }}
+      >
+        <div style={{ padding: "8px 12px", borderBottom: "1px solid #1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ margin: 0, fontSize: 13, color: "#ccc" }}>{publicName}</h3>
+          {allPlayerActions.length > 0 && (
+            <span style={{ fontSize: 10, color: "#444" }}>{traitsOpen ? "▲" : "▼"} actions</span>
+          )}
         </div>
         {showBoxes && (
           <div style={{ display: "flex", gap: 4, padding: "8px 12px" }}>
@@ -631,6 +641,34 @@ export function MonsterActorCard({
             <div style={{ height: 4, background: "#1a1a2e", borderRadius: 2, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${hpRatio * 100}%`, background: conditionColor(condition), borderRadius: 2, transition: "width 0.3s" }} />
             </div>
+          </div>
+        )}
+        {traitsOpen && allPlayerActions.length > 0 && (
+          <div style={{ padding: "8px 12px", borderTop: "1px solid #1a1a2e", display: "flex", flexDirection: "column", gap: 6 }}>
+            {monsterActions.length > 0 && (
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Actions</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {monsterActions.map((a, i) => (
+                    <span key={i} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a2a4e", color: "#aaa" }}>
+                      {a.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {monsterReactions.length > 0 && (
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Reactions</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {monsterReactions.map((a, i) => (
+                    <span key={i} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#1a2a1a", border: "1px solid #2a4e2a", color: "#9be9a8" }}>
+                      {a.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </article>
