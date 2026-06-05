@@ -2093,14 +2093,10 @@ export function ActorCard({
       return;
     }
 
+    // If a committed roll exists for this key, clear it first — no blocking guard,
+    // unready always wins. Roll window closes atomically with the unready.
     if (committedRoll?.readiedKey === readiedKey) {
-      onLog({
-        actorName: actor.name,
-        actionName: "Committed Roll Locked",
-        tabId: "system",
-        message: `${actor.name} has a committed roll for ${committedRoll.actionLabel}. Reset the roll before unreadying it.`,
-      });
-      return;
+      onClearCommittedRoll();
     }
 
     if (concentration && concentration.actionId === action.id && concentration.sourceTabId === tabId) {

@@ -369,25 +369,12 @@ export function TabPanel({
                           return;
                         }
 
-                        const candidate = createCandidate(action, activeTab, costs, readiedKey);
-                        // Allow priming for: economy-costed actions with dice, bonds with damage,
-                        // healing spells (damage-only), triggered effects with formulae.
-                        const canPrimeRollFromActionClick = Boolean(
-                          onPrimeRoll &&
-                            costs.length > 0 &&
-                            hasAttachedDice(action) &&
-                            !committed &&
-                            !commitBlocked &&
-                            !resolved &&
-                            action.logMode !== "silent"
-                        );
-
+                        // Click readies the action (marks economy slot).
+                        // Roll panel opens only when the player explicitly clicks the Roll button —
+                        // no auto-prime on click. This keeps unready simple and prevents
+                        // the roll window from popping before the player is ready to roll.
                         if (!readied) {
                           onUseAction({ action, tabId: activeTab, costs });
-                        }
-
-                        if (canPrimeRollFromActionClick) {
-                          onPrimeRoll?.(candidate);
                         }
                       }}
                       onUnready={() => {
