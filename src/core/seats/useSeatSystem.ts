@@ -266,10 +266,28 @@ export function useDmSeatSystem({
     onRoomStateChange(next);
   }, [onRoomStateChange]);
 
+  // kickFromSeat: clear the binding only — seat definition stays, player returns to picker
+  const kickFromSeat = useCallback(async (seatId: string): Promise<void> => {
+    const current = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
+    const base = current ?? createEmptyRoomLiveState();
+    const nextBindings = { ...base.seatBindings };
+    delete nextBindings[seatId];
+    setSeatBindings(prev => { const n = { ...prev }; delete n[seatId]; return n; });
+    const next: FdmcRoomLiveState = {
+      ...base,
+      revision: base.revision + 1,
+      updatedAt: Date.now(),
+      seatBindings: nextBindings,
+    };
+    await publishFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, next);
+    onRoomStateChange(next);
+  }, [onRoomStateChange]);
+
   return {
     seats,
     seatBindings,
     assignSeat,
+    kickFromSeat,
     removeSeat,
     purgeAllSeatMetadata,
     pushActorsToSeat,

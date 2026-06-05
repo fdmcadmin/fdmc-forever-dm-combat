@@ -140,19 +140,16 @@ export function SeatAssignmentPanel({
                   <span style={{ fontSize: 10, color: binding ? "#4caf50" : "#555" }}>
                     {binding ? `● ${binding.viewerSeatKey.slice(0, 8)}` : "○ open"}
                   </span>
-                  {/* Kick player from seat — clears binding + seat from room metadata */}
-                  {binding && (onKickFromSeat || onRemoveSeat) && (
+                  {/* Kick = clear binding only — player returns to seat picker, seat stays */}
+                  {binding && onKickFromSeat && (
                     <button type="button"
-                      onClick={() => {
-                        if (onRemoveSeat) void onRemoveSeat(seatId);
-                        else if (onKickFromSeat) onKickFromSeat(seatId);
-                        removeSeat(seatId);
-                      }}
-                      title="Kick player from seat — they return to seat selection"
+                      onClick={() => onKickFromSeat(seatId)}
+                      title="Kick player from seat — clears binding only, seat stays"
                       style={{ fontSize: 9, padding: "1px 6px", background: "transparent", border: "1px solid #5a2a00", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>
                       Kick
                     </button>
                   )}
+                  {/* ✕ = remove seat entirely (clears binding + deletes seat definition) */}
                   <button type="button" onClick={() => {
                     if (onRemoveSeat) void onRemoveSeat(seatId);
                     removeSeat(seatId);

@@ -453,10 +453,14 @@ export default function App() {
     }
   }
 
-  // ── DM Actor library (seeded from bundled source on first boot) ────────────
-  const [actorLibrary, setActorLibrary] = useState<Record<string, Actor>>(() =>
-    seedLibraryFromBundled(brokenChainActors)
-  );
+  // ── DM Actor library — load from localStorage immediately so hooks have real actors on first render ──
+  // brokenChainActors is intentionally empty (private actors not bundled).
+  // loadActorLibrary() returns actors imported via Edit Actors → Import.
+  // seedLibraryFromBundled is only used as the fallback when localStorage has nothing.
+  const [actorLibrary, setActorLibrary] = useState<Record<string, Actor>>(() => {
+    const stored = loadActorLibrary();
+    return Object.keys(stored).length > 0 ? stored : seedLibraryFromBundled(brokenChainActors);
+  });
   const [actorOverrides, setActorOverrides] = useState(() => loadActorOverrides());
 
   // ── Reload library when DM popover saves changes ─────────────────────────
@@ -480,7 +484,10 @@ export default function App() {
 
   // ── Level-up approval queue (DM side) ────────────────────────────────────
   const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>([]);
-  const bundledActors = useMemo(() => brokenChainActors, []);
+
+  // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
+  // All runtime hooks that need actor IDs/HP defaults receive the real seeded actors this way.
+  const bundledActors = useMemo(() => Object.values(actorLibrary), [actorLibrary]);
 
   // ── Live state — HP, initiative, trackers — room metadata ──────────────────
   const {
@@ -499,6 +506,7 @@ export default function App() {
     seats,
     seatBindings,
     assignSeat,
+    kickFromSeat,
     removeSeat,
     purgeAllSeatMetadata,
     pushActorsToSeat,
@@ -2228,6 +2236,7 @@ export default function App() {
             onAssignSeat={assignSeat}
             onPushActorsToSeat={pushActorsToSeat}
             onPushActorsToAllSeats={pushActorsToAllSeats}
+            onKickFromSeat={(seatId) => void kickFromSeat(seatId)}
             onRemoveSeat={removeSeat}
           />
         )}

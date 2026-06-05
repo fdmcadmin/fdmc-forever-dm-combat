@@ -126,7 +126,7 @@ function DmPanelApp() {
   }, []);
 
   // ── Seat system ────────────────────────────────────────────────────────────
-  const { seats, seatBindings, assignSeat, removeSeat, purgeAllSeatMetadata, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
+  const { seats, seatBindings, assignSeat, kickFromSeat, removeSeat, purgeAllSeatMetadata, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
     actorLibrary,
     actorOverrides,
     roomLiveState,
@@ -193,8 +193,9 @@ function DmPanelApp() {
     const isNew = editingActorId === "__new__" || saveMode === "duplicate";
     if (isNew) {
       upsertActorInLibrary(editedActor);
-      setActorLibrary(lib => ({ ...lib, [editedActor.id]: editedActor }));
-      pushActorsToAllSeats();
+      const freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
+      setActorLibrary(() => freshLib);
+      pushActorsToAllSeats({ freshLibrary: freshLib });
       broadcastLibraryUpdate();
       setEditingActorId(null);
       return;
@@ -211,10 +212,12 @@ function DmPanelApp() {
     if (JSON.stringify(editedActor.classFeatureTracker) !== JSON.stringify(base.classFeatureTracker)) override.classFeatureTracker = editedActor.classFeatureTracker;
 
     saveActorOverride(editedActor.id, override);
-    // Always update library state so pushActorsToAllSeats has current data for broadcast
     upsertActorInLibrary(editedActor);
-    setActorLibrary(lib => ({ ...lib, [editedActor.id]: editedActor }));
-    pushActorsToAllSeats();
+    const freshOverrides = loadActorOverrides();
+    const freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
+    setActorLibrary(() => freshLib);
+    // Pass fresh data so seat-system refs don't hold stale library
+    pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
     broadcastLibraryUpdate();
     setEditingActorId(null);
   }
@@ -401,6 +404,7 @@ function DmPanelApp() {
             onAssignSeat={assignSeat}
             onPushActorsToSeat={pushActorsToSeat}
             onPushActorsToAllSeats={pushActorsToAllSeats}
+            onKickFromSeat={(seatId) => void kickFromSeat(seatId)}
             onRemoveSeat={removeSeat}
           />
         )}
@@ -598,13 +602,7 @@ function DmPanelApp() {
                   onAssignSeat={assignSeat}
                   onPushActorsToSeat={pushActorsToSeat}
                   onPushActorsToAllSeats={pushActorsToAllSeats}
-                  onKickFromSeat={(seatId) => {
-                    const next = { ...roomLiveState, seatBindings: { ...roomLiveState.seatBindings } };
-                    delete next.seatBindings[seatId];
-                    next.revision += 1;
-                    next.updatedAt = Date.now();
-                    void commitRoomState(next);
-                  }}
+                  onKickFromSeat={(seatId) => void kickFromSeat(seatId)}
                   onRemoveSeat={removeSeat}
                 />
               )}
