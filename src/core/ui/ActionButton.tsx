@@ -152,7 +152,7 @@ export function ActionButton({
           <span className="action-description readied-text">
             {costs.length === 0
               ? `Selected — use ${rollButtonLabel} below or click another option to switch.`
-              : `Readied — use ${rollButtonLabel} below or right-click to unready.`}
+              : `Readied — use ${rollButtonLabel} below or ✕ Unready to cancel.`}
           </span>
         )}
         {!readied && costs.length === 0 && onCommitRoll && <span className="action-description readied-text">Click to select this roll.</span>}
@@ -161,6 +161,17 @@ export function ActionButton({
       </button>
 
       <div className="action-card-footer-row">
+        {/* Visible unready button — shown for any readied economy-costed action, not just right-click */}
+        {readied && !committed && !resolved && costs.length > 0 && onUnready && (
+          <button
+            className="inline-commit-button unready-button"
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onUnready(action); }}
+            title="Unready this action"
+          >
+            ✕ Unready
+          </button>
+        )}
         {showCommitButton && (
           <button className="inline-commit-button" type="button" onClick={() => onCommitRoll?.(action)}>
             {rollButtonLabel}
