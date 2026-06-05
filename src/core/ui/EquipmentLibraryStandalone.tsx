@@ -8,11 +8,9 @@
 
 import { useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
-import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
-import type { ActorAction } from "../types/tabs";
-
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
 /** DM sends a single item directly (existing flow) */
@@ -31,6 +29,8 @@ export type LootOffer = {
   offerId: string;
   items: EquipmentItem[];
   message: string;
+  /** mid = compact strip (non-blocking, shown during combat); final = full-screen pick panel */
+  mode?: "mid" | "final";
 };
 
 /** Player broadcasts their chosen item back to DM */
@@ -52,26 +52,7 @@ export function isLootChoice(msg: unknown): msg is LootChoice {
   return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:loot-choice");
 }
 
-function itemToAction(item: EquipmentItem): ActorAction {
-  return {
-    id: `equip-${item.id}`,
-    label: item.name,
-    description: item.description,
-    actionKind: "equipment",
-    logMode: item.isUsable ? "table-note" : "silent",
-    displayMode: "compact",
-    hasDefinedUse: item.isUsable,
-    category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
-    metadata: {
-      attack: item.attack,
-      damage: item.damage,
-      crit: item.crit,
-      range: item.range,
-      cost: item.isUsable ? "Action" : undefined,
-      details: [item.description, item.ac ? `AC ${item.ac}` : undefined, item.value].filter(Boolean).join(" · "),
-    },
-  };
-}
+// itemToAction is imported from EquipmentBagEditor (canonical source with weapon auto-detect)
 
 // ─── Item form (inline) ───────────────────────────────────────────────────────
 
@@ -149,7 +130,7 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
   const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(null);
   const [lootTarget, setLootTarget] = useState<{ item: EquipmentItem; seatId: string } | null>(null);
-  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string } | null>(null);
+  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string; mode: "mid" | "final" } | null>(null);
   const [lootMessage, setLootMessage] = useState("");
   const [recentDelivery, setRecentDelivery] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<EquipmentImportResult | null>(null);
@@ -193,15 +174,22 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
 
   async function handleSendLootOffer() {
     if (!lootOffer || lootOffer.items.length === 0 || !OBR.isAvailable) return;
-    const offer: LootOffer = {
-      type: "fdmc:loot-offer",
-      seatId: lootOffer.seatId,
-      offerId: `offer-${Date.now().toString(36)}`,
-      items: lootOffer.items,
-      message: lootMessage.trim() || `Boss drop — choose one item.`,
-    };
-    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, offer, { destination: "REMOTE" });
-    setRecentDelivery(`Loot offer sent (${lootOffer.items.length} items) to ${seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId}`);
+    const isAll = lootOffer.seatId === "__all__";
+    const targetSeats = isAll ? seats.filter(s => s.seatMode !== "viewer") : seats.filter(s => s.seatId === lootOffer.seatId);
+    const offerId = `offer-${Date.now().toString(36)}`;
+    for (const seat of targetSeats) {
+      const offer: LootOffer = {
+        type: "fdmc:loot-offer",
+        seatId: seat.seatId,
+        offerId,
+        items: lootOffer.items,
+        message: lootMessage.trim() || (lootOffer.mode === "final" ? "Session reward — choose your item." : "Boss drop — choose one item."),
+        mode: lootOffer.mode,
+      };
+      await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, offer, { destination: "REMOTE" });
+    }
+    const target = isAll ? "all players" : (seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId);
+    setRecentDelivery(`${lootOffer.mode === "final" ? "Session reward" : "Loot offer"} (${lootOffer.items.length} items) sent to ${target}`);
     setLootOffer(null);
     setLootMessage("");
     setTimeout(() => setRecentDelivery(null), 6000);
@@ -254,15 +242,28 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
 
   // ── Loot offer builder ───────────────────────────────────────────────────────
   if (lootOffer) {
-    const seatLabel = seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId;
+    const seatLabel = lootOffer.seatId === "__all__" ? "All Players" : (seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId);
     return (
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0 }}>Boss Loot Table</h3>
+          <h3 style={{ margin: 0 }}>{lootOffer.mode === "final" ? "Session Reward" : "Mid-Combat Loot"}</h3>
           <span style={{ fontSize: 11, color: "#7b68ee" }}>→ {seatLabel}</span>
         </div>
-        <p style={{ margin: 0, fontSize: 12, color: "#666" }}>
-          Player will see all items and choose one. The chosen item attaches to their actor's equipment.
+        {/* Mode toggle */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {(["mid", "final"] as const).map(m => (
+            <button key={m} type="button" onClick={() => setLootOffer(o => o ? { ...o, mode: m } : null)}
+              style={{ flex: 1, padding: "5px", fontSize: 11, borderRadius: 4, border: "none", cursor: "pointer",
+                background: lootOffer.mode === m ? (m === "final" ? "#7b68ee" : "#2a6e2a") : "#1a1a2e",
+                color: lootOffer.mode === m ? "#fff" : "#555" }}>
+              {m === "mid" ? "⚔ Mid-Combat" : "🏆 Session Final"}
+            </button>
+          ))}
+        </div>
+        <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
+          {lootOffer.mode === "final"
+            ? "Full-screen pick panel — best for end-of-session rewards. Player focuses on the choice."
+            : "Compact strip — shown above the combat panel so player can pick without losing combat view."}
         </p>
         {/* Items in the offer */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -286,9 +287,10 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
         </div>
         {/* Seat selector */}
         <label style={{ fontSize: 12 }}>
-          Send to seat:
+          Send to:
           <select value={lootOffer.seatId} onChange={e => setLootOffer(o => o ? { ...o, seatId: e.target.value } : null)}
             style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+            <option value="__all__">★ All Players</option>
             {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
           </select>
         </label>
@@ -366,12 +368,11 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
                 <button type="button"
                   onClick={() => {
                     if (lootOffer) {
-                      // Add to existing offer (if not already in it)
                       if (!lootOffer.items.find(i => i.id === item.id)) {
-                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatId: seats[0]?.seatId ?? "" });
+                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatId: "__all__", mode: "mid" });
                       }
                     } else {
-                      setLootOffer({ items: [item], seatId: seats[0]?.seatId ?? "" });
+                      setLootOffer({ items: [item], seatId: "__all__", mode: "mid" });
                     }
                   }}
                   style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
@@ -406,12 +407,6 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
           🔒 {campaignLib.length} campaign · {dmLib.length} custom
         </p>
         <div style={{ display: "flex", gap: 6 }}>
-          {lootOffer !== null && (lootOffer as { items: EquipmentItem[] }).items.length > 0 && (
-            <button type="button" onClick={() => setLootOffer(o => o)}
-              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee33", border: "1px solid #7b68ee", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
-              🎁 Table ({(lootOffer as { items: EquipmentItem[] }).items.length})
-            </button>
-          )}
           {dmLib.length > 0 && (
             <button type="button" onClick={() => exportEquipmentLibrary()}
               style={{ fontSize: 11, padding: "3px 8px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}

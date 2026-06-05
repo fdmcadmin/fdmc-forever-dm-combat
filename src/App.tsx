@@ -1747,49 +1747,84 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Player loot offer — persistent pick-one panel ── */}
-      {isPlayerMode && lootOffer && actorToShow && (
-        <div style={{ margin: "8px 12px", padding: 12, background: "#0d0d14", border: "1px solid #7b68ee55", borderRadius: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#7b68ee" }}>🎁 {lootOffer.message}</span>
-            <span style={{ fontSize: 10, color: "#555" }}>Choose one</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {lootOffer.items.map(item => (
-              <div key={item.id} style={{ padding: "8px 10px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3 }}>
-                      <strong style={{ fontSize: 12 }}>{item.name}</strong>
-                      <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 5px", borderRadius: 6 }}>{item.category ?? item.type}</span>
-                      {item.tier && <span style={{ fontSize: 10, color: "#7b68ee66" }}>{item.tier}</span>}
-                      {item.attunementRequired && <span style={{ fontSize: 10, color: "#e07b39" }}>Attune</span>}
+      {/* ── Player loot offer — two views: mid-combat (compact strip) or final (full-screen) ── */}
+      {isPlayerMode && lootOffer && actorToShow && (() => {
+        const isFinal = (lootOffer as { mode?: string }).mode === "final";
+
+        function chooseItem(item: { id: string; name: string }) {
+          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:loot-choice",
+            seatId: claimedSeatId,
+            offerId: lootOffer!.offerId,
+            chosenItemId: item.id,
+            actorId: actorToShow!.id,
+          } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
+          addEntry({ actorName: actorToShow!.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow!.name} chose ${item.name}.` });
+        }
+
+        if (isFinal) {
+          // Full-screen pick panel — best for end-of-session rewards
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.95)", zIndex: 200, display: "flex", flexDirection: "column", padding: 24, gap: 16, overflowY: "auto" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ margin: "0 0 4px", fontSize: 11, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 2 }}>Session Reward</p>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#fff" }}>🏆 {lootOffer.message}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555" }}>Choose one item — it will be added to your equipment.</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+                {lootOffer.items.map(item => (
+                  <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+                          <strong style={{ fontSize: 14, color: "#fff" }}>{item.name}</strong>
+                          <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 8 }}>{item.category ?? item.type}</span>
+                          {item.tier && <span style={{ fontSize: 10, color: "#7b68ee" }}>{item.tier}</span>}
+                          {item.attunementRequired && <span style={{ fontSize: 10, color: "#e07b39" }}>Attunement</span>}
+                        </div>
+                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
+                        {item.mechanicsText && <p style={{ margin: 0, fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
+                        {item.attack && <span style={{ fontSize: 11, color: "#7b68ee", marginRight: 8 }}>⚔ {item.attack}</span>}
+                        {item.damage && <span style={{ fontSize: 11, color: "#e07b39" }}>💥 {item.damage}</span>}
+                        {item.ac && <span style={{ fontSize: 11, color: "#4caf50" }}>🛡 AC {item.ac}</span>}
+                      </div>
+                      <button type="button" onClick={() => chooseItem(item)}
+                        style={{ fontSize: 13, padding: "8px 18px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
+                        ✓ Choose
+                      </button>
                     </div>
-                    <p style={{ margin: 0, fontSize: 11, color: "#666", lineHeight: 1.4 }}>{item.description?.slice(0, 120)}</p>
-                    {item.mechanicsText && (
-                      <p style={{ margin: "3px 0 0", fontSize: 10, color: "#aaa", lineHeight: 1.4 }}>{item.mechanicsText.slice(0, 100)}</p>
-                    )}
                   </div>
-                  <button type="button"
-                    onClick={() => {
-                      void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
-                        type: "fdmc:loot-choice",
-                        seatId: claimedSeatId,
-                        offerId: lootOffer.offerId,
-                        chosenItemId: item.id,
-                        actorId: actorToShow.id,
-                      } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
-                      addEntry({ actorName: actorToShow.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow.name} chose ${item.name}.` });
-                    }}
-                    style={{ fontSize: 11, padding: "4px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", flexShrink: 0, fontWeight: 500 }}>
-                    Choose
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        // Mid-combat: compact strip above the combat panel, doesn't block view
+        return (
+          <div style={{ margin: "4px 12px 0", background: "#0d0d14", border: "1px solid #7b68ee44", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ padding: "6px 10px", background: "#1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#7b68ee" }}>🎁 {lootOffer.message}</span>
+              <span style={{ fontSize: 10, color: "#444" }}>pick one</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {lootOffer.items.map(item => (
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#0d0d14" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "#ddd" }}>{item.name}</span>
+                    <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>{item.category ?? item.type}</span>
+                    {item.tier && <span style={{ fontSize: 10, color: "#7b68ee66", marginLeft: 4 }}>{item.tier}</span>}
+                  </div>
+                  <button type="button" onClick={() => chooseItem(item)}
+                    style={{ fontSize: 10, padding: "3px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 4, color: "#7b68ee", cursor: "pointer", flexShrink: 0 }}>
+                    Take
                   </button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Player loot delivery toast ── */}
       {isPlayerMode && lootToast && (

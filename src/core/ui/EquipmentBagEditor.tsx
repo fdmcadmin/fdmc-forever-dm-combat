@@ -10,7 +10,7 @@
  * The actor's bag = actor.tabs.equipment (ActorAction[]) with actionKind "equipment"
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ActorAction } from "../types/tabs";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
@@ -402,21 +402,28 @@ export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEd
   const [library, setLibrary] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
   const [editingItem, setEditingItem] = useState<EquipmentItem | undefined>(undefined);
 
-  // Re-derive equipped actions from library on mount — fixes stale reference/rollable state
-  const refreshedOnMount = useState(false);
-  if (!refreshedOnMount[0]) {
-    refreshedOnMount[1](true);
+  // Re-derive equipped actions from library on mount — fixes stale reference/rollable state.
+  // Uses useEffect (not render-time side-effect) to avoid React anti-patterns.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const equippedActionsRef = useRef(equippedActions);
+  equippedActionsRef.current = equippedActions;
+
+  useEffect(() => {
     const allItems = loadEquipmentLibrary();
-    const refreshed = equippedActions.map(a => {
-      const itemId = a.id.replace(/^equip-/, "").replace(/-[a-z0-9]+$/, ""); // strip suffix added by loot system
+    const current = equippedActionsRef.current;
+    const refreshed = current.map(a => {
+      const itemId = a.id.replace(/^equip-/, "").replace(/-[a-z0-9]+$/, "");
       const item = allItems.find(i => i.id === itemId || `equip-${i.id}` === a.id);
       return item ? itemToAction(item) : a;
     });
     const hasChange = refreshed.some((a, i) =>
-      a.logMode !== equippedActions[i].logMode || a.hasDefinedUse !== equippedActions[i].hasDefinedUse
+      a.logMode !== current[i].logMode || a.hasDefinedUse !== current[i].hasDefinedUse
     );
-    if (hasChange) setTimeout(() => onChange(refreshed), 0);
-  }
+    if (hasChange) onChangeRef.current(refreshed);
+  // Run once on mount only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const equippedIds = new Set(equippedActions.map(a => a.id.replace("equip-", "")));
 
