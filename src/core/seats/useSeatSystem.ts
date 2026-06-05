@@ -201,10 +201,17 @@ export function useDmSeatSystem({
     onRoomStateChange(next);
   }, [onRoomStateChange]);
 
-  const pushActorsToSeat = useCallback((seatId: string): void => {
+  type PushFreshData = {
+    freshLibrary?: Record<string, Actor>;
+    freshOverrides?: ActorOverrideMap;
+  };
+
+  const pushActorsToSeat = useCallback((seatId: string, fresh?: PushFreshData): void => {
     const seat = seatsRef.current[seatId];
     if (!seat || !OBR.isAvailable) return;
-    const actors = resolveActorsForSeat(seat, libraryRef.current, overridesRef.current, liveStateRef.current);
+    const lib = fresh?.freshLibrary ?? libraryRef.current;
+    const overrides = fresh?.freshOverrides ?? overridesRef.current;
+    const actors = resolveActorsForSeat(seat, lib, overrides, liveStateRef.current);
     const payload: ActorDataBroadcast = {
       type: "fdmc:actor-data",
       seatId,
@@ -214,9 +221,9 @@ export function useDmSeatSystem({
     void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, payload, { destination: "REMOTE" });
   }, []);
 
-  const pushActorsToAllSeats = useCallback((): void => {
+  const pushActorsToAllSeats = useCallback((fresh?: PushFreshData): void => {
     for (const seatId of Object.keys(seatsRef.current)) {
-      pushActorsToSeat(seatId);
+      pushActorsToSeat(seatId, fresh);
     }
   }, [pushActorsToSeat]);
 

@@ -337,8 +337,9 @@ export default function App() {
     const isNew = editingActorId === "__new__" || saveMode === "duplicate";
     if (isNew) {
       upsertActorInLibrary(editedActor);
-      setActorLibrary(lib => ({ ...lib, [editedActor.id]: editedActor }));
-      pushActorsToAllSeats();
+      const freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
+      setActorLibrary(() => freshLib);
+      pushActorsToAllSeats({ freshLibrary: freshLib });
       setEditingActorId(null);
       return;
     }
@@ -355,15 +356,18 @@ export default function App() {
     if (JSON.stringify(editedActor.classFeatureTracker) !== JSON.stringify(base.classFeatureTracker)) override.classFeatureTracker = editedActor.classFeatureTracker;
 
     saveActorOverride(editedActor.id, override);
-    setActorOverrides(loadActorOverrides());
+    const freshOverrides = loadActorOverrides();
+    setActorOverrides(freshOverrides);
 
+    let freshLib = actorLibrary;
     if (saveMode === "current-and-library") {
       upsertActorInLibrary(editedActor);
-      setActorLibrary(lib => ({ ...lib, [editedActor.id]: editedActor }));
+      freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
+      setActorLibrary(() => freshLib);
     }
 
-    // Push updated actor to all seats that have this actor assigned
-    pushActorsToAllSeats();
+    // Push with fresh data so broadcast doesn't use stale refs
+    pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
     setEditingActorId(null);
     closePanel();
   }
@@ -381,8 +385,9 @@ export default function App() {
     if (JSON.stringify(finalActor.abilityScores) !== JSON.stringify(base.abilityScores)) override.abilityScores = finalActor.abilityScores;
     if (JSON.stringify(finalActor.classFeatureTracker) !== JSON.stringify(base.classFeatureTracker)) override.classFeatureTracker = finalActor.classFeatureTracker;
     saveActorOverride(request.actorId, override);
-    setActorOverrides(loadActorOverrides());
-    pushActorsToAllSeats();
+    const freshOverrides = loadActorOverrides();
+    setActorOverrides(freshOverrides);
+    pushActorsToAllSeats({ freshOverrides });
     setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
 
     if (OBR.isAvailable) {
@@ -681,10 +686,11 @@ export default function App() {
         tabs: { ...actor.tabs, equipment: [...(actor.tabs.equipment ?? []), equipAction] },
       };
 
-      // Save and broadcast
+      // Save and broadcast — pass freshLibrary so push doesn't use stale ref
+      const freshLib = { ...dmActors.reduce((m, a) => ({ ...m, [a.id]: a }), {} as Record<string, typeof actor>), [updatedActor.id]: updatedActor };
       upsertActorInLibrary(updatedActor);
       setActorLibrary(lib => ({ ...lib, [updatedActor.id]: updatedActor }));
-      pushActorsToSeat(msg.seatId ?? "");
+      pushActorsToSeat(msg.seatId ?? "", { freshLibrary: freshLib });
 
       // Notify player their item was attached
       void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
@@ -1567,9 +1573,14 @@ export default function App() {
             {roomBytes}B {budgetLabel}
           </span>
           {levelUpRequests.length > 0 && (
-            <span style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11 }}>
+            <button
+              type="button"
+              onClick={() => void openDmPanel("editActors")}
+              title="Open DM Approvals — pending level-up requests"
+              style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, border: "none", cursor: "pointer" }}
+            >
               ⬆ {levelUpRequests.length}
-            </span>
+            </button>
           )}
           <button type="button" onClick={() => void openDmPanel("seats")}>Seats</button>
           <button
