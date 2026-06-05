@@ -124,7 +124,7 @@ function DmPanelApp() {
   }, []);
 
   // ── Seat system ────────────────────────────────────────────────────────────
-  const { seats, seatBindings, assignSeat, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
+  const { seats, seatBindings, assignSeat, removeSeat, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
     actorLibrary,
     actorOverrides,
     roomLiveState,
@@ -392,13 +392,7 @@ function DmPanelApp() {
             onAssignSeat={assignSeat}
             onPushActorsToSeat={pushActorsToSeat}
             onPushActorsToAllSeats={pushActorsToAllSeats}
-            onKickFromSeat={(seatId) => {
-              const next = { ...roomLiveState, seatBindings: { ...roomLiveState.seatBindings } };
-              delete next.seatBindings[seatId];
-              next.revision += 1;
-              next.updatedAt = Date.now();
-              void commitRoomState(next);
-            }}
+            onRemoveSeat={removeSeat}
           />
         )}
 

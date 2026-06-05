@@ -12,6 +12,8 @@ type SeatAssignmentPanelProps = {
   onPushActorsToAllSeats: () => void;
   /** DM kicks a player from their seat — clears the binding from room metadata */
   onKickFromSeat?: (seatId: string) => void;
+  /** DM removes a seat entirely — clears seat + binding from room metadata */
+  onRemoveSeat?: (seatId: string) => Promise<void>;
 };
 
 function nextSeatId(seats: Record<string, FdmcSeat>): string {
@@ -30,6 +32,7 @@ export function SeatAssignmentPanel({
   onPushActorsToSeat,
   onPushActorsToAllSeats,
   onKickFromSeat,
+  onRemoveSeat,
 }: SeatAssignmentPanelProps) {
   // Dynamic seat ID list — starts from existing seats, grows with Add Seat
   const [seatIds, setSeatIds] = useState<string[]>(() => {
@@ -137,16 +140,23 @@ export function SeatAssignmentPanel({
                   <span style={{ fontSize: 10, color: binding ? "#4caf50" : "#555" }}>
                     {binding ? `● ${binding.viewerSeatKey.slice(0, 8)}` : "○ open"}
                   </span>
-                  {/* Kick player from seat — clears binding, player returns to seat picker */}
-                  {binding && onKickFromSeat && (
+                  {/* Kick player from seat — clears binding + seat from room metadata */}
+                  {binding && (onKickFromSeat || onRemoveSeat) && (
                     <button type="button"
-                      onClick={() => onKickFromSeat(seatId)}
+                      onClick={() => {
+                        if (onRemoveSeat) void onRemoveSeat(seatId);
+                        else if (onKickFromSeat) onKickFromSeat(seatId);
+                        removeSeat(seatId);
+                      }}
                       title="Kick player from seat — they return to seat selection"
                       style={{ fontSize: 9, padding: "1px 6px", background: "transparent", border: "1px solid #5a2a00", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>
                       Kick
                     </button>
                   )}
-                  <button type="button" onClick={() => removeSeat(seatId)}
+                  <button type="button" onClick={() => {
+                    if (onRemoveSeat) void onRemoveSeat(seatId);
+                    removeSeat(seatId);
+                  }}
                     style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
                     ✕
                   </button>
