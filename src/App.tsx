@@ -44,7 +44,7 @@ import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 import { isObrReady, obrSend } from "./core/utils/obrReady";
-import { loadEquipmentLibrary } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, itemToAction } from "./core/ui/EquipmentBagEditor";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
@@ -662,24 +662,7 @@ export default function App() {
       if (!item) return;
 
       // Build the equipment action and add it
-      const equipAction = {
-        id: `equip-${item.id}-${Date.now().toString(36)}`,
-        label: item.name,
-        description: item.description,
-        actionKind: "equipment" as const,
-        logMode: item.isUsable ? "table-note" as const : "silent" as const,
-        displayMode: "compact" as const,
-        hasDefinedUse: item.isUsable,
-        category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
-        metadata: {
-          attack: item.attack,
-          damage: item.damage,
-          crit: item.crit,
-          range: item.range,
-          cost: item.isUsable ? "Action" : undefined,
-          details: [item.description, item.ac ? `AC ${item.ac}` : undefined, item.value].filter(Boolean).join(" · "),
-        },
-      };
+      const equipAction = itemToAction(item);
 
       const updatedActor = {
         ...actor,
@@ -1960,6 +1943,8 @@ export default function App() {
           round={roomLiveState.combat.round}
           phase={roomLiveState.combat.phase}
           isDmMode={isDmMode}
+          viewerActorIds={isPlayerMode ? seatActors.map(a => a.id) : undefined}
+          actionStateByActorId={isDmMode ? actionStateByActorId : undefined}
           onStartCombat={handleStartCombat}
           onNextTurn={handleNextTurn}
           onEndCombat={handleEndCombat}

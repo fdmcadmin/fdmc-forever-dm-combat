@@ -200,15 +200,18 @@ function slugify(value: string): string {
 
 // ─── Convert between EquipmentItem and ActorAction ───────────────────────────
 
-function itemToAction(item: EquipmentItem): ActorAction {
+export function itemToAction(item: EquipmentItem): ActorAction {
+  // Any item with attack or damage formulas is rollable regardless of isUsable flag
+  const isRollable = item.isUsable || Boolean(item.attack || item.damage);
   return {
     id: `equip-${item.id}`,
     label: item.name,
     description: item.description,
     actionKind: "equipment",
-    logMode: item.isUsable ? "table-note" : "silent",
+    logMode: isRollable ? "table-note" : "silent",
     displayMode: "compact",
-    hasDefinedUse: item.isUsable,
+    hasDefinedUse: isRollable,
+    economyCost: item.attack || item.damage ? ["main"] : undefined,
     category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
     tags: item.tags,
     metadata: {
@@ -216,7 +219,7 @@ function itemToAction(item: EquipmentItem): ActorAction {
       damage: item.damage,
       crit: item.crit,
       range: item.range,
-      cost: item.isUsable ? "Action" : undefined,
+      cost: isRollable ? "Action" : undefined,
       details: [
         item.description,
         item.ac ? `AC ${item.ac}` : undefined,
@@ -398,6 +401,22 @@ export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEd
   const [view, setView] = useState<"bag" | "library" | "create">("bag");
   const [library, setLibrary] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
   const [editingItem, setEditingItem] = useState<EquipmentItem | undefined>(undefined);
+
+  // Re-derive equipped actions from library on mount — fixes stale reference/rollable state
+  const refreshedOnMount = useState(false);
+  if (!refreshedOnMount[0]) {
+    refreshedOnMount[1](true);
+    const allItems = loadEquipmentLibrary();
+    const refreshed = equippedActions.map(a => {
+      const itemId = a.id.replace(/^equip-/, "").replace(/-[a-z0-9]+$/, ""); // strip suffix added by loot system
+      const item = allItems.find(i => i.id === itemId || `equip-${i.id}` === a.id);
+      return item ? itemToAction(item) : a;
+    });
+    const hasChange = refreshed.some((a, i) =>
+      a.logMode !== equippedActions[i].logMode || a.hasDefinedUse !== equippedActions[i].hasDefinedUse
+    );
+    if (hasChange) setTimeout(() => onChange(refreshed), 0);
+  }
 
   const equippedIds = new Set(equippedActions.map(a => a.id.replace("equip-", "")));
 

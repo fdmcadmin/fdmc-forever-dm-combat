@@ -238,12 +238,22 @@ export function LevelUpRequestPanel({ actor, seatId, onClose }: LevelUpRequestPa
 
   // Full editor in proposeMode — player makes all changes, hits "Submit for DM Approval"
   return (
-    <ActorEditor
-      actor={actor}
-      mode="edit-current"
-      proposeMode
-      onSave={(proposedActor) => void handlePropose(proposedActor)}
-      onCancel={onClose}
-    />
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", background: "#1a1a2e", flexShrink: 0 }}>
+        <p style={{ margin: 0, fontSize: 12, color: "#7b68ee", fontWeight: 600 }}>⬆ Level-Up Request</p>
+        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#666" }}>
+          Make your changes below — update HP, AC, add actions or spells — then hit <strong style={{ color: "#aaa" }}>Submit for DM Approval</strong> at the bottom.
+        </p>
+      </div>
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <ActorEditor
+          actor={actor}
+          mode="edit-current"
+          proposeMode
+          onSave={(proposedActor) => void handlePropose(proposedActor)}
+          onCancel={onClose}
+        />
+      </div>
+    </div>
   );
 }

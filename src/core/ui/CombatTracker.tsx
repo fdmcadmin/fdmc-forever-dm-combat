@@ -13,6 +13,7 @@ import React, { useState } from "react";
 import type { Actor } from "../types/actor";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import type { FdmcCombatPhase } from "../table-state/fdmcRoomLiveState";
+import type { ActorActionEconomyMap } from "../types/actionEconomy";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,10 @@ export type CombatTrackerProps = {
   round: number;
   phase: FdmcCombatPhase;
   isDmMode: boolean;
+  /** Actor IDs owned by the current viewer — enables player-side Next Turn + initiative input */
+  viewerActorIds?: string[];
+  /** Economy state for all actors — used to show per-row dots for DM */
+  actionStateByActorId?: ActorActionEconomyMap;
   onStartCombat: () => void;
   onNextTurn: () => void;
   onEndCombat: () => void;
@@ -186,6 +191,8 @@ export function CombatTracker({
   round,
   phase,
   isDmMode,
+  viewerActorIds,
+  actionStateByActorId,
   onStartCombat,
   onNextTurn,
   onEndCombat,
@@ -193,6 +200,8 @@ export function CombatTracker({
   onSetInitiative,
   onSwapInitiative,
 }: CombatTrackerProps) {
+  const viewerActorIdSet = new Set(viewerActorIds ?? []);
+  const isViewerActive = activeId !== null && viewerActorIdSet.has(activeId);
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null);
   const sorted = sortCombatants(combatants);
   const activeIndex = sorted.findIndex(c => c.id === activeId);
@@ -218,28 +227,26 @@ export function CombatTracker({
           )}
         </div>
 
-        {isDmMode && (
-          <div style={{ display: "flex", gap: 4 }}>
-            {phase === "setup" || phase === "initiative" ? (
-              <>
-                {/* Auto-roll initiative for all monsters that don't have one yet */}
-                {sorted.some(c => c.kind === "monster" && c.initiative === null && !c.isDead) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sorted
-                        .filter(c => c.kind === "monster" && c.initiative === null && !c.isDead)
-                        .forEach(c => {
-                          const roll = Math.floor(Math.random() * 20) + 1 + c.initiativeBonus;
-                          onSetInitiative(c.id, roll);
-                        });
-                    }}
-                    style={{ fontSize: 11, padding: "2px 8px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
-                    title="Auto-roll 1d20 + DEX for all monsters without initiative"
-                  >
-                    🎲 Roll Monsters
-                  </button>
-                )}
+        <div style={{ display: "flex", gap: 4 }}>
+          {isDmMode && (phase === "setup" || phase === "initiative") && (
+            <>
+              {sorted.some(c => c.kind === "monster" && c.initiative === null && !c.isDead) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sorted
+                      .filter(c => c.kind === "monster" && c.initiative === null && !c.isDead)
+                      .forEach(c => {
+                        const roll = Math.floor(Math.random() * 20) + 1 + c.initiativeBonus;
+                        onSetInitiative(c.id, roll);
+                      });
+                  }}
+                  style={{ fontSize: 11, padding: "2px 8px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+                  title="Auto-roll 1d20 + DEX for all monsters without initiative"
+                >
+                  🎲 Roll Monsters
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onStartCombat}
@@ -250,32 +257,41 @@ export function CombatTracker({
                   color: sorted.some(c => c.initiative !== null) ? "#fff" : "#555",
                   border: "none", borderRadius: 3, cursor: sorted.some(c => c.initiative !== null) ? "pointer" : "default",
                 }}
-                title="Lock initiative order and start combat"
               >
                 ▶ Start Combat
               </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={onNextTurn}
-                  style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
-                >
-                  Next Turn →
-                </button>
-                <button
-                  type="button"
-                  onClick={onEndCombat}
-                  style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
-                  title="End combat — keep actor HP and seats"
-                >
-                  End
-                </button>
-              </>
-            )}
-          </div>
-        )}
+            </>
+          )}
+          {isDmMode && phase === "combat" && (
+            <>
+              <button
+                type="button"
+                onClick={onNextTurn}
+                style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
+              >
+                Next Turn →
+              </button>
+              <button
+                type="button"
+                onClick={onEndCombat}
+                style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
+                title="End combat — keep actor HP and seats"
+              >
+                End
+              </button>
+            </>
+          )}
+          {/* Player "End My Turn" — shown when it's their actor's turn */}
+          {!isDmMode && isViewerActive && phase === "combat" && (
+            <button
+              type="button"
+              onClick={onNextTurn}
+              style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
+            >
+              End My Turn →
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mid-combat: monsters/actors needing initiative ── */}
@@ -338,8 +354,8 @@ export function CombatTracker({
                 {isActive ? "▶" : isNext ? "›" : "·"}
               </span>
 
-              {/* Initiative — editable for DM */}
-              {isDmMode ? (
+              {/* Initiative — editable for DM always; editable for player on their own actors during setup/initiative */}
+              {isDmMode || (viewerActorIdSet.has(combatant.id) && (phase === "setup" || phase === "initiative")) ? (
                 <input
                   type="number"
                   value={combatant.initiative ?? ""}
@@ -351,7 +367,7 @@ export function CombatTracker({
                   placeholder="—"
                   style={{
                     width: 30, fontSize: 12, textAlign: "center",
-                    background: "#0d0d14", border: "1px solid #2a2a2a",
+                    background: "#0d0d14", border: `1px solid ${viewerActorIdSet.has(combatant.id) && !isDmMode ? "#7b68ee66" : "#2a2a2a"}`,
                     borderRadius: 3, color: "#7b68ee", padding: "1px 2px", flexShrink: 0,
                   }}
                 />
@@ -408,6 +424,28 @@ export function CombatTracker({
                   ⇅
                 </button>
               )}
+
+              {/* Economy dots — DM only, actor combatants */}
+              {isDmMode && combatant.kind === "actor" && actionStateByActorId && (() => {
+                const state = actionStateByActorId[combatant.id];
+                if (!state) return null;
+                const costs = ["main", "bonus", "reaction"] as const;
+                const labels = ["A", "B", "R"] as const;
+                return (
+                  <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+                    {costs.map((cost, i) => {
+                      const val = state[cost];
+                      const isUsed = typeof val === "string" && val.startsWith("__fdm_used__:");
+                      const isReadied = val && !isUsed;
+                      const color = isUsed ? "#ff5840" : isReadied ? "#d7b36a" : "#2a2a4e";
+                      return (
+                        <div key={cost} title={`${labels[i]}: ${isUsed ? "used" : isReadied ? "readied" : "available"}`}
+                          style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* HP bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
