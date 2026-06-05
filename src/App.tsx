@@ -43,6 +43,7 @@ import { ActorCard } from "./core/ui/ActorCard";
 import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
+import { isObrReady, obrSend } from "./core/utils/obrReady";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
@@ -384,7 +385,7 @@ export default function App() {
     setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
 
     if (OBR.isAvailable) {
-      void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+      void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
         type: "fdmc:level-up-response",
         actorId: request.actorId,
         seatId: request.seatId,
@@ -396,7 +397,7 @@ export default function App() {
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
     setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
     if (OBR.isAvailable) {
-      void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+      void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
         type: "fdmc:level-up-response",
         actorId: request.actorId,
         seatId: request.seatId,
@@ -603,7 +604,7 @@ export default function App() {
         ac: vis === "full" ? (m.ac ?? "") : "",
       };
     });
-    void OBR.broadcast.sendMessage(
+    void obrSend(
       MONSTER_ROSTER_CHANNEL,
       { type: "fdmc:monster-roster", monsters: payload },
       { destination: "REMOTE" }
@@ -771,7 +772,7 @@ export default function App() {
   // Viewer: request party data on entering viewer mode
   useEffect(() => {
     if (!isPlayerMode || seatStatus !== "viewer" || !OBR.isAvailable) return;
-    void OBR.broadcast.sendMessage(
+    void obrSend(
       VIEWER_PARTY_CHANNEL,
       { type: "fdmc:viewer-party-request" },
       { destination: "REMOTE" },
@@ -789,7 +790,7 @@ export default function App() {
         const hp = getActorHp(a.id);
         return { id: a.id, name: a.name, hpCurrent: hp.current, hpMax: hp.max, status: "" };
       });
-      void OBR.broadcast.sendMessage(
+      void obrSend(
         VIEWER_PARTY_CHANNEL,
         { type: "fdmc:viewer-party", actors: summary },
         { destination: "REMOTE" },
@@ -812,7 +813,7 @@ export default function App() {
       }
     });
     // Request current roster on join — DM re-sends if they have monsters loaded
-    void OBR.broadcast.sendMessage(
+    void obrSend(
       MONSTER_ROSTER_CHANNEL,
       { type: "fdmc:monster-roster-request" },
       { destination: "REMOTE" },
@@ -964,7 +965,7 @@ export default function App() {
       // Monster's turn starts — reset its economy now
       const nextInstanceId = nextCombatant.id;
       if (OBR.isAvailable) {
-        void OBR.broadcast.sendMessage(
+        void obrSend(
           "fdmc:monster-turn-reset",
           { type: "fdmc:monster-turn-reset", instanceId: nextInstanceId },
           { destination: "LOCAL" }
@@ -976,7 +977,7 @@ export default function App() {
         return updated;
       });
       if (OBR.isAvailable) {
-        void OBR.broadcast.sendMessage(
+        void obrSend(
           MONSTER_ECONOMY_CHANNEL,
           { type: "fdmc:monster-economy", instanceId: nextInstanceId, actionUsed: false, reactionUsed: false } satisfies MonsterEconomyBroadcast,
           { destination: "REMOTE" },
@@ -1496,7 +1497,7 @@ export default function App() {
             onClick={() => {
               pushActorsToAllSeats();
               if (OBR.isAvailable) {
-                void OBR.broadcast.sendMessage(
+                void obrSend(
                   FDMC_SEAT_BROADCAST_CHANNEL,
                   { type: "fdmc:seats-ready", seats: Object.values(seats) },
                   { destination: "REMOTE" }
@@ -2114,7 +2115,7 @@ export default function App() {
               broadcastMonsterRoster([]);
               // Broadcast so player cards reset action economy toggles
               if (OBR.isAvailable) {
-                void OBR.broadcast.sendMessage(
+                void obrSend(
                   "fdmc:action-economy-reset",
                   { type: "fdmc:action-economy-reset" },
                   { destination: "REMOTE" }
