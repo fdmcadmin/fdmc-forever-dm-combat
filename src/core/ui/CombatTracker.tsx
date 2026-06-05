@@ -23,7 +23,7 @@ export type Combatant = {
   initiative: number | null;
   /** DEX modifier (or actor's initiativeBonus) used for auto-roll */
   initiativeBonus: number;
-  hp: { current: number; max: number };
+  hp: { current: number; max: number; temp?: number };
   isActive: boolean;
   isDead: boolean;
   /** For monsters: player-safe or DM name */
@@ -158,7 +158,7 @@ export function buildCombatants(
     kind: "monster" as const,
     initiative: initiativeByMonsterInstanceId[m.instanceId] ?? null,
     initiativeBonus: parseInitiativeBonus(m.abilityScores),
-    hp: { current: m.currentHp, max: m.maxHp },
+    hp: { current: m.currentHp, max: m.maxHp, temp: m.tempHp > 0 ? m.tempHp : undefined },
     isActive: m.instanceId === activeId,
     isDead: m.currentHp <= 0,
     displayName: m.displayName,
@@ -411,11 +411,18 @@ export function CombatTracker({
 
               {/* HP bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                {isDmMode && (
-                  <span style={{ fontSize: 10, color: hpColor(combatant.hp.current, combatant.hp.max), minWidth: 36, textAlign: "right" }}>
-                    {combatant.isDead ? "☠" : `${combatant.hp.current}/${combatant.hp.max}`}
-                  </span>
-                )}
+                {isDmMode && (() => {
+                  const temp = combatant.hp.temp ?? 0;
+                  const displayCurrent = combatant.hp.current + temp;
+                  return (
+                    <span style={{ fontSize: 10, color: hpColor(combatant.hp.current, combatant.hp.max), minWidth: 36, textAlign: "right" }}>
+                      {combatant.isDead ? "☠" : temp > 0
+                        ? <>{displayCurrent}<span style={{ color: "#7ec8e3" }}>/{combatant.hp.max}</span></>
+                        : `${combatant.hp.current}/${combatant.hp.max}`
+                      }
+                    </span>
+                  );
+                })()}
                 <div style={{ width: 28, height: 3, background: "#2a2a2a", borderRadius: 2, overflow: "hidden" }}>
                   <div style={{
                     height: "100%",
