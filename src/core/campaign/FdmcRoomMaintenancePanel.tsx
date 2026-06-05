@@ -52,6 +52,7 @@ type FdmcRoomMaintenancePanelProps = {
   onPurge: () => Promise<FdmcRoomMaintenancePurgeResult>;
   onReinitialize: () => Promise<FdmcRoomMaintenanceReinitializeResult>;
   onActorSnapshot: () => Promise<FdmcRoomMaintenanceActorSnapshotResult>;
+  onPurgeSeatMetadata: () => Promise<void>;
 };
 
 function formatBytes(bytes: number): string {
@@ -67,14 +68,16 @@ export function FdmcRoomMaintenancePanel({
   onPurge,
   onReinitialize,
   onActorSnapshot,
+  onPurgeSeatMetadata,
 }: FdmcRoomMaintenancePanelProps) {
   const [scanResult, setScanResult] = useState<FdmcRoomMaintenanceScanResult | undefined>(undefined);
   const [purgeResult, setPurgeResult] = useState<FdmcRoomMaintenancePurgeResult | undefined>(undefined);
   const [reinitializeResult, setReinitializeResult] = useState<FdmcRoomMaintenanceReinitializeResult | undefined>(undefined);
   const [actorSnapshotResult, setActorSnapshotResult] = useState<FdmcRoomMaintenanceActorSnapshotResult | undefined>(undefined);
+  const [seatPurgeStatus, setSeatPurgeStatus] = useState<string | null>(null);
   const [purgeArmed, setPurgeArmed] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState("");
-  const [busyAction, setBusyAction] = useState<"scan" | "snapshot" | "purge" | "reinitialize" | null>(null);
+  const [busyAction, setBusyAction] = useState<"scan" | "snapshot" | "seatPurge" | "purge" | "reinitialize" | null>(null);
 
   const purgeConfirmed = purgeConfirmText === "RESET FDMC";
   const sortedEntries = useMemo(() => scanResult?.entries ?? [], [scanResult]);
@@ -98,6 +101,19 @@ export function FdmcRoomMaintenancePanel({
       setActorSnapshotResult(result);
       const rescan = await onScan();
       setScanResult(rescan);
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleSeatPurge() {
+    setBusyAction("seatPurge");
+    setSeatPurgeStatus(null);
+    try {
+      await onPurgeSeatMetadata();
+      setSeatPurgeStatus("Seat metadata cleared — all seat bindings and seat config removed from room metadata and localStorage.");
+    } catch (e) {
+      setSeatPurgeStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setBusyAction(null);
     }
@@ -196,6 +212,29 @@ export function FdmcRoomMaintenancePanel({
             <p className="subtle">Actors: {actorSnapshotResult.actorIds.join(", ")}</p>
           )}
           <p className="subtle">Snapshot size: {formatBytes(actorSnapshotResult.bytes)}</p>
+        </div>
+      )}
+
+      <div className="fdmc-maintenance-section seat-purge-section">
+        <div>
+          <h4>2b. Purge All Seat Metadata</h4>
+          <p className="subtle">
+            Clears all seat definitions and player bindings from OBR room metadata and DM localStorage. All players are returned to the seat picker. Does not touch actors or combat state.
+          </p>
+        </div>
+        <button
+          className="secondary-button danger-zone-button"
+          type="button"
+          onClick={() => void handleSeatPurge()}
+          disabled={busyAction !== null}
+        >
+          {busyAction === "seatPurge" ? "Clearing..." : "Purge All Seat Metadata"}
+        </button>
+      </div>
+
+      {seatPurgeStatus && (
+        <div className="fdmc-maintenance-results">
+          <p className="subtle">{seatPurgeStatus}</p>
         </div>
       )}
 

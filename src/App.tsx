@@ -455,6 +455,7 @@ export default function App() {
     seatBindings,
     assignSeat,
     removeSeat,
+    purgeAllSeatMetadata,
     pushActorsToSeat,
     pushActorsToAllSeats,
   } = useDmSeatSystem({
@@ -1527,6 +1528,7 @@ export default function App() {
                 return { ok: true, checks: { tableBindingExists: Boolean(tableBinding), sharedTableStateExists: sharedExists, actorsByIdEmpty: true, actorsOrderEmpty: true, combatPhaseSetup: true, revisionIsOne: true }, tableBinding: tableBinding ?? undefined, message: "Room live state is canonical." };
               }}
               onActorSnapshot={async () => ({ ok: true, mode: "empty" as const, actorCount: dmActors.length, bytes: 0, message: `${dmActors.length} actors in DM library (localStorage).` })}
+              onPurgeSeatMetadata={purgeAllSeatMetadata}
             />
           )}
         </ToolPanelLayer>
@@ -2264,6 +2266,7 @@ export default function App() {
               bytes: 0,
               message: "Snapshot split-button implementation in P3.",
             })}
+            onPurgeSeatMetadata={purgeAllSeatMetadata}
           />
         )}
       </ToolPanelLayer>

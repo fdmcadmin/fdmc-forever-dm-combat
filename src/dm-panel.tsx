@@ -124,7 +124,7 @@ function DmPanelApp() {
   }, []);
 
   // ── Seat system ────────────────────────────────────────────────────────────
-  const { seats, seatBindings, assignSeat, removeSeat, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
+  const { seats, seatBindings, assignSeat, removeSeat, purgeAllSeatMetadata, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
     actorLibrary,
     actorOverrides,
     roomLiveState,
@@ -485,6 +485,7 @@ function DmPanelApp() {
                 return { ok: true, checks: { tableBindingExists: Boolean(binding), sharedTableStateExists: false, actorsByIdEmpty: true, actorsOrderEmpty: true, combatPhaseSetup: true, revisionIsOne: true }, tableBinding: binding ?? undefined, message: "Room live state reset." };
               }}
               onActorSnapshot={async () => ({ ok: true, mode: "empty" as const, actorCount: actors.length, bytes: 0, message: `${actors.length} actors in DM library.` })}
+              onPurgeSeatMetadata={purgeAllSeatMetadata}
             />
           </div>
         )}

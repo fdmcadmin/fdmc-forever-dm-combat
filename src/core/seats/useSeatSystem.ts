@@ -220,6 +220,24 @@ export function useDmSeatSystem({
     }
   }, [pushActorsToSeat]);
 
+  const purgeAllSeatMetadata = useCallback(async (): Promise<void> => {
+    setSeats({});
+    setSeatBindings({});
+    saveSeatConfig({});
+
+    const current = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
+    const base = current ?? createEmptyRoomLiveState();
+    const next: FdmcRoomLiveState = {
+      ...base,
+      revision: base.revision + 1,
+      updatedAt: Date.now(),
+      seats: {},
+      seatBindings: {},
+    };
+    await publishFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, next);
+    onRoomStateChange(next);
+  }, [onRoomStateChange]);
+
   const removeSeat = useCallback(async (seatId: string): Promise<void> => {
     const nextSeats = { ...seatsRef.current };
     delete nextSeats[seatId];
@@ -246,6 +264,7 @@ export function useDmSeatSystem({
     seatBindings,
     assignSeat,
     removeSeat,
+    purgeAllSeatMetadata,
     pushActorsToSeat,
     pushActorsToAllSeats,
   };
