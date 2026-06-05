@@ -469,6 +469,7 @@ export default function App() {
     claimedSeatId,
     seatActors,
     seatStatus,
+    isBrowsing,
     requestActorData,
     manualClaim,
     claimViewerSeat,
@@ -1281,8 +1282,8 @@ export default function App() {
     );
   }
 
-  // Players always go through seat selection — unless they already have actors (refresh case)
-  if (isPlayerMode && (seatStatus === "no-seat" || seatStatus === "claiming" || seatStatus === "loading") && seatActors.length === 0) {
+  // Show seat picker when: no actors yet OR player explicitly chose to browse (releaseSeat called)
+  if (isPlayerMode && (seatStatus === "no-seat" || seatStatus === "claiming" || seatStatus === "loading") && (seatActors.length === 0 || isBrowsing)) {
     const availableSeats = Object.values(roomLiveState.seats).sort((a, b) => a.seatId.localeCompare(b.seatId));
     const boundSeatIds = new Set(Object.values(roomLiveState.seatBindings).map(b => b.seatId));
     const openSeats = availableSeats.filter(s => !boundSeatIds.has(s.seatId));
@@ -1670,8 +1671,8 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Player seat status bar ── */}
-      {isPlayerMode && claimedSeatId && (
+      {/* ── Player seat status bar — shows when seated or syncing, not while browsing ── */}
+      {isPlayerMode && !isBrowsing && claimedSeatId && (seatStatus === "ready" || seatStatus === "claiming") && (
         <div style={{ padding: "4px 12px", background: "#1a1a2e", fontSize: 11, color: "#888", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ color: seatStatus === "claiming" ? "#888" : "#7b68ee" }}>
             {seatStatus === "claiming" ? "⟳" : "●"} {roomLiveState.seats[claimedSeatId]?.label ?? claimedSeatId}
@@ -1729,10 +1730,10 @@ export default function App() {
       )}
 
       {/* ── Player level-up request panel ── */}
-      {isPlayerMode && showLevelUpRequest && actorToShow && claimedSeatId && (
+      {isPlayerMode && showLevelUpRequest && actorToShow && (
         <LevelUpRequestPanel
           actor={actorToShow}
-          seatId={claimedSeatId}
+          seatId={claimedSeatId ?? ""}
           onClose={() => setShowLevelUpRequest(false)}
         />
       )}

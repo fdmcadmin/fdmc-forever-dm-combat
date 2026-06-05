@@ -236,6 +236,8 @@ export type UsePlayerSeatSystemResult = {
   claimedSeatId: string | null;
   seatActors: Actor[];
   seatStatus: "loading" | "no-seat" | "claiming" | "ready" | "viewer";
+  /** True when player explicitly chose to browse seats — shows picker even if seatActors cached */
+  isBrowsing: boolean;
   requestActorData: () => void;
   manualClaim: (seatId: string, seat?: FdmcSeat) => void;
   claimViewerSeat: () => void;
@@ -251,6 +253,7 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
   const claimedRef = useRef<string | null>(null);
   // Set true when player explicitly chooses to browse seats — prevents auto-reclaim
   const browsingRef = useRef(false);
+  const [isBrowsing, setIsBrowsing] = useState(false);
 
   // Derive viewer seat key on mount — also restore viewer choice if they previously chose it
   useEffect(() => {
@@ -323,6 +326,7 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     if (!viewerSeatKey) return;
     // Player chose a seat — clear browsing guard
     browsingRef.current = false;
+    setIsBrowsing(false);
 
     // Viewer-mode seat — skip broadcast, go straight to viewer state
     if (seat?.seatMode === "viewer") {
@@ -350,6 +354,7 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
   // Viewer seat — no broadcast, no actor data, read-only watch mode
   const claimViewerSeat = useCallback((): void => {
     browsingRef.current = false;
+    setIsBrowsing(false);
     setSeatStatus("viewer");
     setClaimedSeatId("viewer");
     // Store viewer preference so refresh restores it
@@ -359,10 +364,10 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
   // Release current seat — returns to seat picker without page reload
   const releaseSeat = useCallback((): void => {
     claimedRef.current = null;
-    browsingRef.current = true; // suppress auto-reclaim while browsing
+    browsingRef.current = true;
+    setIsBrowsing(true);
     setClaimedSeatId(null);
     setSeatStatus("no-seat");
-    // Clear persisted choice so next mount doesn't auto-restore
     try { window.localStorage.removeItem("fdmc.player.seatChoice.v1"); } catch { /* ok */ }
   }, []);
 
@@ -377,5 +382,5 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     setSeatStatus("claiming");
   }, [viewerSeatKey]);
 
-  return { viewerSeatKey, claimedSeatId, seatActors, seatStatus, requestActorData, manualClaim, claimViewerSeat, releaseSeat };
+  return { viewerSeatKey, claimedSeatId, seatActors, seatStatus, isBrowsing, requestActorData, manualClaim, claimViewerSeat, releaseSeat };
 }
