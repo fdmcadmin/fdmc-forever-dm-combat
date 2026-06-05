@@ -162,14 +162,18 @@ export function ActionButton({
 
       <div className="action-card-footer-row">
         {/* Visible unready button — shown for any readied economy-costed action, not just right-click */}
-        {readied && !committed && !resolved && costs.length > 0 && onUnready && (
+        {readied && !resolved && costs.length > 0 && onUnready && (
           <button
             className="inline-commit-button unready-button"
             type="button"
-            onClick={(e) => { e.stopPropagation(); onUnready(action); }}
-            title="Unready this action"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (committed && onResetCommittedRoll) onResetCommittedRoll();
+              onUnready(action);
+            }}
+            title={committed ? "Reset roll and unready this action" : "Unready this action"}
           >
-            ✕ Unready
+            ✕ {committed ? "Reset & Unready" : "Unready"}
           </button>
         )}
         {showCommitButton && (

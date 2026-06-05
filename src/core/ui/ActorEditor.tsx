@@ -359,26 +359,27 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               Submit for DM Approval
             </button>
           ) : (
-            /* DM mode — full save options */
+            /* DM mode — primary saves to current + library; override-only is secondary */
             <>
               <button
                 type="button"
-                onClick={() => onSave(buildEditedActor(), "current")}
+                onClick={() => onSave(buildEditedActor(), "current-and-library")}
                 style={{ flex: 1, padding: "7px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
               >
-                Save to Current Actor
+                Save to Library
               </button>
               <button
                 type="button"
-                onClick={() => onSave(buildEditedActor(), "current-and-library")}
-                style={{ flex: 1, padding: "7px 12px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
+                onClick={() => onSave(buildEditedActor(), "current")}
+                style={{ padding: "7px 12px", background: "transparent", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                title="Save as session override only — not written to base library (changes lost on next Sync)"
               >
-                Save to Current + Library
+                Override Only
               </button>
               <button
                 type="button"
                 onClick={() => onSave(buildEditedActor(`${actor.id}-copy-${Date.now().toString(36)}`), "duplicate")}
-                style={{ padding: "7px 12px", background: "transparent", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 13 }}
+                style={{ padding: "7px 12px", background: "transparent", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
               >
                 Duplicate
               </button>

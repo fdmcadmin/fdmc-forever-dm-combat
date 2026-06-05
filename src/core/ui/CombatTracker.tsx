@@ -356,21 +356,38 @@ export function CombatTracker({
 
               {/* Initiative — editable for DM always; editable for player on their own actors during setup/initiative */}
               {isDmMode || (viewerActorIdSet.has(combatant.id) && (phase === "setup" || phase === "initiative")) ? (
-                <input
-                  type="number"
-                  value={combatant.initiative ?? ""}
-                  onChange={e => {
-                    const val = Number.parseInt(e.target.value, 10);
-                    if (Number.isFinite(val)) onSetInitiative(combatant.id, val);
-                  }}
-                  onClick={e => e.stopPropagation()}
-                  placeholder="—"
-                  style={{
-                    width: 30, fontSize: 12, textAlign: "center",
-                    background: "#0d0d14", border: `1px solid ${viewerActorIdSet.has(combatant.id) && !isDmMode ? "#7b68ee66" : "#2a2a2a"}`,
-                    borderRadius: 3, color: "#7b68ee", padding: "1px 2px", flexShrink: 0,
-                  }}
-                />
+                <div style={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
+                  <input
+                    type="number"
+                    value={combatant.initiative ?? ""}
+                    onChange={e => {
+                      const val = Number.parseInt(e.target.value, 10);
+                      if (Number.isFinite(val)) onSetInitiative(combatant.id, val);
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    placeholder="—"
+                    style={{
+                      width: 30, fontSize: 12, textAlign: "center",
+                      background: "#0d0d14", border: `1px solid ${viewerActorIdSet.has(combatant.id) && !isDmMode ? "#7b68ee66" : "#2a2a2a"}`,
+                      borderRadius: 3, color: "#7b68ee", padding: "1px 2px",
+                    }}
+                  />
+                  {/* Roll initiative button — shown for own actors (player) or all in DM mode */}
+                  {(viewerActorIdSet.has(combatant.id) || isDmMode) && (phase === "setup" || phase === "initiative") && (
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        const roll = Math.floor(Math.random() * 20) + 1 + combatant.initiativeBonus;
+                        onSetInitiative(combatant.id, roll);
+                      }}
+                      title={`Roll 1d20${combatant.initiativeBonus >= 0 ? "+" : ""}${combatant.initiativeBonus}`}
+                      style={{ fontSize: 9, padding: "1px 3px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+                    >
+                      🎲
+                    </button>
+                  )}
+                </div>
               ) : (
                 <span style={{ width: 26, fontSize: 12, color: "#7b68ee", textAlign: "center", flexShrink: 0 }}>
                   {combatant.initiative ?? "—"}

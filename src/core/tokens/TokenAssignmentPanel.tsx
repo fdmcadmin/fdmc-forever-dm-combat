@@ -63,7 +63,7 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
       binding: readTokenBinding(item),
       isLocked: item.locked ?? false,
     })));
-    // Pre-populate form from first selected token's binding
+    // Pre-populate form from first selected token's binding; clear form for unbound tokens
     if (items.length === 1) {
       const b = readTokenBinding(items[0]);
       if (b) {
@@ -72,6 +72,13 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
         setSelectedActorId(b.actorId ?? "");
         setSelectedInstanceId(b.instanceId ?? "");
         setAllowPlayerMove(b.allowPlayerMove);
+      } else {
+        // New unbound token — reset form so DM can't accidentally re-apply previous binding
+        setBindingType("seat");
+        setSelectedSeatId("");
+        setSelectedActorId("");
+        setSelectedInstanceId("");
+        setAllowPlayerMove(false);
       }
     }
   }, []);

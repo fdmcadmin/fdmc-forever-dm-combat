@@ -302,7 +302,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode]);
 
-  // ── DM: listen for level-up requests from players ─────────────────────────
+  // ── DM: listen for level-up requests ────────────────────────────────────
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
@@ -312,6 +312,24 @@ export default function App() {
           const filtered = current.filter(r => r.actorId !== msg.actorId);
           return [...filtered, msg];
         });
+      }
+    });
+  }, [isDmMode]);
+
+  // ── DM: listen for player turn-end requests ───────────────────────────────
+  // Uses roomLiveStateRef so the listener always reads current combat state.
+  // handleNextTurnRef is set below after handleNextTurn is defined.
+  const handleNextTurnRef = useRef<() => void>(() => undefined);
+
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as unknown;
+      if (msg && typeof msg === "object" && (msg as { type?: string }).type === "fdmc:request-next-turn") {
+        const req = msg as { type: string; actorId: string };
+        if (req.actorId && req.actorId === roomLiveStateRef.current.combat.activeActorId) {
+          handleNextTurnRef.current();
+        }
       }
     });
   }, [isDmMode]);
@@ -965,7 +983,7 @@ export default function App() {
     for (const m of monsterCandidates as MainEncounterMonsterInstance[]) {
       initiativeByMonster[m.instanceId] = roomLiveState.monsterLiveState[m.instanceId]?.initiative ?? null;
     }
-    return buildCombatants(
+    const base = buildCombatants(
       actors,
       monsterCandidates as MainEncounterMonsterInstance[],
       roomLiveState.combat.activeActorId,
@@ -974,7 +992,24 @@ export default function App() {
       isDmMode,
       liveHpByActorId,
     );
-  }, [actors, monsterCandidates, roomLiveState, isDmMode, getActorInitiative, liveHpByActorId]);
+
+    // Player mode: add player-safe monster combatants from DM broadcast
+    if (isPlayerMode && playerMonsters.length > 0) {
+      const playerMonsterCombatants: import("./core/ui/CombatTracker").Combatant[] = playerMonsters.map(m => ({
+        id: m.instanceId,
+        name: m.publicName,
+        kind: "monster" as const,
+        initiative: roomLiveState.monsterLiveState[m.instanceId]?.initiative ?? null,
+        initiativeBonus: 0,
+        hp: { current: Math.round(m.hpRatio * 100), max: 100 },
+        isActive: m.instanceId === roomLiveState.combat.activeActorId,
+        isDead: m.hpRatio <= 0,
+      }));
+      return [...base, ...playerMonsterCombatants];
+    }
+
+    return base;
+  }, [actors, monsterCandidates, playerMonsters, roomLiveState, isDmMode, isPlayerMode, getActorInitiative, liveHpByActorId]);
 
   function handleStartCombat() {
     const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
@@ -994,6 +1029,17 @@ export default function App() {
   }
 
   function handleNextTurn() {
+    handleNextTurnRef.current = handleNextTurn; // keep ref current
+    // Players broadcast a request — DM executes the actual state change
+    if (isPlayerMode && OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(
+        FDMC_SEAT_BROADCAST_CHANNEL,
+        { type: "fdmc:request-next-turn", actorId: roomLiveState.combat.activeActorId },
+        { destination: "REMOTE" }
+      );
+      return;
+    }
+
     const currentId = roomLiveState.combat.activeActorId;
     const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
     if (sorted.length === 0) return;
@@ -1490,6 +1536,21 @@ export default function App() {
           )}
           {openPanel === "editActors" && (
             <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+              {/* Level-up approval queue — same as OBR popover path */}
+              {levelUpRequests.length > 0 && (
+                <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
+                  <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 600 }}>Pending Level-Up Requests</p>
+                  {levelUpRequests.map(req => (
+                    <LevelUpApprovalPanel
+                      key={req.actorId}
+                      request={req}
+                      currentActor={dmActors.find(a => a.id === req.actorId)}
+                      onApprove={handleLevelUpApprove}
+                      onReject={handleLevelUpReject}
+                    />
+                  ))}
+                </div>
+              )}
               {editingActorId === "__new__" ? (
                 <ActorEditor
                   mode="create-new"
