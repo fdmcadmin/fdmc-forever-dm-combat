@@ -1,0 +1,13 @@
+{
+  "name": "Forever DM Combat",
+  "version": "0.6.0",
+  "manifest_version": 1,
+  "action": {
+    "title": "Forever DM Combat",
+    "icon": "/icon.png",
+    "popover": "/",
+    "height": 720,
+    "width": 420
+  },
+  "icon": "/icon.png"
+}

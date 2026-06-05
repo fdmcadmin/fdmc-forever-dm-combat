@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forever DM Combat">
+  <rect width="64" height="64" rx="14" fill="#12141a"/>
+  <path d="M32 6C24 14 17 23 16 35c-.8 10 5.9 17.7 16 22 10.1-4.3 16.8-12 16-22-1-12-8-21-16-29Z" fill="#f7f5ec"/>
+  <path d="M32 9v46M22 31l10 9 11-12M25 43l7-5 8 5M23 22l9 9 7-13" stroke="#12141a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 35h8m20 0h8M17 27l-5-5m35 5 5-5M20 46l-6 5m30-5 6 5" stroke="#f7f5ec" stroke-width="3" stroke-linecap="round"/>
+  <g transform="translate(15 47) rotate(-17 17 6)">
+    <rect x="1" y="1" width="15" height="8" rx="4" fill="none" stroke="#f7f5ec" stroke-width="3"/>
+    <rect x="18" y="1" width="15" height="8" rx="4" fill="none" stroke="#f7f5ec" stroke-width="3"/>
+    <path d="M13 5h9" stroke="#12141a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M13 5h9" stroke="#f7f5ec" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

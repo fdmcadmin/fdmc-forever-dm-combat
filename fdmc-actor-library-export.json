@@ -1,0 +1,3266 @@
+{
+  "schema": "fdmc.actor-library-export.v1",
+  "exportedAt": "2026-06-04T05:07:03.327Z",
+  "version": "0.6.0",
+  "actors": {
+    "klydon": {
+      "id": "klydon",
+      "kind": "player",
+      "name": "Klydon Vashir",
+      "subtitle": "Water Genasi Cleric · Level 3",
+      "race": "Water Genasi",
+      "className": "Cleric",
+      "level": 3,
+      "stats": {
+        "ac": 15,
+        "hp": {
+          "current": 24,
+          "max": 24,
+          "temp": 0
+        },
+        "speed": "30 ft, swim 30 ft"
+      },
+      "abilityScores": {
+        "str": {
+          "score": 8,
+          "modifier": -1
+        },
+        "dex": {
+          "score": 10,
+          "modifier": 0
+        },
+        "con": {
+          "score": 15,
+          "modifier": 2
+        },
+        "int": {
+          "score": 14,
+          "modifier": 2
+        },
+        "wis": {
+          "score": 16,
+          "modifier": 3
+        },
+        "cha": {
+          "score": 12,
+          "modifier": 1
+        }
+      },
+      "classFeatureTracker": {
+        "label": "Channel Divinity / Spell Slots",
+        "value": "CD 2/2 · L1 4/4 · L2 2/2",
+        "note": "Spell save DC 13 · Spell attack +5 · Regain 1 CD on Short Rest"
+      },
+      "pinnedReactions": [],
+      "tabs": {
+        "main": [
+          {
+            "id": "mace",
+            "label": "Mace",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Simple weapon. Sap mastery — on hit, target has disadvantage on next attack before start of your next turn.",
+            "metadata": {
+              "attack": "1d20+1",
+              "damage": "1d6-1",
+              "crit": "2d6-1",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Simple weapon. Sap mastery — on hit, target has disadvantage on next attack before start of your next turn."
+            }
+          },
+          {
+            "id": "unarmed",
+            "label": "Unarmed Strike",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Unarmed.",
+            "metadata": {
+              "attack": "1d20+1",
+              "damage": "1 bludgeoning",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Unarmed."
+            }
+          },
+          {
+            "id": "channel-divinity",
+            "label": "Channel Divinity",
+            "actionKind": "feature",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Channel Divinity",
+            "description": "2 uses / Long Rest. Regain 1 expended use after Short Rest. Save DC 13 where applicable. Parent feature — choose Divine Spark, Turn Undead, or Preserve Life.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "cd-divine-spark",
+            "label": "CD: Divine Spark",
+            "actionKind": "feature",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Channel Divinity",
+            "description": "Uses Channel Divinity. Apply Cleric spell save DC 13 where applicable.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "cd-turn-undead",
+            "label": "CD: Turn Undead",
+            "actionKind": "feature",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Channel Divinity",
+            "description": "Uses Channel Divinity. Undead-facing control effect; DC 13.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "cd-preserve-life",
+            "label": "CD: Preserve Life",
+            "actionKind": "feature",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Channel Divinity",
+            "description": "Uses Channel Divinity. Restore up to 15 HP split among Bloodied creatures within 30 ft. Cannot raise above half HP.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "bonus": [
+          {
+            "id": "healing-word",
+            "label": "Healing Word",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Healing Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Heal 1d4+WIS. Bonus action. L1+ slot.",
+            "metadata": {
+              "damage": "1d4+3",
+              "range": "60 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "details": "Heal 1d4+WIS. Bonus action. L1+ slot."
+            }
+          },
+          {
+            "id": "sanctuary-ba",
+            "label": "Sanctuary",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 min. Creatures must save to attack warded target.",
+            "metadata": {
+              "saveDc": "WIS DC 13",
+              "range": "30 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "concentration": "1 min",
+              "details": "Concentration 1 min. Creatures must save to attack warded target."
+            }
+          },
+          {
+            "id": "shield-of-faith-ba",
+            "label": "Shield of Faith",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 10 min. Target gains +2 AC.",
+            "metadata": {
+              "range": "60 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "concentration": "10 min",
+              "details": "Concentration up to 10 min. Target gains +2 AC."
+            }
+          },
+          {
+            "id": "lesser-restoration-ba",
+            "label": "Lesser Restoration",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Always prepared. End one disease or condition.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Bonus Action",
+              "slotCost": "L2",
+              "details": "Always prepared. End one disease or condition."
+            }
+          },
+          {
+            "id": "spiritual-weapon-ba",
+            "label": "Spiritual Weapon",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 1 min. Bonus action to move/attack.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d8+3",
+              "range": "60 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L2",
+              "concentration": "1 min",
+              "details": "Concentration up to 1 min. Bonus action to move/attack."
+            }
+          }
+        ],
+        "spells": [
+          {
+            "id": "light",
+            "label": "Light",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Object sheds light 20-ft radius. V,M. 1 hour.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "details": "Object sheds light 20-ft radius. V,M. 1 hour."
+            }
+          },
+          {
+            "id": "guidance",
+            "label": "Guidance",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 1 min. Target adds 1d4 to one ability check.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "concentration": "1 min",
+              "details": "Concentration up to 1 min. Target adds 1d4 to one ability check."
+            }
+          },
+          {
+            "id": "resistance",
+            "label": "Resistance",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 1 min. Target adds 1d4 to one saving throw.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "concentration": "1 min",
+              "details": "Concentration up to 1 min. Target adds 1d4 to one saving throw."
+            }
+          },
+          {
+            "id": "shape-water",
+            "label": "Shape Water",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Species: Water Genasi. No slot. Manipulate water.",
+            "metadata": {
+              "range": "30 ft / 5-ft cube",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "details": "Species: Water Genasi. No slot. Manipulate water."
+            }
+          },
+          {
+            "id": "cure-wounds",
+            "label": "Cure Wounds",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Always prepared. Heal 1d8+WIS. Touch. Disciple of Life adds 2+slot level extra HP.",
+            "metadata": {
+              "damage": "1d8+3",
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "Always prepared. Heal 1d8+WIS. Touch. Disciple of Life adds 2+slot level extra HP."
+            }
+          },
+          {
+            "id": "bless",
+            "label": "Bless",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Always prepared. Concentration 1 min. Up to 3 creatures add 1d4 to attack rolls and saves.",
+            "metadata": {
+              "saveDc": "—",
+              "range": "30 ft",
+              "cost": "Action",
+              "slotCost": "L1",
+              "concentration": "1 min",
+              "details": "Always prepared. Concentration 1 min. Up to 3 creatures add 1d4 to attack rolls and saves."
+            }
+          },
+          {
+            "id": "guiding-bolt",
+            "label": "Guiding Bolt",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Next attack against target has advantage.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "4d6 radiant",
+              "range": "120 ft",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "Next attack against target has advantage."
+            }
+          },
+          {
+            "id": "bane",
+            "label": "Bane",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 min. Up to 3 creatures subtract 1d4 from attack rolls and saves.",
+            "metadata": {
+              "saveDc": "CHA DC 13",
+              "range": "30 ft",
+              "cost": "Action",
+              "slotCost": "L1",
+              "concentration": "1 min",
+              "details": "Concentration 1 min. Up to 3 creatures subtract 1d4 from attack rolls and saves."
+            }
+          },
+          {
+            "id": "command",
+            "label": "Command",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "One-word command. Instant.",
+            "metadata": {
+              "saveDc": "WIS DC 13",
+              "range": "60 ft",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "One-word command. Instant."
+            }
+          },
+          {
+            "id": "create-destroy-water",
+            "label": "Create or Destroy Water",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Also available 1/LR free via Water Genasi species (2nd-level version).",
+            "metadata": {
+              "range": "30 ft",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "Also available 1/LR free via Water Genasi species (2nd-level version)."
+            }
+          },
+          {
+            "id": "protection-evil-good",
+            "label": "Protection from Evil and Good",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 10 min. Target protected from specified creature types.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L1",
+              "concentration": "10 min",
+              "details": "Concentration up to 10 min. Target protected from specified creature types."
+            }
+          },
+          {
+            "id": "inflict-wounds",
+            "label": "Inflict Wounds",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Melee spell attack.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "3d10 necrotic",
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "Melee spell attack."
+            }
+          },
+          {
+            "id": "aid",
+            "label": "Aid",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Always prepared. 8 hours. Up to 3 targets gain +5 max/current HP.",
+            "metadata": {
+              "range": "30 ft",
+              "cost": "Action",
+              "slotCost": "L2",
+              "details": "Always prepared. 8 hours. Up to 3 targets gain +5 max/current HP."
+            }
+          },
+          {
+            "id": "hold-person",
+            "label": "Hold Person",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 min. Humanoid Paralyzed. Repeat save each turn.",
+            "metadata": {
+              "saveDc": "WIS DC 13",
+              "range": "60 ft",
+              "cost": "Action",
+              "slotCost": "L2",
+              "concentration": "1 min",
+              "details": "Concentration 1 min. Humanoid Paralyzed. Repeat save each turn."
+            }
+          },
+          {
+            "id": "blindness-deafness",
+            "label": "Blindness/Deafness",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "1 min. Blinded or deafened. Repeat save each turn.",
+            "metadata": {
+              "saveDc": "CON DC 13",
+              "range": "120 ft",
+              "cost": "Action",
+              "slotCost": "L2",
+              "details": "1 min. Blinded or deafened. Repeat save each turn."
+            }
+          },
+          {
+            "id": "spiritual-weapon",
+            "label": "Spiritual Weapon",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 min. Bonus action to move/attack each turn.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d8+3",
+              "range": "60 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L2",
+              "concentration": "1 min",
+              "details": "Concentration 1 min. Bonus action to move/attack each turn."
+            }
+          },
+          {
+            "id": "warding-bond",
+            "label": "Warding Bond",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "1 hour. Target gains +1 AC and saves, resistance to all damage. You share damage taken.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L2",
+              "details": "1 hour. Target gains +1 AC and saves, resistance to all damage. You share damage taken."
+            }
+          },
+          {
+            "id": "enhance-ability",
+            "label": "Enhance Ability",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 hour. Choose ability; grant advantage on checks.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L2",
+              "concentration": "1 hour",
+              "details": "Concentration 1 hour. Choose ability; grant advantage on checks."
+            }
+          },
+          {
+            "id": "calm-emotions",
+            "label": "Calm Emotions",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 min. Suppress charmed/frightened or neutralize hostility.",
+            "metadata": {
+              "saveDc": "CHA DC 13",
+              "range": "60 ft / 20-ft sphere",
+              "cost": "Action",
+              "slotCost": "L2",
+              "concentration": "1 min",
+              "details": "Concentration 1 min. Suppress charmed/frightened or neutralize hostility."
+            }
+          },
+          {
+            "id": "zone-of-truth",
+            "label": "Zone of Truth",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L2 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "10 min. Creatures can't knowingly lie.",
+            "metadata": {
+              "saveDc": "CHA DC 13",
+              "range": "60 ft / 15-ft sphere",
+              "cost": "Action",
+              "slotCost": "L2",
+              "details": "10 min. Creatures can't knowingly lie."
+            }
+          }
+        ],
+        "bond": [
+          {
+            "id": "klydon-bond",
+            "label": "Bond — TBD",
+            "actionKind": "bond",
+            "economyCost": [
+              "bond"
+            ],
+            "category": "Bond",
+            "concentration": false,
+            "description": "Bond ability not yet defined for Klydon. Add when player provides.",
+            "metadata": {
+              "details": "Bond ability not yet defined for Klydon. Add when player provides."
+            }
+          }
+        ],
+        "checks": [
+          {
+            "id": "check-perception",
+            "label": "Perception",
+            "description": "Roll Perception from the sheet.",
+            "metadata": {
+              "attack": "Roll Perception from the sheet.",
+              "details": "Roll Perception from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-survival",
+            "label": "Survival",
+            "description": "Roll Survival from the sheet.",
+            "metadata": {
+              "attack": "Roll Survival from the sheet.",
+              "details": "Roll Survival from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-stealth",
+            "label": "Stealth",
+            "description": "Roll Stealth from the sheet.",
+            "metadata": {
+              "attack": "Roll Stealth from the sheet.",
+              "details": "Roll Stealth from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-grapple",
+            "label": "Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-shove",
+            "label": "Shove",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-escape-grapple",
+            "label": "Escape Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-hide",
+            "label": "Hide",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "features": [
+          {
+            "id": "disciple-of-life",
+            "label": "Disciple of Life",
+            "description": "Healing spells cast with a spell slot restore extra HP equal to 2 + spell slot level.",
+            "metadata": {
+              "details": "Healing spells cast with a spell slot restore extra HP equal to 2 + spell slot level."
+            },
+            "category": "Life Domain",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "life-domain-spells",
+            "label": "Life Domain Spells",
+            "description": "Cure Wounds, Bless, Aid, and Lesser Restoration are always prepared.",
+            "metadata": {
+              "details": "Cure Wounds, Bless, Aid, and Lesser Restoration are always prepared."
+            },
+            "category": "Life Domain",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "divine-order-protector",
+            "label": "Divine Order: Protector",
+            "description": "Martial weapons and heavy armor training.",
+            "metadata": {
+              "details": "Martial weapons and heavy armor training."
+            },
+            "category": "Class Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "water-genasi-traits",
+            "label": "Water Genasi Traits",
+            "description": "Acid Resistance. Amphibious: breathe air and water. Swim speed 30 ft. Shape Water cantrip. Create or Destroy Water 1/LR.",
+            "metadata": {
+              "details": "Acid Resistance. Amphibious: breathe air and water. Swim speed 30 ft. Shape Water cantrip. Create or Destroy Water 1/LR."
+            },
+            "category": "Species",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "status": [],
+        "equipment": [
+          {
+            "id": "shield",
+            "label": "Shield",
+            "description": "+2 AC (already included in AC 15). Requires one free hand.",
+            "metadata": {
+              "details": "+2 AC (already included in AC 15). Requires one free hand."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "chain-shirt",
+            "label": "Chain Shirt",
+            "description": "Medium armor. AC 13 base.",
+            "metadata": {
+              "details": "Medium armor. AC 13 base."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "mace",
+            "label": "Mace",
+            "description": "Simple melee. Sap mastery.",
+            "metadata": {
+              "details": "Simple melee. Sap mastery."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "holy-water",
+            "label": "Holy Water",
+            "description": "Vial. Deals 2d6 radiant on hit vs undead/fiends.",
+            "metadata": {
+              "details": "Vial. Deals 2d6 radiant on hit vs undead/fiends."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "amulet",
+            "label": "Amulet",
+            "description": "Holy symbol. Spellcasting focus.",
+            "metadata": {
+              "details": "Holy symbol. Spellcasting focus."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          }
+        ],
+        "resources": [
+          {
+            "id": "cd-uses",
+            "label": "Channel Divinity",
+            "description": "2 / Long Rest. Regain 1 on Short Rest. Spend for Divine Spark, Turn Undead, or Preserve Life.",
+            "metadata": {
+              "details": "2 / Long Rest. Regain 1 on Short Rest. Spend for Divine Spark, Turn Undead, or Preserve Life."
+            },
+            "category": "Channel Divinity",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "spell-slots-l1",
+            "label": "Spell Slots L1",
+            "description": "4 / Long Rest. Spend for L1 spells.",
+            "metadata": {
+              "details": "4 / Long Rest. Spend for L1 spells."
+            },
+            "category": "Spell Slots",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "spell-slots-l2",
+            "label": "Spell Slots L2",
+            "description": "2 / Long Rest. Spend for L2 spells.",
+            "metadata": {
+              "details": "2 / Long Rest. Spend for L2 spells."
+            },
+            "category": "Spell Slots",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "call-to-the-wave",
+            "label": "Call to the Wave: Create/Destroy Water",
+            "description": "1 / Long Rest. Species spell (2nd-level version, no slot).",
+            "metadata": {
+              "details": "1 / Long Rest. Species spell (2nd-level version, no slot)."
+            },
+            "category": "Species",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "outOfCombat": [
+          {
+            "id": "short-rest-klydon",
+            "label": "Short Rest",
+            "description": "Regain 1 Channel Divinity use. Optionally spend hit dice (1d8+CON) to recover HP.",
+            "metadata": {
+              "details": "Regain 1 Channel Divinity use. Optionally spend hit dice (1d8+CON) to recover HP."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "long-rest-klydon",
+            "label": "Long Rest",
+            "description": "Restore all HP, all spell slots, Channel Divinity uses, and Call to the Wave.",
+            "metadata": {
+              "details": "Restore all HP, all spell slots, Channel Divinity uses, and Call to the Wave."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "notes": []
+      }
+    },
+    "kolakanathi": {
+      "id": "kolakanathi",
+      "kind": "player",
+      "name": "Kolakanathi Takahashi",
+      "subtitle": "Goliath Barbarian · Level 3",
+      "race": "Goliath",
+      "className": "Barbarian",
+      "level": 3,
+      "stats": {
+        "ac": 14,
+        "hp": {
+          "current": 41,
+          "max": 41,
+          "temp": 0
+        },
+        "speed": "35 ft"
+      },
+      "abilityScores": {
+        "str": {
+          "score": 16,
+          "modifier": 3
+        },
+        "dex": {
+          "score": 13,
+          "modifier": 1
+        },
+        "con": {
+          "score": 16,
+          "modifier": 3
+        },
+        "int": {
+          "score": 10,
+          "modifier": 0
+        },
+        "wis": {
+          "score": 12,
+          "modifier": 1
+        },
+        "cha": {
+          "score": 8,
+          "modifier": -1
+        }
+      },
+      "classFeatureTracker": {
+        "label": "Rage / Stone's Endurance / Large Form",
+        "value": "Rage 3/3 · SE 2/2 · Large 1/1 · WoG 4d12",
+        "note": "Unarmored AC = 10+DEX+CON (14+shield). Regain 1 Rage on Short Rest."
+      },
+      "pinnedReactions": [
+        {
+          "id": "stones-endurance",
+          "label": "Stone's Endurance",
+          "description": "2/LR. When taking damage, roll 1d12+3 and reduce damage by that amount.",
+          "logMessage": "Kolakanathi uses Stone's Endurance.",
+          "sourceTabId": "main",
+          "sourceActionId": "stones-endurance-reaction"
+        }
+      ],
+      "tabs": {
+        "main": [
+          {
+            "id": "greatsword",
+            "label": "Greatsword",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Martial. Slashing. Graze mastery — on miss, target still takes STR mod in damage.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "2d6+3",
+              "crit": "4d6+3",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Martial. Slashing. Graze mastery — on miss, target still takes STR mod in damage."
+            }
+          },
+          {
+            "id": "unarmed-kola",
+            "label": "Unarmed Strike",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Unarmed. STR-based.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "4 bludgeoning",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Unarmed. STR-based."
+            }
+          },
+          {
+            "id": "reckless-attack",
+            "label": "Reckless Attack",
+            "actionKind": "feature",
+            "economyCost": [],
+            "category": "Barbarian Features",
+            "description": "First attack on your turn: gain advantage using STR. Attacks against you have advantage until your next turn.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "divine-fury",
+            "label": "Divine Fury (Rage Rider)",
+            "actionKind": "feature",
+            "economyCost": [],
+            "category": "Barbarian Features",
+            "description": "While raging, first creature hit each turn takes +1d6+1 radiant or necrotic bonus damage.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "bonus": [
+          {
+            "id": "rage-enter",
+            "label": "Rage (Enter)",
+            "actionKind": "resource",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Barbarian Features",
+            "description": "3 / Long Rest. Regain 1 on Short Rest. Enter rage: +2 damage on STR attacks, resistance to B/P/S damage, advantage on STR checks/saves. Lasts 1 min or until no enemy hit/attacked.",
+            "logMode": "table-note",
+            "displayMode": "compact",
+            "hasDefinedUse": true
+          },
+          {
+            "id": "warrior-of-gods",
+            "label": "Warrior of the Gods: Expend Dice",
+            "actionKind": "resource",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Barbarian Features",
+            "description": "Pool of 4d12 / Long Rest. Spend any number to heal self for total rolled.",
+            "logMode": "table-note",
+            "displayMode": "compact",
+            "hasDefinedUse": true
+          },
+          {
+            "id": "large-form",
+            "label": "Large Form",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Goliath",
+            "description": "1 / Long Rest. Become Large for 10 minutes or until ended. Reach increases. Powerful Build applies.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "spells": [],
+        "bond": [
+          {
+            "id": "kolakanathi-bond",
+            "label": "Bond — TBD",
+            "actionKind": "bond",
+            "economyCost": [
+              "bond"
+            ],
+            "category": "Bond",
+            "concentration": false,
+            "description": "Bond ability not yet defined for Kolakanathi. Add when player provides.",
+            "metadata": {
+              "details": "Bond ability not yet defined for Kolakanathi. Add when player provides."
+            }
+          }
+        ],
+        "checks": [
+          {
+            "id": "check-perception",
+            "label": "Perception",
+            "description": "Roll Perception from the sheet.",
+            "metadata": {
+              "attack": "Roll Perception from the sheet.",
+              "details": "Roll Perception from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-survival",
+            "label": "Survival",
+            "description": "Roll Survival from the sheet.",
+            "metadata": {
+              "attack": "Roll Survival from the sheet.",
+              "details": "Roll Survival from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-stealth",
+            "label": "Stealth",
+            "description": "Roll Stealth from the sheet.",
+            "metadata": {
+              "attack": "Roll Stealth from the sheet.",
+              "details": "Roll Stealth from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-grapple",
+            "label": "Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-shove",
+            "label": "Shove",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-escape-grapple",
+            "label": "Escape Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-hide",
+            "label": "Hide",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "features": [
+          {
+            "id": "unarmored-defense",
+            "label": "Unarmored Defense",
+            "description": "While not wearing armor, AC = 10 + DEX mod + CON mod (base 14). Shield adds normally.",
+            "metadata": {
+              "details": "While not wearing armor, AC = 10 + DEX mod + CON mod (base 14). Shield adds normally."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "danger-sense",
+            "label": "Danger Sense",
+            "description": "Advantage on DEX saving throws unless incapacitated.",
+            "metadata": {
+              "details": "Advantage on DEX saving throws unless incapacitated."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "reckless-attack-passive",
+            "label": "Reckless Attack",
+            "description": "On first attack each turn, choose to gain advantage. Attacks against you have advantage until your next turn.",
+            "metadata": {
+              "details": "On first attack each turn, choose to gain advantage. Attacks against you have advantage until your next turn."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "primal-knowledge",
+            "label": "Primal Knowledge",
+            "description": "While raging, some skill checks can use STR.",
+            "metadata": {
+              "details": "While raging, some skill checks can use STR."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "divine-fury-passive",
+            "label": "Divine Fury",
+            "description": "Rage on-hit rider. First creature hit each turn takes +1d6+1 radiant or necrotic.",
+            "metadata": {
+              "details": "Rage on-hit rider. First creature hit each turn takes +1d6+1 radiant or necrotic."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "goliath-traits",
+            "label": "Goliath Traits",
+            "description": "Stone's Endurance (reaction). Large Form (bonus action, 1/LR). Powerful Build: count as one size larger for carry capacity/push/drag/lift.",
+            "metadata": {
+              "details": "Stone's Endurance (reaction). Large Form (bonus action, 1/LR). Powerful Build: count as one size larger for carry capacity/push/drag/lift."
+            },
+            "category": "Goliath",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "weapon-mastery",
+            "label": "Weapon Mastery",
+            "description": "Greatsword: Graze — on miss, deal STR mod damage. Can change mastery on Long Rest.",
+            "metadata": {
+              "details": "Greatsword: Graze — on miss, deal STR mod damage. Can change mastery on Long Rest."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "status": [],
+        "equipment": [
+          {
+            "id": "greatsword-equip",
+            "label": "Greatsword",
+            "description": "Martial melee. 2d6+3 slashing. Heavy, Two-Handed, Graze.",
+            "metadata": {
+              "details": "Martial melee. 2d6+3 slashing. Heavy, Two-Handed, Graze."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "oil-equip",
+            "label": "Oil x6",
+            "description": "Flask of oil. Burns for 4d8 fire damage if lit. Slippery surface.",
+            "metadata": {
+              "details": "Flask of oil. Burns for 4d8 fire damage if lit. Slippery surface."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "lantern",
+            "label": "Bullseye Lantern",
+            "description": "60-ft cone of bright light, additional 60 ft dim light. Burns 6 hours per flask of oil.",
+            "metadata": {
+              "details": "60-ft cone of bright light, additional 60 ft dim light. Burns 6 hours per flask of oil."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          }
+        ],
+        "resources": [
+          {
+            "id": "rage-uses",
+            "label": "Rage",
+            "description": "3 / Long Rest. Regain 1 on Short Rest.",
+            "metadata": {
+              "details": "3 / Long Rest. Regain 1 on Short Rest."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "warrior-of-gods-dice",
+            "label": "Warrior of the Gods Dice",
+            "description": "Pool of 4d12 / Long Rest. Spend dice to heal self for total rolled.",
+            "metadata": {
+              "details": "Pool of 4d12 / Long Rest. Spend dice to heal self for total rolled."
+            },
+            "category": "Barbarian Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "stones-endurance-uses",
+            "label": "Stone's Endurance",
+            "description": "2 / Long Rest. Reaction: roll 1d12+3 to reduce incoming damage.",
+            "metadata": {
+              "details": "2 / Long Rest. Reaction: roll 1d12+3 to reduce incoming damage."
+            },
+            "category": "Goliath",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "large-form-uses",
+            "label": "Large Form",
+            "description": "1 / Long Rest. Bonus action to become Large for 10 minutes.",
+            "metadata": {
+              "details": "1 / Long Rest. Bonus action to become Large for 10 minutes."
+            },
+            "category": "Goliath",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "outOfCombat": [
+          {
+            "id": "short-rest-kola",
+            "label": "Short Rest",
+            "description": "Regain 1 Rage use. Optionally spend hit dice (1d12+CON) to recover HP.",
+            "metadata": {
+              "details": "Regain 1 Rage use. Optionally spend hit dice (1d12+CON) to recover HP."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "long-rest-kola",
+            "label": "Long Rest",
+            "description": "Restore all HP, Rage uses, Warrior of the Gods dice, Stone's Endurance, and Large Form.",
+            "metadata": {
+              "details": "Restore all HP, Rage uses, Warrior of the Gods dice, Stone's Endurance, and Large Form."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "notes": []
+      }
+    },
+    "lights-stone": {
+      "id": "lights-stone",
+      "kind": "player",
+      "name": "Lights Stone",
+      "subtitle": "Dwarf Paladin · Level 3 · Oath of Conquest",
+      "race": "Dwarf",
+      "className": "Paladin",
+      "level": 3,
+      "stats": {
+        "ac": 16,
+        "hp": {
+          "current": 28,
+          "max": 28,
+          "temp": 0
+        },
+        "speed": "30 ft"
+      },
+      "abilityScores": {
+        "str": {
+          "score": 16,
+          "modifier": 3
+        },
+        "dex": {
+          "score": 13,
+          "modifier": 1
+        },
+        "con": {
+          "score": 12,
+          "modifier": 1
+        },
+        "int": {
+          "score": 8,
+          "modifier": -1
+        },
+        "wis": {
+          "score": 12,
+          "modifier": 1
+        },
+        "cha": {
+          "score": 14,
+          "modifier": 2
+        }
+      },
+      "classFeatureTracker": {
+        "label": "Channel Divinity / Lay On Hands / Spell Slots",
+        "value": "CD 2/2 · LoH 15 · L1 3/3 · Smite 1/1",
+        "note": "Spell save DC 12 · Spell attack +4 (CHA-based). Regain 1 CD on Short Rest."
+      },
+      "pinnedReactions": [
+        {
+          "id": "protection-reaction",
+          "label": "Protection (Feat Reaction)",
+          "description": "When creature attacks a target other than you within 5 ft., use reaction and shield to impose disadvantage. Requires shield.",
+          "logMessage": "Lights Stone uses Protection reaction.",
+          "sourceTabId": "main",
+          "sourceActionId": "protection-feat"
+        }
+      ],
+      "tabs": {
+        "main": [
+          {
+            "id": "flail-lights",
+            "label": "Flail",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Martial. Bludgeoning. Sap mastery — on hit, target has disadvantage on next attack roll before start of your next turn.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d8+3",
+              "crit": "2d8+3",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Martial. Bludgeoning. Sap mastery — on hit, target has disadvantage on next attack roll before start of your next turn."
+            }
+          },
+          {
+            "id": "handaxe-lights",
+            "label": "Handaxe",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Martial. Slashing. Light, Thrown. Vex mastery — on hit, gain advantage on next attack against target before end of your next turn.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d6+3",
+              "crit": "2d6+3",
+              "range": "20/60 ft",
+              "cost": "Action",
+              "details": "Martial. Slashing. Light, Thrown. Vex mastery — on hit, gain advantage on next attack against target before end of your next turn."
+            }
+          },
+          {
+            "id": "unarmed-lights",
+            "label": "Unarmed Strike",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "STR-based.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "4 bludgeoning",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "STR-based."
+            }
+          },
+          {
+            "id": "channel-divinity-lights",
+            "label": "Channel Divinity",
+            "actionKind": "feature",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Channel Divinity",
+            "description": "2 uses / Long Rest. Regain 1 on Short Rest. Save DC 12. Choose: Conquering Presence or Guided Strike.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "cd-conquering-presence",
+            "label": "CD: Conquering Presence",
+            "actionKind": "feature",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Channel Divinity",
+            "description": "Uses Channel Divinity. Chosen creatures within 30 ft make WIS save DC 12 or become Frightened for 1 min. Repeat save at end of each turn.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "cd-guided-strike",
+            "label": "CD: Guided Strike",
+            "actionKind": "feature",
+            "economyCost": [],
+            "category": "Channel Divinity",
+            "description": "After missing an attack roll but before result: use Channel Divinity to gain +10 to that attack roll.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "bonus": [
+          {
+            "id": "cd-divine-sense",
+            "label": "CD: Divine Sense",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Channel Divinity",
+            "description": "Uses Channel Divinity. For 10 min, sense Celestials, Fiends, and Undead within 60 ft. Sense consecrated/desecrated locations.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "lay-on-hands-heal",
+            "label": "Lay On Hands: Heal",
+            "actionKind": "resource",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Paladin Features",
+            "description": "Touch creature. Spend any number of points from 15-HP pool to restore that much HP.",
+            "logMode": "table-note",
+            "displayMode": "compact",
+            "hasDefinedUse": true
+          },
+          {
+            "id": "lay-on-hands-purify",
+            "label": "Lay On Hands: Purify Poison",
+            "actionKind": "resource",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Paladin Features",
+            "description": "Spend 5 pool points to remove Poisoned condition. Does not restore HP.",
+            "logMode": "table-note",
+            "displayMode": "compact",
+            "hasDefinedUse": true
+          },
+          {
+            "id": "stonecunning",
+            "label": "Stonecunning (Tremorsense)",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Dwarf",
+            "description": "2 / Long Rest. Gain Tremorsense 60 ft for 10 min while on or touching stone.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "shield-of-faith-lights",
+            "label": "Shield of Faith",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 10 min. Target gains +2 AC.",
+            "metadata": {
+              "range": "60 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "concentration": "10 min",
+              "details": "Concentration up to 10 min. Target gains +2 AC."
+            }
+          },
+          {
+            "id": "armor-of-agathys",
+            "label": "Armor of Agathys",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "1 hour. Gain 5 temp HP. While they last, attacker takes 5 cold damage.",
+            "metadata": {
+              "range": "Self",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "details": "1 hour. Gain 5 temp HP. While they last, attacker takes 5 cold damage."
+            }
+          },
+          {
+            "id": "divine-smite-free",
+            "label": "Divine Smite (Free 1/LR)",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Divine Smite",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Paladin's Smite: one free no-slot cast per Long Rest. After hitting with weapon, add 2d8 radiant (3d8 vs undead/fiends).",
+            "metadata": {
+              "damage": "2d8 radiant",
+              "range": "On hit",
+              "cost": "Bonus Action",
+              "slotCost": "No Slot",
+              "details": "Paladin's Smite: one free no-slot cast per Long Rest. After hitting with weapon, add 2d8 radiant (3d8 vs undead/fiends)."
+            }
+          },
+          {
+            "id": "divine-smite-slot",
+            "label": "Divine Smite (Spell Slot)",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Divine Smite",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Normal slot version. L1 = +2d8 radiant (+1d8 per extra slot level, +1d8 vs undead/fiends).",
+            "metadata": {
+              "damage": "2d8 radiant",
+              "range": "On hit",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "details": "Normal slot version. L1 = +2d8 radiant (+1d8 per extra slot level, +1d8 vs undead/fiends)."
+            }
+          }
+        ],
+        "spells": [
+          {
+            "id": "cure-wounds-lights",
+            "label": "Cure Wounds",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Heal 1d8+CHA mod. Touch.",
+            "metadata": {
+              "damage": "1d8+2",
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "Heal 1d8+CHA mod. Touch."
+            }
+          }
+        ],
+        "bond": [
+          {
+            "id": "lights-bond",
+            "label": "Bond — TBD",
+            "actionKind": "bond",
+            "economyCost": [
+              "bond"
+            ],
+            "category": "Bond",
+            "concentration": false,
+            "description": "Bond ability not yet defined for Lights Stone. Add when player provides.",
+            "metadata": {
+              "details": "Bond ability not yet defined for Lights Stone. Add when player provides."
+            }
+          }
+        ],
+        "checks": [
+          {
+            "id": "check-perception",
+            "label": "Perception",
+            "description": "Roll Perception from the sheet.",
+            "metadata": {
+              "attack": "Roll Perception from the sheet.",
+              "details": "Roll Perception from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-survival",
+            "label": "Survival",
+            "description": "Roll Survival from the sheet.",
+            "metadata": {
+              "attack": "Roll Survival from the sheet.",
+              "details": "Roll Survival from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-stealth",
+            "label": "Stealth",
+            "description": "Roll Stealth from the sheet.",
+            "metadata": {
+              "attack": "Roll Stealth from the sheet.",
+              "details": "Roll Stealth from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-grapple",
+            "label": "Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-shove",
+            "label": "Shove",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-escape-grapple",
+            "label": "Escape Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-hide",
+            "label": "Hide",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "features": [
+          {
+            "id": "paladins-smite",
+            "label": "Paladin's Smite",
+            "description": "Divine Smite always prepared. One free no-slot cast per Long Rest.",
+            "metadata": {
+              "details": "Divine Smite always prepared. One free no-slot cast per Long Rest."
+            },
+            "category": "Paladin Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "oath-of-conquest",
+            "label": "Oath of Conquest",
+            "description": "Oath spells and Channel Divinity options. Conquering Presence and Guided Strike.",
+            "metadata": {
+              "details": "Oath spells and Channel Divinity options. Conquering Presence and Guided Strike."
+            },
+            "category": "Oath of Conquest",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "dwarf-traits",
+            "label": "Dwarf Traits",
+            "description": "Poison resistance. Advantage vs Poisoned. Darkvision 120 ft. Dwarven Toughness (+1 HP per level already reflected). Stonecunning 2/LR.",
+            "metadata": {
+              "details": "Poison resistance. Advantage vs Poisoned. Darkvision 120 ft. Dwarven Toughness (+1 HP per level already reflected). Stonecunning 2/LR."
+            },
+            "category": "Dwarf",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "protection-fighting",
+            "label": "Protection Fighting Style",
+            "description": "When creature attacks a target other than you within 5 ft, use reaction + shield to impose disadvantage. Requires shield.",
+            "metadata": {
+              "details": "When creature attacks a target other than you within 5 ft, use reaction + shield to impose disadvantage. Requires shield."
+            },
+            "category": "Paladin Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "savage-attacker",
+            "label": "Savage Attacker (Feat)",
+            "description": "Once per turn on weapon hit, roll weapon damage dice twice and use either result.",
+            "metadata": {
+              "details": "Once per turn on weapon hit, roll weapon damage dice twice and use either result."
+            },
+            "category": "Feats",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "weapon-mastery-lights",
+            "label": "Weapon Mastery",
+            "description": "Flail Sap. Handaxe Vex.",
+            "metadata": {
+              "details": "Flail Sap. Handaxe Vex."
+            },
+            "category": "Paladin Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "status": [],
+        "equipment": [
+          {
+            "id": "flail-equip",
+            "label": "Flail",
+            "description": "Martial melee. 1d8+3. Sap mastery.",
+            "metadata": {
+              "details": "Martial melee. 1d8+3. Sap mastery."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "handaxe-equip",
+            "label": "Handaxe",
+            "description": "Martial. 1d6+3. Light, Thrown 20/60. Vex mastery.",
+            "metadata": {
+              "details": "Martial. 1d6+3. Light, Thrown 20/60. Vex mastery."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "shield-lights",
+            "label": "Shield",
+            "description": "+2 AC. Required for Protection feat reaction.",
+            "metadata": {
+              "details": "+2 AC. Required for Protection feat reaction."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "armor-lights",
+            "label": "Armor",
+            "description": "Verify type with player. Chain Mail = AC 16 base.",
+            "metadata": {
+              "details": "Verify type with player. Chain Mail = AC 16 base."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          }
+        ],
+        "resources": [
+          {
+            "id": "cd-lights",
+            "label": "Channel Divinity",
+            "description": "2 / Long Rest. Regain 1 on Short Rest. Spend for Divine Sense, Conquering Presence, or Guided Strike.",
+            "metadata": {
+              "details": "2 / Long Rest. Regain 1 on Short Rest. Spend for Divine Sense, Conquering Presence, or Guided Strike."
+            },
+            "category": "Paladin Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "loh-pool",
+            "label": "Lay On Hands Pool",
+            "description": "15 HP / Long Rest. Spend points to heal (any amount) or purify poison (5 pts).",
+            "metadata": {
+              "details": "15 HP / Long Rest. Spend points to heal (any amount) or purify poison (5 pts)."
+            },
+            "category": "Paladin Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "divine-smite-free-uses",
+            "label": "Divine Smite Free Cast",
+            "description": "1 / Long Rest. No spell slot needed once per LR.",
+            "metadata": {
+              "details": "1 / Long Rest. No spell slot needed once per LR."
+            },
+            "category": "Paladin Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "stonecunning-uses",
+            "label": "Stonecunning",
+            "description": "2 / Long Rest. Tremorsense 60 ft for 10 min on/near stone.",
+            "metadata": {
+              "details": "2 / Long Rest. Tremorsense 60 ft for 10 min on/near stone."
+            },
+            "category": "Dwarf",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "spell-slots-l1-lights",
+            "label": "Spell Slots L1",
+            "description": "3 / Long Rest.",
+            "metadata": {
+              "details": "3 / Long Rest."
+            },
+            "category": "Spell Slots",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "outOfCombat": [
+          {
+            "id": "short-rest-lights",
+            "label": "Short Rest",
+            "description": "Regain 1 CD use. Lay On Hands pool does NOT reset on short rest.",
+            "metadata": {
+              "details": "Regain 1 CD use. Lay On Hands pool does NOT reset on short rest."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "long-rest-lights",
+            "label": "Long Rest",
+            "description": "Restore all HP, spell slots, CD uses, LoH pool 15, Divine Smite free cast, Stonecunning uses.",
+            "metadata": {
+              "details": "Restore all HP, spell slots, CD uses, LoH pool 15, Divine Smite free cast, Stonecunning uses."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "notes": []
+      }
+    },
+    "lyrielle": {
+      "id": "lyrielle",
+      "kind": "player",
+      "name": "Lyrielle",
+      "subtitle": "Wood Elf Ranger · Level 3 · Primal Companion",
+      "race": "Wood Elf",
+      "className": "Ranger",
+      "level": 3,
+      "stats": {
+        "ac": 15,
+        "hp": {
+          "current": 28,
+          "max": 28,
+          "temp": 0
+        },
+        "speed": "35 ft"
+      },
+      "abilityScores": {
+        "str": {
+          "score": 10,
+          "modifier": 0
+        },
+        "dex": {
+          "score": 16,
+          "modifier": 3
+        },
+        "con": {
+          "score": 15,
+          "modifier": 2
+        },
+        "int": {
+          "score": 8,
+          "modifier": -1
+        },
+        "wis": {
+          "score": 14,
+          "modifier": 2
+        },
+        "cha": {
+          "score": 12,
+          "modifier": 1
+        }
+      },
+      "classFeatureTracker": {
+        "label": "Hunter's Mark / Spell Slots / Faelar HP",
+        "value": "HM free 2/2 · L1 3/3 · Faelar HP 20",
+        "note": "Spell save DC 12 · Spell attack +4 (WIS-based). Archery: +2 ranged attacks already reflected."
+      },
+      "pinnedReactions": [],
+      "tabs": {
+        "main": [
+          {
+            "id": "shortbow-plus1",
+            "label": "Shortbow +1",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "+1 magic bow. Two-Handed. Vex mastery — on hit, gain advantage on next attack against same target before end of your next turn.",
+            "metadata": {
+              "attack": "1d20+8",
+              "damage": "1d6+4",
+              "crit": "2d6+4",
+              "range": "80/320 ft",
+              "cost": "Action",
+              "details": "+1 magic bow. Two-Handed. Vex mastery — on hit, gain advantage on next attack against same target before end of your next turn."
+            }
+          },
+          {
+            "id": "longbow",
+            "label": "Longbow",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Heavy, Two-Handed. Slow mastery — on hit, target speed reduced by 10 until start of your next turn.",
+            "metadata": {
+              "attack": "1d20+7",
+              "damage": "1d8+3",
+              "crit": "2d8+3",
+              "range": "150/600 ft",
+              "cost": "Action",
+              "details": "Heavy, Two-Handed. Slow mastery — on hit, target speed reduced by 10 until start of your next turn."
+            }
+          },
+          {
+            "id": "scimitar",
+            "label": "Scimitar",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Finesse, Light. Nick mastery — when using the Light property, no penalty for off-hand attack.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d6+3",
+              "crit": "2d6+3",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Finesse, Light. Nick mastery — when using the Light property, no penalty for off-hand attack."
+            }
+          },
+          {
+            "id": "shortsword-lyrielle",
+            "label": "Shortsword",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Finesse, Light. Vex mastery.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d6+3",
+              "crit": "2d6+3",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Finesse, Light. Vex mastery."
+            }
+          },
+          {
+            "id": "unarmed-lyrielle",
+            "label": "Unarmed Strike",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "DEX-based unarmed.",
+            "metadata": {
+              "attack": "1d20+2",
+              "damage": "1 bludgeoning",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "DEX-based unarmed."
+            }
+          },
+          {
+            "id": "beast-of-the-land",
+            "label": "Faelar — Beast of the Land",
+            "actionKind": "feature",
+            "economyCost": [],
+            "category": "Primal Companion",
+            "description": "AC 15 · HP 20 · Speed 40 ft / Climb 40 ft. Beast Strike: +4 to hit, 1d8+4 piercing + charge rider (on 20 ft straight move before hit: target Prone). Acts after Lyrielle on her turn.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "bonus": [
+          {
+            "id": "hunters-mark-free",
+            "label": "Hunter's Mark (Free 2/LR)",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Hunter's Mark",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Favored Enemy: 2 free casts per Long Rest. Concentration up to 1 hour. +1d6 damage to marked target. Swap mark on kill.",
+            "metadata": {
+              "range": "90 ft",
+              "cost": "Bonus Action",
+              "slotCost": "No Slot",
+              "concentration": "1 hour",
+              "details": "Favored Enemy: 2 free casts per Long Rest. Concentration up to 1 hour. +1d6 damage to marked target. Swap mark on kill."
+            }
+          },
+          {
+            "id": "hunters-mark-slot",
+            "label": "Hunter's Mark (Slot)",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Hunter's Mark",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Normal slot version. Concentration up to 1 hour.",
+            "metadata": {
+              "range": "90 ft",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "concentration": "1 hour",
+              "details": "Normal slot version. Concentration up to 1 hour."
+            }
+          },
+          {
+            "id": "command-beast",
+            "label": "Command Beast (Faelar)",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Primal Companion",
+            "description": "Command Faelar to take action from stat block. Alternatively, sacrifice one attack when taking Attack action to command Beast Strike instead.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "spells": [
+          {
+            "id": "snare",
+            "label": "Snare",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "8 hours. Creates magical trap. First creature to step in is Restrained.",
+            "metadata": {
+              "saveDc": "DEX DC 12",
+              "range": "Touch",
+              "cost": "1 minute",
+              "slotCost": "L1",
+              "details": "8 hours. Creates magical trap. First creature to step in is Restrained."
+            }
+          },
+          {
+            "id": "hail-of-thorns",
+            "label": "Hail of Thorns",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Next ranged weapon hit: burst of thorns hits target and all creatures within 5 ft.",
+            "metadata": {
+              "damage": "1d10 piercing",
+              "saveDc": "DEX DC 12",
+              "range": "Self",
+              "cost": "Bonus Action",
+              "slotCost": "L1",
+              "details": "Next ranged weapon hit: burst of thorns hits target and all creatures within 5 ft."
+            }
+          },
+          {
+            "id": "cure-wounds-lyrielle",
+            "label": "Cure Wounds",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Heal 1d8+WIS.",
+            "metadata": {
+              "damage": "1d8+2",
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "Heal 1d8+WIS."
+            }
+          },
+          {
+            "id": "longstrider",
+            "label": "Longstrider",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "1 hour. Target's speed increases by 10 ft.",
+            "metadata": {
+              "range": "Touch",
+              "cost": "Action",
+              "slotCost": "L1",
+              "details": "1 hour. Target's speed increases by 10 ft."
+            }
+          }
+        ],
+        "bond": [
+          {
+            "id": "lyrielle-bond",
+            "label": "Bond — TBD",
+            "actionKind": "bond",
+            "economyCost": [
+              "bond"
+            ],
+            "category": "Bond",
+            "concentration": false,
+            "description": "Bond ability not yet defined for Lyrielle. Add when player provides.",
+            "metadata": {
+              "details": "Bond ability not yet defined for Lyrielle. Add when player provides."
+            }
+          }
+        ],
+        "checks": [
+          {
+            "id": "check-perception",
+            "label": "Perception",
+            "description": "Roll Perception from the sheet.",
+            "metadata": {
+              "attack": "Roll Perception from the sheet.",
+              "details": "Roll Perception from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-survival",
+            "label": "Survival",
+            "description": "Roll Survival from the sheet.",
+            "metadata": {
+              "attack": "Roll Survival from the sheet.",
+              "details": "Roll Survival from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-stealth",
+            "label": "Stealth",
+            "description": "Roll Stealth from the sheet.",
+            "metadata": {
+              "attack": "Roll Stealth from the sheet.",
+              "details": "Roll Stealth from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-grapple",
+            "label": "Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-shove",
+            "label": "Shove",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-escape-grapple",
+            "label": "Escape Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-hide",
+            "label": "Hide",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "features": [
+          {
+            "id": "favored-enemy",
+            "label": "Favored Enemy",
+            "description": "Hunter's Mark always prepared. Two free casts per Long Rest.",
+            "metadata": {
+              "details": "Hunter's Mark always prepared. Two free casts per Long Rest."
+            },
+            "category": "Ranger Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "deft-explorer",
+            "label": "Deft Explorer",
+            "description": "Expertise in one skill. Two additional languages.",
+            "metadata": {
+              "details": "Expertise in one skill. Two additional languages."
+            },
+            "category": "Ranger Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "primal-companion",
+            "label": "Primal Companion — Beast of the Land",
+            "description": "Faelar acts on your turn. Dodges unless commanded. Restore with spell slot if it died in the last hour.",
+            "metadata": {
+              "details": "Faelar acts on your turn. Dodges unless commanded. Restore with spell slot if it died in the last hour."
+            },
+            "category": "Ranger Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "archery-style",
+            "label": "Archery Fighting Style",
+            "description": "+2 to ranged weapon attack rolls (already reflected in attack bonuses).",
+            "metadata": {
+              "details": "+2 to ranged weapon attack rolls (already reflected in attack bonuses)."
+            },
+            "category": "Ranger Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "weapon-mastery-lyrielle",
+            "label": "Weapon Mastery",
+            "description": "Longbow Slow. Shortsword Vex.",
+            "metadata": {
+              "details": "Longbow Slow. Shortsword Vex."
+            },
+            "category": "Ranger Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "wood-elf-traits",
+            "label": "Wood Elf Traits",
+            "description": "Darkvision 60 ft. Fey Ancestry: immune to magical sleep, advantage vs Charmed. Trance. Fleet of Foot: speed 35. Mask of the Wild: hide in natural cover.",
+            "metadata": {
+              "details": "Darkvision 60 ft. Fey Ancestry: immune to magical sleep, advantage vs Charmed. Trance. Fleet of Foot: speed 35. Mask of the Wild: hide in natural cover."
+            },
+            "category": "Wood Elf",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "status": [],
+        "equipment": [
+          {
+            "id": "shortbow-plus1-equip",
+            "label": "Shortbow +1",
+            "description": "Magic bow. 1d6+4 piercing. 80/320 ft. Vex mastery.",
+            "metadata": {
+              "details": "Magic bow. 1d6+4 piercing. 80/320 ft. Vex mastery."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "studded-leather",
+            "label": "Studded Leather",
+            "description": "Light armor. AC 12 + DEX = 15.",
+            "metadata": {
+              "details": "Light armor. AC 12 + DEX = 15."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "longbow-equip",
+            "label": "Longbow",
+            "description": "1d8+3 piercing. 150/600. Slow mastery.",
+            "metadata": {
+              "details": "1d8+3 piercing. 150/600. Slow mastery."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "scimitar-equip",
+            "label": "Scimitar",
+            "description": "1d6+3 slashing. Finesse, Light.",
+            "metadata": {
+              "details": "1d6+3 slashing. Finesse, Light."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "shortsword-equip",
+            "label": "Shortsword",
+            "description": "1d6+3 piercing. Finesse, Light.",
+            "metadata": {
+              "details": "1d6+3 piercing. Finesse, Light."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "quiver",
+            "label": "Quiver + Arrows x20",
+            "description": "20 arrows.",
+            "metadata": {
+              "details": "20 arrows."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          }
+        ],
+        "resources": [
+          {
+            "id": "hunters-mark-free-uses",
+            "label": "Hunter's Mark Free Casts",
+            "description": "2 / Long Rest. Favored Enemy feature. Bonus action, concentration 1 hour.",
+            "metadata": {
+              "details": "2 / Long Rest. Favored Enemy feature. Bonus action, concentration 1 hour."
+            },
+            "category": "Ranger Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "spell-slots-l1-lyrielle",
+            "label": "Spell Slots L1",
+            "description": "3 / Long Rest.",
+            "metadata": {
+              "details": "3 / Long Rest."
+            },
+            "category": "Spell Slots",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "faelar-hp",
+            "label": "Faelar HP",
+            "description": "20 HP. Restore with spell slot if died in last hour.",
+            "metadata": {
+              "details": "20 HP. Restore with spell slot if died in last hour."
+            },
+            "category": "Primal Companion",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "arrows",
+            "label": "Arrows",
+            "description": "20 arrows. Track if table uses ammunition.",
+            "metadata": {
+              "details": "20 arrows. Track if table uses ammunition."
+            },
+            "category": "Equipment",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "outOfCombat": [
+          {
+            "id": "short-rest-lyrielle",
+            "label": "Short Rest",
+            "description": "Optionally spend hit dice (1d10+CON) to recover HP. No spell slot recovery.",
+            "metadata": {
+              "details": "Optionally spend hit dice (1d10+CON) to recover HP. No spell slot recovery."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "long-rest-lyrielle",
+            "label": "Long Rest",
+            "description": "Restore all HP, spell slots, Hunter's Mark free uses. Faelar restored to full HP.",
+            "metadata": {
+              "details": "Restore all HP, spell slots, Hunter's Mark free uses. Faelar restored to full HP."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "notes": []
+      }
+    },
+    "vaelith": {
+      "id": "vaelith",
+      "kind": "player",
+      "name": "Vaelith",
+      "subtitle": "Elf (Drow) Warlock · Level 3 · Great Old One",
+      "race": "Elf (Drow Lineage)",
+      "className": "Warlock",
+      "level": 3,
+      "stats": {
+        "ac": 13,
+        "hp": {
+          "current": 24,
+          "max": 24,
+          "temp": 0
+        },
+        "speed": "30 ft"
+      },
+      "abilityScores": {
+        "str": {
+          "score": 8,
+          "modifier": -1
+        },
+        "dex": {
+          "score": 13,
+          "modifier": 1
+        },
+        "con": {
+          "score": 15,
+          "modifier": 2
+        },
+        "int": {
+          "score": 10,
+          "modifier": 0
+        },
+        "wis": {
+          "score": 12,
+          "modifier": 1
+        },
+        "cha": {
+          "score": 17,
+          "modifier": 3
+        }
+      },
+      "classFeatureTracker": {
+        "label": "Pact Magic / Magical Cunning / Faerie Fire",
+        "value": "Pact L2 2/2 · MC 1/1 · FF 1/1",
+        "note": "Spell save DC 13 · Spell attack +5 (CHA). Pact slots recover on Short OR Long Rest."
+      },
+      "pinnedReactions": [],
+      "tabs": {
+        "main": [
+          {
+            "id": "eldritch-blast",
+            "label": "Eldritch Blast",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Force damage. Agonizing Blast invocation: add CHA mod to each beam damage.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d10+3",
+              "crit": "2d10+3",
+              "range": "120 ft",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "details": "Force damage. Agonizing Blast invocation: add CHA mod to each beam damage."
+            }
+          },
+          {
+            "id": "mind-sliver",
+            "label": "Mind Sliver",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "V only. Target subtracts 1d4 from next saving throw before end of your next turn.",
+            "metadata": {
+              "damage": "1d6 psychic",
+              "saveDc": "INT DC 13",
+              "range": "60 ft",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "details": "V only. Target subtracts 1d4 from next saving throw before end of your next turn."
+            }
+          },
+          {
+            "id": "dancing-lights",
+            "label": "Dancing Lights",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Drow lineage cantrip. Concentration up to 1 min. Up to 4 lights (torch-size).",
+            "metadata": {
+              "range": "120 ft",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "concentration": "1 min",
+              "details": "Drow lineage cantrip. Concentration up to 1 min. Up to 4 lights (torch-size)."
+            }
+          },
+          {
+            "id": "false-life",
+            "label": "False Life (Invocation)",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Invocations",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Fiendish Vigor invocation: cast on self without slot; gain max result of 1d4+4 = 9 temp HP.",
+            "metadata": {
+              "damage": "+9 temp HP",
+              "range": "Self",
+              "cost": "Action",
+              "slotCost": "No Slot",
+              "details": "Fiendish Vigor invocation: cast on self without slot; gain max result of 1d4+4 = 9 temp HP."
+            }
+          },
+          {
+            "id": "unarmed-vaelith",
+            "label": "Unarmed Strike",
+            "economyCost": [
+              "main"
+            ],
+            "actionKind": "attack",
+            "concentration": false,
+            "description": "Unarmed, STR-based.",
+            "metadata": {
+              "attack": "1d20+1",
+              "damage": "1 bludgeoning",
+              "range": "Reach 5 ft",
+              "cost": "Action",
+              "details": "Unarmed, STR-based."
+            }
+          }
+        ],
+        "bonus": [
+          {
+            "id": "awakened-mind",
+            "label": "Awakened Mind",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Great Old One",
+            "description": "Choose creature within 30 ft. Establish telepathic communication within 3 miles for 3 minutes. Shared language required.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "pact-blade-conjure",
+            "label": "Pact of the Blade: Conjure",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Pact of the Blade",
+            "description": "Conjure a pact weapon in your empty hand.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "pact-blade-bond",
+            "label": "Pact of the Blade: Bond",
+            "actionKind": "feature",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Pact of the Blade",
+            "description": "Bond with magic weapon touched. Can use CHA for attacks. Choose damage type: necrotic, psychic, or radiant.",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "hex",
+            "label": "Hex",
+            "economyCost": [
+              "bonus"
+            ],
+            "category": "Bonus Action Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration up to 1 hour. Target has disadvantage on chosen ability checks. +1d6 necrotic on each hit.",
+            "metadata": {
+              "damage": "+1d6 necrotic on hits",
+              "range": "90 ft",
+              "cost": "Bonus Action",
+              "slotCost": "Pact Slot L2",
+              "concentration": "1 hour",
+              "details": "Concentration up to 1 hour. Target has disadvantage on chosen ability checks. +1d6 necrotic on each hit."
+            }
+          }
+        ],
+        "spells": [
+          {
+            "id": "eb-spells",
+            "label": "Eldritch Blast",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Cantrips",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "See Actions tab for primary card.",
+            "metadata": {
+              "attack": "1d20+5",
+              "damage": "1d10+3",
+              "range": "120 ft",
+              "cost": "Action",
+              "slotCost": "Cantrip",
+              "details": "See Actions tab for primary card."
+            }
+          },
+          {
+            "id": "bane-vaelith",
+            "label": "Bane",
+            "economyCost": [
+              "main"
+            ],
+            "category": "L1 Pact Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Concentration 1 min. Up to 3 targets subtract 1d4 from attack rolls and saves.",
+            "metadata": {
+              "saveDc": "CHA DC 13",
+              "range": "30 ft",
+              "cost": "Action",
+              "slotCost": "Pact Slot",
+              "concentration": "1 min",
+              "details": "Concentration 1 min. Up to 3 targets subtract 1d4 from attack rolls and saves."
+            }
+          },
+          {
+            "id": "dissonant-whispers",
+            "label": "Dissonant Whispers",
+            "economyCost": [
+              "main"
+            ],
+            "category": "GOO Spells",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Always prepared (GOO). On fail: target flees 30 ft. On save: half damage, no flee.",
+            "metadata": {
+              "damage": "3d6 psychic",
+              "saveDc": "WIS DC 13",
+              "range": "60 ft",
+              "cost": "Action",
+              "slotCost": "Pact Slot",
+              "details": "Always prepared (GOO). On fail: target flees 30 ft. On save: half damage, no flee."
+            }
+          },
+          {
+            "id": "tashas-laughter",
+            "label": "Tasha's Hideous Laughter",
+            "economyCost": [
+              "main"
+            ],
+            "category": "GOO Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Always prepared (GOO). Concentration 1 min. Incapacitated (prone, laughing). Repeat save on damage.",
+            "metadata": {
+              "saveDc": "WIS DC 13",
+              "range": "30 ft",
+              "cost": "Action",
+              "slotCost": "Pact Slot",
+              "concentration": "1 min",
+              "details": "Always prepared (GOO). Concentration 1 min. Incapacitated (prone, laughing). Repeat save on damage."
+            }
+          },
+          {
+            "id": "detect-thoughts",
+            "label": "Detect Thoughts",
+            "economyCost": [
+              "main"
+            ],
+            "category": "GOO Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Always prepared (GOO). Concentration 1 min. Read surface thoughts; probe deeper with save.",
+            "metadata": {
+              "saveDc": "WIS DC 13",
+              "range": "Self",
+              "cost": "Action",
+              "slotCost": "Pact Slot L2",
+              "concentration": "1 min",
+              "details": "Always prepared (GOO). Concentration 1 min. Read surface thoughts; probe deeper with save."
+            }
+          },
+          {
+            "id": "phantasmal-force",
+            "label": "Phantasmal Force",
+            "economyCost": [
+              "main"
+            ],
+            "category": "GOO Spells",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Always prepared (GOO). Concentration 1 min. Target believes illusion is real. Takes 1d6 psychic each turn.",
+            "metadata": {
+              "saveDc": "INT DC 13",
+              "range": "60 ft / 10-ft cube",
+              "cost": "Action",
+              "slotCost": "Pact Slot L2",
+              "concentration": "1 min",
+              "details": "Always prepared (GOO). Concentration 1 min. Target believes illusion is real. Takes 1d6 psychic each turn."
+            }
+          },
+          {
+            "id": "faerie-fire-free",
+            "label": "Faerie Fire (Free 1/LR)",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Drow Lineage",
+            "actionKind": "spell",
+            "concentration": true,
+            "description": "Drow lineage: free 1/LR. Concentration 1 min. Affected creatures shed light 10 ft; attacks against them have advantage.",
+            "metadata": {
+              "saveDc": "DEX DC 13",
+              "range": "60 ft / 20-ft cube",
+              "cost": "Action",
+              "slotCost": "No Slot",
+              "concentration": "1 min",
+              "details": "Drow lineage: free 1/LR. Concentration 1 min. Affected creatures shed light 10 ft; attacks against them have advantage."
+            }
+          },
+          {
+            "id": "faerie-fire-slot",
+            "label": "Faerie Fire (Pact Slot)",
+            "economyCost": [
+              "main"
+            ],
+            "category": "Drow Lineage",
+            "actionKind": "spell",
+            "concentration": false,
+            "description": "Normal pact slot version.",
+            "metadata": {
+              "saveDc": "DEX DC 13",
+              "range": "60 ft / 20-ft cube",
+              "cost": "Action",
+              "slotCost": "Pact Slot",
+              "details": "Normal pact slot version."
+            }
+          }
+        ],
+        "bond": [
+          {
+            "id": "dark-whisper",
+            "label": "Dark Whisper",
+            "actionKind": "bond",
+            "economyCost": [
+              "bond"
+            ],
+            "category": "Bond",
+            "concentration": false,
+            "description": "Bond Action: after Vaelith's attack lands, target takes this psychic damage at the start of its next turn.",
+            "metadata": {
+              "damage": "1d4 psychic",
+              "details": "Bond Action: after Vaelith's attack lands, target takes this psychic damage at the start of its next turn."
+            }
+          }
+        ],
+        "checks": [
+          {
+            "id": "check-perception",
+            "label": "Perception",
+            "description": "Roll Perception from the sheet.",
+            "metadata": {
+              "attack": "Roll Perception from the sheet.",
+              "details": "Roll Perception from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-survival",
+            "label": "Survival",
+            "description": "Roll Survival from the sheet.",
+            "metadata": {
+              "attack": "Roll Survival from the sheet.",
+              "details": "Roll Survival from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-stealth",
+            "label": "Stealth",
+            "description": "Roll Stealth from the sheet.",
+            "metadata": {
+              "attack": "Roll Stealth from the sheet.",
+              "details": "Roll Stealth from the sheet."
+            },
+            "category": "Ability Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-grapple",
+            "label": "Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-shove",
+            "label": "Shove",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-escape-grapple",
+            "label": "Escape Grapple",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "check-hide",
+            "label": "Hide",
+            "description": "Common combat check; resolve from the sheet/table rule.",
+            "metadata": {
+              "attack": "Common combat check; resolve from the sheet/table rule.",
+              "details": "Common combat check; resolve from the sheet/table rule."
+            },
+            "category": "Combat Checks",
+            "actionKind": "check",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          }
+        ],
+        "features": [
+          {
+            "id": "eldritch-invocations",
+            "label": "Eldritch Invocations",
+            "description": "Agonizing Blast: add CHA mod to EB damage. Fiendish Vigor: False Life on self without slot. Pact of the Blade: conjure/bond pact weapon.",
+            "metadata": {
+              "details": "Agonizing Blast: add CHA mod to EB damage. Fiendish Vigor: False Life on self without slot. Pact of the Blade: conjure/bond pact weapon."
+            },
+            "category": "Warlock Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "pact-magic",
+            "label": "Pact Magic",
+            "description": "2 pact slots at L2. Recover on Short OR Long Rest.",
+            "metadata": {
+              "details": "2 pact slots at L2. Recover on Short OR Long Rest."
+            },
+            "category": "Warlock Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "magical-cunning-passive",
+            "label": "Magical Cunning",
+            "description": "Once per LR: 1-minute rite regains up to 1 expended pact slot.",
+            "metadata": {
+              "details": "Once per LR: 1-minute rite regains up to 1 expended pact slot."
+            },
+            "category": "Warlock Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "goo-patron",
+            "label": "Great Old One Patron",
+            "description": "Awakened Mind. Always-prepared GOO spells.",
+            "metadata": {
+              "details": "Awakened Mind. Always-prepared GOO spells."
+            },
+            "category": "GOO",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "psychic-spells",
+            "label": "Psychic Spells",
+            "description": "Warlock damage spells can deal psychic damage. Enchantment/Illusion spells can be cast without V/S components.",
+            "metadata": {
+              "details": "Warlock damage spells can deal psychic damage. Enchantment/Illusion spells can be cast without V/S components."
+            },
+            "category": "Warlock Features",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "drow-lineage",
+            "label": "Elf / Drow Lineage Traits",
+            "description": "Darkvision 120 ft. Dancing Lights cantrip. Faerie Fire 1/LR. Fey Ancestry: immune magic sleep, advantage vs Charmed. Trance.",
+            "metadata": {
+              "details": "Darkvision 120 ft. Dancing Lights cantrip. Faerie Fire 1/LR. Fey Ancestry: immune magic sleep, advantage vs Charmed. Trance."
+            },
+            "category": "Elf / Drow",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "alert-feat",
+            "label": "Alert (Feat)",
+            "description": "+2 bonus to initiative (already reflected if using +3 total). Can swap initiative with one willing ally after rolling.",
+            "metadata": {
+              "details": "+2 bonus to initiative (already reflected if using +3 total). Can swap initiative with one willing ally after rolling."
+            },
+            "category": "Feats",
+            "actionKind": "feature",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "status": [],
+        "equipment": [
+          {
+            "id": "leather-plus1",
+            "label": "Leather +1",
+            "description": "Magic light armor. AC 11+DEX+1 = 13.",
+            "metadata": {
+              "details": "Magic light armor. AC 11+DEX+1 = 13."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          },
+          {
+            "id": "orb-vaelith",
+            "label": "Orb",
+            "description": "Arcane focus. Spellcasting focus.",
+            "metadata": {
+              "details": "Arcane focus. Spellcasting focus."
+            },
+            "category": "Reference Equipment",
+            "actionKind": "equipment",
+            "logMode": "silent",
+            "displayMode": "compact",
+            "hasDefinedUse": false
+          }
+        ],
+        "resources": [
+          {
+            "id": "pact-slots",
+            "label": "Pact Magic Slots L2",
+            "description": "2 / Short Rest or Long Rest. Slot level 2. All leveled warlock spells spend pact slots.",
+            "metadata": {
+              "details": "2 / Short Rest or Long Rest. Slot level 2. All leveled warlock spells spend pact slots."
+            },
+            "category": "Pact Magic",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "magical-cunning",
+            "label": "Magical Cunning",
+            "description": "1 / Long Rest. 1-minute rite to regain up to 1 expended Pact Magic slot.",
+            "metadata": {
+              "details": "1 / Long Rest. 1-minute rite to regain up to 1 expended Pact Magic slot."
+            },
+            "category": "Warlock Features",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          },
+          {
+            "id": "faerie-fire-lr",
+            "label": "Faerie Fire (Free)",
+            "description": "1 / Long Rest. Drow lineage. No slot required.",
+            "metadata": {
+              "details": "1 / Long Rest. Drow lineage. No slot required."
+            },
+            "category": "Drow Lineage",
+            "actionKind": "resource",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "outOfCombat": [
+          {
+            "id": "short-rest-vaelith",
+            "label": "Short Rest",
+            "description": "Recover all Pact Magic slots (2 at L2). This is the core warlock recovery mechanic.",
+            "metadata": {
+              "details": "Recover all Pact Magic slots (2 at L2). This is the core warlock recovery mechanic."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "table-note",
+            "displayMode": "compact"
+          },
+          {
+            "id": "long-rest-vaelith",
+            "label": "Long Rest",
+            "description": "Recover all HP, Pact Magic slots, Magical Cunning, Faerie Fire free cast.",
+            "metadata": {
+              "details": "Recover all HP, Pact Magic slots, Magical Cunning, Faerie Fire free cast."
+            },
+            "category": "Out of Combat",
+            "actionKind": "utility",
+            "logMode": "silent",
+            "displayMode": "compact"
+          }
+        ],
+        "notes": []
+      }
+    }
+  },
+  "overrides": {},
+  "equipment": []
+}

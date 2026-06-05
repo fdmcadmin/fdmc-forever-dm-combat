@@ -1,0 +1,50 @@
+{
+  "name": "forever-dm-combat",
+  "private": true,
+  "version": "0.6.0-p3",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "generate-export": "npx tsx scripts/generateActorExport.ts",
+    "preview": "vite preview",
+    "dev:public": "vite --host 0.0.0.0 --port 5173",
+    "preview:public": "vite preview --host 0.0.0.0 --port 4173",
+    "stage:dev:main": "node ./scripts/build-dev-main.mjs && node ./scripts/stage-dev-main.mjs && node ./scripts/promote-dev-main.mjs",
+    "stage:dev": "npm run stage:dev:main",
+    "deploy:dev": "node ./scripts/dev-host-required.mjs",
+    "assemble:dev": "node ./scripts/dev-host-required.mjs --assemble",
+    "stage:candidate:dev:main": "node ./scripts/build-dev-main.mjs && node ./scripts/stage-dev-main.mjs",
+    "promote:dev:main": "node ./scripts/promote-dev-main.mjs"
+  },
+  "dependencies": {
+    "@owlbear-rodeo/sdk": "^3.1.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.11"
+  },
+  "fdmc": {
+    "projectId": "fdmc",
+    "appName": "Forever DM Combat",
+    "engineName": "Forever DM Combat Engine",
+    "ownerPublicId": "fdmc-project",
+    "communityId": "WARD",
+    "buildLabel": "0.5.8-actor-snapshot-monster-rollbox",
+    "buildId": "fdmc-build-0.5.8-actor-snapshot-monster-rollbox-2026-06-02",
+    "distribution": "internal-pre-public",
+    "sourcePolicy": "private-source",
+    "redistribution": "not-authorized",
+    "channel": "dev",
+    "lane": "unified-combat-app",
+    "storageScope": "fdmc:dev:main",
+    "broadcastScope": "forever-dm-combat:dev:main",
+    "deploymentRule": "sync-lab-deploy-allowed-after-passing-build"
+  }
+}

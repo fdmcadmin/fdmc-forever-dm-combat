@@ -1,0 +1,45 @@
+# Cloudflare Pages — cache + security headers
+# HTML and JS always revalidate — OBR picks up new builds without reinstalling
+
+/*
+  # Allow OBR to embed FDMC in its iframe
+  X-Frame-Options: ALLOWALL
+  # Allow embedding from OBR domains; unsafe-inline covers Cloudflare's injected analytics/bot-check scripts
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; connect-src 'self' wss: https:; img-src 'self' data: blob: https:; frame-ancestors 'self' https://*.owlbear.rodeo https://owlbear.rodeo
+  # Allow Firefox to access localStorage inside OBR's iframe (third-party storage)
+  Permissions-Policy: storage-access=*
+  # Prevent MIME sniffing
+  X-Content-Type-Options: nosniff
+
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/actor-popout.html
+  Cache-Control: no-cache, must-revalidate
+
+/dm-panel.html
+  Cache-Control: no-cache, must-revalidate
+
+/manifest.json
+  Cache-Control: no-cache, must-revalidate
+
+/assets/main.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/dmPanel.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/actorPopout.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/ActorCard.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/monsterLibrary.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/styles.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/styles.css
+  Cache-Control: no-cache, must-revalidate

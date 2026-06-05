@@ -1,0 +1,2234 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+const ENCOUNTER_LOAD_QUEUE_KEY = "fdmc.dm.encounterLoadQueue.v1";
+const ENCOUNTER_LOAD_CHANNEL = "forever-dm-combat:encounter-load-request:v1";
+const MONSTER_ROSTER_CHANNEL = "forever-dm-combat:monster-roster:v1";
+const VIEWER_PARTY_CHANNEL = "forever-dm-combat:viewer-party:v1";
+
+type ViewerActorSummary = {
+  id: string;
+  name: string;
+  hpCurrent: number;
+  hpMax: number;
+  status: string;
+};
+
+export type PlayerSafeMonster = {
+  instanceId: string;
+  publicName: string;
+  visibilityState: string;
+  showHpBar: boolean;
+  hpRatio: number;
+  conditionLabel: string;
+  activeConditions: string[];
+  ac: string;
+};
+import OBR from "@owlbear-rodeo/sdk";
+import { CombatLog } from "./core/combat-log/CombatLog";
+import { CombatTracker, buildCombatants, sortCombatants } from "./core/ui/CombatTracker";
+import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
+import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
+import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
+import { useCombatLog } from "./core/combat-log/useCombatLog";
+import { useActionEconomyState } from "./core/state/useActionEconomyState";
+import { useActorConcentrationState } from "./core/state/useActorConcentrationState";
+import { useCommittedRollState } from "./core/state/useCommittedRollState";
+import { useActorLiveState } from "./core/state/useActorLiveState";
+import { useActorNotesState } from "./core/state/useActorNotesState";
+import { useActorStatusState } from "./core/state/useActorStatusState";
+import { useResourceCounterState } from "./core/state/useResourceCounterState";
+import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
+import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
+import { getToolPanelTitle, type ToolPanelId } from "./core/runtime-shell/toolPanelTypes";
+import { ActorCard } from "./core/ui/ActorCard";
+import { ActorSelector } from "./core/ui/ActorSelector";
+import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
+import { readTokenBinding } from "./core/tokens/tokenBinding";
+import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
+import { MonsterSelector } from "./core/ui/MonsterSelector";
+import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
+import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
+import { resolveActor, buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
+import { SeatAssignmentPanel } from "./core/seats/SeatAssignmentPanel";
+import { useDmSeatSystem, usePlayerSeatSystem } from "./core/seats/useSeatSystem";
+import {
+  seedLibraryFromBundled,
+  loadActorLibrary,
+  loadActorOverrides,
+  saveActorLibrary,
+  saveActorOverride,
+  upsertActorInLibrary,
+} from "./core/seats/dmActorLibrary";
+import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
+import type { MonsterCombatCandidate } from "./core/monsters/MonsterJconScanner";
+import { MonsterRuntimeSetupSlot } from "./core/monsters/runtime/MonsterRuntimeSetupSlot";
+import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
+import { type MainEncounterMonsterInstance } from "./core/monsters/runtime/mainMonsterRuntime";
+import {
+  saveMonsterRoster,
+  loadMonsterRoster,
+  clearMonsterRoster,
+} from "./core/monsters/runtime/monsterRosterStorage";
+import {
+  readFdmcRoomStateKey,
+  publishFdmcRoomStateKey,
+} from "./core/table-state/roomStateBridge";
+import {
+  deregisterMonsterInstance,
+  patchMonsterInitiative,
+  patchMonsterHp,
+  pushRecentEvent,
+  normalizeFdmcRoomLiveState,
+} from "./core/table-state/fdmcRoomLiveState";
+import {
+  FDMC_TABLE_BINDING_KEY,
+  FDMC_ROOM_LIVE_STATE_KEY,
+  normalizeTableBinding,
+  createTableBinding,
+  type FdmcTableBinding,
+} from "./core/table-state/sharedTableState";
+import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
+import type { Actor } from "./core/types/actor";
+import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
+import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
+import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
+import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "./core/export/encounterLogExport";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const APP_VERSION = "FDMC 0.6.0-p3 · 2026-06-03";
+const DM_LIBRARY_UPDATED_CHANNEL = "forever-dm-combat:dm-library-updated:v1";
+
+// Shared maintenance helpers
+// These keys are the only ones the 0.6.0 build should keep
+const FDMC_KEEP_KEYS = new Set([
+  "fdmc.main.roomLiveState.v1",
+  "fdmc.main.tableBinding.v1",
+]);
+
+async function scanFdmcRoomMetadata() {
+  if (!OBR.isAvailable) return { ok: true, entries: [], totalBytes: 0, message: "Not in Owlbear." };
+  const obr = OBR as unknown as { room?: { getMetadata?: () => Promise<Record<string, unknown>> } };
+  const metadata = await obr.room?.getMetadata?.() ?? {};
+  const entries = Object.keys(metadata)
+    .filter(k => k.startsWith("fdmc") || k.startsWith("forever-dm-combat") || k.startsWith("fdm:"))
+    .map(k => ({ key: k, bytes: JSON.stringify(metadata[k]).length, isCanonical: FDMC_KEEP_KEYS.has(k) }));
+  return { ok: true, entries, totalBytes: entries.reduce((s, e) => s + e.bytes, 0), message: `${entries.length} FDMC key(s).` };
+}
+
+async function purgeLegacyFdmcMetadata() {
+  if (!OBR.isAvailable) return { ok: false, removedKeys: [], failedKeys: [], message: "Not in Owlbear." };
+  const obr = OBR as unknown as { room?: { getMetadata?: () => Promise<Record<string, unknown>>; setMetadata?: (m: Record<string, unknown>) => Promise<void> } };
+  const metadata = await obr.room?.getMetadata?.() ?? {};
+  const keysToRemove = Object.keys(metadata).filter(k =>
+    (k.startsWith("fdmc") || k.startsWith("forever-dm-combat") || k.startsWith("fdm:")) &&
+    !FDMC_KEEP_KEYS.has(k)
+  );
+  if (keysToRemove.length === 0) return { ok: true, removedKeys: [], failedKeys: [], message: "No legacy keys found." };
+  const patch: Record<string, undefined> = {};
+  for (const k of keysToRemove) patch[k] = undefined;
+  try {
+    await obr.room?.setMetadata?.({ ...metadata, ...patch });
+    return { ok: true, removedKeys: keysToRemove, failedKeys: [], message: `Removed ${keysToRemove.length} legacy key(s): ${keysToRemove.join(", ")}` };
+  } catch (err) {
+    return { ok: false, removedKeys: [], failedKeys: keysToRemove, message: `Purge failed: ${String(err)}` };
+  }
+}
+
+// ─── Viewer role ──────────────────────────────────────────────────────────────
+
+function useViewerRole(tableBinding: FdmcTableBinding | null) {
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [idLoaded, setIdLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!OBR.isAvailable) {
+      setIdLoaded(true); // outside Owlbear — no viewer ID available
+      return;
+    }
+    void OBR.player.getId()
+      .then(id => { setViewerId(id); setIdLoaded(true); })
+      .catch(() => setIdLoaded(true));
+  }, []);
+
+  // Still loading viewer ID — return loading state
+  if (!idLoaded) return "loading" as const;
+  // No table binding — DM needs to claim
+  if (!tableBinding) return "unknown" as const;
+  // Binding exists and viewer ID matches
+  if (tableBinding.gmControllerId === viewerId) return "dm" as const;
+  // Binding exists, viewer ID loaded but doesn't match → player
+  return "player" as const;
+}
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+
+// ─── Player-safe monster roster ───────────────────────────────────────────────
+
+function PlayerMonsterRoster({
+  monsters,
+  peekId,
+  onPeek,
+}: {
+  monsters: PlayerSafeMonster[];
+  peekId?: string | null;
+  onPeek?: (id: string) => void;
+}) {
+  if (monsters.length === 0) return null;
+  return (
+    <section aria-label="Monster roster">
+      <h2 className="panel-title">Monsters</h2>
+      <div className="actor-list actor-card-grid-2x3">
+        {monsters.map(m => {
+          const ratio = m.hpRatio;
+          const condColor = m.conditionLabel === "Down" ? "#555"
+            : ratio <= 0.25 ? "#ff4444"
+            : ratio <= 0.5 ? "#e07b39"
+            : ratio <= 0.75 ? "#f0c040"
+            : "#4caf50";
+          return (
+            <div key={m.instanceId} style={{ display: "flex", flexDirection: "column" }}>
+              <button
+                type="button"
+                className={`actor-select-button actor-grid-card ${peekId === m.instanceId ? "active" : ""}`}
+                onClick={() => onPeek?.(m.instanceId)}
+                aria-label={`View ${m.publicName}`}
+                style={{ cursor: onPeek ? "pointer" : "default" }}
+              >
+                <span className="actor-grid-name">{m.publicName || "Unknown creature"}</span>
+                <span className="actor-grid-meta" style={{ color: condColor }}>
+                  {m.conditionLabel || "—"}
+                </span>
+              </button>
+              {/* Peek panel — 4 fields + debuffs, nothing else */}
+              {peekId === m.instanceId && (
+                <div style={{ background: "#161622", border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: "2px 0 6px", fontSize: 12 }}>
+                  <div style={{ display: "flex", gap: 12, marginBottom: m.activeConditions.length > 0 ? 6 : 0 }}>
+                    <span style={{ color: "#aaa" }}><strong style={{ color: "#888" }}>Name</strong> {m.publicName}</span>
+                    {m.ac && <span style={{ color: "#aaa" }}><strong style={{ color: "#888" }}>AC</strong> {m.ac}</span>}
+                    <span style={{ color: condColor }}><strong style={{ color: "#888" }}>Condition</strong> {m.conditionLabel || "—"}</span>
+                  </div>
+                  {m.showHpBar && (
+                    <div style={{ marginBottom: m.activeConditions.length > 0 ? 6 : 0 }}>
+                      <div style={{ height: 6, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${Math.max(0, Math.min(100, m.hpRatio * 100))}%`, background: condColor, borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  )}
+                  {m.activeConditions.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {m.activeConditions.map(c => (
+                        <span key={c} style={{ fontSize: 10, padding: "1px 6px", background: "#2a1a2a", border: "1px solid #7b68ee55", borderRadius: 10, color: "#bb99ff" }}>
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  // ── Table binding ──────────────────────────────────────────────────────────
+  const [tableBinding, setTableBinding] = useState<FdmcTableBinding | null>(null);
+  const viewerRole = useViewerRole(tableBinding);
+  const isDmMode = viewerRole === "dm";
+  const isPlayerMode = viewerRole === "player";
+  const isRoleLoading = viewerRole === "loading";
+
+  // On mount: check OBR's native GM role. If OBR says GM, auto-claim the
+  // table binding — this handles new rooms (no binding) and old rooms with
+  // a stale binding from a previous session/build.
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+
+    void (async () => {
+      try {
+        const [obrRole, gmId, existing] = await Promise.all([
+          (OBR.player as unknown as { getRole?: () => Promise<string> }).getRole?.() ?? Promise.resolve("PLAYER"),
+          OBR.player.getId(),
+          readFdmcRoomStateKey(FDMC_TABLE_BINDING_KEY, normalizeTableBinding),
+        ]);
+
+        if (obrRole === "GM") {
+          if (!existing || existing.gmControllerId !== gmId) {
+            // OBR says GM but binding is missing or stale — auto-claim
+            const binding = createTableBinding(gmId);
+            await publishFdmcRoomStateKey(FDMC_TABLE_BINDING_KEY, binding);
+            setTableBinding(binding);
+          } else {
+            setTableBinding(existing);
+          }
+        } else {
+          // Player — just read existing binding for seat matching
+          if (existing) setTableBinding(existing);
+        }
+      } catch {
+        // Fallback: try to read binding without role check
+        const existing = await readFdmcRoomStateKey(FDMC_TABLE_BINDING_KEY, normalizeTableBinding).catch(() => null);
+        if (existing) setTableBinding(existing);
+      }
+    })();
+  }, []);
+
+  async function claimTableBinding() {
+    if (!OBR.isAvailable) return;
+    const gmId = await OBR.player.getId().catch(() => null);
+    const binding = createTableBinding(gmId);
+    await publishFdmcRoomStateKey(FDMC_TABLE_BINDING_KEY, binding);
+    setTableBinding(binding);
+  }
+
+  // ── DM: listen for encounter load requests from monster panel popover ──────
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(ENCOUNTER_LOAD_CHANNEL, () => {
+      try {
+        const raw = window.localStorage.getItem(ENCOUNTER_LOAD_QUEUE_KEY);
+        const instances: MainEncounterMonsterInstance[] = raw ? JSON.parse(raw) as MainEncounterMonsterInstance[] : [];
+        window.localStorage.removeItem(ENCOUNTER_LOAD_QUEUE_KEY);
+        addMonsterInstances(instances);
+      } catch { /* ok */ }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDmMode]);
+
+  // ── DM: listen for level-up requests from players ─────────────────────────
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as unknown;
+      if (isLevelUpRequest(msg)) {
+        setLevelUpRequests(current => {
+          const filtered = current.filter(r => r.actorId !== msg.actorId);
+          return [...filtered, msg];
+        });
+      }
+    });
+  }, [isDmMode]);
+
+  // ── DM: handle actor editor save ──────────────────────────────────────────
+  function handleActorEditorSave(editedActor: Actor, saveMode: ActorEditorSaveMode) {
+    const isDeleted = editedActor.id.endsWith("--DELETED");
+
+    if (isDeleted) {
+      const realId = editedActor.id.replace("--DELETED", "");
+      setActorLibrary(lib => {
+        const next = { ...lib };
+        delete next[realId];
+        saveActorLibrary(next);
+        return next;
+      });
+      setEditingActorId(null);
+      closePanel();
+      return;
+    }
+
+    // New actor (created from blank form) or duplicate — write directly to library
+    const isNew = editingActorId === "__new__" || saveMode === "duplicate";
+    if (isNew) {
+      upsertActorInLibrary(editedActor);
+      setActorLibrary(lib => ({ ...lib, [editedActor.id]: editedActor }));
+      pushActorsToAllSeats();
+      setEditingActorId(null);
+      return;
+    }
+
+    // Save override (preserves base actor, only stores delta)
+    const base = actorLibrary[editedActor.id] ?? editedActor;
+    const override: Partial<Actor> = {};
+    if (editedActor.level !== base.level) override.level = editedActor.level;
+    if (editedActor.name !== base.name) override.name = editedActor.name;
+    if (editedActor.subtitle !== base.subtitle) override.subtitle = editedActor.subtitle;
+    if (JSON.stringify(editedActor.stats) !== JSON.stringify(base.stats)) override.stats = editedActor.stats;
+    if (JSON.stringify(editedActor.tabs) !== JSON.stringify(base.tabs)) override.tabs = editedActor.tabs;
+    if (JSON.stringify(editedActor.abilityScores) !== JSON.stringify(base.abilityScores)) override.abilityScores = editedActor.abilityScores;
+    if (JSON.stringify(editedActor.classFeatureTracker) !== JSON.stringify(base.classFeatureTracker)) override.classFeatureTracker = editedActor.classFeatureTracker;
+
+    saveActorOverride(editedActor.id, override);
+    setActorOverrides(loadActorOverrides());
+
+    if (saveMode === "current-and-library") {
+      upsertActorInLibrary(editedActor);
+      setActorLibrary(lib => ({ ...lib, [editedActor.id]: editedActor }));
+    }
+
+    // Push updated actor to all seats that have this actor assigned
+    pushActorsToAllSeats();
+    setEditingActorId(null);
+    closePanel();
+  }
+
+  // ── DM: approve level-up request ─────────────────────────────────────────
+  // finalActor is the full proposed actor, possibly edited by DM in the review step.
+  function handleLevelUpApprove(request: LevelUpRequest, finalActor: Actor) {
+    const base = actorLibrary[request.actorId] ?? finalActor;
+    const override: Partial<Actor> = {};
+    if (finalActor.level !== base.level) override.level = finalActor.level;
+    if (finalActor.name !== base.name) override.name = finalActor.name;
+    if (finalActor.subtitle !== base.subtitle) override.subtitle = finalActor.subtitle;
+    if (JSON.stringify(finalActor.stats) !== JSON.stringify(base.stats)) override.stats = finalActor.stats;
+    if (JSON.stringify(finalActor.tabs) !== JSON.stringify(base.tabs)) override.tabs = finalActor.tabs;
+    if (JSON.stringify(finalActor.abilityScores) !== JSON.stringify(base.abilityScores)) override.abilityScores = finalActor.abilityScores;
+    if (JSON.stringify(finalActor.classFeatureTracker) !== JSON.stringify(base.classFeatureTracker)) override.classFeatureTracker = finalActor.classFeatureTracker;
+    saveActorOverride(request.actorId, override);
+    setActorOverrides(loadActorOverrides());
+    pushActorsToAllSeats();
+    setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
+
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:level-up-response",
+        actorId: request.actorId,
+        seatId: request.seatId,
+        approved: true,
+      }, { destination: "REMOTE" });
+    }
+  }
+
+  function handleLevelUpReject(request: LevelUpRequest, reason: string) {
+    setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:level-up-response",
+        actorId: request.actorId,
+        seatId: request.seatId,
+        approved: false,
+        reason,
+      }, { destination: "REMOTE" });
+    }
+  }
+
+  // ── DM Actor library (seeded from bundled source on first boot) ────────────
+  const [actorLibrary, setActorLibrary] = useState<Record<string, Actor>>(() =>
+    seedLibraryFromBundled(brokenChainActors)
+  );
+  const [actorOverrides, setActorOverrides] = useState(() => loadActorOverrides());
+
+  // ── Reload library when DM popover saves changes ─────────────────────────
+  // Also reload on mount in case actors were built in popover before this window opened
+  useEffect(() => {
+    const stored = loadActorLibrary();
+    if (Object.keys(stored).length > 0) {
+      setActorLibrary(stored);
+      setActorOverrides(loadActorOverrides());
+    }
+
+    if (!OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(DM_LIBRARY_UPDATED_CHANNEL, () => {
+      setActorLibrary(loadActorLibrary());
+      setActorOverrides(loadActorOverrides());
+    });
+  }, []);
+
+  // ── Actor editor state ────────────────────────────────────────────────────
+  const [editingActorId, setEditingActorId] = useState<string | null>(null);
+
+  // ── Level-up approval queue (DM side) ────────────────────────────────────
+  const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>([]);
+  const bundledActors = useMemo(() => brokenChainActors, []);
+
+  // ── Live state — HP, initiative, trackers — room metadata ──────────────────
+  const {
+    roomLiveState,
+    setActorHp,
+    getActorHp,
+    setActorInitiative,
+    getActorInitiative,
+    getRoomStateBytes,
+    commitRoomState,
+    refreshFromRoom,
+  } = useActorLiveState(bundledActors);
+
+  // ── DM seat system ────────────────────────────────────────────────────────
+  const {
+    seats,
+    seatBindings,
+    assignSeat,
+    pushActorsToSeat,
+    pushActorsToAllSeats,
+  } = useDmSeatSystem({
+    actorLibrary,
+    actorOverrides,
+    roomLiveState,
+    onRoomStateChange: commitRoomState,
+  });
+
+  // ── Player seat system ────────────────────────────────────────────────────
+  const {
+    viewerSeatKey,
+    claimedSeatId,
+    seatActors,
+    seatStatus,
+    requestActorData,
+    manualClaim,
+    claimViewerSeat,
+    releaseSeat,
+  } = usePlayerSeatSystem(roomLiveState);
+
+  // ── Active actors — DM sees all; player sees only their seat actors ────────
+  const dmActors: Actor[] = useMemo(
+    () => Object.values(actorLibrary).flatMap(actor => {
+      const resolved = resolveActor(actor.id, actorLibrary, actorOverrides, roomLiveState);
+      return resolved ? [resolved] : [];
+    }),
+    [actorLibrary, actorOverrides, roomLiveState],
+  );
+
+  // Player actors come from seat broadcast cache, HP overlaid from live state
+  const playerActors: Actor[] = useMemo(
+    () => seatActors.flatMap(a => {
+      const resolved = resolveActor(a.id, { [a.id]: a }, actorOverrides, roomLiveState);
+      return resolved ? [resolved] : [];
+    }),
+    [seatActors, actorOverrides, roomLiveState],
+  );
+
+  const actors = isDmMode ? dmActors : playerActors;
+
+  // ── Selected actor ────────────────────────────────────────────────────────
+  const [selectedActorId, setSelectedActorId] = useState<string>(() => bundledActors[0]?.id ?? "");
+  const selectedActor = actors.find(a => a.id === selectedActorId) ?? actors[0] ?? null;
+
+  // ── Action economy ────────────────────────────────────────────────────────
+  const {
+    actionStateByActorId,
+    getActionState,
+    readyActionCosts,
+    unreadyActionKey,
+    resetActorTurn,
+    resetAllTurns,
+  } = useActionEconomyState(isDmMode ? bundledActors : seatActors);
+
+  // ── Committed roll ────────────────────────────────────────────────────────
+  const {
+    getCommittedRoll,
+    startCommittedRoll,
+    setCommittedRollResult,
+    chooseCommittedRollOutcome,
+    chooseCommittedRollDamage,
+    markCommittedRollBridgeSent,
+    clearCommittedRoll,
+  } = useCommittedRollState(isDmMode ? bundledActors : seatActors);
+
+  // ── Concentration ─────────────────────────────────────────────────────────
+  const {
+    getActorConcentration,
+    setActorConcentration,
+    clearActorConcentration,
+  } = useActorConcentrationState(isDmMode ? bundledActors : seatActors);
+
+  // ── Notes ─────────────────────────────────────────────────────────────────
+  const { getActorNotes, addActorNote, deleteActorNote } =
+    useActorNotesState(isDmMode ? bundledActors : seatActors);
+
+  // ── Status ────────────────────────────────────────────────────────────────
+  const {
+    getActorStatus,
+    setActorTracker,
+    resetActorTracker,
+    resetActorStatuses,
+  } = useActorStatusState(isDmMode ? bundledActors : seatActors);
+
+  // ── Resource counters (spell slots, class features) ───────────────────────
+  const {
+    getRemaining,
+    decrementResource,
+    counters,
+    consumeSpellSlot,
+    consumeNamedResource,
+    resetActorResources,
+  } = useResourceCounterState(isDmMode ? dmActors : playerActors);
+
+  // ── Combat log ────────────────────────────────────────────────────────────
+  const { entries: logEntries, addEntry, removePendingEntries, clearEntries } = useCombatLog();
+
+  // ── Dice bridge ───────────────────────────────────────────────────────────
+  const {
+    status: diceBridgeStatus,
+    lastEvent: diceBridgeLastEvent,
+    sendRollRequest,
+    sendDicePlusRollRequest,
+    sendMockRollResult,
+  } = useOwlbearDiceBridge();
+
+  // ── Monster combat roster — hydrate when DM mode confirmed (async tableBinding) ──
+  const [monsterCandidates, setMonsterCandidates] = useState<MonsterCombatCandidate[]>([]);
+  useEffect(() => {
+    if (!isDmMode) return;
+    const saved = loadMonsterRoster();
+    if (saved.length > 0) setMonsterCandidates(saved);
+  }, [isDmMode]);
+  const [activeMonsterInstanceId, setActiveMonsterInstanceId] = useState<string>("");
+  // Ref so addMonsterInstances always reads latest state without stale closures
+  const roomLiveStateRef = useRef(roomLiveState);
+  useEffect(() => { roomLiveStateRef.current = roomLiveState; }, [roomLiveState]);
+
+  const activeMonster = useMemo(
+    () => monsterCandidates.find(
+      m => (m as MainEncounterMonsterInstance).instanceId === activeMonsterInstanceId
+    ) as MainEncounterMonsterInstance | undefined ?? monsterCandidates[0] as MainEncounterMonsterInstance | undefined,
+    [monsterCandidates, activeMonsterInstanceId],
+  );
+
+  function broadcastMonsterRoster(roster: MainEncounterMonsterInstance[]) {
+    if (!OBR.isAvailable) return;
+    const payload: PlayerSafeMonster[] = roster.map(m => {
+      const ratio = m.maxHp > 0 ? m.currentHp / m.maxHp : 0;
+      const conditionLabel = m.currentHp <= 0 ? "Down"
+        : ratio <= 0.25 ? "Critical"
+        : ratio <= 0.5 ? "Bloodied"
+        : ratio <= 0.75 ? "Wounded"
+        : "Healthy";
+      const vis = m.visibilityState;
+      const showName = vis !== "hidden";
+      const showHpBar = vis === "hp-bar" || vis === "full";
+      return {
+        instanceId: m.instanceId,
+        publicName: showName
+          ? (m.isNameRevealed ? (m.revealedName || m.displayName) : (m.hiddenName || "Unknown creature"))
+          : "Unknown creature",
+        visibilityState: vis,
+        showHpBar,
+        hpRatio: showHpBar ? ratio : 0,
+        conditionLabel: vis !== "hidden" ? conditionLabel : "",
+        activeConditions: vis !== "hidden" ? (m.usedActionNames ?? []) : [],
+        ac: vis === "full" ? (m.ac ?? "") : "",
+      };
+    });
+    void OBR.broadcast.sendMessage(
+      MONSTER_ROSTER_CHANNEL,
+      { type: "fdmc:monster-roster", monsters: payload },
+      { destination: "REMOTE" }
+    ).catch(() => undefined);
+  }
+
+  // ── DM: token selection → auto-open bound card ───────────────────────────
+  // When DM selects a token on the map, check its binding and open the right card.
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.player.onChange(async (player) => {
+      const selected = player.selection ?? [];
+      if (selected.length !== 1) return; // only act on single-token selection
+      try {
+        const items = await OBR.scene.items.getItems(selected);
+        if (items.length === 0) return;
+        const binding = readTokenBinding(items[0]);
+        if (!binding || binding.tableId !== roomLiveState.tableId) return;
+        if (binding.bindingType === "seat" && binding.actorId) {
+          // Open actor card for bound actor
+          const actorId = binding.actorId;
+          setSelectedActorId(actorId);
+          setActiveMonsterInstanceId("");
+        } else if (binding.bindingType === "monster" && binding.instanceId) {
+          // Open monster card for bound instance
+          setActiveMonsterInstanceId(binding.instanceId);
+        }
+      } catch { /* selection read failed — ignore */ }
+    });
+  }, [isDmMode, roomLiveState.tableId]);
+
+  // ── DM: respond to player roster request on join ─────────────────────────
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(MONSTER_ROSTER_CHANNEL, (event) => {
+      const msg = event.data as { type?: string } | undefined;
+      if (msg?.type === "fdmc:monster-roster-request" && monsterCandidates.length > 0) {
+        broadcastMonsterRoster(monsterCandidates as MainEncounterMonsterInstance[]);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDmMode, monsterCandidates]);
+
+  // ── DM: sync HP from monster popout → monsterCandidates → broadcast to players ──
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(MONSTER_POPOUT_HP_CHANNEL, (event) => {
+      const msg = event.data as { type?: string; instanceId?: string; currentHp?: number; maxHp?: number; tempHp?: number } | undefined;
+      if (msg?.type !== "fdmc:monster-popout-hp" || !msg.instanceId) return;
+      setMonsterCandidates(prev => {
+        const next = prev.map(m => {
+          const inst = m as MainEncounterMonsterInstance;
+          if (inst.instanceId !== msg.instanceId) return m;
+          return { ...inst, currentHp: msg.currentHp ?? inst.currentHp, maxHp: msg.maxHp ?? inst.maxHp, tempHp: msg.tempHp ?? inst.tempHp };
+        }) as MainEncounterMonsterInstance[];
+        broadcastMonsterRoster(next);
+        return next;
+      });
+    });
+  }, [isDmMode]);
+
+  function addMonsterInstances(monsters: MainEncounterMonsterInstance[]) {
+    if (monsters.length === 0) return;
+    setMonsterCandidates(c => {
+      const next = [...c, ...monsters];
+      saveMonsterRoster(next as MainEncounterMonsterInstance[]);
+      broadcastMonsterRoster(next as MainEncounterMonsterInstance[]);
+      return next;
+    });
+    setActiveMonsterInstanceId(prev => prev || monsters[0].instanceId);
+    addEntry({
+      actorName: "System", actionName: "Encounter Loaded", tabId: "system",
+      message: `${monsters.length} monster${monsters.length === 1 ? "" : "s"} added to combat roster.`,
+    });
+  }
+
+  function addMonsterInstance(monster: MainEncounterMonsterInstance) {
+    addMonsterInstances([monster]);
+  }
+
+  function updateMonsterInstance(
+    instanceId: string,
+    patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "tempHp" | "status" | "visibilityState" | "hiddenName" | "isNameRevealed">>
+  ) {
+    setMonsterCandidates(current => {
+      const next = current.map(m => {
+        const enc = m as MainEncounterMonsterInstance;
+        if (enc.instanceId !== instanceId) return m;
+        const currentHp = typeof patch.currentHp === "number" ? patch.currentHp : enc.currentHp;
+        return { ...enc, ...patch, currentHp, hp: `${currentHp}/${enc.maxHp}` } as MainEncounterMonsterInstance;
+      });
+      saveMonsterRoster(next as MainEncounterMonsterInstance[]);
+      broadcastMonsterRoster(next as MainEncounterMonsterInstance[]);
+      return next;
+    });
+    // P4 spec: HP changes write to room metadata via patchMonsterHp so DM reload restores live HP
+    if (typeof patch.currentHp === "number") {
+      const inst = monsterCandidates.find(m => (m as MainEncounterMonsterInstance).instanceId === instanceId) as MainEncounterMonsterInstance | undefined;
+      if (inst) {
+        const nextState = patchMonsterHp(roomLiveState, instanceId, { current: patch.currentHp, max: inst.maxHp, temp: patch.tempHp ?? inst.tempHp ?? 0 });
+        void commitRoomState(nextState);
+        // P7/P8: log HP change
+        const delta = patch.currentHp - inst.currentHp;
+        const monsterName = inst.revealedName || inst.displayName || inst.name;
+        logHpChange(instanceId, monsterName, delta, roomLiveState.combat.round);
+        // P8: boss kill detection
+        if (patch.currentHp <= 0 && inst.currentHp > 0 && (inst.kind === "boss")) {
+          const encId = inst.templateRef ?? instanceId;
+          const encName = inst.revealedName || inst.name;
+          appendLogEntry({
+            id: makeLogId(), timestamp: new Date().toLocaleTimeString(),
+            round: roomLiveState.combat.round, type: "boss-killed",
+            code: "KILL", actorId: instanceId, actorName: monsterName,
+            val: 0, message: `${monsterName} defeated`,
+          });
+          setBossKillAlert({ name: monsterName, encounterId: encId, encounterName: encName });
+        }
+      }
+    }
+  }
+
+  function removeMonsterInstance(instanceId: string) {
+    setMonsterCandidates(c => {
+      const next = c.filter(m => (m as MainEncounterMonsterInstance).instanceId !== instanceId);
+      saveMonsterRoster(next as MainEncounterMonsterInstance[]);
+      broadcastMonsterRoster(next as MainEncounterMonsterInstance[]);
+      return next;
+    });
+    if (activeMonsterInstanceId === instanceId) setActiveMonsterInstanceId("");
+    const nextState = deregisterMonsterInstance(roomLiveState, instanceId);
+    void commitRoomState(nextState);
+  }
+
+  // ── Monster economy state — received via OBR broadcast from MonsterActorCard ──
+  const [monsterEconomyByInstanceId, setMonsterEconomyByInstanceId] = useState<
+    Record<string, { actionUsed: boolean; reactionUsed: boolean }>
+  >({});
+
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(MONSTER_ECONOMY_CHANNEL, (event) => {
+      const msg = event.data as MonsterEconomyBroadcast | undefined;
+      if (msg?.type !== "fdmc:monster-economy") return;
+      setMonsterEconomyByInstanceId(prev => ({
+        ...prev,
+        [msg.instanceId]: { actionUsed: msg.actionUsed, reactionUsed: msg.reactionUsed },
+      }));
+    });
+  }, []);
+
+  // ── Viewer: party summary — received from DM when viewer joins ───────────
+  const [viewerParty, setViewerParty] = useState<ViewerActorSummary[]>([]);
+
+  // Player/viewer: listen for party summary broadcasts
+  useEffect(() => {
+    if (isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(VIEWER_PARTY_CHANNEL, (event) => {
+      const msg = event.data as { type?: string; actors?: ViewerActorSummary[] } | undefined;
+      if (msg?.type === "fdmc:viewer-party" && Array.isArray(msg.actors)) {
+        setViewerParty(msg.actors);
+      }
+    });
+  }, [isDmMode]);
+
+  // Viewer: request party data on entering viewer mode
+  useEffect(() => {
+    if (!isPlayerMode || seatStatus !== "viewer" || !OBR.isAvailable) return;
+    void OBR.broadcast.sendMessage(
+      VIEWER_PARTY_CHANNEL,
+      { type: "fdmc:viewer-party-request" },
+      { destination: "REMOTE" },
+    ).catch(() => undefined);
+  }, [isPlayerMode, seatStatus]);
+
+  // DM: respond to viewer party requests
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(VIEWER_PARTY_CHANNEL, (event) => {
+      const msg = event.data as { type?: string } | undefined;
+      if (msg?.type !== "fdmc:viewer-party-request") return;
+      // Send compact actor summary to viewers
+      const summary: ViewerActorSummary[] = dmActors.map(a => {
+        const hp = getActorHp(a.id);
+        return { id: a.id, name: a.name, hpCurrent: hp.current, hpMax: hp.max, status: "" };
+      });
+      void OBR.broadcast.sendMessage(
+        VIEWER_PARTY_CHANNEL,
+        { type: "fdmc:viewer-party", actors: summary },
+        { destination: "REMOTE" },
+      ).catch(() => undefined);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDmMode, dmActors]);
+
+  // ── Player: monster roster cache — received from DM broadcast ─────────────
+  const [playerMonsters, setPlayerMonsters] = useState<PlayerSafeMonster[]>([]);
+  const [playerPeekId, setPlayerPeekId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isDmMode || !OBR.isAvailable) return;
+    // Listen for roster broadcasts from DM
+    const unsub = OBR.broadcast.onMessage(MONSTER_ROSTER_CHANNEL, (event) => {
+      const msg = event.data as { type?: string; monsters?: PlayerSafeMonster[] } | undefined;
+      if (msg?.type === "fdmc:monster-roster" && Array.isArray(msg.monsters)) {
+        setPlayerMonsters(msg.monsters);
+      }
+    });
+    // Request current roster on join — DM re-sends if they have monsters loaded
+    void OBR.broadcast.sendMessage(
+      MONSTER_ROSTER_CHANNEL,
+      { type: "fdmc:monster-roster-request" },
+      { destination: "REMOTE" },
+    ).catch(() => undefined);
+    return unsub;
+  }, [isDmMode]);
+
+  // ── Player: loot delivery toast + level-up request UI ───────────────────
+  const [lootToast, setLootToast] = useState<string | null>(null);
+  const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
+
+  // ── Player: refresh + loot delivery via seat broadcast ───────────────────
+  useEffect(() => {
+    if (isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as { type?: unknown; seatId?: string; message?: string; item?: { name?: string } } | undefined;
+      if (!msg) return;
+      if (msg.type === "fdmc:seats-ready") {
+        void refreshFromRoom();
+      }
+      // Loot delivery — show only if addressed to this player's seat
+      if (msg.type === "fdmc:loot-delivery" && msg.seatId === claimedSeatId) {
+        const itemName = msg.item?.name ?? "item";
+        const text = msg.message?.trim() || `${itemName} delivered.`;
+        setLootToast(text);
+        addEntry({ actorName: "DM", actionName: "Loot Delivered", tabId: "system", message: text });
+        setTimeout(() => setLootToast(null), 6000);
+      }
+    });
+  }, [isDmMode, refreshFromRoom, claimedSeatId]);
+
+  // ── Turn reset ────────────────────────────────────────────────────────────
+  const [turnResetVersion, setTurnResetVersion] = useState(0);
+  const [focusedActorId, setFocusedActorId] = useState<string | null>(null);
+  // P8: boss kill alert
+  const [bossKillAlert, setBossKillAlert] = useState<{ name: string; encounterId: string; encounterName: string } | null>(null);
+
+  // P7/P8: log HP change to encounter log + ring buffer
+  function logHpChange(actorId: string, actorName: string, delta: number, round: number) {
+    if (!isDmMode || delta === 0) return;
+    appendLogEntry({
+      id: makeLogId(), timestamp: new Date().toLocaleTimeString(), round,
+      type: "hp-change", code: makeActionCode(actorName, "HP"),
+      actorId, actorName, val: delta, message: delta < 0 ? `${actorName} took ${Math.abs(delta)} damage` : `${actorName} healed ${delta} HP`,
+    });
+    if (OBR.isAvailable) {
+      const next = pushRecentEvent(roomLiveState, {
+        actorId, type: "hp-change", code: makeActionCode(actorName, "HP"), val: delta, round,
+      });
+      void commitRoomState(next);
+    }
+  }
+
+  // P7/P8: log roll result to encounter log + ring buffer
+  function logRollResult(actorId: string, actorName: string, actionName: string, val: number, type: "roll-attack" | "roll-damage", round: number) {
+    if (!isDmMode) return;
+    const code = makeActionCode(actorName, actionName);
+    appendLogEntry({
+      id: makeLogId(), timestamp: new Date().toLocaleTimeString(), round,
+      type, code, actorId, actorName, val, message: `${actorName} — ${actionName}: ${val}`,
+    });
+    if (OBR.isAvailable) {
+      const next = pushRecentEvent(roomLiveState, { actorId, type, code, val, round });
+      void commitRoomState(next);
+    }
+  }
+  // Track which actor's OBR popover is currently open for toggle behavior
+  const [openActorPopoverId, setOpenActorPopoverId] = useState<string | null>(null);
+
+  // ── Combat tracker helpers ────────────────────────────────────────────────
+
+  /** Live HP map for all actors — used by combat tracker and actor selector */
+  const liveHpByActorId = useMemo(
+    () => Object.fromEntries(actors.map(a => [a.id, getActorHp(a.id)])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [actors, roomLiveState.actorLiveState],
+  );
+
+  /** All combatants (actors + monsters) with their current initiative */
+  const allCombatants = useMemo(() => {
+    const initiativeByActor: Record<string, number | null> = {};
+    for (const actor of actors) {
+      initiativeByActor[actor.id] = getActorInitiative(actor.id);
+    }
+    const initiativeByMonster: Record<string, number | null> = {};
+    for (const m of monsterCandidates as MainEncounterMonsterInstance[]) {
+      initiativeByMonster[m.instanceId] = roomLiveState.monsterLiveState[m.instanceId]?.initiative ?? null;
+    }
+    return buildCombatants(
+      actors,
+      monsterCandidates as MainEncounterMonsterInstance[],
+      roomLiveState.combat.activeActorId,
+      initiativeByActor,
+      initiativeByMonster,
+      isDmMode,
+      liveHpByActorId,
+    );
+  }, [actors, monsterCandidates, roomLiveState, isDmMode, getActorInitiative, liveHpByActorId]);
+
+  function handleStartCombat() {
+    const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
+    if (sorted.length === 0) return;
+    const firstId = sorted[0].id;
+    // Read fresh from OBR to ensure seat bindings from dm-panel are captured
+    void (async () => {
+      const freshState = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
+      const base = freshState ?? roomLiveState;
+      const next = patchCombat(base, { phase: "combat", activeActorId: firstId, round: 1 });
+      void commitRoomState(next);
+    })();
+    setSelectedActorId(actors.find(a => a.id === firstId)?.id ?? selectedActorId);
+    setActiveMonsterInstanceId(monsterCandidates.find(m => (m as MainEncounterMonsterInstance).instanceId === firstId) ? firstId : "");
+    clearEncounterLog(); // P8: fresh log per combat session
+    addEntry({ actorName: "System", actionName: "Combat Start", tabId: "system", message: `Round 1 begins. ${sorted[0]?.name ?? "First combatant"} goes first.` });
+  }
+
+  function handleNextTurn() {
+    const currentId = roomLiveState.combat.activeActorId;
+    const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
+    if (sorted.length === 0) return;
+
+    // Log turn end
+    const currentActor = actors.find(a => a.id === currentId);
+    if (currentActor) {
+      addEntry({ actorName: currentActor.name, actionName: "Turn End", tabId: "system", message: `${currentActor.name} ends their turn.` });
+    } else if (currentId) {
+      addEntry({ actorName: "Monster", actionName: "Turn End", tabId: "system", message: "Monster turn ends." });
+    }
+
+    // Advance to next combatant
+    const currentIdx = sorted.findIndex(c => c.id === currentId);
+    const nextIdx = (currentIdx + 1) % sorted.length;
+    const nextCombatant = sorted[nextIdx];
+    const isNewRound = nextIdx === 0;
+    const newRound = isNewRound ? roomLiveState.combat.round + 1 : roomLiveState.combat.round;
+
+    const next = patchCombat(roomLiveState, { activeActorId: nextCombatant.id, round: newRound });
+    void commitRoomState(next);
+
+    // Reset economy on TURN START — applies to both actors AND monsters
+    if (nextCombatant.kind === "actor") {
+      // Actor's turn starts — reset their economy now
+      const nextActor = actors.find(a => a.id === nextCombatant.id);
+      if (nextActor) resetActorTurn(nextActor.id);
+      setTurnResetVersion(v => v + 1);
+      setSelectedActorId(nextCombatant.id);
+      setActiveMonsterInstanceId("");
+    } else {
+      // Monster's turn starts — reset its economy now
+      const nextInstanceId = nextCombatant.id;
+      if (OBR.isAvailable) {
+        void OBR.broadcast.sendMessage(
+          "fdmc:monster-turn-reset",
+          { type: "fdmc:monster-turn-reset", instanceId: nextInstanceId },
+          { destination: "LOCAL" }
+        ).catch(() => undefined);
+      }
+      setMonsterEconomyByInstanceId(prev => {
+        const updated = { ...prev };
+        delete updated[nextInstanceId];
+        return updated;
+      });
+      if (OBR.isAvailable) {
+        void OBR.broadcast.sendMessage(
+          MONSTER_ECONOMY_CHANNEL,
+          { type: "fdmc:monster-economy", instanceId: nextInstanceId, actionUsed: false, reactionUsed: false } satisfies MonsterEconomyBroadcast,
+          { destination: "REMOTE" },
+        ).catch(() => undefined);
+      }
+      setTurnResetVersion(v => v + 1);
+      setActiveMonsterInstanceId(nextCombatant.id);
+    }
+
+    if (isNewRound) {
+      addEntry({ actorName: "System", actionName: `Round ${newRound}`, tabId: "system", message: `Round ${newRound} begins.` });
+    }
+    addEntry({ actorName: nextCombatant.name, actionName: "Turn Start", tabId: "system", message: `${nextCombatant.name}'s turn.` });
+  }
+
+  function handleEndCombat() {
+    const next = patchCombat(roomLiveState, { phase: "setup", activeActorId: null, round: 1 });
+    void commitRoomState(next);
+    addEntry({ actorName: "System", actionName: "Combat End", tabId: "system", message: "Combat ended. Seats and HP preserved." });
+  }
+
+  function handleSetCombatantInitiative(combatantId: string, initiative: number) {
+    if (actors.find(a => a.id === combatantId)) {
+      void setActorInitiative(combatantId, initiative);
+      // Propagate initiative to companions — companions act on owner's turn
+      const companions = actors.filter(
+        a => a.kind === "companion" &&
+        (a.moduleData as { ownerId?: string } | undefined)?.ownerId === combatantId
+      );
+      for (const companion of companions) {
+        void setActorInitiative(companion.id, initiative);
+      }
+    } else {
+      // Monster — write only initiative to room metadata; full monster data stays DM-local
+      void commitRoomState(patchMonsterInitiative(roomLiveState, combatantId, initiative));
+    }
+  }
+
+  // ── Tool panel ────────────────────────────────────────────────────────────
+  const [openPanel, setOpenPanel] = useState<ToolPanelId>(null);
+  const closePanel = useCallback(() => setOpenPanel(null), []);
+
+  // ── Open DM tool as OBR popover window ───────────────────────────────────
+  // All known DM popover IDs — used for close-all
+  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance"] as const;
+
+  const closeAllDmPanels = useCallback(async () => {
+    if (!OBR.isAvailable) { setOpenPanel(null); return; }
+    await Promise.all([
+      ...DM_PANEL_IDS.map(id => OBR.popover.close(id).catch(() => undefined)),
+      OBR.popover.close("fdm-actor-card").catch(() => undefined),
+    ]);
+  }, []);
+
+  const openDmPanel = useCallback(async (panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance") => {
+    if (!OBR.isAvailable) {
+      // Fallback to inline panel when outside Owlbear
+      const fallbackMap: Record<string, ToolPanelId> = {
+        editActors: "editActors", seats: "actorAssignments",
+        monsters: "monsterPanel", maintenance: "roomMaintenance",
+      };
+      setOpenPanel(fallbackMap[panel] ?? null);
+      return;
+    }
+    try {
+      const base = new URL(window.location.href);
+      base.pathname = base.pathname.replace(/\/[^/]*$/, "/dm-panel.html");
+      base.search = "";
+      base.searchParams.set("panel", panel);
+      if (OBR.popover) {
+        const sizes: Record<string, { width: number; height: number }> = {
+          editActors: { width: 700, height: 860 },
+          seats: { width: 640, height: 800 },
+          monsters: { width: 660, height: 820 },
+          equipment: { width: 640, height: 780 },
+          maintenance: { width: 560, height: 640 },
+        };
+        const { width, height } = sizes[panel] ?? { width: 660, height: 800 };
+        // Close ALL other DM panels first — enforce one DM panel at a time
+        // (actor card stays independent)
+        await Promise.all(
+          DM_PANEL_IDS
+            .filter(id => id !== `fdm-dm-${panel}`)
+            .map(id => OBR.popover.close(id).catch(() => undefined))
+        );
+
+        // Position near the right edge of the screen, below the OBR toolbar
+        const panelLeft = Math.max(width + 32, Math.min(window.screen.width - width - 16, window.screen.width - width - 40));
+
+        await OBR.popover.open({
+          id: `fdm-dm-${panel}`,
+          url: base.toString(),
+          width,
+          height,
+          anchorReference: "POSITION",
+          anchorPosition: { left: panelLeft, top: 24 },
+          anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+          transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+          disableClickAway: true,
+          marginThreshold: 16,
+        });
+      } else {
+        throw new Error("no popover");
+      }
+    } catch {
+      // Fallback
+      const fallbackMap: Record<string, ToolPanelId> = {
+        editActors: "editActors", seats: "actorAssignments",
+        monsters: "monsterPanel", maintenance: "roomMaintenance",
+      };
+      setOpenPanel(fallbackMap[panel] ?? null);
+    }
+  }, []);
+
+  // ── Budget ────────────────────────────────────────────────────────────────
+  const roomBytes = getRoomStateBytes();
+  const budgetLabel = roomBytes < 4000 ? "OK" : roomBytes < 8000 ? "WARN" : "DANGER";
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Player no-seat state
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Still identifying the viewer — show a minimal loading state, no flash
+  if (isRoleLoading) {
+    return (
+      <div style={{ padding: 16, fontFamily: "monospace", textAlign: "center", color: "#555" }}>
+        <p style={{ fontSize: 12 }}>Loading…</p>
+      </div>
+    );
+  }
+
+  // ── Boot screen — no table binding or unrecognized viewer ────────────────
+  // Shown when: no binding exists, OR a stale binding exists with a different GM ID.
+  // Anyone can claim DM from here. The Owlbear room owner is the intended claimer.
+  if (viewerRole === "unknown" || (!isDmMode && !isPlayerMode)) {
+    return (
+      <div style={{ padding: 24, fontFamily: "monospace", textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+        <p style={{ margin: 0, fontSize: 14 }}>Forever DM Combat</p>
+        <p style={{ margin: 0, fontSize: 11, color: "#555" }}>{APP_VERSION}</p>
+        {tableBinding ? (
+          <>
+            <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
+              A table exists but you are not recognized as DM or a seated player.
+            </p>
+            <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
+              If you are the DM, claim the table to reassign yourself.
+            </p>
+          </>
+        ) : (
+          <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
+            No table binding found. If you are the DM, claim the table to begin.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => void claimTableBinding()}
+          style={{ padding: "8px 20px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
+        >
+          Claim Table as DM
+        </button>
+        {tableBinding && (
+          <>
+            <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
+              If you are a player, wait for the DM to assign your seat.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (!OBR.isAvailable) return;
+                void publishFdmcRoomStateKey(FDMC_TABLE_BINDING_KEY, null).then(() => setTableBinding(null));
+              }}
+              style={{ padding: "4px 12px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 4, color: "#ff9999", cursor: "pointer", fontSize: 11 }}
+            >
+              Clear stale FDMC metadata
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── Viewer mode — read-only combat observer ───────────────────────────────
+  if (isPlayerMode && seatStatus === "viewer") {
+    return (
+      <main className="fdmc-app">
+        {/* Viewer status bar */}
+        <div style={{ padding: "4px 12px", background: "#0a0a12", borderBottom: "1px solid #1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "#555" }}>👁 Watching — read only</span>
+          <button
+            type="button"
+            onClick={releaseSeat}
+            style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#555", cursor: "pointer" }}
+          >
+            ← Change Seat
+          </button>
+        </div>
+
+        {/* Actor nameplates — from viewer party broadcast */}
+        {viewerParty.length > 0 && (
+          <section aria-label="Actor roster" style={{ padding: "8px 12px" }}>
+            <h2 className="panel-title">Actors</h2>
+            <div className="actor-list actor-card-grid-2x3">
+              {viewerParty.map(actor => {
+                const ratio = actor.hpMax > 0 ? actor.hpCurrent / actor.hpMax : 0;
+                const hpStatus = actor.hpCurrent <= 0 ? "down" : ratio < 0.5 ? "bloodied" : "healthy";
+                return (
+                  <div key={actor.id} className={`actor-select-button actor-grid-card ${hpStatus}`} style={{ cursor: "default" }}>
+                    <span className="actor-grid-name">{actor.name}</span>
+                    <span className="actor-grid-meta">
+                      {actor.hpCurrent <= 0 ? "☠ Down" : ratio <= 0.25 ? "Critical" : ratio <= 0.5 ? "Bloodied" : ratio <= 0.75 ? "Wounded" : "Healthy"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+        {viewerParty.length === 0 && (
+          <p style={{ padding: "12px 14px", fontSize: 11, color: "#444" }}>Waiting for party data…</p>
+        )}
+
+        {/* Monster nameplates — player-safe, from DM broadcast */}
+        {playerMonsters.length > 0 && (
+          <PlayerMonsterRoster monsters={playerMonsters} />
+        )}
+
+        {/* Combat log */}
+        <CombatLog entries={logEntries} onClear={() => undefined} />
+      </main>
+    );
+  }
+
+  // Players always go through seat selection — unless they already have actors (refresh case)
+  if (isPlayerMode && (seatStatus === "no-seat" || seatStatus === "claiming" || seatStatus === "loading") && seatActors.length === 0) {
+    const availableSeats = Object.values(roomLiveState.seats).sort((a, b) => a.seatId.localeCompare(b.seatId));
+    const boundSeatIds = new Set(Object.values(roomLiveState.seatBindings).map(b => b.seatId));
+    const openSeats = availableSeats.filter(s => !boundSeatIds.has(s.seatId));
+    // Auto-claim if exactly one seat is open
+    // Auto-claim removed — players always choose their own seat
+
+    return (
+      <div style={{ padding: 16, fontFamily: "monospace", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 14, color: "#aaa" }}>Forever DM Combat</p>
+          <p style={{ margin: 0, fontSize: 11, color: "#555" }}>{APP_VERSION}</p>
+        </div>
+
+        {seatStatus === "loading" ? (
+          <div style={{ textAlign: "center" }}>
+            <p style={{ color: "#555", margin: 0, fontSize: 12 }}>Connecting…</p>
+          </div>
+        ) : seatStatus === "claiming" ? (
+          <div style={{ textAlign: "center" }}>
+            <p style={{ color: "#7b68ee", margin: 0 }}>Connecting to your seat…</p>
+            <button type="button" onClick={requestActorData}
+              style={{ marginTop: 8, fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
+              Retry
+            </button>
+          </div>
+        ) : availableSeats.length === 0 ? (
+          <>
+            <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+              <p style={{ color: "#555", fontSize: 12, margin: 0 }}>
+                Waiting for DM to open seats…
+              </p>
+              <button
+                type="button"
+                onClick={() => void refreshFromRoom()}
+                style={{ fontSize: 12, padding: "4px 14px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}
+              >
+                Refresh
+              </button>
+            </div>
+            {/* Viewer option even when no player seats exist */}
+            <div style={{ marginTop: 12, borderTop: "1px solid #2a2a2a", paddingTop: 12 }}>
+              <button
+                type="button"
+                onClick={() => claimViewerSeat()}
+                style={{
+                  width: "100%", padding: "10px 14px",
+                  background: "#0d0d14", border: "1px solid #333",
+                  borderRadius: 6, color: "#666", cursor: "pointer",
+                  textAlign: "left", display: "flex",
+                  justifyContent: "space-between", alignItems: "center",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 13, color: "#555" }}>👁 Watch as Viewer</div>
+                  <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
+                    Read-only — see the combat screen without a player seat
+                  </div>
+                </div>
+                <span style={{ fontSize: 11, color: "#444" }}>no seat required →</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ margin: 0, fontSize: 12, color: "#888", textAlign: "center" }}>
+              Select your seat:
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {availableSeats.map(seat => {
+                  const isViewerSeat = seat.seatMode === "viewer";
+                  const isTaken = boundSeatIds.has(seat.seatId);
+                  return (
+                    <button
+                      key={seat.seatId}
+                      type="button"
+                      onClick={() => manualClaim(seat.seatId, seat)}
+                      style={{
+                        padding: "10px 14px",
+                        background: isViewerSeat ? "#0d0d14" : (isTaken ? "#1a1a1a" : "#1a1a2e"),
+                        border: `1px solid ${isViewerSeat ? "#2a3a2a" : (isTaken ? "#333" : "#7b68ee55")}`,
+                        borderRadius: 6,
+                        color: isViewerSeat ? "#4caf50" : (isTaken ? "#555" : "#fff"),
+                        cursor: "pointer",
+                        textAlign: "left",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: 13 }}>
+                          {isViewerSeat ? `👁 ${seat.label}` : seat.label}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+                          {isViewerSeat
+                            ? "Read-only watch seat"
+                            : seat.actorIds.length > 0
+                              ? seat.actorIds.join(", ")
+                              : "No actors assigned yet"}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11, color: isViewerSeat ? "#4caf5066" : (isTaken ? "#555" : "#7b68ee") }}>
+                        {isTaken && !isViewerSeat ? "occupied" : "open →"}
+                      </span>
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Viewer seat — always available at the bottom, no DM config needed */}
+            <div style={{ marginTop: 12, borderTop: "1px solid #2a2a2a", paddingTop: 12 }}>
+              <button
+                type="button"
+                onClick={() => claimViewerSeat()}
+                style={{
+                  width: "100%", padding: "10px 14px",
+                  background: "#0d0d14", border: "1px solid #333",
+                  borderRadius: 6, color: "#666", cursor: "pointer",
+                  textAlign: "left", display: "flex",
+                  justifyContent: "space-between", alignItems: "center",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 13, color: "#555" }}>👁 Watch as Viewer</div>
+                  <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
+                    Read-only — see the combat screen without a player seat
+                  </div>
+                </div>
+                <span style={{ fontSize: 11, color: "#444" }}>no seat required →</span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (!selectedActor && actors.length === 0) {
+    // DM sees toolbar so they can access Edit Actors to build the library
+    // Player sees a waiting message
+    return (
+      <main className="fdmc-app">
+        {isDmMode && (
+          <header className="fdmc-dm-toolbar">
+            <span className="fdmc-version-pill">{APP_VERSION}</span>
+            <button type="button" onClick={() => void openDmPanel("seats")}>Seats</button>
+            <button type="button" onClick={() => void openDmPanel("editActors")}>Edit Actors</button>
+            <button type="button" onClick={() => void openDmPanel("maintenance")}>Maintenance</button>
+            <button
+              type="button"
+              onClick={() => void closeAllDmPanels()}
+              style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
+              title="Close all floating DM windows"
+            >
+              ✕ Close All
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActorLibrary(loadActorLibrary()); setActorOverrides(loadActorOverrides()); }}
+              style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+            >
+              ↺ Sync
+            </button>
+          </header>
+        )}
+        <div style={{ padding: 24, fontFamily: "monospace", textAlign: "center", color: "#555", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+          <p style={{ margin: 0 }}>
+            {isDmMode ? "No actors in library." : "No actors assigned to your seat."}
+          </p>
+          {isDmMode ? (
+            <p style={{ fontSize: 12, color: "#444", margin: 0 }}>
+              Open <strong style={{ color: "#7b68ee" }}>Edit Actors</strong> → Create New Actor to build your party.
+            </p>
+          ) : (
+            <>
+              <p style={{ fontSize: 12, color: "#444", margin: 0 }}>
+                The DM may not have assigned actors to your seat yet.
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" onClick={requestActorData}
+                  style={{ fontSize: 12, padding: "5px 14px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>
+                  Retry
+                </button>
+                <button type="button" onClick={releaseSeat}
+                  style={{ fontSize: 12, padding: "5px 14px", background: "#1a1a2e", border: "1px solid #7b68ee44", borderRadius: 4, color: "#7b68ee", cursor: "pointer" }}>
+                  ← Choose Different Seat
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        <ToolPanelLayer
+          openPanel={openPanel}
+          title={getToolPanelTitle(openPanel)}
+          isAllowed={isDmMode}
+          onClose={closePanel}
+        >
+          {openPanel === "actorAssignments" && (
+            <SeatAssignmentPanel
+              actors={dmActors}
+              seats={seats}
+              seatBindings={seatBindings}
+              onAssignSeat={assignSeat}
+              onPushActorsToSeat={pushActorsToSeat}
+              onPushActorsToAllSeats={pushActorsToAllSeats}
+            />
+          )}
+          {openPanel === "editActors" && (
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+              {editingActorId === "__new__" ? (
+                <ActorEditor
+                  mode="create-new"
+                  onSave={handleActorEditorSave}
+                  onCancel={() => setEditingActorId(null)}
+                />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+                  <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "#888" }}>No actors yet — build your party.</p>
+                    <button
+                      type="button"
+                      onClick={() => setEditingActorId("__new__")}
+                      style={{ fontSize: 12, padding: "4px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 500 }}
+                    >
+                      + Create New Actor
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {openPanel === "roomMaintenance" && (
+            <FdmcRoomMaintenancePanel
+              onScan={scanFdmcRoomMetadata}
+              onPurge={purgeLegacyFdmcMetadata}
+              onReinitialize={async () => {
+                const scan = await scanFdmcRoomMetadata();
+                const sharedExists = scan.entries.some(e => e.key.includes("sharedTableState"));
+                return { ok: true, checks: { tableBindingExists: Boolean(tableBinding), sharedTableStateExists: sharedExists, actorsByIdEmpty: true, actorsOrderEmpty: true, combatPhaseSetup: true, revisionIsOne: true }, tableBinding: tableBinding ?? undefined, message: "Room live state is canonical." };
+              }}
+              onActorSnapshot={async () => ({ ok: true, mode: "empty" as const, actorCount: dmActors.length, bytes: 0, message: `${dmActors.length} actors in DM library (localStorage).` })}
+            />
+          )}
+        </ToolPanelLayer>
+      </main>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Main render
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const actorToShow = selectedActor ?? actors[0];
+  if (!actorToShow) return null;
+
+  const hp = getActorHp(actorToShow.id);
+  const actionState = getActionState(actorToShow);
+  const concentration = getActorConcentration(actorToShow);
+  const committedRoll = getCommittedRoll(actorToShow);
+  const actorNotes = getActorNotes(actorToShow);
+  const status = getActorStatus(actorToShow);
+  // liveHpByActorId is computed above as a useMemo
+
+  return (
+    <main className="fdmc-app">
+
+      {/* ── DM toolbar ── */}
+      {isDmMode && (
+        <header className="fdmc-dm-toolbar">
+          <span className="fdmc-version-pill">{APP_VERSION}</span>
+          <span className={`fdmc-budget-pill fdmc-budget-${budgetLabel.toLowerCase()}`}>
+            {roomBytes}B {budgetLabel}
+          </span>
+          {levelUpRequests.length > 0 && (
+            <span style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11 }}>
+              ⬆ {levelUpRequests.length}
+            </span>
+          )}
+          <button type="button" onClick={() => void openDmPanel("seats")}>Seats</button>
+          <button
+            type="button"
+            onClick={() => {
+              pushActorsToAllSeats();
+              if (OBR.isAvailable) {
+                void OBR.broadcast.sendMessage(
+                  FDMC_SEAT_BROADCAST_CHANNEL,
+                  { type: "fdmc:seats-ready", seats: Object.values(seats) },
+                  { destination: "REMOTE" }
+                );
+              }
+            }}
+            style={{ fontSize: 11, padding: "2px 8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
+            title="Tell players seats are open"
+          >
+            ▶ Players Join
+          </button>
+          <button type="button" onClick={() => void openDmPanel("editActors")}>Edit Actors</button>
+          <button type="button" onClick={() => void openDmPanel("monsters")}>
+            Monsters{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
+          </button>
+          <button type="button" onClick={() => void openDmPanel("equipment")}>Equipment</button>
+          <button type="button" onClick={() => void openDmPanel("tokens")}>Tokens</button>
+          <button type="button" onClick={() => setOpenPanel("encounterCleanup")}>Cleanup</button>
+          <button type="button" onClick={() => void openDmPanel("maintenance")}>Maintenance</button>
+          <button
+            type="button"
+            onClick={() => void closeAllDmPanels()}
+            style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
+            title="Close all floating DM windows"
+          >
+            ✕ Close All
+          </button>
+          {!tableBinding && (
+            <button type="button" onClick={() => void claimTableBinding()}>Claim Table</button>
+          )}
+        </header>
+      )}
+
+      {/* ── DM sync bar — always visible, pulls actors from localStorage ── */}
+      {isDmMode && (
+        <div style={{ padding: "3px 12px", background: "#0a0a12", borderBottom: "1px solid #1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 10, color: "#444" }}>
+            {dmActors.length > 0 ? `${dmActors.length} actor${dmActors.length === 1 ? "" : "s"} loaded` : "No actors — build in Edit Actors"}
+          </span>
+          <button
+            type="button"
+            onClick={() => { setActorLibrary(loadActorLibrary()); setActorOverrides(loadActorOverrides()); }}
+            style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+          >
+            ↺ Sync Library
+          </button>
+        </div>
+      )}
+
+      {/* ── Player loot delivery toast ── */}
+      {isPlayerMode && lootToast && (
+        <div style={{ padding: "6px 14px", background: "#2a6e2a", fontSize: 12, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>🎁 {lootToast}</span>
+          <button type="button" onClick={() => setLootToast(null)} style={{ fontSize: 11, background: "transparent", border: "none", color: "#aaa", cursor: "pointer" }}>×</button>
+        </div>
+      )}
+
+      {/* ── Player seat status bar ── */}
+      {isPlayerMode && claimedSeatId && (
+        <div style={{ padding: "4px 12px", background: "#1a1a2e", fontSize: 11, color: "#888", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: seatStatus === "claiming" ? "#888" : "#7b68ee" }}>
+            {seatStatus === "claiming" ? "⟳" : "●"} {roomLiveState.seats[claimedSeatId]?.label ?? claimedSeatId}
+            {seatStatus === "claiming" && <span style={{ fontSize: 9, color: "#555", marginLeft: 4 }}>syncing…</span>}
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {/* P6: unlock own token — only show when DM has granted movement for this seat */}
+            {OBR.isAvailable && viewerSeatKey && (() => {
+              // Only show if this player's viewerSeatKey appears in a binding
+              // (i.e. DM has actually bound a token with allowPlayerMove to their seat)
+              const myBinding = Object.values(roomLiveState.seatBindings).find(
+                b => b.viewerSeatKey === viewerSeatKey
+              );
+              if (!myBinding) return null;
+              return (
+                <button type="button"
+                  onClick={async () => {
+                    try {
+                      const all = await OBR.scene.items.getItems();
+                      const { readTokenBinding, unlockToken } = await import("./core/tokens/tokenBinding");
+                      for (const item of all) {
+                        const b = readTokenBinding(item);
+                        if (b?.bindingType === "seat" && b.seatId === claimedSeatId && b.allowPlayerMove) {
+                          await unlockToken(item.id);
+                        }
+                      }
+                    } catch { /* ok */ }
+                  }}
+                  style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #2a6e2a44", borderRadius: 3, color: "#4caf5099", cursor: "pointer" }}
+                  title="Unlock your token (DM has granted movement permission)">
+                  🔓
+                </button>
+              );
+            })()}
+            <button type="button" onClick={requestActorData}
+              style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#666", cursor: "pointer" }}>
+              Refresh
+            </button>
+            {/* Level-up request — player submits request to DM */}
+            {actorToShow && (
+              <button type="button" onClick={() => setShowLevelUpRequest(v => !v)}
+                style={{ fontSize: 10, padding: "1px 6px", background: showLevelUpRequest ? "#7b68ee22" : "transparent", border: "1px solid #7b68ee33", borderRadius: 3, color: "#7b68ee88", cursor: "pointer" }}
+                title="Request level up from DM">
+                ⬆ Level
+              </button>
+            )}
+            {/* Always give players a way back to the seat picker */}
+            <button type="button" onClick={releaseSeat}
+              style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #2a2a3e", borderRadius: 3, color: "#555", cursor: "pointer" }}
+              title="Return to seat selection">
+              ← Seats
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Player level-up request panel ── */}
+      {isPlayerMode && showLevelUpRequest && actorToShow && claimedSeatId && (
+        <LevelUpRequestPanel
+          actor={actorToShow}
+          seatId={claimedSeatId}
+          onClose={() => setShowLevelUpRequest(false)}
+        />
+      )}
+
+      {/* ── Actor selector ── */}
+      <ActorSelector
+        actors={actors}
+        selectedActorId={actorToShow.id}
+        hpByActorId={liveHpByActorId}
+        actionStateByActorId={actionStateByActorId}
+        onSelectActor={setSelectedActorId}
+        onOpenActorCard={async (actorId) => {
+          setSelectedActorId(actorId);
+
+          // Toggle: if this actor's card is already open, close it
+          if (openActorPopoverId === actorId) {
+            setOpenActorPopoverId(null);
+            setFocusedActorId(null);
+            if (OBR.isAvailable) await OBR.popover.close("fdm-actor-card").catch(() => undefined);
+            return;
+          }
+
+          setFocusedActorId(null);
+          if (!OBR.isAvailable) { setFocusedActorId(actorId); setOpenActorPopoverId(actorId); return; }
+          try {
+            const popoverUrl = new URL(window.location.href);
+            popoverUrl.pathname = popoverUrl.pathname.replace(/\/[^/]*$/, "/actor-popout.html");
+            popoverUrl.search = "";
+            popoverUrl.searchParams.set("fdmActorPopover", actorId);
+            await OBR.popover.close("fdm-actor-card").catch(() => undefined);
+            const cardLeft = Math.max(500 + 32, Math.min(window.screen.width - 500 - 16, window.screen.width - 540));
+            await OBR.popover.open({
+              id: "fdm-actor-card",
+              url: popoverUrl.toString(),
+              width: 500,
+              height: 640,
+              anchorReference: "POSITION",
+              anchorPosition: { left: cardLeft, top: 24 },
+              anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+              transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+              disableClickAway: false,  // allow clicking away to close
+              marginThreshold: 16,
+            });
+            setOpenActorPopoverId(actorId);
+          } catch {
+            setFocusedActorId(actorId);
+            setOpenActorPopoverId(actorId);
+          }
+        }}
+      />
+
+      {/* ── Context-aware economy strip — actor dots or monster dots by active turn ── */}
+      {(() => {
+        const dot = (label: string, color: string) => (
+          <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: color, boxShadow: `0 0 5px ${color}66` }} />
+            <span style={{ fontSize: 9, color: "#444", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+          </div>
+        );
+
+        const activeId = roomLiveState.combat.activeActorId;
+        const phase = roomLiveState.combat.phase;
+
+        // During combat: show active combatant's economy dots
+        if (phase === "combat" && activeId) {
+          const activeMon = monsterCandidates.find(
+            m => (m as MainEncounterMonsterInstance).instanceId === activeId,
+          ) as MainEncounterMonsterInstance | undefined;
+
+          if (activeMon) {
+            // Monster's turn — show ACTION + REACTION dots only
+            const eco = monsterEconomyByInstanceId[activeId] ?? { actionUsed: false, reactionUsed: false };
+            return (
+              <div style={{ display: "flex", gap: 10, padding: "6px 14px 4px", alignItems: "center" }}>
+                {dot("Action",   eco.actionUsed   ? "#ff5840" : "#4bb469")}
+                {dot("Reaction", eco.reactionUsed ? "#ff5840" : "#4bb469")}
+                <span style={{ fontSize: 9, color: "#555", marginLeft: 2 }}>
+                  {activeMon.revealedName || activeMon.displayName || activeMon.name}
+                </span>
+              </div>
+            );
+          }
+
+          // Actor's turn — check all combatants (includes actors from other seats)
+          const activeActor = actors.find(a => a.id === activeId);
+          if (activeActor) {
+            const actionState = actionStateByActorId[activeActor.id];
+            const concentration = getActorConcentration(activeActor);
+            const slots: { cost: "main" | "bonus" | "bond" | "reaction"; label: string }[] = [
+              { cost: "main", label: "Action" }, { cost: "bonus", label: "Bonus" },
+              { cost: "bond", label: "Bond" }, { cost: "reaction", label: "Reaction" },
+            ];
+            return (
+              <div style={{ display: "flex", gap: 10, padding: "6px 14px 4px", alignItems: "center" }}>
+                {slots.map(({ cost, label }) => {
+                  const val = actionState?.[cost] ?? null;
+                  const isUsed = val?.startsWith("__fdm_used__:");
+                  const isReadied = val && !isUsed;
+                  return dot(label, isUsed ? "#ff5840" : isReadied ? "#d7b36a" : "#4bb469");
+                })}
+                {dot("Conc", concentration ? "#9b8ac4" : "#2a2a3e")}
+              </div>
+            );
+          }
+
+          // Another player's turn (activeId not in my actor list, not a monster)
+          const activeCombatant = allCombatants.find(c => c.id === activeId);
+          if (activeCombatant) {
+            const slots: { cost: "main" | "bonus" | "bond" | "reaction"; label: string }[] = [
+              { cost: "main", label: "Action" }, { cost: "bonus", label: "Bonus" },
+              { cost: "bond", label: "Bond" }, { cost: "reaction", label: "Reaction" },
+            ];
+            const actionState = actionStateByActorId[activeId];
+            return (
+              <div style={{ display: "flex", gap: 10, padding: "6px 14px 4px", alignItems: "center" }}>
+                {slots.map(({ cost, label }) => {
+                  const val = actionState?.[cost] ?? null;
+                  const isUsed = val?.startsWith("__fdm_used__:");
+                  const isReadied = val && !isUsed;
+                  return dot(label, isUsed ? "#ff5840" : isReadied ? "#d7b36a" : "#4bb469");
+                })}
+                <span style={{ fontSize: 9, color: "#555", marginLeft: 2 }}>
+                  ⏳ {activeCombatant.name}
+                </span>
+              </div>
+            );
+          }
+        }
+
+        // Outside combat or no active — show selected actor's dots
+        if (actorToShow) {
+          const actionState = actionStateByActorId[actorToShow.id];
+          const concentration = getActorConcentration(actorToShow);
+          const slots: { cost: "main" | "bonus" | "bond" | "reaction"; label: string }[] = [
+            { cost: "main", label: "Action" }, { cost: "bonus", label: "Bonus" },
+            { cost: "bond", label: "Bond" }, { cost: "reaction", label: "Reaction" },
+          ];
+          return (
+            <div style={{ display: "flex", gap: 10, padding: "6px 14px 4px", alignItems: "center" }}>
+              {slots.map(({ cost, label }) => {
+                const val = actionState?.[cost] ?? null;
+                const isUsed = val?.startsWith("__fdm_used__:");
+                const isReadied = val && !isUsed;
+                return dot(label, isUsed ? "#ff5840" : isReadied ? "#d7b36a" : "#4bb469");
+              })}
+              {dot("Conc", concentration ? "#9b8ac4" : "#2a2a3e")}
+            </div>
+          );
+        }
+
+        return null;
+      })()}
+
+      {/* ── Player monster roster — safe view from DM broadcast ── */}
+      {isPlayerMode && playerMonsters.length > 0 && (
+        <PlayerMonsterRoster
+          monsters={playerMonsters}
+          peekId={playerPeekId}
+          onPeek={(id) => setPlayerPeekId(prev => prev === id ? null : id)}
+        />
+      )}
+
+      {/* ── DM monster selector — full data from local roster ── */}
+      {isDmMode && monsterCandidates.length > 0 && (
+        <MonsterSelector
+          monsters={monsterCandidates as MainEncounterMonsterInstance[]}
+          activeInstanceId={activeMonsterInstanceId}
+          isDmView={true}
+          onSelectMonster={(instanceId) => setActiveMonsterInstanceId(instanceId)}
+          onOpenMonsterCard={(instanceId) => {
+            setActiveMonsterInstanceId(instanceId);
+            if (!OBR.isAvailable) return; // inline card at 1492 handles non-OBR view
+            void (async () => {
+              try {
+                const base = new URL(window.location.href);
+                base.pathname = base.pathname.replace(/\/[^/]*$/, "/monster-popout.html");
+                base.search = "";
+                base.searchParams.set("instanceId", instanceId);
+                const cardLeft = Math.max(540 + 32, Math.min(window.screen.width - 540 - 16, window.screen.width - 580));
+                OBR.popover.close("fdm-monster-card").catch(() => undefined);
+                await OBR.popover.open({
+                  id: "fdm-monster-card",
+                  url: base.toString(),
+                  width: 540,
+                  height: 680,
+                  anchorReference: "POSITION",
+                  anchorPosition: { left: cardLeft, top: 24 },
+                  anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+                  transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+                  disableClickAway: false,
+                  marginThreshold: 16,
+                });
+              } catch { /* inline card handles fallback */ }
+            })();
+          }}
+        />
+      )}
+
+
+      {/* ── Combat Tracker — shows whenever there are combatants ── */}
+      {allCombatants.length > 0 && (
+        <CombatTracker
+          combatants={allCombatants}
+          activeId={roomLiveState.combat.activeActorId}
+          round={roomLiveState.combat.round}
+          phase={roomLiveState.combat.phase}
+          isDmMode={isDmMode}
+          onStartCombat={handleStartCombat}
+          onNextTurn={handleNextTurn}
+          onEndCombat={handleEndCombat}
+          onSelectCombatant={(id) => {
+            const actor = actors.find(a => a.id === id);
+            if (actor) { setSelectedActorId(id); setActiveMonsterInstanceId(""); }
+            else setActiveMonsterInstanceId(id);
+          }}
+          onSetInitiative={handleSetCombatantInitiative}
+          onSwapInitiative={(idA, idB) => {
+            // Swap the initiative values of two combatants
+            const initA = allCombatants.find(c => c.id === idA)?.initiative ?? null;
+            const initB = allCombatants.find(c => c.id === idB)?.initiative ?? null;
+            if (initA !== null) handleSetCombatantInitiative(idB, initA);
+            if (initB !== null) handleSetCombatantInitiative(idA, initB);
+            addEntry({
+              actorName: "System", actionName: "Initiative Swap", tabId: "system",
+              message: `Initiative swapped: ${allCombatants.find(c => c.id === idA)?.name} ↔ ${allCombatants.find(c => c.id === idB)?.name}`,
+            });
+          }}
+        />
+      )}
+
+      {/* ── Inline actor card — hidden by default, only shown when OBR popover fails ── */}
+      {focusedActorId && (
+      <ActorCard
+        actor={actorToShow}
+        hp={hp}
+        actionState={actionState}
+        concentration={concentration}
+        committedRoll={committedRoll}
+        actorNotes={actorNotes}
+        status={status}
+        rulesProfile={DEFAULT_COMBAT_RULES_PROFILE}
+        turnResetVersion={turnResetVersion}
+        isPlayerMode={isPlayerMode}
+        isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actorToShow.id}
+        diceBridgeStatus={diceBridgeStatus}
+        diceBridgeLastEvent={diceBridgeLastEvent}
+        onHpChange={(nextHp) => void setActorHp(actorToShow.id, nextHp)}
+        onResetHp={() => void setActorHp(actorToShow.id, actorToShow.stats.hp)}
+        onReadyActionCosts={(costs, readiedKey) => readyActionCosts(actorToShow.id, costs, readiedKey)}
+        onUnreadyAction={(readiedKey) => unreadyActionKey(actorToShow.id, readiedKey)}
+        onRemovePendingLogEntries={removePendingEntries}
+        onResetTurn={handleNextTurn}
+        onSetConcentration={(next) => setActorConcentration(actorToShow.id, next)}
+        onClearConcentration={() => clearActorConcentration(actorToShow.id)}
+        onStartCommittedRoll={(input) => {
+          startCommittedRoll(actorToShow.id, input);
+
+          // Find the action being committed
+          const action = Object.values(actorToShow.tabs).flat().find(a => a.id === input.actionId);
+          if (!action) return;
+
+          // Spell with slot level → decrement matching slot resource
+          if (action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0) {
+            consumeSpellSlot(actorToShow.id, action.metadata?.spellLevel ?? 1);
+            return;
+          }
+
+          // Any action with a slotCost that references a named resource
+          // e.g. Channel Divinity, Rage, Bardic Inspiration, Fury of the Gods
+          const slotCost = action.metadata?.slotCost?.trim();
+          if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !slotCost.startsWith("L")) {
+            consumeNamedResource(actorToShow.id, slotCost);
+          }
+        }}
+        onSetCommittedRollResult={(result) => setCommittedRollResult(actorToShow.id, result)}
+        onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actorToShow.id, outcome)}
+        onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(actorToShow.id, choice)}
+        onMarkCommittedRollBridgeSent={() => markCommittedRollBridgeSent(actorToShow.id)}
+        onClearCommittedRoll={() => clearCommittedRoll(actorToShow.id)}
+        onSendDiceBridgeRequest={sendRollRequest}
+        onSendDicePlusRequest={sendDicePlusRollRequest}
+        onSendMockDiceBridgeResult={(nat, total) => void sendMockRollResult({ naturalRoll: nat, total, protocol: "fdm-dice-result", requestId: "" })}
+        onAddActorNote={(text, visibility) => addActorNote(actorToShow.id, text, visibility)}
+        onDeleteActorNote={(noteId) => deleteActorNote(actorToShow.id, noteId)}
+        onStatusTrackerChange={(trackerId, nextTracker) => setActorTracker(actorToShow.id, trackerId, nextTracker)}
+        onResetStatusTracker={(trackerId) => resetActorTracker(actorToShow, trackerId)}
+        onResetAllActorStatuses={() => resetActorStatuses(actorToShow)}
+        resourceCounters={counters[actorToShow.id]}
+        onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest.` }); }}
+        onLongRest={() => { resetActorResources(actorToShow.id, "long"); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest.` }); }}
+        onLog={addEntry}
+      />
+      )}
+
+      {/* ── Active monster card — only shown when OBR popover is unavailable (inline fallback) ── */}
+      {isDmMode && activeMonster && activeMonsterInstanceId && !OBR.isAvailable && (
+        <MonsterActorCard
+          monster={activeMonster}
+          isDmView={isDmMode}
+          onHpChange={(patch) => updateMonsterInstance(activeMonster.instanceId, patch)}
+          onSendDicePlusRequest={sendDicePlusRollRequest}
+          diceBridgeLastEvent={diceBridgeLastEvent}
+          onActionCommit={(actionName) => {
+            addEntry({
+              actorName: activeMonster.displayName,
+              actionName,
+              tabId: "system",
+              message: `${activeMonster.displayName} used ${actionName}.`,
+            });
+          }}
+        />
+      )}
+
+      {/* ── P8: Boss kill alert ── */}
+      {isDmMode && bossKillAlert && (
+        <div style={{ margin: "8px 12px", padding: "10px 14px", background: "#1a0a0a", border: "1px solid #8b000088", borderRadius: 6, display: "flex", flexDirection: "column", gap: 8 }}>
+          <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#ff9999" }}>
+            ⚔ {bossKillAlert.name} defeated — export encounter log?
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button type="button"
+              onClick={() => {
+                const summary = generatePostCombatSummary(readEncounterLog(), bossKillAlert.encounterId, bossKillAlert.encounterName);
+                downloadExport(exportSummaryAsText(summary), `fdmc-${bossKillAlert.encounterId}-${Date.now()}.txt`);
+              }}
+              style={{ fontSize: 11, padding: "4px 12px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
+              Export Text
+            </button>
+            <button type="button"
+              onClick={() => {
+                const summary = generatePostCombatSummary(readEncounterLog(), bossKillAlert.encounterId, bossKillAlert.encounterName);
+                downloadExport(exportSummaryAsJson(summary), `fdmc-${bossKillAlert.encounterId}-${Date.now()}.json`, "application/json");
+              }}
+              style={{ fontSize: 11, padding: "4px 12px", background: "#2a3a4e", color: "#7b68ee", border: "1px solid #7b68ee44", borderRadius: 4, cursor: "pointer" }}>
+              Export JSON
+            </button>
+            <button type="button" onClick={() => setBossKillAlert(null)}
+              style={{ fontSize: 11, padding: "4px 12px", background: "transparent", color: "#666", border: "1px solid #444", borderRadius: 4, cursor: "pointer" }}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Combat log ── */}
+      <CombatLog entries={logEntries} onClear={clearEntries} />
+
+      {/* ── Tool panel layer ── */}
+      <ToolPanelLayer
+        openPanel={openPanel}
+        title={getToolPanelTitle(openPanel)}
+        isAllowed={isDmMode}
+        onClose={closePanel}
+      >
+        {openPanel === "actorAssignments" && (
+          <SeatAssignmentPanel
+            actors={dmActors}
+            seats={seats}
+            seatBindings={seatBindings}
+            onAssignSeat={assignSeat}
+            onPushActorsToSeat={pushActorsToSeat}
+            onPushActorsToAllSeats={pushActorsToAllSeats}
+            onKickFromSeat={(seatId) => {
+              const next = { ...roomLiveState, seatBindings: { ...roomLiveState.seatBindings } };
+              delete next.seatBindings[seatId];
+              next.revision += 1;
+              next.updatedAt = Date.now();
+              void commitRoomState(next);
+            }}
+          />
+        )}
+
+        {openPanel === "editActors" && (
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+            {/* Level-up approval queue */}
+            {levelUpRequests.length > 0 && (
+              <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e" }}>
+                <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 600 }}>Pending Level-Up Requests</p>
+                {levelUpRequests.map(req => (
+                  <LevelUpApprovalPanel
+                    key={req.actorId}
+                    request={req}
+                    currentActor={dmActors.find(a => a.id === req.actorId)}
+                    onApprove={handleLevelUpApprove}
+                    onReject={handleLevelUpReject}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Actor editor / actor list */}
+            {editingActorId === "__new__" ? (
+              <ActorEditor
+                mode="create-new"
+                onSave={handleActorEditorSave}
+                onCancel={() => setEditingActorId(null)}
+              />
+            ) : editingActorId ? (
+              (() => {
+                const actor = dmActors.find(a => a.id === editingActorId);
+                if (!actor) return <p style={{ padding: 14 }}>Actor not found.</p>;
+                return (
+                  <ActorEditor
+                    actor={actor}
+                    mode="edit-current"
+                    onSave={handleActorEditorSave}
+                    onCancel={() => setEditingActorId(null)}
+                  />
+                );
+              })()
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+                <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
+                    {dmActors.length === 0 ? "No actors yet — create your first actor." : `${dmActors.length} actor${dmActors.length === 1 ? "" : "s"}`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setEditingActorId("__new__")}
+                    style={{ fontSize: 12, padding: "4px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 500 }}
+                  >
+                    + Create New Actor
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
+                  {dmActors.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "#555", textAlign: "center", marginTop: 40 }}>
+                      Build your party from scratch using the editor.
+                    </p>
+                  ) : (
+                    dmActors.map(actor => (
+                      <div key={actor.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#161622", borderRadius: 6, marginBottom: 6, border: "1px solid #2a2a3e" }}>
+                        <div>
+                          <span style={{ fontWeight: 500 }}>{actor.name || "Unnamed"}</span>
+                          <span style={{ fontSize: 11, color: "#888", marginLeft: 8 }}>Level {actor.level}{actor.className ? ` · ${actor.className}` : ""}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEditingActorId(actor.id)}
+                          style={{ fontSize: 12, padding: "3px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 4, color: "#7b68ee", cursor: "pointer" }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {openPanel === "monsterPanel" && (
+          <EncounterLibraryPanel
+            monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
+            activeRosterCount={monsterCandidates.length}
+            onLoadEncounter={(instances) => {
+              addMonsterInstances(instances);
+              closePanel();
+            }}
+            onClearRoster={() => {
+              setMonsterCandidates([]);
+              setActiveMonsterInstanceId("");
+              resetAllTurns();
+              addEntry({ actorName: "System", actionName: "Roster Cleared", tabId: "system", message: "Combat roster cleared from encounter library." });
+            }}
+          />
+        )}
+
+        {openPanel === "encounterCleanup" && (
+          <EncounterCleanupPanel
+            activeMonsterCount={monsterCandidates.length}
+            combatantCount={actors.length}
+            persistentEquipmentCount={0}
+            onCleanup={async () => {
+              // Wipe local state
+              setMonsterCandidates([]);
+              setActiveMonsterInstanceId("");
+              clearMonsterRoster();
+              resetAllTurns();
+              // Read FRESH from OBR so seat bindings from the live state survive the wipe
+              // (React local roomLiveState may be stale if bindings were written by dm-panel recently)
+              const freshState = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
+              const base = freshState ?? roomLiveState;
+              const wiped = {
+                ...base,
+                revision: base.revision + 1,
+                updatedAt: Date.now(),
+                monsterLiveState: {},
+                combat: { phase: "setup" as const, activeActorId: null, round: 1 },
+                recentEvents: { slots: [], nextSlot: 1 },
+              };
+              void commitRoomState(wiped);
+              // Broadcast empty roster to clear player monster view
+              broadcastMonsterRoster([]);
+              // Broadcast so player cards reset action economy toggles
+              if (OBR.isAvailable) {
+                void OBR.broadcast.sendMessage(
+                  "fdmc:action-economy-reset",
+                  { type: "fdmc:action-economy-reset" },
+                  { destination: "REMOTE" }
+                ).catch(() => undefined);
+              }
+              const msg = "Encounter wiped. Monsters cleared, combat reset. Seats and actor HP preserved.";
+              addEntry({ actorName: "System", actionName: "Encounter Cleanup", tabId: "system", message: msg });
+              closePanel();
+              return msg;
+            }}
+          />
+        )}
+
+        {openPanel === "roomMaintenance" && (
+          <FdmcRoomMaintenancePanel
+            onScan={scanFdmcRoomMetadata}
+            onPurge={purgeLegacyFdmcMetadata}
+            onReinitialize={async () => ({
+              ok: true,
+              checks: {
+                tableBindingExists: Boolean(tableBinding),
+                sharedTableStateExists: false,
+                actorsByIdEmpty: true,
+                actorsOrderEmpty: true,
+                combatPhaseSetup: true,
+                revisionIsOne: true,
+              },
+              tableBinding: tableBinding ?? undefined,
+              message: "Room live state is the canonical state.",
+            })}
+            onActorSnapshot={async () => ({
+              ok: true,
+              mode: "empty" as const,
+              actorCount: 0,
+              bytes: 0,
+              message: "Snapshot split-button implementation in P3.",
+            })}
+          />
+        )}
+      </ToolPanelLayer>
+
+      {/* ── Actor pop-out overlay — CSS popout within same React tree ── */}
+      {(() => {
+        if (!focusedActorId) return null;
+        const focusedActor = actors.find(a => a.id === focusedActorId);
+        if (!focusedActor) return null;
+        const focusedHp = getActorHp(focusedActorId);
+        const focusedActionState = getActionState(focusedActor);
+        const focusedConcentration = getActorConcentration(focusedActor);
+        const focusedCommittedRoll = getCommittedRoll(focusedActor);
+        const focusedNotes = getActorNotes(focusedActor);
+        const focusedStatus = getActorStatus(focusedActor);
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column", background: "#0d0d14" }}
+          >
+            {/* Close bar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 12px", borderBottom: "1px solid #2a2a3e", background: "#0d0d14" }}>
+              <span style={{ fontSize: 11, color: "#888" }}>Focused Card — {focusedActor.name}</span>
+              <button
+                type="button"
+                onClick={() => setFocusedActorId(null)}
+                style={{ fontSize: 12, padding: "2px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <ActorCard
+                actor={focusedActor}
+                hp={focusedHp}
+                actionState={focusedActionState}
+                concentration={focusedConcentration}
+                committedRoll={focusedCommittedRoll}
+                actorNotes={focusedNotes}
+                status={focusedStatus}
+                rulesProfile={DEFAULT_COMBAT_RULES_PROFILE}
+                turnResetVersion={turnResetVersion}
+                isPlayerMode={isPlayerMode}
+                isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === focusedActorId}
+                diceBridgeStatus={diceBridgeStatus}
+                diceBridgeLastEvent={diceBridgeLastEvent}
+                onHpChange={(nextHp) => void setActorHp(focusedActorId, nextHp)}
+                onResetHp={() => void setActorHp(focusedActorId, focusedActor.stats.hp)}
+                onReadyActionCosts={(costs, readiedKey) => readyActionCosts(focusedActorId, costs, readiedKey)}
+                onUnreadyAction={(readiedKey) => unreadyActionKey(focusedActorId, readiedKey)}
+                onRemovePendingLogEntries={removePendingEntries}
+                onResetTurn={() => { resetActorTurn(focusedActorId); setTurnResetVersion(v => v + 1); }}
+                onSetConcentration={(next) => setActorConcentration(focusedActorId, next)}
+                onClearConcentration={() => clearActorConcentration(focusedActorId)}
+                onStartCommittedRoll={(input) => startCommittedRoll(focusedActorId, input)}
+                onSetCommittedRollResult={(result) => setCommittedRollResult(focusedActorId, result)}
+                onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(focusedActorId, outcome)}
+                onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(focusedActorId, choice)}
+                onMarkCommittedRollBridgeSent={() => markCommittedRollBridgeSent(focusedActorId)}
+                onClearCommittedRoll={() => clearCommittedRoll(focusedActorId)}
+                onSendDiceBridgeRequest={sendRollRequest}
+                onSendDicePlusRequest={sendDicePlusRollRequest}
+                onSendMockDiceBridgeResult={(nat, total) => void sendMockRollResult({ naturalRoll: nat, total, protocol: "fdm-dice-result", requestId: "" })}
+                onAddActorNote={(text, visibility) => addActorNote(focusedActorId, text, visibility)}
+                onDeleteActorNote={(noteId) => deleteActorNote(focusedActorId, noteId)}
+                onStatusTrackerChange={(trackerId, nextTracker) => setActorTracker(focusedActorId, trackerId, nextTracker)}
+                onResetStatusTracker={(trackerId) => resetActorTracker(focusedActor, trackerId)}
+                onResetAllActorStatuses={() => resetActorStatuses(focusedActor)}
+                resourceCounters={counters[focusedActorId]}
+                onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest.` }); }}
+                onLongRest={() => { resetActorResources(focusedActorId, "long"); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest.` }); }}
+                onLog={addEntry}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+    </main>
+  );
+}
