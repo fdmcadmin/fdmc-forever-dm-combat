@@ -46,45 +46,53 @@ export function validateTokenBinding(binding: FdmcTokenBinding, currentTableId: 
 
 export async function writeTokenBinding(itemId: string, binding: FdmcTokenBinding): Promise<void> {
   if (!OBR.isAvailable) return;
-  await OBR.scene.items.updateItems([itemId], items => {
-    for (const item of items) {
-      item.metadata[FDMC_TOKEN_BINDING_KEY] = binding;
+  await OBR.scene.items.updateItems(
+    (item: Item) => item.id === itemId,
+    draft => {
+      for (const item of draft) {
+        (item.metadata as Record<string, unknown>)[FDMC_TOKEN_BINDING_KEY] = binding;
+      }
     }
-  });
+  );
 }
 
 export async function clearTokenBinding(itemId: string): Promise<void> {
   if (!OBR.isAvailable) return;
-  await OBR.scene.items.updateItems([itemId], items => {
-    for (const item of items) {
-      delete item.metadata[FDMC_TOKEN_BINDING_KEY];
+  await OBR.scene.items.updateItems(
+    (item: Item) => item.id === itemId,
+    draft => {
+      for (const item of draft) {
+        delete (item.metadata as Record<string, unknown>)[FDMC_TOKEN_BINDING_KEY];
+      }
     }
-  });
+  );
 }
 
 // ─── Lock helpers ─────────────────────────────────────────────────────────────
 
 export async function lockToken(itemId: string): Promise<void> {
   if (!OBR.isAvailable) return;
-  await OBR.scene.items.updateItems([itemId], items => {
-    for (const item of items) { item.locked = true; }
-  });
+  await OBR.scene.items.updateItems(
+    (item: Item) => item.id === itemId,
+    draft => { for (const item of draft) { item.locked = true; } }
+  );
 }
 
 export async function unlockToken(itemId: string): Promise<void> {
   if (!OBR.isAvailable) return;
-  await OBR.scene.items.updateItems([itemId], items => {
-    for (const item of items) { item.locked = false; }
-  });
+  await OBR.scene.items.updateItems(
+    (item: Item) => item.id === itemId,
+    draft => { for (const item of draft) { item.locked = false; } }
+  );
 }
 
 export async function lockAllTokens(): Promise<void> {
   if (!OBR.isAvailable) return;
   const items = await OBR.scene.items.getItems<Item>();
-  const ids = items.map((i: Item) => i.id);
-  if (ids.length === 0) return;
-  await OBR.scene.items.updateItems(ids, items => {
-    for (const item of items) { item.locked = true; }
+  if (items.length === 0) return;
+  // Pass Item objects directly — updateItems accepts ItemType[] or ItemFilter
+  await OBR.scene.items.updateItems(items, draft => {
+    for (const item of draft) { item.locked = true; }
   });
 }
 

@@ -330,7 +330,9 @@ export default function App() {
       if (isLevelUpRequest(msg)) {
         setLevelUpRequests(current => {
           const filtered = current.filter(r => r.actorId !== msg.actorId);
-          return [...filtered, msg];
+          const next = [...filtered, msg];
+          try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+          return next;
         });
       }
     });
@@ -406,6 +408,14 @@ export default function App() {
       setActorLibrary(() => freshLib);
     }
 
+    // Sync edited HP to live state so resolveActor's live-HP-wins rule doesn't
+    // silently discard the DM's HP change (live HP overlays stats.hp in resolveActor).
+    const liveHp = getActorHp(editedActor.id);
+    const editedHp = editedActor.stats.hp;
+    if (editedHp.max !== liveHp.max || editedHp.current !== liveHp.current) {
+      void setActorHp(editedActor.id, editedHp);
+    }
+
     // Push with fresh data so broadcast doesn't use stale refs
     pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
     setEditingActorId(null);
@@ -427,8 +437,20 @@ export default function App() {
     saveActorOverride(request.actorId, override);
     const freshOverrides = loadActorOverrides();
     setActorOverrides(freshOverrides);
+
+    // Sync HP if level-up changed max HP (live HP would otherwise override the new max)
+    const liveHp = getActorHp(request.actorId);
+    const editedHp = finalActor.stats.hp;
+    if (editedHp.max !== liveHp.max || editedHp.current !== liveHp.current) {
+      void setActorHp(request.actorId, editedHp);
+    }
+
     pushActorsToAllSeats({ freshOverrides });
-    setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
+    setLevelUpRequests(current => {
+      const next = current.filter(r => r.actorId !== request.actorId);
+      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
 
     if (OBR.isAvailable) {
       void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
@@ -441,7 +463,11 @@ export default function App() {
   }
 
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
-    setLevelUpRequests(current => current.filter(r => r.actorId !== request.actorId));
+    setLevelUpRequests(current => {
+      const next = current.filter(r => r.actorId !== request.actorId);
+      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     if (OBR.isAvailable) {
       // Send dedicated rejection notice so player gets a toast + can resubmit
       void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {

@@ -43,6 +43,7 @@ import { useDmSeatSystem } from "./core/seats/useSeatSystem";
 import {
   normalizeFdmcRoomLiveState,
   createEmptyRoomLiveState,
+  patchActorHp,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
 import {
@@ -129,7 +130,12 @@ function DmPanelApp() {
   }, []);
 
   // ── Approvals inbox — level-up + convergence ─────────────────────────────
-  const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>([]);
+  const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>(() => {
+    try {
+      const stored = localStorage.getItem("fdmc:pending-level-up-requests");
+      return stored ? (JSON.parse(stored) as LevelUpRequest[]) : [];
+    } catch { return []; }
+  });
   const [pendingConvergenceRequests, setPendingConvergenceRequests] = useState<ConvergenceRequest[]>([]);
   const [convergenceApprovalReq, setConvergenceApprovalReq] = useState<ConvergenceRequest | null>(null);
 
@@ -140,7 +146,9 @@ function DmPanelApp() {
       if (isLevelUpRequest(msg)) {
         setLevelUpRequests(prev => {
           const filtered = prev.filter(r => r.actorId !== msg.actorId);
-          return [...filtered, msg];
+          const next = [...filtered, msg];
+          try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+          return next;
         });
       }
       if (isConvergenceRequest(msg)) {
@@ -166,8 +174,20 @@ function DmPanelApp() {
     const freshOverrides = loadActorOverrides();
     setActorOverrides(freshOverrides);
     setActorLibrary(lib => { const next = { ...lib, [request.actorId]: finalActor }; saveActorLibrary(next); return next; });
+
+    // Sync level-up HP to live state — new max HP must win over old live HP
+    const currentLiveHp = roomLiveState.actorLiveState[request.actorId]?.hp;
+    const editedHp = finalActor.stats.hp;
+    if (!currentLiveHp || editedHp.max !== currentLiveHp.max || editedHp.current !== currentLiveHp.current) {
+      void commitRoomState(patchActorHp(roomLiveState, request.actorId, editedHp));
+    }
+
     pushActorsToAllSeats({ freshOverrides });
-    setLevelUpRequests(prev => prev.filter(r => r.actorId !== request.actorId));
+    setLevelUpRequests(prev => {
+      const next = prev.filter(r => r.actorId !== request.actorId);
+      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     if (OBR.isAvailable) {
       void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
         type: "fdmc:level-up-response",
@@ -179,7 +199,11 @@ function DmPanelApp() {
   }
 
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
-    setLevelUpRequests(prev => prev.filter(r => r.actorId !== request.actorId));
+    setLevelUpRequests(prev => {
+      const next = prev.filter(r => r.actorId !== request.actorId);
+      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     if (OBR.isAvailable) {
       void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
         type: "fdmc:level-up-rejected",
@@ -312,6 +336,15 @@ function DmPanelApp() {
     const freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
     setActorLibrary(() => freshLib);
     setActorOverrides(freshOverrides);
+
+    // Sync edited HP to live state — resolveActor's live-HP-wins rule would
+    // otherwise discard the DM's HP change silently.
+    const currentLiveHp = roomLiveState.actorLiveState[editedActor.id]?.hp;
+    const editedHp = editedActor.stats.hp;
+    if (!currentLiveHp || editedHp.max !== currentLiveHp.max || editedHp.current !== currentLiveHp.current) {
+      void commitRoomState(patchActorHp(roomLiveState, editedActor.id, editedHp));
+    }
+
     // Pass fresh data so seat-system refs don't hold stale library
     pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
     broadcastLibraryUpdate();
