@@ -143,13 +143,12 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[]): void {
 }
 
 function upsertItem(item: EquipmentItem): void {
-  // Save to DM library — strips isLocked so campaign items become editable custom copies
-  // DM library overrides campaign library in loadEquipmentLibrary() combined view
+  // Only DM items can be upserted — locked campaign items require explicit 🔓 unlock first
+  if (item.isLocked) return;
   const library = loadEquipmentLibrary("dm");
   const idx = library.findIndex(i => i.id === item.id);
-  const toSave: EquipmentItem = { ...item, isLocked: false };
-  if (idx === -1) library.push(toSave);
-  else library[idx] = toSave;
+  if (idx === -1) library.push(item);
+  else library[idx] = item;
   saveEquipmentLibrary(library, "dm");
 }
 

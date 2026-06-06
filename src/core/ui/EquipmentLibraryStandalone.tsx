@@ -388,6 +388,18 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     setEditingItem(null);
   }
 
+  // TODO: remove at 0.9.0 alpha lock — DM-only pre-alpha unlock for campaign item editing
+  function handleUnlockItem(item: EquipmentItem) {
+    const unlockedCopy: EquipmentItem = { ...item, isLocked: false };
+    const lib = loadEquipmentLibrary("dm");
+    const idx = lib.findIndex(i => i.id === item.id);
+    if (idx === -1) lib.push(unlockedCopy); else lib[idx] = unlockedCopy;
+    saveEquipmentLibrary(lib, "dm");
+    refreshLibrary();
+    // Open edit form immediately so DM can make changes
+    setEditingItem(unlockedCopy);
+  }
+
   function handleDeleteItem(id: string) {
     saveEquipmentLibrary(loadEquipmentLibrary("dm").filter(i => i.id !== id), "dm");
     refreshLibrary();
@@ -866,7 +878,14 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
                 )}
               </>
             )}
-            {!item.isLocked && (
+            {item.isLocked ? (
+              /* TODO: remove at 0.9.0 alpha lock */
+              <button type="button" onClick={() => handleUnlockItem(item)}
+                style={{ fontSize: 10, padding: "2px 7px", background: "transparent", border: "1px solid #5a4a1a", borderRadius: 3, color: "#e07b3988", cursor: "pointer" }}
+                title="Unlock for DM editing — creates a custom copy (pre-alpha only)">
+                🔓
+              </button>
+            ) : (
               <>
                 <button type="button" onClick={() => setEditingItem(item)}
                   style={{ fontSize: 11, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
