@@ -57,14 +57,16 @@ import type { Actor } from "./core/types/actor";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
 import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "./data/broken-chain/equipmentLibrary";
-import { EquipmentLibraryStandalone } from "./core/ui/EquipmentLibraryStandalone";
+import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest, type LootDelivery } from "./core/ui/EquipmentLibraryStandalone";
+import { LevelUpApprovalPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
+import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
 import { TokenAssignmentPanel } from "./core/tokens/TokenAssignmentPanel";
 import { loadMonsterRoster } from "./core/monsters/runtime/monsterRosterStorage";
 import "./styles.css";
 
 // ─── Panel type ───────────────────────────────────────────────────────────────
 
-type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens";
+type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals";
 
 const PANEL_TITLES: Record<PanelId, string> = {
   editActors: "Edit Actors",
@@ -75,11 +77,12 @@ const PANEL_TITLES: Record<PanelId, string> = {
   maintenance: "Room Maintenance",
   library: "Library",
   seatTokens: "Seats & Tokens",
+  approvals: "DM Approvals",
 };
 
 function getPanelFromUrl(): PanelId {
   const param = new URLSearchParams(window.location.search).get("panel");
-  const valid: PanelId[] = ["editActors", "seats", "monsters", "equipment", "tokens", "maintenance", "library", "seatTokens"];
+  const valid: PanelId[] = ["editActors", "seats", "monsters", "equipment", "tokens", "maintenance", "library", "seatTokens", "approvals"];
   return valid.includes(param as PanelId) ? (param as PanelId) : "editActors";
 }
 
@@ -98,7 +101,7 @@ function DmPanelApp() {
   const [actorLibrary, setActorLibrary] = useState<Record<string, Actor>>(() =>
     seedLibraryFromBundled(brokenChainActors)
   );
-  const actorOverrides = useMemo(() => loadActorOverrides(), []);
+  const [actorOverrides, setActorOverrides] = useState(() => loadActorOverrides());
   const actors = useMemo(
     () => Object.values(actorLibrary).map(a =>
       resolveActorFromLibrary(a.id, actorLibrary, actorOverrides) ?? a
@@ -124,6 +127,98 @@ function DmPanelApp() {
     setRoomLiveState(next);
     await publishFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, next);
   }, []);
+
+  // ── Approvals inbox — level-up + convergence ─────────────────────────────
+  const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>([]);
+  const [pendingConvergenceRequests, setPendingConvergenceRequests] = useState<ConvergenceRequest[]>([]);
+  const [convergenceApprovalReq, setConvergenceApprovalReq] = useState<ConvergenceRequest | null>(null);
+
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as unknown;
+      if (isLevelUpRequest(msg)) {
+        setLevelUpRequests(prev => {
+          const filtered = prev.filter(r => r.actorId !== msg.actorId);
+          return [...filtered, msg];
+        });
+      }
+      if (isConvergenceRequest(msg)) {
+        setPendingConvergenceRequests(prev => {
+          if (prev.find(r => r.offerId === msg.offerId && r.seatId === msg.seatId)) return prev;
+          return [...prev, msg];
+        });
+      }
+    });
+  }, []);
+
+  function handleLevelUpApprove(request: LevelUpRequest, finalActor: Actor) {
+    const base = actorLibrary[request.actorId] ?? finalActor;
+    const override: Partial<Actor> = {};
+    if (finalActor.level !== base.level) override.level = finalActor.level;
+    if (finalActor.name !== base.name) override.name = finalActor.name;
+    if (finalActor.subtitle !== base.subtitle) override.subtitle = finalActor.subtitle;
+    if (JSON.stringify(finalActor.stats) !== JSON.stringify(base.stats)) override.stats = finalActor.stats;
+    if (JSON.stringify(finalActor.tabs) !== JSON.stringify(base.tabs)) override.tabs = finalActor.tabs;
+    if (JSON.stringify(finalActor.abilityScores) !== JSON.stringify(base.abilityScores)) override.abilityScores = finalActor.abilityScores;
+    if (JSON.stringify(finalActor.classFeatureTracker) !== JSON.stringify(base.classFeatureTracker)) override.classFeatureTracker = finalActor.classFeatureTracker;
+    saveActorOverride(request.actorId, override);
+    const freshOverrides = loadActorOverrides();
+    setActorOverrides(freshOverrides);
+    setActorLibrary(lib => { const next = { ...lib, [request.actorId]: finalActor }; saveActorLibrary(next); return next; });
+    pushActorsToAllSeats({ freshOverrides });
+    setLevelUpRequests(prev => prev.filter(r => r.actorId !== request.actorId));
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:level-up-response",
+        actorId: request.actorId,
+        seatId: request.seatId,
+        approved: true,
+      }, { destination: "REMOTE" });
+    }
+  }
+
+  function handleLevelUpReject(request: LevelUpRequest, reason: string) {
+    setLevelUpRequests(prev => prev.filter(r => r.actorId !== request.actorId));
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:level-up-rejected",
+        actorId: request.actorId,
+        seatId: request.seatId,
+        reason,
+      }, { destination: "REMOTE" });
+    }
+  }
+
+  async function handleConvergenceApprove(req: ConvergenceRequest, outputItemId: string) {
+    if (!OBR.isAvailable) return;
+    const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
+    const outputItem = allItems.find(i => i.id === outputItemId);
+    if (!outputItem) return;
+    const delivery: LootDelivery = {
+      type: "fdmc:loot-delivery",
+      seatId: req.seatId,
+      item: outputItem,
+      deliveryId: `conv-${Date.now().toString(36)}`,
+      message: `Convergence complete — ${outputItem.name} has been forged. Remove your submitted items from your equipment bag.`,
+    };
+    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
+    setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    setConvergenceApprovalReq(null);
+  }
+
+  async function handleConvergenceDeny(req: ConvergenceRequest) {
+    if (OBR.isAvailable) {
+      await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:convergence-denied",
+        seatId: req.seatId,
+        offerId: req.offerId,
+        reason: "DM declined the convergence request.",
+      }, { destination: "REMOTE" });
+    }
+    setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    setConvergenceApprovalReq(null);
+  }
 
   // ── Seat system ────────────────────────────────────────────────────────────
   const { seats, seatBindings, assignSeat, kickFromSeat, removeSeat, purgeAllSeatMetadata, pushActorsToSeat, pushActorsToAllSeats } = useDmSeatSystem({
@@ -216,6 +311,7 @@ function DmPanelApp() {
     const freshOverrides = loadActorOverrides();
     const freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
     setActorLibrary(() => freshLib);
+    setActorOverrides(freshOverrides);
     // Pass fresh data so seat-system refs don't hold stale library
     pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
     broadcastLibraryUpdate();
@@ -232,8 +328,28 @@ function DmPanelApp() {
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", fontFamily: "monospace", background: "#0d0d14", color: "#fff" }}>
       {/* Header */}
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0d0d14", flexShrink: 0 }}>
-        <h2 style={{ margin: 0, fontSize: 15, color: "#7b68ee" }}>{title}</h2>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <h2 style={{ margin: 0, fontSize: 15, color: "#7b68ee" }}>{title}</h2>
+          {(levelUpRequests.length + pendingConvergenceRequests.length) > 0 && panelId !== "approvals" && (
+            <a href={`?panel=approvals`} style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 9px", fontSize: 11, fontWeight: 600, textDecoration: "none" }}>
+              ⬆ {levelUpRequests.length + pendingConvergenceRequests.length} Pending
+            </a>
+          )}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => {
+              // Bump revision so publishFdmcRoomStateKey's early-return guard passes,
+              // then push all actor definitions to all seats via broadcast.
+              void commitRoomState({ ...roomLiveState, revision: roomLiveState.revision + 1, updatedAt: Date.now() })
+                .then(() => pushActorsToAllSeats());
+            }}
+            style={{ fontSize: 11, padding: "2px 9px", background: "#2a3a2a", border: "1px solid #4caf5055", borderRadius: 3, color: "#4caf50", cursor: "pointer", fontWeight: 600 }}
+            title="Force-publish room metadata and re-push all actor cards to every seated player"
+          >
+            ⚡ Force Push
+          </button>
           <span style={{ fontSize: 10, color: "#444" }}>FDMC 0.6.0 DM Tools</span>
           <button
             type="button"
@@ -437,8 +553,103 @@ function DmPanelApp() {
 
         {/* ── Equipment Library ── */}
         {panelId === "equipment" && (
-          <EquipmentLibraryStandalone seats={Object.values(seats)} />
+          <EquipmentLibraryStandalone
+            seats={Object.values(seats)}
+            externalConvergenceRequests={pendingConvergenceRequests}
+            onExternalConvergenceApprove={handleConvergenceApprove}
+            onExternalConvergenceDeny={handleConvergenceDeny}
+          />
         )}
+
+        {/* ── Unified Approvals Inbox ── */}
+        {panelId === "approvals" && (() => {
+          const seatList = Object.values(seats);
+          const campaignLib = loadEquipmentLibrary("campaign");
+          const dmLib = loadEquipmentLibrary("dm");
+
+          if (convergenceApprovalReq) {
+            return (
+              <ConvergenceApprovalPanel
+                req={convergenceApprovalReq}
+                campaignLib={campaignLib}
+                dmLib={dmLib}
+                seats={seatList}
+                onApprove={async (req, outputItemId) => { await handleConvergenceApprove(req, outputItemId); }}
+                onDeny={async (req) => { await handleConvergenceDeny(req); }}
+                onBack={() => setConvergenceApprovalReq(null)}
+              />
+            );
+          }
+
+          const totalPending = levelUpRequests.length + pendingConvergenceRequests.length;
+          return (
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+              <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", fontSize: 12, color: "#888", flexShrink: 0 }}>
+                {totalPending === 0 ? "No pending approvals." : `${totalPending} pending approval${totalPending === 1 ? "" : "s"}`}
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
+
+                {/* Level-up requests */}
+                {levelUpRequests.length > 0 && (
+                  <div style={{ marginBottom: 18 }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>
+                      ⬆ Level-Up Requests ({levelUpRequests.length})
+                    </p>
+                    {levelUpRequests.map(req => (
+                      <LevelUpApprovalPanel
+                        key={req.actorId}
+                        request={req}
+                        currentActor={actors.find(a => a.id === req.actorId)}
+                        onApprove={handleLevelUpApprove}
+                        onReject={handleLevelUpReject}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Convergence requests */}
+                {pendingConvergenceRequests.length > 0 && (
+                  <div style={{ marginBottom: 18 }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
+                      ◈ Convergence Forge Requests ({pendingConvergenceRequests.length})
+                    </p>
+                    {pendingConvergenceRequests.map(req => {
+                      const seat = seatList.find(s => s.seatId === req.seatId);
+                      const allItems = [...campaignLib, ...dmLib];
+                      const submittedNames = req.submittedItemNames.length > 0
+                        ? req.submittedItemNames
+                        : req.submittedItemIds.map(id => allItems.find(i => i.id === id)?.name ?? id);
+                      return (
+                        <div key={`${req.offerId}-${req.seatId}`}
+                          style={{ background: "#0d1a0d", border: "1px solid #2a6e2a66", borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                            <div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#4caf50" }}>{req.actorName ?? seat?.label ?? req.seatId}</span>
+                              <span style={{ fontSize: 11, color: "#666", marginLeft: 6 }}>wants to forge</span>
+                              <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>
+                                Submitting: {submittedNames.join(" + ")}
+                              </div>
+                            </div>
+                            <button type="button" onClick={() => setConvergenceApprovalReq(req)}
+                              style={{ fontSize: 12, padding: "6px 14px", background: "#1a2a1a", border: "1px solid #4caf5055", borderRadius: 6, color: "#4caf50", cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
+                              Review →
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {totalPending === 0 && (
+                  <p style={{ fontSize: 12, color: "#444", fontStyle: "italic", marginTop: 20, textAlign: "center" }}>
+                    All clear — no approvals waiting.
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Token Assignment ── */}
         {panelId === "tokens" && (

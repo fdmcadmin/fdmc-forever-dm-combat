@@ -925,6 +925,8 @@ export default function App() {
   // ── Player: loot delivery toast + offer + level-up request UI ───────────
   const [lootToast, setLootToast] = useState<string | null>(null);
   const [lootOffer, setLootOffer] = useState<import("./core/ui/EquipmentLibraryStandalone").LootOffer | null>(null);
+  const [showConvergePanel, setShowConvergePanel] = useState(false);
+  const [convergenceSubmitting, setConvergenceSubmitting] = useState(false);
   const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
   const [levelUpRejectionToast, setLevelUpRejectionToast] = useState<string | null>(null);
 
@@ -949,6 +951,15 @@ export default function App() {
       if (msg.type === "fdmc:loot-offer" && msg.seatId === claimedSeatId) {
         setLootOffer(msg as import("./core/ui/EquipmentLibraryStandalone").LootOffer);
         addEntry({ actorName: "DM", actionName: "Loot Offer", tabId: "system", message: msg.message ?? "Boss drop — choose an item." });
+      }
+      // Convergence denied by DM
+      if (msg.type === "fdmc:convergence-denied" && (msg as { seatId?: string }).seatId === claimedSeatId) {
+        setConvergenceSubmitting(false);
+        setShowConvergePanel(false);
+        const reason = (msg as { reason?: string }).reason ?? "DM declined the convergence.";
+        setLootToast(`◈ ${reason}`);
+        addEntry({ actorName: "DM", actionName: "Convergence Denied", tabId: "system", message: reason });
+        setTimeout(() => setLootToast(null), 6000);
       }
       // DM confirms choice was received and item attached
       if (msg.type === "fdmc:loot-attached" && msg.seatId === claimedSeatId) {
@@ -1173,7 +1184,7 @@ export default function App() {
 
   // ── Open DM tool as OBR popover window ───────────────────────────────────
   // All known DM popover IDs — used for close-all
-  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens"] as const;
+  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens", "fdm-dm-approvals"] as const;
 
   const closeAllDmPanels = useCallback(async () => {
     if (!OBR.isAvailable) { setOpenPanel(null); return; }
@@ -1183,7 +1194,7 @@ export default function App() {
     ]);
   }, []);
 
-  const openDmPanel = useCallback(async (panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens") => {
+  const openDmPanel = useCallback(async (panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals") => {
     if (!OBR.isAvailable) {
       const fallbackMap: Record<string, ToolPanelId> = {
         editActors: "editActors", seats: "actorAssignments", library: "editActors",
@@ -1665,7 +1676,7 @@ export default function App() {
           {levelUpRequests.length > 0 && (
             <button
               type="button"
-              onClick={() => void openDmPanel("editActors")}
+              onClick={() => void openDmPanel("approvals")}
               title={`${levelUpRequests.length} pending level-up request${levelUpRequests.length === 1 ? "" : "s"}`}
               style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 9px", fontSize: 11, border: "none", cursor: "pointer", fontWeight: 600 }}
             >
@@ -1749,7 +1760,9 @@ export default function App() {
 
       {/* ── Player loot offer — two views: mid-combat (compact strip) or final (full-screen) ── */}
       {isPlayerMode && lootOffer && actorToShow && (() => {
-        const isFinal = (lootOffer as { mode?: string }).mode === "final";
+        const mode = (lootOffer as { mode?: string }).mode;
+        const isFinal = mode === "boss-final";
+        const isMerchant = mode === "merchant";
 
         function chooseItem(item: { id: string; name: string }) {
           void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
@@ -1800,7 +1813,48 @@ export default function App() {
           );
         }
 
-        // Mid-combat: compact strip above the combat panel, doesn't block view
+        if (isMerchant) {
+          // Merchant: full-screen shop view with gold costs
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.95)", zIndex: 200, display: "flex", flexDirection: "column", padding: 24, gap: 16, overflowY: "auto" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ margin: "0 0 4px", fontSize: 11, color: "#e0a030", textTransform: "uppercase", letterSpacing: 2 }}>Merchant</p>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#fff" }}>🛒 {lootOffer.message}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555" }}>Choose one item to purchase — gold spent is recorded by the DM.</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+                {lootOffer.items.map(item => (
+                  <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+                          <strong style={{ fontSize: 14, color: "#fff" }}>{item.name}</strong>
+                          <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 8 }}>{item.category ?? item.type}</span>
+                          {item.attunementRequired && <span style={{ fontSize: 10, color: "#e07b39" }}>Attunement</span>}
+                        </div>
+                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
+                        {item.mechanicsText && <p style={{ margin: "0 0 6px", fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
+                        {item.value && <span style={{ fontSize: 13, color: "#e0a030", fontWeight: 600 }}>💰 {item.value}</span>}
+                      </div>
+                      <button type="button" onClick={() => chooseItem(item)}
+                        style={{ fontSize: 13, padding: "8px 14px", background: "#4a3a1a", border: "1px solid #e0a03055", color: "#e0a030", borderRadius: 6, cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
+                        Buy
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <button type="button" onClick={() => setLootOffer(null)}
+                  style={{ fontSize: 12, padding: "6px 20px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
+                  Nothing for me
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // Mid-boss: compact strip above the combat panel, doesn't block view
         return (
           <div style={{ margin: "4px 12px 0", background: "#0d0d14", border: "1px solid #7b68ee44", borderRadius: 8, overflow: "hidden" }}>
             <div style={{ padding: "6px 10px", background: "#1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1826,6 +1880,165 @@ export default function App() {
         );
       })()}
 
+      {/* ── Player convergence panel (player-initiated) ── */}
+      {isPlayerMode && showConvergePanel && actorToShow && (() => {
+        // Get convergence-eligible items from the actor's equipment bag
+        const equipBag: { id?: string; label?: string; itemId?: string; metadata?: { convergence?: { role?: string; mechanicalTag?: string } } }[] =
+          (actorToShow as unknown as { tabs?: { equipment?: unknown[] } }).tabs?.equipment as typeof equipBag ?? [];
+        const allLibItems = loadEquipmentLibrary();
+        // An item is convergence-eligible if it's tagged in the library with role: "input"
+        const eligibleItems = equipBag
+          .map(a => {
+            const rawId = (a.id ?? "").replace(/^equip-/, "");
+            return allLibItems.find(i => i.id === rawId || `equip-${i.id}` === a.id);
+          })
+          .filter((i): i is import("./core/ui/EquipmentBagEditor").EquipmentItem => Boolean(i?.convergence?.role === "input"));
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const [selected, setSelected] = useState<string[]>([]);
+
+        function toggle(id: string) {
+          setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+        }
+
+        function submitConvergence() {
+          if (selected.length < 2 || convergenceSubmitting) return;
+          setConvergenceSubmitting(true);
+          const chosenItems = eligibleItems.filter(i => selected.includes(i.id));
+          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:convergence-request",
+            seatId: claimedSeatId,
+            offerId: `forge-${Date.now().toString(36)}`,
+            submittedItemIds: chosenItems.map(i => i.id),
+            submittedItemNames: chosenItems.map(i => i.name),
+            actorId: actorToShow!.id,
+            actorName: actorToShow!.name,
+          } as import("./core/ui/EquipmentLibraryStandalone").ConvergenceRequest, { destination: "REMOTE" });
+          addEntry({
+            actorName: actorToShow!.name,
+            actionName: "Convergence Submitted",
+            tabId: "system",
+            message: `${actorToShow!.name} submitted ${chosenItems.map(i => i.name).join(" + ")} for convergence.`,
+          });
+        }
+
+        if (convergenceSubmitting) {
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.97)", zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24 }}>
+              <p style={{ fontSize: 32, margin: 0 }}>◈</p>
+              <p style={{ fontSize: 16, fontWeight: 600, color: "#4caf50", margin: 0 }}>Awaiting DM Approval</p>
+              <p style={{ fontSize: 12, color: "#555", margin: 0, textAlign: "center" }}>Your items have been submitted. The DM will forge the result and send it to you.</p>
+            </div>
+          );
+        }
+
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.97)", zIndex: 200, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+              <div>
+                <p style={{ margin: "0 0 2px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 2 }}>Forge</p>
+                <h3 style={{ margin: 0, fontSize: 16, color: "#fff" }}>◈ Try Convergence</h3>
+              </div>
+              <button type="button" onClick={() => setShowConvergePanel(false)}
+                style={{ fontSize: 12, padding: "5px 12px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>
+                ✕ Close
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <p style={{ margin: 0, fontSize: 13, color: "#888", lineHeight: 1.6 }}>
+                Select two items from your bag to submit for convergence. The DM will determine the outcome. You will not know the result until they approve.
+              </p>
+              <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
+                Only items with a convergence tag (◈) are eligible. You need at least 2.
+              </p>
+
+              {eligibleItems.length === 0 && (
+                <div style={{ background: "#1a1a0d", border: "1px solid #5a4a0a", borderRadius: 8, padding: "14px 16px" }}>
+                  <p style={{ margin: 0, color: "#ffcc44", fontSize: 13, fontWeight: 600 }}>No convergence items in your bag</p>
+                  <p style={{ margin: "6px 0 0", fontSize: 12, color: "#666" }}>
+                    Convergence items are special drops tagged with ◈. Check your equipment tab — they appear in your bag after boss encounters.
+                  </p>
+                </div>
+              )}
+
+              {eligibleItems.length === 1 && (
+                <div style={{ background: "#1a1a0d", border: "1px solid #5a4a0a", borderRadius: 8, padding: "14px 16px" }}>
+                  <p style={{ margin: 0, color: "#ffcc44", fontSize: 13, fontWeight: 600 }}>Only 1 convergence item found</p>
+                  <p style={{ margin: "6px 0 0", fontSize: 12, color: "#666" }}>You need at least 2 convergence-tagged items to attempt a forge.</p>
+                </div>
+              )}
+
+              {eligibleItems.map(item => {
+                const isSelected = selected.includes(item.id);
+                return (
+                  <button key={item.id} type="button" onClick={() => toggle(item.id)}
+                    style={{
+                      all: "unset", display: "block", width: "100%", boxSizing: "border-box",
+                      padding: "14px 16px", borderRadius: 10, cursor: "pointer",
+                      background: isSelected ? "#0d1a0d" : "#161622",
+                      border: `2px solid ${isSelected ? "#4caf50" : "#2a2a3e"}`,
+                      transition: "border-color 0.15s",
+                    }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                        background: isSelected ? "#4caf50" : "transparent",
+                        border: `2px solid ${isSelected ? "#4caf50" : "#444"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 13, color: "#fff",
+                      }}>
+                        {isSelected ? "✓" : ""}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+                          <strong style={{ fontSize: 14, color: "#fff" }}>{item.name}</strong>
+                          {item.category && <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 8 }}>{item.category}</span>}
+                          {item.tier && <span style={{ fontSize: 10, color: "#4caf5088" }}>{item.tier}</span>}
+                          <span style={{ fontSize: 10, color: "#4caf50" }}>◈ {item.convergence?.mechanicalTag}</span>
+                        </div>
+                        {item.act && <p style={{ margin: "0 0 4px", fontSize: 10, color: "#444" }}>{item.act}{item.session ? ` · ${item.session}` : ""}</p>}
+                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
+                        {item.mechanicsText && <p style={{ margin: 0, fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {selected.length >= 2 && (
+                <div style={{ background: "#0a1a0a", border: "1px solid #4caf5055", borderRadius: 8, padding: "12px 14px" }}>
+                  <p style={{ margin: "0 0 6px", fontSize: 11, color: "#4caf50", fontWeight: 600 }}>Ready to submit</p>
+                  <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
+                    {eligibleItems.filter(i => selected.includes(i.id)).map(i => i.name).join(" + ")} will be sent to the DM. You will not know the result until they approve. This cannot be undone.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "12px 20px", borderTop: "1px solid #2a2a3e", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+              <button type="button"
+                disabled={selected.length < 2}
+                onClick={submitConvergence}
+                style={{
+                  width: "100%", padding: "13px", fontSize: 14, fontWeight: 700, borderRadius: 8, border: "none",
+                  cursor: selected.length >= 2 ? "pointer" : "default",
+                  background: selected.length >= 2 ? "linear-gradient(135deg, #1a4a1a 0%, #2a6e2a 100%)" : "#1a1a1a",
+                  color: selected.length >= 2 ? "#fff" : "#444",
+                }}>
+                {selected.length < 2 ? `◈ Select ${2 - selected.length} more item${2 - selected.length === 1 ? "" : "s"}` : "◈ Submit to DM for Forging"}
+              </button>
+              <button type="button" onClick={() => setShowConvergePanel(false)}
+                style={{ width: "100%", padding: "8px", fontSize: 12, background: "transparent", border: "1px solid #333", borderRadius: 6, color: "#666", cursor: "pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Player loot delivery toast ── */}
       {isPlayerMode && lootToast && (
         <div style={{ padding: "6px 14px", background: "#2a6e2a", fontSize: 12, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1840,6 +2053,27 @@ export default function App() {
           <button type="button" onClick={() => setLevelUpRejectionToast(null)} style={{ fontSize: 11, background: "transparent", border: "none", color: "#aaa", cursor: "pointer" }}>×</button>
         </div>
       )}
+
+      {/* ── Player convergence forge button — shown when player has ≥2 convergence items ── */}
+      {isPlayerMode && actorToShow && !showConvergePanel && !convergenceSubmitting && (() => {
+        const equipBag: { id?: string }[] =
+          (actorToShow as unknown as { tabs?: { equipment?: { id?: string }[] } }).tabs?.equipment ?? [];
+        const libItems = loadEquipmentLibrary();
+        const eligibleCount = equipBag.filter(a => {
+          const rawId = (a.id ?? "").replace(/^equip-/, "");
+          const lib = libItems.find(i => i.id === rawId || `equip-${i.id}` === a.id);
+          return lib?.convergence?.role === "input";
+        }).length;
+        if (eligibleCount < 2) return null;
+        return (
+          <div style={{ padding: "4px 12px", flexShrink: 0 }}>
+            <button type="button" onClick={() => setShowConvergePanel(true)}
+              style={{ width: "100%", padding: "7px", fontSize: 12, fontWeight: 600, background: "#0d1a0d", border: "1px solid #4caf5055", borderRadius: 6, color: "#4caf50", cursor: "pointer", letterSpacing: 0.5 }}>
+              ◈ Try Convergence — {eligibleCount} forge item{eligibleCount !== 1 ? "s" : ""} in bag
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ── Player seat status bar — shows when seated or syncing, not while browsing ── */}
       {isPlayerMode && !isBrowsing && claimedSeatId && (seatStatus === "ready" || seatStatus === "claiming") && (

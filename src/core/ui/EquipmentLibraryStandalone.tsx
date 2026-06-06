@@ -6,7 +6,7 @@
  * Adds loot delivery — DM selects item + seat → broadcasts to player.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
@@ -29,8 +29,34 @@ export type LootOffer = {
   offerId: string;
   items: EquipmentItem[];
   message: string;
-  /** mid = compact strip (non-blocking, shown during combat); final = full-screen pick panel */
-  mode?: "mid" | "final";
+  /** boss-mid = compact strip during combat; boss-final = full-screen; merchant = shows gold cost */
+  mode?: "boss-mid" | "boss-final" | "merchant";
+};
+
+/** DM pushes a convergence offer — player picks a combo using items they own */
+export type ConvergenceOffer = {
+  type: "fdmc:convergence-offer";
+  seatId: string;
+  offerId: string;
+  /** Each convergence option: submit these input items → receive this output item */
+  combos: Array<{
+    outputItem: EquipmentItem;
+    inputItems: Array<{ id: string; name: string }>;
+    description: string;
+  }>;
+  message: string;
+};
+
+/** Player submits items for convergence — DM receives, picks output, and approves */
+export type ConvergenceRequest = {
+  type: "fdmc:convergence-request";
+  seatId: string;
+  offerId: string;
+  outputItemId?: string;       // not filled by player — DM selects at approval
+  submittedItemIds: string[];  // the items the player is sacrificing
+  submittedItemNames: string[]; // resolved names for DM display
+  actorId: string;
+  actorName: string;
 };
 
 /** Player broadcasts their chosen item back to DM */
@@ -50,6 +76,12 @@ export function isLootOffer(msg: unknown): msg is LootOffer {
 }
 export function isLootChoice(msg: unknown): msg is LootChoice {
   return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:loot-choice");
+}
+export function isConvergenceOffer(msg: unknown): msg is ConvergenceOffer {
+  return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:convergence-offer");
+}
+export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
+  return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:convergence-request");
 }
 
 // itemToAction is imported from EquipmentBagEditor (canonical source with weapon auto-detect)
@@ -119,18 +151,221 @@ function ItemForm({ initial, onSave, onCancel }: {
   );
 }
 
+// ─── Convergence approval panel (standalone component with its own state) ────
+
+export function ConvergenceApprovalPanel({
+  req, campaignLib, dmLib, seats, onApprove, onDeny, onBack,
+}: {
+  req: ConvergenceRequest;
+  campaignLib: EquipmentItem[];
+  dmLib: EquipmentItem[];
+  seats: FdmcSeat[];
+  onApprove: (req: ConvergenceRequest, outputItemId: string) => Promise<void>;
+  onDeny: (req: ConvergenceRequest) => Promise<void>;
+  onBack: () => void;
+}) {
+  const allItems = [...campaignLib, ...dmLib];
+  const seat = seats.find(s => s.seatId === req.seatId);
+
+  // Submitted items — try library first, fall back to names from the request
+  const submittedItems = req.submittedItemIds.map(id => allItems.find(i => i.id === id)).filter(Boolean) as EquipmentItem[];
+  const submittedNames = submittedItems.length > 0
+    ? submittedItems.map(i => i.name)
+    : req.submittedItemNames;
+
+  // DM picks the output item — default to first DM library item, or first campaign item
+  const pickableItems = dmLib.length > 0 ? [...dmLib, ...campaignLib] : campaignLib;
+  const [selectedOutputId, setSelectedOutputId] = useState<string>(pickableItems[0]?.id ?? "");
+  const selectedOutput = allItems.find(i => i.id === selectedOutputId);
+
+  const seatLabel = seat?.label ?? req.seatId;
+  const actorLabel = req.actorName ? `${req.actorName} (${seatLabel})` : seatLabel;
+
+  function ItemCard({ item, role }: { item: EquipmentItem; role: "output" | "input" }) {
+    const isOutput = role === "output";
+    return (
+      <div style={{
+        background: isOutput ? "#0d1a0d" : "#1a0d0d",
+        border: `1px solid ${isOutput ? "#4caf5066" : "#5a1a1a"}`,
+        borderRadius: 10, padding: "14px 16px",
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <div style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>{isOutput ? "◈" : "✕"}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+              <strong style={{ fontSize: 14, color: "#fff" }}>{item.name}</strong>
+              {item.category && <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 8 }}>{item.category}</span>}
+              {item.tier && <span style={{ fontSize: 10, color: isOutput ? "#4caf50" : "#ff9999" }}>{item.tier}</span>}
+              {item.attunementRequired && <span style={{ fontSize: 10, color: "#e07b39" }}>Attunement</span>}
+              {item.convergence?.mechanicalTag && <span style={{ fontSize: 10, color: "#4caf5066" }}>◈ {item.convergence.mechanicalTag}</span>}
+            </div>
+            {item.act && (
+              <div style={{ fontSize: 10, color: "#444", marginBottom: 4 }}>
+                {item.act}{item.session ? ` · ${item.session}` : ""}{item.sourceEncounter ? ` · ${item.sourceEncounter}` : ""}
+              </div>
+            )}
+            <p style={{ margin: "0 0 6px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
+            {item.mechanicsText && (
+              <p style={{ margin: "0 0 6px", fontSize: 11, color: "#c8c8c8", lineHeight: 1.5, background: "#0d0d14", borderRadius: 4, padding: "7px 10px" }}>
+                {item.mechanicsText}
+              </p>
+            )}
+            {item.dmNote && (
+              <p style={{ margin: 0, fontSize: 10, color: "#555", lineHeight: 1.4, fontStyle: "italic", borderTop: "1px solid #2a2a2a", paddingTop: 6, marginTop: 4 }}>
+                DM — {item.dmNote}
+              </p>
+            )}
+            {!isOutput && (
+              <p style={{ margin: "8px 0 0", fontSize: 11, color: "#ff9999", fontWeight: 500, borderTop: "1px solid #5a1a1a44", paddingTop: 8 }}>
+                ✕ Remove from {actorLabel}'s bag after approving
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* Header */}
+      <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" onClick={onBack}
+            style={{ fontSize: 12, padding: "3px 8px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>
+            ← Back
+          </button>
+          <h3 style={{ margin: 0, fontSize: 14 }}>◈ Convergence Review</h3>
+        </div>
+        <span style={{ fontSize: 11, color: "#4caf50", fontWeight: 600 }}>{actorLabel}</span>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* Submitted items — what the player is giving up */}
+        <div>
+          <p style={{ margin: "0 0 8px", fontSize: 10, color: "#ff9999", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
+            Items Submitted by Player
+          </p>
+          {submittedItems.length > 0
+            ? submittedItems.map(item => <ItemCard key={item.id} item={item} role="input" />)
+            : (
+              <div style={{ background: "#1a0d0d", border: "1px solid #5a1a1a", borderRadius: 8, padding: "12px 14px" }}>
+                <p style={{ margin: "0 0 4px", color: "#ff9999", fontSize: 12, fontWeight: 600 }}>Items not found in library — display by name only</p>
+                {submittedNames.map((name, i) => (
+                  <p key={i} style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>✕ {name}</p>
+                ))}
+                {submittedNames.length === 0 && req.submittedItemIds.map(id => (
+                  <p key={id} style={{ margin: "4px 0 0", fontSize: 11, color: "#555" }}>ID: {id}</p>
+                ))}
+              </div>
+            )
+          }
+        </div>
+
+        {/* Divider */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ flex: 1, height: 1, background: "#2a2a3e" }} />
+          <span style={{ fontSize: 12, color: "#4caf50", fontWeight: 600 }}>◈ forges into</span>
+          <div style={{ flex: 1, height: 1, background: "#2a2a3e" }} />
+        </div>
+
+        {/* Output item picker — DM selects what the player receives */}
+        <div>
+          <p style={{ margin: "0 0 8px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
+            Select Output Item (DM Chooses)
+          </p>
+          <select value={selectedOutputId} onChange={e => setSelectedOutputId(e.target.value)}
+            style={{ display: "block", width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #2a6e2a66", background: "#0d1a0d", color: "#fff", fontSize: 13, marginBottom: 10, cursor: "pointer" }}>
+            {dmLib.length > 0 && (
+              <optgroup label="── My Library (custom items)">
+                {dmLib.map(i => <option key={i.id} value={i.id}>{i.name}{i.tier ? ` [${i.tier}]` : ""}</option>)}
+              </optgroup>
+            )}
+            <optgroup label="── Campaign Library">
+              {campaignLib.map(i => <option key={i.id} value={i.id}>{i.name}{i.tier ? ` [${i.tier}]` : ""}</option>)}
+            </optgroup>
+          </select>
+          {selectedOutput && <ItemCard item={selectedOutput} role="output" />}
+          {!selectedOutput && selectedOutputId && (
+            <div style={{ background: "#1a1a0d", border: "1px solid #5a4a0a", borderRadius: 8, padding: "10px 14px" }}>
+              <p style={{ margin: 0, color: "#ffcc44", fontSize: 12 }}>⚠ Selected item not found. Choose another from the dropdown.</p>
+            </div>
+          )}
+          {pickableItems.length === 0 && (
+            <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No items in library. Add items to My Library before approving.</p>
+          )}
+        </div>
+
+        {/* DM checklist */}
+        <div style={{ background: "#0a0a14", border: "1px solid #2a2a5e", borderRadius: 8, padding: "12px 14px" }}>
+          <p style={{ margin: "0 0 8px", fontSize: 11, color: "#7b68ee", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Before Approving</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <p style={{ margin: 0, fontSize: 12, color: "#aaa", display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ color: "#4caf50", flexShrink: 0 }}>□</span>
+              Confirm {actorLabel} has submitted items equipped in their bag
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: "#aaa", display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ color: "#4caf50", flexShrink: 0 }}>□</span>
+              Confirm safe location — convergence cannot happen mid-combat
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: "#ff9999", display: "flex", alignItems: "flex-start", gap: 8, fontWeight: 500 }}>
+              <span style={{ flexShrink: 0 }}>✕</span>
+              After approving — open actor editor and remove submitted items from their bag manually
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div style={{ padding: "12px 14px", borderTop: "1px solid #2a2a3e", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        <button type="button"
+          disabled={!selectedOutput}
+          onClick={() => selectedOutput && void onApprove(req, selectedOutput.id)}
+          style={{
+            width: "100%", padding: "13px", fontSize: 14, fontWeight: 700, borderRadius: 8, cursor: selectedOutput ? "pointer" : "default", letterSpacing: 0.5, border: "none",
+            background: selectedOutput ? "linear-gradient(135deg, #1a4a1a 0%, #2a6e2a 100%)" : "#1a1a1a",
+            color: selectedOutput ? "#fff" : "#444",
+          }}>
+          ◈ Approve — Forge {selectedOutput?.name ?? "?"} for {actorLabel}
+        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => void onDeny(req)}
+            style={{ flex: 1, padding: "8px", fontSize: 12, background: "transparent", border: "1px solid #5a1a1a", borderRadius: 6, color: "#ff9999", cursor: "pointer" }}>
+            ✕ Deny Request
+          </button>
+          <button type="button" onClick={onBack}
+            style={{ flex: 1, padding: "8px", fontSize: 12, background: "transparent", border: "1px solid #333", borderRadius: 6, color: "#666", cursor: "pointer" }}>
+            ← Back to List
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type EquipmentLibraryStandaloneProps = {
   seats: FdmcSeat[];
+  externalConvergenceRequests?: ConvergenceRequest[];
+  onExternalConvergenceApprove?: (req: ConvergenceRequest, outputItemId: string) => Promise<void>;
+  onExternalConvergenceDeny?: (req: ConvergenceRequest) => Promise<void>;
 };
 
-export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandaloneProps) {
+export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny }: EquipmentLibraryStandaloneProps) {
   const [campaignLib, setCampaignLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("campaign"));
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
   const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(null);
   const [lootTarget, setLootTarget] = useState<{ item: EquipmentItem; seatId: string } | null>(null);
-  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string; mode: "mid" | "final" } | null>(null);
+  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string; mode: "boss-mid" | "boss-final" | "merchant" } | null>(null);
+  const [convergenceBuilder, setConvergenceBuilder] = useState<{
+    seatId: string;
+    combos: Array<{ outputItem: EquipmentItem; inputItems: Array<{ id: string; name: string }>; description: string }>;
+    message: string;
+  } | null>(null);
+  const [pendingConvergenceRequests, setPendingConvergenceRequests] = useState<ConvergenceRequest[]>([]);
+  const [convergenceApproval, setConvergenceApproval] = useState<ConvergenceRequest | null>(null);
   const [lootMessage, setLootMessage] = useState("");
   const [recentDelivery, setRecentDelivery] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<EquipmentImportResult | null>(null);
@@ -172,6 +407,63 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
     setTimeout(() => setRecentDelivery(null), 4000);
   }
 
+  // Listen for convergence requests from players (only when not managed externally by dm-panel)
+  useEffect(() => {
+    if (!OBR.isAvailable || externalConvergenceRequests !== undefined) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data;
+      if (isConvergenceRequest(msg)) {
+        setPendingConvergenceRequests(prev => {
+          if (prev.find(r => r.offerId === msg.offerId && r.seatId === msg.seatId)) return prev;
+          return [...prev, msg];
+        });
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleApproveConvergence(req: ConvergenceRequest, outputItemId: string) {
+    if (!OBR.isAvailable) return;
+    const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
+    const outputItem = allItems.find(i => i.id === outputItemId);
+    if (!outputItem) return;
+    const seat = seats.find(s => s.seatId === req.seatId);
+    const delivery: LootDelivery = {
+      type: "fdmc:loot-delivery",
+      seatId: req.seatId,
+      item: outputItem,
+      deliveryId: `conv-${Date.now().toString(36)}`,
+      message: `Convergence complete — ${outputItem.name} has been forged. Remove your submitted items from your equipment bag.`,
+    };
+    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
+    setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    setRecentDelivery(`Convergence approved — ${outputItem.name} sent to ${seat?.label ?? req.seatId}. Remove ${req.submittedItemNames.join(" + ")} from their bag.`);
+    setTimeout(() => setRecentDelivery(null), 10000);
+  }
+
+  async function handleSendConvergenceOffer() {
+    if (!convergenceBuilder || convergenceBuilder.combos.length === 0 || !OBR.isAvailable) return;
+    const offerId = `conv-offer-${Date.now().toString(36)}`;
+    const isAll = convergenceBuilder.seatId === "__all__";
+    const targetSeats = isAll
+      ? seats.filter(s => s.seatMode !== "viewer")
+      : seats.filter(s => s.seatId === convergenceBuilder.seatId);
+    for (const seat of targetSeats) {
+      const offer: ConvergenceOffer = {
+        type: "fdmc:convergence-offer",
+        seatId: seat.seatId,
+        offerId,
+        combos: convergenceBuilder.combos,
+        message: convergenceBuilder.message.trim() || "Convergence available — combine items to unlock a new one.",
+      };
+      await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, offer, { destination: "REMOTE" });
+    }
+    const target = isAll ? "all players" : (seats.find(s => s.seatId === convergenceBuilder.seatId)?.label ?? convergenceBuilder.seatId);
+    setRecentDelivery(`Convergence offer (${convergenceBuilder.combos.length} combo${convergenceBuilder.combos.length !== 1 ? "s" : ""}) sent to ${target}`);
+    setConvergenceBuilder(null);
+    setTimeout(() => setRecentDelivery(null), 6000);
+  }
+
   async function handleSendLootOffer() {
     if (!lootOffer || lootOffer.items.length === 0 || !OBR.isAvailable) return;
     const isAll = lootOffer.seatId === "__all__";
@@ -183,13 +475,13 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
         seatId: seat.seatId,
         offerId,
         items: lootOffer.items,
-        message: lootMessage.trim() || (lootOffer.mode === "final" ? "Session reward — choose your item." : "Boss drop — choose one item."),
+        message: lootMessage.trim() || (lootOffer.mode === "boss-final" ? "Session reward — choose your item." : lootOffer.mode === "merchant" ? "Merchant stock — spend your gold." : "Boss drop — choose one item."),
         mode: lootOffer.mode,
       };
       await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, offer, { destination: "REMOTE" });
     }
     const target = isAll ? "all players" : (seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId);
-    setRecentDelivery(`${lootOffer.mode === "final" ? "Session reward" : "Loot offer"} (${lootOffer.items.length} items) sent to ${target}`);
+    setRecentDelivery(`${lootOffer.mode === "boss-final" ? "Session reward" : lootOffer.mode === "merchant" ? "Merchant stock" : "Mid-boss loot"} (${lootOffer.items.length} items) sent to ${target}`);
     setLootOffer(null);
     setLootMessage("");
     setTimeout(() => setRecentDelivery(null), 6000);
@@ -246,23 +538,25 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
     return (
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0 }}>{lootOffer.mode === "final" ? "Session Reward" : "Mid-Combat Loot"}</h3>
+          <h3 style={{ margin: 0 }}>{lootOffer.mode === "boss-final" ? "Session Reward" : lootOffer.mode === "merchant" ? "Merchant Stock" : "Mid-Boss Loot"}</h3>
           <span style={{ fontSize: 11, color: "#7b68ee" }}>→ {seatLabel}</span>
         </div>
         {/* Mode toggle */}
         <div style={{ display: "flex", gap: 4 }}>
-          {(["mid", "final"] as const).map(m => (
+          {(["boss-mid", "boss-final", "merchant"] as const).map(m => (
             <button key={m} type="button" onClick={() => setLootOffer(o => o ? { ...o, mode: m } : null)}
               style={{ flex: 1, padding: "5px", fontSize: 11, borderRadius: 4, border: "none", cursor: "pointer",
-                background: lootOffer.mode === m ? (m === "final" ? "#7b68ee" : "#2a6e2a") : "#1a1a2e",
+                background: lootOffer.mode === m ? (m === "boss-final" ? "#7b68ee" : m === "merchant" ? "#4a3a1a" : "#2a6e2a") : "#1a1a2e",
                 color: lootOffer.mode === m ? "#fff" : "#555" }}>
-              {m === "mid" ? "⚔ Mid-Combat" : "🏆 Session Final"}
+              {m === "boss-mid" ? "⚔ Mid-Boss" : m === "boss-final" ? "🏆 Session Final" : "🛒 Merchant"}
             </button>
           ))}
         </div>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
-          {lootOffer.mode === "final"
+          {lootOffer.mode === "boss-final"
             ? "Full-screen pick panel — best for end-of-session rewards. Player focuses on the choice."
+            : lootOffer.mode === "merchant"
+            ? "Shows item gold cost (from item value field). Player picks to buy. Gold deducted manually by DM."
             : "Compact strip — shown above the combat panel so player can pick without losing combat view."}
         </p>
         {/* Items in the offer */}
@@ -312,6 +606,182 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
         </div>
       </div>
     );
+  }
+
+  // ── Convergence builder UI ────────────────────────────────────────────────────
+  if (convergenceBuilder) {
+    const allItems = [...campaignLib, ...dmLib];
+    const outputItems = dmLib; // DM creates output items in their custom library
+    const inputItems = allItems.filter(i => i.convergence?.role === "input");
+    const seatLabel = convergenceBuilder.seatId === "__all__"
+      ? "All Players"
+      : (seats.find(s => s.seatId === convergenceBuilder.seatId)?.label ?? convergenceBuilder.seatId);
+
+    function addCombo() {
+      setConvergenceBuilder(b => b ? {
+        ...b,
+        combos: [...b.combos, { outputItem: outputItems[0] ?? dmLib[0] ?? campaignLib[0], inputItems: [], description: "" }],
+      } : null);
+    }
+    function removeCombo(idx: number) {
+      setConvergenceBuilder(b => b ? { ...b, combos: b.combos.filter((_, i) => i !== idx) } : null);
+    }
+    function updateComboOutput(idx: number, item: EquipmentItem) {
+      setConvergenceBuilder(b => b ? { ...b, combos: b.combos.map((c, i) => i === idx ? { ...c, outputItem: item } : c) } : null);
+    }
+    function addComboInput(idx: number, item: EquipmentItem) {
+      setConvergenceBuilder(b => b ? {
+        ...b,
+        combos: b.combos.map((c, i) => i === idx
+          ? { ...c, inputItems: c.inputItems.find(x => x.id === item.id) ? c.inputItems : [...c.inputItems, { id: item.id, name: item.name }] }
+          : c),
+      } : null);
+    }
+    function removeComboInput(comboIdx: number, inputId: string) {
+      setConvergenceBuilder(b => b ? {
+        ...b,
+        combos: b.combos.map((c, i) => i === comboIdx ? { ...c, inputItems: c.inputItems.filter(x => x.id !== inputId) } : c),
+      } : null);
+    }
+    function updateComboDesc(idx: number, desc: string) {
+      setConvergenceBuilder(b => b ? { ...b, combos: b.combos.map((c, i) => i === idx ? { ...c, description: desc } : c) } : null);
+    }
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+        <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+          <h3 style={{ margin: 0, fontSize: 14 }}>◈ Convergence Offer</h3>
+          <span style={{ fontSize: 11, color: "#4caf50" }}>→ {seatLabel}</span>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: "#555" }}>
+            Player submits 2 input items → receives the output item. DM manually removes input items from their bag after approving.
+          </p>
+
+          {convergenceBuilder.combos.length === 0 && (
+            <p style={{ fontSize: 12, color: "#444", fontStyle: "italic", marginBottom: 10 }}>No combos added yet. Click + Add Combo below.</p>
+          )}
+
+          {convergenceBuilder.combos.map((combo, idx) => (
+            <div key={idx} style={{ background: "#161622", border: "1px solid #2a3a2a", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: "#4caf50", fontWeight: 600 }}>Combo {idx + 1}</span>
+                <button type="button" onClick={() => removeCombo(idx)}
+                  style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕ Remove</button>
+              </div>
+              {/* Output item picker */}
+              <label style={{ fontSize: 11, color: "#aaa", display: "block", marginBottom: 6 }}>
+                Output item (player receives):
+                <select value={combo.outputItem.id}
+                  onChange={e => {
+                    const found = allItems.find(i => i.id === e.target.value);
+                    if (found) updateComboOutput(idx, found);
+                  }}
+                  style={{ display: "block", width: "100%", marginTop: 3, padding: "4px 6px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 11 }}>
+                  <optgroup label="My Library">
+                    {dmLib.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  </optgroup>
+                  <optgroup label="Campaign Library">
+                    {campaignLib.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  </optgroup>
+                </select>
+              </label>
+              {/* Input items */}
+              <div style={{ marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: "#aaa" }}>Input items (player submits):</span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                  {combo.inputItems.map(inp => (
+                    <span key={inp.id} style={{ fontSize: 10, background: "#1a2a1a", border: "1px solid #2a6e2a55", borderRadius: 10, padding: "2px 8px", color: "#4caf50", display: "flex", alignItems: "center", gap: 4 }}>
+                      {inp.name}
+                      <button type="button" onClick={() => removeComboInput(idx, inp.id)}
+                        style={{ background: "transparent", border: "none", color: "#ff9999", cursor: "pointer", fontSize: 10, padding: 0, lineHeight: 1 }}>×</button>
+                    </span>
+                  ))}
+                  {combo.inputItems.length === 0 && <span style={{ fontSize: 10, color: "#444" }}>None selected</span>}
+                </div>
+                <select defaultValue="" onChange={e => {
+                  const found = inputItems.find(i => i.id === e.target.value);
+                  if (found) addComboInput(idx, found);
+                  e.target.value = "";
+                }}
+                  style={{ display: "block", width: "100%", marginTop: 4, padding: "3px 6px", borderRadius: 4, border: "1px solid #333", background: "#0d0d14", color: "#aaa", fontSize: 11 }}>
+                  <option value="">+ Add input item…</option>
+                  {inputItems.map(i => <option key={i.id} value={i.id}>{i.name} [{i.convergence?.mechanicalTag}]</option>)}
+                </select>
+              </div>
+              {/* Description */}
+              <label style={{ fontSize: 11, color: "#aaa" }}>
+                Description (shown to player):
+                <input type="text" value={combo.description}
+                  onChange={e => updateComboDesc(idx, e.target.value)}
+                  placeholder="Combine these two to forge something greater…"
+                  style={{ display: "block", width: "100%", marginTop: 3, padding: "4px 6px", borderRadius: 4, border: "1px solid #333", background: "#111", color: "#fff", fontSize: 11 }} />
+              </label>
+            </div>
+          ))}
+
+          <button type="button" onClick={addCombo}
+            style={{ width: "100%", padding: "6px", fontSize: 12, background: "#1a2a1a", border: "1px dashed #2a6e2a55", borderRadius: 6, color: "#4caf50", cursor: "pointer", marginBottom: 12 }}>
+            + Add Combo
+          </button>
+
+          {/* Seat selector */}
+          <label style={{ fontSize: 12, display: "block", marginBottom: 8 }}>
+            Send to:
+            <select value={convergenceBuilder.seatId}
+              onChange={e => setConvergenceBuilder(b => b ? { ...b, seatId: e.target.value } : null)}
+              style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+              <option value="__all__">★ All Players</option>
+              {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
+            </select>
+          </label>
+          <label style={{ fontSize: 12, display: "block", marginBottom: 10 }}>
+            Message (optional)
+            <input type="text" value={convergenceBuilder.message}
+              onChange={e => setConvergenceBuilder(b => b ? { ...b, message: e.target.value } : null)}
+              placeholder="Convergence available — combine items to unlock something new."
+              style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+          </label>
+        </div>
+        <div style={{ padding: "10px 14px", borderTop: "1px solid #2a2a3e", flexShrink: 0, display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => void handleSendConvergenceOffer()}
+            disabled={convergenceBuilder.combos.length === 0}
+            style={{ flex: 1, padding: "8px", background: convergenceBuilder.combos.length > 0 ? "#4caf50" : "#333", color: "#fff", border: "none", borderRadius: 6, cursor: convergenceBuilder.combos.length > 0 ? "pointer" : "default", fontWeight: 500, fontSize: 13 }}>
+            ◈ Send Convergence Offer ({convergenceBuilder.combos.length} combo{convergenceBuilder.combos.length !== 1 ? "s" : ""})
+          </button>
+          <button type="button" onClick={() => setConvergenceBuilder(null)}
+            style={{ padding: "8px 14px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Convergence approval panel ───────────────────────────────────────────────
+  if (convergenceApproval) {
+    return <ConvergenceApprovalPanel
+      req={convergenceApproval}
+      campaignLib={campaignLib}
+      dmLib={dmLib}
+      seats={seats}
+      onApprove={async (req, outputItemId) => {
+        await handleApproveConvergence(req, outputItemId);
+        setConvergenceApproval(null);
+      }}
+      onDeny={async (req) => {
+        if (!OBR.isAvailable) return;
+        await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:convergence-denied",
+          seatId: req.seatId,
+          offerId: req.offerId,
+          reason: "DM declined the convergence request.",
+        }, { destination: "REMOTE" });
+        setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+        setConvergenceApproval(null);
+      }}
+      onBack={() => setConvergenceApproval(null)}
+    />;
   }
 
   const filteredCampaign = filterText
@@ -369,16 +839,24 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
                   onClick={() => {
                     if (lootOffer) {
                       if (!lootOffer.items.find(i => i.id === item.id)) {
-                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatId: "__all__", mode: "mid" });
+                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatId: "__all__", mode: "boss-mid" });
                       }
                     } else {
-                      setLootOffer({ items: [item], seatId: "__all__", mode: "mid" });
+                      setLootOffer({ items: [item], seatId: "__all__", mode: "boss-mid" });
                     }
                   }}
                   style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
                   title="Add to loot table — player picks one item from the list">
                   + Table
                 </button>
+                {item.convergence?.role === "input" && (
+                  <button type="button"
+                    onClick={() => setConvergenceBuilder(b => b ?? { seatId: "__all__", combos: [], message: "" })}
+                    style={{ fontSize: 11, padding: "2px 8px", background: "#1a2a1a", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}
+                    title="Open convergence builder">
+                    ◈
+                  </button>
+                )}
               </>
             )}
             {!item.isLocked && (
@@ -423,6 +901,11 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
               e.target.value = "";
             }} />
           </label>
+          <button type="button" onClick={() => setConvergenceBuilder({ seatId: "__all__", combos: [], message: "" })}
+            style={{ fontSize: 11, padding: "3px 10px", background: "#1a2a1a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}
+            title="Build a convergence offer — player submits 2 items to receive a new one">
+            ◈ Converge
+          </button>
           <button type="button" onClick={() => setEditingItem("new")}
             style={{ fontSize: 11, padding: "3px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}>
             + New Item
@@ -448,6 +931,33 @@ export function EquipmentLibraryStandalone({ seats }: EquipmentLibraryStandalone
       )}
 
       <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
+        {/* Pending convergence requests — shown only when not managed by the unified approvals panel */}
+        {pendingConvergenceRequests.length > 0 && !externalConvergenceRequests && (
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
+              ◈ Convergence Requests ({pendingConvergenceRequests.length})
+            </p>
+            {pendingConvergenceRequests.map(req => {
+              const seat = seats.find(s => s.seatId === req.seatId);
+              const allItems = [...campaignLib, ...dmLib];
+              const outputItem = allItems.find(i => i.id === req.outputItemId);
+              return (
+                <div key={`${req.offerId}-${req.seatId}`}
+                  style={{ background: "#0d1a0d", border: "1px solid #2a6e2a66", borderRadius: 8, padding: "8px 12px", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#4caf50" }}>{seat?.label ?? req.seatId}</span>
+                    <span style={{ fontSize: 11, color: "#666", marginLeft: 6 }}>→</span>
+                    <span style={{ fontSize: 12, color: "#aaa", marginLeft: 6 }}>{outputItem?.name ?? req.outputItemId}</span>
+                  </div>
+                  <button type="button" onClick={() => setConvergenceApproval(req)}
+                    style={{ fontSize: 11, padding: "4px 12px", background: "#1a2a1a", border: "1px solid #4caf5055", borderRadius: 4, color: "#4caf50", cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
+                    Review →
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
         {/* Campaign Library — locked */}
         {filteredCampaign.length > 0 && (
           <>
