@@ -338,7 +338,10 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
         {activeTab === "equipment" && (
           <EquipmentBagEditor
             equippedActions={tabsDraft.equipment ?? []}
-            onChange={handleTabActions("equipment")}
+            mainActions={tabsDraft.main ?? []}
+            onChange={(updates) => {
+              setTabsDraft(d => ({ ...d, ...updates }));
+            }}
           />
         )}
         {activeTab === "notes" && (

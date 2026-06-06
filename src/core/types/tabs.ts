@@ -92,6 +92,16 @@ export type ActorActionMetadata = {
   charges?: { max: number; reset: "longRest" | "shortRest" | "manual" };
   /** Effect descriptor — carried from EquipmentItem for charge-gated effects */
   effect?: { type: string; label?: string; formula?: string; value?: string; condition?: string };
+  /**
+   * Passive stat effects baked in at attach time.
+   * Includes both explicit statEffects from the library item AND synthesized AC effects
+   * from the item's ac string (e.g. "14", "+2").
+   * deriveActorStats reads these directly — no library lookup needed.
+   * Actor records are self-contained: library changes don't silently affect equipped items.
+   */
+  statEffects?: Array<{ type: string; stat?: string; value: number; condition?: string }>;
+  /** AC display string carried from item (e.g. "14", "+2", "11 + DEX") — for equipment tab display only */
+  acDisplay?: string;
 };
 
 export type ActorAction = {

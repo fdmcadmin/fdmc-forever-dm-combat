@@ -201,34 +201,92 @@ function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "item";
 }
 
-// ─── Convert between EquipmentItem and ActorAction ───────────────────────────
+// ─── AC synthesis (local copy — avoids circular dep with deriveActorStats) ───
+
+function synthesizeAcEquipEffect(item: EquipmentItem): { type: string; value: number } | undefined {
+  const ac = item.ac?.trim();
+  if (!ac) return undefined;
+  if (ac.startsWith("+")) {
+    const val = parseInt(ac.slice(1), 10);
+    if (!isNaN(val) && val > 0) return { type: "addAC", value: val };
+  } else {
+    const match = /^(\d+)/.exec(ac);
+    if (match) {
+      const val = parseInt(match[1], 10);
+      if (!isNaN(val) && val > 0) return { type: "setAC", value: val };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Build the full statEffects array for an item — baked at attach time so the
+ * actor record is self-contained.  Includes:
+ *   - All explicit statEffects from the library item
+ *   - A synthesized setAC/addAC if the item has an ac string but no explicit AC effect
+ */
+function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: string; value: number; condition?: string }> | undefined {
+  const effects: Array<{ type: string; stat?: string; value: number; condition?: string }> = [
+    ...(item.statEffects ?? []).map(e => ({ type: e.type, stat: e.stat, value: e.value, condition: e.condition })),
+  ];
+  const hasAcEffect = effects.some(e => e.type === "setAC" || e.type === "addAC");
+  if (!hasAcEffect && item.ac) {
+    const synth = synthesizeAcEquipEffect(item);
+    if (synth) effects.push(synth);
+  }
+  return effects.length > 0 ? effects : undefined;
+}
+
+// ─── Convert EquipmentItem → ActorAction (EQUIPMENT TAB — display/inventory) ─
+//
+// Equipment tab entries are INVENTORY DISPLAY ONLY.
+// Weapons with attack/damage rolls live in tabs.main as attack actions.
+// Armor/shields appear here with their AC info displayed but no dice.
+// Consumables (charges, no attack/damage) remain clickable here (Use button).
+//
+// Key: metadata.statEffects is baked at attach time — actor is self-contained.
+// Library changes do NOT silently alter already-equipped items.
 
 export function itemToAction(item: EquipmentItem): ActorAction {
-  // Any item with attack or damage formulas is rollable regardless of isUsable flag
-  const isRollable = item.isUsable || Boolean(item.attack || item.damage);
+  const isWeapon = Boolean(item.attack || item.damage);
+  // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
+  const isConsumable = Boolean(item.charges) && !isWeapon;
+
   return {
     id: `equip-${item.id}`,
     label: item.name,
     description: item.description,
     actionKind: "equipment",
-    logMode: isRollable ? "table-note" : "silent",
+    // Weapons: reference-only on equipment tab (roll lives in main tab)
+    // Consumables: logged when used so DM/player knows a charge was spent
+    // Armor/gear: silent reference
+    logMode: isConsumable ? "table-note" : "silent",
     displayMode: "compact",
-    hasDefinedUse: isRollable,
-    economyCost: item.attack || item.damage ? ["main"] : undefined,
+    hasDefinedUse: isConsumable,  // Use button only for consumables; weapons roll from main
+    economyCost: undefined,        // equipment bag never costs action economy slots
     category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
     tags: item.tags,
     metadata: {
+      // Keep attack/damage for display text in the bag — but outcomeMode blocks dice button
       attack: item.attack,
       damage: item.damage,
       crit: item.crit,
       range: item.range,
-      cost: isRollable ? "Action" : undefined,
+      // Weapons: "reference" → TabPanel.hasAttachedDice returns false → no Roll button
+      // Consumables: "triggered" → Use button fires a log entry (no dice on equip tab)
+      // Armor/gear: "reference"
+      outcomeMode: isConsumable ? "triggered" : "reference",
       details: [
-        item.description,
         item.ac ? `AC ${item.ac}` : undefined,
+        item.attack ? `⚔ ${item.attack}` : undefined,
+        item.damage ? `💥 ${item.damage}` : undefined,
+        item.range ? `Range: ${item.range}` : undefined,
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
       ].filter(Boolean).join(" · "),
+      // Baked at attach time — no library lookup needed for AC/stat derivation
+      statEffects: bakeStatEffects(item),
+      acDisplay: item.ac,
       charges: item.charges,
       effect: item.effect ? {
         type: item.effect.type as string,
@@ -237,6 +295,36 @@ export function itemToAction(item: EquipmentItem): ActorAction {
         value: item.effect.value,
         condition: item.effect.condition,
       } : undefined,
+    },
+  };
+}
+
+// ─── Convert EquipmentItem → ActorAction (MAIN/ACTIONS TAB — rollable attack) ─
+//
+// Only called for items with attack or damage formulas.
+// This is the action the player actually uses during combat.
+// id prefix "atk-" distinguishes it from the equipment display entry "equip-".
+
+export function itemToAttackAction(item: EquipmentItem): ActorAction {
+  return {
+    id: `atk-${item.id}`,
+    label: item.name,
+    description: item.description,
+    actionKind: "attack",
+    logMode: "table-note",
+    displayMode: "compact",
+    hasDefinedUse: true,
+    economyCost: ["main"],
+    category: item.category ?? (item.type.charAt(0).toUpperCase() + item.type.slice(1)),
+    tags: item.tags,
+    metadata: {
+      attack: item.attack,
+      damage: item.damage,
+      crit: item.crit,
+      range: item.range,
+      cost: "Action",
+      details: item.range ? `Range: ${item.range}` : undefined,
+      // No outcomeMode — TabPanel infers "attack-roll" from attack formula (correct behavior)
     },
   };
 }
@@ -403,35 +491,69 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
 // ─── Bag editor ───────────────────────────────────────────────────────────────
 
 type EquipmentBagEditorProps = {
-  /** Current equipped items — actor.tabs.equipment */
+  /** Current equipped items — actor.tabs.equipment (display/inventory) */
   equippedActions: ActorAction[];
-  onChange: (actions: ActorAction[]) => void;
+  /** Current main-tab actions — actor.tabs.main (weapons attach rollable actions here) */
+  mainActions: ActorAction[];
+  /**
+   * Called with tab updates when equipment changes.
+   * Always includes `equipment`. Includes `main` when a weapon is attached/detached.
+   */
+  onChange: (updates: { equipment?: ActorAction[]; main?: ActorAction[] }) => void;
 };
 
-export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEditorProps) {
+export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: EquipmentBagEditorProps) {
   const [view, setView] = useState<"bag" | "library" | "create">("bag");
   const [library, setLibrary] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
   const [editingItem, setEditingItem] = useState<EquipmentItem | undefined>(undefined);
 
-  // Re-derive equipped actions from library on mount — fixes stale reference/rollable state.
-  // Uses useEffect (not render-time side-effect) to avoid React anti-patterns.
+  // ── Migration: bake statEffects into pre-snapshot equipment entries; create
+  //              missing attack actions in main for weapons already equipped. ──
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const equippedActionsRef = useRef(equippedActions);
   equippedActionsRef.current = equippedActions;
+  const mainActionsRef = useRef(mainActions);
+  mainActionsRef.current = mainActions;
 
   useEffect(() => {
     const allItems = loadEquipmentLibrary();
     const current = equippedActionsRef.current;
+    const currentMain = mainActionsRef.current;
+    let equipChanged = false;
+    let mainChanged = false;
+    const newMain = [...currentMain];
+
     const refreshed = current.map(a => {
       const itemId = a.id.replace(/^equip-/, "");
       const item = allItems.find(i => i.id === itemId || `equip-${i.id}` === a.id);
-      return item ? itemToAction(item) : a;
+      if (!item) return a;
+
+      // Re-derive as fresh snapshot if statEffects are missing or logMode is stale
+      const fresh = itemToAction(item);
+      const needsRefresh =
+        a.metadata?.statEffects === undefined ||
+        a.logMode !== fresh.logMode ||
+        a.hasDefinedUse !== fresh.hasDefinedUse;
+
+      if (needsRefresh) equipChanged = true;
+
+      // If this is a weapon, ensure it has an attack action in main tab
+      if (item.attack || item.damage) {
+        const atkId = `atk-${item.id}`;
+        if (!newMain.some(m => m.id === atkId)) {
+          newMain.push(itemToAttackAction(item));
+          mainChanged = true;
+        }
+      }
+
+      return needsRefresh ? fresh : a;
     });
-    const hasChange = refreshed.some((a, i) =>
-      a.logMode !== current[i].logMode || a.hasDefinedUse !== current[i].hasDefinedUse
-    );
-    if (hasChange) onChangeRef.current(refreshed);
+
+    const updates: { equipment?: ActorAction[]; main?: ActorAction[] } = {};
+    if (equipChanged) updates.equipment = refreshed;
+    if (mainChanged) updates.main = newMain;
+    if (equipChanged || mainChanged) onChangeRef.current(updates);
   // Run once on mount only
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -444,11 +566,24 @@ export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEd
 
   function attachItem(item: EquipmentItem) {
     if (equippedIds.has(item.id)) return; // already equipped
-    onChange([...equippedActions, itemToAction(item)]);
+    const newEquipment = [...equippedActions, itemToAction(item)];
+    const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
+    // Weapons also get a rollable attack action in the main (Actions) tab
+    if (item.attack || item.damage) {
+      const atkEntry = itemToAttackAction(item);
+      if (!mainActions.some(a => a.id === atkEntry.id)) {
+        updates.main = [...mainActions, atkEntry];
+      }
+    }
+    onChange(updates);
   }
 
   function detachItem(actionId: string) {
-    onChange(equippedActions.filter(a => a.id !== actionId));
+    const itemId = actionId.replace(/^equip-/, "");
+    const newEquipment = equippedActions.filter(a => a.id !== actionId);
+    const newMain = mainActions.filter(a => a.id !== `atk-${itemId}`);
+    const hadAtkEntry = newMain.length !== mainActions.length;
+    onChange({ equipment: newEquipment, ...(hadAtkEntry ? { main: newMain } : {}) });
   }
 
   function handleCreateItem(item: EquipmentItem) {
@@ -461,9 +596,14 @@ export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEd
   function handleSaveLibraryItem(item: EquipmentItem) {
     upsertItem(item);
     refreshLibrary();
-    // Also update the action in the bag if it's already equipped
+    // Update both equipment display entry and attack action if already equipped
     if (equippedIds.has(item.id)) {
-      onChange(equippedActions.map(a => a.id === `equip-${item.id}` ? itemToAction(item) : a));
+      const newEquipment = equippedActions.map(a => a.id === `equip-${item.id}` ? itemToAction(item) : a);
+      const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
+      if (item.attack || item.damage) {
+        updates.main = mainActions.map(a => a.id === `atk-${item.id}` ? itemToAttackAction(item) : a);
+      }
+      onChange(updates);
     }
     setEditingItem(undefined);
     setView("library");
@@ -474,7 +614,10 @@ export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEd
     const dmLib = loadEquipmentLibrary("dm").filter(i => i.id !== itemId);
     saveEquipmentLibrary(dmLib, "dm");
     setLibrary(loadEquipmentLibrary());
-    onChange(equippedActions.filter(a => a.id !== `equip-${itemId}`));
+    const newEquipment = equippedActions.filter(a => a.id !== `equip-${itemId}`);
+    const newMain = mainActions.filter(a => a.id !== `atk-${itemId}`);
+    const hadAtkEntry = newMain.length !== mainActions.length;
+    onChange({ equipment: newEquipment, ...(hadAtkEntry ? { main: newMain } : {}) });
   }
 
   // ── Bag view ────────────────────────────────────────────────────────────────

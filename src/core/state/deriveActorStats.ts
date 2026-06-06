@@ -89,12 +89,29 @@ function synthesizeAcEffect(item: EquipmentItem): StatEffect | undefined {
 // ─── Get equipped items from actor + library ──────────────────────────────────
 
 export function getEquippedLibraryItems(actor: Actor): EquipmentItem[] {
-  const library = loadEquipmentLibrary();
   const equippedActions = actor.tabs.equipment ?? [];
   const items: EquipmentItem[] = [];
 
   for (const action of equippedActions) {
-    // Match action to library item by id
+    // ── Fast path: statEffects baked into the action at attach time (post-snapshot model) ──
+    // Actor is self-contained — no library lookup needed.
+    if (action.metadata?.statEffects?.length) {
+      const id = action.id.replace(/^equip-/, "");
+      items.push({
+        id,
+        name: action.label,
+        type: "gear",
+        description: action.description ?? "",
+        isUsable: false,
+        // Cast is safe — the stored shape matches StatEffect exactly (type/stat/value/condition)
+        statEffects: action.metadata.statEffects as StatEffect[],
+        ac: action.metadata.acDisplay,
+      });
+      continue;
+    }
+
+    // ── Fallback: library lookup for legacy items without embedded statEffects ──
+    const library = loadEquipmentLibrary();
     const strippedId = action.id.replace(/^equip-/, "");
     const item = library.find(i =>
       i.id === strippedId ||
