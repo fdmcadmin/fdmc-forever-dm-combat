@@ -66,6 +66,26 @@ function makeDerived(score: number, base: number, modifiedBy?: string): DerivedA
   };
 }
 
+// ─── Synthesize StatEffect from ac string field ───────────────────────────────
+// Covers items that have ac: "14", "+2", "11 + DEX", "14 + DEX (max 2)" etc.
+// "+N" → addAC (shield, ring); leading number → setAC (armor base)
+
+function synthesizeAcEffect(item: EquipmentItem): StatEffect | undefined {
+  const ac = item.ac?.trim();
+  if (!ac) return undefined;
+  if (ac.startsWith("+")) {
+    const val = parseInt(ac.slice(1), 10);
+    if (!isNaN(val) && val > 0) return { type: "addAC", value: val };
+  } else {
+    const match = /^(\d+)/.exec(ac);
+    if (match) {
+      const val = parseInt(match[1], 10);
+      if (!isNaN(val) && val > 0) return { type: "setAC", value: val };
+    }
+  }
+  return undefined;
+}
+
 // ─── Get equipped items from actor + library ──────────────────────────────────
 
 export function getEquippedLibraryItems(actor: Actor): EquipmentItem[] {
@@ -82,7 +102,15 @@ export function getEquippedLibraryItems(actor: Actor): EquipmentItem[] {
       `equip-${i.id}` === action.id ||
       i.id === `bc-equip-${strippedId}`
     );
-    if (item?.statEffects?.length) items.push(item);
+    if (!item) continue;
+
+    if (item.statEffects?.length) {
+      items.push(item);
+    } else if (item.ac) {
+      // Synthesize statEffects from ac string so deriveActorStats picks it up
+      const synth = synthesizeAcEffect(item);
+      if (synth) items.push({ ...item, statEffects: [synth] });
+    }
   }
 
   return items;
