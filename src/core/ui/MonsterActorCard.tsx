@@ -290,7 +290,9 @@ function ActionCard({
   const isMultiattack = action.name.toLowerCase() === "multiattack";
   // Multi-attack in-progress: action slot used but sub-attacks remain
   const isMultiattackInProgress = isMultiattack && attackCounter && stepsUsed > 0 && stepsUsed < attackCounter.total;
-  const showRollButton = action.kind !== "trait" && !isUsed && !isThisAction && !isDischarged;
+  // Sub-attacks are always re-usable during multiattack steps
+  const isInMultiattackStep = !isMultiattack && attackCounter && stepsUsed > 0 && stepsUsed < attackCounter.total;
+  const showRollButton = action.kind !== "trait" && (!isUsed || isInMultiattackStep) && !isThisAction && !isDischarged;
 
   const borderColor = isThisAction ? "#7b68ee66"
     : isDischarged ? "#5a3a0066"
@@ -315,14 +317,14 @@ function ActionCard({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: action.text ? 2 : 0 }}>
-            <strong style={{ fontSize: 12, color: isDischarged ? "#e07b39" : isMultiattackInProgress ? "#f0c040" : isReaction ? "#888" : "#ddd" }}>{action.name}</strong>
+            <strong style={{ fontSize: 12, color: isDischarged ? "#e07b39" : isMultiattackInProgress ? "#e07b39" : isReaction ? "#888" : "#ddd" }}>{action.name}</strong>
             {action.recharge && (
               <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 8, background: isDischarged ? "#3a1a00" : "#1a1a2e", border: `1px solid ${isDischarged ? "#e07b3966" : "#444"}`, color: isDischarged ? "#e07b39" : "#666" }}>
                 Recharge {action.recharge}
               </span>
             )}
             {isMultiattackInProgress && (
-              <span style={{ fontSize: 9, color: "#f0c040" }}>⚡ in progress</span>
+              <span style={{ fontSize: 9, color: "#e07b39" }}>⚡ in progress</span>
             )}
             {action.roll && (
               <span style={{ fontSize: 10, color: "#7b68ee" }}>⚔ {action.roll}</span>
@@ -642,12 +644,22 @@ export function MonsterActorCard({
     // Final commit
     const result = committedRoll.damageResult ?? committedRoll.result;
     setUsedActionIds(prev => new Set([...prev, committedRoll.actionId]));
+    // Hit during multiattack — auto-advance step so next sub-attack is available
+    if (committedRoll.actionId !== "multiattack"
+        && actionCounter && economy.stepsUsed < actionCounter.total) {
+      setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionCounter.total) }));
+    }
     addLog(`${publicName} ${committedRoll.actionName}: ${result || "used"}.`);
     onActionCommit?.(committedRoll.actionName);
     setCommittedRoll(null);
   }
 
   function handleClearRoll() {
+    // Miss during multiattack — auto-advance step so next sub-attack is available
+    if (committedRoll?.actionId && committedRoll.actionId !== "multiattack"
+        && actionCounter && economy.stepsUsed < actionCounter.total) {
+      setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionCounter.total) }));
+    }
     addLog(`${publicName} roll cleared.`);
     setCommittedRoll(null);
   }
