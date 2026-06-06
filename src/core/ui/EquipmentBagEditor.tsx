@@ -124,8 +124,11 @@ export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[]
   if (key) {
     try { return (JSON.parse(window.localStorage.getItem(key) ?? "[]") as EquipmentItem[]); } catch { return []; }
   }
-  // Both combined — campaign first
-  return [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
+  // Both combined — DM items override campaign items with same ID (so edits to campaign items persist)
+  const campaign = loadEquipmentLibrary("campaign");
+  const dm = loadEquipmentLibrary("dm");
+  const dmIds = new Set(dm.map(i => i.id));
+  return [...campaign.filter(i => !dmIds.has(i.id)), ...dm];
 }
 
 export function saveEquipmentLibrary(library: EquipmentItem[], owner: "campaign" | "dm" = "dm"): void {
@@ -140,12 +143,13 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[]): void {
 }
 
 function upsertItem(item: EquipmentItem): void {
-  // Only DM items can be upserted — campaign items are read-only
-  if (item.isLocked) return;
+  // Save to DM library — strips isLocked so campaign items become editable custom copies
+  // DM library overrides campaign library in loadEquipmentLibrary() combined view
   const library = loadEquipmentLibrary("dm");
   const idx = library.findIndex(i => i.id === item.id);
-  if (idx === -1) library.push(item);
-  else library[idx] = item;
+  const toSave: EquipmentItem = { ...item, isLocked: false };
+  if (idx === -1) library.push(toSave);
+  else library[idx] = toSave;
   saveEquipmentLibrary(library, "dm");
 }
 
