@@ -380,8 +380,15 @@ export function EncounterLibraryPanel({
     } catch { return []; }
   });
 
-  // Merge base library with any in-session edits
-  const resolvedLibrary = monsterLibrary.map(t => monsterOverrides[t.templateId] ?? t);
+  // Merge base library with any in-session edits.
+  // Also include newly-created templates that aren't in the parent's library yet
+  // (parent re-renders asynchronously; overrides make them visible immediately).
+  const resolvedLibrary = [
+    ...monsterLibrary.map(t => monsterOverrides[t.templateId] ?? t),
+    ...Object.values(monsterOverrides).filter(
+      t => !monsterLibrary.some(m => m.templateId === t.templateId)
+    ),
+  ];
 
   function handleSaveMonsterTemplate(updated: MainMonsterTemplate) {
     // Save to DM localStorage library
@@ -640,6 +647,10 @@ export function EncounterLibraryPanel({
                     visibility: { defaultState: "condition", hiddenName: "Unknown creature", revealedName: "" },
                   };
                   upsertMonsterTemplate(blank);
+                  // Add to overrides immediately so resolvedLibrary contains it before
+                  // the parent re-renders with the new monsterLibrary prop.
+                  // Without this the "stale ID" useEffect clears editingMonsterTemplateId.
+                  setMonsterOverrides(prev => ({ ...prev, [blank.templateId]: blank }));
                   setEditingMonsterTemplateId(blank.templateId);
                   refreshLibrary();
                 }}

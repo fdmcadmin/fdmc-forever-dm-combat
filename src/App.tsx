@@ -2405,7 +2405,14 @@ export default function App() {
         rulesProfile={DEFAULT_COMBAT_RULES_PROFILE}
         turnResetVersion={turnResetVersion}
         isPlayerMode={isPlayerMode}
-        isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actorToShow.id}
+        isActiveTurn={
+          roomLiveState.combat.phase !== "combat" ||
+          roomLiveState.combat.activeActorId === actorToShow.id ||
+          // Companions act on their owner's turn — check ownerId from moduleData
+          (actorToShow.kind === "companion" &&
+            roomLiveState.combat.activeActorId ===
+              (actorToShow.moduleData as { ownerId?: string } | undefined)?.ownerId)
+        }
         combatRound={roomLiveState.combat.phase === "combat" ? roomLiveState.combat.round : undefined}
         diceBridgeStatus={diceBridgeStatus}
         diceBridgeLastEvent={diceBridgeLastEvent}
@@ -2739,7 +2746,14 @@ export default function App() {
                 rulesProfile={DEFAULT_COMBAT_RULES_PROFILE}
                 turnResetVersion={turnResetVersion}
                 isPlayerMode={isPlayerMode}
-                isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === focusedActorId}
+                isActiveTurn={
+                  roomLiveState.combat.phase !== "combat" ||
+                  roomLiveState.combat.activeActorId === focusedActorId ||
+                  // Companions act on their owner's turn
+                  (focusedActor.kind === "companion" &&
+                    roomLiveState.combat.activeActorId ===
+                      (focusedActor.moduleData as { ownerId?: string } | undefined)?.ownerId)
+                }
                 combatRound={roomLiveState.combat.phase === "combat" ? roomLiveState.combat.round : undefined}
                 diceBridgeStatus={diceBridgeStatus}
                 diceBridgeLastEvent={diceBridgeLastEvent}
