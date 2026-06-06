@@ -21,10 +21,12 @@ export type PlayerSafeMonster = {
   conditionLabel: string;
   activeConditions: string[];
   ac: string;
-  /** Action names — shown as read-only pills on player card (no DM data) */
+  /** Whether monster has standard actions — shows "Action" category pill on player card */
   actionNames: string[];
-  /** Reaction names — shown as read-only green pills */
+  /** Whether monster has reactions — shows "Reaction" category pill on player card */
   reactionNames: string[];
+  /** Whether monster has bonus actions — shows "Bonus" category pill on player card */
+  hasBonusActions: boolean;
 };
 import OBR from "@owlbear-rodeo/sdk";
 import { CombatLog } from "./core/combat-log/CombatLog";
@@ -66,7 +68,7 @@ import {
   upsertActorInLibrary,
 } from "./core/seats/dmActorLibrary";
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
-import type { MonsterCombatCandidate } from "./core/monsters/MonsterJconScanner";
+import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
 import { MonsterRuntimeSetupSlot } from "./core/monsters/runtime/MonsterRuntimeSetupSlot";
 import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { type MainEncounterMonsterInstance } from "./core/monsters/runtime/mainMonsterRuntime";
@@ -225,24 +227,17 @@ function PlayerMonsterRoster({
                       ))}
                     </div>
                   )}
-                  {m.actionNames.length > 0 && (
-                    <div>
-                      <p style={{ margin: "0 0 3px", fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Actions</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                        {m.actionNames.map((name, i) => (
-                          <span key={i} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a2a4e", color: "#aaa" }}>{name}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {m.reactionNames.length > 0 && (
-                    <div>
-                      <p style={{ margin: "0 0 3px", fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Reactions</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                        {m.reactionNames.map((name, i) => (
-                          <span key={i} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 10, background: "#1a2a1a", border: "1px solid #2a4e2a", color: "#9be9a8" }}>{name}</span>
-                        ))}
-                      </div>
+                  {(m.actionNames.length > 0 || m.hasBonusActions || m.reactionNames.length > 0) && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                      {m.actionNames.length > 0 && (
+                        <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a2a4e", color: "#aaa" }}>Action</span>
+                      )}
+                      {m.hasBonusActions && (
+                        <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a3a1e", color: "#c8b96a" }}>Bonus</span>
+                      )}
+                      {m.reactionNames.length > 0 && (
+                        <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "#1a2a1a", border: "1px solid #2a4e2a", color: "#9be9a8" }}>Reaction</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -687,6 +682,7 @@ export default function App() {
         ac: vis === "full" ? (m.ac ?? "") : "",
         actionNames: vis !== "hidden" ? (m.actions ?? []).map(a => a.name).filter(Boolean) : [],
         reactionNames: vis !== "hidden" ? (m.reactions ?? []).map(a => a.name).filter(Boolean) : [],
+        hasBonusActions: vis !== "hidden" && (m.actions ?? []).some(a => (a as MonsterReaderAction & { economyCost?: string }).economyCost === "bonus"),
       };
     });
     void obrSend(
@@ -2410,6 +2406,7 @@ export default function App() {
         turnResetVersion={turnResetVersion}
         isPlayerMode={isPlayerMode}
         isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actorToShow.id}
+        combatRound={roomLiveState.combat.phase === "combat" ? roomLiveState.combat.round : undefined}
         diceBridgeStatus={diceBridgeStatus}
         diceBridgeLastEvent={diceBridgeLastEvent}
         onHpChange={(nextHp) => void setActorHp(actorToShow.id, nextHp)}
@@ -2743,6 +2740,7 @@ export default function App() {
                 turnResetVersion={turnResetVersion}
                 isPlayerMode={isPlayerMode}
                 isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === focusedActorId}
+                combatRound={roomLiveState.combat.phase === "combat" ? roomLiveState.combat.round : undefined}
                 diceBridgeStatus={diceBridgeStatus}
                 diceBridgeLastEvent={diceBridgeLastEvent}
                 onHpChange={(nextHp) => void setActorHp(focusedActorId, nextHp)}

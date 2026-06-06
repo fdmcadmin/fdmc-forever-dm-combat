@@ -74,6 +74,8 @@ export function useActionEconomyState(actors: Actor[]) {
   const initialState = useMemo(() => createInitialState(actors), [actors]);
   const [actionStateByActorId, setActionStateByActorId] = useState<ActorActionEconomyMap>(() => mergeStoredState(actors, initialState));
   const broadcastReadyRef = useRef(false);
+  const stateRef = useRef(actionStateByActorId);
+  stateRef.current = actionStateByActorId;
 
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
@@ -94,6 +96,11 @@ export function useActionEconomyState(actors: Actor[]) {
     }
 
     broadcastReadyRef.current = true;
+    // UX-6: re-broadcast current state on mount so late-joining peers get current economy
+    const currentStored = readStoredState();
+    if (currentStored) {
+      void OBR.broadcast.sendMessage(ACTION_STATE_CHANNEL, { type: "replace", state: currentStored }, { destination: "ALL" }).catch(() => undefined);
+    }
 
     return OBR.broadcast.onMessage(ACTION_STATE_CHANNEL, (event) => {
       if (!isActionStateSyncMessage(event.data)) {

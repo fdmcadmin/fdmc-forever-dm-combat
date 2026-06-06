@@ -67,6 +67,8 @@ type ActorCardProps = {
   isPlayerMode?: boolean;
   /** False during combat when it is not this actor's turn — gates main/bonus actions */
   isActiveTurn?: boolean;
+  /** Current combat round — when set + isActiveTurn, shows F09 initiative pill */
+  combatRound?: number;
   /** Resource counters — remaining count per resource action ID */
   resourceCounters?: Record<string, number>;
   onShortRest?: () => void;
@@ -553,6 +555,7 @@ export function ActorCard({
   canShowDevTestRoll = false,
   isPlayerMode = false,
   isActiveTurn = true,
+  combatRound,
   resourceCounters,
   onShortRest,
   onLongRest,
@@ -2842,10 +2845,12 @@ export function ActorCard({
             )}
           </div>
           <div className="actor-header-tools">
-            {/* P9: initiative roll button removed — roll from combat tracker 🎲 button instead */}
+            {/* F09: initiative pill — shows round when active turn */}
             {initiativeState?.result && (
               <span className={`initiative-result-pill ${initiativeState.status}`}>
-                Init {initiativeState.result}
+                {isActiveTurn && combatRound !== undefined
+                  ? `⚡ Init ${initiativeState.result} · Rd ${combatRound}`
+                  : `Init ${initiativeState.result}`}
               </span>
             )}
             {!isPlayerMode && <span className="actor-kind-pill">{titleCaseKind(actor.kind)}</span>}
@@ -2960,6 +2965,8 @@ export function ActorCard({
           usedCostSlots={usedCostSlots}
           concentration={concentration}
           isPlayerMode={isPlayerMode}
+          isActiveTurn={isActiveTurn}
+          hasBonusActions={Object.values(actor.tabs).some((actions: ActorAction[]) => actions.some(a => (a as { economyCost?: string }).economyCost?.toLowerCase() === "bonus"))}
           onResetTurn={isPlayerMode ? onResetTurn : resetTurn}
           onClearConcentration={onClearConcentration}
         />

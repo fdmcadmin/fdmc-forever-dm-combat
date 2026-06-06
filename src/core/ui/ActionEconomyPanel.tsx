@@ -15,11 +15,17 @@ const DOT_READIED = "#d7b36a";  // amber
 const DOT_USED    = "#ff5840";  // red
 const DOT_NONE    = "#2a2a3e";  // dark — no cost active
 
+const BONUS_WARN_COLOR = "#e07b39";
+
 type ActionEconomyPanelProps = {
   state: ActorActionEconomyState;
   usedCostSlots?: ActionCost[];
   concentration: ActorConcentrationState;
   isPlayerMode?: boolean;
+  /** True when it IS this actor's turn — F03 ⚠ shows only off-turn */
+  isActiveTurn?: boolean;
+  /** True if actor has at least one bonus-action defined — enables F03 ⚠ badge */
+  hasBonusActions?: boolean;
   onResetTurn: () => void;
   onClearConcentration: () => void;
 };
@@ -60,6 +66,8 @@ export function ActionEconomyPanel({
   usedCostSlots = [],
   concentration,
   isPlayerMode = false,
+  isActiveTurn = true,
+  hasBonusActions = false,
   onResetTurn,
   onClearConcentration,
 }: ActionEconomyPanelProps) {
@@ -75,13 +83,22 @@ export function ActionEconomyPanel({
       <div style={{ display: "flex", alignItems: "flex-end", gap: 14, flexWrap: "wrap" }}>
         {slotOrder.map(({ cost, label }) => {
           const s = dotState(state, usedCostSlots, cost);
+          const showBonusWarn = cost === "bonus" && !isActiveTurn && !isPlayerMode && hasBonusActions && s === "ready";
           return (
-            <Dot
-              key={cost}
-              color={dotColor(s)}
-              label={label}
-              title={`${label}: ${s}`}
-            />
+            <div key={cost} style={{ position: "relative", display: "inline-flex" }}>
+              <Dot
+                color={dotColor(s)}
+                label={label}
+                title={showBonusWarn ? `${label}: unspent — bonus action available` : `${label}: ${s}`}
+              />
+              {showBonusWarn && (
+                <span style={{
+                  position: "absolute", top: -4, right: -6,
+                  fontSize: 10, color: BONUS_WARN_COLOR, fontWeight: "bold", lineHeight: 1,
+                  pointerEvents: "none",
+                }}>⚠</span>
+              )}
+            </div>
           );
         })}
 

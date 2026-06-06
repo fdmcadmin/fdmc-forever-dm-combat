@@ -413,7 +413,7 @@ export function EquipmentBagEditor({ equippedActions, onChange }: EquipmentBagEd
     const allItems = loadEquipmentLibrary();
     const current = equippedActionsRef.current;
     const refreshed = current.map(a => {
-      const itemId = a.id.replace(/^equip-/, "").replace(/-[a-z0-9]+$/, "");
+      const itemId = a.id.replace(/^equip-/, "");
       const item = allItems.find(i => i.id === itemId || `equip-${i.id}` === a.id);
       return item ? itemToAction(item) : a;
     });
