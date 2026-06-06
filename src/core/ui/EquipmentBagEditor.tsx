@@ -226,6 +226,14 @@ export function itemToAction(item: EquipmentItem): ActorAction {
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
       ].filter(Boolean).join(" · "),
+      charges: item.charges,
+      effect: item.effect ? {
+        type: item.effect.type as string,
+        label: item.effect.label,
+        formula: item.effect.formula,
+        value: item.effect.value,
+        condition: item.effect.condition,
+      } : undefined,
     },
   };
 }

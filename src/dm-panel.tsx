@@ -56,9 +56,9 @@ import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import type { Actor } from "./core/types/actor";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
-import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, itemToAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "./data/broken-chain/equipmentLibrary";
-import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest, type LootDelivery } from "./core/ui/EquipmentLibraryStandalone";
+import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { LevelUpApprovalPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
 import { TokenAssignmentPanel } from "./core/tokens/TokenAssignmentPanel";
@@ -214,19 +214,35 @@ function DmPanelApp() {
     }
   }
 
+  async function handleDeliverLoot(seatId: string, item: EquipmentItem, message: string) {
+    const seat = seats[seatId];
+    const actorId = seat?.primaryActorId;
+    const actor = actorId ? actorLibrary[actorId] : undefined;
+
+    if (actor) {
+      const equipAction = itemToAction(item);
+      const updatedActor = { ...actor, tabs: { ...actor.tabs, equipment: [...(actor.tabs.equipment ?? []), equipAction] } };
+      const freshLib = { ...actorLibrary, [updatedActor.id]: updatedActor };
+      upsertActorInLibrary(updatedActor);
+      setActorLibrary(() => freshLib);
+      pushActorsToSeat(seatId, { freshLibrary: freshLib });
+    }
+
+    if (OBR.isAvailable) {
+      await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:loot-attached",
+        seatId,
+        itemName: item.name,
+        message,
+      }, { destination: "REMOTE" });
+    }
+  }
+
   async function handleConvergenceApprove(req: ConvergenceRequest, outputItemId: string) {
-    if (!OBR.isAvailable) return;
     const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
     const outputItem = allItems.find(i => i.id === outputItemId);
     if (!outputItem) return;
-    const delivery: LootDelivery = {
-      type: "fdmc:loot-delivery",
-      seatId: req.seatId,
-      item: outputItem,
-      deliveryId: `conv-${Date.now().toString(36)}`,
-      message: `Convergence complete — ${outputItem.name} has been forged. Remove your submitted items from your equipment bag.`,
-    };
-    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
+    await handleDeliverLoot(req.seatId, outputItem, `Convergence complete — ${outputItem.name} has been forged. Remove your submitted items from your equipment bag.`);
     setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
     setConvergenceApprovalReq(null);
   }
@@ -591,6 +607,7 @@ function DmPanelApp() {
             externalConvergenceRequests={pendingConvergenceRequests}
             onExternalConvergenceApprove={handleConvergenceApprove}
             onExternalConvergenceDeny={handleConvergenceDeny}
+            onDeliverLoot={handleDeliverLoot}
           />
         )}
 
@@ -819,7 +836,7 @@ function DmPanelApp() {
                   onClearRoster={() => undefined}
                 />
               )}
-              {libraryTab === "equipment" && <EquipmentLibraryStandalone seats={Object.values(seats)} />}
+              {libraryTab === "equipment" && <EquipmentLibraryStandalone seats={Object.values(seats)} onDeliverLoot={handleDeliverLoot} />}
             </div>
           </div>
         )}

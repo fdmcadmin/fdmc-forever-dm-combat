@@ -2966,7 +2966,7 @@ export function ActorCard({
           concentration={concentration}
           isPlayerMode={isPlayerMode}
           isActiveTurn={isActiveTurn}
-          hasBonusActions={Object.values(actor.tabs).some((actions: ActorAction[]) => actions.some(a => (a as { economyCost?: string }).economyCost?.toLowerCase() === "bonus"))}
+          hasBonusActions={Object.values(actor.tabs).some((actions: ActorAction[]) => actions.some(a => a.economyCost?.includes("bonus") ?? false))}
           onResetTurn={isPlayerMode ? onResetTurn : resetTurn}
           onClearConcentration={onClearConcentration}
         />

@@ -88,6 +88,10 @@ export type ActorActionMetadata = {
   castingTimeType?: CastingTimeType;
   /** Explicit outcome mode — set this to skip inference and lock the roll behavior */
   outcomeMode?: ActionOutcomeMode;
+  /** Charge tracking — carried from EquipmentItem for items with limited uses */
+  charges?: { max: number; reset: "longRest" | "shortRest" | "manual" };
+  /** Effect descriptor — carried from EquipmentItem for charge-gated effects */
+  effect?: { type: string; label?: string; formula?: string; value?: string; condition?: string };
 };
 
 export type ActorAction = {

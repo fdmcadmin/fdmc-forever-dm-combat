@@ -351,9 +351,11 @@ type EquipmentLibraryStandaloneProps = {
   externalConvergenceRequests?: ConvergenceRequest[];
   onExternalConvergenceApprove?: (req: ConvergenceRequest, outputItemId: string) => Promise<void>;
   onExternalConvergenceDeny?: (req: ConvergenceRequest) => Promise<void>;
+  /** Called by DM panel to attach item to actor + push to seat before notifying player */
+  onDeliverLoot?: (seatId: string, item: EquipmentItem, message: string) => Promise<void>;
 };
 
-export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny }: EquipmentLibraryStandaloneProps) {
+export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot }: EquipmentLibraryStandaloneProps) {
   const [campaignLib, setCampaignLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("campaign"));
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
   const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(null);
@@ -393,14 +395,19 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
 
   async function handleSendLoot() {
     if (!lootTarget || !OBR.isAvailable) return;
-    const delivery: LootDelivery = {
-      type: "fdmc:loot-delivery",
-      seatId: lootTarget.seatId,
-      item: lootTarget.item,
-      deliveryId: `loot-${Date.now().toString(36)}`,
-      message: lootMessage.trim() || `${lootTarget.item.name} delivered.`,
-    };
-    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
+    const message = lootMessage.trim() || `${lootTarget.item.name} delivered.`;
+    if (onDeliverLoot) {
+      await onDeliverLoot(lootTarget.seatId, lootTarget.item, message);
+    } else {
+      const delivery: LootDelivery = {
+        type: "fdmc:loot-delivery",
+        seatId: lootTarget.seatId,
+        item: lootTarget.item,
+        deliveryId: `loot-${Date.now().toString(36)}`,
+        message,
+      };
+      await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
+    }
     setRecentDelivery(`Sent ${lootTarget.item.name} to ${seats.find(s => s.seatId === lootTarget.seatId)?.label ?? lootTarget.seatId}`);
     setLootTarget(null);
     setLootMessage("");

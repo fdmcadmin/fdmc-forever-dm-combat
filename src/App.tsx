@@ -2200,7 +2200,7 @@ export default function App() {
               anchorPosition: { left: cardLeft, top: 24 },
               anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
               transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
-              disableClickAway: false,  // allow clicking away to close
+              disableClickAway: true,   // keep window open — user must click ✕ Close All or the actor button again
               marginThreshold: 16,
             });
             setOpenActorPopoverId(actorId);
