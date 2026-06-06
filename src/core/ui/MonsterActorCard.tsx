@@ -705,34 +705,37 @@ export function MonsterActorCard({
             </div>
           </div>
         )}
-        {traitsOpen && allPlayerActions.length > 0 && (
-          <div style={{ padding: "8px 12px", borderTop: "1px solid #1a1a2e", display: "flex", flexDirection: "column", gap: 6 }}>
-            {monsterActions.length > 0 && (
-              <div>
-                <p style={{ margin: "0 0 4px", fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Actions</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {monsterActions.map((a, i) => (
-                    <span key={i} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a2a4e", color: "#aaa" }}>
-                      {a.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {monsterReactions.length > 0 && (
-              <div>
-                <p style={{ margin: "0 0 4px", fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Reactions</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {monsterReactions.map((a, i) => (
-                    <span key={i} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "#1a2a1a", border: "1px solid #2a4e2a", color: "#9be9a8" }}>
-                      {a.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {traitsOpen && allPlayerActions.length > 0 && (() => {
+          // Count by category — never expose action names to players
+          const bonusCount = monsterActions.filter(a => (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() === "bonus").length;
+          const specialCount = monsterActions.filter(a => a.kind === "trait").length;
+          const actionCount = monsterActions.length - bonusCount - specialCount;
+          const reactionCount = monsterReactions.length;
+          return (
+            <div style={{ padding: "6px 12px 8px", borderTop: "1px solid #1a1a2e", display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {actionCount > 0 && Array.from({ length: actionCount }).map((_, i) => (
+                <span key={`act-${i}`} style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #2a2a4e", color: "#aaa" }}>
+                  Action
+                </span>
+              ))}
+              {bonusCount > 0 && Array.from({ length: bonusCount }).map((_, i) => (
+                <span key={`bon-${i}`} style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, background: "#1a1500", border: "1px solid #e07b3944", color: "#e07b39" }}>
+                  Bonus
+                </span>
+              ))}
+              {reactionCount > 0 && Array.from({ length: reactionCount }).map((_, i) => (
+                <span key={`rea-${i}`} style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, background: "#1a1a2e", border: "1px solid #7b68ee44", color: "#7b68ee" }}>
+                  Reaction
+                </span>
+              ))}
+              {specialCount > 0 && Array.from({ length: specialCount }).map((_, i) => (
+                <span key={`spc-${i}`} style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, background: "#1a0a1a", border: "1px solid #9b59b644", color: "#9b59b6" }}>
+                  Special
+                </span>
+              ))}
+            </div>
+          );
+        })()}
       </article>
     );
   }
