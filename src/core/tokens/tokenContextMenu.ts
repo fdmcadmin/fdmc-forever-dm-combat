@@ -24,7 +24,11 @@ const ASSIGN_PREFIX = "fdmc.tokenmenu.assign.";
 let registeredAssignIds: string[] = [];
 
 function svgDataUri(svg: string): string {
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  // OBR validates context-menu icons with a strict URI check (Joi `.uri()`). A
+  // percent-encoded data URI (`data:image/svg+xml,%3C…`) FAILS that check with
+  // "icons[0].icon must be a valid uri". A base64 data URI is a clean, unambiguous URI
+  // that passes. SVGs here are pure ASCII, so btoa is safe.
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
 function seatIcon(color: string): string {
