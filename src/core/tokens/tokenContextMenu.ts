@@ -51,17 +51,28 @@ function contextMenuApi(): ContextMenuApiShape | null {
  */
 export async function syncTokenContextMenus(tableId: string, seats: Record<string, FdmcSeat>): Promise<void> {
   const api = contextMenuApi();
-  if (!api) return;
+  if (!api) {
+    console.warn("[FDMC] token context menu: OBR.contextMenu API unavailable — menu not registered.");
+    return;
+  }
+
+  // Surface create failures instead of swallowing them — a silent failure here is why the
+  // menu can appear to be "missing". Logs once per failed entry; never throws.
+  const warnFail = (what: string) => (e: unknown) => console.warn(`[FDMC] token context menu: failed to register "${what}":`, e);
 
   // Remove previously-registered per-seat entries before rebuilding.
   await Promise.all(registeredAssignIds.map(id => api.remove(id).catch(() => undefined)));
   registeredAssignIds = [];
 
   // GM Lock / Unlock toggle — label flips based on the token's current lock state.
+  // NOTE: a token's `locked` is often `undefined` (not literally `false`), and OBR's
+  // default `==` comparison means `value: false` would NOT match an unlocked token —
+  // hiding the whole entry. Use `locked != true` so the Lock icon shows whenever the
+  // token is not explicitly locked.
   await api.create({
     id: GM_LOCK_ID,
     icons: [
-      { icon: LOCK_ICON, label: "GM Lock token", filter: { roles: ["GM"], every: [{ key: "locked", value: false }] } },
+      { icon: LOCK_ICON, label: "GM Lock token", filter: { roles: ["GM"], every: [{ key: "locked", value: true, operator: "!=" }] } },
       { icon: UNLOCK_ICON, label: "GM Unlock token", filter: { roles: ["GM"], every: [{ key: "locked", value: true }] } },
     ],
     onClick: (ctx: { items: { id: string; locked?: boolean }[] }) => {
@@ -72,7 +83,7 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
         else void unlockToken(item.id);
       }
     },
-  }).catch(() => undefined);
+  }).catch(warnFail("GM Lock"));
 
   // Clear assignment.
   await api.create({
@@ -81,7 +92,7 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
     onClick: (ctx: { items: { id: string }[] }) => {
       for (const item of ctx.items) void clearTokenBinding(item.id);
     },
-  }).catch(() => undefined);
+  }).catch(warnFail("Clear assignment"));
 
   // One "Assign to <seat>" entry per active player seat.
   const seatList = Object.values(seats)
@@ -110,7 +121,7 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
           void writeTokenBinding(item.id, binding).then(() => lockToken(item.id)).catch(() => undefined);
         }
       },
-    }).catch(() => undefined);
+    }).catch(warnFail(`Assign to ${seat.label}`));
     registeredAssignIds.push(id);
   }
 }

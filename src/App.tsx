@@ -708,12 +708,22 @@ export default function App() {
       .join("|"),
     [roomLiveState.seats],
   );
+  // Register / re-sync the token menus when the seat set changes. We deliberately do NOT
+  // tear down in this effect's cleanup — tearing everything down on every re-sync races
+  // the immediate re-create (an async remove() can land after create() and silently wipe
+  // the menu). syncTokenContextMenus prunes stale per-seat entries itself; the one-time
+  // unmount teardown lives in the effect below. Waits for OBR readiness before touching
+  // the contextMenu API.
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
-    void syncTokenContextMenus(roomLiveState.tableId, roomLiveState.seats);
-    return () => { void teardownTokenContextMenus(); };
+    const register = () => void syncTokenContextMenus(roomLiveState.tableId, roomLiveState.seats);
+    if (OBR.isReady) register();
+    else OBR.onReady(register);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode, roomLiveState.tableId, seatMenuSignature]);
+
+  // Remove the FDMC token menus only when the app unmounts.
+  useEffect(() => () => { void teardownTokenContextMenus(); }, []);
 
   function broadcastMonsterRoster(roster: MainEncounterMonsterInstance[]) {
     if (!OBR.isAvailable) return;
