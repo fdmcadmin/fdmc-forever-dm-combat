@@ -5,6 +5,7 @@ const ENCOUNTER_LOAD_QUEUE_KEY = FDMC_STORAGE_KEYS.encounterLoadQueue;
 const ENCOUNTER_LOAD_CHANNEL = FDMC_CHANNELS.encounterLoadRequest;
 const MONSTER_ROSTER_CHANNEL = FDMC_CHANNELS.monsterRoster;
 const VIEWER_PARTY_CHANNEL = FDMC_CHANNELS.viewerParty;
+const PARTY_TRACKER_CHANNEL = FDMC_CHANNELS.partyTracker;
 
 type ViewerActorSummary = {
   id: string;
@@ -33,7 +34,7 @@ export type PlayerSafeMonster = {
 import OBR from "@owlbear-rodeo/sdk";
 import { CombatLog } from "./core/combat-log/CombatLog";
 import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
-import { CombatTracker, buildCombatants, sortCombatants } from "./core/ui/CombatTracker";
+import { CombatTracker, buildCombatants, sortCombatants, type Combatant } from "./core/ui/CombatTracker";
 import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -52,7 +53,7 @@ import { ActorCard } from "./core/ui/ActorCard";
 import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
-import { syncTokenContextMenus, teardownTokenContextMenus } from "./core/tokens/tokenContextMenu";
+// Token context menu is registered by the background page (src/background.ts), not here.
 import { isObrReady, obrSend } from "./core/utils/obrReady";
 import { loadEquipmentLibrary, itemToAction } from "./core/ui/EquipmentBagEditor";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
@@ -700,30 +701,12 @@ export default function App() {
     [monsterCandidates, activeMonsterInstanceId],
   );
 
-  // ── DM: token right-click menu — quick GM lock + assign-to-seat ───────────
-  // Rebuilt when the seat set changes. Stable signature avoids menu thrash.
-  const seatMenuSignature = useMemo(
-    () => Object.values(roomLiveState.seats)
-      .map(s => `${s.seatId}:${s.label}:${s.seatMode}:${s.primaryActorId}`)
-      .join("|"),
-    [roomLiveState.seats],
-  );
-  // Register / re-sync the token menus when the seat set changes. We deliberately do NOT
-  // tear down in this effect's cleanup — tearing everything down on every re-sync races
-  // the immediate re-create (an async remove() can land after create() and silently wipe
-  // the menu). syncTokenContextMenus prunes stale per-seat entries itself; the one-time
-  // unmount teardown lives in the effect below. Waits for OBR readiness before touching
-  // the contextMenu API.
-  useEffect(() => {
-    if (!isDmMode || !OBR.isAvailable) return;
-    const register = () => void syncTokenContextMenus(roomLiveState.tableId, roomLiveState.seats);
-    if (OBR.isReady) register();
-    else OBR.onReady(register);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDmMode, roomLiveState.tableId, seatMenuSignature]);
-
-  // Remove the FDMC token menus only when the app unmounts.
-  useEffect(() => () => { void teardownTokenContextMenus(); }, []);
+  // ── Token right-click menu — REGISTERED IN THE BACKGROUND PAGE ───────────
+  // The token context menu (GM Lock / Assign to seat / Clear) is registered by
+  // `src/background.ts`, NOT here. This app is the action POPOVER — it only runs while
+  // open, so a menu registered here would vanish the moment the DM closes the popover.
+  // The background page (manifest "background") keeps it alive for the whole session.
+  // See background.ts.
 
   function broadcastMonsterRoster(roster: MainEncounterMonsterInstance[]) {
     if (!OBR.isAvailable) return;
@@ -990,6 +973,24 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode, dmActors]);
 
+  // ── Shared party tracker — every PC sees the whole party (names + HP) so healers
+  // know who to help. The DM broadcasts a player-safe roster of party combatants
+  // (actors only — NEVER monster HP). Players merge it into their combat tracker.
+  const [partyRoster, setPartyRoster] = useState<Combatant[]>([]);
+
+  // Player: receive the roster + request it on mount (covers late joiners).
+  useEffect(() => {
+    if (isDmMode || !OBR.isAvailable) return;
+    const unsub = OBR.broadcast.onMessage(PARTY_TRACKER_CHANNEL, (event) => {
+      const msg = event.data as { type?: string; party?: Combatant[] } | undefined;
+      if (msg?.type === "fdmc:party-tracker" && Array.isArray(msg.party)) {
+        setPartyRoster(msg.party);
+      }
+    });
+    void obrSend(PARTY_TRACKER_CHANNEL, { type: "fdmc:party-tracker-request" }, { destination: "REMOTE" }).catch(() => undefined);
+    return unsub;
+  }, [isDmMode]);
+
   // ── Player: monster roster cache — received from DM broadcast ─────────────
   const [playerMonsters, setPlayerMonsters] = useState<PlayerSafeMonster[]>([]);
   const [playerPeekId, setPlayerPeekId] = useState<string | null>(null);
@@ -1132,33 +1133,66 @@ export default function App() {
     for (const m of monsterCandidates as MainEncounterMonsterInstance[]) {
       initiativeByMonster[m.instanceId] = roomLiveState.monsterLiveState[m.instanceId]?.initiative ?? null;
     }
-    const base = buildCombatants(
-      actors,
-      monsterCandidates as MainEncounterMonsterInstance[],
-      roomLiveState.combat.activeActorId,
-      initiativeByActor,
-      initiativeByMonster,
-      isDmMode,
-      liveHpByActorId,
-    );
 
-    // Player mode: add player-safe monster combatants from DM broadcast
-    if (isPlayerMode && playerMonsters.length > 0) {
-      const playerMonsterCombatants: import("./core/ui/CombatTracker").Combatant[] = playerMonsters.map(m => ({
-        id: m.instanceId,
-        name: m.publicName,
-        kind: "monster" as const,
-        initiative: roomLiveState.monsterLiveState[m.instanceId]?.initiative ?? null,
-        initiativeBonus: 0,
-        hp: { current: Math.round(m.hpRatio * 100), max: 100 },
-        isActive: m.instanceId === roomLiveState.combat.activeActorId,
-        isDead: m.hpRatio <= 0,
-      }));
-      return [...base, ...playerMonsterCombatants];
+    // DM: full roster — real HP for both party and monsters.
+    if (isDmMode) {
+      return buildCombatants(
+        actors,
+        monsterCandidates as MainEncounterMonsterInstance[],
+        roomLiveState.combat.activeActorId,
+        initiativeByActor,
+        initiativeByMonster,
+        true,
+        liveHpByActorId,
+      );
     }
 
-    return base;
-  }, [actors, monsterCandidates, playerMonsters, roomLiveState, isDmMode, isPlayerMode, getActorInitiative, liveHpByActorId]);
+    // Player / viewer: party (actor) rows come from the DM's shared roster so EVERY
+    // ally's HP is visible (healers need this). Fall back to just the player's own seat
+    // actors until the roster arrives. Active flag is recomputed from live combat state.
+    const partyCombatants: Combatant[] = partyRoster.length > 0
+      ? partyRoster.map(c => ({ ...c, isActive: c.id === roomLiveState.combat.activeActorId }))
+      : buildCombatants(actors, [], roomLiveState.combat.activeActorId, initiativeByActor, {}, false, liveHpByActorId);
+
+    // Monsters come from the player-safe broadcast — ratio HP only, never true numbers.
+    const playerMonsterCombatants: Combatant[] = playerMonsters.map(m => ({
+      id: m.instanceId,
+      name: m.publicName,
+      kind: "monster" as const,
+      initiative: roomLiveState.monsterLiveState[m.instanceId]?.initiative ?? null,
+      initiativeBonus: 0,
+      hp: { current: Math.round(m.hpRatio * 100), max: 100 },
+      isActive: m.instanceId === roomLiveState.combat.activeActorId,
+      isDead: m.hpRatio <= 0,
+    }));
+
+    return [...partyCombatants, ...playerMonsterCombatants];
+  }, [actors, monsterCandidates, playerMonsters, partyRoster, roomLiveState, isDmMode, getActorInitiative, liveHpByActorId]);
+
+  // ── DM: broadcast the player-safe party roster (actor combatants only — never monster
+  // HP) so every PC's tracker shows ally HP. Re-broadcasts when the party's HP / init /
+  // active / death state changes; also replies to a late joiner's request.
+  const partyRosterSig = useMemo(
+    () => (isDmMode ? JSON.stringify(allCombatants.filter(c => c.kind === "actor")) : ""),
+    [isDmMode, allCombatants],
+  );
+  const partyRosterSigRef = useRef(partyRosterSig);
+  partyRosterSigRef.current = partyRosterSig;
+
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable || !partyRosterSig) return;
+    void obrSend(PARTY_TRACKER_CHANNEL, { type: "fdmc:party-tracker", party: JSON.parse(partyRosterSig) }, { destination: "REMOTE" }).catch(() => undefined);
+  }, [isDmMode, partyRosterSig]);
+
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(PARTY_TRACKER_CHANNEL, (event) => {
+      const msg = event.data as { type?: string } | undefined;
+      if (msg?.type !== "fdmc:party-tracker-request") return;
+      const sig = partyRosterSigRef.current;
+      if (sig) void obrSend(PARTY_TRACKER_CHANNEL, { type: "fdmc:party-tracker", party: JSON.parse(sig) }, { destination: "REMOTE" }).catch(() => undefined);
+    });
+  }, [isDmMode]);
 
   function handleStartCombat() {
     const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
@@ -2491,8 +2525,14 @@ export default function App() {
           onEndCombat={handleEndCombat}
           onSelectCombatant={(id) => {
             const actor = actors.find(a => a.id === id);
-            if (actor) { setSelectedActorId(id); setActiveMonsterInstanceId(""); }
-            else setActiveMonsterInstanceId(id);
+            if (actor) { setSelectedActorId(id); setActiveMonsterInstanceId(""); return; }
+            // Only open a monster card for a real monster instance. Clicking another
+            // player's row in the shared tracker (a party actor the viewer doesn't own)
+            // must not hijack the monster card.
+            const isMonster = isDmMode
+              ? monsterCandidates.some(m => (m as MainEncounterMonsterInstance).instanceId === id)
+              : playerMonsters.some(m => m.instanceId === id);
+            if (isMonster) setActiveMonsterInstanceId(id);
           }}
           onSetInitiative={handleSetCombatantInitiative}
           onSwapInitiative={(idA, idB) => {

@@ -11,6 +11,7 @@ export default defineConfig({
         actorPopout: "actor-popout.html",
         dmPanel: "dm-panel.html",
         monsterPopout: "monster-popout.html",
+        background: "background.html",
       },
       output: {
         // Stable filenames — prevents OBR re-verify on every deploy

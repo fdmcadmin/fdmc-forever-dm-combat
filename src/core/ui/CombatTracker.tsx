@@ -486,9 +486,11 @@ export function CombatTracker({
                 );
               })()}
 
-              {/* HP bar */}
+              {/* HP numbers — shown for PARTY (actor) rows to EVERYONE so healers can
+                  see who needs healing. Monster true HP stays DM-only (players see only
+                  the condition bar; their monster rows carry a 0–100 ratio, not real HP). */}
               <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                {isDmMode && (() => {
+                {(isDmMode || combatant.kind === "actor") && (() => {
                   const temp = combatant.hp.temp ?? 0;
                   const displayCurrent = combatant.hp.current + temp;
                   return (
@@ -547,11 +549,10 @@ export function CombatTracker({
                     </div>
                   );
                 })()}
-                {isDmMode && (
-                  <span style={{ fontSize: 10, color: hpColor(companion.hp.current, companion.hp.max) }}>
-                    {companion.isDead ? "☠" : `${companion.hp.current}/${companion.hp.max}`}
-                  </span>
-                )}
+                {/* Companions are party actors — show their HP numbers to everyone too. */}
+                <span style={{ fontSize: 10, color: hpColor(companion.hp.current, companion.hp.max) }}>
+                  {companion.isDead ? "☠" : `${companion.hp.current}/${companion.hp.max}`}
+                </span>
               </div>
             ))}
             </React.Fragment>

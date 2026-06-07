@@ -22,4 +22,7 @@ export const FDMC_CHANNELS = {
   monsterRoster: "forever-dm-combat:monster-roster:v1",
   /** DM ↔ viewer: player-safe party summary. */
   viewerParty: "forever-dm-combat:viewer-party:v1",
+  /** DM ↔ players: player-safe party combatant roster (names + HP) for the shared combat
+   * tracker, so every PC (esp. healers) can see ally HP. Monster HP is never in here. */
+  partyTracker: "forever-dm-combat:party-tracker:v1",
 } as const;
