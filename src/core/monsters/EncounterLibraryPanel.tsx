@@ -15,121 +15,14 @@ import {
 import { upsertMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
+import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
+import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 
-// ─── Module unlock — LOCAL SOFT GATE ONLY ─────────────────────────────────────
-//
-// ⚠️ SECURITY: This is a front-end-only soft gate. It is NOT content protection.
-// The "hash" is plain base64 (btoa) and the code can be trivially recovered by
-// anyone who opens dev tools or reads the bundle. Treat it as a demo/local
-// convenience lock — a speed bump, not a lock. It must NOT be presented to users
-// as protecting paid or private content. A real licensing system (server-side
-// entitlement check + signed tokens) is required before any paid distribution.
-// See _specs/P-UX1-SPEC.md → "Module Unlock security debt".
-//
-// Default code: "brokenchain" → base64 below.
-// To change: run btoa("yourNewCode") in the browser console and paste here.
-
-const MODULE_UNLOCK_HASH = "YnJva2VuY2hhaW4="; // btoa("brokenchain") — base64 of the unlock code
-const MODULE_LOCK_KEY = "fdmc.module.unlocked.v1";
-const MODULE_ID = "the-broken-chain";
-
-// The stored "unlocked" flag is a DERIVED token, not the raw code hash. So casually
-// pasting btoa("brokenchain") into the console does NOT unlock — only entering the code
-// through the form issues this exact token. The snap-back watcher (below) re-locks the UI
-// whenever the stored value is missing or doesn't match. (Still front-end only — see the
-// Module Unlock security debt note in MASTER.md / P-UX1-SPEC.md.)
-const UNLOCK_TOKEN = btoa(`fdmc-unlock:${MODULE_UNLOCK_HASH}:granted`);
-
-function isModuleUnlocked(): boolean {
-  try {
-    return window.localStorage.getItem(MODULE_LOCK_KEY) === UNLOCK_TOKEN;
-  } catch {
-    return false;
-  }
-}
-
-function unlockModule(code: string): boolean {
-  if (btoa(code.trim()) === MODULE_UNLOCK_HASH) {
-    try { window.localStorage.setItem(MODULE_LOCK_KEY, UNLOCK_TOKEN); } catch { /* ok */ }
-    return true;
-  }
-  return false;
-}
-
-function lockModule(): void {
-  try { window.localStorage.removeItem(MODULE_LOCK_KEY); } catch { /* ok */ }
-}
-
-// ─── Lock screen ──────────────────────────────────────────────────────────────
-
-function ModuleLockScreen({ onUnlock }: { onUnlock: () => void }) {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
-  const [patreonNote, setPatreonNote] = useState(false);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (unlockModule(code)) {
-      onUnlock();
-    } else {
-      setError("Incorrect unlock code.");
-      setCode("");
-    }
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 16, padding: 24 }}>
-      <div style={{ textAlign: "center" }}>
-        <p style={{ margin: "0 0 4px", fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 2 }}>Module Unlock</p>
-        <h3 style={{ margin: "0 0 8px", fontSize: 18 }}>The Broken Chain</h3>
-        <p style={{ margin: 0, fontSize: 12, color: "#666" }}>
-          Enter the demo unlock code to load this module's sample encounters.
-        </p>
-      </div>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 260 }}>
-        <input
-          type="password"
-          value={code}
-          onChange={e => { setCode(e.target.value); setError(""); }}
-          placeholder="Enter unlock code"
-          style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 14, textAlign: "center" }}
-          autoFocus
-        />
-        {error && <p style={{ margin: 0, fontSize: 12, color: "#ff9999", textAlign: "center" }}>{error}</p>}
-        <button type="submit" style={{ padding: "8px 16px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
-          Unlock
-        </button>
-      </form>
-
-      {/* Future unlock path — Patreon (placeholder; no real entitlement yet) */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, width: "100%", maxWidth: 260 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", color: "#444", fontSize: 10 }}>
-          <span style={{ flex: 1, height: 1, background: "#2a2a3e" }} />
-          <span>or</span>
-          <span style={{ flex: 1, height: 1, background: "#2a2a3e" }} />
-        </div>
-        <button
-          type="button"
-          onClick={() => setPatreonNote(true)}
-          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "8px 16px", background: "#FF424D", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600 }}
-          title="Unlock this module through Patreon (coming soon)"
-        >
-          <span aria-hidden style={{ fontWeight: 800 }}>ⓟ</span> Unlock with Patreon
-        </button>
-        {patreonNote && (
-          <p style={{ margin: 0, fontSize: 11, color: "#FFb0b4", textAlign: "center", lineHeight: 1.5 }}>
-            Patreon unlock is coming soon. Supporting the campaign will auto-unlock its modules here.
-            For now, enter the code above (ask your DM).
-          </p>
-        )}
-      </div>
-
-      <p style={{ margin: 0, fontSize: 10, color: "#444", textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
-        Local demo gate — a soft unlock for this device, not secure content protection.
-      </p>
-    </div>
-  );
-}
+// ─── Module unlock ────────────────────────────────────────────────────────────
+// The campaign ("Broken Chain") library is gated behind a LOCAL SOFT password.
+// A DM never needs it to create/manage their OWN monsters & encounters — only to
+// open the bundled campaign content. Logic lives in core/campaign/moduleUnlock.
+// (Front-end soft gate only — see the security note in that file / MASTER.md.)
 
 // ─── Monster bands (P-UX1 guided creation scaffolds) ──────────────────────────
 //
@@ -472,6 +365,14 @@ type EncounterLibraryPanelProps = {
   onMonsterLibraryUpdate?: (updated: MainMonsterTemplate) => void;
   /** When true, open the monster band picker immediately on mount (Create Monster shortcut). */
   autoOpenBandPicker?: boolean;
+  /** Hide in-panel create buttons — manage-only view (toolbar carries the create buttons). */
+  hideCreate?: boolean;
+  /**
+   * Open the equipment creator pre-tagged to a loot pool. Wired by the DM panel to
+   * jump to the Equipment tab with the encounter name pre-filled. When omitted the
+   * loot-pool section still shows, but the "Create loot" button is hidden.
+   */
+  onCreateLootForEncounter?: (lootPoolName: string) => void;
 };
 
 export function EncounterLibraryPanel({
@@ -481,8 +382,15 @@ export function EncounterLibraryPanel({
   activeRosterCount,
   onMonsterLibraryUpdate,
   autoOpenBandPicker = false,
+  hideCreate = false,
+  onCreateLootForEncounter,
 }: EncounterLibraryPanelProps) {
-  const [unlocked, setUnlocked] = useState(() => isModuleUnlocked());
+  // Campaign-library unlock state + snap-back watcher (shared module). The panel itself
+  // is NEVER gated — only the Broken Chain (campaign) section reads `unlocked`.
+  const { unlocked, unlock, lock } = useModuleUnlock();
+  // The Broken Chain section is a click-to-open drawer. Collapsed by default; clicking it
+  // reveals the lock prompt (if locked) or the campaign encounters (if unlocked).
+  const [brokenChainOpen, setBrokenChainOpen] = useState(false);
   const [showBandPicker, setShowBandPicker] = useState(autoOpenBandPicker);
   const [encounters, setEncounters] = useState<EncounterDefinition[]>([]);
   const [unusedEncounters, setUnusedEncounters] = useState<EncounterDefinition[]>(() => loadUnusedEncounters());
@@ -494,6 +402,9 @@ export function EncounterLibraryPanel({
   const [monsterImportResult, setMonsterImportResult] = useState<MonsterImportResult | null>(null);
   const [dmMonsterCount, setDmMonsterCount] = useState(() => loadMonsterLibrary().length);
   const [editDraft, setEditDraft] = useState<EncounterDefinition | null>(null);
+  // Equipment library snapshot — used to resolve each encounter's loot pool. Refreshed
+  // when the editor opens so newly-created loot shows up without a panel reload.
+  const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
   const [addingTemplateId, setAddingTemplateId] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
   const [activeTab, setActiveTab] = useState<"library" | "staged">("library");
@@ -554,28 +465,22 @@ export function EncounterLibraryPanel({
     persistStaged(staged.filter(s => s.id !== stagedId));
   }
 
-  // Lock snap-back guard — if the stored unlock flag is cleared or tampered (e.g.
-  // someone pokes localStorage in the console), re-lock the UI until the correct code
-  // is entered again. Front-end soft gate only.
+  // Load encounters. My Library (DM-owned) encounters ALWAYS load so a new DM can
+  // build immediately. The bundled campaign templates are only seeded once the Broken
+  // Chain module is unlocked.
   useEffect(() => {
-    if (!unlocked) return;
-    function revalidate() { if (!isModuleUnlocked()) setUnlocked(false); }
-    window.addEventListener("storage", revalidate);
-    const interval = window.setInterval(revalidate, 2000);
-    return () => { window.removeEventListener("storage", revalidate); window.clearInterval(interval); };
-  }, [unlocked]);
-
-  // Load / seed encounters on mount
-  useEffect(() => {
-    if (!unlocked) return;
-    const seeded = seedEncounterLibraryFromTemplates(monsterLibrary);
-    setEncounters(seeded);
+    if (unlocked) {
+      setEncounters(seedEncounterLibraryFromTemplates(monsterLibrary));
+    } else {
+      setEncounters(loadEncounterLibrary("dm"));
+    }
   }, [unlocked, monsterLibrary]);
 
   const refreshLibrary = useCallback(() => {
-    setEncounters(loadEncounterLibrary());
+    // Mirror the load rule: hide campaign rows while locked.
+    setEncounters(unlocked ? loadEncounterLibrary() : loadEncounterLibrary("dm"));
     setUnusedEncounters(loadUnusedEncounters());
-  }, []);
+  }, [unlocked]);
 
   // Clear stale monster template editor ID if template no longer exists
   useEffect(() => {
@@ -584,18 +489,10 @@ export function EncounterLibraryPanel({
     }
   }, [editingMonsterTemplateId, resolvedLibrary]);
 
-  function handleUnlock() {
-    setUnlocked(true);
-  }
-
-  function handleLock() {
-    lockModule();
-    setUnlocked(false);
-  }
-
   function startEdit(encounter: EncounterDefinition) {
     setEditDraft(JSON.parse(JSON.stringify(encounter)));
     setEditingId(encounter.id);
+    setEquipmentItems(loadEquipmentLibrary()); // refresh loot pool view on open
   }
 
   function saveEdit(targetOverride?: "campaign" | "dm") {
@@ -663,9 +560,9 @@ export function EncounterLibraryPanel({
     startEdit(newEncounter);
   }
 
-  if (!unlocked) {
-    return <ModuleLockScreen onUnlock={handleUnlock} />;
-  }
+  // NOTE: the panel is intentionally NOT gated behind the module unlock. A new DM can
+  // create and manage their own monsters & encounters immediately. Only the Broken
+  // Chain (campaign) section inside the list reads `unlocked`.
 
   // ── Monster band picker (guided monster creation) ─────────────────────────
   if (showBandPicker) {
@@ -728,11 +625,14 @@ export function EncounterLibraryPanel({
             style={{ fontWeight: "bold", background: "transparent", border: "none", borderBottom: "1px solid #555", color: "inherit", fontSize: 14, width: 200 }}
           />
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-            <button type="button" onClick={() => saveEdit("campaign")}
-              style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee33", border: "1px solid #7b68ee", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
-              title="Save to Campaign Library (module-locked)">
-              → Campaign
-            </button>
+            {/* Save into the campaign library only when it's unlocked. */}
+            {unlocked && (
+              <button type="button" onClick={() => saveEdit("campaign")}
+                style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee33", border: "1px solid #7b68ee", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+                title="Save to Broken Chain Library (campaign)">
+                → Campaign
+              </button>
+            )}
             <button type="button" onClick={() => saveEdit("dm")}
               style={{ fontSize: 11, padding: "3px 9px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
               title="Save to My Library (DM personal)">
@@ -787,6 +687,68 @@ export function EncounterLibraryPanel({
             </button>
           </div>
 
+          {/* ── Loot Pool ── tie equipment (boss drops / merchant stock) to this encounter.
+              The pool is every equipment item tagged with the selected loot-pool name. */}
+          {(() => {
+            const pools = Array.from(new Set(
+              equipmentItems.map(i => i.sourceEncounter?.trim()).filter((s): s is string => Boolean(s))
+            )).sort((a, b) => a.localeCompare(b));
+            const selectedPool = (editDraft.lootPool?.trim() || editDraft.name.trim() || "New Encounter");
+            const poolItems = equipmentItems.filter(i => (i.sourceEncounter?.trim() || "") === selectedPool);
+            return (
+              <div style={{ marginTop: 16, borderTop: "1px solid #2a2a3e", paddingTop: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <label style={{ fontSize: 11, color: "#e0b34a", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>🎁 Loot Pool</label>
+                  <span style={{ fontSize: 10, color: "#555" }}>{poolItems.length} item{poolItems.length === 1 ? "" : "s"}</span>
+                </div>
+                <p style={{ margin: "0 0 8px", fontSize: 10, color: "#555", lineHeight: 1.5 }}>
+                  Choose an existing loot pool or keep this encounter's own pool. Items tagged with the
+                  pool name become this boss/merchant's drops.
+                </p>
+                <select
+                  value={editDraft.lootPool ?? ""}
+                  onChange={e => setEditDraft({ ...editDraft, lootPool: e.target.value || undefined })}
+                  style={{ width: "100%", padding: "5px 8px", borderRadius: 4, border: "1px solid #5a4a1a", background: "#111", color: "#fff", fontSize: 12, marginBottom: 8 }}
+                >
+                  <option value="">— This encounter ({editDraft.name || "unnamed"}) —</option>
+                  {pools.filter(p => p !== selectedPool).map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+
+                {poolItems.length === 0 ? (
+                  <div style={{ background: "#1a1508", border: "1px solid #5a4a1a55", borderRadius: 6, padding: "10px 12px" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 11, color: "#888" }}>
+                      No loot in <strong style={{ color: "#e0b34a" }}>{selectedPool}</strong> yet.
+                    </p>
+                    {onCreateLootForEncounter && (
+                      <button type="button" onClick={() => onCreateLootForEncounter(selectedPool)}
+                        style={{ fontSize: 12, padding: "6px 12px", background: "#e0b34a", color: "#0d0d14", border: "none", borderRadius: 5, cursor: "pointer", fontWeight: 700 }}
+                        title="Open the equipment creator pre-tagged to this encounter">
+                        + Create loot for this encounter
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {poolItems.map(item => (
+                      <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", background: "#161622", border: "1px solid #2a2a3e", borderRadius: 5, marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: "#ccc", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span>
+                        <span style={{ fontSize: 10, color: "#555" }}>{item.category ?? item.type}</span>
+                        {item.tier && <span style={{ fontSize: 10, color: "#e0b34a99" }}>{item.tier}</span>}
+                      </div>
+                    ))}
+                    {onCreateLootForEncounter && (
+                      <button type="button" onClick={() => onCreateLootForEncounter(selectedPool)}
+                        style={{ fontSize: 11, padding: "4px 10px", marginTop: 4, background: "#2a230d", color: "#e0b34a", border: "1px solid #5a4a1a", borderRadius: 5, cursor: "pointer" }}
+                        title="Add another item to this encounter's loot pool">
+                        + Add more loot
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           <div style={{ marginTop: 16, borderTop: "1px solid #2a2a3e", paddingTop: 12 }}>
             <label style={{ fontSize: 12, display: "block", marginBottom: 4, color: "#888" }}>DM Notes</label>
             <textarea
@@ -811,13 +773,16 @@ export function EncounterLibraryPanel({
         <div style={{ display: "flex", gap: 6 }}>
           {activeTab === "library" && (
             <div style={{ display: "flex", gap: 4 }}>
-              {/* Create a new monster — opens the band picker (guided scaffold) */}
-              <button type="button"
-                onClick={() => setShowBandPicker(true)}
-                style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}
-                title="Create a new monster — pick a band to scaffold its action economy">
-                + Create Monster
-              </button>
+              {/* Create a new monster — opens the band picker (guided scaffold).
+                  Hidden in manage-only view (the DM toolbar's "+ Monster" covers it). */}
+              {!hideCreate && (
+                <button type="button"
+                  onClick={() => setShowBandPicker(true)}
+                  style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}
+                  title="Create a new monster — pick a band to scaffold its action economy">
+                  + Create Monster
+                </button>
+              )}
               <button type="button" onClick={() => handleCreateNew("dm")}
                 style={{ fontSize: 11, padding: "3px 8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
                 title="Create new encounter in My Library">
@@ -854,11 +819,13 @@ export function EncounterLibraryPanel({
               e.target.value = "";
             }} />
           </label>
-          <button type="button" onClick={handleLock}
-            style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#555", cursor: "pointer" }}
-            title="Lock campaign module">
-            🔒
-          </button>
+          {unlocked && (
+            <button type="button" onClick={lock}
+              style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#555", cursor: "pointer" }}
+              title="Lock the Broken Chain campaign library">
+              🔒
+            </button>
+          )}
         </div>
       </div>
 
@@ -966,12 +933,7 @@ export function EncounterLibraryPanel({
 
       {/* Encounter list */}
       {activeTab === "library" && <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
-        {encounters.length === 0 ? (
-          <p style={{ fontSize: 12, color: "#555", textAlign: "center", marginTop: 32 }}>
-            No encounters yet. Use + Mine to create your own, or unlock the campaign module.
-          </p>
-        ) : (
-          (() => {
+        {(() => {
             const campaign = encounters.filter(e => e.owner === "campaign" || (!e.owner && unlocked));
             const dm = encounters.filter(e => e.owner === "dm");
             const renderEncounter = (encounter: EncounterDefinition) => (
@@ -1020,35 +982,44 @@ export function EncounterLibraryPanel({
 
             return (
               <>
-                {/* Campaign Library section */}
-                {unlocked && campaign.length > 0 && (
-                  <>
-                    <p style={{ margin: "0 0 6px", fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>
-                      🔒 Campaign Library — The Broken Chain
-                    </p>
-                    {campaign.sort((a, b) => (a.order ?? 99) - (b.order ?? 99)).map(renderEncounter)}
-                  </>
-                )}
-
-                {/* DM Custom Library section */}
-                {dm.length > 0 && (
-                  <>
-                    <p style={{ margin: `${unlocked && campaign.length > 0 ? "12px" : "0"} 0 6px`, fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
-                      My Library
-                    </p>
-                    {dm.map(renderEncounter)}
-                  </>
-                )}
-
-                {!unlocked && campaign.length === 0 && dm.length === 0 && (
-                  <p style={{ fontSize: 12, color: "#555", textAlign: "center", marginTop: 32 }}>
-                    No encounters yet. Use + Mine to create your own.
+                {/* My Library — always visible, no password needed */}
+                <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
+                  My Library
+                </p>
+                {dm.length > 0 ? (
+                  dm.map(renderEncounter)
+                ) : (
+                  <p style={{ fontSize: 12, color: "#555", fontStyle: "italic", margin: "0 0 4px" }}>
+                    No encounters yet. Use <strong style={{ color: "#aaa" }}>+ Encounter</strong> to build your own —
+                    or <strong style={{ color: "#aaa" }}>+ Create Monster</strong> to make a creature first.
                   </p>
+                )}
+
+                {/* Broken Chain campaign library — click-to-open drawer; the lock lives here */}
+                <button type="button" onClick={() => setBrokenChainOpen(o => !o)}
+                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", marginTop: 16, marginBottom: 6,
+                    padding: "8px 10px", background: "#161018", border: "1px solid #4a2a2a", borderLeft: "3px solid #c8472e", borderRadius: 6, cursor: "pointer", color: "#fff" }}
+                  title={brokenChainOpen ? "Collapse" : "Open the Broken Chain library"}>
+                  <span style={{ fontSize: 11, color: "#c8472e", width: 12, flexShrink: 0 }}>{brokenChainOpen ? "▼" : "▶"}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0 }}>🔒 Broken Chain Library</span>
+                  <span style={{ fontSize: 10, color: unlocked ? "#4caf50" : "#c8472e", flexShrink: 0 }}>
+                    {unlocked ? `unlocked · ${campaign.length}` : "locked"}
+                  </span>
+                </button>
+                {brokenChainOpen && (
+                  unlocked ? (
+                    campaign.length > 0 ? (
+                      campaign.sort((a, b) => (a.order ?? 99) - (b.order ?? 99)).map(renderEncounter)
+                    ) : (
+                      <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No campaign encounters loaded.</p>
+                    )
+                  ) : (
+                    <ModuleUnlockPrompt onUnlock={unlock} what="encounters" />
+                  )
                 )}
               </>
             );
-          })()
-        )}
+          })()}
 
         {/* Unused / archived encounters — always shown at bottom if any exist */}
         {unusedEncounters.length > 0 && (

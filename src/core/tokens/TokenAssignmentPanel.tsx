@@ -6,7 +6,7 @@
  * Controls lock state and player move permission.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import OBR, { type Item } from "@owlbear-rodeo/sdk";
 import {
   FDMC_TOKEN_BINDING_KEY,
@@ -57,6 +57,11 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
 
   const seatList = Object.values(seats).sort((a, b) => a.seatId.localeCompare(b.seatId));
 
+  // Signature of the last selection the form was synced to. The form is ONLY
+  // (re)filled when the selection actually changes — a routine status poll must never
+  // clobber the DM's in-progress seat / control choices.
+  const lastSelectionSigRef = useRef<string>("");
+
   const refreshSelected = useCallback(async () => {
     const items = await getSelectedItems();
     setSelectedTokens(items.map(item => ({
@@ -64,7 +69,14 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
       binding: readTokenBinding(item),
       isLocked: item.locked ?? false,
     })));
-    // Pre-populate form from first selected token's binding; clear form for unbound tokens
+
+    // Detect a real selection change (different token set), not just a poll tick.
+    const sig = items.map(i => i.id).sort().join(",");
+    const selectionChanged = sig !== lastSelectionSigRef.current;
+    lastSelectionSigRef.current = sig;
+    if (!selectionChanged) return; // leave the form alone while the DM is editing
+
+    // Pre-populate form from the newly-selected token's binding; clear for unbound.
     if (items.length === 1) {
       const b = readTokenBinding(items[0]);
       if (b) {
@@ -84,12 +96,16 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
     }
   }, []);
 
-  // Poll selection every 500ms — OBR doesn't have a reliable selection-change event
+  // Refresh immediately when the map selection changes (event-driven, snappy), plus a
+  // slow fallback poll to keep the per-token lock indicator current. Neither resets the
+  // form unless the selection genuinely changed (guard above).
   useEffect(() => {
     if (!OBR.isAvailable) return;
     void refreshSelected();
-    const interval = setInterval(() => void refreshSelected(), 1000);
-    return () => clearInterval(interval);
+    let unsub: (() => void) | undefined;
+    try { unsub = OBR.player.onChange(() => void refreshSelected()); } catch { /* poll covers it */ }
+    const interval = setInterval(() => void refreshSelected(), 1500);
+    return () => { try { unsub?.(); } catch { /* ok */ } clearInterval(interval); };
   }, [refreshSelected]);
 
   // When seat changes, default to first actor in that seat
@@ -102,8 +118,11 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
 
   async function handleSave() {
     if (selectedTokens.length === 0) return;
-    if (bindingType === "seat" && (!selectedSeatId || !selectedActorId)) {
-      setStatusMsg("Select a seat and actor before saving.");
+    // Only the seat is required — the actor defaults to the seat's primary character
+    // (or is left open if the seat has none yet). This lets a DM bind a token to a seat
+    // before a player has even claimed it.
+    if (bindingType === "seat" && !selectedSeatId) {
+      setStatusMsg("Select a seat before saving.");
       return;
     }
     if (bindingType === "monster" && !selectedInstanceId) {
@@ -114,6 +133,7 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
     try {
       const seat = seats[selectedSeatId];
       const monster = activeMonsters.find(m => m.instanceId === selectedInstanceId);
+      const resolvedActorId = selectedActorId || seat?.primaryActorId || seat?.actorIds[0] || "";
       const binding: FdmcTokenBinding = {
         version: 1,
         tableId,
@@ -123,7 +143,7 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
         allowPlayerMove,
         ...(bindingType === "seat" ? {
           seatId: selectedSeatId,
-          actorId: selectedActorId,
+          actorId: resolvedActorId,
           actorType: "player",
         } : {
           instanceId: selectedInstanceId,
@@ -242,18 +262,24 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
               <>
                 <div>
                   <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>Seat</label>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {selectedSeatId && (
-                      <span title="This seat's color — the token marker will match" style={{ width: 14, height: 14, borderRadius: "50%", background: getSeatColor(selectedSeatId), flexShrink: 0, boxShadow: `0 0 0 2px ${withAlpha(getSeatColor(selectedSeatId), 0.3)}` }} />
-                    )}
-                    <select value={selectedSeatId} onChange={e => setSelectedSeatId(e.target.value)}
-                      style={{ flex: 1, padding: "5px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}>
-                      <option value="">— Select seat —</option>
-                      {seatList.filter(s => s.seatMode !== "viewer").map(s => (
-                        <option key={s.seatId} value={s.seatId}>{s.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {seatList.filter(s => s.seatMode !== "viewer").length === 0 ? (
+                    <p style={{ fontSize: 12, color: "#e0b34a", background: "#2a230d", border: "1px solid #5a4a1a", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
+                      No seats yet — open the <strong>Seats</strong> tab and add a seat first, then come back to bind this token.
+                    </p>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {selectedSeatId && (
+                        <span title="This seat's color — the token marker will match" style={{ width: 14, height: 14, borderRadius: "50%", background: getSeatColor(selectedSeatId), flexShrink: 0, boxShadow: `0 0 0 2px ${withAlpha(getSeatColor(selectedSeatId), 0.3)}` }} />
+                      )}
+                      <select value={selectedSeatId} onChange={e => setSelectedSeatId(e.target.value)}
+                        style={{ flex: 1, padding: "5px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}>
+                        <option value="">— Select seat —</option>
+                        {seatList.filter(s => s.seatMode !== "viewer").map(s => (
+                          <option key={s.seatId} value={s.seatId}>{s.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 {selectedSeat && selectedSeat.actorIds.length > 0 && (
                   <div>

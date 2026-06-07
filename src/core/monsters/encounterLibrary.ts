@@ -29,6 +29,12 @@ export type EncounterDefinition = {
   entries: EncounterMonsterEntry[];
   /** Which library this encounter belongs to */
   owner?: EncounterLibraryOwner;
+  /**
+   * Loot pool tag for this encounter. The pool is the set of equipment items whose
+   * `sourceEncounter` matches this tag. Defaults to the encounter's own `name` when
+   * unset, so a fresh boss/merchant automatically owns a loot pool of the same name.
+   */
+  lootPool?: string;
 };
 
 // ─── Library ownership ────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
+import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
 /** DM sends a single item directly (existing flow) */
@@ -90,8 +91,32 @@ export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
 
 const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consumable", "gear", "magic", "tool"];
 
-function ItemForm({ initial, onSave, onCancel }: {
+// Loot is grouped by its encounter/merchant tag (item.sourceEncounter). Items with
+// no tag fall into a single "Unsorted" bucket rendered flat (not collapsed).
+const UNGROUPED_KEY = "__ungrouped__";
+
+function groupByEncounter(items: EquipmentItem[]): { key: string; label: string; items: EquipmentItem[] }[] {
+  const groups = new Map<string, EquipmentItem[]>();
+  for (const it of items) {
+    const key = it.sourceEncounter?.trim() || UNGROUPED_KEY;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(it);
+  }
+  const tagged: { key: string; label: string; items: EquipmentItem[] }[] = [];
+  for (const [key, list] of groups) {
+    if (key === UNGROUPED_KEY) continue;
+    tagged.push({ key, label: key, items: list });
+  }
+  tagged.sort((a, b) => a.label.localeCompare(b.label));
+  const ungrouped = groups.get(UNGROUPED_KEY);
+  if (ungrouped) tagged.push({ key: UNGROUPED_KEY, label: "Unsorted (no encounter)", items: ungrouped });
+  return tagged;
+}
+
+function ItemForm({ initial, preset, onSave, onCancel }: {
   initial?: EquipmentItem;
+  /** Defaults applied only when creating a NEW item (initial undefined). */
+  preset?: Partial<EquipmentItem>;
   onSave: (item: EquipmentItem) => void;
   onCancel: () => void;
 }) {
@@ -101,6 +126,7 @@ function ItemForm({ initial, onSave, onCancel }: {
     type: "gear",
     description: "",
     isUsable: false,
+    ...preset,
   });
 
   const input = { display: "block" as const, width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 13 };
@@ -115,6 +141,11 @@ function ItemForm({ initial, onSave, onCancel }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, background: "#1a1a2e", borderRadius: 8, margin: 14 }}>
       <h4 style={{ margin: 0 }}>{initial ? "Edit Item" : "New Item"}</h4>
+      {!initial && draft.sourceEncounter && (
+        <div style={{ fontSize: 11, color: "#e0b34a", background: "#2a230d", border: "1px solid #5a4a1a", borderRadius: 6, padding: "6px 10px" }}>
+          🎁 Adding to loot pool: <strong>{draft.sourceEncounter}</strong> — this item will appear under that encounter.
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>Name <input type="text" value={draft.name} onChange={e => set("name", e.target.value)} style={input} /></label>
         <label style={{ fontSize: 12 }}>Type
@@ -136,6 +167,19 @@ function ItemForm({ initial, onSave, onCancel }: {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>Value <input type="text" value={draft.value ?? ""} onChange={e => set("value", e.target.value || undefined)} placeholder="25 gp" style={input} /></label>
         <label style={{ fontSize: 12 }}>Weight <input type="text" value={draft.weight ?? ""} onChange={e => set("weight", e.target.value || undefined)} placeholder="3 lb" style={input} /></label>
+      </div>
+      {/* Encounter / loot-pool tagging — links the item to a boss or merchant section */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <label style={{ fontSize: 12 }}>
+          Encounter / Boss / Merchant
+          <input type="text" value={draft.sourceEncounter ?? ""} onChange={e => set("sourceEncounter", e.target.value || undefined)}
+            placeholder="e.g. The Ironclad Warden" style={input} />
+        </label>
+        <label style={{ fontSize: 12 }}>
+          Act Tag
+          <input type="text" value={draft.act ?? ""} onChange={e => set("act", e.target.value || undefined)}
+            placeholder="e.g. Act 1" style={input} />
+        </label>
       </div>
       <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={draft.isUsable} onChange={e => set("isUsable", e.target.checked)} />
@@ -353,12 +397,27 @@ type EquipmentLibraryStandaloneProps = {
   onExternalConvergenceDeny?: (req: ConvergenceRequest) => Promise<void>;
   /** Called by DM panel to attach item to actor + push to seat before notifying player */
   onDeliverLoot?: (seatId: string, item: EquipmentItem, message: string) => Promise<void>;
+  /** Open the New Item form immediately on mount (toolbar "+ Equipment" create flow). */
+  autoCreate?: boolean;
+  /** Pre-fill the encounter/loot-pool tag on a newly created item. */
+  presetEncounter?: string;
+  /** Bump this to (re)open the New Item form externally (e.g. "Create loot for encounter"). */
+  createSignal?: number;
+  /** Hide the in-panel create button — manage-only view (toolbar carries the create buttons). */
+  hideCreate?: boolean;
 };
 
-export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot }: EquipmentLibraryStandaloneProps) {
+export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot, autoCreate = false, presetEncounter, createSignal, hideCreate = false }: EquipmentLibraryStandaloneProps) {
   const [campaignLib, setCampaignLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("campaign"));
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
-  const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(null);
+  const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(autoCreate ? "new" : null);
+  // Which encounter/merchant groups are expanded (default: all collapsed).
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
+  // Campaign-library unlock — My Library (custom) is always open; only the Broken Chain
+  // (campaign) equipment sits behind the password.
+  const { unlocked, unlock } = useModuleUnlock();
+  // Broken Chain section is a click-to-open drawer; the lock prompt lives inside it.
+  const [brokenChainOpen, setBrokenChainOpen] = useState(false);
   const [lootTarget, setLootTarget] = useState<{ item: EquipmentItem; seatId: string } | null>(null);
   const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string; mode: "boss-mid" | "boss-final" | "merchant" } | null>(null);
   const [convergenceBuilder, setConvergenceBuilder] = useState<{
@@ -377,6 +436,22 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   function refreshLibrary() {
     setCampaignLib(loadEquipmentLibrary("campaign"));
     setDmLib(loadEquipmentLibrary("dm"));
+  }
+
+  // External "open creator" trigger — bumping createSignal opens a fresh New Item
+  // form (used by the "Create loot for this encounter" button, which also sets
+  // presetEncounter so the new item is tagged to that loot pool).
+  useEffect(() => {
+    if (!createSignal) return;
+    setEditingItem("new");
+  }, [createSignal]);
+
+  function toggleGroup(id: string) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   function handleSaveItem(item: EquipmentItem) {
@@ -510,6 +585,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     return (
       <ItemForm
         initial={editingItem === "new" ? undefined : editingItem}
+        preset={editingItem === "new" && presetEncounter ? { sourceEncounter: presetEncounter } : undefined}
         onSave={handleSaveItem}
         onCancel={() => setEditingItem(null)}
       />
@@ -903,12 +979,40 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     );
   }
 
+  // Render a library section grouped into collapsible per-encounter / per-merchant
+  // bands. Untagged items render flat under "Unsorted". A search filter auto-expands
+  // every group so matches are never hidden behind a collapsed header.
+  function renderGroupedList(items: EquipmentItem[], sectionKey: string) {
+    const groups = groupByEncounter(items);
+    return groups.map(g => {
+      const gid = `${sectionKey}:${g.key}`;
+      if (g.key === UNGROUPED_KEY) {
+        // Untagged items render directly (no collapse).
+        return <div key={gid}>{g.items.map(renderItem)}</div>;
+      }
+      const expanded = expandedGroups.has(gid) || filterText.trim().length > 0;
+      return (
+        <div key={gid} style={{ marginBottom: 8 }}>
+          <button type="button" onClick={() => toggleGroup(gid)}
+            style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "7px 10px",
+              background: "#161622", border: "1px solid #2a2a3e", borderLeft: "3px solid #e0b34a", borderRadius: 6, cursor: "pointer", color: "#fff" }}
+            title={expanded ? "Collapse" : "Expand"}>
+            <span style={{ fontSize: 11, color: "#e0b34a", width: 12, flexShrink: 0 }}>{expanded ? "▼" : "▶"}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎁 {g.label}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#0d0d14", background: "#e0b34a", borderRadius: 8, padding: "1px 7px", flexShrink: 0 }}>{g.items.length}</span>
+          </button>
+          {expanded && <div style={{ marginTop: 6, paddingLeft: 6 }}>{g.items.map(renderItem)}</div>}
+        </div>
+      );
+    });
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
-          🔒 {campaignLib.length} campaign · {dmLib.length} custom
+          {dmLib.length} custom{unlocked ? ` · 🔒 ${campaignLib.length} campaign` : ""}
         </p>
         <div style={{ display: "flex", gap: 6 }}>
           {dmLib.length > 0 && (
@@ -932,10 +1036,12 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             title="Build a convergence offer — player submits 2 items to receive a new one">
             ◈ Converge
           </button>
-          <button type="button" onClick={() => setEditingItem("new")}
-            style={{ fontSize: 11, padding: "3px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}>
-            + New Item
-          </button>
+          {!hideCreate && (
+            <button type="button" onClick={() => setEditingItem("new")}
+              style={{ fontSize: 11, padding: "3px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}>
+              + New Item
+            </button>
+          )}
         </div>
       </div>
 
@@ -984,26 +1090,41 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             })}
           </div>
         )}
-        {/* Campaign Library — locked */}
-        {filteredCampaign.length > 0 && (
-          <>
-            <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf5066", textTransform: "uppercase", letterSpacing: 1 }}>
-              🔒 Campaign Library — The Broken Chain ({filteredCampaign.length})
-            </p>
-            {filteredCampaign.map(renderItem)}
-          </>
-        )}
-
-        {/* DM Custom Library */}
-        <p style={{ margin: `${filteredCampaign.length > 0 ? "14px" : "0"} 0 6px`, fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>
+        {/* My Library — always visible, no password needed, grouped by encounter/merchant */}
+        <p style={{ margin: "0 0 6px", fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>
           My Library ({filteredDm.length})
         </p>
         {filteredDm.length === 0 ? (
           <p style={{ fontSize: 12, color: "#444", fontStyle: "italic" }}>
-            No custom items yet. Use + New Item or ↑ Import to add your own.
+            No custom items yet. Use {hideCreate ? "+ Equipment on the toolbar" : "+ New Item"} or ↑ Import to add your own.
           </p>
         ) : (
-          filteredDm.map(renderItem)
+          renderGroupedList(filteredDm, "dm")
+        )}
+
+        {/* Broken Chain campaign equipment — click-to-open drawer; the lock lives here */}
+        <button type="button" onClick={() => setBrokenChainOpen(o => !o)}
+          style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", marginTop: 16, marginBottom: 6,
+            padding: "8px 10px", background: "#161018", border: "1px solid #4a2a2a", borderLeft: "3px solid #c8472e", borderRadius: 6, cursor: "pointer", color: "#fff" }}
+          title={brokenChainOpen ? "Collapse" : "Open the Broken Chain library"}>
+          <span style={{ fontSize: 11, color: "#c8472e", width: 12, flexShrink: 0 }}>{brokenChainOpen ? "▼" : "▶"}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0 }}>🔒 Broken Chain Library</span>
+          <span style={{ fontSize: 10, color: unlocked ? "#4caf50" : "#c8472e", flexShrink: 0 }}>
+            {unlocked ? `unlocked · ${filteredCampaign.length}` : "locked"}
+          </span>
+        </button>
+        {brokenChainOpen && (
+          unlocked ? (
+            filteredCampaign.length > 0 ? (
+              renderGroupedList(filteredCampaign, "campaign")
+            ) : (
+              <p style={{ fontSize: 12, color: "#444", fontStyle: "italic" }}>
+                {filterText ? "No campaign items match your filter." : "No campaign equipment loaded."}
+              </p>
+            )
+          ) : (
+            <ModuleUnlockPrompt onUnlock={unlock} what="equipment" />
+          )
         )}
       </div>
     </div>

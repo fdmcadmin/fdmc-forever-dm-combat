@@ -344,10 +344,28 @@ function DmPanelApp() {
   const [editingActorId, setEditingActorId] = useState<string | null>(createParam === "actor" ? "__new__" : null);
   const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  // Library tab: actors | monsters | equipment — honor the create= hint
+  // lootEncounter= arrives when the monster panel's "Create loot for encounter" button
+  // reopens the panel on the equipment tab pre-tagged to that loot pool.
+  const lootEncounterParam = useMemo(() => new URLSearchParams(window.location.search).get("lootEncounter") ?? undefined, []);
+  // Library tab: actors | monsters | equipment — honor the create= / lootEncounter= hint
   const [libraryTab, setLibraryTab] = useState<"actors" | "monsters" | "equipment">(
-    createParam === "monster" ? "monsters" : createParam === "equipment" ? "equipment" : "actors"
+    lootEncounterParam ? "equipment"
+      : createParam === "monster" ? "monsters"
+      : createParam === "equipment" ? "equipment"
+      : "actors"
   );
+  // Equipment loot-pool create flow: preset tag + a signal that re-opens the creator.
+  const [equipPreset, setEquipPreset] = useState<string | undefined>(lootEncounterParam);
+  const [equipCreateSignal, setEquipCreateSignal] = useState(0);
+
+  // Open the equipment creator pre-tagged to a loot pool (from the encounter editor).
+  // Switches to the Equipment tab and bumps the signal so the New Item form opens with
+  // the encounter name pre-filled — the in-app tie between encounters and loot creation.
+  const handleCreateLootForEncounter = useCallback((lootPoolName: string) => {
+    setEquipPreset(lootPoolName);
+    setLibraryTab("equipment");
+    setEquipCreateSignal(s => s + 1);
+  }, []);
   // Seats+Tokens tab
   const [seatTokenTab, setSeatTokenTab] = useState<"seats" | "tokens">(
     getPanelFromUrl() === "tokens" || getPanelFromUrl() === "seatTokens"
@@ -650,6 +668,15 @@ function DmPanelApp() {
           <EncounterLibraryPanel
             monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
             activeRosterCount={Object.keys(roomLiveState.monsterLiveState).length}
+            onCreateLootForEncounter={(lootPoolName) => {
+              // Standalone monsters panel has no sibling equipment tab — reopen this
+              // window on the Library/Equipment tab pre-tagged to the loot pool.
+              const u = new URL(window.location.href);
+              u.searchParams.set("panel", "library");
+              u.searchParams.set("create", "equipment");
+              u.searchParams.set("lootEncounter", lootPoolName);
+              window.location.href = u.toString();
+            }}
             onLoadEncounter={(instances) => {
               // Write instances to localStorage queue — App.tsx reads on broadcast
               try {
@@ -876,7 +903,7 @@ function DmPanelApp() {
                         <label style={{ fontSize: 11, padding: "3px 9px", background: "#2a2a3e", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer" }}>
                           ↑ Import<input type="file" accept=".json" onChange={handleImportFile} style={{ display: "none" }} />
                         </label>
-                        <button type="button" onClick={() => setEditingActorId("__new__")} style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>+ Create</button>
+                        {/* Manage view — create is driven by the toolbar's "+ Party Character" button. */}
                       </div>
                     </div>
                     {importResult && (
@@ -909,6 +936,8 @@ function DmPanelApp() {
                   monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
                   activeRosterCount={Object.keys(roomLiveState.monsterLiveState).length}
                   autoOpenBandPicker={createParam === "monster"}
+                  hideCreate
+                  onCreateLootForEncounter={handleCreateLootForEncounter}
                   onLoadEncounter={(instances) => {
                     try {
                       const existing = JSON.parse(window.localStorage.getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
@@ -921,7 +950,16 @@ function DmPanelApp() {
                   onClearRoster={() => undefined}
                 />
               )}
-              {libraryTab === "equipment" && <EquipmentLibraryStandalone seats={Object.values(seats)} onDeliverLoot={handleDeliverLoot} />}
+              {libraryTab === "equipment" && (
+                <EquipmentLibraryStandalone
+                  seats={Object.values(seats)}
+                  onDeliverLoot={handleDeliverLoot}
+                  autoCreate={createParam === "equipment" || Boolean(lootEncounterParam)}
+                  presetEncounter={equipPreset}
+                  createSignal={equipCreateSignal}
+                  hideCreate
+                />
+              )}
             </div>
           </div>
         )}
