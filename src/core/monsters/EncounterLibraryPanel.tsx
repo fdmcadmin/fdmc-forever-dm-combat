@@ -29,22 +29,28 @@ import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, do
 // Default code: "brokenchain" → base64 below.
 // To change: run btoa("yourNewCode") in the browser console and paste here.
 
-const MODULE_UNLOCK_HASH = "YnJva2VuY2hhaW4="; // btoa("brokenchain")
+const MODULE_UNLOCK_HASH = "YnJva2VuY2hhaW4="; // btoa("brokenchain") — base64 of the unlock code
 const MODULE_LOCK_KEY = "fdmc.module.unlocked.v1";
 const MODULE_ID = "the-broken-chain";
 
+// The stored "unlocked" flag is a DERIVED token, not the raw code hash. So casually
+// pasting btoa("brokenchain") into the console does NOT unlock — only entering the code
+// through the form issues this exact token. The snap-back watcher (below) re-locks the UI
+// whenever the stored value is missing or doesn't match. (Still front-end only — see the
+// Module Unlock security debt note in MASTER.md / P-UX1-SPEC.md.)
+const UNLOCK_TOKEN = btoa(`fdmc-unlock:${MODULE_UNLOCK_HASH}:granted`);
+
 function isModuleUnlocked(): boolean {
   try {
-    return window.localStorage.getItem(MODULE_LOCK_KEY) === MODULE_UNLOCK_HASH;
+    return window.localStorage.getItem(MODULE_LOCK_KEY) === UNLOCK_TOKEN;
   } catch {
     return false;
   }
 }
 
 function unlockModule(code: string): boolean {
-  const hash = btoa(code.trim());
-  if (hash === MODULE_UNLOCK_HASH) {
-    try { window.localStorage.setItem(MODULE_LOCK_KEY, hash); } catch { /* ok */ }
+  if (btoa(code.trim()) === MODULE_UNLOCK_HASH) {
+    try { window.localStorage.setItem(MODULE_LOCK_KEY, UNLOCK_TOKEN); } catch { /* ok */ }
     return true;
   }
   return false;
@@ -59,6 +65,7 @@ function lockModule(): void {
 function ModuleLockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [patreonNote, setPatreonNote] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,9 +100,32 @@ function ModuleLockScreen({ onUnlock }: { onUnlock: () => void }) {
           Unlock
         </button>
       </form>
+
+      {/* Future unlock path — Patreon (placeholder; no real entitlement yet) */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, width: "100%", maxWidth: 260 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", color: "#444", fontSize: 10 }}>
+          <span style={{ flex: 1, height: 1, background: "#2a2a3e" }} />
+          <span>or</span>
+          <span style={{ flex: 1, height: 1, background: "#2a2a3e" }} />
+        </div>
+        <button
+          type="button"
+          onClick={() => setPatreonNote(true)}
+          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "8px 16px", background: "#FF424D", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+          title="Unlock this module through Patreon (coming soon)"
+        >
+          <span aria-hidden style={{ fontWeight: 800 }}>ⓟ</span> Unlock with Patreon
+        </button>
+        {patreonNote && (
+          <p style={{ margin: 0, fontSize: 11, color: "#FFb0b4", textAlign: "center", lineHeight: 1.5 }}>
+            Patreon unlock is coming soon. Supporting the campaign will auto-unlock its modules here.
+            For now, enter the code above (ask your DM).
+          </p>
+        )}
+      </div>
+
       <p style={{ margin: 0, fontSize: 10, color: "#444", textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
         Local demo gate — a soft unlock for this device, not secure content protection.
-        Ask your DM for the code.
       </p>
     </div>
   );
@@ -523,6 +553,17 @@ export function EncounterLibraryPanel({
   function removeStagedEntry(stagedId: string) {
     persistStaged(staged.filter(s => s.id !== stagedId));
   }
+
+  // Lock snap-back guard — if the stored unlock flag is cleared or tampered (e.g.
+  // someone pokes localStorage in the console), re-lock the UI until the correct code
+  // is entered again. Front-end soft gate only.
+  useEffect(() => {
+    if (!unlocked) return;
+    function revalidate() { if (!isModuleUnlocked()) setUnlocked(false); }
+    window.addEventListener("storage", revalidate);
+    const interval = window.setInterval(revalidate, 2000);
+    return () => { window.removeEventListener("storage", revalidate); window.clearInterval(interval); };
+  }, [unlocked]);
 
   // Load / seed encounters on mount
   useEffect(() => {

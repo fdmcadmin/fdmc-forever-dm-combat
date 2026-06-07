@@ -52,6 +52,7 @@ import { ActorCard } from "./core/ui/ActorCard";
 import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
+import { syncTokenContextMenus, teardownTokenContextMenus } from "./core/tokens/tokenContextMenu";
 import { isObrReady, obrSend } from "./core/utils/obrReady";
 import { loadEquipmentLibrary, itemToAction } from "./core/ui/EquipmentBagEditor";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
@@ -698,6 +699,21 @@ export default function App() {
     ) as MainEncounterMonsterInstance | undefined ?? monsterCandidates[0] as MainEncounterMonsterInstance | undefined,
     [monsterCandidates, activeMonsterInstanceId],
   );
+
+  // ── DM: token right-click menu — quick GM lock + assign-to-seat ───────────
+  // Rebuilt when the seat set changes. Stable signature avoids menu thrash.
+  const seatMenuSignature = useMemo(
+    () => Object.values(roomLiveState.seats)
+      .map(s => `${s.seatId}:${s.label}:${s.seatMode}:${s.primaryActorId}`)
+      .join("|"),
+    [roomLiveState.seats],
+  );
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    void syncTokenContextMenus(roomLiveState.tableId, roomLiveState.seats);
+    return () => { void teardownTokenContextMenus(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDmMode, roomLiveState.tableId, seatMenuSignature]);
 
   function broadcastMonsterRoster(roster: MainEncounterMonsterInstance[]) {
     if (!OBR.isAvailable) return;
