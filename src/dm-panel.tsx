@@ -17,7 +17,11 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 
-const DM_LIBRARY_UPDATED_CHANNEL = "forever-dm-combat:dm-library-updated:v1";
+import { FDMC_CHANNELS } from "./core/constants/channels";
+import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
+import { FDMC_ACCENTS } from "./core/constants/theme";
+
+const DM_LIBRARY_UPDATED_CHANNEL = FDMC_CHANNELS.dmLibraryUpdated;
 
 function broadcastLibraryUpdate() {
   if (!OBR.isAvailable) return;
@@ -61,6 +65,7 @@ import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "./data/broken-chain/equipmentLib
 import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { LevelUpApprovalPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
+import { buildActorSeatColorMap, withAlpha } from "./core/seats/seatColors";
 import { TokenAssignmentPanel } from "./core/tokens/TokenAssignmentPanel";
 import { loadMonsterRoster } from "./core/monsters/runtime/monsterRosterStorage";
 import "./styles.css";
@@ -70,7 +75,7 @@ import "./styles.css";
 type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals";
 
 const PANEL_TITLES: Record<PanelId, string> = {
-  editActors: "Edit Actors",
+  editActors: "Party Characters",
   seats: "Player Seats",
   monsters: "Monsters & Encounters",
   equipment: "Equipment Library",
@@ -79,6 +84,30 @@ const PANEL_TITLES: Record<PanelId, string> = {
   library: "Library",
   seatTokens: "Seats & Tokens",
   approvals: "DM Approvals",
+};
+
+// Per-panel accent color — drives the header stripe + title so each DM tool reads
+// as its own space instead of "purple text on black" everywhere (P-UX1). Pulled
+// from the shared accent tokens so the DM chrome stays consistent.
+const PANEL_ACCENT: Record<PanelId, string> = {
+  editActors: FDMC_ACCENTS.use,       // party characters → blue
+  seats: FDMC_ACCENTS.seats,          // seats → green
+  monsters: FDMC_ACCENTS.monster,     // monsters → GM red
+  equipment: FDMC_ACCENTS.equipment,  // equipment → gold
+  tokens: FDMC_ACCENTS.fix,           // tokens → cyan
+  maintenance: FDMC_ACCENTS.fix,      // fix-it → cyan
+  library: FDMC_ACCENTS.use,          // library → blue
+  seatTokens: FDMC_ACCENTS.seats,     // seats & tokens → green
+  approvals: FDMC_ACCENTS.approval,   // approvals → amber
+};
+
+// Library sub-tab accents (Party Characters / Monsters / Equipment).
+const LIB_TAB_ACCENT: Record<"actors" | "monsters" | "equipment", string> = {
+  actors: FDMC_ACCENTS.use, monsters: FDMC_ACCENTS.monster, equipment: FDMC_ACCENTS.equipment,
+};
+// Seats & Tokens sub-tab accents.
+const SEATTOK_TAB_ACCENT: Record<"seats" | "tokens", string> = {
+  seats: FDMC_ACCENTS.seats, tokens: FDMC_ACCENTS.fix,
 };
 
 function getPanelFromUrl(): PanelId {
@@ -91,6 +120,8 @@ function getPanelFromUrl(): PanelId {
 
 function DmPanelApp() {
   const panelId = useMemo(() => getPanelFromUrl(), []);
+  // create= jumps straight into the right creator (set by the main DM toolbar).
+  const createParam = useMemo(() => new URLSearchParams(window.location.search).get("create"), []);
 
   // ── Seed campaign equipment library on first DM panel open ────────────────
   useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY); }, []);
@@ -130,14 +161,32 @@ function DmPanelApp() {
   }, []);
 
   // ── Approvals inbox — level-up + convergence ─────────────────────────────
+  const LEVEL_UP_STORAGE_KEY = FDMC_STORAGE_KEYS.pendingLevelUpRequests;
+
   const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>(() => {
     try {
-      const stored = localStorage.getItem("fdmc:pending-level-up-requests");
+      const stored = localStorage.getItem(LEVEL_UP_STORAGE_KEY);
       return stored ? (JSON.parse(stored) as LevelUpRequest[]) : [];
     } catch { return []; }
   });
   const [pendingConvergenceRequests, setPendingConvergenceRequests] = useState<ConvergenceRequest[]>([]);
   const [convergenceApprovalReq, setConvergenceApprovalReq] = useState<ConvergenceRequest | null>(null);
+
+  // Cross-window sync: when another DM panel popover approves/clears a request,
+  // it writes the updated list to localStorage. The storage event fires in all
+  // other same-origin tabs/popovers — we re-read and sync React state so the
+  // badge disappears everywhere, not just in the window that did the approval.
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== LEVEL_UP_STORAGE_KEY) return;
+      try {
+        const next = event.newValue ? (JSON.parse(event.newValue) as LevelUpRequest[]) : [];
+        setLevelUpRequests(next);
+      } catch { /* ignore malformed */ }
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [LEVEL_UP_STORAGE_KEY]);
 
   useEffect(() => {
     if (!OBR.isAvailable) return;
@@ -147,7 +196,7 @@ function DmPanelApp() {
         setLevelUpRequests(prev => {
           const filtered = prev.filter(r => r.actorId !== msg.actorId);
           const next = [...filtered, msg];
-          try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+          try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
           return next;
         });
       }
@@ -185,7 +234,7 @@ function DmPanelApp() {
     pushActorsToAllSeats({ freshOverrides });
     setLevelUpRequests(prev => {
       const next = prev.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
     if (OBR.isAvailable) {
@@ -201,7 +250,7 @@ function DmPanelApp() {
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
     setLevelUpRequests(prev => {
       const next = prev.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
     if (OBR.isAvailable) {
@@ -291,11 +340,14 @@ function DmPanelApp() {
   }, [Object.keys(seats).join(",")]);
 
   // ── Actor editor state ────────────────────────────────────────────────────
-  const [editingActorId, setEditingActorId] = useState<string | null>(null);
+  // create=actor opens the guided Party Character creator immediately.
+  const [editingActorId, setEditingActorId] = useState<string | null>(createParam === "actor" ? "__new__" : null);
   const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  // Library tab: actors | monsters | equipment
-  const [libraryTab, setLibraryTab] = useState<"actors" | "monsters" | "equipment">("actors");
+  // Library tab: actors | monsters | equipment — honor the create= hint
+  const [libraryTab, setLibraryTab] = useState<"actors" | "monsters" | "equipment">(
+    createParam === "monster" ? "monsters" : createParam === "equipment" ? "equipment" : "actors"
+  );
   // Seats+Tokens tab
   const [seatTokenTab, setSeatTokenTab] = useState<"seats" | "tokens">(
     getPanelFromUrl() === "tokens" || getPanelFromUrl() === "seatTokens"
@@ -385,12 +437,15 @@ function DmPanelApp() {
 
   const title = PANEL_TITLES[panelId];
 
+  // actorId → seat color, so the library shows which character belongs to which seat (P-UX1).
+  const actorSeatColor = buildActorSeatColorMap(seats);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", fontFamily: "monospace", background: "#0d0d14", color: "#fff" }}>
-      {/* Header */}
-      <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0d0d14", flexShrink: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "#0d0d14", color: "#fff" }}>
+      {/* Header — accent stripe + title colored by panel type */}
+      <div style={{ padding: "8px 14px", borderTop: `3px solid ${PANEL_ACCENT[panelId]}`, borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0d0d14", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <h2 style={{ margin: 0, fontSize: 15, color: "#7b68ee" }}>{title}</h2>
+          <h2 style={{ margin: 0, fontSize: 15, color: PANEL_ACCENT[panelId] }}>{title}</h2>
           {(levelUpRequests.length + pendingConvergenceRequests.length) > 0 && panelId !== "approvals" && (
             <a href={`?panel=approvals`} style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 9px", fontSize: 11, fontWeight: 600, textDecoration: "none" }}>
               ⬆ {levelUpRequests.length + pendingConvergenceRequests.length} Pending
@@ -446,7 +501,7 @@ function DmPanelApp() {
             <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
               <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
                 <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
-                  {actors.length === 0 ? "No actors yet." : `${actors.length} actor${actors.length === 1 ? "" : "s"}`}
+                  {actors.length === 0 ? "No Party Characters yet." : `${actors.length} Party Character${actors.length === 1 ? "" : "s"}`}
                 </p>
                 <div style={{ display: "flex", gap: 6 }}>
                   {actors.length > 0 && (
@@ -462,8 +517,8 @@ function DmPanelApp() {
                     <input type="file" accept=".json" onChange={handleImportFile} style={{ display: "none" }} />
                   </label>
                   <button type="button" onClick={() => setEditingActorId("__new__")}
-                    style={{ fontSize: 12, padding: "4px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 500 }}>
-                    + New Actor
+                    style={{ fontSize: 12, padding: "4px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>
+                    + Create Party Character
                   </button>
                 </div>
               </div>
@@ -479,7 +534,7 @@ function DmPanelApp() {
               <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
                 {actors.length === 0 ? (
                   <div style={{ textAlign: "center", marginTop: 40, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
-                    <p style={{ fontSize: 12, color: "#555", margin: 0 }}>No actors in library.</p>
+                    <p style={{ fontSize: 12, color: "#555", margin: 0 }}>No Party Characters in your library.</p>
 
                     {/* One-time import button — seeds from bundled 0.5.5b source files */}
                     <div style={{ background: "#1a1a2e", borderRadius: 8, padding: 16, border: "1px solid #7b68ee33", maxWidth: 340 }}>
@@ -530,13 +585,16 @@ function DmPanelApp() {
                     )}
 
                     <p style={{ fontSize: 11, color: "#444", margin: 0 }}>
-                      — or — use Create New Actor to build from scratch
+                      — or — use Create Party Character to build from scratch
                     </p>
                   </div>
-                ) : actors.map(actor => (
-                  <div key={actor.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#161622", borderRadius: 8, marginBottom: 8, border: "1px solid #2a2a3e" }}>
+                ) : actors.map(actor => {
+                  const seatColor = actorSeatColor[actor.id];
+                  return (
+                  <div key={actor.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: seatColor ? withAlpha(seatColor, 0.06) : "#161622", borderRadius: 8, marginBottom: 8, border: "1px solid #2a2a3e", borderLeft: `4px solid ${seatColor ?? "#2a2a3e"}` }}>
                     <div>
                       <span style={{ fontWeight: 500, fontSize: 14 }}>{actor.name || "Unnamed"}</span>
+                      {seatColor && <span title="Assigned to a seat" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: seatColor, marginLeft: 8 }} />}
                       <span style={{ fontSize: 12, color: "#888", marginLeft: 10 }}>
                         {actor.race} {actor.className} · Level {actor.level}
                       </span>
@@ -566,7 +624,8 @@ function DmPanelApp() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )
@@ -594,15 +653,15 @@ function DmPanelApp() {
             onLoadEncounter={(instances) => {
               // Write instances to localStorage queue — App.tsx reads on broadcast
               try {
-                const existing = JSON.parse(window.localStorage.getItem("fdmc.dm.encounterLoadQueue.v1") ?? "[]") as unknown[];
+                const existing = JSON.parse(window.localStorage.getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
                 window.localStorage.setItem(
-                  "fdmc.dm.encounterLoadQueue.v1",
+                  FDMC_STORAGE_KEYS.encounterLoadQueue,
                   JSON.stringify([...existing, ...instances])
                 );
               } catch { /* ok */ }
               if (OBR.isAvailable) {
                 void OBR.broadcast.sendMessage(
-                  "forever-dm-combat:encounter-load-request:v1",
+                  FDMC_CHANNELS.encounterLoadRequest,
                   { type: "fdmc:encounter-load-request" },
                   { destination: "LOCAL" }
                 ).catch(() => undefined);
@@ -779,15 +838,24 @@ function DmPanelApp() {
         {/* ── Library (Actors / Monsters / Equipment tabs) ── */}
         {panelId === "library" && (
           <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-            <div style={{ display: "flex", gap: 2, padding: "6px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
-              {(["actors", "monsters", "equipment"] as const).map(tab => (
-                <button key={tab} type="button" onClick={() => setLibraryTab(tab)}
-                  style={{ fontSize: 12, padding: "3px 12px", borderRadius: 4, border: "none", cursor: "pointer",
-                    background: libraryTab === tab ? "#7b68ee" : "transparent",
-                    color: libraryTab === tab ? "#fff" : "#666" }}>
-                  {tab === "actors" ? "Actors" : tab === "monsters" ? "Monsters" : "Equipment"}
-                </button>
-              ))}
+            <div style={{ display: "flex", gap: 6, padding: "6px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
+              {(["actors", "monsters", "equipment"] as const).map(tab => {
+                const accent = LIB_TAB_ACCENT[tab];
+                const active = libraryTab === tab;
+                return (
+                  <button key={tab} type="button" onClick={() => setLibraryTab(tab)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, padding: "4px 12px", borderRadius: 5, cursor: "pointer",
+                      border: `1px solid ${active ? accent : "#2a2a3e"}`,
+                      background: active ? accent : "transparent",
+                      color: active ? "#0d0d14" : accent, fontWeight: active ? 700 : 500 }}>
+                    <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: active ? "#0d0d14" : accent }} />
+                    {tab === "actors" ? "Party Characters" : tab === "monsters" ? "Monsters" : "Equipment"}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ padding: "5px 14px", borderBottom: "1px solid #1a1a2e", fontSize: 10, color: "#555", flexShrink: 0 }}>
+              Library = load &amp; edit what exists · use the <strong style={{ color: "#7b68ee" }}>+ Create</strong> button to build something new.
             </div>
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {libraryTab === "actors" && (
@@ -802,13 +870,13 @@ function DmPanelApp() {
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
                     <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: 12, color: "#888" }}>{actors.length} actor{actors.length === 1 ? "" : "s"}</span>
+                      <span style={{ fontSize: 12, color: "#888" }}>{actors.length} Party Character{actors.length === 1 ? "" : "s"}</span>
                       <div style={{ display: "flex", gap: 6 }}>
                         {actors.length > 0 && <button type="button" onClick={handleExport} style={{ fontSize: 11, padding: "3px 9px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 4, cursor: "pointer" }}>↓ Export</button>}
                         <label style={{ fontSize: 11, padding: "3px 9px", background: "#2a2a3e", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer" }}>
                           ↑ Import<input type="file" accept=".json" onChange={handleImportFile} style={{ display: "none" }} />
                         </label>
-                        <button type="button" onClick={() => setEditingActorId("__new__")} style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>+ New</button>
+                        <button type="button" onClick={() => setEditingActorId("__new__")} style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: 600 }}>+ Create</button>
                       </div>
                     </div>
                     {importResult && (
@@ -818,16 +886,20 @@ function DmPanelApp() {
                       </div>
                     )}
                     <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
-                      {actors.map(actor => (
-                        <div key={actor.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#161622", borderRadius: 6, marginBottom: 6, border: "1px solid #2a2a3e" }}>
+                      {actors.map(actor => {
+                        const seatColor = actorSeatColor[actor.id];
+                        return (
+                        <div key={actor.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: seatColor ? withAlpha(seatColor, 0.06) : "#161622", borderRadius: 6, marginBottom: 6, border: "1px solid #2a2a3e", borderLeft: `4px solid ${seatColor ?? "#2a2a3e"}` }}>
                           <div>
                             <span style={{ fontWeight: 500, fontSize: 13 }}>{actor.name}</span>
+                            {seatColor && <span title="Assigned to a seat" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: seatColor, marginLeft: 7 }} />}
                             <span style={{ fontSize: 11, color: "#555", marginLeft: 8 }}>AC {actor.stats.ac} · HP {actor.stats.hp.max} · Level {actor.level}</span>
                           </div>
                           <button type="button" onClick={() => setEditingActorId(actor.id)}
                             style={{ fontSize: 11, padding: "3px 10px", background: "#2a2a3e", border: "1px solid #444", borderRadius: 4, color: "#aaa", cursor: "pointer" }}>Edit</button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )
@@ -836,13 +908,14 @@ function DmPanelApp() {
                 <EncounterLibraryPanel
                   monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
                   activeRosterCount={Object.keys(roomLiveState.monsterLiveState).length}
+                  autoOpenBandPicker={createParam === "monster"}
                   onLoadEncounter={(instances) => {
                     try {
-                      const existing = JSON.parse(window.localStorage.getItem("fdmc.dm.encounterLoadQueue.v1") ?? "[]") as unknown[];
-                      window.localStorage.setItem("fdmc.dm.encounterLoadQueue.v1", JSON.stringify([...existing, ...instances]));
+                      const existing = JSON.parse(window.localStorage.getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
+                      window.localStorage.setItem(FDMC_STORAGE_KEYS.encounterLoadQueue, JSON.stringify([...existing, ...instances]));
                     } catch { /* ok */ }
                     if (OBR.isAvailable) {
-                      void OBR.broadcast.sendMessage("forever-dm-combat:encounter-load-request:v1", { type: "fdmc:encounter-load-request" }, { destination: "LOCAL" }).catch(() => undefined);
+                      void OBR.broadcast.sendMessage(FDMC_CHANNELS.encounterLoadRequest, { type: "fdmc:encounter-load-request" }, { destination: "LOCAL" }).catch(() => undefined);
                     }
                   }}
                   onClearRoster={() => undefined}
@@ -856,15 +929,21 @@ function DmPanelApp() {
         {/* ── Seats & Tokens (tabbed) ── */}
         {(panelId === "seatTokens" || panelId === "seats" || panelId === "tokens") && (
           <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-            <div style={{ display: "flex", gap: 2, padding: "6px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
-              {(["seats", "tokens"] as const).map(tab => (
-                <button key={tab} type="button" onClick={() => setSeatTokenTab(tab)}
-                  style={{ fontSize: 12, padding: "3px 12px", borderRadius: 4, border: "none", cursor: "pointer",
-                    background: seatTokenTab === tab ? "#7b68ee" : "transparent",
-                    color: seatTokenTab === tab ? "#fff" : "#666" }}>
-                  {tab === "seats" ? "Seats" : "Tokens"}
-                </button>
-              ))}
+            <div style={{ display: "flex", gap: 6, padding: "6px 14px", borderBottom: "1px solid #2a2a3e", flexShrink: 0 }}>
+              {(["seats", "tokens"] as const).map(tab => {
+                const accent = SEATTOK_TAB_ACCENT[tab];
+                const active = seatTokenTab === tab;
+                return (
+                  <button key={tab} type="button" onClick={() => setSeatTokenTab(tab)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, padding: "4px 12px", borderRadius: 5, cursor: "pointer",
+                      border: `1px solid ${active ? accent : "#2a2a3e"}`,
+                      background: active ? accent : "transparent",
+                      color: active ? "#0d0d14" : accent, fontWeight: active ? 700 : 500 }}>
+                    <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: active ? "#0d0d14" : accent }} />
+                    {tab === "seats" ? "Seats" : "Tokens"}
+                  </button>
+                );
+              })}
             </div>
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {seatTokenTab === "seats" && (

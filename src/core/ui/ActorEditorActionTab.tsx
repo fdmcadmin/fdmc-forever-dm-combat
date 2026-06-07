@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
+import { tabAccent } from "./tabVisuals";
 import type { ActorAction, TabId } from "../types/tabs";
+
+// Human heading per tab so the editor reads as a labeled section, not a raw list.
+const ACTION_TAB_HEADING: Partial<Record<TabId, string>> = {
+  main: "Actions",
+  bonus: "Bonus Actions",
+  bond: "Bonds & Additives",
+  notes: "Notes",
+};
 import type { ActionCost } from "../types/actionEconomy";
 import { actionFromEditorDraft, archiveActionFromTab, replaceActionInTab } from "./pcActionAdapters";
 import type { PcActionDraft, PcRollMode, PcActionCost } from "./pcActionTypes";
@@ -297,10 +306,20 @@ export function ActorEditorActionTab({ tabId, actions, onChange }: ActorEditorAc
     onChange([...actions, cloned]);
   }
 
+  const accent = tabAccent(tabId);
+  const heading = ACTION_TAB_HEADING[tabId] ?? "Entries";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="fdmc-section-head" style={{ color: accent, marginTop: 0 }}>
+        {heading}
+        {actions.length > 0 && (
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 8, background: accent, color: "#0d0d14", letterSpacing: 0 }}>{actions.length}</span>
+        )}
+      </div>
+
       {actions.length === 0 && !addingNew && (
-        <p style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>No actions in this tab.</p>
+        <p style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>Nothing here yet — use “+ Add” below to create the first entry.</p>
       )}
 
       {actions.map(action => (

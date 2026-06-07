@@ -24,6 +24,7 @@ import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { PinnedReactions } from "./PinnedReactions";
+import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
 import { TabPanel } from "./TabPanel";
 import { StatusTrackerPanel } from "./StatusTrackerPanel";
@@ -38,6 +39,8 @@ type ActorCardProps = {
   committedRoll: CommittedRollState | null;
   rulesProfile: CombatRulesProfile;
   turnResetVersion: number;
+  /** Seat color for the character's seat — tints the name so the sheet carries seat identity. */
+  seatColor?: string;
   onHpChange: (nextHp: HitPoints) => void;
   onResetHp: () => void;
   onReadyActionCosts: (costs: ActionCost[], readiedKey: string) => void;
@@ -348,7 +351,7 @@ function actionToPinnedReaction(tabId: TabId, action: ActorAction): PinnedReacti
 function getPinnedReactionShortcuts(actor: Actor) {
   const pinnedById = new Map<string, PinnedReaction>();
 
-  actor.pinnedReactions.forEach((reaction) => {
+  (actor.pinnedReactions ?? []).forEach((reaction) => {
     pinnedById.set(reaction.id, reaction);
   });
 
@@ -527,6 +530,7 @@ export function ActorCard({
   committedRoll,
   rulesProfile,
   turnResetVersion,
+  seatColor,
   onHpChange,
   onResetHp,
   onReadyActionCosts,
@@ -2828,12 +2832,12 @@ export function ActorCard({
   }
 
   return (
-    <article className={`actor-card ${hpStatus}`}>
-      <header className="actor-card-header selected-actor-header">
+    <article className={`actor-card ${hpStatus}`} style={seatColor ? { borderLeft: `5px solid ${seatColor}` } : undefined}>
+      <header className="actor-card-header selected-actor-header" style={seatColor ? { background: withAlpha(seatColor, 0.1) } : undefined}>
         <div className="actor-title-row compact-detail-title">
           <div className="actor-title-copy">
-            <p className="eyebrow">{actor.kind === "companion" ? "Companion Card" : "Selected Actor"}</p>
-            <h2>{actor.name}</h2>
+            <p className="eyebrow">{actor.kind === "companion" ? "Companion Card" : "Selected Character"}</p>
+            <h2 style={seatColor ? { color: seatColor } : undefined}>{actor.name}</h2>
             <p className="actor-subtitle">
               {actor.className ? `${actor.className} · Level ${levelDisplay}` : actor.subtitle}
             </p>
@@ -2972,7 +2976,12 @@ export function ActorCard({
         />
       </div>
 
-      <TabBar activeTab={activeTab} visibleTabs={visibleTabs} onChangeTab={setActiveTab} />
+      <TabBar
+        activeTab={activeTab}
+        visibleTabs={visibleTabs}
+        onChangeTab={setActiveTab}
+        counts={Object.fromEntries(visibleTabs.map((t) => [t, actor.tabs[t]?.length ?? 0]))}
+      />
 
       {activeTab === "notes" ? (
         <ActorNotesPanel

@@ -155,9 +155,9 @@ export function FdmcRoomMaintenancePanel({
   }
 
   return (
-    <section className="controlled-intake-card fdmc-room-maintenance-card" aria-label="FDMC room maintenance">
-      <p className="eyebrow">DM/Builder Danger Zone</p>
-      <h3>FDMC Room Maintenance</h3>
+    <section className="controlled-intake-card fdmc-room-maintenance-card" aria-label="FDMC room maintenance" style={{ borderTop: "3px solid #6fe0e0" }}>
+      <p className="eyebrow" style={{ color: "#6fe0e0" }}>🛠 Fix it</p>
+      <h3 style={{ color: "#6fe0e0" }}>FDMC Room Maintenance</h3>
       <p className="subtle">
         This tool only scans and resets FDMC-owned room metadata keys. It does not delete tokens, maps, token metadata,
         bundled libraries, actor source templates, or other extensions&apos; metadata.

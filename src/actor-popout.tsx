@@ -33,6 +33,8 @@ import "./styles.css";
 
 const params = new URLSearchParams(window.location.search);
 const POPOUT_ACTOR_ID = params.get("fdmActorPopover") ?? "";
+// Seat color is passed by the opener so the popout sheet can carry seat identity.
+const POPOUT_SEAT_COLOR = params.get("seatColor") ?? undefined;
 
 // ─── Resolve actor — DM library first, player cache fallback, bundled last ───
 
@@ -85,7 +87,7 @@ function ActorPopout() {
 
   if (!actor) {
     return (
-      <div style={{ padding: 24, fontFamily: "monospace", color: "#888" }}>
+      <div style={{ padding: 24, color: "#888" }}>
         <p>Actor not found: {POPOUT_ACTOR_ID || "(no id)"}</p>
         <p style={{ fontSize: 11 }}>Open this popout from the actor selector in Forever DM Combat.</p>
       </div>
@@ -103,6 +105,7 @@ function ActorPopout() {
     <div style={{ height: "100vh", overflow: "auto" }}>
       <ActorCard
         actor={actor}
+        seatColor={POPOUT_SEAT_COLOR}
         hp={hp}
         actionState={actionState}
         concentration={concentration}

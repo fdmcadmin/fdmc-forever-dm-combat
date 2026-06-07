@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Actor } from "../types/actor";
 import type { FdmcSeat, FdmcSeatBinding } from "./seatTypes";
 import type { SeatAssignmentInput } from "./useSeatSystem";
+import { getSeatColor, withAlpha } from "./seatColors";
 
 type SeatAssignmentPanelProps = {
   actors: Actor[];
@@ -98,8 +99,10 @@ export function SeatAssignmentPanel({
       <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ margin: 0 }}>Player Seats</h3>
         <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" onClick={onPushActorsToAllSeats} style={{ fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>
-            Push All
+          <button type="button" onClick={onPushActorsToAllSeats}
+            title="Re-broadcast every seat's assigned characters to all seated players"
+            style={{ fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>
+            ⇪ Push All
           </button>
           <button type="button" onClick={addSeat} style={{ fontSize: 11, padding: "3px 10px", background: "#7b68ee", border: "none", borderRadius: 3, color: "#fff", cursor: "pointer" }}>
             + Add Seat
@@ -109,7 +112,9 @@ export function SeatAssignmentPanel({
 
       <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
-          Assign actors to seats. Right-click actors to set primary. Players self-select their seat when they open the app.
+          Lend Party Characters to seats. Each seat has its own color — it follows the character onto its card,
+          combat tracker row, and assigned token. Right-click a character to set it as primary ★. Players
+          self-select their seat when they open the app.
         </p>
 
         {seatIds.map(seatId => {
@@ -118,15 +123,19 @@ export function SeatAssignmentPanel({
           const isSaving = saving === seatId;
 
           const isViewer = draft.seatMode === "viewer";
+          const seatColor = isViewer ? "#4caf50" : getSeatColor(seatId);
           return (
-            <div key={seatId} style={{ border: `1px solid ${isViewer ? "#2a3a2a" : "#2a2a3e"}`, borderRadius: 6, padding: 10 }}>
+            <div key={seatId} style={{ border: `1px solid ${isViewer ? "#2a3a2a" : "#2a2a3e"}`, borderLeft: `4px solid ${seatColor}`, borderRadius: 6, padding: 10, background: withAlpha(seatColor, 0.05) }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <input
-                  type="text"
-                  value={draft.label}
-                  onChange={e => setDrafts(c => ({ ...c, [seatId]: { ...c[seatId], label: e.target.value } }))}
-                  style={{ fontWeight: "bold", background: "transparent", border: "none", borderBottom: "1px solid #555", color: "inherit", fontSize: 13, width: 130 }}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span title="Seat color" style={{ width: 12, height: 12, borderRadius: "50%", background: seatColor, flexShrink: 0, boxShadow: `0 0 0 2px ${withAlpha(seatColor, 0.25)}` }} />
+                  <input
+                    type="text"
+                    value={draft.label}
+                    onChange={e => setDrafts(c => ({ ...c, [seatId]: { ...c[seatId], label: e.target.value } }))}
+                    style={{ fontWeight: "bold", background: "transparent", border: "none", borderBottom: "1px solid #555", color: "inherit", fontSize: 13, width: 120 }}
+                  />
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {/* Player / Viewer mode toggle */}
                   <button
@@ -137,7 +146,7 @@ export function SeatAssignmentPanel({
                   >
                     {isViewer ? "👁 Viewer" : "Player"}
                   </button>
-                  <span style={{ fontSize: 10, color: binding ? "#4caf50" : "#555" }}>
+                  <span title={binding ? "A player is bound to this seat" : "Seat is open"} style={{ fontSize: 10, color: binding ? seatColor : "#555", fontWeight: binding ? 700 : 400 }}>
                     {binding ? `● ${binding.viewerSeatKey.slice(0, 8)}` : "○ open"}
                   </span>
                   {/* Kick = clear binding only — player returns to seat picker, seat stays */}
@@ -178,11 +187,12 @@ export function SeatAssignmentPanel({
                       }}
                       style={{
                         padding: "2px 8px", fontSize: 11, borderRadius: 12,
-                        border: selected ? "1px solid #7b68ee" : "1px solid #333",
-                        background: selected ? (isPrimary ? "#7b68ee44" : "#2a2a3e") : "transparent",
+                        border: selected ? `1px solid ${seatColor}` : "1px solid #333",
+                        background: selected ? (isPrimary ? withAlpha(seatColor, 0.32) : withAlpha(seatColor, 0.14)) : "transparent",
                         color: selected ? "#fff" : "#666", cursor: "pointer",
+                        fontWeight: isPrimary ? 600 : 400,
                       }}
-                      title={selected ? (isPrimary ? "Primary ★" : "Right-click to set as primary") : "Click to assign"}
+                      title={selected ? (isPrimary ? "Primary ★ — borrows this seat's color" : "Right-click to set as primary") : "Click to lend this character to the seat"}
                     >
                       {actor.name}{isPrimary ? " ★" : ""}
                     </button>
@@ -196,17 +206,21 @@ export function SeatAssignmentPanel({
                 </p>
               )}
 
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <button type="button" onClick={() => void saveSeat(seatId)} disabled={isSaving}
-                  style={{ fontSize: 11, padding: "3px 10px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
-                  {isSaving ? "Saving…" : "Save"}
+                  title="Save this seat's configuration (label, mode, assigned characters)"
+                  style={{ fontSize: 11, padding: "3px 12px", background: "#7b68ee", border: "none", borderRadius: 3, color: "#fff", cursor: "pointer", fontWeight: 600 }}>
+                  {isSaving ? "Saving…" : "Save Seat"}
                 </button>
                 {seats[seatId] && !isViewer && (
                   <button type="button" onClick={() => onPushActorsToSeat(seatId)}
+                    title="Lend / broadcast the assigned character data to this seat's player now"
                     style={{ fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>
-                    Push
+                    ⇪ Push
                   </button>
                 )}
+                <span style={{ flex: 1 }} />
+                <span style={{ fontSize: 9, color: "#444" }}>Kick = free seat · ✕ = delete seat</span>
               </div>
             </div>
           );

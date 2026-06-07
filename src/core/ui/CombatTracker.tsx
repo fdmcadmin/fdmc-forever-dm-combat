@@ -14,6 +14,7 @@ import type { Actor } from "../types/actor";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import type { FdmcCombatPhase } from "../table-state/fdmcRoomLiveState";
 import type { ActorActionEconomyMap } from "../types/actionEconomy";
+import { MONSTER_COLOR, NEUTRAL_SEAT_COLOR, withAlpha } from "../seats/seatColors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,10 @@ export type CombatTrackerProps = {
   viewerActorIds?: string[];
   /** Economy state for all actors — used to show per-row dots for DM */
   actionStateByActorId?: ActorActionEconomyMap;
+  /** actorId → seat color. Drives the per-row identity rail (P-UX1). */
+  seatColorById?: Record<string, string>;
+  /** Color used for monster/GM combatant rows. Defaults to MONSTER_COLOR. */
+  monsterColor?: string;
   onStartCombat: () => void;
   onNextTurn: () => void;
   onEndCombat: () => void;
@@ -193,6 +198,8 @@ export function CombatTracker({
   isDmMode,
   viewerActorIds,
   actionStateByActorId,
+  seatColorById,
+  monsterColor = MONSTER_COLOR,
   onStartCombat,
   onNextTurn,
   onEndCombat,
@@ -217,7 +224,8 @@ export function CombatTracker({
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 12px 6px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>
+          {/* Phase label colored by state — green in combat, amber in initiative, muted in setup */}
+          <span style={{ fontSize: 11, color: phase === "combat" ? "#7be08a" : phase === "initiative" ? "#e0b85a" : "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
             {phase === "combat" ? `Round ${round}` : phase === "initiative" ? "Initiative" : "Setup"}
           </span>
           {phase === "combat" && activeIndex >= 0 && (
@@ -335,6 +343,13 @@ export function CombatTracker({
           const aliveIdx = aliveSorted.findIndex(c => c.id === activeId);
           const isNext = phase === "combat" && !isActive && idx === (aliveIdx + 1) % Math.max(1, aliveSorted.length);
 
+          // Identity color — seat color for party characters, monster color for monsters.
+          const railColor = combatant.kind === "monster"
+            ? monsterColor
+            : seatColorById?.[combatant.id]
+              ?? (combatant.ownerId ? seatColorById?.[combatant.ownerId] : undefined)
+              ?? NEUTRAL_SEAT_COLOR;
+
           return (
             <React.Fragment key={combatant.id}>
             <div
@@ -343,8 +358,13 @@ export function CombatTracker({
                 alignItems: "center",
                 gap: 4,
                 padding: "4px 6px",
-                background: isActive ? "#1a1a3e" : isSwapSource ? "#1a2a1a" : "transparent",
-                border: `1px solid ${isActive ? "#7b68ee55" : isSwapSource ? "#4caf5066" : isNext ? "#2a2a3e" : "transparent"}`,
+                // Identity rail on the left edge using the seat/monster color.
+                borderLeft: `3px solid ${railColor}`,
+                paddingLeft: 7,
+                background: isActive ? withAlpha(railColor, 0.16) : isSwapSource ? "#1a2a1a" : "transparent",
+                border: `1px solid ${isActive ? withAlpha(railColor, 0.5) : isSwapSource ? "#4caf5066" : isNext ? "#2a2a3e" : "transparent"}`,
+                borderLeftWidth: 3,
+                borderLeftColor: railColor,
                 borderRadius: 5,
                 opacity: combatant.isDead ? 0.4 : 1,
               }}
@@ -410,15 +430,17 @@ export function CombatTracker({
                   }
                 }}
                 style={{
-                  flex: 1, fontSize: 12, fontWeight: isActive ? 600 : 400,
-                  color: isActive ? "#fff" : isSwapTarget ? "#4caf50" : combatant.isDead ? "#555" : "#aaa",
+                  // Names hold their seat color (party) / monster color (GM) so the
+                  // tracker reads as the table at a glance.
+                  flex: 1, fontSize: 12, fontWeight: isActive ? 700 : 500,
+                  color: isActive ? "#fff" : isSwapTarget ? "#4caf50" : combatant.isDead ? "#555" : railColor,
                   background: "transparent", border: "none", cursor: "pointer",
                   textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: 0,
                 }}
               >
                 {combatant.name}
                 {combatant.kind === "monster" && (
-                  <span style={{ fontSize: 10, color: "#444", marginLeft: 4 }}>⚔</span>
+                  <span style={{ fontSize: 10, color: withAlpha(monsterColor, 0.7), marginLeft: 4 }}>⚔</span>
                 )}
               </button>
 
@@ -504,6 +526,27 @@ export function CombatTracker({
                   {companion.name}
                   <span style={{ fontSize: 9, color: "#444", marginLeft: 4 }}>acts on {combatant.name}'s turn</span>
                 </span>
+                {/* Economy dots — companion row */}
+                {isDmMode && actionStateByActorId && (() => {
+                  const cState = actionStateByActorId[companion.id];
+                  if (!cState) return null;
+                  const costs = ["main", "bonus", "reaction"] as const;
+                  const labels = ["A", "B", "R"] as const;
+                  return (
+                    <div style={{ display: "flex", gap: 2, flexShrink: 0, marginRight: 2 }}>
+                      {costs.map((cost, i) => {
+                        const val = cState[cost];
+                        const isUsed = typeof val === "string" && val.startsWith("__fdm_used__:");
+                        const isReadied = val && !isUsed;
+                        const color = isUsed ? "#ff5840" : isReadied ? "#d7b36a" : "#2a2a4e";
+                        return (
+                          <div key={cost} title={`${labels[i]}: ${isUsed ? "used" : isReadied ? "readied" : "available"}`}
+                            style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 {isDmMode && (
                   <span style={{ fontSize: 10, color: hpColor(companion.hp.current, companion.hp.max) }}>
                     {companion.isDead ? "☠" : `${companion.hp.current}/${companion.hp.max}`}

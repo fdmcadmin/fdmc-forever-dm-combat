@@ -5,6 +5,7 @@ import { ActorEditorActionTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
+import { tabAccent } from "./tabVisuals";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,38 @@ const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
 };
 
 const EDITOR_TABS: EditorTab[] = ["profile", "actions", "bonus", "reactions", "bonds", "spells", "resources", "equipment", "notes"];
+
+// Distinct color accent per creator step (P-UX1). Derived from the shared
+// `tabVisuals` source of truth so the creator's tabs match the character sheet's
+// tabs a player sees afterward. profile/reactions are creator-only steps with no
+// 1:1 sheet tab, so they carry their own accents.
+const EDITOR_TAB_ACCENT: Record<EditorTab, string> = {
+  profile: "#7b68ee",
+  actions: tabAccent("main"),
+  bonus: tabAccent("bonus"),
+  reactions: "#9be9a8",
+  bonds: tabAccent("bond"),
+  spells: tabAccent("spells"),
+  resources: tabAccent("features"),
+  equipment: tabAccent("equipment"),
+  notes: tabAccent("notes"),
+};
+
+// Which steps are required vs optional in the guided flow.
+const REQUIRED_STEPS = new Set<EditorTab>(["profile"]);
+const RECOMMENDED_STEPS = new Set<EditorTab>(["actions"]);
+
+const STEP_HINT: Record<EditorTab, string> = {
+  profile: "Required — name, level, and core stats. Everything else builds on this.",
+  actions: "Recommended — add at least one attack or ability (the character's main turn action).",
+  bonus: "Optional — bonus actions this character can take.",
+  reactions: "Optional — reactions triggered on other turns.",
+  bonds: "Optional — bonds & primed additives (Rage, Focus, Pressure, Dark Bargain…).",
+  spells: "Optional — spells and slot levels.",
+  resources: "Optional — resource pools and class features.",
+  equipment: "Optional — equipment bag and attached gear.",
+  notes: "Optional — freeform notes. Finish to save the character.",
+};
 
 const ABILITY_IDS: AbilityId[] = ["str", "dex", "con", "int", "wis", "cha"];
 const ABILITY_LABELS: Record<AbilityId, string> = { str: "STR", dex: "DEX", con: "CON", int: "INT", wis: "WIS", cha: "CHA" };
@@ -263,11 +296,40 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
     };
   }
 
+  // Per-step item count, used for tab count badges + guided gating.
+  function stepCount(tab: EditorTab): number {
+    switch (tab) {
+      case "actions": return (tabsDraft.main ?? []).filter(a => !a.economyCost?.includes("reaction")).length;
+      case "reactions": return (tabsDraft.main ?? []).filter(a => a.economyCost?.includes("reaction")).length;
+      case "bonus": return (tabsDraft.bonus ?? []).length;
+      case "bonds": return (tabsDraft.bond ?? []).length;
+      case "spells": return (tabsDraft.spells ?? []).length;
+      case "resources": return (tabsDraft.resources ?? []).length;
+      case "equipment": return (tabsDraft.equipment ?? []).length;
+      case "notes": return (tabsDraft.notes ?? []).length;
+      default: return 0;
+    }
+  }
+
+  // ── Guided flow (P-UX1) ───────────────────────────────────────────────────
+  // New characters are walked Profile → … → Notes with Next/Back/Finish.
+  // Advanced users can still click any tab to jump.
+  const stepIndex = EDITOR_TABS.indexOf(activeTab);
+  const isFirstStep = stepIndex <= 0;
+  const isLastStep = stepIndex === EDITOR_TABS.length - 1;
+  const profileValid = profileDraft.name.trim().length > 0;
+  // Profile must be valid before leaving the first step on the guided path.
+  const canAdvance = activeTab !== "profile" || profileValid;
+  function goToStep(delta: number) {
+    const next = EDITOR_TABS[Math.min(EDITOR_TABS.length - 1, Math.max(0, stepIndex + delta))];
+    if (next) setActiveTab(next);
+  }
+
   const modeLabel = proposeMode
     ? "Propose Level-Up Changes"
-    : mode === "edit-current" ? "Edit Actor"
-    : mode === "duplicate" ? "Duplicate Actor"
-    : "Create New Actor";
+    : mode === "edit-current" ? "Edit Party Character"
+    : mode === "duplicate" ? "Duplicate Party Character"
+    : "Create Party Character";
 
   return (
     <div className="actor-editor" style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -275,33 +337,62 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       <div style={{ padding: "10px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <p style={{ margin: 0, fontSize: 11, color: "#888" }}>{modeLabel}</p>
-          <h3 style={{ margin: 0 }}>{profileDraft.name || "Unnamed Actor"}</h3>
+          <h3 style={{ margin: 0 }}>{profileDraft.name || "Unnamed Character"}</h3>
         </div>
         <button type="button" onClick={onCancel} style={{ fontSize: 12, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>Cancel</button>
       </div>
 
-      {/* Tab bar */}
+      {/* Tab bar — distinct color accent + count badge per step */}
       <div style={{ display: "flex", overflowX: "auto", borderBottom: "1px solid #2a2a3e", background: "#0d0d14" }}>
-        {EDITOR_TABS.map(tab => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "7px 12px",
-              fontSize: 12,
-              background: "transparent",
-              border: "none",
-              borderBottom: activeTab === tab ? "2px solid #7b68ee" : "2px solid transparent",
-              color: activeTab === tab ? "#fff" : "#666",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {EDITOR_TAB_LABELS[tab]}
-          </button>
-        ))}
+        {EDITOR_TABS.map(tab => {
+          const isActive = activeTab === tab;
+          const accent = EDITOR_TAB_ACCENT[tab];
+          const count = stepCount(tab);
+          const isRequired = REQUIRED_STEPS.has(tab);
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              aria-current={isActive ? "true" : undefined}
+              style={{
+                padding: "7px 12px",
+                fontSize: 12,
+                background: "transparent",
+                border: "none",
+                borderBottom: isActive ? `2px solid ${accent}` : "2px solid transparent",
+                color: isActive ? accent : "#666",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: accent, opacity: isActive ? 1 : 0.4, flexShrink: 0 }} />
+              {EDITOR_TAB_LABELS[tab]}
+              {isRequired && <span title="Required" style={{ color: "#ff9999", fontSize: 11 }}>*</span>}
+              {count > 0 && (
+                <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1, padding: "1px 5px", borderRadius: 8, background: isActive ? accent : "#2a2a3e", color: isActive ? "#0d0d14" : "#9a9ab0" }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Guided step hint banner */}
+      {!proposeMode && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", background: "#0a0a12", borderBottom: "1px solid #1a1a2e", fontSize: 11, color: "#8a8aa0" }}>
+          <span style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1, flexShrink: 0 }}>
+            Step {stepIndex + 1}/{EDITOR_TABS.length}
+          </span>
+          <span style={{ color: RECOMMENDED_STEPS.has(activeTab) ? "#ffce6a" : REQUIRED_STEPS.has(activeTab) ? "#ff9999" : "#777" }}>
+            {STEP_HINT[activeTab]}
+          </span>
+        </div>
+      )}
 
       {/* Tab content */}
       <div style={{ flex: 1, overflow: "auto", padding: 14 }}>
@@ -351,6 +442,39 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
 
       {/* Save buttons */}
       <div style={{ padding: "10px 14px", borderTop: "1px solid #2a2a3e", display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Guided Back / Next / Finish (DM + create/edit only — not in propose mode) */}
+        {!proposeMode && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={() => goToStep(-1)}
+              disabled={isFirstStep}
+              style={{ padding: "7px 14px", background: "transparent", color: isFirstStep ? "#444" : "#aaa", border: "1px solid #444", borderRadius: 4, cursor: isFirstStep ? "default" : "pointer", fontSize: 12 }}
+            >
+              ← Back
+            </button>
+            <span style={{ flex: 1 }} />
+            {!isLastStep ? (
+              <button
+                type="button"
+                onClick={() => goToStep(1)}
+                disabled={!canAdvance}
+                title={!canAdvance ? "Enter a name on the Profile step first" : "Continue to the next step"}
+                style={{ padding: "7px 22px", background: canAdvance ? "#7b68ee" : "#2a2a3e", color: canAdvance ? "#fff" : "#666", border: "none", borderRadius: 4, cursor: canAdvance ? "pointer" : "default", fontSize: 13, fontWeight: 600 }}
+              >
+                Next →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onSave(buildEditedActor(), "current-and-library")}
+                style={{ padding: "7px 22px", background: "#34c759", color: "#06210f", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                ✓ Finish &amp; Save
+              </button>
+            )}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8 }}>
           {proposeMode ? (
             /* Player propose mode — single submit button, no direct save */
@@ -362,19 +486,20 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               Submit for DM Approval
             </button>
           ) : (
-            /* DM mode — primary saves to current + library; override-only is secondary */
+            /* DM mode — save now (escape hatch), override-only, and duplicate */
             <>
               <button
                 type="button"
                 onClick={() => onSave(buildEditedActor(), "current-and-library")}
-                style={{ flex: 1, padding: "7px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
+                style={{ flex: 1, padding: "6px 12px", background: "transparent", color: "#9a9ab0", border: "1px solid #3a3a52", borderRadius: 4, cursor: "pointer", fontSize: 12 }}
+                title="Save to the library now without stepping through the rest of the flow"
               >
-                Save to Library
+                Save now
               </button>
               <button
                 type="button"
                 onClick={() => onSave(buildEditedActor(), "current")}
-                style={{ padding: "7px 12px", background: "transparent", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                style={{ padding: "6px 12px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 title="Save as session override only — not written to base library (changes lost on next Sync)"
               >
                 Override Only

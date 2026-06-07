@@ -1,16 +1,22 @@
-// Auto-generated from fdmc-equipment-library-0.1.9 — do not edit manually
+// Auto-generated from fdmc-equipment-library-0.2.0 — do not edit manually
 // Source: acts1-2-all-canonical-items.fdmc-items.json (61 items, The Broken Chain)
-// v0.1.9: added damage/ac/charges/effect fields for all weapons, armor, and usable items
+// v0.2.0: added attack (to-hit formula) + crit dice to all weapons; added GP value to all vendor-stock items
+//   Attack formula rules:
+//     Tier 1 / Tier 2  (no prof): 1d20 + primary_stat + item_bonus  →  1d20+4 (stat+3, +1 item)
+//     Tier 2.5 (prof included):   1d20 + prof + primary_stat + item  →  1d20+7 (prof+2, stat+4, +1 item)
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
 
 export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
+  // ── Act 1 · Session 2 — Displaced Owlbear boss-loot ──────────────────────
   {
     "id": "tbc-thornback-hatchet",
     "name": "Thornback Hatchet",
     "type": "weapon",
     "description": "Frontier-forged, the head wrapped in hardwood from the deep canopy. The grip has been re-wrapped twice by different hands. Someone carried this a long way before you.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "range": "20/60 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -29,7 +35,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "The head is heavier than standard, re-tempered in the field by someone who knew what they were doing. The haft is straight-grained hardwood from deep in the canopy. It has been sharpened recently.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d12+1",
+    "crit": "2d12+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Melee Two-Handed",
@@ -47,7 +55,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Slender, balanced for the space between trees. The blade is narrow enough to thread between branches without catching. Whoever made this knew the forest.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d8+1",
+    "crit": "2d8+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Finesse",
@@ -65,7 +75,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Strung with gut and finished with bark lacquer. The draw is light but the release is clean — made for shooting through branches, not across open ground.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "range": "80/320 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -84,7 +96,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "A walking staff that doubles as a weapon and a focus. The knot at the top is tied in a pattern no living tradition teaches.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d6+1 / 1d8+1",
+    "crit": "2d6+1 / 2d8+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Spellcasting Focus",
@@ -166,11 +180,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water.",
     "dmNote": "Movement A1 tag. Real standalone value in the swamp (Session 3) and any natural terrain encounter. Worth keeping AND worth combining. That's the correct tension for a convergence input.",
-    "tags": [
-      "A1",
-      "Woodland",
-      "Movement"
-    ],
+    "tags": ["A1", "Woodland", "Movement"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -195,11 +205,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While worn, you have advantage on Wisdom (Perception) and Wisdom (Survival) checks made outdoors.",
     "dmNote": "Utility A1 tag. Covers the WIS gap for any class — a Barbarian or Fighter with no WIS investment gets meaningful Perception and Survival just by equipping it. Useful through Sessions 3 and 4.",
-    "tags": [
-      "A1",
-      "Woodland",
-      "Utility"
-    ],
+    "tags": ["A1", "Woodland", "Utility"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -208,13 +214,17 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
       "flavorTag": "Woodland"
     }
   },
+
+  // ── Act 1 · Session 4 — Mirage Stalker boss-loot ─────────────────────────
   {
     "id": "tbc-stillstep-blade",
     "name": "Stillstep Blade",
     "type": "weapon",
     "description": "Taken from a creature that was never quite where it appeared. The steel reads as something other than steel.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Melee One-Handed",
@@ -232,7 +242,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Carved from a tree split at the root by something that wasn't lightning. Frontier folk leave split trees alone.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "2d6+1",
+    "crit": "4d6+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Melee Two-Handed",
@@ -250,7 +262,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Wrapped in sinew from something that didn't stay in one place. The cord pulls faintly toward whatever the blade last cut.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d4+1",
+    "crit": "2d4+1",
     "range": "20/60 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -269,7 +283,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Strung from the antlers of something the hunters stopped naming. The string hums a note just below hearing.",
     "isUsable": false,
+    "attack": "1d20+4",
     "damage": "1d8+1",
+    "crit": "2d8+1",
     "range": "150/600 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -288,6 +304,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "A braided cord knotted so tight it can't be undone. The center of it feels like it's looking back. Trappers nailed these to fenceposts to ward off predators. It never worked.",
     "isUsable": false,
+    "attack": "1d20+4",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Spellcasting Focus",
@@ -369,11 +386,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While worn, reduce force damage you take by 2.",
     "dmNote": "Defense A1 tag. Pairs with Frost Brace (Defense A2) from Session 2 inn reward → Ring of Protection Tier 2.5. Force damage reduction is modest but meaningful at Level 2-3.",
-    "tags": [
-      "A1",
-      "Far Realm",
-      "Defense"
-    ],
+    "tags": ["A1", "Far Realm", "Defense"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -398,11 +411,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone.",
     "dmNote": "Stability A1 tag. Prone prevention is broadly useful. Worth keeping AND worth combining — correct tension for a convergence input at this tier.",
-    "tags": [
-      "A1",
-      "Woodland",
-      "Stability"
-    ],
+    "tags": ["A1", "Woodland", "Stability"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -427,10 +436,10 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While wearing this ring, you can't be surprised.",
     "dmNote": "Hale's one demonstration across the campaign. The item is not the point — the process is. Party keeps the ring. Hale never gives a second convergence input.",
-    "tags": [
-      "Demo output — not a player-achievable recipe"
-    ]
+    "tags": ["Demo output — not a player-achievable recipe"]
   },
+
+  // ── Act 1 · Hale Cottage — vendor-stock ──────────────────────────────────
   {
     "id": "tbc-frontier-ration-tin-x3",
     "name": "Frontier Ration Tin (×3)",
@@ -439,6 +448,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": true,
     "charges": { "max": 3, "reset": "manual" },
     "effect": { "type": "custom", "label": "Extra Hit Die on short rest" },
+    "value": "15 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Consumable",
@@ -458,6 +468,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": true,
     "charges": { "max": 1, "reset": "manual" },
     "effect": { "type": "nullifyDamage", "value": "cold", "label": "First cold hit −2d6 (1h)" },
+    "value": "20 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Consumable",
@@ -477,6 +488,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": true,
     "charges": { "max": 3, "reset": "manual" },
     "effect": { "type": "custom", "label": "Flare — bright 20ft, visible 1 mile, 1 min" },
+    "value": "30 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Utility",
@@ -494,6 +506,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "magic",
     "description": "A coil of grey cord, thinner than it should be for its strength. \"Standard issue. It'll hold you.\"",
     "isUsable": false,
+    "value": "25 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Utility",
@@ -505,13 +518,17 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "50 feet of rope that holds up to 3,000 lbs. On command the end knots or unknots itself. Advantage on checks made to secure or climb with it.",
     "dmNote": "Permanent utility, the one non-consumable in the stock. Pure exploration value, no combat power."
   },
+
+  // ── Act 2 · Session 2 — Last Directive elite-reward ──────────────────────
   {
     "id": "tbc-frostedge",
     "name": "Frostedge",
     "type": "weapon",
     "description": "A blade recovered from the Ward field cache at the cemetery edge. The edge holds a cold that the forge didn't give it.",
     "isUsable": false,
+    "attack": "1d20+5",
     "damage": "1d8+1 / 1d10+1",
+    "crit": "2d8+1 / 2d10+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Versatile",
@@ -529,7 +546,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "A ranged weapon recovered from the Ward cache. The grip is wrong — too light, too balanced for something this size.",
     "isUsable": false,
+    "attack": "1d20+5",
     "damage": "1d8+1",
+    "crit": "2d8+1",
     "range": "150/600 ft",
     "attunementRequired": true,
     "isLocked": true,
@@ -594,11 +613,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "elite-reward",
     "mechanicsText": "While worn, reduce cold damage you take by 2.",
     "dmNote": "Defense A2 tag. Pairs with Displaced Ward Brooch (Defense A1) → Ring of Protection Tier 2.5. The party must decide: use it now against Act 2 cold pressure, or burn it in convergence for a ring that serves through Acts 3 and 4. That decision is the mechanic.",
-    "tags": [
-      "A2",
-      "Frost",
-      "Defense"
-    ],
+    "tags": ["A2", "Frost", "Defense"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -607,6 +622,8 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
       "flavorTag": "Frost"
     }
   },
+
+  // ── Act 2 · Session 2 — Brennan Inn vendor-stock ──────────────────────────
   {
     "id": "tbc-drift-globe",
     "name": "Drift Globe",
@@ -614,6 +631,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A frosted glass orb kept on the innkeeper's shelf. Brennan left it \"for whoever goes back out into that.\" It holds a light that doesn't gutter in wind.",
     "isUsable": true,
     "effect": { "type": "custom", "label": "Hovering light — bright 20ft + dim 20ft, wind/cold immune" },
+    "value": "120 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Utility",
@@ -631,6 +649,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "magic",
     "description": "A small pendant of pale bone on a leather thong. \"The cold up here doesn't just freeze you,\" the innkeeper relays. \"It gets in. This keeps some of it out.\"",
     "isUsable": false,
+    "value": "80 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Equip",
@@ -650,6 +669,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": true,
     "charges": { "max": 1, "reset": "manual" },
     "effect": { "type": "custom", "label": "Choose: navigate / anchor point / riding horse 8h" },
+    "value": "75 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Consumable",
@@ -669,6 +689,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": true,
     "charges": { "max": 2, "reset": "shortRest" },
     "effect": { "type": "custom", "label": "15ft gale cube — DC 13 STR or push 10ft; ranged DisAdv inside" },
+    "value": "60 gp",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Consumable",
@@ -680,13 +701,17 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Action: uncork to create a 15-foot cube of gale wind originating from you, lasting until the end of your next turn. Creatures in it must make a DC 13 Strength save or be pushed 10 feet. Ranged attacks against you have disadvantage while inside. 2 charges, recovers 1 on short rest, all on long rest.",
     "dmNote": "Defensive/utility wind tool. Forced movement plus ranged disadvantage — no bond overlap. The charge economy gates it correctly."
   },
+
+  // ── Act 2 · Session 3 — Lesser Wendigos boss-loot ────────────────────────
   {
     "id": "tbc-frostmarrow-spear",
     "name": "Frostmarrow Spear",
     "type": "weapon",
     "description": "Pulled from the frozen lakebed during the clearing of the north road. The head is ice that never melts. Hunters called it cold that remembers.",
     "isUsable": false,
+    "attack": "1d20+5",
     "damage": "1d6+1 / 1d8+1",
+    "crit": "2d6+1 / 2d8+1",
     "range": "20/60 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -701,11 +726,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-rimecleaver-versatile-thrown-handaxe-equivalent-1-no-attunement",
-    "name": "Rimecleaver Versatile Thrown (handaxe equivalent) · +1 · No attunement",
+    "name": "Rimecleaver",
     "type": "weapon",
     "description": "Balanced for throwing by someone who expected to be running when they needed it. The head is dark iron that doesn't warm in the hand no matter how long it's held.",
     "isUsable": false,
+    "attack": "1d20+5",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "range": "20/60 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -724,7 +751,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "A blade that makes no sound when drawn. The edge is correct — unnervingly correct, as if it was made for a single specific purpose that nobody named.",
     "isUsable": false,
+    "attack": "1d20+5",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Finesse",
@@ -742,7 +771,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Strung with gut from something that ran north and didn't come back. The draw is heavier than it should be at this temperature. It pulls as if it wants to be drawn.",
     "isUsable": false,
+    "attack": "1d20+5",
     "damage": "1d8+1",
+    "crit": "2d8+1",
     "range": "150/600 ft",
     "attunementRequired": false,
     "isLocked": true,
@@ -761,6 +792,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "A Ward field token repurposed — the original inscription worn away and something else worn in its place. It holds a charge that isn't warmth.",
     "isUsable": false,
+    "attack": "1d20+5",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Spellcasting Focus",
@@ -843,11 +875,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "Action: expend 1 charge. Until the end of your next turn, you know the location of any invisible or magically hidden creature within 15 feet of you. 1 charge. Regains 1 on long rest.",
     "dmNote": "Cleanse A2 tag. Double-limited: once per activation AND 2-charge economy. Prevents it becoming an at-will reveal that trivializes enemy stealth mechanics. Real standalone value worth keeping.",
-    "tags": [
-      "A2",
-      "Frost",
-      "Cleanse"
-    ],
+    "tags": ["A2", "Frost", "Cleanse"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -872,11 +900,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While worn: you have advantage on saving throws against being knocked prone or moved against your will.",
     "dmNote": "Stability A2 tag. Broad passive worth keeping through Act 3. Stability tag feeds convergence combinations.",
-    "tags": [
-      "A2",
-      "Ward",
-      "Stability"
-    ],
+    "tags": ["A2", "Ward", "Stability"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -885,13 +909,18 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
       "flavorTag": "Ward"
     }
   },
+
+  // ── Act 2 · Session 5 — Full Wendigo boss-loot (Tier 2.5) ────────────────
+  // Tier 2.5 attack formula: 1d20 + prof(+2) + primary_stat(+4) + item(+1) = 1d20+7
   {
     "id": "tbc-lake-ice-blade",
     "name": "Lake Ice Blade",
     "type": "weapon",
     "description": "Forged from ice on the lake's deepest shelf — ice older than the winter, older than whatever went wrong here. It holds an edge no whetstone gave it.",
     "isUsable": false,
+    "attack": "1d20+7",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "attunementRequired": true,
     "isLocked": true,
     "category": "Melee One-Handed",
@@ -909,7 +938,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Pulled from the lakebed after the fight. The blade is wrong — too thin, too light, the metal composition something no northern forge produces. It vibrates at a frequency just below hearing when drawn.",
     "isUsable": false,
+    "attack": "1d20+7",
     "damage": "1d6+1",
+    "crit": "2d6+1",
     "attunementRequired": true,
     "isLocked": true,
     "category": "Finesse",
@@ -927,7 +958,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "Recovered from the Ward's northern cache — standard issue, but the limbs have been re-worked by hands unknown. Arrows fired from it leave a trail that lingers a half-second too long, like the weapon is reluctant to let go of what it touched.",
     "isUsable": false,
+    "attack": "1d20+7",
     "damage": "1d8+1",
+    "crit": "2d8+1",
     "range": "150/600 ft",
     "attunementRequired": true,
     "isLocked": true,
@@ -946,6 +979,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "description": "A Ward field instrument recovered from the base at the lake's edge. Whatever it was designed to do, it has been doing something else for long enough that the original purpose is gone. The carvings shift when you aren't looking directly at them.",
     "isUsable": false,
+    "attack": "1d20+7",
     "attunementRequired": true,
     "isLocked": true,
     "category": "Spellcasting Focus",
@@ -959,11 +993,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-voidtempered-blade-versatile-longsword",
-    "name": "Voidtempered Blade Versatile (longsword) ·",
+    "name": "Voidtempered Blade",
     "type": "weapon",
     "description": "The blade came out of the lake the same moment the Wendigo fell. Nobody threw it in. The metal is wrong — it conducts something that isn't heat, and when a spell passes through it the air around the edge smells of ozone and something older.",
     "isUsable": false,
+    "attack": "1d20+7",
     "damage": "1d8+1 / 1d10+1",
+    "crit": "2d8+1 / 2d10+1",
     "attunementRequired": true,
     "isLocked": true,
     "category": "Spellcasting Focus",
@@ -1046,11 +1082,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "Action (1/day, recharges at dawn): one creature within 30 feet takes 3d6 cold damage, DC 13 Constitution save for half.",
     "dmNote": "Offensive A2 tag. Real offensive burst — sacrificing it in convergence costs the party damage output. Replaces the Necklace of Fireballs concept, retuned to cold and campaign flavor.",
-    "tags": [
-      "A2",
-      "Far Realm",
-      "Offensive"
-    ],
+    "tags": ["A2", "Far Realm", "Offensive"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -1075,11 +1107,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "While carried: you have a +1 bonus to all saving throws.",
     "dmNote": "Stability A2 tag. Broad passive worth keeping. The 'already there' detail is intentional unease — never explain who left it. Replaces the Stone of Good Luck concept at the input level.",
-    "tags": [
-      "A2",
-      "Frost",
-      "Stability"
-    ],
+    "tags": ["A2", "Frost", "Stability"],
     "convergence": {
       "role": "input",
       "enabled": true,
@@ -1105,12 +1133,10 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceType": "boss-loot",
     "mechanicsText": "One use. The bearer places this disc at any location. The nearest Ward operative covering the eastern territory will find it within 24 hours and respond.",
     "dmNote": "DM tool. If the party goes off the intended path in Act 3, the eastern Ward operative finds the mark and redirects them. Seeds the Act 3 contact before the party meets them. One use means the party has to decide when to spend it — not a free pass.",
-    "tags": [
-      "End of Act 2",
-      "Ward",
-      "Utility"
-    ]
+    "tags": ["End of Act 2", "Ward", "Utility"]
   },
+
+  // ── Act 2 · Session 1 — Ward Cache DM rewards (Tier 1.5) ─────────────────
   {
     "id": "tbc-rimestone-pauldron",
     "name": "Rimestone Pauldron",
@@ -1219,11 +1245,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "sourceEncounter": "Ward Cache-DM Reward",
     "sourceType": "dm-reward",
     "mechanicsText": "When you would take cold damage from any source, you may use 1 charge to nullify that damage entirely.",
-    "tags": [
-      "A1",
-      "Frost",
-      "Stability"
-    ],
+    "tags": ["A1", "Frost", "Stability"],
     "convergence": {
       "role": "input",
       "enabled": true,

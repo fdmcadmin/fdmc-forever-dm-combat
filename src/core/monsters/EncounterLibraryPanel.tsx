@@ -16,15 +16,18 @@ import { upsertMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, import
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
 
-// ─── Campaign module lock ─────────────────────────────────────────────────────
+// ─── Module unlock — LOCAL SOFT GATE ONLY ─────────────────────────────────────
 //
-// Simple hash-based gate for premium campaign content.
-// Change MODULE_UNLOCK_HASH to lock with a new code.
-// Generate a new hash: btoa(yourPassword) — or use any string.
-// The actual password is never stored in source — only the hash.
+// ⚠️ SECURITY: This is a front-end-only soft gate. It is NOT content protection.
+// The "hash" is plain base64 (btoa) and the code can be trivially recovered by
+// anyone who opens dev tools or reads the bundle. Treat it as a demo/local
+// convenience lock — a speed bump, not a lock. It must NOT be presented to users
+// as protecting paid or private content. A real licensing system (server-side
+// entitlement check + signed tokens) is required before any paid distribution.
+// See _specs/P-UX1-SPEC.md → "Module Unlock security debt".
 //
-// Default code: "brokenchain" → hash below
-// To change: run btoa("yourNewCode") in browser console and paste here.
+// Default code: "brokenchain" → base64 below.
+// To change: run btoa("yourNewCode") in the browser console and paste here.
 
 const MODULE_UNLOCK_HASH = "YnJva2VuY2hhaW4="; // btoa("brokenchain")
 const MODULE_LOCK_KEY = "fdmc.module.unlocked.v1";
@@ -70,10 +73,10 @@ function ModuleLockScreen({ onUnlock }: { onUnlock: () => void }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 16, padding: 24 }}>
       <div style={{ textAlign: "center" }}>
-        <p style={{ margin: "0 0 4px", fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 2 }}>Campaign Module</p>
+        <p style={{ margin: "0 0 4px", fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: 2 }}>Module Unlock</p>
         <h3 style={{ margin: "0 0 8px", fontSize: 18 }}>The Broken Chain</h3>
         <p style={{ margin: 0, fontSize: 12, color: "#666" }}>
-          This encounter library is locked.
+          Enter the demo unlock code to load this module's sample encounters.
         </p>
       </div>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 260 }}>
@@ -90,11 +93,89 @@ function ModuleLockScreen({ onUnlock }: { onUnlock: () => void }) {
           Unlock
         </button>
       </form>
-      <p style={{ margin: 0, fontSize: 10, color: "#444", textAlign: "center" }}>
-        Contact your DM for the unlock code.
+      <p style={{ margin: 0, fontSize: 10, color: "#444", textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
+        Local demo gate — a soft unlock for this device, not secure content protection.
+        Ask your DM for the code.
       </p>
     </div>
   );
+}
+
+// ─── Monster bands (P-UX1 guided creation scaffolds) ──────────────────────────
+//
+// Bands pre-populate the action economy so a first-time DM sees the right shape
+// for a creature's difficulty. The band is a scaffold, not a hard limit — every
+// section keeps its + Add button and rows can be deleted. These are FDMC-native
+// guides, not official D&D CR automation.
+
+export type MonsterBand = "normal" | "strong" | "elite" | "boss";
+
+export const MONSTER_BANDS: { band: MonsterBand; label: string; color: string; blurb: string; shape: string }[] = [
+  { band: "normal", label: "Normal", color: "#8a8aa0", blurb: "Rank-and-file creature. One thing it does, one thing it is.", shape: "1 Action · 1 Trait" },
+  { band: "strong", label: "Strong", color: "#4f9dff", blurb: "A tougher threat with a recharge ability and more flavor.", shape: "1 Action · 1 Recharge · 3 Traits" },
+  { band: "elite", label: "Elite", color: "#ffb02e", blurb: "A full action economy — acts on its turn and reacts on others.", shape: "Action · Bonus · Reaction · 3 Traits" },
+  { band: "boss", label: "Boss", color: "#c8472e", blurb: "Centerpiece encounter. Multiattack, phases, and signature traits.", shape: "Multiattack · Bonus · Reaction · Recharge/Phase · 3+ Traits" },
+];
+
+function blankTrait(name = ""): MonsterReaderAction { return { name, kind: "trait" }; }
+function blankAction(name = "", extra: Partial<MonsterReaderAction> = {}): MonsterReaderAction { return { name, kind: "action", ...extra }; }
+function blankReaction(name = ""): MonsterReaderAction { return { name, kind: "reaction" }; }
+
+/** Returns the scaffolded action/trait/reaction lists for a band. */
+export function scaffoldForBand(band: MonsterBand): { actions: MonsterReaderAction[]; traits: MonsterReaderAction[]; reactions: MonsterReaderAction[] } {
+  switch (band) {
+    case "strong":
+      return {
+        actions: [blankAction("Action"), blankAction("Recharge Action", { recharge: "5-6" })],
+        traits: [blankTrait("Trait 1"), blankTrait("Trait 2"), blankTrait("Trait 3")],
+        reactions: [],
+      };
+    case "elite":
+      return {
+        actions: [blankAction("Action"), blankAction("Bonus Action", { text: "Bonus action" })],
+        traits: [blankTrait("Trait 1"), blankTrait("Trait 2"), blankTrait("Trait 3")],
+        reactions: [blankReaction("Reaction")],
+      };
+    case "boss":
+      return {
+        actions: [
+          blankAction("Multiattack", { text: "Multiattack package" }),
+          blankAction("Bonus Action", { text: "Bonus action" }),
+          blankAction("Recharge / Phase Action", { recharge: "5-6" }),
+        ],
+        traits: [blankTrait("Boss / Phase Trait"), blankTrait("Trait 1"), blankTrait("Trait 2"), blankTrait("Trait 3")],
+        reactions: [blankReaction("Reaction")],
+      };
+    case "normal":
+    default:
+      return { actions: [blankAction("Action")], traits: [blankTrait("Trait")], reactions: [] };
+  }
+}
+
+/** Builds a fresh, banded monster template ready to drop into the editor. */
+export function buildBandedMonster(band: MonsterBand): MainMonsterTemplate {
+  const scaffold = scaffoldForBand(band);
+  return {
+    templateId: `custom-${Date.now().toString(36)}`,
+    name: band === "boss" ? "New Boss" : "New Monster",
+    stats: {
+      kind: band === "boss" ? "boss" : "monster",
+      ac: band === "boss" ? 16 : band === "elite" ? 14 : 12,
+      maxHp: band === "boss" ? 120 : band === "elite" ? 60 : band === "strong" ? 35 : 20,
+      speed: "30 ft",
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" }, { label: "DEX", value: "12 (+1)" },
+      { label: "CON", value: "12 (+1)" }, { label: "INT", value: "8 (-1)" },
+      { label: "WIS", value: "10 (+0)" }, { label: "CHA", value: "8 (-1)" },
+    ],
+    traits: scaffold.traits,
+    actions: scaffold.actions,
+    reactions: scaffold.reactions,
+    resources: [],
+    notes: [],
+    visibility: { defaultState: "condition", hiddenName: "Unknown creature", revealedName: "" },
+  };
 }
 
 // ─── Visibility options ───────────────────────────────────────────────────────
@@ -143,11 +224,17 @@ function MonsterTemplateEditor({ template, onSave, onCancel }: MonsterTemplateEd
   const inputStyle: React.CSSProperties = { padding: "2px 6px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 11, width: "100%" };
   const labelStyle: React.CSSProperties = { fontSize: 10, color: "#666", marginBottom: 1, display: "block" };
 
-  function renderActionList(list: "actions" | "traits" | "reactions", title: string) {
+  function renderActionList(list: "actions" | "traits" | "reactions", title: string, accent: string, emptyHint: string) {
+    const count = draft[list].length;
     return (
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 12, borderLeft: `3px solid ${accent}`, paddingLeft: 8 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <span style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: accent, textTransform: "uppercase", letterSpacing: 1 }}>
+            {title}
+            {count > 0 && (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: accent, color: "#0d0d14", letterSpacing: 0 }}>{count}</span>
+            )}
+          </span>
           <button type="button" onClick={() => addAction(list)} style={{ fontSize: 10, padding: "1px 7px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>+ Add</button>
         </div>
         {draft[list].map((a, i) => (
@@ -177,7 +264,7 @@ function MonsterTemplateEditor({ template, onSave, onCancel }: MonsterTemplateEd
             </div>
           </div>
         ))}
-        {draft[list].length === 0 && <p style={{ fontSize: 11, color: "#444", fontStyle: "italic", margin: "2px 0 0" }}>None</p>}
+        {draft[list].length === 0 && <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: "2px 0 0" }}>{emptyHint}</p>}
       </div>
     );
   }
@@ -186,11 +273,14 @@ function MonsterTemplateEditor({ template, onSave, onCancel }: MonsterTemplateEd
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 500 }}>Edit Monster Template</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 500 }}>Edit Monster</span>
+          <span title="Monsters you create are saved to your personal My Library" style={{ fontSize: 9, padding: "1px 7px", borderRadius: 8, background: "#16291b", border: "1px solid #2f7d3f", color: "#7be08a", textTransform: "uppercase", letterSpacing: 1 }}>My Library</span>
+        </span>
         <div style={{ display: "flex", gap: 6 }}>
           <button type="button" onClick={() => onSave(draft)}
-            style={{ fontSize: 11, padding: "3px 10px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}>
-            Save
+            style={{ fontSize: 11, padding: "3px 12px", background: "#34c759", color: "#06210f", border: "none", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>
+            ✓ Save to My Library
           </button>
           <button type="button" onClick={onCancel}
             style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
@@ -252,10 +342,12 @@ function MonsterTemplateEditor({ template, onSave, onCancel }: MonsterTemplateEd
           </div>
         </div>
 
-        {/* Actions / Traits / Reactions */}
-        {renderActionList("actions", "Actions")}
-        {renderActionList("traits", "Traits")}
-        {renderActionList("reactions", "Reactions")}
+        {/* Actions / Traits / Reactions — each section color-accented.
+            Recharge actions: set the Recharge field on a row (e.g. "5-6").
+            Bonus actions: name the row and note "bonus" in its Text. */}
+        {renderActionList("actions", "Actions", "#ff6b5e", "No actions yet — click + Add for an attack, multiattack, bonus, or recharge action.")}
+        {renderActionList("reactions", "Reactions", "#9be9a8", "No reactions yet — click + Add for a triggered reaction.")}
+        {renderActionList("traits", "Traits", "#e07bff", "No traits yet — click + Add for passive or signature traits.")}
       </div>
     </div>
   );
@@ -348,6 +440,8 @@ type EncounterLibraryPanelProps = {
   onClearRoster: () => void;
   activeRosterCount: number;
   onMonsterLibraryUpdate?: (updated: MainMonsterTemplate) => void;
+  /** When true, open the monster band picker immediately on mount (Create Monster shortcut). */
+  autoOpenBandPicker?: boolean;
 };
 
 export function EncounterLibraryPanel({
@@ -356,8 +450,10 @@ export function EncounterLibraryPanel({
   onClearRoster,
   activeRosterCount,
   onMonsterLibraryUpdate,
+  autoOpenBandPicker = false,
 }: EncounterLibraryPanelProps) {
   const [unlocked, setUnlocked] = useState(() => isModuleUnlocked());
+  const [showBandPicker, setShowBandPicker] = useState(autoOpenBandPicker);
   const [encounters, setEncounters] = useState<EncounterDefinition[]>([]);
   const [unusedEncounters, setUnusedEncounters] = useState<EncounterDefinition[]>(() => loadUnusedEncounters());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -502,6 +598,17 @@ export function EncounterLibraryPanel({
     onLoadEncounter(instances);
   }
 
+  function handleCreateBandedMonster(band: MonsterBand) {
+    const monster = buildBandedMonster(band);
+    upsertMonsterTemplate(monster);
+    // Add to overrides immediately so resolvedLibrary contains it before the
+    // parent re-renders with the new monsterLibrary prop.
+    setMonsterOverrides(prev => ({ ...prev, [monster.templateId]: monster }));
+    setShowBandPicker(false);
+    setEditingMonsterTemplateId(monster.templateId);
+    refreshLibrary();
+  }
+
   function handleCreateNew(owner: "campaign" | "dm" = "dm") {
     const newEncounter: EncounterDefinition = {
       id: `${owner}-${Date.now().toString(36)}`,
@@ -517,6 +624,38 @@ export function EncounterLibraryPanel({
 
   if (!unlocked) {
     return <ModuleLockScreen onUnlock={handleUnlock} />;
+  }
+
+  // ── Monster band picker (guided monster creation) ─────────────────────────
+  if (showBandPicker) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+        <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Create Monster — pick a band</span>
+          <button type="button" onClick={() => setShowBandPicker(false)}
+            style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
+            Cancel
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, color: "#777", lineHeight: 1.5 }}>
+            A band scaffolds the right action economy for the creature's difficulty. It's a starting point —
+            every section keeps its <strong style={{ color: "#aaa" }}>+ Add</strong> button and rows can be deleted.
+          </p>
+          {MONSTER_BANDS.map(({ band, label, color, blurb, shape }) => (
+            <button key={band} type="button" onClick={() => handleCreateBandedMonster(band)}
+              style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 8, padding: "10px 12px",
+                background: "#161622", border: "1px solid #2a2a3e", borderLeft: `4px solid ${color}`, borderRadius: 8, cursor: "pointer" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color }}>{label}</span>
+                <span style={{ fontSize: 10, color: "#888" }}>{shape}</span>
+              </div>
+              <p style={{ margin: "4px 0 0", fontSize: 11, color: "#888" }}>{blurb}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // ── Editing an encounter ──────────────────────────────────────────────────
@@ -631,32 +770,12 @@ export function EncounterLibraryPanel({
         <div style={{ display: "flex", gap: 6 }}>
           {activeTab === "library" && (
             <div style={{ display: "flex", gap: 4 }}>
-              {/* Create a new blank monster template (individual stat block) */}
+              {/* Create a new monster — opens the band picker (guided scaffold) */}
               <button type="button"
-                onClick={() => {
-                  const blank: import("./runtime/mainMonsterRuntime").MainMonsterTemplate = {
-                    templateId: `custom-${Date.now().toString(36)}`,
-                    name: "New Monster",
-                    stats: { kind: "monster", ac: 12, maxHp: 20, speed: "30 ft" },
-                    abilities: [
-                      { label: "STR", value: "10 (+0)" }, { label: "DEX", value: "12 (+1)" },
-                      { label: "CON", value: "12 (+1)" }, { label: "INT", value: "8 (-1)" },
-                      { label: "WIS", value: "10 (+0)" }, { label: "CHA", value: "8 (-1)" },
-                    ],
-                    traits: [], actions: [], reactions: [], resources: [], notes: [],
-                    visibility: { defaultState: "condition", hiddenName: "Unknown creature", revealedName: "" },
-                  };
-                  upsertMonsterTemplate(blank);
-                  // Add to overrides immediately so resolvedLibrary contains it before
-                  // the parent re-renders with the new monsterLibrary prop.
-                  // Without this the "stale ID" useEffect clears editingMonsterTemplateId.
-                  setMonsterOverrides(prev => ({ ...prev, [blank.templateId]: blank }));
-                  setEditingMonsterTemplateId(blank.templateId);
-                  refreshLibrary();
-                }}
-                style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
-                title="Create a new blank monster stat block">
-                + New Monster
+                onClick={() => setShowBandPicker(true)}
+                style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer", fontWeight: 600 }}
+                title="Create a new monster — pick a band to scaffold its action economy">
+                + Create Monster
               </button>
               <button type="button" onClick={() => handleCreateNew("dm")}
                 style={{ fontSize: 11, padding: "3px 8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}

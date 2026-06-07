@@ -24,7 +24,7 @@ function MonsterPopoutApp() {
 
   if (!isLoaded) {
     return (
-      <div style={{ padding: 24, fontFamily: "monospace", textAlign: "center", color: "#555" }}>
+      <div style={{ padding: 24, textAlign: "center", color: "#555" }}>
         <p style={{ fontSize: 12 }}>Loading…</p>
       </div>
     );
@@ -32,7 +32,7 @@ function MonsterPopoutApp() {
 
   if (!monster) {
     return (
-      <div style={{ padding: 24, fontFamily: "monospace", textAlign: "center", color: "#555" }}>
+      <div style={{ padding: 24, textAlign: "center", color: "#555" }}>
         <p style={{ fontSize: 13, marginBottom: 8 }}>Monster not found.</p>
         <p style={{ fontSize: 11, color: "#444" }}>
           Instance ID: <code>{INSTANCE_ID || "(none)"}</code>

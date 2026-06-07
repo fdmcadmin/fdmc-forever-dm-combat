@@ -39,6 +39,7 @@ import {
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
+import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 
 // ─── Economy broadcast ────────────────────────────────────────────────────────
 
@@ -681,7 +682,7 @@ export function MonsterActorCard({
     return (
       <article
         className="monster-actor-card player-safe"
-        style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", overflow: "hidden", fontFamily: "monospace", cursor: allPlayerActions.length > 0 ? "pointer" : "default" }}
+        style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", borderLeft: `3px solid ${MONSTER_COLOR}`, overflow: "hidden", cursor: allPlayerActions.length > 0 ? "pointer" : "default" }}
         onClick={() => { if (allPlayerActions.length > 0) setTraitsOpen(o => !o); }}
       >
         <div style={{ padding: "8px 12px", borderBottom: "1px solid #1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -743,10 +744,10 @@ export function MonsterActorCard({
   // ── DM card ──────────────────────────────────────────────────────────────────
   return (
     <article className="monster-actor-card dm-card"
-      style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", overflow: "hidden", fontFamily: "monospace" }}>
+      style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", borderLeft: `3px solid ${MONSTER_COLOR}`, overflow: "hidden" }}>
 
-      {/* 1. Header */}
-      <div style={{ padding: "8px 12px", borderBottom: "1px solid #1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {/* 1. Header — GM/monster red identity so it never reads as a party card */}
+      <div style={{ padding: "8px 12px", borderBottom: "1px solid #1a1a2e", background: withAlpha(MONSTER_COLOR, 0.08), display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h3 style={{ margin: "0 0 1px", fontSize: 14, color: "#fff" }}>{publicName}</h3>
           {monster.displayName && monster.displayName !== publicName && (
@@ -754,7 +755,7 @@ export function MonsterActorCard({
           )}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <span style={{ fontSize: 10, color: "#444", background: "#1a1a2e", padding: "2px 7px", borderRadius: 3 }}>
+          <span style={{ fontSize: 10, color: MONSTER_COLOR, background: withAlpha(MONSTER_COLOR, 0.14), border: `1px solid ${withAlpha(MONSTER_COLOR, 0.4)}`, padding: "2px 7px", borderRadius: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>
             {monster.kind ?? "monster"}
           </span>
           {monster.visibilityState && monster.visibilityState !== "full" && (

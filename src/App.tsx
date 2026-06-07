@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-const ENCOUNTER_LOAD_QUEUE_KEY = "fdmc.dm.encounterLoadQueue.v1";
-const ENCOUNTER_LOAD_CHANNEL = "forever-dm-combat:encounter-load-request:v1";
-const MONSTER_ROSTER_CHANNEL = "forever-dm-combat:monster-roster:v1";
-const VIEWER_PARTY_CHANNEL = "forever-dm-combat:viewer-party:v1";
+import { FDMC_CHANNELS } from "./core/constants/channels";
+import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
+const ENCOUNTER_LOAD_QUEUE_KEY = FDMC_STORAGE_KEYS.encounterLoadQueue;
+const ENCOUNTER_LOAD_CHANNEL = FDMC_CHANNELS.encounterLoadRequest;
+const MONSTER_ROSTER_CHANNEL = FDMC_CHANNELS.monsterRoster;
+const VIEWER_PARTY_CHANNEL = FDMC_CHANNELS.viewerParty;
 
 type ViewerActorSummary = {
   id: string;
@@ -68,6 +70,7 @@ import {
   upsertActorInLibrary,
 } from "./core/seats/dmActorLibrary";
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
+import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
 import { MonsterRuntimeSetupSlot } from "./core/monsters/runtime/MonsterRuntimeSetupSlot";
 import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
@@ -105,13 +108,52 @@ import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, do
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const APP_VERSION = "FDMC 0.6.0-p3 · 2026-06-03";
-const DM_LIBRARY_UPDATED_CHANNEL = "forever-dm-combat:dm-library-updated:v1";
+const DM_LIBRARY_UPDATED_CHANNEL = FDMC_CHANNELS.dmLibraryUpdated;
+
+// ─── DM toolbar button color system (P-UX1) ───────────────────────────────────
+// Buttons are color-coded by *what they do* so the toolbar stops reading as a row
+// of identical buttons:
+//   create  → green   (build something new)
+//   use     → blue    (open / navigate existing tools)
+//   session → solid green (broadcast / "go" action)
+//   cleanup → amber   (tidy the encounter)
+//   fix     → clean cyan (only touch if something is broken)
+//   danger  → red     (close / destructive)
+//   claim   → purple  (table ownership)
+const DM_BTN: Record<"create" | "use" | "session" | "cleanup" | "fix" | "danger" | "claim", React.CSSProperties> = {
+  create:  { fontSize: 11, padding: "3px 11px", background: "#16291b", border: "1px solid #2f7d3f", borderRadius: 5, color: "#7be08a", cursor: "pointer", fontWeight: 600 },
+  use:     { fontSize: 11, padding: "3px 11px", background: "#15233c", border: "1px solid #2f5d9e", borderRadius: 5, color: "#7db1ff", cursor: "pointer", fontWeight: 500 },
+  session: { fontSize: 11, padding: "3px 11px", background: "#2a6e2a", border: "1px solid #3a8e3a", borderRadius: 5, color: "#eafff0", cursor: "pointer", fontWeight: 600 },
+  cleanup: { fontSize: 11, padding: "3px 11px", background: "#2a2010", border: "1px solid #6e5a20", borderRadius: 5, color: "#e0b85a", cursor: "pointer", fontWeight: 500 },
+  fix:     { fontSize: 11, padding: "3px 11px", background: "#0e2a2a", border: "1px solid #2f7d7d", borderRadius: 5, color: "#6fe0e0", cursor: "pointer", fontWeight: 500 },
+  danger:  { fontSize: 11, padding: "3px 11px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 5, color: "#ff9999", cursor: "pointer" },
+  claim:   { fontSize: 11, padding: "3px 11px", background: "#7b68ee", border: "none", borderRadius: 5, color: "#fff", cursor: "pointer", fontWeight: 600 },
+};
+
+// Group label that sits in front of a button cluster.
+const dmGroupLabel = (color: string): React.CSSProperties => ({
+  fontSize: 9, color, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, flexShrink: 0,
+});
+
+// Subtle shade variation within a family so a cluster reads as "shades of green /
+// shades of blue" rather than three identical buttons.
+const DM_CREATE_SHADES: React.CSSProperties[] = [
+  { ...DM_BTN.create, background: "#16301d", border: "1px solid #379149", color: "#8ee89a" },
+  { ...DM_BTN.create, background: "#15291b", border: "1px solid #2f7d3f", color: "#7be08a" },
+  { ...DM_BTN.create, background: "#122417", border: "1px solid #2a6e38", color: "#6dd47e" },
+];
+const DM_USE_SHADES: React.CSSProperties[] = [
+  { ...DM_BTN.use, background: "#172a45", border: "1px solid #3a6fb0", color: "#93c0ff" },
+  { ...DM_BTN.use, background: "#15233c", border: "1px solid #2f5d9e", color: "#7db1ff" },
+  { ...DM_BTN.use, background: "#122036", border: "1px solid #2a548c", color: "#6aa6f5" },
+];
 
 // Shared maintenance helpers
-// These keys are the only ones the 0.6.0 build should keep
+// The only room-metadata keys the 0.6.0 build keeps: compact live state + table
+// binding. Everything else FDMC-prefixed is legacy and safe to purge.
 const FDMC_KEEP_KEYS = new Set([
-  "fdmc.main.roomLiveState.v1",
-  "fdmc.main.tableBinding.v1",
+  FDMC_ROOM_LIVE_STATE_KEY,
+  FDMC_TABLE_BINDING_KEY,
 ]);
 
 async function scanFdmcRoomMetadata() {
@@ -185,7 +227,7 @@ function PlayerMonsterRoster({
   if (monsters.length === 0) return null;
   return (
     <section aria-label="Monster roster">
-      <h2 className="panel-title">Monsters</h2>
+      <h2 className="panel-title" style={{ color: MONSTER_COLOR, borderLeft: `3px solid ${MONSTER_COLOR}`, paddingLeft: 8 }}>Monsters</h2>
       <div className="actor-list actor-card-grid-2x3">
         {monsters.map(m => {
           const ratio = m.hpRatio;
@@ -326,7 +368,7 @@ export default function App() {
         setLevelUpRequests(current => {
           const filtered = current.filter(r => r.actorId !== msg.actorId);
           const next = [...filtered, msg];
-          try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+          try { localStorage.setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
           return next;
         });
       }
@@ -443,7 +485,7 @@ export default function App() {
     pushActorsToAllSeats({ freshOverrides });
     setLevelUpRequests(current => {
       const next = current.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
 
@@ -460,7 +502,7 @@ export default function App() {
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
     setLevelUpRequests(current => {
       const next = current.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem("fdmc:pending-level-up-requests", JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
     if (OBR.isAvailable) {
@@ -1041,6 +1083,12 @@ export default function App() {
 
   // ── Combat tracker helpers ────────────────────────────────────────────────
 
+  /** actorId → seat color, from the compact seat snapshots in room state (P-UX1). */
+  const seatColorById = useMemo(
+    () => buildActorSeatColorMap(roomLiveState.seats),
+    [roomLiveState.seats],
+  );
+
   /** Live HP map for all actors — used by combat tracker and actor selector */
   const liveHpByActorId = useMemo(
     () => Object.fromEntries(actors.map(a => [a.id, getActorHp(a.id)])),
@@ -1216,7 +1264,10 @@ export default function App() {
     ]);
   }, []);
 
-  const openDmPanel = useCallback(async (panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals") => {
+  const openDmPanel = useCallback(async (
+    panel: "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals",
+    create?: "actor" | "monster" | "equipment",
+  ) => {
     if (!OBR.isAvailable) {
       const fallbackMap: Record<string, ToolPanelId> = {
         editActors: "editActors", seats: "actorAssignments", library: "editActors",
@@ -1230,6 +1281,8 @@ export default function App() {
       base.pathname = base.pathname.replace(/\/[^/]*$/, "/dm-panel.html");
       base.search = "";
       base.searchParams.set("panel", panel);
+      // create= tells the DM panel to jump straight into the right creator.
+      if (create) base.searchParams.set("create", create);
       if (OBR.popover) {
         const sizes: Record<string, { width: number; height: number }> = {
           editActors: { width: 700, height: 860 },
@@ -1243,10 +1296,11 @@ export default function App() {
         };
         const { width, height } = sizes[panel] ?? { width: 660, height: 800 };
         // Close ALL other DM panels first — enforce one DM panel at a time
-        // (actor card stays independent)
+        // (actor card stays independent). When create= is set we also close the
+        // target panel so it reopens fresh and the create flow actually triggers.
         await Promise.all(
           DM_PANEL_IDS
-            .filter(id => id !== `fdm-dm-${panel}`)
+            .filter(id => create ? true : id !== `fdm-dm-${panel}`)
             .map(id => OBR.popover.close(id).catch(() => undefined))
         );
 
@@ -1289,7 +1343,7 @@ export default function App() {
   // Still identifying the viewer — show a minimal loading state, no flash
   if (isRoleLoading) {
     return (
-      <div style={{ padding: 16, fontFamily: "monospace", textAlign: "center", color: "#555" }}>
+      <div style={{ padding: 16, textAlign: "center", color: "#555" }}>
         <p style={{ fontSize: 12 }}>Loading…</p>
       </div>
     );
@@ -1300,7 +1354,7 @@ export default function App() {
   // Anyone can claim DM from here. The Owlbear room owner is the intended claimer.
   if (viewerRole === "unknown" || (!isDmMode && !isPlayerMode)) {
     return (
-      <div style={{ padding: 24, fontFamily: "monospace", textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+      <div style={{ padding: 24, textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
         <p style={{ margin: 0, fontSize: 14 }}>Forever DM Combat</p>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>{APP_VERSION}</p>
         {tableBinding ? (
@@ -1410,7 +1464,7 @@ export default function App() {
     // Auto-claim removed — players always choose their own seat
 
     return (
-      <div style={{ padding: 16, fontFamily: "monospace", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ textAlign: "center" }}>
           <p style={{ margin: 0, fontSize: 14, color: "#aaa" }}>Forever DM Combat</p>
           <p style={{ margin: 0, fontSize: 11, color: "#555" }}>{APP_VERSION}</p>
@@ -1546,37 +1600,45 @@ export default function App() {
     return (
       <main className="fdmc-app">
         {isDmMode && (
-          <header className="fdmc-dm-toolbar">
-            <span className="fdmc-version-pill">{APP_VERSION}</span>
-            <button type="button" onClick={() => void openDmPanel("seatTokens")}>Seats & Tokens</button>
-            <button type="button" onClick={() => void openDmPanel("library")}>Library</button>
-            <button type="button" onClick={() => void openDmPanel("maintenance")}
-              style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#444", cursor: "pointer" }}>⚙</button>
-            <button
-              type="button"
-              onClick={() => void closeAllDmPanels()}
-              style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
-              title="Close all floating DM windows"
-            >
-              ✕ Close All
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActorLibrary(loadActorLibrary()); setActorOverrides(loadActorOverrides()); }}
-              style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
-            >
-              ↺ Sync
-            </button>
+          <header className="fdmc-dm-toolbar" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "6px 10px", background: "#0d0d14", borderBottom: "1px solid #2a2a3e" }}>
+            <span style={dmGroupLabel("#3f9d5f")}>Create</span>
+            <button type="button" style={DM_CREATE_SHADES[0]} onClick={() => void openDmPanel("library", "actor")}>+ Party Character</button>
+            <button type="button" style={DM_CREATE_SHADES[1]} onClick={() => void openDmPanel("library", "monster")}>+ Monster</button>
+            <button type="button" style={DM_CREATE_SHADES[2]} onClick={() => void openDmPanel("library", "equipment")}>+ Equipment</button>
+            <span style={{ width: 10 }} />
+            <span style={dmGroupLabel("#5f8fd9")}>Manage</span>
+            <button type="button" style={DM_USE_SHADES[0]} onClick={() => void openDmPanel("seatTokens")}>Seats &amp; Tokens</button>
+            <button type="button" style={DM_USE_SHADES[1]} onClick={() => void openDmPanel("library")}>Library</button>
+            <span style={{ flex: 1, minWidth: 8 }} />
+            <button type="button" style={DM_BTN.fix} title="Something looks broken? Open Room Maintenance."
+              onClick={() => void openDmPanel("maintenance")}>🛠 Fix something</button>
+            <button type="button" style={DM_BTN.danger} title="Close all floating DM windows"
+              onClick={() => void closeAllDmPanels()}>✕ Close All</button>
+            <button type="button" style={DM_BTN.use}
+              onClick={() => { setActorLibrary(loadActorLibrary()); setActorOverrides(loadActorOverrides()); }}>↺ Sync</button>
           </header>
         )}
-        <div style={{ padding: 24, fontFamily: "monospace", textAlign: "center", color: "#555", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+        <div style={{ padding: 24, textAlign: "center", color: "#555", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
           <p style={{ margin: 0 }}>
-            {isDmMode ? "No actors in library." : "No actors assigned to your seat."}
+            {isDmMode ? "No Party Characters in your library." : "No characters assigned to your seat."}
           </p>
           {isDmMode ? (
-            <p style={{ fontSize: 12, color: "#444", margin: 0 }}>
-              Open <strong style={{ color: "#7b68ee" }}>Edit Actors</strong> → Create New Actor to build your party.
-            </p>
+            <>
+              <p style={{ fontSize: 12, color: "#666", margin: 0 }}>
+                What do you want to build first?
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+                <button type="button" onClick={() => void openDmPanel("library", "actor")}
+                  style={{ ...DM_BTN.create, fontSize: 13, padding: "9px 18px" }}>+ Create Party Character</button>
+                <button type="button" onClick={() => void openDmPanel("library", "monster")}
+                  style={{ ...DM_BTN.create, fontSize: 13, padding: "9px 18px" }}>+ Create Monster</button>
+                <button type="button" onClick={() => void openDmPanel("library", "equipment")}
+                  style={{ ...DM_BTN.create, fontSize: 13, padding: "9px 18px" }}>+ Create Equipment</button>
+              </div>
+              <p style={{ fontSize: 11, color: "#444", margin: 0 }}>
+                Monsters and equipment you create are saved to your <strong style={{ color: "#7be08a" }}>My Library</strong>.
+              </p>
+            </>
           ) : (
             <>
               <p style={{ fontSize: 12, color: "#444", margin: 0 }}>
@@ -1687,61 +1749,71 @@ export default function App() {
   return (
     <main className="fdmc-app">
 
-      {/* ── DM toolbar ── */}
+      {/* ── DM toolbar — grouped, color-coded rows (P-UX1) ── */}
       {isDmMode && (
-        <header className="fdmc-dm-toolbar">
-          <span className="fdmc-version-pill">{APP_VERSION}</span>
-          <span className={`fdmc-budget-pill fdmc-budget-${budgetLabel.toLowerCase()}`}>
-            {roomBytes}B {budgetLabel}
-          </span>
-          {/* Approvals badge — only shows when requests are pending */}
-          {levelUpRequests.length > 0 && (
-            <button
-              type="button"
-              onClick={() => void openDmPanel("approvals")}
-              title={`${levelUpRequests.length} pending level-up request${levelUpRequests.length === 1 ? "" : "s"}`}
-              style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "1px 9px", fontSize: 11, border: "none", cursor: "pointer", fontWeight: 600 }}
-            >
-              ⬆ {levelUpRequests.length} Approval{levelUpRequests.length === 1 ? "" : "s"}
+        <header
+          className="fdmc-dm-toolbar"
+          style={{ display: "flex", flexDirection: "column", gap: 5, padding: "6px 10px", background: "#0d0d14", borderBottom: "1px solid #2a2a3e" }}
+        >
+          {/* Row 1 — CREATE (green) · session + status on the right */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={dmGroupLabel("#3f9d5f")}>Create</span>
+            <button type="button" style={DM_CREATE_SHADES[0]} title="Build a new Party Character (guided)"
+              onClick={() => void openDmPanel("library", "actor")}>+ Party Character</button>
+            <button type="button" style={DM_CREATE_SHADES[1]} title="Build a new monster — pick a band to scaffold it (saved to My Library)"
+              onClick={() => void openDmPanel("library", "monster")}>+ Monster</button>
+            <button type="button" style={DM_CREATE_SHADES[2]} title="Build a new equipment item"
+              onClick={() => void openDmPanel("library", "equipment")}>+ Equipment</button>
+
+            <span style={{ flex: 1, minWidth: 8 }} />
+
+            {/* Approvals badge — only when pending */}
+            {levelUpRequests.length > 0 && (
+              <button type="button" onClick={() => void openDmPanel("approvals")}
+                title={`${levelUpRequests.length} pending level-up request${levelUpRequests.length === 1 ? "" : "s"}`}
+                style={{ background: "#7b68ee", color: "#fff", borderRadius: 10, padding: "2px 9px", fontSize: 11, border: "none", cursor: "pointer", fontWeight: 600 }}>
+                ⬆ {levelUpRequests.length} Approval{levelUpRequests.length === 1 ? "" : "s"}
+              </button>
+            )}
+            <button type="button" style={DM_BTN.session} title="Tell players their seats are open"
+              onClick={() => {
+                pushActorsToAllSeats();
+                if (OBR.isAvailable) {
+                  void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, { type: "fdmc:seats-ready", seats: Object.values(seats) }, { destination: "REMOTE" });
+                }
+              }}>
+              ▶ Players Join
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              pushActorsToAllSeats();
-              if (OBR.isAvailable) {
-                void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, { type: "fdmc:seats-ready", seats: Object.values(seats) }, { destination: "REMOTE" });
-              }
-            }}
-            style={{ fontSize: 11, padding: "2px 8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
-            title="Tell players seats are open"
-          >
-            ▶ Players Join
-          </button>
-          {/* Seats & Tokens — single tabbed popout */}
-          <button type="button" onClick={() => void openDmPanel("seatTokens")}>Seats & Tokens</button>
-          {/* Library — Actors / Monsters / Equipment in one tabbed window */}
-          <button type="button" onClick={() => void openDmPanel("library")}>
-            Library{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
-          </button>
-          <button type="button" onClick={() => setOpenPanel("encounterCleanup")}>Cleanup</button>
-          <button
-            type="button"
-            onClick={() => void closeAllDmPanels()}
-            style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
-            title="Close all floating DM windows"
-          >
-            ✕ Close All
-          </button>
-          {/* Maintenance — secondary, muted — only needed when troubleshooting */}
-          <button type="button" onClick={() => void openDmPanel("maintenance")}
-            style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#444", cursor: "pointer" }}
-            title="Room Maintenance — only click if something is broken">
-            ⚙
-          </button>
-          {!tableBinding && (
-            <button type="button" onClick={() => void claimTableBinding()}>Claim Table</button>
-          )}
+            {!tableBinding && (
+              <button type="button" style={DM_BTN.claim} onClick={() => void claimTableBinding()}>Claim Table</button>
+            )}
+            <span style={{ fontSize: 9, color: "#3a3a4e" }}>{APP_VERSION}</span>
+            <span title="Room metadata size" style={{ fontSize: 9, padding: "1px 6px", borderRadius: 8, border: "1px solid #2a2a3e",
+              color: budgetLabel === "OK" ? "#4caf50" : budgetLabel === "WARN" ? "#e0b85a" : "#ff5840" }}>
+              {roomBytes}B
+            </span>
+          </div>
+
+          {/* Row 2 — MANAGE (blue) · housekeeping cluster on the right */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={dmGroupLabel("#5f8fd9")}>Manage</span>
+            <button type="button" style={DM_USE_SHADES[0]} onClick={() => void openDmPanel("seatTokens")}>Seats &amp; Tokens</button>
+            <button type="button" style={DM_USE_SHADES[1]} title="Assign the selected map token to a seat or monster"
+              onClick={() => void openDmPanel("tokens")}>🎯 Assign Token</button>
+            <button type="button" style={DM_USE_SHADES[2]} title="Browse & load Party Characters, Monsters and Equipment"
+              onClick={() => void openDmPanel("library")}>
+              Library{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
+            </button>
+
+            <span style={{ flex: 1, minWidth: 8 }} />
+
+            <button type="button" style={DM_BTN.cleanup} title="Tidy up the encounter — clear defeated monsters and stale state"
+              onClick={() => setOpenPanel("encounterCleanup")}>🧹 Cleanup</button>
+            <button type="button" style={DM_BTN.fix} title="Something looks broken? Open Room Maintenance to repair room state."
+              onClick={() => void openDmPanel("maintenance")}>🛠 Fix something</button>
+            <button type="button" style={DM_BTN.danger} title="Close all floating DM windows"
+              onClick={() => void closeAllDmPanels()}>✕ Close All</button>
+          </div>
         </header>
       )}
 
@@ -1749,7 +1821,7 @@ export default function App() {
       {isDmMode && (
         <div style={{ padding: "3px 12px", background: "#0a0a12", borderBottom: "1px solid #1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 10, color: "#444" }}>
-            {dmActors.length > 0 ? `${dmActors.length} actor${dmActors.length === 1 ? "" : "s"} loaded` : "No actors — build in Edit Actors"}
+            {dmActors.length > 0 ? `${dmActors.length} Party Character${dmActors.length === 1 ? "" : "s"} loaded` : "No characters — open Library → Create Party Character"}
           </span>
           <button
             type="button"
@@ -2098,11 +2170,23 @@ export default function App() {
       })()}
 
       {/* ── Player seat status bar — shows when seated or syncing, not while browsing ── */}
-      {isPlayerMode && !isBrowsing && claimedSeatId && (seatStatus === "ready" || seatStatus === "claiming") && (
-        <div style={{ padding: "4px 12px", background: "#1a1a2e", fontSize: 11, color: "#888", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: seatStatus === "claiming" ? "#888" : "#7b68ee" }}>
-            {seatStatus === "claiming" ? "⟳" : "●"} {roomLiveState.seats[claimedSeatId]?.label ?? claimedSeatId}
-            {seatStatus === "claiming" && <span style={{ fontSize: 9, color: "#555", marginLeft: 4 }}>syncing…</span>}
+      {isPlayerMode && !isBrowsing && claimedSeatId && (seatStatus === "ready" || seatStatus === "claiming") && (() => {
+        const mySeatColor = getSeatColor(claimedSeatId);
+        // "Your turn" when one of this seat's characters is the active combatant.
+        const isMyTurn = roomLiveState.combat.phase === "combat"
+          && seatActors.some(a => a.id === roomLiveState.combat.activeActorId);
+        return (
+        <div style={{ padding: "4px 12px", background: seatStatus === "claiming" ? "#1a1a2e" : withAlpha(mySeatColor, isMyTurn ? 0.22 : 0.12), borderLeft: `4px solid ${seatStatus === "claiming" ? "#444" : mySeatColor}`, fontSize: 11, color: "#888", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: seatStatus === "claiming" ? "#888" : mySeatColor, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <span>
+              {seatStatus === "claiming" ? "⟳" : "●"} {roomLiveState.seats[claimedSeatId]?.label ?? claimedSeatId}
+              {seatStatus === "claiming" && <span style={{ fontSize: 9, color: "#555", marginLeft: 4 }}>syncing…</span>}
+            </span>
+            {isMyTurn && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 8px", borderRadius: 10, background: mySeatColor, color: "#0d0d14", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                ▶ Your turn
+              </span>
+            )}
           </span>
           <div style={{ display: "flex", gap: 6 }}>
             {/* P6: unlock own token — only show when DM has granted movement for this seat */}
@@ -2153,7 +2237,8 @@ export default function App() {
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* ── Player level-up request panel ── */}
       {isPlayerMode && showLevelUpRequest && actorToShow && (
@@ -2170,6 +2255,7 @@ export default function App() {
         selectedActorId={actorToShow.id}
         hpByActorId={liveHpByActorId}
         actionStateByActorId={actionStateByActorId}
+        seatColorById={seatColorById}
         onSelectActor={setSelectedActorId}
         onOpenActorCard={async (actorId) => {
           setSelectedActorId(actorId);
@@ -2189,6 +2275,9 @@ export default function App() {
             popoverUrl.pathname = popoverUrl.pathname.replace(/\/[^/]*$/, "/actor-popout.html");
             popoverUrl.search = "";
             popoverUrl.searchParams.set("fdmActorPopover", actorId);
+            // Carry the seat color so the popout sheet can tint the character name.
+            const popoutSeatColor = seatColorById[actorId];
+            if (popoutSeatColor) popoverUrl.searchParams.set("seatColor", popoutSeatColor);
             await OBR.popover.close("fdm-actor-card").catch(() => undefined);
             const cardLeft = Math.max(500 + 32, Math.min(window.screen.width - 500 - 16, window.screen.width - 540));
             await OBR.popover.open({
@@ -2369,6 +2458,8 @@ export default function App() {
           isDmMode={isDmMode}
           viewerActorIds={isPlayerMode ? seatActors.map(a => a.id) : undefined}
           actionStateByActorId={isDmMode ? actionStateByActorId : undefined}
+          seatColorById={seatColorById}
+          monsterColor={MONSTER_COLOR}
           onStartCombat={handleStartCombat}
           onNextTurn={handleNextTurn}
           onEndCombat={handleEndCombat}
@@ -2396,6 +2487,7 @@ export default function App() {
       {focusedActorId && (
       <ActorCard
         actor={actorToShow}
+        seatColor={seatColorById[actorToShow.id]}
         hp={hp}
         actionState={actionState}
         concentration={concentration}
@@ -2737,6 +2829,7 @@ export default function App() {
             <div style={{ flex: 1, overflow: "auto" }}>
               <ActorCard
                 actor={focusedActor}
+                seatColor={seatColorById[focusedActor.id]}
                 hp={focusedHp}
                 actionState={focusedActionState}
                 concentration={focusedConcentration}

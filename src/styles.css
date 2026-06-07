@@ -27,6 +27,44 @@ button {
   font: inherit;
 }
 
+/* ── FDMC design tokens ───────────────────────────────────────────────────────
+   Semantic accent colors shared by the DM tools. These mirror
+   core/constants/theme.ts (FDMC_ACCENTS) and core/seats/seatColors.ts so the CSS
+   layer and the inline-styled React components stay in agreement. New styling
+   should prefer these tokens over ad-hoc hex. */
+:root {
+  --fdmc-create: #34c759;   /* build something new (green) */
+  --fdmc-use: #7db1ff;      /* open / navigate existing (blue) */
+  --fdmc-cleanup: #e0b85a;  /* tidy the encounter (amber) */
+  --fdmc-fix: #6fe0e0;      /* maintenance — only if broken (cyan) */
+  --fdmc-danger: #ff5840;   /* destructive (red) */
+  --fdmc-monster: #c8472e;  /* GM / monster family */
+  --fdmc-surface: rgba(21, 24, 32, 0.88);
+  --fdmc-border: rgba(255, 255, 255, 0.1);
+  --fdmc-text-dim: #a8adbb;
+}
+
+/* Reusable grouped-section header — gives editor field groups a clear, accented
+   heading instead of a flat wall of inputs. The accent comes from `color`. */
+.fdmc-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 6px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+.fdmc-section-head::before {
+  content: "";
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
 .app-shell {
   width: min(1180px, 100%);
   margin: 0 auto;

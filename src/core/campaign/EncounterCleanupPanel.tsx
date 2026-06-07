@@ -23,9 +23,9 @@ export function EncounterCleanupPanel({
   }
 
   return (
-    <section className="controlled-intake-card" aria-label="Encounter cleanup">
-      <p className="eyebrow">Danger Zone</p>
-      <h3>Encounter Cleanup</h3>
+    <section className="controlled-intake-card" aria-label="Encounter cleanup" style={{ borderTop: "3px solid #e0b85a" }}>
+      <p className="eyebrow" style={{ color: "#e0b85a" }}>🧹 Cleanup</p>
+      <h3 style={{ color: "#e0b85a" }}>Encounter Cleanup</h3>
       <p className="subtle">This clears the active monster encounter state while preserving actor assignments and seat bindings.</p>
       <div className="fdmc-grid three">
         <span>Active monsters: {activeMonsterCount}</span>

@@ -20,6 +20,7 @@ import {
   getSelectedItems,
 } from "./tokenBinding";
 import type { FdmcSeat } from "../seats/seatTypes";
+import { getSeatColor, withAlpha, MONSTER_COLOR } from "../seats/seatColors";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 
 type TokenAssignmentPanelProps = {
@@ -165,7 +166,7 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
   const selectedSeat = seats[selectedSeatId];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", fontFamily: "monospace" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Header */}
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <h3 style={{ margin: 0, fontSize: 14 }}>Token Assignment</h3>
@@ -179,20 +180,32 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
 
         {/* Selected tokens */}
         {selectedTokens.length === 0 ? (
-          <p style={{ fontSize: 12, color: "#555", textAlign: "center", marginTop: 20 }}>
-            Select a token on the map to bind it.
-          </p>
+          <div style={{ textAlign: "center", marginTop: 24, padding: "0 12px" }}>
+            <div style={{ fontSize: 26, marginBottom: 8 }}>🎯</div>
+            <p style={{ fontSize: 13, color: "#aaa", margin: "0 0 6px" }}>
+              Click a token on the map
+            </p>
+            <p style={{ fontSize: 11, color: "#666", margin: 0, lineHeight: 1.5 }}>
+              Its assignment options appear here. Assign a token to a <strong style={{ color: "#aaa" }}>seat</strong> (it gets
+              that seat's color marker) or to a <strong style={{ color: MONSTER_COLOR }}>monster</strong>, then choose who can move it.
+            </p>
+          </div>
         ) : (
           <>
             <div>
               <p style={{ margin: "0 0 6px", fontSize: 11, color: "#888" }}>
                 {selectedTokens.length} token{selectedTokens.length === 1 ? "" : "s"} selected:
               </p>
-              {selectedTokens.map(({ item, binding: b, isLocked }) => (
-                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", background: "#161622", borderRadius: 4, marginBottom: 4, border: "1px solid #2a2a3e" }}>
-                  <div>
+              {selectedTokens.map(({ item, binding: b, isLocked }) => {
+                const markerColor = b
+                  ? (b.bindingType === "seat" ? getSeatColor(b.seatId) : MONSTER_COLOR)
+                  : "#3a3a4e";
+                return (
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", background: "#161622", borderRadius: 4, marginBottom: 4, border: "1px solid #2a2a3e", borderLeft: `3px solid ${markerColor}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span title={b ? "Assigned marker color" : "Unassigned"} style={{ width: 10, height: 10, borderRadius: "50%", background: markerColor, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, color: "#ccc" }}>{item.name || item.id.slice(0, 12)}</span>
-                    <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>{statusLabel(b, seats, activeMonsters)}</span>
+                    <span style={{ fontSize: 10, color: "#555", marginLeft: 2 }}>{statusLabel(b, seats, activeMonsters)}</span>
                   </div>
                   <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                     <span style={{ fontSize: 9, color: isLocked ? "#ff9999" : "#4caf50" }}>{isLocked ? "🔒" : "🔓"}</span>
@@ -202,21 +215,25 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Binding type */}
             <div>
               <p style={{ margin: "0 0 6px", fontSize: 11, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>Bind To</p>
               <div style={{ display: "flex", gap: 6 }}>
-                {(["seat", "monster"] as const).map(t => (
-                  <button key={t} type="button" onClick={() => setBindingType(t)}
-                    style={{ flex: 1, padding: "5px 0", fontSize: 12, borderRadius: 4, cursor: "pointer", border: "none",
-                      background: bindingType === t ? "#7b68ee" : "#1a1a2e",
-                      color: bindingType === t ? "#fff" : "#666" }}>
-                    {t === "seat" ? "Seat / Actor" : "Monster"}
-                  </button>
-                ))}
+                {(["seat", "monster"] as const).map(t => {
+                  const activeBg = t === "monster" ? MONSTER_COLOR : "#7b68ee";
+                  return (
+                    <button key={t} type="button" onClick={() => setBindingType(t)}
+                      style={{ flex: 1, padding: "5px 0", fontSize: 12, borderRadius: 4, cursor: "pointer", border: "none",
+                        background: bindingType === t ? activeBg : "#1a1a2e",
+                        color: bindingType === t ? "#fff" : "#666" }}>
+                      {t === "seat" ? "Seat / Party Character" : "Monster (GM)"}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -225,17 +242,22 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
               <>
                 <div>
                   <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>Seat</label>
-                  <select value={selectedSeatId} onChange={e => setSelectedSeatId(e.target.value)}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}>
-                    <option value="">— Select seat —</option>
-                    {seatList.filter(s => s.seatMode !== "viewer").map(s => (
-                      <option key={s.seatId} value={s.seatId}>{s.label}</option>
-                    ))}
-                  </select>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {selectedSeatId && (
+                      <span title="This seat's color — the token marker will match" style={{ width: 14, height: 14, borderRadius: "50%", background: getSeatColor(selectedSeatId), flexShrink: 0, boxShadow: `0 0 0 2px ${withAlpha(getSeatColor(selectedSeatId), 0.3)}` }} />
+                    )}
+                    <select value={selectedSeatId} onChange={e => setSelectedSeatId(e.target.value)}
+                      style={{ flex: 1, padding: "5px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}>
+                      <option value="">— Select seat —</option>
+                      {seatList.filter(s => s.seatMode !== "viewer").map(s => (
+                        <option key={s.seatId} value={s.seatId}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 {selectedSeat && selectedSeat.actorIds.length > 0 && (
                   <div>
-                    <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>Actor</label>
+                    <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>Party Character</label>
                     <select value={selectedActorId} onChange={e => setSelectedActorId(e.target.value)}
                       style={{ width: "100%", padding: "5px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}>
                       {selectedSeat.actorIds.map(id => (
@@ -267,18 +289,39 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
               </div>
             )}
 
-            {/* Allow player move */}
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, cursor: "pointer" }}>
-              <input type="checkbox" checked={allowPlayerMove} onChange={e => setAllowPlayerMove(e.target.checked)}
-                style={{ accentColor: "#7b68ee", width: 14, height: 14 }} />
-              Allow player to move this token
-            </label>
+            {/* Token control mode — who is allowed to move this token */}
+            <div>
+              <p style={{ margin: "0 0 6px", fontSize: 11, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>Token Control</p>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" onClick={() => setAllowPlayerMove(false)}
+                  title="DM-only — token auto-locks so players and viewers cannot move it. DM can still reassign or unlock instantly."
+                  style={{ flex: 1, padding: "6px 0", fontSize: 12, borderRadius: 4, cursor: "pointer",
+                    border: `1px solid ${!allowPlayerMove ? "#ff9999" : "#333"}`,
+                    background: !allowPlayerMove ? "#3a1a1a" : "transparent",
+                    color: !allowPlayerMove ? "#ff9999" : "#666" }}>
+                  🔒 DM-only
+                </button>
+                <button type="button" onClick={() => setAllowPlayerMove(true)}
+                  title="Seat-controlled — the assigned seat's player may move this token."
+                  style={{ flex: 1, padding: "6px 0", fontSize: 12, borderRadius: 4, cursor: "pointer",
+                    border: `1px solid ${allowPlayerMove ? "#4caf50" : "#333"}`,
+                    background: allowPlayerMove ? "#1a3a1a" : "transparent",
+                    color: allowPlayerMove ? "#4caf50" : "#666" }}>
+                  👤 Seat can move
+                </button>
+              </div>
+              <p style={{ margin: "5px 0 0", fontSize: 10, color: "#555" }}>
+                {allowPlayerMove
+                  ? "The seat's player can drag this token. Viewers still cannot."
+                  : "Locked for everyone except the DM. This does not change who owns the character."}
+              </p>
+            </div>
 
             {/* Save / Clear */}
             <div style={{ display: "flex", gap: 6 }}>
               <button type="button" onClick={() => void handleSave()} disabled={saving}
-                style={{ flex: 2, padding: "6px 0", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
-                {saving ? "Saving…" : "Save Binding"}
+                style={{ flex: 2, padding: "6px 0", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                {saving ? "Saving…" : "Assign Token"}
               </button>
               <button type="button" onClick={() => void handleClear()}
                 style={{ flex: 1, padding: "6px 0", background: "transparent", color: "#ff9999", border: "1px solid #5a1a1a", borderRadius: 4, cursor: "pointer", fontSize: 12 }}>

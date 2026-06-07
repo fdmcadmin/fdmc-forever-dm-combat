@@ -117,7 +117,7 @@ export type EquipmentItem = {
 const CAMPAIGN_EQUIPMENT_KEY = "fdmc.dm.equipmentLibrary.campaign.v1";
 const DM_EQUIPMENT_KEY = "fdmc.dm.equipmentLibrary.dm.v1";
 const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1";
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.1.9";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.2.0";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
