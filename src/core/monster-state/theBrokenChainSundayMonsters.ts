@@ -44,6 +44,65 @@ const ENCOUNTERS: SundayMonsterEncounterSet[] = [
       { templateId: "act2S2GraveLight", count: 3 },
     ],
   },
+  // ── Act 1 — Wardenwood wilds (campaign-flavored wolves / owlbear / raiders) ──
+  {
+    encounterId: "act1-thornfang-pack",
+    label: "Act 1 — Thornfang Pack",
+    sessionLabel: "Act 1 · Wardenwood",
+    description: "Thornfang Packlord + 3 Thornfang Wolves.",
+    templateEntries: [
+      { templateId: "thornfangPacklord", count: 1 },
+      { templateId: "thornfangWolf", count: 3 },
+    ],
+  },
+  {
+    encounterId: "act1-mosshide-owlbear",
+    label: "Act 1 — Mosshide Owlbear",
+    sessionLabel: "Act 1 · Wardenwood",
+    description: "Mosshide Owlbear + 2 Thornfang Wolves.",
+    templateEntries: [
+      { templateId: "mosshideOwlbear", count: 1 },
+      { templateId: "thornfangWolf", count: 2 },
+    ],
+  },
+  {
+    encounterId: "act1-greenwood-reaver-band",
+    label: "Act 1 — Greenwood Reaver Band",
+    sessionLabel: "Act 1 · Wardenwood",
+    description: "Greenwood Reaver (CR 2 captain) + 3 Thornfang Wolves.",
+    templateEntries: [
+      { templateId: "greenwoodReaver", count: 1 },
+      { templateId: "thornfangWolf", count: 3 },
+    ],
+  },
+  // ── Act 1 — Wardenwood canon (campaign-original statblocks from Monsters/*.docx) ──
+  {
+    encounterId: "act1-threadbare-spider-nest",
+    label: "Act 1 — Threadbare Spider Nest",
+    sessionLabel: "Act 1 · Wardenwood",
+    description: "4 Threadbare Spiders — Far Realm seed, opening tone-setter (party level 1).",
+    templateEntries: [
+      { templateId: "act1ThreadbareSpider", count: 4 },
+    ],
+  },
+  {
+    encounterId: "act1-swamp-ambush",
+    label: "Act 1 — Swamp Ambush",
+    sessionLabel: "Act 1 · Wardenwood",
+    description: "4 Swamp Ambushers — grounded bandit ambush, terrain fight.",
+    templateEntries: [
+      { templateId: "act1SwampAmbusher", count: 4 },
+    ],
+  },
+  {
+    encounterId: "act1-mirage-stalker",
+    label: "Act 1 — Mirage Stalker (Final Boss)",
+    sessionLabel: "Act 1 · Wardenwood",
+    description: "Mirage Stalker — Act 1 final boss (Far Realm aberration).",
+    templateEntries: [
+      { templateId: "mirageStalker", count: 1 },
+    ],
+  },
 ];
 
 const SUNDAY_TEMPLATE_KEYS: SampleMonsterKey[] = [
@@ -56,6 +115,12 @@ const SUNDAY_TEMPLATE_KEYS: SampleMonsterKey[] = [
   "act2S2CorruptedHunter",
   "act2S2SoulGorgedGuardian",
   "act2S2GraveLight",
+  "thornfangWolf",
+  "thornfangPacklord",
+  "mosshideOwlbear",
+  "greenwoodReaver",
+  "act1ThreadbareSpider",
+  "act1SwampAmbusher",
 ];
 
 function makeTemplate(templateId: SampleMonsterKey): SundayMonsterTemplate {

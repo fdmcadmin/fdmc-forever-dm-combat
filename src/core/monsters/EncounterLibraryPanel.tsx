@@ -17,6 +17,7 @@ import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
+import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyPanel";
 
 // ─── Module unlock ────────────────────────────────────────────────────────────
 // The campaign ("Broken Chain") library is gated behind a LOCAL SOFT password.
@@ -982,6 +983,9 @@ export function EncounterLibraryPanel({
 
             return (
               <>
+                {/* P9.5 — party-size / level difficulty band check (homebrew guide) */}
+                <EncounterDifficultyPanel encounters={encounters} monsterLibrary={monsterLibrary} />
+
                 {/* My Library — always visible, no password needed */}
                 <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
                   My Library

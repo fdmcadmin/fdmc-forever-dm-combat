@@ -945,7 +945,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: `Damage ${amount}`,
       tabId: "system",
-      message: `${actor.name} takes ${amount} damage. HP ${formatHp(hp.current)} â†’ ${formatHp(next.current)}.`,
+      message: `${actor.name} takes ${amount} damage. HP ${formatHp(hp.current)} → ${formatHp(next.current)}.`,
     });
   }
 
@@ -970,8 +970,8 @@ export function ActorCard({
         restoredAmount < amount
           ? `${actor.name} receives ${amount} healing, but only ${restoredAmount} HP is restored due to max HP. HP ${formatHp(
               hp.current
-            )} â†’ ${formatHp(next.current)}.`
-          : `${actor.name} heals ${amount} HP. HP ${formatHp(hp.current)} â†’ ${formatHp(next.current)}.`,
+            )} → ${formatHp(next.current)}.`
+          : `${actor.name} heals ${amount} HP. HP ${formatHp(hp.current)} → ${formatHp(next.current)}.`,
     });
   }
 
@@ -987,7 +987,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: `Temp HP +${amount}`,
       tabId: "system",
-      message: `${actor.name} gains ${amount} temporary HP. Temp HP ${currentTemp} â†’ ${next.temp}.`,
+      message: `${actor.name} gains ${amount} temporary HP. Temp HP ${currentTemp} → ${next.temp}.`,
     });
   }
 
@@ -1007,7 +1007,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: `Temp HP -${amount}`,
       tabId: "system",
-      message: `${actor.name} loses ${amount} temporary HP. Temp HP ${currentTemp} â†’ ${nextTemp}.`,
+      message: `${actor.name} loses ${amount} temporary HP. Temp HP ${currentTemp} → ${nextTemp}.`,
     });
   }
 
@@ -1026,7 +1026,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: "Reset Temp HP",
       tabId: "system",
-      message: `${actor.name}'s temporary HP resets to 0. Temp HP ${currentTemp} â†’ 0.`,
+      message: `${actor.name}'s temporary HP resets to 0. Temp HP ${currentTemp} → 0.`,
     });
   }
 
@@ -1046,7 +1046,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: "Set 0 HP",
       tabId: "system",
-      message: `${actor.name} drops to 0 HP. HP ${formatHp(hp.current)} â†’ 0.`,
+      message: `${actor.name} drops to 0 HP. HP ${formatHp(hp.current)} → 0.`,
     });
   }
 
@@ -1448,7 +1448,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: "Spend Risk Die",
       tabId: "system",
-      message: `${actor.name} spends 1 Risk Die. Risk Dice ${counter.current}/${counter.max} â†’ ${nextValue}/${counter.max}.`,
+      message: `${actor.name} spends 1 Risk Die. Risk Dice ${counter.current}/${counter.max} → ${nextValue}/${counter.max}.`,
     });
   }
 
@@ -1475,7 +1475,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: reason,
       tabId: "system",
-      message: `${actor.name} spends 1 ${counter.label}. ${counter.label} ${counter.current}/${counter.max} â†’ ${nextValue}/${counter.max}.`,
+      message: `${actor.name} spends 1 ${counter.label}. ${counter.label} ${counter.current}/${counter.max} → ${nextValue}/${counter.max}.`,
     });
     return true;
   }
@@ -1958,7 +1958,7 @@ export function ActorCard({
 
     if (swappedCost) {
       const previousLabel = getReadiedLabel(actionState[swappedCost]);
-      return `${actor.name} swapped readied ${actionCostLabels[swappedCost]}: ${previousLabel} â†’ ${actionLabel}.`;
+      return `${actor.name} swapped readied ${actionCostLabels[swappedCost]}: ${previousLabel} → ${actionLabel}.`;
     }
 
     return `${actor.name} has readied ${actionLabel} [${formatCosts(costs)}].`;
@@ -2245,7 +2245,7 @@ export function ActorCard({
       actorName: actor.name,
       actionName: "Rage Active",
       tabId: "system",
-      message: `${actor.name} is raging and uses ${candidate.actionLabel}${pairedText}. Rage ${counter.current}/${counter.max} â†’ ${nextValue}/${counter.max}.`,
+      message: `${actor.name} is raging and uses ${candidate.actionLabel}${pairedText}. Rage ${counter.current}/${counter.max} → ${nextValue}/${counter.max}.`,
     });
   }
 
@@ -2717,7 +2717,7 @@ export function ActorCard({
       return;
     }
 
-    const additiveText = additiveParts.length > 0 ? ` with additives (${additiveParts.map((effect) => `${effect.shorthand}=${effect.critAdjusted ? `${effect.baseFormula}â†’${effect.formula}` : effect.formula}`).join(" + ")})` : "";
+    const additiveText = additiveParts.length > 0 ? ` with additives (${additiveParts.map((effect) => `${effect.shorthand}=${effect.critAdjusted ? `${effect.baseFormula}→${effect.formula}` : effect.formula}`).join(" + ")})` : "";
     const rageIsAttached = Boolean(
       committedRoll &&
       getVisibleArmedEffects().some((effect) => effect.id === "rage-active" || effect.id === "rage-pending") &&

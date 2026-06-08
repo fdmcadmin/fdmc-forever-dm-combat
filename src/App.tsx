@@ -21,6 +21,9 @@ export type PlayerSafeMonster = {
   visibilityState: string;
   showHpBar: boolean;
   hpRatio: number;
+  /** True only when the monster is genuinely at 0 HP AND visible — never set for
+   *  hidden monsters (would leak), and NOT inferred from a hidden HP bar. */
+  isDown: boolean;
   conditionLabel: string;
   activeConditions: string[];
   ac: string;
@@ -728,6 +731,7 @@ export default function App() {
         visibilityState: vis,
         showHpBar,
         hpRatio: showHpBar ? ratio : 0,
+        isDown: vis !== "hidden" && m.currentHp <= 0,
         conditionLabel: vis !== "hidden" ? conditionLabel : "",
         activeConditions: vis !== "hidden" ? (m.usedActionNames ?? []) : [],
         ac: vis === "full" ? (m.ac ?? "") : "",
@@ -1163,7 +1167,7 @@ export default function App() {
       initiativeBonus: 0,
       hp: { current: Math.round(m.hpRatio * 100), max: 100 },
       isActive: m.instanceId === roomLiveState.combat.activeActorId,
-      isDead: m.hpRatio <= 0,
+      isDead: m.isDown,
     }));
 
     return [...partyCombatants, ...playerMonsterCombatants];
