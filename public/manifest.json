@@ -9,5 +9,6 @@
     "height": 720,
     "width": 420
   },
+  "background": "/background.html",
   "icon": "/icon.png"
 }

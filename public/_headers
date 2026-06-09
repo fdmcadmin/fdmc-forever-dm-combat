@@ -20,10 +20,16 @@
 /dm-panel.html
   Cache-Control: no-cache, must-revalidate
 
+/background.html
+  Cache-Control: no-cache, must-revalidate
+
 /manifest.json
   Cache-Control: no-cache, must-revalidate
 
 /assets/main.js
+  Cache-Control: no-cache, must-revalidate
+
+/assets/background.js
   Cache-Control: no-cache, must-revalidate
 
 /assets/dmPanel.js

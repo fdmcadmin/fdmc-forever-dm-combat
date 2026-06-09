@@ -14,16 +14,15 @@
 import { writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { klydon } from "../src/private/klydon";
-import { kolakanathi } from "../src/private/kolakanathi";
 import { lightsStone } from "../src/private/lights_stone";
-import { lyrielleNew } from "../src/private/lyrielle_new";
-import { vaelithNew } from "../src/private/vaelith_new";
+import { lyrielle } from "../src/private/lyrielle";
+import { saigon } from "../src/private/saigon";
+import { abel } from "../src/private/abel";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const actors = [klydon, kolakanathi, lightsStone, lyrielleNew, vaelithNew];
+const actors = [lightsStone, lyrielle, saigon, abel];
 
 const exportData = {
   schema: "fdmc.actor-library-export.v1",
