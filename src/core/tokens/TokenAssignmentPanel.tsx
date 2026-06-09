@@ -22,7 +22,7 @@ import {
 import type { FdmcSeat } from "../seats/seatTypes";
 import { getSeatColor, withAlpha, MONSTER_COLOR } from "../seats/seatColors";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
-import { TOKEN_MENU_STATUS_KEY } from "./tokenContextMenu";
+import { TOKEN_MENU_STATUS_KEY, TOKEN_MENU_ERROR_KEY } from "./tokenContextMenu";
 
 type TokenAssignmentPanelProps = {
   tableId: string;
@@ -61,16 +61,20 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
   // missing, or the background page never loaded — e.g. a bad manifest key), warn the DM here so
   // they fall back to this panel for token assignment.
   const [menuOk, setMenuOk] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
   useEffect(() => {
     if (!OBR.isAvailable) return;
     const check = () => {
-      try { setMenuOk(window.localStorage.getItem(TOKEN_MENU_STATUS_KEY) === "ready"); }
-      catch { setMenuOk(true); }
+      try {
+        setMenuOk(window.localStorage.getItem(TOKEN_MENU_STATUS_KEY) === "ready");
+        setMenuError(window.localStorage.getItem(TOKEN_MENU_ERROR_KEY) || null);
+      }
+      catch { setMenuOk(true); setMenuError(null); }
     };
     check();
     // The background page may register a moment after this panel mounts.
     const t = setTimeout(check, 1500);
-    const onStorage = (e: StorageEvent) => { if (e.key === TOKEN_MENU_STATUS_KEY) check(); };
+    const onStorage = (e: StorageEvent) => { if (e.key === TOKEN_MENU_STATUS_KEY || e.key === TOKEN_MENU_ERROR_KEY) check(); };
     window.addEventListener("storage", onStorage);
     return () => { clearTimeout(t); window.removeEventListener("storage", onStorage); };
   }, []);
@@ -219,6 +223,11 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
       {!menuOk && (
         <div style={{ margin: "8px 14px 0", padding: "6px 10px", background: "#2a1a12", border: "1px solid #5a4a1a", borderRadius: 5, fontSize: 11, color: "#e0c98a", lineHeight: 1.4, flexShrink: 0 }}>
           ⚠ Token context menu unavailable — use Assign Token panel.
+          {menuError && (
+            <div style={{ marginTop: 4, fontSize: 10, color: "#c79b6a", fontFamily: "monospace", wordBreak: "break-word" }}>
+              {menuError}
+            </div>
+          )}
         </div>
       )}
 

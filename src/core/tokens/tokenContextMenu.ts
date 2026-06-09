@@ -13,7 +13,7 @@
 
 import OBR from "@owlbear-rodeo/sdk";
 import { writeTokenBinding, lockToken, unlockToken, clearTokenBinding, type FdmcTokenBinding } from "./tokenBinding";
-import { getSeatColor } from "../seats/seatColors";
+import { getSeatColorIndex } from "../seats/seatColors";
 import type { FdmcSeat } from "../seats/seatTypes";
 
 const GM_LOCK_ID = "fdmc.tokenmenu.gmlock.v1";
@@ -23,21 +23,24 @@ const ASSIGN_PREFIX = "fdmc.tokenmenu.assign.";
 // Track which per-seat assign menus we created so we can remove stale ones.
 let registeredAssignIds: string[] = [];
 
-function svgDataUri(svg: string): string {
-  // OBR validates context-menu icons with a strict URI check (Joi `.uri()`). A
-  // percent-encoded data URI (`data:image/svg+xml,%3C…`) FAILS that check with
-  // "icons[0].icon must be a valid uri". A base64 data URI is a clean, unambiguous URI
-  // that passes. SVGs here are pure ASCII, so btoa is safe.
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-}
+// OBR context-menu icons MUST be real URL paths (relative or absolute). The SDK
+// normalizes any non-http icon URL by prefixing `window.location.origin`, which mangles
+// a `data:image/svg+xml;base64,…` data URI into something like
+// `https://app.origin/data:image/svg+xml;base64,…` — a broken request, so the icon
+// (and effectively the whole entry) never renders. These static SVGs ship from
+// `public/fdmc-icons/` → served at `/fdmc-icons/*.svg`, which the SDK normalizes
+// cleanly to `https://app.origin/fdmc-icons/*.svg`.
+const ICON_BASE = "/fdmc-icons";
+const LOCK_ICON = `${ICON_BASE}/gm-lock.svg`;
+const UNLOCK_ICON = `${ICON_BASE}/gm-unlock.svg`;
+const CLEAR_ICON = `${ICON_BASE}/clear-assignment.svg`;
 
-function seatIcon(color: string): string {
-  return svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="${color}" stroke="white" stroke-width="1.5"/></svg>`);
+/** Static seat marker icon path whose baked color matches the seat's palette color. */
+function seatIcon(seatId: string): string {
+  const idx = getSeatColorIndex(seatId);
+  if (idx < 0) return `${ICON_BASE}/seat-default.svg`;
+  return `${ICON_BASE}/seat-${idx + 1}.svg`;
 }
-
-const LOCK_ICON = svgDataUri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>');
-const UNLOCK_ICON = svgDataUri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-1.5"/></svg>');
-const CLEAR_ICON = svgDataUri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>');
 
 type ContextMenuApiShape = {
   create: (menu: unknown) => Promise<void>;
@@ -58,24 +61,37 @@ function contextMenuApi(): ContextMenuApiShape | null {
  * persistent background page) can warn when the token context menu isn't usable.
  */
 export const TOKEN_MENU_STATUS_KEY = "fdmc.tokenMenu.status.v1";
-function setMenuStatus(status: "ready" | "unavailable"): void {
-  try { window.localStorage.setItem(TOKEN_MENU_STATUS_KEY, status); } catch { /* localStorage unavailable */ }
+/** Last registration error message, surfaced in the DM token assignment panel. */
+export const TOKEN_MENU_ERROR_KEY = "fdmc.tokenMenu.error.v1";
+function setMenuStatus(status: "ready" | "unavailable", error?: string): void {
+  try {
+    window.localStorage.setItem(TOKEN_MENU_STATUS_KEY, status);
+    if (status === "ready" || !error) window.localStorage.removeItem(TOKEN_MENU_ERROR_KEY);
+    else window.localStorage.setItem(TOKEN_MENU_ERROR_KEY, error);
+  } catch { /* localStorage unavailable */ }
 }
 
 export async function syncTokenContextMenus(tableId: string, seats: Record<string, FdmcSeat>): Promise<void> {
   const api = contextMenuApi();
   if (!api) {
-    console.warn("[FDMC] token context menu: OBR.contextMenu API unavailable — menu not registered.");
-    setMenuStatus("unavailable");
+    const msg = "OBR.contextMenu API unavailable — menu not registered.";
+    console.warn(`[FDMC] token context menu: ${msg}`);
+    setMenuStatus("unavailable", msg);
     return;
   }
-  // OBR.contextMenu is present → entries are being registered (per-entry failures are logged
-  // individually below but are extremely rare once the API exists).
-  setMenuStatus("ready");
 
-  // Surface create failures instead of swallowing them — a silent failure here is why the
-  // menu can appear to be "missing". Logs once per failed entry; never throws.
-  const warnFail = (what: string) => (e: unknown) => console.warn(`[FDMC] token context menu: failed to register "${what}":`, e);
+  // Collect per-entry failures instead of swallowing them — a silent failure here is why the
+  // menu can appear to be "missing". We only flip status to "ready" once every create resolves;
+  // any failure stores the first error so the DM token assignment panel can surface it.
+  const errors: string[] = [];
+  const tryCreate = async (what: string, menu: unknown): Promise<void> => {
+    try {
+      await api.create(menu);
+    } catch (e) {
+      console.warn(`[FDMC] token context menu: failed to register "${what}":`, e);
+      errors.push(`${what}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
 
   // Remove previously-registered per-seat entries before rebuilding.
   await Promise.all(registeredAssignIds.map(id => api.remove(id).catch(() => undefined)));
@@ -86,7 +102,7 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
   // default `==` comparison means `value: false` would NOT match an unlocked token —
   // hiding the whole entry. Use `locked != true` so the Lock icon shows whenever the
   // token is not explicitly locked.
-  await api.create({
+  await tryCreate("GM Lock", {
     id: GM_LOCK_ID,
     icons: [
       { icon: LOCK_ICON, label: "GM Lock token", filter: { roles: ["GM"], every: [{ key: "locked", value: true, operator: "!=" }] } },
@@ -100,16 +116,16 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
         else void unlockToken(item.id);
       }
     },
-  }).catch(warnFail("GM Lock"));
+  });
 
   // Clear assignment.
-  await api.create({
+  await tryCreate("Clear assignment", {
     id: CLEAR_ID,
     icons: [{ icon: CLEAR_ICON, label: "Clear FDMC assignment", filter: { roles: ["GM"] } }],
     onClick: (ctx: { items: { id: string }[] }) => {
       for (const item of ctx.items) void clearTokenBinding(item.id);
     },
-  }).catch(warnFail("Clear assignment"));
+  });
 
   // One "Assign to <seat>" entry per active player seat.
   const seatList = Object.values(seats)
@@ -118,10 +134,9 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
 
   for (const seat of seatList) {
     const id = `${ASSIGN_PREFIX}${seat.seatId}`;
-    const color = getSeatColor(seat.seatId);
-    await api.create({
+    await tryCreate(`Assign to ${seat.label}`, {
       id,
-      icons: [{ icon: seatIcon(color), label: `Assign to ${seat.label}`, filter: { roles: ["GM"] } }],
+      icons: [{ icon: seatIcon(seat.seatId), label: `Assign to ${seat.label}`, filter: { roles: ["GM"] } }],
       onClick: (ctx: { items: { id: string }[] }) => {
         const binding: FdmcTokenBinding = {
           version: 1,
@@ -138,9 +153,14 @@ export async function syncTokenContextMenus(tableId: string, seats: Record<strin
           void writeTokenBinding(item.id, binding).then(() => lockToken(item.id)).catch(() => undefined);
         }
       },
-    }).catch(warnFail(`Assign to ${seat.label}`));
+    });
     registeredAssignIds.push(id);
   }
+
+  // Only now — after every registration attempt resolved — decide health. "ready" requires a
+  // clean run; any failure keeps the menu flagged unavailable and records the error for the panel.
+  if (errors.length > 0) setMenuStatus("unavailable", errors.join(" | "));
+  else setMenuStatus("ready");
 }
 
 /** Remove all FDMC token context menus (effect cleanup). */

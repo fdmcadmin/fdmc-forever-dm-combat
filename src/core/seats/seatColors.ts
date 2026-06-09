@@ -44,20 +44,32 @@ export function getSeatColorByIndex(index: number): string {
 }
 
 /**
- * Stable seat color from a seat id such as "seat-1".
- * Falls back to a deterministic hash for non-numeric ids.
+ * Stable palette index (0-based, already wrapped into the palette length) for a
+ * seat id such as "seat-1". Returns -1 for a missing id (→ neutral color).
+ *
+ * Single source of truth for both {@link getSeatColor} and the static seat icon
+ * file lookup (`/fdmc-icons/seat-<n>.svg`) so the menu marker color always matches
+ * the seat color shown everywhere else.
  */
-export function getSeatColor(seatId: string | null | undefined): string {
-  if (!seatId) return NEUTRAL_SEAT_COLOR;
+export function getSeatColorIndex(seatId: string | null | undefined): number {
+  if (!seatId) return -1;
   const numMatch = seatId.match(/(\d+)/);
   if (numMatch) {
     const n = Number.parseInt(numMatch[1], 10);
-    if (Number.isFinite(n) && n >= 1) return getSeatColorByIndex(n - 1);
+    if (Number.isFinite(n) && n >= 1) return (n - 1) % SEAT_COLOR_PALETTE.length;
   }
   // Non-numeric id — deterministic hash into the palette
   let hash = 0;
   for (let i = 0; i < seatId.length; i++) hash = (hash * 31 + seatId.charCodeAt(i)) | 0;
-  return getSeatColorByIndex(Math.abs(hash));
+  return Math.abs(hash) % SEAT_COLOR_PALETTE.length;
+}
+
+/**
+ * Stable seat color from a seat id such as "seat-1".
+ * Falls back to a deterministic hash for non-numeric ids.
+ */
+export function getSeatColor(seatId: string | null | undefined): string {
+  return getSeatColorByIndex(getSeatColorIndex(seatId));
 }
 
 /**
