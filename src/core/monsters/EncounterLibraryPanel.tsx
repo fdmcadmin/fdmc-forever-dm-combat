@@ -401,7 +401,9 @@ export function EncounterLibraryPanel({
   // Local overrides for templates edited this session (before parent re-renders)
   const [monsterOverrides, setMonsterOverrides] = useState<Record<string, MainMonsterTemplate>>({});
   const [monsterImportResult, setMonsterImportResult] = useState<MonsterImportResult | null>(null);
-  const [dmMonsterCount, setDmMonsterCount] = useState(() => loadMonsterLibrary().length);
+  // DM's own monster library from localStorage — "My Library" (DM creations). Reactive: the
+  // monster picker + count derive from this, so created monsters persist and appear after reload.
+  const [dmLibrary, setDmLibrary] = useState<MainMonsterTemplate[]>(() => loadMonsterLibrary());
   const [editDraft, setEditDraft] = useState<EncounterDefinition | null>(null);
   // Equipment library snapshot — used to resolve each encounter's loot pool. Refreshed
   // when the editor opens so newly-created loot shows up without a panel reload.
@@ -418,19 +420,30 @@ export function EncounterLibraryPanel({
     } catch { return []; }
   });
 
-  // Merge base library with any in-session edits.
-  // Also include newly-created templates that aren't in the parent's library yet
-  // (parent re-renders asynchronously; overrides make them visible immediately).
+  // ── Monster library resolution — fixes (a) DM creations persisting and (b) campaign gating ──
+  // `monsterLibrary` prop is the bundled CAMPAIGN library (BROKEN_CHAIN_MONSTER_LIBRARY).
+  // "My Library" = the DM's own creations from localStorage (templateIds that AREN'T campaign) —
+  // always available. Campaign monsters are only surfaced when the module is unlocked, with any
+  // DM edits applied on top. In-session overrides give immediate visibility on create/edit.
+  const campaignIds = new Set(monsterLibrary.map(m => m.templateId));
+  const myMonsters = dmLibrary.filter(m => !campaignIds.has(m.templateId));
+  const campaignBase = unlocked
+    ? monsterLibrary.map(t => dmLibrary.find(m => m.templateId === t.templateId) ?? t)
+    : [];
+  const baseLibrary = [...myMonsters, ...campaignBase];
   const resolvedLibrary = [
-    ...monsterLibrary.map(t => monsterOverrides[t.templateId] ?? t),
+    ...baseLibrary.map(t => monsterOverrides[t.templateId] ?? t),
+    // newly-created templates not yet in baseLibrary — never leak a campaign template while locked
     ...Object.values(monsterOverrides).filter(
-      t => !monsterLibrary.some(m => m.templateId === t.templateId)
+      t => !baseLibrary.some(m => m.templateId === t.templateId) && (unlocked || !campaignIds.has(t.templateId)),
     ),
   ];
 
   function handleSaveMonsterTemplate(updated: MainMonsterTemplate) {
     // Save to DM localStorage library
     upsertMonsterTemplate(updated);
+    // Refresh My Library from localStorage so the created/edited monster persists across reloads.
+    setDmLibrary(loadMonsterLibrary());
     // Update local override so the encounter editor sees it immediately
     setMonsterOverrides(prev => ({ ...prev, [updated.templateId]: updated }));
     // Notify parent if it wants to refresh its static library copy
@@ -444,7 +457,7 @@ export function EncounterLibraryPanel({
   }
 
   function stageEncounter(encounter: EncounterDefinition) {
-    const instances = spawnEncounterInstances(encounter, monsterLibrary);
+    const instances = spawnEncounterInstances(encounter, resolvedLibrary);
     const entry: StagedEntry = {
       id: `staged-${Date.now().toString(36)}`,
       encounterId: encounter.id,
@@ -533,7 +546,7 @@ export function EncounterLibraryPanel({
   }
 
   function handleLoadEncounter(encounter: EncounterDefinition) {
-    const instances = spawnEncounterInstances(encounter, monsterLibrary);
+    const instances = spawnEncounterInstances(encounter, resolvedLibrary);
     onLoadEncounter(instances);
   }
 
@@ -799,10 +812,10 @@ export function EncounterLibraryPanel({
             </div>
           )}
           {/* Monster library export */}
-          {dmMonsterCount > 0 && (
+          {myMonsters.length > 0 && (
             <button type="button" onClick={() => exportMonsterLibrary()}
               style={{ fontSize: 11, padding: "3px 8px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}
-              title={`Export your ${dmMonsterCount} custom monster${dmMonsterCount === 1 ? "" : "s"} to JSON`}>
+              title={`Export your ${myMonsters.length} custom monster${myMonsters.length === 1 ? "" : "s"} to JSON`}>
               ↓ Monsters
             </button>
           )}
@@ -815,7 +828,7 @@ export function EncounterLibraryPanel({
               if (!file) return;
               void importMonsterLibrary(file).then(result => {
                 setMonsterImportResult(result);
-                if (result.ok) setDmMonsterCount(loadMonsterLibrary().length);
+                if (result.ok) setDmLibrary(loadMonsterLibrary());
               });
               e.target.value = "";
             }} />
@@ -984,7 +997,7 @@ export function EncounterLibraryPanel({
             return (
               <>
                 {/* P9.5 — party-size / level difficulty band check (homebrew guide) */}
-                <EncounterDifficultyPanel encounters={encounters} monsterLibrary={monsterLibrary} />
+                <EncounterDifficultyPanel encounters={encounters} monsterLibrary={resolvedLibrary} />
 
                 {/* My Library — always visible, no password needed */}
                 <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
