@@ -53,12 +53,25 @@ function contextMenuApi(): ContextMenuApiShape | null {
  * (Re)build the DM token context menus for the current seats. Idempotent — removes
  * any stale per-seat entries first, then recreates the live set.
  */
+/**
+ * Status flag in localStorage so the DM popover (a separate same-origin context from this
+ * persistent background page) can warn when the token context menu isn't usable.
+ */
+export const TOKEN_MENU_STATUS_KEY = "fdmc.tokenMenu.status.v1";
+function setMenuStatus(status: "ready" | "unavailable"): void {
+  try { window.localStorage.setItem(TOKEN_MENU_STATUS_KEY, status); } catch { /* localStorage unavailable */ }
+}
+
 export async function syncTokenContextMenus(tableId: string, seats: Record<string, FdmcSeat>): Promise<void> {
   const api = contextMenuApi();
   if (!api) {
     console.warn("[FDMC] token context menu: OBR.contextMenu API unavailable — menu not registered.");
+    setMenuStatus("unavailable");
     return;
   }
+  // OBR.contextMenu is present → entries are being registered (per-entry failures are logged
+  // individually below but are extremely rare once the API exists).
+  setMenuStatus("ready");
 
   // Surface create failures instead of swallowing them — a silent failure here is why the
   // menu can appear to be "missing". Logs once per failed entry; never throws.

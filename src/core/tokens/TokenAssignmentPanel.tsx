@@ -22,6 +22,7 @@ import {
 import type { FdmcSeat } from "../seats/seatTypes";
 import { getSeatColor, withAlpha, MONSTER_COLOR } from "../seats/seatColors";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
+import { TOKEN_MENU_STATUS_KEY } from "./tokenContextMenu";
 
 type TokenAssignmentPanelProps = {
   tableId: string;
@@ -54,6 +55,25 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
   const [allowPlayerMove, setAllowPlayerMove] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  // Token context-menu health. The persistent background page registers the right-click menu
+  // and writes a "ready"/"unavailable" status flag. If the menu can't register (OBR.contextMenu
+  // missing, or the background page never loaded — e.g. a bad manifest key), warn the DM here so
+  // they fall back to this panel for token assignment.
+  const [menuOk, setMenuOk] = useState(true);
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    const check = () => {
+      try { setMenuOk(window.localStorage.getItem(TOKEN_MENU_STATUS_KEY) === "ready"); }
+      catch { setMenuOk(true); }
+    };
+    check();
+    // The background page may register a moment after this panel mounts.
+    const t = setTimeout(check, 1500);
+    const onStorage = (e: StorageEvent) => { if (e.key === TOKEN_MENU_STATUS_KEY) check(); };
+    window.addEventListener("storage", onStorage);
+    return () => { clearTimeout(t); window.removeEventListener("storage", onStorage); };
+  }, []);
 
   const seatList = Object.values(seats).sort((a, b) => a.seatId.localeCompare(b.seatId));
 
@@ -195,6 +215,12 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
           🔒 Lock All
         </button>
       </div>
+
+      {!menuOk && (
+        <div style={{ margin: "8px 14px 0", padding: "6px 10px", background: "#2a1a12", border: "1px solid #5a4a1a", borderRadius: 5, fontSize: 11, color: "#e0c98a", lineHeight: 1.4, flexShrink: 0 }}>
+          ⚠ Token context menu unavailable — use Assign Token panel.
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
 

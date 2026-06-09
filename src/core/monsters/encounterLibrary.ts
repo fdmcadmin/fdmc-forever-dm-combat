@@ -159,6 +159,11 @@ export function restoreEncounter(id: string): void {
   upsertEncounter(encounter, encounter.owner ?? "dm");
 }
 
+/** Permanently remove an archived encounter from the unused list (cannot be restored). */
+export function permanentlyDeleteEncounter(id: string): void {
+  saveUnusedEncounters(loadUnusedEncounters().filter(e => e.id !== id));
+}
+
 // ─── Seed from bundled Act 2 data ────────────────────────────────────────────
 
 /**

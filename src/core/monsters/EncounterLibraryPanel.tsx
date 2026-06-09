@@ -7,12 +7,13 @@ import {
   upsertEncounter,
   deleteEncounter,
   restoreEncounter,
+  permanentlyDeleteEncounter,
   seedEncounterLibraryFromTemplates,
   spawnEncounterInstances,
   type EncounterDefinition,
   type EncounterMonsterEntry,
 } from "./encounterLibrary";
-import { upsertMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
+import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
@@ -426,7 +427,11 @@ export function EncounterLibraryPanel({
   // always available. Campaign monsters are only surfaced when the module is unlocked, with any
   // DM edits applied on top. In-session overrides give immediate visibility on create/edit.
   const campaignIds = new Set(monsterLibrary.map(m => m.templateId));
-  const myMonsters = dmLibrary.filter(m => !campaignIds.has(m.templateId));
+  // A monster is campaign content if its id is in the bundled library OR uses the reserved
+  // `broken-chain:` namespace (covers stale localStorage copies saved by older builds). DM
+  // creations use `custom-...` ids, so they are never caught here.
+  const isCampaignTemplate = (id: string) => campaignIds.has(id) || id.startsWith("broken-chain:");
+  const myMonsters = dmLibrary.filter(m => !isCampaignTemplate(m.templateId));
   const campaignBase = unlocked
     ? monsterLibrary.map(t => dmLibrary.find(m => m.templateId === t.templateId) ?? t)
     : [];
@@ -435,7 +440,7 @@ export function EncounterLibraryPanel({
     ...baseLibrary.map(t => monsterOverrides[t.templateId] ?? t),
     // newly-created templates not yet in baseLibrary — never leak a campaign template while locked
     ...Object.values(monsterOverrides).filter(
-      t => !baseLibrary.some(m => m.templateId === t.templateId) && (unlocked || !campaignIds.has(t.templateId)),
+      t => !baseLibrary.some(m => m.templateId === t.templateId) && (unlocked || !isCampaignTemplate(t.templateId)),
     ),
   ];
 
@@ -1012,6 +1017,35 @@ export function EncounterLibraryPanel({
                   </p>
                 )}
 
+                {/* My Monsters — the DM's own creatures (so they show outside the encounter picker). */}
+                {myMonsters.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4f9dff", textTransform: "uppercase", letterSpacing: 1 }}>
+                      My Monsters · {myMonsters.length}
+                    </p>
+                    {myMonsters.map(m => (
+                      <div key={m.templateId} style={{ background: "#111", border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 10px", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <span style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{m.name}</span>
+                          <span style={{ fontSize: 10, color: "#666", marginLeft: 6 }}>{m.stats.kind} · {m.stats.maxHp} HP · AC {m.stats.ac}</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                          <button type="button" onClick={() => setEditingMonsterTemplateId(m.templateId)}
+                            title="Edit this monster"
+                            style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+                            ✎ Edit
+                          </button>
+                          <button type="button" onClick={() => { deleteMonsterTemplate(m.templateId); setDmLibrary(loadMonsterLibrary()); }}
+                            title="Delete this monster"
+                            style={{ fontSize: 11, padding: "2px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Broken Chain campaign library — click-to-open drawer; the lock lives here */}
                 <button type="button" onClick={() => setBrokenChainOpen(o => !o)}
                   style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", marginTop: 16, marginBottom: 6,
@@ -1053,13 +1087,23 @@ export function EncounterLibraryPanel({
                     {enc.entries.length === 0 ? "Empty" : enc.entries.map(e => e.templateId).join(", ")}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { restoreEncounter(enc.id); refreshLibrary(); }}
-                  style={{ fontSize: 11, padding: "2px 10px", background: "#1a3a1a", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}
-                >
-                  Restore
-                </button>
+                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => { restoreEncounter(enc.id); refreshLibrary(); }}
+                    style={{ fontSize: 11, padding: "2px 10px", background: "#1a3a1a", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}
+                  >
+                    Restore
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { permanentlyDeleteEncounter(enc.id); refreshLibrary(); }}
+                    title="Delete permanently — cannot be restored"
+                    style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}
+                  >
+                    ✕ Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
