@@ -17,6 +17,11 @@ function appendParts(...parts: Array<string | undefined>) {
   return parts.filter(Boolean).join("\n");
 }
 
+const act1ThornfangPackLabel = "Act 1 — Thornfang Pack";
+const act1MosshideLabel = "Act 1 — Mosshide Owlbear";
+const act1ReaverLabel = "Act 1 — Greenwood Raider Band";
+const act1SpiderNestLabel = "Act 1 — Threadbare Spider Nest";
+const act1SwampLabel = "Act 1 — Swamp Ambush";
 const act1BossLabel = "Act 1 Boss";
 const act2S1E1Label = "Act 2 S1 E1 - Hollow Pack";
 const act2S1E2Label = "Act 2 S1 E2 - Frozen Hollow";
@@ -24,6 +29,179 @@ const act2S2E1Label = "Act 2 S2 E1 - Corrupted Hunters";
 const act2S2E2Label = "Act 2 S2 E2 - Last Directive";
 
 export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
+  // ── Act 1 · Wardenwood — Thornfang Pack ──────────────────────────────────────
+  {
+    templateId: "broken-chain:act1:thornfang-wolf:v1",
+    name: "Thornfang Wolf",
+    encounterId: "act1-thornfang-pack",
+    encounterLabel: act1ThornfangPackLabel,
+    stats: { kind: "monster", ac: 13, maxHp: 18, speed: "50 ft" },
+    abilities: [
+      formatAbility("STR", 13, 1),
+      formatAbility("DEX", 15, 2),
+      formatAbility("CON", 12, 1),
+      formatAbility("INT", 3, -4),
+      formatAbility("WIS", 12, 1),
+      formatAbility("CHA", 6, -2),
+    ],
+    traits: [
+      { name: "Pack Tactics", kind: "trait", text: "Advantage on attack rolls against a creature if at least one ally is within 5 feet of it and not incapacitated." },
+      { name: "Keen Hearing and Smell", kind: "trait", text: "Advantage on Wisdom (Perception) checks that rely on hearing or smell." },
+      { name: "Forest-Strider", kind: "trait", text: "Thickets, briar, and undergrowth are not difficult terrain for the wolf, and it leaves no tracks in the woods." },
+    ],
+    actions: [
+      { name: "Savage Bite", kind: "attack", roll: "1d20 + 4", damage: "2d4 + 2", save: "STR DC 12", text: "+4 to hit, reach 5 ft., one target. Hit: 7 (2d4 + 2) piercing. DC 12 Strength save or knocked prone." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: ["Wardenwood wolf minion. Run in packs of 3–5 led by a Thornfang Packlord.", "Skills: Perception +3, Stealth +4.", "Senses: Darkvision 60 ft., Passive Perception 13."],
+    visibility: { defaultState: "hp-bar", hiddenName: "Patient Wolf", revealedName: "Thornfang Wolf" },
+  },
+  {
+    templateId: "broken-chain:act1:thornfang-packlord:v1",
+    name: "Thornfang Packlord",
+    encounterId: "act1-thornfang-pack",
+    encounterLabel: act1ThornfangPackLabel,
+    stats: { kind: "monster", ac: 14, maxHp: 39, speed: "50 ft" },
+    abilities: [
+      formatAbility("STR", 17, 3),
+      formatAbility("DEX", 15, 2),
+      formatAbility("CON", 15, 2),
+      formatAbility("INT", 3, -4),
+      formatAbility("WIS", 12, 1),
+      formatAbility("CHA", 7, -2),
+    ],
+    traits: [
+      { name: "Pack Tactics", kind: "trait", text: "Advantage on attack rolls against a creature if at least one ally is within 5 feet of it and not incapacitated." },
+      { name: "Keen Hearing and Smell", kind: "trait", text: "Advantage on Wisdom (Perception) checks that rely on hearing or smell." },
+      { name: "Forest-Strider", kind: "trait", text: "Thickets, briar, and undergrowth are not difficult terrain, and the Packlord leaves no tracks in the woods." },
+    ],
+    actions: [
+      { name: "Rending Bite", kind: "attack", roll: "1d20 + 5", damage: "2d6 + 3", save: "STR DC 13", text: "+5 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing. DC 13 Strength save or knocked prone." },
+      { name: "Hunting Howl", kind: "action", text: "Bonus Action. Each Thornfang Wolf within 30 feet that can hear the Packlord may immediately move up to its speed toward an enemy without provoking opportunity attacks." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: ["Wardenwood dire-wolf alpha. Hunting Howl repositions the pack.", "Skills: Perception +3, Stealth +4.", "Senses: Darkvision 60 ft., Passive Perception 13."],
+    visibility: { defaultState: "hp-bar", hiddenName: "Great Wolf", revealedName: "Thornfang Packlord" },
+  },
+  // ── Act 1 · Wardenwood — Mosshide Owlbear ────────────────────────────────────
+  {
+    templateId: "broken-chain:act1:mosshide-owlbear:v1",
+    name: "Mosshide Owlbear",
+    encounterId: "act1-mosshide-owlbear",
+    encounterLabel: act1MosshideLabel,
+    stats: { kind: "monster", ac: 13, maxHp: 59, speed: "40 ft" },
+    abilities: [
+      formatAbility("STR", 20, 5),
+      formatAbility("DEX", 12, 1),
+      formatAbility("CON", 17, 3),
+      formatAbility("INT", 3, -4),
+      formatAbility("WIS", 12, 1),
+      formatAbility("CHA", 7, -2),
+    ],
+    traits: [
+      { name: "Keen Sight and Smell", kind: "trait", text: "Advantage on Wisdom (Perception) checks that rely on sight or smell." },
+      { name: "Thornhide", kind: "trait", text: "Briar and broken bark are matted into the owlbear's pelt. A creature that hits it with a melee attack while within 5 feet takes 2 (1d4) piercing damage." },
+    ],
+    actions: [
+      { name: "Multiattack", kind: "action", attackCount: 2, text: "The owlbear makes one Beak attack and one Raking Claws attack." },
+      { name: "Beak", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 5", text: "+7 to hit, reach 5 ft., one creature. Hit: 10 (1d10 + 5) piercing." },
+      { name: "Raking Claws", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 5", text: "+7 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: ["Wardenwood forest apex predator. Challenge 3.", "Skills: Perception +5.", "Senses: Darkvision 60 ft., Passive Perception 15."],
+    visibility: { defaultState: "hp-bar", hiddenName: "Shape in the Trees", revealedName: "Mosshide Owlbear" },
+  },
+  // ── Act 1 · Wardenwood — Greenwood Raider Band ───────────────────────────────
+  {
+    templateId: "broken-chain:act1:greenwood-reaver:v1",
+    name: "Greenwood Reaver",
+    encounterId: "act1-greenwood-reaver",
+    encounterLabel: act1ReaverLabel,
+    stats: { kind: "monster", ac: 15, maxHp: 65, speed: "30 ft" },
+    abilities: [
+      formatAbility("STR", 15, 2),
+      formatAbility("DEX", 16, 3),
+      formatAbility("CON", 14, 2),
+      formatAbility("INT", 11, 0),
+      formatAbility("WIS", 11, 0),
+      formatAbility("CHA", 14, 2),
+    ],
+    traits: [
+      { name: "Woodwise", kind: "trait", text: "The Reaver ignores difficult terrain from thickets and undergrowth, and has advantage on Dexterity (Stealth) checks made to hide in forest cover." },
+    ],
+    actions: [
+      { name: "Multiattack", kind: "action", attackCount: 3, text: "The Reaver makes two Notched Scimitar attacks and one Dagger attack (melee or thrown)." },
+      { name: "Notched Scimitar", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
+      { name: "Dagger", kind: "attack", roll: "1d20 + 5", damage: "1d4 + 3", text: "+5 to hit, melee or thrown 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing." },
+      { name: "Cruel Command", kind: "action", text: "Bonus Action. One ally within 30 feet that can hear the Reaver can use its reaction to make one weapon attack." },
+    ],
+    reactions: [
+      { name: "Parry", kind: "reaction", text: "The Reaver adds 2 to its AC against one melee attack that would hit it. Must see attacker and be wielding a melee weapon." },
+    ],
+    resources: [],
+    notes: ["Wardenwood forest-road raider captain. Challenge 2.", "Saving Throws: STR +4, DEX +5, WIS +2.", "Skills: Athletics +4, Deception +4, Stealth +5.", "Senses: Passive Perception 10."],
+    visibility: { defaultState: "hp-bar", hiddenName: "Raider Captain", revealedName: "Greenwood Reaver" },
+  },
+  // ── Act 1 · Wardenwood — Threadbare Spider Nest (Far Realm seed) ──────────────
+  {
+    templateId: "broken-chain:act1:threadbare-spider:v1",
+    name: "Threadbare Spider",
+    encounterId: "act1-threadbare-spider-nest",
+    encounterLabel: act1SpiderNestLabel,
+    stats: { kind: "monster", ac: 13, maxHp: 22, speed: "30 ft., climb 30 ft." },
+    abilities: [
+      formatAbility("STR", 12, 1),
+      formatAbility("DEX", 16, 3),
+      formatAbility("CON", 12, 1),
+      formatAbility("INT", 3, -4),
+      formatAbility("WIS", 11, 0),
+      formatAbility("CHA", 4, -3),
+    ],
+    traits: [
+      { name: "Wrong-Spun Web", kind: "trait", text: "The nest's webbing is difficult terrain. A creature entering a webbed square for the first time on a turn must succeed on a DC 11 Dexterity save or have its speed reduced to 0 until the start of its next turn." },
+      { name: "Half-Step Skitter", kind: "trait", text: "The spider moves a beat out of sync. The first time each round a creature misses it with a melee attack, the spider may move 5 feet without provoking opportunity attacks." },
+      { name: "Far Realm Fingerprint", kind: "trait", text: "The spider is an aberration, not a beast — effects that affect only beasts do not affect it. The first sign of the same wrongness that produced the Mirage Stalker." },
+    ],
+    actions: [
+      { name: "Bite", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", save: "CON DC 11", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) piercing. DC 11 Constitution save or take 2 (1d4) poison at the start of its next turn." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: ["Campaign-original — NOT an SRD reskin. Act 1 Opening Encounter 1, party level 1. Run 3–4 in the nest.", "Skills: Stealth +5.", "Senses: Darkvision 60 ft., Passive Perception 10."],
+    visibility: { defaultState: "hp-bar", hiddenName: "Spider", revealedName: "Threadbare Spider" },
+  },
+  // ── Act 1 · Wardenwood — Swamp Ambush ────────────────────────────────────────
+  {
+    templateId: "broken-chain:act1:swamp-ambusher:v1",
+    name: "Swamp Ambusher",
+    encounterId: "act1-swamp-ambush",
+    encounterLabel: act1SwampLabel,
+    stats: { kind: "monster", ac: 13, maxHp: 26, speed: "30 ft." },
+    abilities: [
+      formatAbility("STR", 12, 1),
+      formatAbility("DEX", 14, 2),
+      formatAbility("CON", 14, 2),
+      formatAbility("INT", 10, 0),
+      formatAbility("WIS", 11, 0),
+      formatAbility("CHA", 10, 0),
+    ],
+    traits: [
+      { name: "Marsh-Footed", kind: "trait", text: "The Ambusher ignores difficult terrain created by mud, water, or reeds. The party does not — the bandits flow through the swamp while the party slogs." },
+      { name: "Ambush Instinct", kind: "trait", text: "In the first round of combat, the Ambusher has advantage on attack rolls against any creature that hasn't taken a turn yet, and deals an extra 3 (1d6) damage on a hit." },
+    ],
+    actions: [
+      { name: "Reed Spear", kind: "attack", roll: "1d20 + 3", damage: "1d8 + 2", text: "Melee or thrown. +3 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 6 (1d8 + 2) piercing." },
+      { name: "Net", kind: "attack", roll: "1d20 + 4", text: "Thrown 5/15 ft., one Large or smaller creature. On a hit, the target is Restrained until it frees itself (DC 10 STR check as an action) or the net is destroyed (AC 10, 5 slashing). Only one Ambusher carries a net." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: ["Campaign-original — NOT an SRD reskin. Act 1 Opening Encounter 2. Grounded human threat, no supernatural element. Run 4–5 with terrain.", "Skills: Stealth +4, Survival +2.", "Senses: Passive Perception 10."],
+    visibility: { defaultState: "hp-bar", hiddenName: "Bandit", revealedName: "Swamp Ambusher" },
+  },
+  // ── Act 1 · Boss ──────────────────────────────────────────────────────────────
   {
     templateId: "broken-chain:boss:mirage-stalker:v1",
     name: "Mirage Stalker",

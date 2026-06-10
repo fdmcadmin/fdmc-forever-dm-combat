@@ -52,7 +52,7 @@ const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-broken-chain";
+const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act1-wardenwood";
 
 // ─── Storage operations ───────────────────────────────────────────────────────
 
@@ -167,10 +167,37 @@ export function permanentlyDeleteEncounter(id: string): void {
 // ─── Seed from bundled Act 2 data ────────────────────────────────────────────
 
 /**
+ * One-time repair for browsers polluted by earlier builds.
+ *
+ * A previous seed merge copied DM-owned encounters into the CAMPAIGN storage key.
+ * That made a DM "New Encounter" surface in BOTH "My Library" and the unlocked
+ * "Broken Chain Library" with duplicate React keys. Strip any DM-owned entries
+ * (owner "dm", or ids like "dm-…" / "custom-…") back out of the campaign key.
+ * No-op once the key is clean, so it's safe to call on every load.
+ */
+function cleanCampaignLibraryPollution(): void {
+  try {
+    const raw = window.localStorage.getItem(CAMPAIGN_LIBRARY_KEY);
+    if (!raw) return;
+    const items = JSON.parse(raw) as EncounterDefinition[];
+    const cleaned = items.filter(
+      e => e.owner !== "dm" && !e.id.startsWith("dm-") && !e.id.startsWith("custom-")
+    );
+    if (cleaned.length !== items.length) {
+      saveEncounterLibrary(cleaned, "campaign");
+    }
+  } catch { /* ok */ }
+}
+
+/**
  * Seeds the encounter library from the bundled monster library on first boot.
  * Groups templates by encounterId.
  */
 export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate[]): EncounterDefinition[] {
+  // Repair already-polluted browsers BEFORE the early-return path below, otherwise
+  // a previously polluted campaign key would keep duplicating DM encounters.
+  cleanCampaignLibraryPollution();
+
   const stored = window.localStorage.getItem(ENCOUNTER_LIBRARY_SEED_KEY);
   const existing = loadEncounterLibrary();
 
@@ -204,10 +231,12 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
     });
   }
 
-  // Merge with existing (don't overwrite user edits)
+  // Merge with existing CAMPAIGN encounters only (preserve user edits to campaign
+  // rows). DM-owned encounters live in their own key — copying them in here writes
+  // dm-* ids into the campaign key, which duplicates them across both libraries.
   const merged = [...seeded];
-  for (const existing of loadEncounterLibrary()) {
-    if (!merged.find(e => e.id === existing.id)) merged.push(existing);
+  for (const existingCampaign of loadEncounterLibrary("campaign")) {
+    if (!merged.find(e => e.id === existingCampaign.id)) merged.push(existingCampaign);
   }
 
   saveEncounterLibrary(merged, "campaign");
