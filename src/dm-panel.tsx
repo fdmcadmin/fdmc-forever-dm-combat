@@ -140,6 +140,13 @@ function DmPanelApp() {
     ),
     [actorLibrary, actorOverrides]
   );
+  // Candidate owners for the Companion "Owner" dropdown in the actor editor.
+  const ownerOptions = useMemo(
+    () => Object.values(actorLibrary)
+      .filter(a => a.kind === "player")
+      .map(a => ({ id: a.id, name: a.name })),
+    [actorLibrary]
+  );
 
   // ── Room live state ────────────────────────────────────────────────────────
   const [roomLiveState, setRoomLiveState] = useState<FdmcRoomLiveState>(() => createEmptyRoomLiveState());
@@ -508,12 +515,12 @@ function DmPanelApp() {
         {/* ── Edit Actors ── */}
         {panelId === "editActors" && (
           editingActorId === "__new__" ? (
-            <ActorEditor mode="create-new" onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
+            <ActorEditor mode="create-new" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
           ) : editingActorId ? (
             (() => {
               const actor = actors.find(a => a.id === editingActorId);
               if (!actor) return <p style={{ padding: 14 }}>Actor not found.</p>;
-              return <ActorEditor actor={actor} mode="edit-current" onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
+              return <ActorEditor actor={actor} mode="edit-current" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
             })()
           ) : (
             <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -887,12 +894,12 @@ function DmPanelApp() {
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {libraryTab === "actors" && (
                 editingActorId === "__new__" ? (
-                  <ActorEditor mode="create-new" onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
+                  <ActorEditor mode="create-new" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
                 ) : editingActorId ? (
                   (() => {
                     const actor = actors.find(a => a.id === editingActorId);
                     if (!actor) return <p style={{ padding: 14 }}>Actor not found.</p>;
-                    return <ActorEditor actor={actor} mode="edit-current" onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
+                    return <ActorEditor actor={actor} mode="edit-current" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
                   })()
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>

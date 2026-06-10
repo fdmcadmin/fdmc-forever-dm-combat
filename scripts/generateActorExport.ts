@@ -16,13 +16,15 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { lightsStone } from "../src/private/lights_stone";
 import { lyrielle } from "../src/private/lyrielle";
-import { saigon } from "../src/private/saigon";
-import { abel } from "../src/private/abel";
+import { king } from "../src/private/king";
+import { ash } from "../src/private/ash";
+import { ignatiusVoid } from "../src/private/ignatius_void";
+import { ripsnarl } from "../src/private/ripsnarl";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const actors = [lightsStone, lyrielle, saigon, abel];
+const actors = [lightsStone, lyrielle, king, ash, ignatiusVoid, ripsnarl];
 
 const exportData = {
   schema: "fdmc.actor-library-export.v1",

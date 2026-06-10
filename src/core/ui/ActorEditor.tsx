@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
-import type { Actor, AbilityId, AbilityScores } from "../types/actor";
+import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { TabId, TabActionMap } from "../types/tabs";
 import { ActorEditorActionTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
@@ -14,6 +14,8 @@ export type ActorEditorMode = "edit-current" | "create-new" | "duplicate";
 
 export type ActorEditorSaveMode = "current" | "current-and-library" | "duplicate";
 
+export type OwnerOption = { id: string; name: string };
+
 export type ActorEditorProps = {
   actor?: Actor;  // optional — if omitted, editor starts blank (create-new mode)
   mode: ActorEditorMode;
@@ -22,6 +24,8 @@ export type ActorEditorProps = {
   /** When true: replaces all save buttons with a single "Submit for DM Approval" button.
    *  Used by the player-facing level-up flow. The DM receives the full proposed actor. */
   proposeMode?: boolean;
+  /** Candidate owners (player actors) for the Companion "Owner" dropdown. */
+  ownerOptions?: OwnerOption[];
 };
 
 // Blank actor used as the base for create-new mode
@@ -104,6 +108,10 @@ const ABILITY_LABELS: Record<AbilityId, string> = { str: "STR", dex: "DEX", con:
 // ─── Profile form ─────────────────────────────────────────────────────────────
 
 type ProfileDraft = {
+  /** player / companion / npc — drives combat-tracker grouping. */
+  kind: ActorKind;
+  /** When kind === "companion": the owner PC's actor id (combat tracker groups under it). */
+  ownerId: string;
   name: string;
   subtitle: string;
   race: string;
@@ -123,6 +131,8 @@ type ProfileDraft = {
 
 function actorToProfileDraft(actor: Actor): ProfileDraft {
   return {
+    kind: actor.kind,
+    ownerId: actor.moduleData?.ownerId ?? "",
     name: actor.name,
     subtitle: actor.subtitle,
     race: actor.race ?? "",
@@ -164,6 +174,7 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
   }
 
   return {
+    kind: draft.kind,
     name: draft.name.trim() || "Unnamed Actor",
     subtitle: draft.subtitle.trim(),
     race: draft.race.trim() || undefined,
@@ -190,7 +201,13 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
 
 // ─── Profile tab ──────────────────────────────────────────────────────────────
 
-function ProfileTab({ draft, onChange }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void }) {
+const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
+  { value: "player", label: "Player Character" },
+  { value: "companion", label: "Companion (owned by a PC)" },
+  { value: "npc", label: "NPC / Ally" },
+];
+
+function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[] }) {
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     onChange({ ...draft, [key]: value });
   }
@@ -204,6 +221,28 @@ function ProfileTab({ draft, onChange }: { draft: ProfileDraft; onChange: (d: Pr
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Character type + companion ownership */}
+      <div style={{ display: "grid", gridTemplateColumns: draft.kind === "companion" ? "1fr 1fr" : "1fr", gap: 8, padding: "8px 10px", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6 }}>
+        <label style={labelStyle}>
+          Character Type
+          <select value={draft.kind} onChange={e => set("kind", e.target.value as ActorKind)} style={{ ...inputStyle, marginTop: 2 }}>
+            {ACTOR_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </label>
+        {draft.kind === "companion" && (
+          <label style={labelStyle}>
+            Owner (acts on their turn)
+            <select value={draft.ownerId} onChange={e => set("ownerId", e.target.value)} style={{ ...inputStyle, marginTop: 2 }}>
+              <option value="">— Choose owner —</option>
+              {ownerOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+          </label>
+        )}
+        {draft.kind === "companion" && !draft.ownerId && (
+          <span style={{ gridColumn: "span 2", fontSize: 11, color: "#e9a66a" }}>Pick an owner so this companion is grouped under that PC in the combat tracker.</span>
+        )}
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={labelStyle}>Name <input type="text" value={draft.name} onChange={e => set("name", e.target.value)} style={inputStyle} /></label>
         <label style={labelStyle}>Subtitle <input type="text" value={draft.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></label>
@@ -272,7 +311,7 @@ function ProfileTab({ draft, onChange }: { draft: ProfileDraft; onChange: (d: Pr
 
 // ─── Main editor ──────────────────────────────────────────────────────────────
 
-export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false }: ActorEditorProps) {
+export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, ownerOptions = [] }: ActorEditorProps) {
   const actor = actorProp ?? createBlankActor();
   const [activeTab, setActiveTab] = useState<EditorTab>("profile");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => actorToProfileDraft(actor));
@@ -288,13 +327,28 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
 
   function buildEditedActor(newId?: string): Actor {
     const profilePatch = profileDraftToActorPatch(profileDraft);
-    return {
+    const edited: Actor = {
       ...actor,
       ...profilePatch,
       id: newId ?? actor.id,
       tabs: tabsDraft,
       stats: profilePatch.stats ?? actor.stats,
     };
+    // Companion ownership → moduleData.ownerId. The combat tracker groups any
+    // kind:"companion" actor under the PC whose id matches moduleData.ownerId.
+    if (profileDraft.kind === "companion") {
+      edited.moduleData = {
+        act: 1,
+        theme: "the-broken-chain",
+        statBlockStatus: "confirmed",
+        ...(actor.moduleData ?? {}),
+        ownerId: profileDraft.ownerId.trim() || undefined,
+      };
+    } else if (actor.moduleData?.ownerId) {
+      // Switched away from companion — drop ownerId, keep any other module data.
+      edited.moduleData = { ...actor.moduleData, ownerId: undefined };
+    }
+    return edited;
   }
 
   // Save wrapper: once a character is truly saved, clear its pending draft.
@@ -448,7 +502,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       {/* Tab content */}
       <div style={{ flex: 1, overflow: "auto", padding: 14 }}>
         {activeTab === "profile" && (
-          <ProfileTab draft={profileDraft} onChange={setProfileDraft} />
+          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} />
         )}
         {activeTab === "actions" && (
           <ActorEditorActionTab tabId="main" actions={tabsDraft.main ?? []} onChange={handleTabActions("main")} />

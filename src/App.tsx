@@ -1198,10 +1198,21 @@ export default function App() {
     });
   }, [isDmMode]);
 
+  // Companions act on their owner's turn — reset their action economy alongside
+  // the owner so they get a fresh Action/Bonus/Reaction when the owner's turn starts.
+  function resetCompanionTurns(ownerId: string) {
+    for (const companion of actors.filter(
+      a => a.kind === "companion" && (a.moduleData as { ownerId?: string } | undefined)?.ownerId === ownerId
+    )) {
+      resetActorTurn(companion.id);
+    }
+  }
+
   function handleStartCombat() {
     const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
     if (sorted.length === 0) return;
     const firstId = sorted[0].id;
+    resetCompanionTurns(firstId);
     // Read fresh from OBR to ensure seat bindings from dm-panel are captured
     void (async () => {
       const freshState = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
@@ -1252,7 +1263,10 @@ export default function App() {
     if (nextCombatant.kind === "actor") {
       // Actor's turn starts — reset their economy now
       const nextActor = actors.find(a => a.id === nextCombatant.id);
-      if (nextActor) resetActorTurn(nextActor.id);
+      if (nextActor) {
+        resetActorTurn(nextActor.id);
+        resetCompanionTurns(nextActor.id); // companions share the owner's turn
+      }
       setTurnResetVersion(v => v + 1);
       setSelectedActorId(nextCombatant.id);
       setActiveMonsterInstanceId("");
