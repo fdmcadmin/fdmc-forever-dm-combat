@@ -40,6 +40,9 @@ import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
+import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
+
+const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
 
 // ─── Economy broadcast ────────────────────────────────────────────────────────
 
@@ -473,6 +476,11 @@ export function MonsterActorCard({
     actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0,
   });
   const [committedRoll, setCommittedRoll] = useState<CommittedRoll | null>(null);
+  // adv/normal/disadv applies to every d20 the card sends — action attacks AND ability checks
+  const [rollMode, setRollMode] = useState<RollMode>("normal");
+  // one-off additive bonus die (e.g. Bless/Guidance) that rides the NEXT d20 roll, then clears
+  const [pendingAdditive, setPendingAdditive] = useState<string | null>(null);
+  const [additiveOpen, setAdditiveOpen] = useState(false);
   const [usedActionIds, setUsedActionIds] = useState<Set<string>>(() => new Set());
   // rechargedActionIds — actions with recharge that have been USED this turn and not yet recharged
   const [dischargedActionIds, setDischargedActionIds] = useState<Set<string>>(() => new Set());
@@ -562,7 +570,13 @@ export function MonsterActorCard({
   // ── Action commit flow ──────────────────────────────────────────────────────
   async function handleUseAction(action: MonsterReaderAction) {
     const actionId = slugify(action.name);
-    const attackFormula = normalizeFormula(action.roll);
+    // adv/disadv rewrites the d20 portion of the attack roll only — damage is untouched
+    let attackFormula = applyAdvantage(normalizeFormula(action.roll), rollMode);
+    // a pending additive die rides this roll only when there's an actual d20 attack to roll
+    if (attackFormula && pendingAdditive) {
+      attackFormula = appendBonusDie(attackFormula, pendingAdditive);
+      setPendingAdditive(null);
+    }
     const damageFormula = normalizeFormula(action.damage);
     const requestId = makeRequestId(monster.instanceId, actionId, "attack");
     const roll: CommittedRoll = {
@@ -663,6 +677,52 @@ export function MonsterActorCard({
     }
     addLog(`${publicName} roll cleared.`);
     setCommittedRoll(null);
+  }
+
+  // ── Ability check / save roll ────────────────────────────────────────────────
+  // Rolls a raw 1d20 + ability modifier (with the current adv/disadv mode) and routes
+  // it through the same Dice+ bridge as actions. Result lands via the dice listener.
+  const abilityChecks = useMemo(() => {
+    const scores = (monster as { abilityScores?: { label: string; value: string }[] }).abilityScores ?? [];
+    return scores.map((s) => ({ label: s.label, modifier: parseAbilityModifier(s.value) }));
+  }, [monster]);
+
+  const checkRoll = committedRoll && committedRoll.actionId.startsWith("check-") ? committedRoll : null;
+
+  async function handleAbilityCheck(label: string, modifier: number) {
+    const actionId = `check-${label.toLowerCase()}`;
+    const checkName = `${label} Check`;
+    let formula = applyAdvantage(abilityCheckFormula(modifier), rollMode);
+    if (pendingAdditive) {
+      formula = appendBonusDie(formula, pendingAdditive);
+      setPendingAdditive(null);
+    }
+    const requestId = makeRequestId(monster.instanceId, actionId, "attack");
+    setCommittedRoll({
+      actionName: checkName,
+      actionId,
+      attackFormula: formula,
+      requestId,
+      critThreshold: 20,
+      result: "",
+      phase: "pending",
+    });
+    addLog(`${publicName} rolls a ${label} check${rollMode === "normal" ? "" : ` (${rollMode === "adv" ? "advantage" : "disadvantage"})`}.`);
+    if (onSendDicePlusRequest) {
+      const sent = await onSendDicePlusRequest({
+        protocol: "forever-dm-combat.roll.request.v1",
+        requestId,
+        source: "Forever DM Combat",
+        actorId: monster.instanceId,
+        actorName: publicName,
+        actionId,
+        actionName: checkName,
+        formula,
+        outcomeMode: "ability-check",
+        sentAt: new Date().toISOString(),
+      });
+      if (!sent) addLog("Dice+ unavailable — enter result manually.");
+    }
   }
 
   // ── Player card ─────────────────────────────────────────────────────────────
@@ -807,6 +867,32 @@ export function MonsterActorCard({
 
       <div style={{ padding: "0 12px 12px" }}>
 
+        {/* Additive bonus — flags a one-off +1dX onto the next d20 roll (attack or check) */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0", flexWrap: "wrap" }}>
+          <button type="button" onClick={() => setAdditiveOpen(o => !o)}
+            title="Flag a one-off bonus die onto the next d20 roll"
+            style={{ fontSize: 9, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
+              background: additiveOpen ? withAlpha("#7b68ee", 0.18) : "transparent",
+              border: `1px solid ${additiveOpen ? "#7b68ee" : "#2a2a2a"}`, color: additiveOpen ? "#9d8cff" : "#666" }}>
+            + Additive
+          </button>
+          {additiveOpen && ADDITIVE_DICE.map((die) => (
+            <button key={die} type="button" onClick={() => { setPendingAdditive(die); setAdditiveOpen(false); }}
+              style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#9d8cff" }}>
+              +1{die}
+            </button>
+          ))}
+          {pendingAdditive && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#7b68ee", 0.15), border: "1px solid #7b68ee55", color: "#9d8cff" }}>
+              next roll +1{pendingAdditive}
+              <button type="button" onClick={() => setPendingAdditive(null)} title="Clear additive"
+                style={{ background: "transparent", border: "none", color: "#9d8cff", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
+                ✕
+              </button>
+            </span>
+          )}
+        </div>
+
         {/* 3. Economy row — clickable dot toggles */}
         <div style={{ display: "flex", gap: 12, marginBottom: 8, padding: "5px 0", borderBottom: "1px solid #1a1a2e" }}>
           <EconomyDot label="Action"   used={economy.actionUsed}   onClick={() => { const next = { ...economy, actionUsed: !economy.actionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
@@ -820,6 +906,72 @@ export function MonsterActorCard({
             style={{ marginLeft: "auto", fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#444", cursor: "pointer" }}>
             Reset Turn
           </button>
+        </div>
+
+        {/* 3b. Ability checks & saves + advantage/disadvantage mode */}
+        <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: "1px solid #1a1a2e" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Checks &amp; Saves</span>
+            <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
+              {([
+                { id: "disadv", label: "Disadv", color: "#ff5840" },
+                { id: "normal", label: "Normal", color: "#888" },
+                { id: "adv", label: "Adv", color: "#4bb469" },
+              ] as { id: RollMode; label: string; color: string }[]).map((m) => {
+                const active = rollMode === m.id;
+                return (
+                  <button key={m.id} type="button" onClick={() => setRollMode(m.id)}
+                    title={`Roll mode: ${m.label}`}
+                    style={{
+                      fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer",
+                      background: active ? withAlpha(m.color, 0.18) : "transparent",
+                      border: `1px solid ${active ? m.color : "#2a2a2a"}`,
+                      color: active ? m.color : "#555",
+                      fontWeight: active ? 600 : 400,
+                    }}>
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {abilityChecks.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {abilityChecks.map((ab) => (
+                <button key={ab.label} type="button" onClick={() => handleAbilityCheck(ab.label, ab.modifier)}
+                  title={`Roll ${ab.label} check / save${rollMode === "normal" ? "" : ` with ${rollMode === "adv" ? "advantage" : "disadvantage"}`}`}
+                  style={{
+                    flex: "1 1 30%", minWidth: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+                    padding: "4px 2px", background: "#111", border: "1px solid #2a2a3e", borderRadius: 4, cursor: "pointer",
+                  }}>
+                  <span style={{ fontSize: 10, color: "#999", fontWeight: 600, letterSpacing: 0.5 }}>{ab.label}</span>
+                  <span style={{ fontSize: 11, color: "#7b68ee", fontVariantNumeric: "tabular-nums" }}>
+                    {ab.modifier >= 0 ? `+${ab.modifier}` : ab.modifier}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {checkRoll && (
+            <div style={{ marginTop: 6, padding: "5px 8px", background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, color: "#888" }}>{checkRoll.actionName}</span>
+              <strong style={{ fontSize: 12, color: checkRoll.phase === "pending" ? "#666" : "#7b68ee" }}>
+                {checkRoll.phase === "pending" ? "Rolling…" : (checkRoll.result || "—")}
+              </strong>
+              {checkRoll.phase !== "pending" || !onSendDicePlusRequest ? (
+                <input
+                  type="text" placeholder="manual result"
+                  onKeyDown={(e) => { if (e.key === "Enter") { handleRollResult((e.target as HTMLInputElement).value); } }}
+                  onBlur={(e) => { if (e.target.value.trim()) handleRollResult(e.target.value); }}
+                  style={{ width: 90, padding: "1px 4px", fontSize: 10, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#aaa" }}
+                />
+              ) : null}
+              <button type="button" onClick={() => { if (checkRoll.result) addLog(`${publicName} ${checkRoll.actionName}: ${checkRoll.result}.`); setCommittedRoll(null); }}
+                style={{ marginLeft: "auto", fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#666", cursor: "pointer" }}>
+                Clear
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 4. Actions — true action-cost only */}

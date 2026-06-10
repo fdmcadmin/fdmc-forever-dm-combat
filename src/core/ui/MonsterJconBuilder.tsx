@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { MonsterAbilityId } from "../types/monsterTypes";
+import { FormulaInput } from "./FormulaInput";
 
 type MonsterLevelBandId = "low" | "mid" | "high" | "extreme" | "final";
 type MonsterBuildMode = "guided" | "custom";
@@ -899,10 +900,9 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
           </label>
           {actionIsAttack && (
             <>
-              <label>
-                Attack roll
-                <input value={actionAttack} onChange={(event) => setActionAttack(event.target.value)} placeholder="1d20 + 6" />
-              </label>
+              <div className="monster-builder-wide-field">
+                <FormulaInput label="Attack roll" value={actionAttack} onChange={setActionAttack} placeholder="1d20 + 6" showVars={[]} />
+              </div>
               <label>
                 Attack count
                 <input inputMode="numeric" type="number" min="1" value={actionAttackCount} onChange={(event) => setActionAttackCount(event.target.value)} />

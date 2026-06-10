@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ActorAction } from "../types/tabs";
+import { FormulaInput } from "./FormulaInput";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
 
@@ -393,11 +394,14 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
 
       {/* Weapon fields */}
       {isWeapon && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          <label style={{ fontSize: 12 }}>Attack <input type="text" value={draft.attack ?? ""} onChange={e => set("attack", e.target.value || undefined)} placeholder="1d20+5" style={inputStyle} /></label>
-          <label style={{ fontSize: 12 }}>Damage <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)} placeholder="1d8+3" style={inputStyle} /></label>
-          <label style={{ fontSize: 12 }}>Crit <input type="text" value={draft.crit ?? ""} onChange={e => set("crit", e.target.value || undefined)} placeholder="2d8+3" style={inputStyle} /></label>
-          <label style={{ fontSize: 12, gridColumn: "span 3" }}>Range <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value || undefined)} placeholder="5 ft, 150/600 ft..." style={inputStyle} /></label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Attack roll — dice picker (1d20 + dice + @vars) since this weapon makes an attack roll */}
+          <FormulaInput label="Attack" value={draft.attack ?? ""} onChange={v => set("attack", v || undefined)} placeholder="1d20+@STR+@PROF" />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <label style={{ fontSize: 12 }}>Damage <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)} placeholder="1d8+3" style={inputStyle} /></label>
+            <label style={{ fontSize: 12 }}>Crit <input type="text" value={draft.crit ?? ""} onChange={e => set("crit", e.target.value || undefined)} placeholder="2d8+3" style={inputStyle} /></label>
+            <label style={{ fontSize: 12 }}>Range <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value || undefined)} placeholder="5 ft, 150/600 ft..." style={inputStyle} /></label>
+          </div>
         </div>
       )}
 

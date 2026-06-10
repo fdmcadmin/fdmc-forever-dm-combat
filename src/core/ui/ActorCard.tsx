@@ -1,4 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { appendBonusDie } from "../dice/diceFormula";
+
+const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
 import OBR from "@owlbear-rodeo/sdk";
 import { HitPointBadge } from "../hp/HitPointBadge";
 import { getHpStatus } from "../hp/hpStatus";
@@ -548,7 +551,7 @@ export function ActorCard({
   diceBridgeStatus,
   diceBridgeLastEvent,
   onSendDiceBridgeRequest,
-  onSendDicePlusRequest,
+  onSendDicePlusRequest: onSendDicePlusRequestRaw,
   onSendMockDiceBridgeResult,
   onAddActorNote,
   onDeleteActorNote,
@@ -577,6 +580,18 @@ export function ActorCard({
   const [initiativeByActorId, setInitiativeByActorId] = useState<Record<string, InitiativeRollState | null>>(() => readActorCardSessionSnapshot().initiativeByActorId ?? {});
   const [attackUseByActorId, setAttackUseByActorId] = useState<Record<string, AttackUseState | null>>(() => readActorCardSessionSnapshot().attackUseByActorId ?? {});
   const [debuffNote, setDebuffNote] = useState("");
+  // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
+  const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
+  const [additiveMenuOpen, setAdditiveMenuOpen] = useState(false);
+  // Wrap the dice-send prop once so every existing call site picks up the additive without edits.
+  // Only attack rolls and ability checks (d20 rolls) consume it — damage/healing sends are untouched.
+  const onSendDicePlusRequest = useCallback(async (request: DiceBridgeRollRequest) => {
+    if (pendingAdditiveDie && (request.outcomeMode === "attack-roll" || request.outcomeMode === "ability-check")) {
+      setPendingAdditiveDie(null);
+      return onSendDicePlusRequestRaw({ ...request, formula: appendBonusDie(request.formula, pendingAdditiveDie) });
+    }
+    return onSendDicePlusRequestRaw(request);
+  }, [onSendDicePlusRequestRaw, pendingAdditiveDie]);
   const sessionBroadcastReadyRef = useRef(false);
   const suppressNextSessionBroadcastRef = useRef(false);
   const hasMountedTurnResetRef = useRef(false);
@@ -1711,6 +1726,32 @@ export function ActorCard({
         >
           {absCheckOpen ? "Checks ▼" : "Checks ▶"}
         </button>
+        <span className="abs-check-additive" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, flexWrap: "wrap" }}>
+          <button
+            className="secondary-button compact"
+            type="button"
+            onClick={() => setAdditiveMenuOpen((current) => !current)}
+            title="Flag a one-off bonus die onto your next d20 roll (attack or check)"
+            aria-expanded={additiveMenuOpen}
+          >
+            + Additive
+          </button>
+          {additiveMenuOpen && ADDITIVE_DICE.map((die) => (
+            <button key={die} className="secondary-button compact quiet" type="button"
+              onClick={() => { setPendingAdditiveDie(die); setAdditiveMenuOpen(false); }}>
+              +1{die}
+            </button>
+          ))}
+          {pendingAdditiveDie && (
+            <span className="abs-check-additive-chip" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, padding: "2px 4px 2px 8px", borderRadius: 10, background: "rgba(123,104,238,0.15)", border: "1px solid rgba(123,104,238,0.4)", color: "#9d8cff" }}>
+              next roll +1{pendingAdditiveDie}
+              <button type="button" onClick={() => setPendingAdditiveDie(null)} title="Clear additive"
+                style={{ background: "transparent", border: "none", color: "#9d8cff", cursor: "pointer", lineHeight: 1, padding: 0 }}>
+                ✕
+              </button>
+            </span>
+          )}
+        </span>
         {absCheckOpen && (
           <div className="abs-check-drawer">
             <div>
