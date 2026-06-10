@@ -43,6 +43,7 @@ import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
+const DAMAGE_ADDITIVE_DICE = ["d4", "d6", "d8", "d10", "d12"] as const;
 
 // ─── Economy broadcast ────────────────────────────────────────────────────────
 
@@ -480,6 +481,8 @@ export function MonsterActorCard({
   const [rollMode, setRollMode] = useState<RollMode>("normal");
   // one-off additive bonus die (e.g. Bless/Guidance) that rides the NEXT d20 roll, then clears
   const [pendingAdditive, setPendingAdditive] = useState<string | null>(null);
+  // one-off additive die that rides the NEXT damage roll, then clears
+  const [pendingDamageDie, setPendingDamageDie] = useState<string | null>(null);
   const [additiveOpen, setAdditiveOpen] = useState(false);
   const [usedActionIds, setUsedActionIds] = useState<Set<string>>(() => new Set());
   // rechargedActionIds — actions with recharge that have been USED this turn and not yet recharged
@@ -637,7 +640,12 @@ export function MonsterActorCard({
     if (!committedRoll) return;
     const isCrit = typeof committedRoll.naturalRoll === "number" && committedRoll.naturalRoll >= committedRoll.critThreshold;
     if (committedRoll.phase === "held" && committedRoll.damageFormula) {
-      const dmgFormula = isCrit ? doubleDice(committedRoll.damageFormula) : committedRoll.damageFormula;
+      let dmgFormula = isCrit ? doubleDice(committedRoll.damageFormula) : committedRoll.damageFormula;
+      // One-off damage additive die (from the Additive control) rides this roll, then clears.
+      if (pendingDamageDie) {
+        dmgFormula = appendBonusDie(dmgFormula, pendingDamageDie);
+        setPendingDamageDie(null);
+      }
       const dmgId = makeRequestId(monster.instanceId, committedRoll.actionId, "damage");
       setCommittedRoll(r => r && { ...r, phase: "damage-pending", requestId: dmgId });
       if (onSendDicePlusRequest) {
@@ -867,29 +875,54 @@ export function MonsterActorCard({
 
       <div style={{ padding: "0 12px 12px" }}>
 
-        {/* Additive bonus — flags a one-off +1dX onto the next d20 roll (attack or check) */}
+        {/* Additive bonus — one-off +1dX onto the next d20 roll and/or the next damage roll */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0", flexWrap: "wrap" }}>
           <button type="button" onClick={() => setAdditiveOpen(o => !o)}
-            title="Flag a one-off bonus die onto the next d20 roll"
+            title="Flag a one-off bonus die onto the next roll and/or next damage roll"
             style={{ fontSize: 9, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
               background: additiveOpen ? withAlpha("#7b68ee", 0.18) : "transparent",
               border: `1px solid ${additiveOpen ? "#7b68ee" : "#2a2a2a"}`, color: additiveOpen ? "#9d8cff" : "#666" }}>
             + Additive
           </button>
-          {additiveOpen && ADDITIVE_DICE.map((die) => (
-            <button key={die} type="button" onClick={() => { setPendingAdditive(die); setAdditiveOpen(false); }}
-              style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#9d8cff" }}>
-              +1{die}
-            </button>
-          ))}
           {pendingAdditive && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#7b68ee", 0.15), border: "1px solid #7b68ee55", color: "#9d8cff" }}>
-              next roll +1{pendingAdditive}
-              <button type="button" onClick={() => setPendingAdditive(null)} title="Clear additive"
+              roll +1{pendingAdditive}
+              <button type="button" onClick={() => setPendingAdditive(null)} title="Clear roll additive"
                 style={{ background: "transparent", border: "none", color: "#9d8cff", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
                 ✕
               </button>
             </span>
+          )}
+          {pendingDamageDie && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#e07b39", 0.15), border: "1px solid #e07b3955", color: "#e9a66a" }}>
+              dmg +1{pendingDamageDie}
+              <button type="button" onClick={() => setPendingDamageDie(null)} title="Clear damage additive"
+                style={{ background: "transparent", border: "none", color: "#e9a66a", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
+                ✕
+              </button>
+            </span>
+          )}
+          {additiveOpen && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "5px 7px", border: "1px solid #2a2a3e", borderRadius: 5, background: "#13131f" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 9, color: "#9d8cff", minWidth: 58 }}>To roll</span>
+                {ADDITIVE_DICE.map((die) => (
+                  <button key={die} type="button" onClick={() => { setPendingAdditive(die); setAdditiveOpen(false); }}
+                    style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#9d8cff" }}>
+                    +1{die}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 9, color: "#e9a66a", minWidth: 58 }}>To damage</span>
+                {DAMAGE_ADDITIVE_DICE.map((die) => (
+                  <button key={die} type="button" onClick={() => { setPendingDamageDie(die); setAdditiveOpen(false); }}
+                    style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#e9a66a" }}>
+                    +1{die}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 

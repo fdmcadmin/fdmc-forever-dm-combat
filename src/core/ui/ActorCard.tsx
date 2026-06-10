@@ -2,6 +2,7 @@
 import { appendBonusDie } from "../dice/diceFormula";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
+const DAMAGE_ADDITIVE_DICE = ["d4", "d6", "d8", "d10", "d12"] as const;
 import OBR from "@owlbear-rodeo/sdk";
 import { HitPointBadge } from "../hp/HitPointBadge";
 import { getHpStatus } from "../hp/hpStatus";
@@ -582,6 +583,8 @@ export function ActorCard({
   const [debuffNote, setDebuffNote] = useState("");
   // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
   const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
+  // one-off additive die that rides the NEXT damage roll, then clears
+  const [pendingDamageDie, setPendingDamageDie] = useState<string | null>(null);
   const [additiveMenuOpen, setAdditiveMenuOpen] = useState(false);
   // Wrap the dice-send prop once so every existing call site picks up the additive without edits.
   // Only attack rolls and ability checks (d20 rolls) consume it — damage/healing sends are untouched.
@@ -1731,24 +1734,49 @@ export function ActorCard({
             className="secondary-button compact"
             type="button"
             onClick={() => setAdditiveMenuOpen((current) => !current)}
-            title="Flag a one-off bonus die onto your next d20 roll (attack or check)"
+            title="Flag a one-off bonus die onto your next roll and/or next damage roll"
             aria-expanded={additiveMenuOpen}
           >
             + Additive
           </button>
-          {additiveMenuOpen && ADDITIVE_DICE.map((die) => (
-            <button key={die} className="secondary-button compact quiet" type="button"
-              onClick={() => { setPendingAdditiveDie(die); setAdditiveMenuOpen(false); }}>
-              +1{die}
-            </button>
-          ))}
           {pendingAdditiveDie && (
             <span className="abs-check-additive-chip" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, padding: "2px 4px 2px 8px", borderRadius: 10, background: "rgba(123,104,238,0.15)", border: "1px solid rgba(123,104,238,0.4)", color: "#9d8cff" }}>
-              next roll +1{pendingAdditiveDie}
-              <button type="button" onClick={() => setPendingAdditiveDie(null)} title="Clear additive"
+              roll +1{pendingAdditiveDie}
+              <button type="button" onClick={() => setPendingAdditiveDie(null)} title="Clear roll additive"
                 style={{ background: "transparent", border: "none", color: "#9d8cff", cursor: "pointer", lineHeight: 1, padding: 0 }}>
                 ✕
               </button>
+            </span>
+          )}
+          {pendingDamageDie && (
+            <span className="abs-check-additive-chip" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, padding: "2px 4px 2px 8px", borderRadius: 10, background: "rgba(224,123,57,0.15)", border: "1px solid rgba(224,123,57,0.45)", color: "#e9a66a" }}>
+              dmg +1{pendingDamageDie}
+              <button type="button" onClick={() => setPendingDamageDie(null)} title="Clear damage additive"
+                style={{ background: "transparent", border: "none", color: "#e9a66a", cursor: "pointer", lineHeight: 1, padding: 0 }}>
+                ✕
+              </button>
+            </span>
+          )}
+          {additiveMenuOpen && (
+            <span style={{ display: "inline-flex", flexDirection: "column", gap: 4, padding: "5px 7px", border: "1px solid #2a2a3e", borderRadius: 6, background: "#13131f" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 10, color: "#9d8cff", minWidth: 62 }}>To roll</span>
+                {ADDITIVE_DICE.map((die) => (
+                  <button key={die} className="secondary-button compact quiet" type="button"
+                    onClick={() => { setPendingAdditiveDie(die); setAdditiveMenuOpen(false); }}>
+                    +1{die}
+                  </button>
+                ))}
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 10, color: "#e9a66a", minWidth: 62 }}>To damage</span>
+                {DAMAGE_ADDITIVE_DICE.map((die) => (
+                  <button key={die} className="secondary-button compact quiet" type="button"
+                    onClick={() => { setPendingDamageDie(die); setAdditiveMenuOpen(false); }}>
+                    +1{die}
+                  </button>
+                ))}
+              </span>
             </span>
           )}
         </span>
@@ -2752,11 +2780,15 @@ export function ActorCard({
 
     const additiveParts = getDamageAdditives(damageChoice);
     const additiveFormulas = additiveParts.map((effect) => effect.formula);
-    const combinedFormula = combineRollFormulas([baseFormula, ...additiveFormulas]);
+    const baseCombinedFormula = combineRollFormulas([baseFormula, ...additiveFormulas]);
 
-    if (!combinedFormula) {
+    if (!baseCombinedFormula) {
       return;
     }
+
+    // One-off damage additive die (from the Additive control) rides this roll, then clears.
+    const combinedFormula = pendingDamageDie ? appendBonusDie(baseCombinedFormula, pendingDamageDie) : baseCombinedFormula;
+    if (pendingDamageDie) setPendingDamageDie(null);
 
     const additiveText = additiveParts.length > 0 ? ` with additives (${additiveParts.map((effect) => `${effect.shorthand}=${effect.critAdjusted ? `${effect.baseFormula}→${effect.formula}` : effect.formula}`).join(" + ")})` : "";
     const rageIsAttached = Boolean(
