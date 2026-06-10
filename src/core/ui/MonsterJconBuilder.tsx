@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { MonsterAbilityId } from "../types/monsterTypes";
 import { FormulaInput } from "./FormulaInput";
+import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
 type MonsterLevelBandId = "low" | "mid" | "high" | "extreme" | "final";
 type MonsterBuildMode = "guided" | "custom";
@@ -10,6 +11,32 @@ type ActionDraftCost = "Action" | "Bonus Action" | "Reaction" | "Legendary Actio
 type ActionDraftKind = "attack" | "save" | "manual" | "special" | "trait-trigger";
 
 type DraftMonsterJcon = Record<string, unknown>;
+
+// Full snapshot of the builder form so an in-progress monster can be parked as a
+// PENDING draft and restored losslessly (the built JCON drops form-only fields).
+type MonsterBuilderSnapshot = {
+  mode: MonsterBuildMode;
+  builderPurpose: MonsterBuilderPurpose;
+  name: string;
+  creatureType: string;
+  size: string;
+  levelBand: MonsterLevelBandId;
+  encounterPressure: MonsterPressureId;
+  primaryAbility: MonsterAbilityId;
+  hp: string;
+  ac: string;
+  speed: string;
+  mainActionName: string;
+  attackBonus: string;
+  damageFormula: string;
+  critDamageFormula: string;
+  damageType: string;
+  range: string;
+  customAbilities: Record<MonsterAbilityId, string>;
+  actionDrafts: DraftAction[];
+  traitDrafts: DraftTrait[];
+  resourceDrafts: DraftResource[];
+};
 
 type DraftAction = {
   id: string;
@@ -432,6 +459,13 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
   const [resourceReset, setResourceReset] = useState("combat");
   const [resourceNote, setResourceNote] = useState("Track this counter manually during combat.");
 
+  // ── Pending drafts (P-ROLL3b) ───────────────────────────────────────────────
+  const [pendingDrafts, setPendingDrafts] = useState<PendingDraft<MonsterBuilderSnapshot>[]>(
+    () => loadPendingDrafts<MonsterBuilderSnapshot>("monster"),
+  );
+  // id of the draft currently loaded in the form, so Save updates it in place
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+
   const bandInfo = levelBands[levelBand];
   const hpReference = bandInfo.hpReferences[encounterPressure];
   const roughEstimate = roughStrengthEstimate(levelBand, encounterPressure);
@@ -710,6 +744,54 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
     onDraftReady(draft);
   }
 
+  // ── Pending draft capture / restore ─────────────────────────────────────────
+  function captureSnapshot(): MonsterBuilderSnapshot {
+    return {
+      mode, builderPurpose, name, creatureType, size, levelBand, encounterPressure,
+      primaryAbility, hp, ac, speed, mainActionName, attackBonus, damageFormula,
+      critDamageFormula, damageType, range,
+      customAbilities: { ...customAbilities },
+      actionDrafts: actionDrafts.map((a) => ({ ...a })),
+      traitDrafts: traitDrafts.map((t) => ({ ...t })),
+      resourceDrafts: resourceDrafts.map((r) => ({ ...r })),
+    };
+  }
+
+  function restoreSnapshot(s: MonsterBuilderSnapshot) {
+    setMode(s.mode); setBuilderPurpose(s.builderPurpose); setName(s.name);
+    setCreatureType(s.creatureType); setSize(s.size); setLevelBand(s.levelBand);
+    setEncounterPressure(s.encounterPressure); setPrimaryAbility(s.primaryAbility);
+    setHp(s.hp); setAc(s.ac); setSpeed(s.speed); setMainActionName(s.mainActionName);
+    setAttackBonus(s.attackBonus); setDamageFormula(s.damageFormula);
+    setCritDamageFormula(s.critDamageFormula); setDamageType(s.damageType); setRange(s.range);
+    setCustomAbilities({ ...s.customAbilities });
+    setActionDrafts(s.actionDrafts.map((a) => ({ ...a })));
+    setTraitDrafts(s.traitDrafts.map((t) => ({ ...t })));
+    setResourceDrafts(s.resourceDrafts.map((r) => ({ ...r })));
+  }
+
+  function handleSaveDraft() {
+    const id = activeDraftId ?? newPendingDraftId("monster");
+    const next = savePendingDraft<MonsterBuilderSnapshot>("monster", {
+      id,
+      name: name.trim() || "Untitled monster",
+      savedAt: new Date().toISOString(),
+      payload: captureSnapshot(),
+    });
+    setPendingDrafts(next);
+    setActiveDraftId(id);
+  }
+
+  function handleResumeDraft(draft: PendingDraft<MonsterBuilderSnapshot>) {
+    restoreSnapshot(draft.payload);
+    setActiveDraftId(draft.id);
+  }
+
+  function handleDiscardDraft(id: string) {
+    setPendingDrafts(removePendingDraft<MonsterBuilderSnapshot>("monster", id));
+    if (activeDraftId === id) setActiveDraftId(null);
+  }
+
   return (
     <section className="monster-jcon-builder" aria-label="Guided native monster JCON draft helper">
       <div className="monster-dev-panel-heading">
@@ -737,6 +819,28 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
           <button type="button" onClick={loadMirageStalkerStarter}>Load Mirage Stalker starter</button>
         </div>
       </div>
+
+      {pendingDrafts.length > 0 && (
+        <div className="monster-builder-publication-card" aria-label="Pending monster drafts">
+          <div>
+            <p className="eyebrow">Pending / Drafts · {pendingDrafts.length}</p>
+            <h4>In-progress monsters (not yet created)</h4>
+            <p>Parked builds. <strong>Resume</strong> loads one back into the form; <strong>Discard</strong> removes it. Drafts survive reloads — finalize one with <em>Build / Rebuild</em> below, then Discard it once it's saved to the library.</p>
+          </div>
+          <div className="monster-builder-generated-list" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {pendingDrafts.map((d) => (
+              <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <strong style={{ flex: 1, minWidth: 120 }}>
+                  {d.name}{activeDraftId === d.id ? " · editing" : ""}
+                </strong>
+                <span style={{ fontSize: 10, color: "#666" }}>{new Date(d.savedAt).toLocaleString()}</span>
+                <button type="button" onClick={() => handleResumeDraft(d)}>Resume</button>
+                <button type="button" onClick={() => handleDiscardDraft(d.id)}>Discard</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="monster-builder-grid">
         <label>
@@ -1040,6 +1144,9 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
 
       <div className="monster-dev-button-row">
         <button type="button" onClick={buildDraft}>Build / Rebuild JCON Draft Into Editor</button>
+        <button type="button" onClick={handleSaveDraft} title="Park this in-progress monster as a pending draft (survives reloads)">
+          {activeDraftId ? "Update Draft" : "Save as Draft"}
+        </button>
       </div>
     </section>
   );

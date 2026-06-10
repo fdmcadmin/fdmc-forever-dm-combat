@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
+import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
 
@@ -350,6 +351,11 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
   });
 
   const [errors, setErrors] = useState<string[]>([]);
+  // Pending drafts (P-ROLL3b) — only meaningful when creating a brand-new item
+  const [equipDrafts, setEquipDrafts] = useState<PendingDraft<EquipmentItem>[]>(
+    () => loadPendingDrafts<EquipmentItem>("equipment"),
+  );
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
 
   function set<K extends keyof EquipmentItem>(key: K, value: EquipmentItem[K]) {
     setDraft(d => ({ ...d, [key]: value }));
@@ -363,7 +369,29 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
       id: draft.id || `item-${slugify(draft.name)}-${Date.now().toString(36)}`,
       name: draft.name.trim(),
     };
+    // Finalize: this item is now truly created, so clear its pending draft.
+    if (activeDraftId) removePendingDraft("equipment", activeDraftId);
     onSave(item);
+  }
+
+  function handleSaveDraft() {
+    if (!draft.name.trim()) { setErrors(["Name the item before saving a draft."]); return; }
+    const id = activeDraftId ?? newPendingDraftId("equipment");
+    setEquipDrafts(savePendingDraft<EquipmentItem>("equipment", {
+      id, name: draft.name.trim(), savedAt: new Date().toISOString(), payload: draft,
+    }));
+    setActiveDraftId(id);
+  }
+
+  function handleResumeDraft(d: PendingDraft<EquipmentItem>) {
+    setDraft(d.payload);
+    setActiveDraftId(d.id);
+    setErrors([]);
+  }
+
+  function handleDiscardDraft(id: string) {
+    setEquipDrafts(removePendingDraft<EquipmentItem>("equipment", id));
+    if (activeDraftId === id) setActiveDraftId(null);
   }
 
   const inputStyle = {
@@ -378,6 +406,21 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, background: "#1a1a2e", borderRadius: 8 }}>
       <h4 style={{ margin: 0 }}>{initial ? "Edit Item" : "New Item"}</h4>
+
+      {/* Pending / Drafts — parked in-progress items (new-item mode only) */}
+      {!initial && equipDrafts.length > 0 && (
+        <div style={{ padding: "8px 10px", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={{ fontSize: 10, color: "#9d8cff", textTransform: "uppercase", letterSpacing: 1 }}>Pending / Drafts · {equipDrafts.length}</span>
+          {equipDrafts.map(d => (
+            <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <strong style={{ flex: 1, minWidth: 100, fontSize: 12 }}>{d.name}{activeDraftId === d.id ? " · editing" : ""}</strong>
+              <span style={{ fontSize: 10, color: "#666" }}>{new Date(d.savedAt).toLocaleString()}</span>
+              <button type="button" onClick={() => handleResumeDraft(d)} style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}>Resume</button>
+              <button type="button" onClick={() => handleDiscardDraft(d.id)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>Discard</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>
@@ -484,6 +527,12 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         <button type="button" onClick={handleSave} style={{ padding: "5px 16px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
           {initial ? "Save Item" : "Create & Attach"}
         </button>
+        {!initial && (
+          <button type="button" onClick={handleSaveDraft} title="Park this in-progress item as a pending draft (survives reloads)"
+            style={{ padding: "5px 16px", background: "transparent", color: "#9d8cff", border: "1px solid #7b68ee44", borderRadius: 4, cursor: "pointer" }}>
+            {activeDraftId ? "Update Draft" : "Save as Draft"}
+          </button>
+        )}
         <button type="button" onClick={onCancel} style={{ padding: "5px 16px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: 4, cursor: "pointer" }}>
           Cancel
         </button>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores } from "../types/actor";
 import type { TabId, TabActionMap } from "../types/tabs";
 import { ActorEditorActionTab } from "./ActorEditorActionTab";
@@ -278,6 +279,12 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   const [tabsDraft, setTabsDraft] = useState<TabActionMap>(() => ({ ...actor.tabs }));
   const [showDanger, setShowDanger] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  // Pending drafts (P-ROLL3b) — only surfaced when creating a brand-new character
+  const isCreateMode = mode === "create-new" && !proposeMode;
+  const [actorDrafts, setActorDrafts] = useState<PendingDraft<Actor>[]>(
+    () => loadPendingDrafts<Actor>("actor"),
+  );
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
 
   function buildEditedActor(newId?: string): Actor {
     const profilePatch = profileDraftToActorPatch(profileDraft);
@@ -288,6 +295,35 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       tabs: tabsDraft,
       stats: profilePatch.stats ?? actor.stats,
     };
+  }
+
+  // Save wrapper: once a character is truly saved, clear its pending draft.
+  function finalizeSave(edited: Actor, saveMode: ActorEditorSaveMode) {
+    if (activeDraftId) removePendingDraft("actor", activeDraftId);
+    onSave(edited, saveMode);
+  }
+
+  function handleSaveDraft() {
+    const id = activeDraftId ?? newPendingDraftId("actor");
+    setActorDrafts(savePendingDraft<Actor>("actor", {
+      id,
+      name: profileDraft.name.trim() || "Unnamed Character",
+      savedAt: new Date().toISOString(),
+      payload: buildEditedActor(),
+    }));
+    setActiveDraftId(id);
+  }
+
+  function handleResumeDraft(d: PendingDraft<Actor>) {
+    setProfileDraft(actorToProfileDraft(d.payload));
+    setTabsDraft({ ...d.payload.tabs });
+    setActiveDraftId(d.id);
+    setActiveTab("profile");
+  }
+
+  function handleDiscardActorDraft(id: string) {
+    setActorDrafts(removePendingDraft<Actor>("actor", id));
+    if (activeDraftId === id) setActiveDraftId(null);
   }
 
   function handleTabActions(tabId: TabId) {
@@ -341,6 +377,21 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
         </div>
         <button type="button" onClick={onCancel} style={{ fontSize: 12, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>Cancel</button>
       </div>
+
+      {/* Pending / Drafts — parked in-progress characters (create-new only) */}
+      {isCreateMode && actorDrafts.length > 0 && (
+        <div style={{ margin: "8px 14px 0", padding: "8px 10px", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={{ fontSize: 10, color: "#9d8cff", textTransform: "uppercase", letterSpacing: 1 }}>Pending / Drafts · {actorDrafts.length}</span>
+          {actorDrafts.map(d => (
+            <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <strong style={{ flex: 1, minWidth: 100, fontSize: 12 }}>{d.name}{activeDraftId === d.id ? " · editing" : ""}</strong>
+              <span style={{ fontSize: 10, color: "#666" }}>{new Date(d.savedAt).toLocaleString()}</span>
+              <button type="button" onClick={() => handleResumeDraft(d)} style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}>Resume</button>
+              <button type="button" onClick={() => handleDiscardActorDraft(d.id)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>Discard</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tab bar — distinct color accent + count badge per step */}
       <div style={{ display: "flex", overflowX: "auto", borderBottom: "1px solid #2a2a3e", background: "#0d0d14" }}>
@@ -467,7 +518,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             ) : (
               <button
                 type="button"
-                onClick={() => onSave(buildEditedActor(), "current-and-library")}
+                onClick={() => finalizeSave(buildEditedActor(), "current-and-library")}
                 style={{ padding: "7px 22px", background: "#34c759", color: "#06210f", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
               >
                 ✓ Finish &amp; Save
@@ -480,7 +531,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             /* Player propose mode — single submit button, no direct save */
             <button
               type="button"
-              onClick={() => onSave(buildEditedActor(), "current")}
+              onClick={() => finalizeSave(buildEditedActor(), "current")}
               style={{ flex: 1, padding: "7px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
             >
               Submit for DM Approval
@@ -490,7 +541,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             <>
               <button
                 type="button"
-                onClick={() => onSave(buildEditedActor(), "current-and-library")}
+                onClick={() => finalizeSave(buildEditedActor(), "current-and-library")}
                 style={{ flex: 1, padding: "6px 12px", background: "transparent", color: "#9a9ab0", border: "1px solid #3a3a52", borderRadius: 4, cursor: "pointer", fontSize: 12 }}
                 title="Save to the library now without stepping through the rest of the flow"
               >
@@ -498,7 +549,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               </button>
               <button
                 type="button"
-                onClick={() => onSave(buildEditedActor(), "current")}
+                onClick={() => finalizeSave(buildEditedActor(), "current")}
                 style={{ padding: "6px 12px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 title="Save as session override only — not written to base library (changes lost on next Sync)"
               >
@@ -506,11 +557,21 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               </button>
               <button
                 type="button"
-                onClick={() => onSave(buildEditedActor(`${actor.id}-copy-${Date.now().toString(36)}`), "duplicate")}
+                onClick={() => finalizeSave(buildEditedActor(`${actor.id}-copy-${Date.now().toString(36)}`), "duplicate")}
                 style={{ padding: "7px 12px", background: "transparent", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
               >
                 Duplicate
               </button>
+              {isCreateMode && (
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  title="Park this in-progress character as a pending draft (survives reloads)"
+                  style={{ padding: "7px 12px", background: "transparent", color: "#9d8cff", border: "1px solid #7b68ee44", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
+                >
+                  {activeDraftId ? "Update Draft" : "Save as Draft"}
+                </button>
+              )}
             </>
           )}
         </div>
