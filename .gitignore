@@ -6,6 +6,8 @@ dist/
 
 # Private actor source files — campaign character data, not for sharing
 src/private/
+# Private actor export — real party data, never publish to the repo
+fdmc-actor-library-export.json
 
 # Local env / secrets
 .env
