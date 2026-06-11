@@ -13,7 +13,7 @@ import {
   type EncounterDefinition,
   type EncounterMonsterEntry,
 } from "./encounterLibrary";
-import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
+import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, loadCampaignMonsterLibrary, importCampaignMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
@@ -360,7 +360,8 @@ type StagedEntry = {
 };
 
 type EncounterLibraryPanelProps = {
-  monsterLibrary: MainMonsterTemplate[];
+  // Campaign monsters are no longer a bundled prop — they're DM-imported into
+  // localStorage (src/private, never in dist) and loaded internally.
   onLoadEncounter: (instances: MainEncounterMonsterInstance[]) => void;
   onClearRoster: () => void;
   activeRosterCount: number;
@@ -378,7 +379,6 @@ type EncounterLibraryPanelProps = {
 };
 
 export function EncounterLibraryPanel({
-  monsterLibrary,
   onLoadEncounter,
   onClearRoster,
   activeRosterCount,
@@ -405,6 +405,9 @@ export function EncounterLibraryPanel({
   // DM's own monster library from localStorage — "My Library" (DM creations). Reactive: the
   // monster picker + count derive from this, so created monsters persist and appear after reload.
   const [dmLibrary, setDmLibrary] = useState<MainMonsterTemplate[]>(() => loadMonsterLibrary());
+  // Campaign monsters (Broken Chain) — DM-imported into localStorage, NOT bundled into dist.
+  // Same name as the old prop so the campaignIds / campaignBase / seed logic is unchanged.
+  const [monsterLibrary, setMonsterLibrary] = useState<MainMonsterTemplate[]>(() => loadCampaignMonsterLibrary());
   const [editDraft, setEditDraft] = useState<EncounterDefinition | null>(null);
   // Equipment library snapshot — used to resolve each encounter's loot pool. Refreshed
   // when the editor opens so newly-created loot shows up without a panel reload.
@@ -834,6 +837,21 @@ export function EncounterLibraryPanel({
               void importMonsterLibrary(file).then(result => {
                 setMonsterImportResult(result);
                 if (result.ok) setDmLibrary(loadMonsterLibrary());
+              });
+              e.target.value = "";
+            }} />
+          </label>
+          {/* Campaign monster pack import — seeds the Broken Chain (campaign) library from a
+              DM-imported JSON, since campaign monsters are no longer bundled into dist. */}
+          <label style={{ fontSize: 11, padding: "3px 8px", background: "#3a3320", color: "#e9c46a", border: "1px solid #b8860b55", borderRadius: 3, cursor: "pointer", display: "flex", alignItems: "center" }}
+            title="Import the Broken Chain campaign monster pack JSON (replaces the campaign library)">
+            ↑ Campaign Pack
+            <input type="file" accept=".json" style={{ display: "none" }} onChange={e => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              void importCampaignMonsterLibrary(file).then(result => {
+                setMonsterImportResult(result);
+                if (result.ok) setMonsterLibrary(loadCampaignMonsterLibrary());
               });
               e.target.value = "";
             }} />

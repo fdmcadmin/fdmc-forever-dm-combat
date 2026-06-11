@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from "react";
 import OBR from "@owlbear-rodeo/sdk";
-import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, importCampaignEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
@@ -1028,6 +1028,18 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
               const file = e.target.files?.[0];
               if (!file) return;
               void importEquipmentLibrary(file).then(result => { setImportResult(result); if (result.ok) refreshLibrary(); });
+              e.target.value = "";
+            }} />
+          </label>
+          {/* Campaign equipment pack import — seeds the Broken Chain (campaign) library from a
+              DM-imported JSON, since campaign items are no longer bundled into dist. */}
+          <label style={{ fontSize: 11, padding: "3px 8px", background: "#3a3320", color: "#e9c46a", border: "1px solid #b8860b55", borderRadius: 3, cursor: "pointer", display: "flex", alignItems: "center" }}
+            title="Import the Broken Chain campaign equipment pack JSON (replaces the campaign library)">
+            ↑ Campaign Pack
+            <input type="file" accept=".json" style={{ display: "none" }} onChange={e => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              void importCampaignEquipmentLibrary(file).then(result => { setImportResult(result); if (result.ok) refreshLibrary(); });
               e.target.value = "";
             }} />
           </label>

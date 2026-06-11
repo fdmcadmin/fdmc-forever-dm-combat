@@ -106,7 +106,6 @@ import {
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import type { Actor } from "./core/types/actor";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
-import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "./core/export/encounterLogExport";
 
@@ -2803,7 +2802,6 @@ export default function App() {
 
         {openPanel === "monsterPanel" && (
           <EncounterLibraryPanel
-            monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
             activeRosterCount={monsterCandidates.length}
             onLoadEncounter={(instances) => {
               addMonsterInstances(instances);

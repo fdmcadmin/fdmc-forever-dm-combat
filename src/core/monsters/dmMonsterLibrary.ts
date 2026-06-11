@@ -95,6 +95,45 @@ export async function importMonsterLibrary(file: File): Promise<MonsterImportRes
   }
 }
 
+// ─── Campaign monster library (DM-imported, NOT bundled in dist) ──────────────
+// The Broken Chain campaign monsters live in src/private (gitignored, never built
+// into dist). The DM imports the monster pack JSON, which seeds this key; the
+// encounter panel reads it as the campaign base. No import = no campaign monsters.
+
+const CAMPAIGN_MONSTER_LIBRARY_KEY = "fdmc.dm.monsterLibrary.campaign.v1";
+
+export function loadCampaignMonsterLibrary(): MainMonsterTemplate[] {
+  try {
+    const raw = window.localStorage.getItem(CAMPAIGN_MONSTER_LIBRARY_KEY);
+    return raw ? JSON.parse(raw) as MainMonsterTemplate[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCampaignMonsterLibrary(library: MainMonsterTemplate[]): void {
+  try {
+    window.localStorage.setItem(CAMPAIGN_MONSTER_LIBRARY_KEY, JSON.stringify(library));
+  } catch { /* ok */ }
+}
+
+/** Import a campaign monster pack JSON — REPLACES the campaign store (not merge). */
+export async function importCampaignMonsterLibrary(file: File): Promise<MonsterImportResult> {
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text) as { monsters?: unknown[]; schema?: string };
+    const monsters = (parsed.monsters ?? (Array.isArray(parsed) ? parsed : null)) as MainMonsterTemplate[] | null;
+    if (!Array.isArray(monsters)) {
+      return { ok: false, added: 0, updated: 0, skipped: 0, message: "Invalid file — expected { monsters: [...] } or a raw array." };
+    }
+    const valid = monsters.filter(t => t && t.templateId && t.name);
+    saveCampaignMonsterLibrary(valid);
+    return { ok: true, added: valid.length, updated: 0, skipped: monsters.length - valid.length, message: `Loaded ${valid.length} campaign monster${valid.length === 1 ? "" : "s"} into the Broken Chain library.` };
+  } catch (e) {
+    return { ok: false, added: 0, updated: 0, skipped: 0, message: `Import failed: ${String(e)}` };
+  }
+}
+
 // ─── Staged monsters ──────────────────────────────────────────────────────────
 
 export function loadStagedMonsters(): MainMonsterTemplate[] {

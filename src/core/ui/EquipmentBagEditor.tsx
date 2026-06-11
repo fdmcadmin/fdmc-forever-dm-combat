@@ -199,6 +199,25 @@ export async function importEquipmentLibrary(file: File): Promise<EquipmentImpor
   }
 }
 
+/** Import a campaign equipment pack JSON — REPLACES the campaign store (not merge).
+ *  The Broken Chain items live in src/private (gitignored, never bundled into dist);
+ *  the DM imports the pack to seed the campaign owner. No import = no campaign items. */
+export async function importCampaignEquipmentLibrary(file: File): Promise<EquipmentImportResult> {
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text) as { items?: unknown[]; schema?: string };
+    const items = (parsed.items ?? (Array.isArray(parsed) ? parsed : null)) as EquipmentItem[] | null;
+    if (!Array.isArray(items)) {
+      return { ok: false, added: 0, updated: 0, skipped: 0, message: "Invalid file — expected { items: [...] } or a raw array." };
+    }
+    const valid = items.filter(i => i && i.id && i.name);
+    saveEquipmentLibrary(valid, "campaign");
+    return { ok: true, added: valid.length, updated: 0, skipped: items.length - valid.length, message: `Loaded ${valid.length} campaign item${valid.length === 1 ? "" : "s"} into the Broken Chain library.` };
+  } catch (e) {
+    return { ok: false, added: 0, updated: 0, skipped: 0, message: `Import failed: ${String(e)}` };
+  }
+}
+
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "item";
 }
