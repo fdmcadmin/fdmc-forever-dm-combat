@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { appendBonusDie } from "../dice/diceFormula";
+import { appendBonusDie, applyAdvantage, type RollMode } from "../dice/diceFormula";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
 const DAMAGE_ADDITIVE_DICE = ["d4", "d6", "d8", "d10", "d12"] as const;
@@ -586,15 +586,21 @@ export function ActorCard({
   // one-off additive die that rides the NEXT damage roll, then clears
   const [pendingDamageDie, setPendingDamageDie] = useState<string | null>(null);
   const [additiveMenuOpen, setAdditiveMenuOpen] = useState(false);
-  // Wrap the dice-send prop once so every existing call site picks up the additive without edits.
-  // Only attack rolls and ability checks (d20 rolls) consume it — damage/healing sends are untouched.
+  // adv / normal / disadv for the player's own d20 rolls (attacks + ability checks).
+  const [rollMode, setRollMode] = useState<RollMode>("normal");
+  // Wrap the dice-send prop once so every existing call site picks up adv/disadv +
+  // the additive without per-site edits. Only attack rolls and ability checks (d20
+  // rolls) are affected — damage/healing sends pass through untouched.
   const onSendDicePlusRequest = useCallback(async (request: DiceBridgeRollRequest) => {
-    if (pendingAdditiveDie && (request.outcomeMode === "attack-roll" || request.outcomeMode === "ability-check")) {
+    const isD20Roll = request.outcomeMode === "attack-roll" || request.outcomeMode === "ability-check";
+    if (!isD20Roll) return onSendDicePlusRequestRaw(request);
+    let formula = applyAdvantage(request.formula, rollMode);
+    if (pendingAdditiveDie) {
+      formula = appendBonusDie(formula, pendingAdditiveDie);
       setPendingAdditiveDie(null);
-      return onSendDicePlusRequestRaw({ ...request, formula: appendBonusDie(request.formula, pendingAdditiveDie) });
     }
-    return onSendDicePlusRequestRaw(request);
-  }, [onSendDicePlusRequestRaw, pendingAdditiveDie]);
+    return onSendDicePlusRequestRaw(formula === request.formula ? request : { ...request, formula });
+  }, [onSendDicePlusRequestRaw, pendingAdditiveDie, rollMode]);
   const sessionBroadcastReadyRef = useRef(false);
   const suppressNextSessionBroadcastRef = useRef(false);
   const hasMountedTurnResetRef = useRef(false);
@@ -1729,6 +1735,28 @@ export function ActorCard({
         >
           {absCheckOpen ? "Checks ▼" : "Checks ▶"}
         </button>
+        {/* Advantage / disadvantage for the player's own d20 rolls (attacks + checks) */}
+        <span className="abs-check-rollmode" style={{ display: "inline-flex", alignItems: "center", gap: 2, marginLeft: 8 }}>
+          {([
+            { id: "disadv", label: "Disadv", color: "#ff5840" },
+            { id: "normal", label: "Normal", color: "#9a9ab0" },
+            { id: "adv", label: "Adv", color: "#34c759" },
+          ] as { id: RollMode; label: string; color: string }[]).map((m) => {
+            const active = rollMode === m.id;
+            return (
+              <button key={m.id} type="button" onClick={() => setRollMode(m.id)}
+                title={`Roll mode: ${m.label} (applies to your next attack / check)`}
+                style={{
+                  fontSize: 10, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
+                  background: active ? `${m.color}2e` : "transparent",
+                  border: `1px solid ${active ? m.color : "#3a3a52"}`,
+                  color: active ? m.color : "#777", fontWeight: active ? 600 : 400,
+                }}>
+                {m.label}
+              </button>
+            );
+          })}
+        </span>
         <span className="abs-check-additive" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, flexWrap: "wrap" }}>
           <button
             className="secondary-button compact"
@@ -2978,6 +3006,14 @@ export function ActorCard({
 
       {renderClassOptionsPanel()}
 
+      {/* In player mode, float the roll workspace (incl. Hit/Miss) pinned to the bottom of
+          the viewport so the player never has to scroll back to the top after rolling. */}
+      <div style={isPlayerMode && committedRoll ? {
+        position: "fixed", left: 8, right: 8, bottom: 8, zIndex: 60,
+        maxHeight: "72vh", overflowY: "auto", borderRadius: 10,
+        background: "#0d0d14", border: "2px solid #7b68ee",
+        boxShadow: "0 -10px 28px rgba(0,0,0,0.6)",
+      } : undefined}>
       <CommittedRollPanel
         committedRoll={committedRoll}
         onHoldResult={handleHoldCommittedRollResult}
@@ -3006,7 +3042,7 @@ export function ActorCard({
               actorId: actor.id,
               actorName: actor.name,
               actionId: committedRoll.actionId,
-              actionName: `${committedRoll.actionLabel} (Reroll â€” ${source.label})`,
+              actionName: `${committedRoll.actionLabel} (Reroll — ${source.label})`,
               formula: labeledDiceFormula(committedRoll.attackFormula, `${committedRoll.actionLabel} reroll`),
               outcomeMode: committedRoll.outcomeMode,
               sentAt: new Date().toISOString(),
@@ -3021,6 +3057,7 @@ export function ActorCard({
           }
         }}
       />
+      </div>
       {!isCompanionCard && <BondSummary actor={actor} actionState={actionState} />}
 
       <PinnedReactions

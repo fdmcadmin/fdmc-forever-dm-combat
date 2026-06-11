@@ -479,6 +479,11 @@ export default function App() {
     saveActorOverride(request.actorId, override);
     const freshOverrides = loadActorOverrides();
     setActorOverrides(freshOverrides);
+    // Persist the approved actor to the BASE library too (not just a session override) —
+    // otherwise the level-up reverts on the next Sync/reload and "doesn't push through".
+    // Mirrors the dm-panel approval handler + handleActorEditorSave.
+    upsertActorInLibrary(finalActor);
+    setActorLibrary(lib => { const next = { ...lib, [request.actorId]: finalActor }; saveActorLibrary(next); return next; });
 
     // Sync HP if level-up changed max HP (live HP would otherwise override the new max)
     const liveHp = getActorHp(request.actorId);

@@ -391,7 +391,9 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
         finish(false);
       }
 
-      window.setTimeout(() => finish(false), 1200);
+      // 2.5s window — the old 1200ms raced under live multiplayer load and made the
+      // probe report "not ready" even when Dice+ was present.
+      window.setTimeout(() => finish(false), 2500);
     });
   }, [status]);
 
@@ -434,15 +436,19 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
       return false;
     }
 
+    // The ready-check is an ADVISORY probe, not a gate. It races / times out for
+    // players even when Dice+ is in the room (it works fine for the GM), which was
+    // hard-blocking every player roll. If the probe doesn't confirm, still SEND the
+    // roll best-effort — Dice+ rolls if present; otherwise the player uses manual
+    // entry (always available in the roll panel).
     const dicePlusReady = await checkDicePlusReady();
 
     if (!dicePlusReady) {
       setLastEvent({
-        kind: "error",
-        message: "Dice+ did not respond. Confirm Dice+ is installed and enabled in this Owlbear room, or use manual roll entry.",
+        kind: "dice-plus-request-sent",
+        message: `Dice+ didn't confirm ready — sending ${request.actionName} anyway. Use manual entry if no result appears.`,
         request,
       });
-      return false;
     }
 
     try {

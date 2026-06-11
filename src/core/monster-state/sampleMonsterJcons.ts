@@ -517,7 +517,8 @@ export const sampleMonsterJcons = {
     subtitle: "Act 1 · Wardenwood · Large beast · Strong · pack alpha",
     campaignModule: "the-broken-chain",
     tags: ["act-1", "woodland", "wardenwood", "thornfang-pack", "beast", "wolf", "dire", "strong", "party-levels-1-3"],
-    defense: { ac: 14, hp: { current: 39, max: 39, temp: 0 }, speed: "50 ft" },
+    // HP tuned 39→33 (Act 1 opener ran long; high variant hit 48, above a dire wolf).
+    defense: { ac: 14, hp: { current: 33, max: 33, temp: 0 }, speed: "50 ft" },
     abilities: { str: { score: 17, modifier: 3 }, dex: { score: 15, modifier: 2 }, con: { score: 15, modifier: 2 }, int: { score: 3, modifier: -4 }, wis: { score: 12, modifier: 1 }, cha: { score: 7, modifier: -2 } },
     actions: [{ id: "thornfang-packlord-bite", name: "Rending Bite", kind: "meleeAttack", cost: "Action", range: "5 ft", attack: "1d20 + 5", damage: "2d6 + 3", critDamage: "4d6 + 3", damageType: "piercing", hitRider: { save: "STR DC 13", failEffect: "Target is knocked prone." }, description: "+5 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing. DC 13 STR save or knocked prone." }],
     bonusActions: [{ id: "thornfang-packlord-howl", name: "Hunting Howl", kind: "manual", cost: "Bonus Action", range: "30 ft", description: "Each Thornfang Wolf within 30 feet that can hear the Packlord may immediately move up to its speed toward an enemy without provoking opportunity attacks." }],

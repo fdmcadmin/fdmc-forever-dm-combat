@@ -46,8 +46,18 @@ export function unitThreat(m: Pick<ThreatMonster, "maxHp" | "isBoss" | "multiatt
   return hp * (m.isBoss ? BOSS_MULT : 1) * (m.multiattack ? MULTIATTACK_MULT : 1);
 }
 
-export function encounterThreat(monsters: ThreatMonster[]): number {
-  return monsters.reduce((sum, m) => sum + unitThreat(m) * Math.max(0, m.count), 0);
+/**
+ * Total encounter threat. Raw HP-sum (unitThreat × count) PLUS an action-economy
+ * factor: every enemy body beyond the party size adds a full turn of attacks, which
+ * a pure HP sum misses — that's why a 4-body Act 1 pack read "Standard" yet ground
+ * out 6 rounds against an L1 party. +8% threat per enemy over party size, capped at
+ * +40%. Pass `partySize` to enable it (0 = legacy HP-only behavior).
+ */
+export function encounterThreat(monsters: ThreatMonster[], partySize = 0): number {
+  const base = monsters.reduce((sum, m) => sum + unitThreat(m) * Math.max(0, m.count), 0);
+  const totalCount = monsters.reduce((sum, m) => sum + Math.max(0, m.count), 0);
+  const over = partySize > 0 ? Math.max(0, totalCount - Math.floor(partySize)) : 0;
+  return base * (1 + Math.min(0.40, 0.08 * over));
 }
 
 export function partyBudget(size: number, level: number): number {
@@ -72,7 +82,7 @@ export type EncounterRating = {
 };
 
 export function rateEncounter(monsters: ThreatMonster[], size: number, level: number): EncounterRating {
-  const threat = encounterThreat(monsters);
+  const threat = encounterThreat(monsters, size);
   const budget = partyBudget(size, level);
   const ratio = budget > 0 ? threat / budget : 0;
   return { threat, budget, ratio, difficulty: difficultyFromRatio(ratio) };

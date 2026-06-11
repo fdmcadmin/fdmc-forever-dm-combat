@@ -178,7 +178,13 @@ export function subscribeFdmcRoomStateKey<T>(
     }
 
     const revision = readRevision(next);
-    if (revision !== undefined && revision === lastRevision) {
+    // Monotonic revision guard: ignore same-OR-OLDER revisions. The old check only
+    // skipped the EXACT same revision, so a stale write — a behind-copy from another
+    // window, or an in-flight write caught by the 5s poll — with a LOWER revision would
+    // still apply and rubber-band combat back to an earlier state mid-fight. Revisions
+    // only ever increment per commit (fdmcRoomLiveState), so a lower revision is always
+    // stale and must be rejected.
+    if (revision !== undefined && lastRevision !== undefined && revision <= lastRevision) {
       return;
     }
 

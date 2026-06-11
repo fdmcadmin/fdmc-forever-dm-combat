@@ -62,7 +62,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Thornfang Packlord",
     encounterId: "act1-thornfang-pack",
     encounterLabel: act1ThornfangPackLabel,
-    stats: { kind: "monster", ac: 14, maxHp: 39, speed: "50 ft" },
+    // HP tuned down 39→33 after the Act 1 opener ran ~6 rounds (high variant hit 48,
+    // above a standard dire wolf). Standard 33 / low 24 / high 41 — run standard for L1.
+    stats: { kind: "monster", ac: 14, maxHp: 33, speed: "50 ft" },
     abilities: [
       formatAbility("STR", 17, 3),
       formatAbility("DEX", 15, 2),
