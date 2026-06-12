@@ -890,9 +890,15 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
         return nameMatch || actMatch || encounterMatch;
       })
     : campaignLib;
+  // "My Library" = the DM's OWN custom items only. Exclude anything whose id is also a
+  // campaign item (campaign loot leaks into the dm store if a pack was imported via the
+  // generic Import, or from older builds) so it doesn't double-show alongside the Broken
+  // Chain drawer. Mirrors the monster panel's myMonsters filter.
+  const campaignIds = new Set(campaignLib.map(i => i.id));
+  const dmOnly = dmLib.filter(i => !campaignIds.has(i.id));
   const filteredDm = filterText
-    ? dmLib.filter(i => i.name.toLowerCase().includes(filterText.toLowerCase()))
-    : dmLib;
+    ? dmOnly.filter(i => i.name.toLowerCase().includes(filterText.toLowerCase()))
+    : dmOnly;
 
   function renderItem(item: EquipmentItem) {
     const isPeeked = peekId === item.id;
@@ -1012,10 +1018,10 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       {/* Header */}
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
-          {dmLib.length} custom{unlocked ? ` · 🔒 ${campaignLib.length} campaign` : ""}
+          {dmOnly.length} custom{unlocked ? ` · 🔒 ${campaignLib.length} campaign` : ""}
         </p>
         <div style={{ display: "flex", gap: 6 }}>
-          {dmLib.length > 0 && (
+          {dmOnly.length > 0 && (
             <button type="button" onClick={() => exportEquipmentLibrary()}
               style={{ fontSize: 11, padding: "3px 8px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}
               title="Export your custom items to JSON">
