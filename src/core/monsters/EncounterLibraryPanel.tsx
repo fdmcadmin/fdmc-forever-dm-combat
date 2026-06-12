@@ -535,7 +535,10 @@ export function EncounterLibraryPanel({
 
   function handleAddEntry() {
     if (!editDraft || !addingTemplateId) return;
-    const template = monsterLibrary.find(t => t.templateId === addingTemplateId);
+    // Look up in resolvedLibrary (My Library + campaign + session overrides), NOT just
+    // the campaign list — otherwise a DM-created monster can't be added to an encounter
+    // (silently bailed on a fresh room with no campaign content).
+    const template = resolvedLibrary.find(t => t.templateId === addingTemplateId);
     if (!template) return;
     setEditDraft({
       ...editDraft,
@@ -987,7 +990,7 @@ export function EncounterLibraryPanel({
                   {encounter.entries.length === 0
                     ? "Empty — edit to add monsters"
                     : encounter.entries.map(e => {
-                        const t = monsterLibrary.find(m => m.templateId === e.templateId);
+                        const t = resolvedLibrary.find(m => m.templateId === e.templateId);
                         return e.count > 1 ? `${e.count}× ${t?.name ?? e.templateId}` : (t?.name ?? e.templateId);
                       }).join(", ")}
                 </p>
