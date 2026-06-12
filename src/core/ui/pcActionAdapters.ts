@@ -58,6 +58,7 @@ function emptyTabs(): Actor["tabs"] {
     bond: [],
     checks: [],
     features: [],
+    feats: [],
     status: [],
     equipment: [],
     resources: [],

@@ -89,7 +89,8 @@ const tabLabels: Record<TabId, string> = {
   spells: "Spells",
   bond: "Bond",
   checks: "Checks",
-  features: "Features",
+  features: "Class Actions",
+  feats: "Feats",
   status: "Status",
   equipment: "Equipment",
   resources: "Resources",
@@ -299,11 +300,12 @@ const orderedTabs: TabId[] = [
   "spells",
   "bond",
   "checks",
-  "features",
+  "features",  // "Class Actions"
+  "feats",
   "status",
   "equipment",
   "resources",
-  "outOfCombat",
+  // "outOfCombat" dropped (P-SHEET) — Short/Long Rest live on buttons, not a tab
   "notes",
 ];
 
@@ -1757,7 +1759,7 @@ export function ActorCard({
             );
           })}
         </span>
-        <span className="abs-check-additive" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, flexWrap: "wrap" }}>
+        <span className="abs-check-additive" style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, flexWrap: "wrap" }}>
           <button
             className="secondary-button compact"
             type="button"
@@ -1786,7 +1788,7 @@ export function ActorCard({
             </span>
           )}
           {additiveMenuOpen && (
-            <span style={{ display: "inline-flex", flexDirection: "column", gap: 4, padding: "5px 7px", border: "1px solid #2a2a3e", borderRadius: 6, background: "#13131f" }}>
+            <span style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, zIndex: 30, display: "inline-flex", flexDirection: "column", gap: 4, padding: "6px 8px", border: "1px solid #3a3a52", borderRadius: 6, background: "#13131f", boxShadow: "0 6px 18px rgba(0,0,0,0.5)", whiteSpace: "nowrap" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 10, color: "#9d8cff", minWidth: 62 }}>To roll</span>
                 {ADDITIVE_DICE.map((die) => (

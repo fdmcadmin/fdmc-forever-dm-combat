@@ -6,11 +6,12 @@ export type TabId =
   | "spells"
   | "bond"
   | "checks"
-  | "features"
+  | "features"   // rendered as "Class Actions" (P-SHEET)
+  | "feats"      // P-SHEET — feats (mechanical effects feed derived stats)
   | "status"
   | "equipment"
   | "resources"
-  | "outOfCombat"
+  | "outOfCombat" // back-compat only; no longer rendered as its own tab (P-SHEET)
   | "notes";
 
 export type TabDefinition = {

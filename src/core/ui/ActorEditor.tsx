@@ -40,7 +40,7 @@ function createBlankActor(): Actor {
     pinnedReactions: [],
     tabs: {
       main: [], bonus: [], spells: [], bond: [], checks: [],
-      features: [], status: [], equipment: [], resources: [], outOfCombat: [], notes: [],
+      features: [], feats: [], status: [], equipment: [], resources: [], outOfCombat: [], notes: [],
     },
   };
 }

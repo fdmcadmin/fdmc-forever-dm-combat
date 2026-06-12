@@ -33,18 +33,26 @@ export function createPlayerTabs(options: {
   bond: ActorAction[];
   checksOverride?: ActorAction[];
   featuresOverride?: ActorAction[];
+  featsOverride?: ActorAction[];
   equipmentOverride?: ActorAction[];
   resourcesOverride?: ActorAction[];
   outOfCombatOverride?: ActorAction[];
   notesOverride?: ActorAction[];
 }): TabActionMap {
+  // P-SHEET: the "Features" tab is now "Class Actions"; feats get their own tab.
+  // Feats = an explicit featsOverride, or auto-extracted from featuresOverride by the
+  // "Feats" category — so existing actors migrate with no per-file edits.
+  const featureEntries = options.featuresOverride ?? [];
+  const classActions = featureEntries.filter(a => a.category !== "Feats");
+  const feats = options.featsOverride ?? featureEntries.filter(a => a.category === "Feats");
   return {
     main: options.main,
     bonus: options.bonus ?? [],
     spells: options.spells ?? [],
     bond: options.bond,
     checks: options.checksOverride ?? playerChecks,
-    features: options.featuresOverride ?? [],
+    features: classActions,
+    feats,
     status: [],
     equipment: options.equipmentOverride ?? equipment,
     resources: options.resourcesOverride ?? [],
