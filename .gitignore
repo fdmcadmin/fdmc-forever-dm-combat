@@ -8,9 +8,6 @@ dist/
 src/private/
 # Private actor export — real party data, never publish to the repo
 fdmc-actor-library-export.json
-# Private campaign content packs (monsters + equipment) — generated from src/private
-fdmc-monster-pack.json
-fdmc-equipment-pack.json
 
 # Local env / secrets
 .env

@@ -8,7 +8,6 @@
     "build": "tsc -b && vite build",
     "postbuild": "node scripts/stage-dist.mjs",
     "generate-export": "npx tsx scripts/generateActorExport.ts",
-    "generate-packs": "npx tsx scripts/generateCampaignPacks.ts",
     "preview": "vite preview",
     "dev:public": "vite --host 0.0.0.0 --port 5173",
     "preview:public": "vite preview --host 0.0.0.0 --port 4173",
