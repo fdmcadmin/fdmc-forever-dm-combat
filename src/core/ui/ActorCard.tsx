@@ -2,6 +2,13 @@
 import { appendBonusDie, applyAdvantage, type RollMode } from "../dice/diceFormula";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
+// Standard combat actions (5e 2024) — declared from a dropdown above the actions list,
+// logged to the encounter log so the table sees what the actor did this turn.
+const STANDARD_COMBAT_ACTIONS = [
+  "Attack", "Magic", "Dash", "Disengage", "Dodge", "Help", "Hide", "Ready",
+  "Search", "Study", "Utilize", "Influence", "Grapple", "Shove", "Improvise",
+  "Two-Weapon Fighting", "Interact with an Object", "Opportunity Attack",
+] as const;
 const DAMAGE_ADDITIVE_DICE = ["d4", "d6", "d8", "d10", "d12"] as const;
 import OBR from "@owlbear-rodeo/sdk";
 import { HitPointBadge } from "../hp/HitPointBadge";
@@ -3094,6 +3101,26 @@ export function ActorCard({
         onChangeTab={setActiveTab}
         counts={Object.fromEntries(visibleTabs.map((t) => [t, actor.tabs[t]?.length ?? 0]))}
       />
+
+      {/* Standard combat actions — quick declare (Dash, Dodge, Disengage, …) above the
+          actions list; logs to the encounter log so the table sees the called action. */}
+      <div className="standard-actions-row" style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0 2px" }}>
+        <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>Standard action</span>
+        <select
+          defaultValue=""
+          onChange={(e) => {
+            const action = e.target.value;
+            if (!action) return;
+            onLog({ actorName: actor.name, actionName: action, tabId: "system", message: `${actor.name} takes the ${action} action.` });
+            e.target.value = "";
+          }}
+          style={{ flex: 1, minWidth: 0, fontSize: 12, padding: "3px 6px", background: "#111", border: "1px solid #3a3a52", borderRadius: 4, color: "#ccc" }}
+          title="Declare a standard combat action — logs it to the encounter log"
+        >
+          <option value="">— Declare a standard action —</option>
+          {STANDARD_COMBAT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
 
       {activeTab === "notes" ? (
         <ActorNotesPanel
