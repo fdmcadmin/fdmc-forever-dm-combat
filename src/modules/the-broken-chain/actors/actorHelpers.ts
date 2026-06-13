@@ -1,5 +1,5 @@
 import type { ActionCost } from "../../../core/types/actionEconomy";
-import type { ActorAction } from "../../../core/types/tabs";
+import type { ActorAction, ResourceKind } from "../../../core/types/tabs";
 
 type CheckSpec = [string, string];
 
@@ -107,6 +107,36 @@ export function compactResource(id: string, label: string, description: string, 
     label,
     description,
     metadata: { details: description },
+    category,
+    actionKind: "resource",
+    logMode: "silent",
+    displayMode: "compact",
+  };
+}
+
+/**
+ * Machine-trackable resource (P-SHEET S2). Carries a max (metadata.additive), a
+ * resourceKind, and a reset cadence (metadata.cost) so useResourceCounterState can
+ * decrement on use and auto-restore on Short/Long Rest.
+ *   reset "long"  → restored on a Long Rest only (kind "pool"/"spellSlot"/"counter").
+ *   reset "short" → restored on a Short Rest (also on a Long Rest).
+ *   reset "manual"→ never auto-reset (kind "counter"); DM/player resets by hand.
+ */
+export function restResource(
+  id: string,
+  label: string,
+  max: number,
+  reset: "short" | "long" | "manual",
+  kind: ResourceKind,
+  description: string,
+  category = "Class Feature Resources",
+): ActorAction {
+  const cadence = reset === "short" ? "Short Rest" : reset === "long" ? "Long Rest" : "Manual";
+  return {
+    id,
+    label,
+    description,
+    metadata: { details: description, additive: String(max), resourceKind: kind, cost: cadence },
     category,
     actionKind: "resource",
     logMode: "silent",

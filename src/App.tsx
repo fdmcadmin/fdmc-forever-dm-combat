@@ -2639,8 +2639,8 @@ export default function App() {
         onResetStatusTracker={(trackerId) => resetActorTracker(actorToShow, trackerId)}
         onResetAllActorStatuses={() => resetActorStatuses(actorToShow)}
         resourceCounters={counters[actorToShow.id]}
-        onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest.` }); }}
-        onLongRest={() => { resetActorResources(actorToShow.id, "long"); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest.` }); }}
+        onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
+        onLongRest={() => { resetActorResources(actorToShow.id, "long"); const m = actorToShow.stats.hp.max; void setActorHp(actorToShow.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
         onLog={addEntry}
       />
       )}
@@ -2962,8 +2962,8 @@ export default function App() {
                 onResetStatusTracker={(trackerId) => resetActorTracker(focusedActor, trackerId)}
                 onResetAllActorStatuses={() => resetActorStatuses(focusedActor)}
                 resourceCounters={counters[focusedActorId]}
-                onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest.` }); }}
-                onLongRest={() => { resetActorResources(focusedActorId, "long"); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest.` }); }}
+                onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
+                onLongRest={() => { resetActorResources(focusedActorId, "long"); const m = focusedActor.stats.hp.max; void setActorHp(focusedActorId, { current: m, max: m, temp: 0 }); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
                 onLog={addEntry}
               />
             </div>
