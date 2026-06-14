@@ -6,7 +6,7 @@ import type { FdmcRecentEventSlot } from "../table-state/fdmcRoomLiveState";
 export type FdmcSeat = {
   seatId: string;         // "seat-1", "seat-2", etc.
   label: string;          // "Player 1"
-  seatMode: "player" | "viewer";
+  seatMode: "player" | "viewer" | "co-dm";  // co-dm = player who also gets DM editing tools
   actorIds: string[];     // ["vaelith", "faelar"]
   primaryActorId: string;
 };
@@ -43,7 +43,7 @@ export type SeatAssignBroadcast = {
   seatId: string;
   viewerSeatKey: string;
   label: string;
-  seatMode: "player" | "viewer";
+  seatMode: "player" | "viewer" | "co-dm";
   actorIds: string[];
   primaryActorId: string;
 };

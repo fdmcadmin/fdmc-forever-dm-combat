@@ -88,6 +88,7 @@ import {
 import {
   readFdmcRoomStateKey,
   publishFdmcRoomStateKey,
+  subscribeFdmcRoomStateKey,
 } from "./core/table-state/roomStateBridge";
 import {
   deregisterMonsterInstance,
@@ -95,6 +96,7 @@ import {
   patchMonsterHp,
   pushRecentEvent,
   normalizeFdmcRoomLiveState,
+  type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
 import {
   FDMC_TABLE_BINDING_KEY,
@@ -195,6 +197,9 @@ async function purgeLegacyFdmcMetadata() {
 function useViewerRole(tableBinding: FdmcTableBinding | null) {
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [idLoaded, setIdLoaded] = useState(false);
+  // Co-DM: true when the viewer's claimed seat is flagged "co-dm". Read independently
+  // from the main live-state hook (which is created later) so the role resolves early.
+  const [isCoDmSeat, setIsCoDmSeat] = useState(false);
 
   useEffect(() => {
     if (!OBR.isAvailable) {
@@ -206,12 +211,34 @@ function useViewerRole(tableBinding: FdmcTableBinding | null) {
       .catch(() => setIdLoaded(true));
   }, []);
 
+  // Watch the room seats/bindings; flip co-dm on when this viewer's seat is "co-dm".
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    let cancelled = false;
+    let key: string | null = null;
+    const check = (state: FdmcRoomLiveState | undefined) => {
+      if (cancelled || !state || !key) return;
+      const binding = Object.values(state.seatBindings).find(b => b.viewerSeatKey === key);
+      const seat = binding ? state.seats[binding.seatId] : undefined;
+      setIsCoDmSeat(seat?.seatMode === "co-dm");
+    };
+    void OBR.player.getId().then(id => {
+      if (cancelled) return;
+      key = hashViewerId(id);
+      void readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState).then(check);
+    });
+    const unsub = subscribeFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState, check);
+    return () => { cancelled = true; unsub(); };
+  }, []);
+
   // Still loading viewer ID — return loading state
   if (!idLoaded) return "loading" as const;
+  // Real GM ALWAYS wins first — a Co-DM seat change can never lock the GM out.
+  if (tableBinding && tableBinding.gmControllerId === viewerId) return "dm" as const;
+  // Co-DM seat → DM-level access (editing tools).
+  if (isCoDmSeat) return "dm" as const;
   // No table binding — DM needs to claim
   if (!tableBinding) return "unknown" as const;
-  // Binding exists and viewer ID matches
-  if (tableBinding.gmControllerId === viewerId) return "dm" as const;
   // Binding exists, viewer ID loaded but doesn't match → player
   return "player" as const;
 }

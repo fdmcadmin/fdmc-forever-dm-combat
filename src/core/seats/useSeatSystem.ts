@@ -87,7 +87,7 @@ export type UseDmSeatSystemOptions = {
 export type SeatAssignmentInput = {
   seatId: string;
   label: string;
-  seatMode: "player" | "viewer";
+  seatMode: "player" | "viewer" | "co-dm";
   actorIds: string[];
   primaryActorId: string;
 };

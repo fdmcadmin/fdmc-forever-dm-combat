@@ -90,7 +90,7 @@ export function withAlpha(hex: string, alpha: number): string {
 // either FdmcSeat records or the room-metadata seat snapshots.
 type SeatLike = {
   seatId: string;
-  seatMode?: "player" | "viewer";
+  seatMode?: "player" | "viewer" | "co-dm";
   actorIds?: string[];
   primaryActorId?: string;
 };

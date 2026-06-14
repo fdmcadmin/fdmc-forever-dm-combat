@@ -41,7 +41,7 @@ export function SeatAssignmentPanel({
     return fromRoom.length > 0 ? fromRoom : ["seat-1", "seat-2", "seat-3", "seat-4"];
   });
 
-  const [drafts, setDrafts] = useState<Record<string, { label: string; seatMode: "player" | "viewer"; primaryActorId: string; actorIds: string[] }>>(
+  const [drafts, setDrafts] = useState<Record<string, { label: string; seatMode: "player" | "viewer" | "co-dm"; primaryActorId: string; actorIds: string[] }>>(
     () => Object.fromEntries(seatIds.map(id => [id, {
       label: seats[id]?.label ?? `Player ${id.replace("seat-", "")}`,
       seatMode: seats[id]?.seatMode ?? "player",
@@ -123,7 +123,8 @@ export function SeatAssignmentPanel({
           const isSaving = saving === seatId;
 
           const isViewer = draft.seatMode === "viewer";
-          const seatColor = isViewer ? "#4caf50" : getSeatColor(seatId);
+          const isCoDm = draft.seatMode === "co-dm";
+          const seatColor = isViewer ? "#4caf50" : isCoDm ? "#e0a030" : getSeatColor(seatId);
           return (
             <div key={seatId} style={{ border: `1px solid ${isViewer ? "#2a3a2a" : "#2a2a3e"}`, borderLeft: `4px solid ${seatColor}`, borderRadius: 6, padding: 10, background: withAlpha(seatColor, 0.05) }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -137,14 +138,18 @@ export function SeatAssignmentPanel({
                   />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {/* Player / Viewer mode toggle */}
+                  {/* Seat type cycle: Player → Co-DM (DM editing tools) → Viewer */}
                   <button
                     type="button"
-                    onClick={() => setDrafts(c => ({ ...c, [seatId]: { ...c[seatId], seatMode: isViewer ? "player" : "viewer" } }))}
-                    style={{ fontSize: 10, padding: "1px 7px", background: isViewer ? "#1a3a1a" : "transparent", border: `1px solid ${isViewer ? "#4caf5066" : "#444"}`, borderRadius: 3, color: isViewer ? "#4caf50" : "#666", cursor: "pointer" }}
-                    title="Toggle player / viewer seat"
+                    onClick={() => setDrafts(c => {
+                      const cur = c[seatId].seatMode;
+                      const next = cur === "player" ? "co-dm" : cur === "co-dm" ? "viewer" : "player";
+                      return { ...c, [seatId]: { ...c[seatId], seatMode: next } };
+                    })}
+                    style={{ fontSize: 10, padding: "1px 7px", background: isViewer ? "#1a3a1a" : isCoDm ? "#3a3320" : "transparent", border: `1px solid ${isViewer ? "#4caf5066" : isCoDm ? "#e0a03066" : "#444"}`, borderRadius: 3, color: isViewer ? "#4caf50" : isCoDm ? "#e0a030" : "#666", cursor: "pointer" }}
+                    title="Click to cycle seat type: Player → Co-DM (grants DM editing tools) → Viewer"
                   >
-                    {isViewer ? "👁 Viewer" : "Player"}
+                    {isViewer ? "👁 Viewer" : isCoDm ? "★ Co-DM" : "Player"}
                   </button>
                   <span title={binding ? "A player is bound to this seat" : "Seat is open"} style={{ fontSize: 10, color: binding ? seatColor : "#555", fontWeight: binding ? 700 : 400 }}>
                     {binding ? `● ${binding.viewerSeatKey.slice(0, 8)}` : "○ open"}

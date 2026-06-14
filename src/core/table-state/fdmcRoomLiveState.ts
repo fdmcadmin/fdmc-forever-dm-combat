@@ -6,7 +6,7 @@ import type { MonsterVisibilityMode } from "../types/monsterTypes";
 export type FdmcSeat = {
   seatId: string;
   label: string;
-  seatMode: "player" | "viewer";
+  seatMode: "player" | "viewer" | "co-dm";
   actorIds: string[];
   primaryActorId: string;
 };
@@ -175,7 +175,7 @@ export function normalizeFdmcRoomLiveState(val: unknown): FdmcRoomLiveState | un
         return [k, {
           seatId: typeof seat.seatId === "string" ? seat.seatId : k,
           label: typeof seat.label === "string" ? seat.label : k,
-          seatMode: seat.seatMode === "viewer" ? "viewer" : "player",
+          seatMode: seat.seatMode === "viewer" ? "viewer" : seat.seatMode === "co-dm" ? "co-dm" : "player",
           actorIds: Array.isArray(seat.actorIds) ? seat.actorIds.filter((id): id is string => typeof id === "string") : [],
           primaryActorId: typeof seat.primaryActorId === "string" ? seat.primaryActorId : "",
         }];
