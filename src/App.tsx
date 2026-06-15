@@ -1060,6 +1060,9 @@ export default function App() {
   const [lootOffer, setLootOffer] = useState<import("./core/ui/EquipmentLibraryStandalone").LootOffer | null>(null);
   const [showConvergePanel, setShowConvergePanel] = useState(false);
   const [convergenceSubmitting, setConvergenceSubmitting] = useState(false);
+  // Convergence item selection — lifted to component scope so the hook is never
+  // called conditionally inside the panel's render IIFE (rules-of-hooks).
+  const [convergenceSelected, setConvergenceSelected] = useState<string[]>([]);
   const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
   const [levelUpRejectionToast, setLevelUpRejectionToast] = useState<string | null>(null);
 
@@ -2104,12 +2107,9 @@ export default function App() {
           })
           .filter((i): i is import("./core/ui/EquipmentBagEditor").EquipmentItem => Boolean(i?.convergence?.role === "input"));
 
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const [selected, setSelected] = useState<string[]>([]);
-
-        function toggle(id: string) {
-          setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-        }
+        const selected = convergenceSelected;
+        const toggle = (id: string) =>
+          setConvergenceSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
         function submitConvergence() {
           if (selected.length < 2 || convergenceSubmitting) return;
