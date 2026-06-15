@@ -879,8 +879,13 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     />;
   }
 
+  // A DM edit to a campaign item is stored as an unlocked override under the same id
+  // (see handleUnlockItem / upsertItem). Overlay those overrides so the Broken Chain
+  // drawer shows the edited version instead of the original locked copy.
+  const dmById = new Map(dmLib.map(i => [i.id, i]));
+  const campaignMerged = campaignLib.map(c => dmById.get(c.id) ?? c);
   const filteredCampaign = filterText
-    ? campaignLib.filter(i => {
+    ? campaignMerged.filter(i => {
         const lower = filterText.toLowerCase().trim();
         // Name search only triggers with 3+ chars to prevent spurious matches (e.g. "1" matching "+1" items)
         const nameMatch = lower.length >= 3 && i.name.toLowerCase().includes(lower);
@@ -889,7 +894,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
         const encounterMatch = Boolean(i.sourceEncounter?.toLowerCase().includes(lower));
         return nameMatch || actMatch || encounterMatch;
       })
-    : campaignLib;
+    : campaignMerged;
   // "My Library" = the DM's OWN custom items only. Exclude anything whose id is also a
   // campaign item (campaign loot leaks into the dm store if a pack was imported via the
   // generic Import, or from older builds) so it doesn't double-show alongside the Broken

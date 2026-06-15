@@ -145,12 +145,16 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[]): void {
 }
 
 function upsertItem(item: EquipmentItem): void {
-  // Only DM items can be upserted — locked campaign items require explicit 🔓 unlock first
-  if (item.isLocked) return;
+  // Editing a locked campaign item writes an UNLOCKED DM override under the same id.
+  // The combined loadEquipmentLibrary() gives DM items priority over campaign items
+  // with the same id, so the edit takes effect everywhere it's referenced.
+  // (Previously this silently returned for isLocked items, so library/bag edits to
+  //  campaign gear appeared to do nothing.)
+  const toSave: EquipmentItem = item.isLocked ? { ...item, isLocked: false } : item;
   const library = loadEquipmentLibrary("dm");
-  const idx = library.findIndex(i => i.id === item.id);
-  if (idx === -1) library.push(item);
-  else library[idx] = item;
+  const idx = library.findIndex(i => i.id === toSave.id);
+  if (idx === -1) library.push(toSave);
+  else library[idx] = toSave;
   saveEquipmentLibrary(library, "dm");
 }
 
