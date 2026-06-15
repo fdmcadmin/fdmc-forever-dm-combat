@@ -229,6 +229,10 @@ function DmPanelApp() {
     saveActorOverride(request.actorId, override);
     const freshOverrides = loadActorOverrides();
     setActorOverrides(freshOverrides);
+    // Persist the approved actor to the BASE library too (not just a session override) —
+    // otherwise the level-up reverts on the next Sync/reload. upsertActorInLibrary reads
+    // fresh localStorage so it never clobbers actors added in another window.
+    upsertActorInLibrary(finalActor);
     setActorLibrary(lib => { const next = { ...lib, [request.actorId]: finalActor }; saveActorLibrary(next); return next; });
 
     // Sync level-up HP to live state — new max HP must win over old live HP
@@ -239,6 +243,10 @@ function DmPanelApp() {
     }
 
     pushActorsToAllSeats({ freshOverrides });
+    // Tell the main window (and any Co-DM card view) to reload library + overrides from
+    // localStorage — without this the DM's own card stays on the pre-level-up actor until
+    // a manual ↺ Sync. Every other dm-panel save already does this.
+    broadcastLibraryUpdate();
     setLevelUpRequests(prev => {
       const next = prev.filter(r => r.actorId !== request.actorId);
       try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }

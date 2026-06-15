@@ -534,6 +534,9 @@ export default function App() {
         seatId: request.seatId,
         approved: true,
       }, { destination: "REMOTE" });
+      // Notify the dm-panel window (and any Co-DM card view) to reload library +
+      // overrides from localStorage so they don't keep showing the pre-level-up actor.
+      void obrSend(DM_LIBRARY_UPDATED_CHANNEL, { type: "library-updated" }, { destination: "REMOTE" });
     }
   }
 
