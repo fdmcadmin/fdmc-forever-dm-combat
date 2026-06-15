@@ -86,6 +86,22 @@ function synthesizeAcEffect(item: EquipmentItem): StatEffect | undefined {
   return undefined;
 }
 
+// ─── DEX contribution from an armor AC formula ─────────────────────────────────
+// Armor whose AC string references DEX ("12+@DEX", "11 + DEX (max 2)") adds the
+// wearer's DEX modifier — capped when the formula says so (medium armor "(max 2)").
+// Heavy armor has no DEX in its formula, so it returns null (no bonus). The base
+// number is handled separately as setAC; this only resolves the "+ DEX" half that
+// synthesizeAcEffect intentionally drops.
+function armorDexAcBonus(ac: string | undefined, dexModifier: number): number | null {
+  if (!ac || !/\bDEX\b/i.test(ac)) return null;
+  const capMatch = /max\s*(\d+)/i.exec(ac);
+  if (capMatch) {
+    const cap = parseInt(capMatch[1], 10);
+    if (!isNaN(cap)) return Math.min(dexModifier, cap);
+  }
+  return dexModifier;
+}
+
 // ─── Get equipped items from actor + library ──────────────────────────────────
 
 export function getEquippedLibraryItems(actor: Actor): EquipmentItem[] {
@@ -241,12 +257,23 @@ export function deriveActorStats(
     }
   }
 
-  // DEX cap for armor: if armor was set with setAC, DEX mod may apply
-  // Simple rule: if AC was overridden by armor, add DEX mod unless armor is heavy
-  // (Heavy armor: no DEX; Medium: cap +2; Light/Unarmored: full DEX)
-  // For now we trust the player's base AC already accounts for this at profile time
-  // Equipment AC additions are flat bonuses (shields, rings, etc.)
-  const finalAC = baseAC + acBonus;
+  // DEX from armor AC formulas: armor like Studded Leather ("12+@DEX") sets the base
+  // (setAC, above) and adds the wearer's DEX modifier (capped for medium armor). DEX
+  // reflects equipment + drain since it reads the already-derived score. Applied once,
+  // from the first equipped item whose formula references DEX (the body armor).
+  let acDexBonus = 0;
+  const dexModifierForAc = calcModifier(derived.dex);
+  for (const item of items) {
+    const contrib = armorDexAcBonus(item.ac, dexModifierForAc);
+    if (contrib !== null) {
+      acDexBonus = contrib;
+      acModifiedBy.push(`${item.name} (DEX ${contrib >= 0 ? "+" : ""}${contrib})`);
+      break;
+    }
+  }
+
+  // Shields/rings (addAC) are flat bonuses; armor DEX is added here.
+  const finalAC = baseAC + acBonus + acDexBonus;
 
   return {
     str: makeDerived(derived.str, base.str, modifiedBy.str),
