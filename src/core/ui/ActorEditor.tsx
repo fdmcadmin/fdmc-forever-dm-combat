@@ -2,7 +2,7 @@ import { useState } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { TabId, TabActionMap } from "../types/tabs";
-import { ActorEditorActionTab } from "./ActorEditorActionTab";
+import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
@@ -47,9 +47,7 @@ function createBlankActor(): Actor {
 
 type EditorTab =
   | "profile"
-  | "actions"
-  | "bonus"
-  | "reactions"
+  | "combat"
   | "bonds"
   | "spells"
   | "resources"
@@ -59,9 +57,7 @@ type EditorTab =
 
 const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   profile: "Profile",
-  actions: "Class Actions",
-  bonus: "Bonus",
-  reactions: "Reactions",
+  combat: "Combat Actions",
   bonds: "Bond",
   spells: "Spells",
   resources: "Resources",
@@ -70,7 +66,7 @@ const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   notes: "Notes",
 };
 
-const EDITOR_TABS: EditorTab[] = ["profile", "actions", "bonus", "reactions", "bonds", "spells", "resources", "feats", "equipment", "notes"];
+const EDITOR_TABS: EditorTab[] = ["profile", "combat", "bonds", "spells", "resources", "feats", "equipment", "notes"];
 
 // Distinct color accent per creator step (P-UX1). Derived from the shared
 // `tabVisuals` source of truth so the creator's tabs match the character sheet's
@@ -78,9 +74,7 @@ const EDITOR_TABS: EditorTab[] = ["profile", "actions", "bonus", "reactions", "b
 // 1:1 sheet tab, so they carry their own accents.
 const EDITOR_TAB_ACCENT: Record<EditorTab, string> = {
   profile: "#7b68ee",
-  actions: tabAccent("main"),
-  bonus: tabAccent("bonus"),
-  reactions: "#9be9a8",
+  combat: tabAccent("main"),
   bonds: tabAccent("bond"),
   spells: tabAccent("spells"),
   resources: tabAccent("features"),
@@ -91,13 +85,11 @@ const EDITOR_TAB_ACCENT: Record<EditorTab, string> = {
 
 // Which steps are required vs optional in the guided flow.
 const REQUIRED_STEPS = new Set<EditorTab>(["profile"]);
-const RECOMMENDED_STEPS = new Set<EditorTab>(["actions"]);
+const RECOMMENDED_STEPS = new Set<EditorTab>(["combat"]);
 
 const STEP_HINT: Record<EditorTab, string> = {
   profile: "Required — name, level, and core stats. Everything else builds on this.",
-  actions: "Recommended — add at least one attack or ability (the character's main turn action).",
-  bonus: "Optional — bonus actions this character can take.",
-  reactions: "Optional — reactions triggered on other turns.",
+  combat: "Recommended — add the character's actions, bonus actions, and reactions. Choose each entry's type; it's filed automatically.",
   bonds: "Optional — bonds & primed additives (Rage, Focus, Pressure, Dark Bargain…).",
   spells: "Optional — spells and slot levels.",
   resources: "Optional — resource pools and class features.",
@@ -393,9 +385,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   // Per-step item count, used for tab count badges + guided gating.
   function stepCount(tab: EditorTab): number {
     switch (tab) {
-      case "actions": return (tabsDraft.main ?? []).filter(a => !a.economyCost?.includes("reaction")).length;
-      case "reactions": return (tabsDraft.main ?? []).filter(a => a.economyCost?.includes("reaction")).length;
-      case "bonus": return (tabsDraft.bonus ?? []).length;
+      case "combat": return (tabsDraft.main ?? []).length + (tabsDraft.bonus ?? []).length;
       case "bonds": return (tabsDraft.bond ?? []).length;
       case "spells": return (tabsDraft.spells ?? []).length;
       case "resources": return (tabsDraft.resources ?? []).length;
@@ -509,17 +499,12 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
         {activeTab === "profile" && (
           <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} />
         )}
-        {activeTab === "actions" && (
-          <ActorEditorActionTab tabId="main" actions={tabsDraft.main ?? []} onChange={handleTabActions("main")} />
-        )}
-        {activeTab === "bonus" && (
-          <ActorEditorActionTab tabId="bonus" actions={tabsDraft.bonus ?? []} onChange={handleTabActions("bonus")} />
-        )}
-        {activeTab === "reactions" && (
-          <ActorEditorActionTab tabId="main" actions={tabsDraft.main?.filter(a => a.economyCost?.includes("reaction")) ?? []} onChange={actions => {
-            const nonReaction = (tabsDraft.main ?? []).filter(a => !a.economyCost?.includes("reaction"));
-            handleTabActions("main")([...nonReaction, ...actions]);
-          }} />
+        {activeTab === "combat" && (
+          <CombatActionsTab
+            mainActions={tabsDraft.main ?? []}
+            bonusActions={tabsDraft.bonus ?? []}
+            onChange={({ main, bonus }) => setTabsDraft(d => ({ ...d, main, bonus }))}
+          />
         )}
         {activeTab === "bonds" && (
           <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} />

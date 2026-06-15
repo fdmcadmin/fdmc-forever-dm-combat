@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import appManifest from "../public/manifest.json";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
 const ENCOUNTER_LOAD_QUEUE_KEY = FDMC_STORAGE_KEYS.encounterLoadQueue;
@@ -115,7 +116,9 @@ import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, do
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const APP_VERSION = "FDMC 0.6.0-p3 · 2026-06-03";
+// Single source of truth: the OBR manifest version. Bump public/manifest.json and
+// this label + the OBR extension version move together (no more stale-version drift).
+const APP_VERSION = `FDMC v${appManifest.version}`;
 const DM_LIBRARY_UPDATED_CHANNEL = FDMC_CHANNELS.dmLibraryUpdated;
 
 /** Parse a gold cost from an item's free-text value ("25 gp", "1,200 gp", "5"). 0 if none. */

@@ -96,6 +96,9 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
       tab: tabId === "spells" ? "spell" : tabId === "bond" ? "bond" : tabId === "bonus" ? "bonus" : "action",
       actionCost: tabId === "bonus" ? "bonus" : tabId === "bond" ? "bond" : "action",
       rollMode: "attack",
+      // P-UX4 Phase 1: a new Combat Actions entry defaults to the Action type, so
+      // auto-fill its Category heading. tabId "main" only flows from CombatActionsTab.
+      source: tabId === "main" ? "Actions" : undefined,
     }
   );
   const [errors, setErrors] = useState<string[]>([]);
@@ -143,7 +146,12 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>
           Action Economy
-          <select value={draft.actionCost} onChange={e => set("actionCost", e.target.value as PcActionCost)}
+          <select value={draft.actionCost} onChange={e => {
+            // P-UX4 Phase 1: choosing Action auto-fills the Category when it is empty.
+            const next = e.target.value as PcActionCost;
+            setDraft(d => ({ ...d, actionCost: next, source: next === "action" && !d.source?.trim() ? "Actions" : d.source }));
+            setErrors([]);
+          }}
             style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
             {(Object.entries(ACTION_COST_LABELS) as [PcActionCost, string][]).map(([v, l]) =>
               <option key={v} value={v}>{l}</option>
@@ -362,6 +370,162 @@ export function ActorEditorActionTab({ tabId, actions, onChange }: ActorEditorAc
           style={{ padding: "5px 12px", background: "transparent", border: "1px dashed #444", borderRadius: 4, color: "#888", cursor: "pointer", fontSize: 12, marginTop: 4 }}
         >
           + Add Action
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Combat Actions (consolidated) ──────────────────────────────────────────────
+// P-UX4 Phase 1: one tab replaces the separate Action / Bonus / Reaction creator
+// steps. The DM creates an entry and picks its type; the entry is filed into the
+// correct sheet bucket automatically by its chosen economy:
+//   • Bonus Action          → tabs.bonus
+//   • Action / Reaction / … → tabs.main
+// Reactions (economy "reaction") are flagged pinned/pinReaction so they surface in
+// the rendered sheet's PinnedReactions category (ActorCard.isPinnedReactionAction)
+// and round-trip correctly when edited. The rendered sheet itself is unchanged.
+
+const ECONOMY_BADGE: Record<string, { label: string; color: string }> = {
+  bonus: { label: "Bonus", color: tabAccent("bonus") },
+  reaction: { label: "Reaction", color: "#9be9a8" },
+  bond: { label: "Bond", color: tabAccent("bond") },
+  action: { label: "Action", color: tabAccent("main") },
+};
+
+function economyKey(action: ActorAction): string {
+  const costs = action.economyCost ?? [];
+  if (costs.includes("bonus")) return "bonus";
+  if (costs.includes("reaction")) return "reaction";
+  if (costs.includes("bond")) return "bond";
+  return "action";
+}
+
+type CombatActionsTabProps = {
+  mainActions: ActorAction[];
+  bonusActions: ActorAction[];
+  onChange: (next: { main: ActorAction[]; bonus: ActorAction[] }) => void;
+};
+
+export function CombatActionsTab({ mainActions, bonusActions, onChange }: CombatActionsTabProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [addingNew, setAddingNew] = useState(false);
+
+  // Unified, ordered list: main first (Actions + Reactions), then Bonus.
+  const entries = [...mainActions, ...bonusActions];
+
+  // Route a saved action into the correct bucket by its economy, deriving the
+  // pinned-reaction flags so reactions surface on the rendered sheet. Same-bucket
+  // edits keep their position; cross-bucket edits move the entry.
+  function routeAndApply(action: ActorAction) {
+    const isReaction = Boolean(action.economyCost?.includes("reaction"));
+    const routed: ActorAction = { ...action, pinned: isReaction, pinReaction: isReaction };
+    const target: "main" | "bonus" = routed.economyCost?.includes("bonus") ? "bonus" : "main";
+
+    const inMain = mainActions.some(a => a.id === routed.id);
+    const inBonus = bonusActions.some(a => a.id === routed.id);
+
+    let nextMain = mainActions;
+    let nextBonus = bonusActions;
+    if (target === "main") {
+      nextBonus = inBonus ? bonusActions.filter(a => a.id !== routed.id) : bonusActions;
+      nextMain = inMain ? mainActions.map(a => (a.id === routed.id ? routed : a)) : [...mainActions, routed];
+    } else {
+      nextMain = inMain ? mainActions.filter(a => a.id !== routed.id) : mainActions;
+      nextBonus = inBonus ? bonusActions.map(a => (a.id === routed.id ? routed : a)) : [...bonusActions, routed];
+    }
+    onChange({ main: nextMain, bonus: nextBonus });
+  }
+
+  function handleSaveEdit(updated: ActorAction) {
+    routeAndApply(updated);
+    setEditingId(null);
+  }
+
+  function handleAddNew(action: ActorAction) {
+    routeAndApply(action);
+    setAddingNew(false);
+  }
+
+  function handleArchive(actionId: string) {
+    onChange({
+      main: mainActions.filter(a => a.id !== actionId),
+      bonus: bonusActions.filter(a => a.id !== actionId),
+    });
+    if (editingId === actionId) setEditingId(null);
+  }
+
+  function handleDuplicate(action: ActorAction) {
+    routeAndApply({
+      ...action,
+      id: `${action.id}-copy-${Date.now().toString(36)}`,
+      label: `${action.label} (Copy)`,
+    });
+  }
+
+  const accent = tabAccent("main");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="fdmc-section-head" style={{ color: accent, marginTop: 0 }}>
+        Combat Actions
+        {entries.length > 0 && (
+          <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 8, background: accent, color: "#0d0d14", letterSpacing: 0 }}>{entries.length}</span>
+        )}
+      </div>
+      <p style={{ fontSize: 11, color: "#777", margin: "0 0 2px" }}>
+        Create an entry and choose its type — Action, Bonus Action, or Reaction. Each one is
+        filed into the right place on the character sheet automatically.
+      </p>
+
+      {entries.length === 0 && !addingNew && (
+        <p style={{ fontSize: 12, color: "#666", fontStyle: "italic" }}>Nothing here yet — use “+ Add Combat Action” below to create the first entry.</p>
+      )}
+
+      {entries.map(action => {
+        const badge = ECONOMY_BADGE[economyKey(action)] ?? ECONOMY_BADGE.action;
+        return (
+          <div key={action.id}>
+            {editingId === action.id ? (
+              <ActionForm
+                tabId="main"
+                initial={action}
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingId(null)}
+              />
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 8, background: badge.color, color: "#0d0d14", flexShrink: 0, textTransform: "uppercase", letterSpacing: 0.3 }}>{badge.label}</span>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{action.label}</span>
+                  {action.category && <span style={{ fontSize: 11, color: "#666", marginLeft: 6 }}>({action.category})</span>}
+                  {action.metadata?.attack && <span style={{ fontSize: 11, color: "#7b68ee", marginLeft: 6 }}>⚔ {action.metadata.attack}</span>}
+                  {action.metadata?.damage && <span style={{ fontSize: 11, color: "#e07b39", marginLeft: 6 }}>💥 {action.metadata.damage}</span>}
+                </div>
+                <button type="button" onClick={() => setEditingId(action.id)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>Edit</button>
+                <button type="button" onClick={() => handleDuplicate(action)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>Dupe</button>
+                <button type="button" onClick={() => handleArchive(action.id)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>Remove</button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {addingNew && (
+        <ActionForm
+          tabId="main"
+          onSave={handleAddNew}
+          onCancel={() => setAddingNew(false)}
+        />
+      )}
+
+      {!addingNew && !editingId && (
+        <button
+          type="button"
+          onClick={() => setAddingNew(true)}
+          style={{ padding: "5px 12px", background: "transparent", border: "1px dashed #444", borderRadius: 4, color: "#888", cursor: "pointer", fontSize: 12, marginTop: 4 }}
+        >
+          + Add Combat Action
         </button>
       )}
     </div>
