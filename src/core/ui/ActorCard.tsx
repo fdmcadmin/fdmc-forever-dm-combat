@@ -34,6 +34,7 @@ import { CommittedRollPanel, type ReadiedRollCandidate } from "./CommittedRollPa
 import { getRerollSources } from "../state/rerollSources";
 import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
+import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
@@ -242,35 +243,6 @@ function formatModifier(modifier?: number) {
 function abilityRollFormula(actor: Actor, ability: AbilityId) {
   return `1d20${formatModifier(actor.abilityScores?.[ability]?.modifier)}`;
 }
-
-function getActorActions(actor: Actor) {
-  return Object.values(actor.tabs).flat();
-}
-
-/**
- * Reads initiative bonus from actor features/actions.
- * Value comes ONLY from what the player explicitly entered (metadata.initiativeBonus).
- * No hardcoded feat names or ruleset assumptions. Player enters their campaign value.
- */
-function getTraitInitiativeBonus(actor: Actor) {
-  return getActorActions(actor).reduce((total, action) => {
-    const metadata = action.metadata as (ActorAction["metadata"] & { initiativeBonus?: number }) | undefined;
-    if (typeof metadata?.initiativeBonus === "number" && Number.isFinite(metadata.initiativeBonus)) {
-      return total + metadata.initiativeBonus;
-    }
-    return total;
-  }, 0);
-}
-
-function initiativeRollFormula(actor: Actor) {
-  // Derived DEX includes equipment bonuses and drain — always current effective value
-  const derived = deriveActorStats(actor);
-  const dexModifier = derived.dex.modifier;
-  const traitBonus = getTraitInitiativeBonus(actor);
-  const total = dexModifier + traitBonus;
-  return `1d20${total >= 0 ? `+${total}` : String(total)}`;
-}
-
 
 function firstRollDiceLabel(action: ActorAction | null | undefined, fallbackLabel: string) {
   const override = action?.metadata?.diceLabel?.trim();

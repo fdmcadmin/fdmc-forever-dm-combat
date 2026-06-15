@@ -15,6 +15,7 @@ import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonst
 import type { FdmcCombatPhase } from "../table-state/fdmcRoomLiveState";
 import type { ActorActionEconomyMap } from "../types/actionEconomy";
 import { MONSTER_COLOR, NEUTRAL_SEAT_COLOR, withAlpha } from "../seats/seatColors";
+import { getActorInitiativeModifier } from "../state/initiative";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,8 @@ export type Combatant = {
   name: string;
   kind: "actor" | "monster";
   initiative: number | null;
-  /** DEX modifier (or actor's initiativeBonus) used for auto-roll */
+  /** Initiative modifier used for auto-roll. Actors: derived DEX modifier + trait
+   *  bonuses (Alert, etc.). Monsters: DEX modifier parsed from ability scores. */
   initiativeBonus: number;
   hp: { current: number; max: number; temp?: number };
   isActive: boolean;
@@ -120,7 +122,7 @@ export function buildCombatants(
         name: c.name,
         kind: "actor" as const,
         initiative: initiativeByActorId[actor.id] ?? null,
-        initiativeBonus: 0,
+        initiativeBonus: getActorInitiativeModifier(c),
         hp: liveHpByActorId[c.id] ?? c.stats.hp,
         isActive: false,
         isDead: (liveHpByActorId[c.id]?.current ?? c.stats.hp.current) <= 0,
@@ -132,7 +134,7 @@ export function buildCombatants(
       name: actor.name,
       kind: "actor" as const,
       initiative: initiativeByActorId[actor.id] ?? null,
-      initiativeBonus: 0,
+      initiativeBonus: getActorInitiativeModifier(actor),
       hp,
       isActive: actor.id === activeId,
       isDead: hp.current <= 0,
@@ -153,7 +155,7 @@ export function buildCombatants(
         name: c.name,
         kind: "actor" as const,
         initiative: initiativeByActorId[c.id] ?? null,
-        initiativeBonus: 0,
+        initiativeBonus: getActorInitiativeModifier(c),
         hp: cHp,
         isActive: c.id === activeId,
         isDead: cHp.current <= 0,

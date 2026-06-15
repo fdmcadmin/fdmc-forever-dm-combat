@@ -243,8 +243,9 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
           style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", resize: "vertical" }} />
       </label>
 
-      {/* Initiative bonus — only relevant for features/passives (Alert, Jack of All Trades, etc.) */}
-      {(tabId === "features" || draft.actionCost === "passive") && (
+      {/* Initiative bonus — relevant for feats/features/passives (Alert, Jack of All Trades,
+          etc.). Summed into the actor's initiative roll formula (card + combat tracker). */}
+      {(tabId === "feats" || tabId === "features" || draft.actionCost === "passive") && (
         <label style={{ fontSize: 12 }}>
           Initiative Bonus
           <input
