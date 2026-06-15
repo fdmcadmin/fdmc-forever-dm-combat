@@ -86,6 +86,8 @@ type ActorCardProps = {
   combatRound?: number;
   /** Resource counters — remaining count per resource action ID */
   resourceCounters?: Record<string, number>;
+  /** Character gold (gp) from live state — shown as a chip in the header. */
+  gold?: number;
   onShortRest?: () => void;
   onLongRest?: () => void;
   onLog: (input: AddCombatLogEntryInput) => void;
@@ -575,6 +577,7 @@ export function ActorCard({
   isActiveTurn = true,
   combatRound,
   resourceCounters,
+  gold,
   onShortRest,
   onLongRest,
   onLog,
@@ -3004,6 +3007,12 @@ export function ActorCard({
               <span className="stat-label">Speed</span>
               <span className="stat-value speed-value">{formatMovementSpeed(actor.stats.speed)}</span>
             </div>
+            {typeof gold === "number" && (
+              <div className="speed-subrow" title="Character gold — DM grants it; merchant purchases spend it">
+                <span className="stat-label">Gold</span>
+                <span className="stat-value" style={{ color: "#e0a030", fontWeight: 700 }}>💰 {gold}</span>
+              </div>
+            )}
           </div>
         </div>
 

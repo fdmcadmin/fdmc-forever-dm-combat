@@ -67,6 +67,8 @@ export type LootChoice = {
   offerId: string;
   chosenItemId: string;
   actorId: string;
+  /** Merchant purchase — gold to deduct from the buyer. Absent/0 for free loot. */
+  cost?: number;
 };
 
 export function isLootDelivery(msg: unknown): msg is LootDelivery {
@@ -397,6 +399,10 @@ type EquipmentLibraryStandaloneProps = {
   onExternalConvergenceDeny?: (req: ConvergenceRequest) => Promise<void>;
   /** Called by DM panel to attach item to actor + push to seat before notifying player */
   onDeliverLoot?: (seatId: string, item: EquipmentItem, message: string) => Promise<void>;
+  /** Called by DM panel to attach MULTIPLE items to one seat's actor in a single push (boss haul). */
+  onDeliverLootBundle?: (seatId: string, items: EquipmentItem[], message: string) => Promise<void>;
+  /** Called by DM panel to grant gold to a seat's primary actor. mode "add" = adjust, "set" = absolute. */
+  onSendGold?: (seatId: string, amount: number, mode: "add" | "set") => void;
   /** Open the New Item form immediately on mount (toolbar "+ Equipment" create flow). */
   autoCreate?: boolean;
   /** Pre-fill the encounter/loot-pool tag on a newly created item. */
@@ -407,7 +413,7 @@ type EquipmentLibraryStandaloneProps = {
   hideCreate?: boolean;
 };
 
-export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot, autoCreate = false, presetEncounter, createSignal, hideCreate = false }: EquipmentLibraryStandaloneProps) {
+export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot, onDeliverLootBundle, onSendGold, autoCreate = false, presetEncounter, createSignal, hideCreate = false }: EquipmentLibraryStandaloneProps) {
   const [campaignLib, setCampaignLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("campaign"));
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
   const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(autoCreate ? "new" : null);
@@ -432,6 +438,11 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   const [importResult, setImportResult] = useState<EquipmentImportResult | null>(null);
   const [peekId, setPeekId] = useState<string | null>(null);
   const [filterText, setFilterText] = useState("");
+  // Multi-item boss-haul cart: stage several items, then send them all to one seat.
+  const [cart, setCart] = useState<EquipmentItem[]>([]);
+  const [cartSeatId, setCartSeatId] = useState<string>("");
+  // Gold grant panel: pick a seat + amount, add-to or set the actor's gold.
+  const [goldPanel, setGoldPanel] = useState<{ seatId: string; amount: string } | null>(null);
 
   function refreshLibrary() {
     setCampaignLib(loadEquipmentLibrary("campaign"));
@@ -478,6 +489,35 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   function handleDeleteItem(id: string) {
     saveEquipmentLibrary(loadEquipmentLibrary("dm").filter(i => i.id !== id), "dm");
     refreshLibrary();
+  }
+
+  function toggleCart(item: EquipmentItem) {
+    setCart(prev => prev.some(i => i.id === item.id) ? prev.filter(i => i.id !== item.id) : [...prev, item]);
+  }
+
+  async function handleSendCart() {
+    if (cart.length === 0 || !cartSeatId) return;
+    const label = `${cart.length} item${cart.length === 1 ? "" : "s"}`;
+    const message = `${label} delivered.`;
+    if (onDeliverLootBundle) {
+      await onDeliverLootBundle(cartSeatId, cart, message);
+    } else if (onDeliverLoot) {
+      for (const it of cart) await onDeliverLoot(cartSeatId, it, `${it.name} delivered.`);
+    }
+    setRecentDelivery(`Sent ${label} to ${seats.find(s => s.seatId === cartSeatId)?.label ?? cartSeatId}`);
+    setCart([]);
+    setTimeout(() => setRecentDelivery(null), 4000);
+  }
+
+  function handleSendGold(mode: "add" | "set") {
+    if (!goldPanel || !onSendGold) return;
+    const amt = parseInt(goldPanel.amount, 10);
+    if (!Number.isFinite(amt)) return;
+    onSendGold(goldPanel.seatId, amt, mode);
+    const seatLabel = seats.find(s => s.seatId === goldPanel.seatId)?.label ?? goldPanel.seatId;
+    setRecentDelivery(`${mode === "add" ? `Granted ${amt} gp to` : `Set ${seatLabel}'s gold to ${amt} gp —`} ${mode === "add" ? seatLabel : ""}`.trim());
+    setGoldPanel(null);
+    setTimeout(() => setRecentDelivery(null), 4000);
   }
 
   async function handleSendLoot() {
@@ -589,6 +629,49 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
         onSave={handleSaveItem}
         onCancel={() => setEditingItem(null)}
       />
+    );
+  }
+
+  if (goldPanel) {
+    const seatLabel = seats.find(s => s.seatId === goldPanel.seatId)?.label ?? goldPanel.seatId;
+    return (
+      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+        <h3 style={{ margin: 0 }}>💰 Send Gold</h3>
+        <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
+          Grant gold to a player who didn't get boss loot. Gold lands on the seat's primary character and shows on their sheet.
+        </p>
+        <label style={{ fontSize: 12 }}>
+          Player seat:
+          <select value={goldPanel.seatId} onChange={e => setGoldPanel(g => g ? { ...g, seatId: e.target.value } : g)}
+            style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+            {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
+          </select>
+        </label>
+        <label style={{ fontSize: 12 }}>
+          Amount (gp):
+          <input type="number" inputMode="numeric" value={goldPanel.amount} autoFocus
+            onChange={e => setGoldPanel(g => g ? { ...g, amount: e.target.value } : g)}
+            placeholder="e.g. 50"
+            style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => handleSendGold("add")}
+            title="Add this amount to the character's current gold"
+            style={{ flex: 1, padding: "8px", background: "#4a3a1a", border: "1px solid #e0a03055", color: "#e0a030", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>
+            ＋ Add Gold
+          </button>
+          <button type="button" onClick={() => handleSendGold("set")}
+            title="Set the character's gold to exactly this amount"
+            style={{ padding: "8px 12px", background: "transparent", border: "1px solid #555", color: "#aaa", borderRadius: 6, cursor: "pointer" }}>
+            Set Total
+          </button>
+          <button type="button" onClick={() => setGoldPanel(null)}
+            style={{ padding: "8px 12px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
+            Cancel
+          </button>
+        </div>
+        <p style={{ margin: 0, fontSize: 11, color: "#555" }}>Target: <strong style={{ color: "#aaa" }}>{seatLabel}</strong></p>
+      </div>
     );
   }
 
@@ -938,9 +1021,22 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
               <>
                 <button type="button" onClick={() => setLootTarget({ item, seatId: seats[0]?.seatId ?? "" })}
                   style={{ fontSize: 11, padding: "2px 8px", background: "#2a6e2a22", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}
-                  title="Send this item directly to a player (they receive it automatically)">
+                  title="Send this single item directly to a player (they receive it automatically)">
                   Loot
                 </button>
+                {(() => {
+                  const inCart = cart.some(i => i.id === item.id);
+                  return (
+                    <button type="button" onClick={() => toggleCart(item)}
+                      style={{ fontSize: 11, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
+                        background: inCart ? "#2a6e2a" : "transparent",
+                        border: `1px solid ${inCart ? "#2a6e2a" : "#2a6e2a55"}`,
+                        color: inCart ? "#fff" : "#4caf50" }}
+                      title="Add to the boss-haul bundle — send several items to one player at once">
+                      {inCart ? "✓ Bundle" : "＋ Bundle"}
+                    </button>
+                  );
+                })()}
                 <button type="button"
                   onClick={() => {
                     if (lootOffer) {
@@ -1042,6 +1138,13 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
               e.target.value = "";
             }} />
           </label>
+          {onSendGold && seats.some(s => s.seatMode !== "viewer") && (
+            <button type="button" onClick={() => setGoldPanel({ seatId: seats.find(s => s.seatMode !== "viewer")?.seatId ?? "", amount: "" })}
+              style={{ fontSize: 11, padding: "3px 10px", background: "#4a3a1a", color: "#e0a030", border: "1px solid #e0a03055", borderRadius: 3, cursor: "pointer" }}
+              title="Grant gold to a player (for those who didn't get boss loot)">
+              💰 Send Gold
+            </button>
+          )}
           <button type="button" onClick={() => setConvergenceBuilder({ seatId: "__all__", combos: [], message: "" })}
             style={{ fontSize: 11, padding: "3px 10px", background: "#1a2a1a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}
             title="Build a convergence offer — player submits 2 items to receive a new one">
@@ -1138,6 +1241,36 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
           )
         )}
       </div>
+
+      {/* Boss-haul cart — send several items to ONE player in a single delivery */}
+      {cart.length > 0 && (
+        <div style={{ borderTop: "1px solid #2a2a3e", background: "#12121c", padding: "8px 14px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "#4caf50", fontWeight: 700 }}>🎁 Bundle ({cart.length})</span>
+            {cart.map(i => (
+              <span key={i.id} style={{ fontSize: 10, background: "#1a2a1a", border: "1px solid #2a6e2a55", borderRadius: 10, padding: "1px 7px", color: "#4caf50", display: "flex", alignItems: "center", gap: 4 }}>
+                {i.name}
+                <button type="button" onClick={() => toggleCart(i)} style={{ background: "transparent", border: "none", color: "#ff9999", cursor: "pointer", fontSize: 11, padding: 0, lineHeight: 1 }}>×</button>
+              </span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <select value={cartSeatId} onChange={e => setCartSeatId(e.target.value)}
+              style={{ flex: 1, padding: "5px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}>
+              <option value="">Select player…</option>
+              {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
+            </select>
+            <button type="button" onClick={() => void handleSendCart()} disabled={!cartSeatId}
+              style={{ fontSize: 12, padding: "5px 14px", background: cartSeatId ? "#2a6e2a" : "#333", color: "#fff", border: "none", borderRadius: 4, cursor: cartSeatId ? "pointer" : "default", fontWeight: 600 }}>
+              ▶ Send {cart.length} to player
+            </button>
+            <button type="button" onClick={() => setCart([])}
+              style={{ fontSize: 11, padding: "5px 10px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

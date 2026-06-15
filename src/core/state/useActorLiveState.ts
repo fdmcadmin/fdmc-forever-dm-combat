@@ -7,6 +7,7 @@ import {
   createEmptyRoomLiveState,
   normalizeFdmcRoomLiveState,
   patchActorHp,
+  patchActorGold,
   patchActorInitiative,
   patchActorTracker,
   patchActorConditions,
@@ -153,6 +154,18 @@ export function useActorLiveState(actors: Actor[]) {
     await commitState(next);
   }, [commitState]);
 
+  const setActorGold = useCallback(async (actorId: string, gold: number) => {
+    const next = patchActorGold(stateRef.current, actorId, gold);
+    await commitState(next);
+  }, [commitState]);
+
+  /** Add (or subtract, with a negative delta) gold; never drops below 0. */
+  const adjustActorGold = useCallback(async (actorId: string, delta: number) => {
+    const current = stateRef.current.actorLiveState[actorId]?.gold ?? 0;
+    const next = patchActorGold(stateRef.current, actorId, current + delta);
+    await commitState(next);
+  }, [commitState]);
+
   // ── Read helpers ─────────────────────────────────────────────────────────────
 
   const getActorHp = useCallback((actorId: string): HitPoints => {
@@ -172,6 +185,10 @@ export function useActorLiveState(actors: Actor[]) {
 
   const getActorConditions = useCallback((actorId: string): string[] => {
     return stateRef.current.actorLiveState[actorId]?.activeConditions ?? [];
+  }, []);
+
+  const getActorGold = useCallback((actorId: string): number => {
+    return stateRef.current.actorLiveState[actorId]?.gold ?? 0;
   }, []);
 
   const getActorLiveState = useCallback((actorId: string): FdmcActorLiveState | undefined => {
@@ -199,10 +216,13 @@ export function useActorLiveState(actors: Actor[]) {
     setActorInitiative,
     setActorTracker,
     setActorConditions,
+    setActorGold,
+    adjustActorGold,
     getActorHp,
     getActorInitiative,
     getActorTrackers,
     getActorConditions,
+    getActorGold,
     getActorLiveState,
     getRoomStateBytes,
     commitRoomState: commitState,

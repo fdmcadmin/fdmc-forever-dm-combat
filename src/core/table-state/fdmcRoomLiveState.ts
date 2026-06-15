@@ -30,6 +30,8 @@ export type FdmcActorLiveState = {
   initiative: number | null;
   statusTrackers: Record<string, FdmcStatusTracker>;
   activeConditions: string[];
+  /** Character gold (gp). DM grants it; merchant purchases deduct it. Persists across encounters. */
+  gold?: number;
 };
 
 // ─── Live monster state ───────────────────────────────────────────────────────
@@ -127,6 +129,7 @@ function normalizeActorLiveState(val: unknown): FdmcActorLiveState {
     initiative: typeof a.initiative === "number" && Number.isFinite(a.initiative) ? a.initiative : null,
     statusTrackers: Object.fromEntries(Object.entries(rawTrackers).map(([k, v]) => [k, normalizeTracker(v)])),
     activeConditions: conditions,
+    ...(typeof a.gold === "number" && Number.isFinite(a.gold) ? { gold: Math.max(0, Math.floor(a.gold)) } : {}),
   };
 }
 
@@ -219,6 +222,15 @@ export function patchActorHp(state: FdmcRoomLiveState, actorId: string, hp: HitP
       ...state.actorLiveState,
       [actorId]: { ...current, hp: { current: hp.current, max: hp.max, temp: hp.temp ?? 0 } },
     },
+  });
+}
+
+export function patchActorGold(state: FdmcRoomLiveState, actorId: string, gold: number): FdmcRoomLiveState {
+  const current = state.actorLiveState[actorId] ?? { hp: { current: 1, max: 1, temp: 0 }, initiative: null, statusTrackers: {}, activeConditions: [] };
+  const next = Math.max(0, Math.floor(gold));
+  return stamp({
+    ...state,
+    actorLiveState: { ...state.actorLiveState, [actorId]: { ...current, gold: next } },
   });
 }
 

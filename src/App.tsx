@@ -118,6 +118,13 @@ import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, do
 const APP_VERSION = "FDMC 0.6.0-p3 · 2026-06-03";
 const DM_LIBRARY_UPDATED_CHANNEL = FDMC_CHANNELS.dmLibraryUpdated;
 
+/** Parse a gold cost from an item's free-text value ("25 gp", "1,200 gp", "5"). 0 if none. */
+function parseGoldCost(value?: string): number {
+  if (!value) return 0;
+  const match = value.replace(/,/g, "").match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+}
+
 // ─── DM toolbar button color system (P-UX1) ───────────────────────────────────
 // Buttons are color-coded by *what they do* so the toolbar stops reading as a row
 // of identical buttons:
@@ -605,6 +612,9 @@ export default function App() {
     getActorHp,
     setActorInitiative,
     getActorInitiative,
+    setActorGold,
+    adjustActorGold,
+    getActorGold,
     getRoomStateBytes,
     commitRoomState,
     refreshFromRoom,
@@ -817,7 +827,7 @@ export default function App() {
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, async (event) => {
-      const msg = event.data as { type?: string; offerId?: string; chosenItemId?: string; actorId?: string; seatId?: string } | undefined;
+      const msg = event.data as { type?: string; offerId?: string; chosenItemId?: string; actorId?: string; seatId?: string; cost?: number } | undefined;
       if (msg?.type !== "fdmc:loot-choice" || !msg.chosenItemId || !msg.actorId) return;
 
       // Find the actor and add the item to their equipment tab
@@ -828,6 +838,24 @@ export default function App() {
       const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
       const item = allItems.find(i => i.id === msg.chosenItemId);
       if (!item) return;
+
+      // Merchant purchase — re-check the buyer can afford it (authoritative), then deduct gold.
+      const cost = typeof msg.cost === "number" && msg.cost > 0 ? Math.floor(msg.cost) : 0;
+      let goldLeft = 0;
+      if (cost > 0) {
+        const balance = getActorGold(actor.id);
+        if (balance < cost) {
+          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:purchase-denied",
+            seatId: msg.seatId,
+            itemName: item.name,
+            reason: `Not enough gold — ${item.name} costs ${cost} gp, you have ${balance} gp.`,
+          }, { destination: "REMOTE" });
+          return;
+        }
+        goldLeft = balance - cost;
+        void adjustActorGold(actor.id, -cost);
+      }
 
       // Build the equipment action and add it
       const equipAction = itemToAction(item);
@@ -850,7 +878,14 @@ export default function App() {
         itemName: item.name,
       }, { destination: "REMOTE" });
 
-      addEntry({ actorName: actor.name, actionName: "Item Equipped", tabId: "system", message: `${actor.name} received ${item.name}.` });
+      addEntry({
+        actorName: actor.name,
+        actionName: cost > 0 ? "Item Purchased" : "Item Equipped",
+        tabId: "system",
+        message: cost > 0
+          ? `${actor.name} bought ${item.name} for ${cost} gp (${goldLeft} gp left).`
+          : `${actor.name} received ${item.name}.`,
+      });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode, dmActors]);
@@ -1100,10 +1135,18 @@ export default function App() {
         addEntry({ actorName: "DM", actionName: "Convergence Denied", tabId: "system", message: reason });
         setTimeout(() => setLootToast(null), 6000);
       }
-      // DM confirms choice was received and item attached
+      // DM confirms choice was received and item attached.
+      // Merchant shops stay open for more purchases; pick-one offers close.
       if (msg.type === "fdmc:loot-attached" && msg.seatId === claimedSeatId) {
-        setLootOffer(null);
+        setLootOffer(prev => ((prev as { mode?: string } | null)?.mode === "merchant" ? prev : null));
         setLootToast(`✓ ${(msg as { itemName?: string }).itemName ?? "Item"} added to your equipment.`);
+        setTimeout(() => setLootToast(null), 6000);
+      }
+      // Merchant purchase rejected (not enough gold) — toast, shop stays open
+      if (msg.type === "fdmc:purchase-denied" && (msg as { seatId?: string }).seatId === claimedSeatId) {
+        const reason = (msg as { reason?: string }).reason ?? "Purchase denied.";
+        setLootToast(`✗ ${reason}`);
+        addEntry({ actorName: "DM", actionName: "Purchase Denied", tabId: "system", message: reason });
         setTimeout(() => setLootToast(null), 6000);
       }
       // Level-up rejection from DM
@@ -1991,6 +2034,26 @@ export default function App() {
           addEntry({ actorName: actorToShow!.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow!.name} chose ${item.name}.` });
         }
 
+        // Merchant (buy-many) — player's current gold + what they already own, both reactive.
+        const myGold = roomLiveState.actorLiveState[actorToShow!.id]?.gold ?? 0;
+        const ownedIds = new Set((actorToShow!.tabs.equipment ?? []).map(e => e.id.replace(/^equip-/, "")));
+        function buyItem(item: import("./core/ui/EquipmentBagEditor").EquipmentItem) {
+          const cost = parseGoldCost(item.value);
+          if (cost > myGold) {
+            setLootToast(`✗ Not enough gold for ${item.name} — costs ${cost} gp, you have ${myGold} gp.`);
+            setTimeout(() => setLootToast(null), 4000);
+            return;
+          }
+          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:loot-choice",
+            seatId: claimedSeatId,
+            offerId: lootOffer!.offerId,
+            chosenItemId: item.id,
+            actorId: actorToShow!.id,
+            cost,
+          } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
+        }
+
         if (isFinal) {
           // Full-screen pick panel — best for end-of-session rewards
           return (
@@ -2030,17 +2093,22 @@ export default function App() {
         }
 
         if (isMerchant) {
-          // Merchant: full-screen shop view with gold costs
+          // Merchant: full-screen shop — buy as many as you can afford; gold deducts per buy.
           return (
             <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.95)", zIndex: 200, display: "flex", flexDirection: "column", padding: 24, gap: 16, overflowY: "auto" }}>
               <div style={{ textAlign: "center" }}>
                 <p style={{ margin: "0 0 4px", fontSize: 11, color: "#e0a030", textTransform: "uppercase", letterSpacing: 2 }}>Merchant</p>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#fff" }}>🛒 {lootOffer.message}</p>
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555" }}>Choose one item to purchase — gold spent is recorded by the DM.</p>
+                <p style={{ margin: "6px 0 0", fontSize: 14, color: "#e0a030", fontWeight: 700 }}>💰 {myGold} gp</p>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#555" }}>Buy what you can afford — gold is deducted as you purchase.</p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
-                {lootOffer.items.map(item => (
-                  <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e" }}>
+                {lootOffer.items.map(item => {
+                  const cost = parseGoldCost(item.value);
+                  const owned = ownedIds.has(item.id);
+                  const tooPoor = cost > myGold;
+                  return (
+                  <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e", opacity: owned ? 0.55 : 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
@@ -2050,20 +2118,26 @@ export default function App() {
                         </div>
                         <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
                         {item.mechanicsText && <p style={{ margin: "0 0 6px", fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
-                        {item.value && <span style={{ fontSize: 13, color: "#e0a030", fontWeight: 600 }}>💰 {item.value}</span>}
+                        <span style={{ fontSize: 13, color: "#e0a030", fontWeight: 600 }}>💰 {cost > 0 ? `${cost} gp` : (item.value ?? "—")}</span>
                       </div>
-                      <button type="button" onClick={() => chooseItem(item)}
-                        style={{ fontSize: 13, padding: "8px 14px", background: "#4a3a1a", border: "1px solid #e0a03055", color: "#e0a030", borderRadius: 6, cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
-                        Buy
+                      <button type="button" disabled={owned || tooPoor} onClick={() => buyItem(item)}
+                        title={owned ? "Already in your bag" : tooPoor ? "Not enough gold" : `Buy for ${cost} gp`}
+                        style={{ fontSize: 13, padding: "8px 14px", borderRadius: 6, fontWeight: 600, flexShrink: 0,
+                          background: owned ? "#1a2a1a" : tooPoor ? "#1a1a1a" : "#4a3a1a",
+                          border: `1px solid ${owned ? "#2a6e2a55" : tooPoor ? "#333" : "#e0a03055"}`,
+                          color: owned ? "#4caf50" : tooPoor ? "#555" : "#e0a030",
+                          cursor: owned || tooPoor ? "default" : "pointer" }}>
+                        {owned ? "✓ Owned" : tooPoor ? "Can't afford" : "Buy"}
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div style={{ textAlign: "center" }}>
                 <button type="button" onClick={() => setLootOffer(null)}
                   style={{ fontSize: 12, padding: "6px 20px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
-                  Nothing for me
+                  Done shopping
                 </button>
               </div>
             </div>
@@ -2700,6 +2774,7 @@ export default function App() {
         onResetStatusTracker={(trackerId) => resetActorTracker(actorToShow, trackerId)}
         onResetAllActorStatuses={() => resetActorStatuses(actorToShow)}
         resourceCounters={counters[actorToShow.id]}
+        gold={roomLiveState.actorLiveState[actorToShow.id]?.gold}
         onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
         onLongRest={() => { resetActorResources(actorToShow.id, "long"); const m = actorToShow.stats.hp.max; void setActorHp(actorToShow.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
         onLog={addEntry}
@@ -3023,6 +3098,7 @@ export default function App() {
                 onResetStatusTracker={(trackerId) => resetActorTracker(focusedActor, trackerId)}
                 onResetAllActorStatuses={() => resetActorStatuses(focusedActor)}
                 resourceCounters={counters[focusedActorId]}
+                gold={roomLiveState.actorLiveState[focusedActorId]?.gold}
                 onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
                 onLongRest={() => { resetActorResources(focusedActorId, "long"); const m = focusedActor.stats.hp.max; void setActorHp(focusedActorId, { current: m, max: m, temp: 0 }); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
                 onLog={addEntry}

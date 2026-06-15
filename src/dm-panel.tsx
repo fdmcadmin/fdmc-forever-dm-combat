@@ -48,6 +48,7 @@ import {
   normalizeFdmcRoomLiveState,
   createEmptyRoomLiveState,
   patchActorHp,
+  patchActorGold,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
 import {
@@ -312,6 +313,47 @@ function DmPanelApp() {
         message,
       }, { destination: "REMOTE" });
     }
+  }
+
+  // Boss haul — attach SEVERAL items to one seat's primary actor in a single push.
+  async function handleDeliverLootBundle(seatId: string, items: EquipmentItem[], message: string) {
+    const seat = seats[seatId];
+    const actorId = seat?.primaryActorId;
+    const actor = actorId ? actorLibrary[actorId] : undefined;
+    if (actor && items.length > 0) {
+      const newEquipment = [...(actor.tabs.equipment ?? [])];
+      const newMain = [...(actor.tabs.main ?? [])];
+      for (const item of items) {
+        newEquipment.push(itemToAction(item));
+        if (item.attack || item.damage) {
+          const atkEntry = itemToAttackAction(item);
+          if (!newMain.some(a => a.id === atkEntry.id)) newMain.push(atkEntry);
+        }
+      }
+      const updatedActor = { ...actor, tabs: { ...actor.tabs, equipment: newEquipment, main: newMain } };
+      const freshLib = { ...actorLibrary, [updatedActor.id]: updatedActor };
+      upsertActorInLibrary(updatedActor);
+      setActorLibrary(() => freshLib);
+      pushActorsToSeat(seatId, { freshLibrary: freshLib });
+    }
+    if (OBR.isAvailable) {
+      await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:loot-attached",
+        seatId,
+        itemName: `${items.length} item${items.length === 1 ? "" : "s"}`,
+        message,
+      }, { destination: "REMOTE" });
+    }
+  }
+
+  // Grant gold to a seat's primary actor. mode "add" = adjust; "set" = absolute.
+  function handleSendGold(seatId: string, amount: number, mode: "add" | "set") {
+    const seat = seats[seatId];
+    const actorId = seat?.primaryActorId;
+    if (!actorId) return;
+    const currentGold = roomLiveState.actorLiveState[actorId]?.gold ?? 0;
+    const nextGold = mode === "add" ? currentGold + amount : amount;
+    void commitRoomState(patchActorGold(roomLiveState, actorId, nextGold));
   }
 
   async function handleConvergenceApprove(req: ConvergenceRequest, outputItemId: string) {
@@ -721,6 +763,8 @@ function DmPanelApp() {
             onExternalConvergenceApprove={handleConvergenceApprove}
             onExternalConvergenceDeny={handleConvergenceDeny}
             onDeliverLoot={handleDeliverLoot}
+            onDeliverLootBundle={handleDeliverLootBundle}
+            onSendGold={handleSendGold}
           />
         )}
 
@@ -969,6 +1013,8 @@ function DmPanelApp() {
                 <EquipmentLibraryStandalone
                   seats={Object.values(seats)}
                   onDeliverLoot={handleDeliverLoot}
+                  onDeliverLootBundle={handleDeliverLootBundle}
+                  onSendGold={handleSendGold}
                   autoCreate={createParam === "equipment" || Boolean(lootEncounterParam)}
                   presetEncounter={equipPreset}
                   createSignal={equipCreateSignal}
