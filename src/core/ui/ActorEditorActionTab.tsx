@@ -96,9 +96,10 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
       tab: tabId === "spells" ? "spell" : tabId === "bond" ? "bond" : tabId === "bonus" ? "bonus" : "action",
       actionCost: tabId === "bonus" ? "bonus" : tabId === "bond" ? "bond" : "action",
       rollMode: "attack",
-      // P-UX4 Phase 1: a new Combat Actions entry defaults to the Action type, so
-      // auto-fill its Category heading. tabId "main" only flows from CombatActionsTab.
-      source: tabId === "main" ? "Actions" : undefined,
+      // Auto-fill the Category heading so the DM doesn't have to type it:
+      //   P-UX4 Phase 1 — Combat Actions (tabId "main") default to "Actions".
+      //   P-UX4 Phase 2 — Homebrew/Bond entries (tabId "bond") default to "Bond".
+      source: tabId === "main" ? "Actions" : tabId === "bond" ? "Bond" : undefined,
     }
   );
   const [errors, setErrors] = useState<string[]>([]);
@@ -143,7 +144,11 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
           style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
       </label>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      {/* P-UX4 Phase 2: Homebrew/Bond entries always use the bond slot, so the Action
+          Economy chooser isn't needed on the bond tab — hide it and let Outcome Mode
+          take the full row. The economy stays "bond" (set in the draft defaults). */}
+      <div style={{ display: "grid", gridTemplateColumns: tabId === "bond" ? "1fr" : "1fr 1fr", gap: 8 }}>
+        {tabId !== "bond" && (
         <label style={{ fontSize: 12 }}>
           Action Economy
           <select value={draft.actionCost} onChange={e => {
@@ -158,6 +163,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
             )}
           </select>
         </label>
+        )}
 
         <label style={{ fontSize: 12 }}>
           Outcome Mode
