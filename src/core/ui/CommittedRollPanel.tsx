@@ -10,6 +10,12 @@ import type {
   CommittedRollState,
 } from "../types/committedRoll";
 import type { DiceBridgeEvent, DiceBridgeStatus } from "../integrations/useOwlbearDiceBridge";
+import {
+  getCriticalFailureEntries,
+  getCriticalFailureEntry,
+  type CriticalFailureEntry,
+  type CriticalFailureTableKind,
+} from "../data/criticalFailureTables";
 
 export type ReadiedRollCandidate = {
   readiedKey: string;
@@ -43,6 +49,12 @@ type CommittedRollPanelProps = {
   rerollSources?: RerollSource[];
   /** Called when a source is chosen and reroll fires — parent handles dice request + source consumption */
   onRerollWithSource?: (source: RerollSource) => void;
+  /** Player-facing card — hides the DM failure table from non-DM seats (P10). */
+  isPlayerMode?: boolean;
+  /** This actor is a monster — Nat 1 results are player-visible (they create openings). */
+  isMonsterActor?: boolean;
+  /** Resolve a Nat 1 with a chosen d6 failure-table entry; parent logs + marks miss (P10). */
+  onResolveCriticalFailure?: (entry: CriticalFailureEntry, kind: CriticalFailureTableKind) => void;
 };
 
 function formatCosts(costs: ActionCost[]) {
@@ -304,6 +316,9 @@ export function CommittedRollPanel({
   onNextAttack,
   rerollSources = [],
   onRerollWithSource,
+  isPlayerMode = false,
+  isMonsterActor = false,
+  onResolveCriticalFailure,
 }: CommittedRollPanelProps) {
   const [showRerollPicker, setShowRerollPicker] = useState(false);
   const [rerollNewResult, setRerollNewResult] = useState<string | null>(null);
@@ -313,6 +328,8 @@ export function CommittedRollPanel({
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [mockToolsOpen, setMockToolsOpen] = useState(false);
   const [devCustomOpen, setDevCustomOpen] = useState(false);
+  const [criticalFailureKind, setCriticalFailureKind] = useState<CriticalFailureTableKind>("standard");
+  const [criticalFailureD6, setCriticalFailureD6] = useState<number | null>(null);
 
   useEffect(() => {
     setResultInput(committedRoll?.rollResult ?? "");
@@ -328,6 +345,8 @@ export function CommittedRollPanel({
     setManualEntryOpen(false);
     setMockToolsOpen(false);
     setDevCustomOpen(false);
+    setCriticalFailureKind("standard");
+    setCriticalFailureD6(null);
   }, [committedRoll?.bridgeRequestId]);
 
   // When reroll picker is open and a NEW dice result arrives, capture it as the reroll result
@@ -606,10 +625,104 @@ export function CommittedRollPanel({
 
         {isAttackCriticalFailure && committedRoll.phase === "result-held" && (
           <div className="critical-failure-pending-box">
-            <span className="committed-roll-label">Nat 1 simple miss</span>
-            <p>Emergency table mode: no critical-failure chart tonight. Mark this as a miss and used.</p>
-            <button className="roll-prompt-button" type="button" onClick={() => onChooseOutcome("miss")}>
-              Miss / Mark Used
+            <span className="committed-roll-label">Nat 1 failure check</span>
+            <p>
+              Roll a d6 for the failure result. The DM sees the table for player/PC failures. Monster Nat 1 results are player-visible because they create openings.
+            </p>
+            <div className="critical-failure-toggle-row">
+              <button
+                className={`secondary-button compact ${criticalFailureKind === "standard" ? "active" : ""}`}
+                type="button"
+                onClick={() => {
+                  setCriticalFailureKind("standard");
+                  setCriticalFailureD6(null);
+                }}
+              >
+                First Nat 1
+              </button>
+              <button
+                className={`secondary-button compact ${criticalFailureKind === "double" ? "active" : ""}`}
+                type="button"
+                onClick={() => {
+                  setCriticalFailureKind("double");
+                  setCriticalFailureD6(null);
+                }}
+              >
+                Second Nat 1
+              </button>
+            </div>
+            <div className="critical-failure-d6-row" aria-label="Critical failure d6 result">
+              {[1, 2, 3, 4, 5, 6].map((roll) => (
+                <button
+                  key={`critical-failure-d6-${roll}`}
+                  className={`critical-failure-d6-button ${criticalFailureD6 === roll ? "active" : ""}`}
+                  type="button"
+                  onClick={() => setCriticalFailureD6(roll)}
+                >
+                  {roll}
+                </button>
+              ))}
+            </div>
+            {criticalFailureKind === "double" && (
+              <p className="critical-failure-note">
+                Damage only exists on the second Nat 1 table when the d6 result is 6. Level 2+ actors use the non-damage replacement.
+              </p>
+            )}
+            {(() => {
+              const selectedEntry = typeof criticalFailureD6 === "number" ? getCriticalFailureEntry(criticalFailureKind, criticalFailureD6) : null;
+              const canSeeTable = !isPlayerMode || isMonsterActor;
+              if (!selectedEntry) {
+                return <p className="critical-failure-note">Waiting on d6 result.</p>;
+              }
+
+              return (
+                <div className="critical-failure-selected-result">
+                  <span className="critical-failure-roll">{selectedEntry.roll}</span>
+                  {canSeeTable ? (
+                    <>
+                      <strong>{selectedEntry.title}</strong>
+                      <span>{selectedEntry.dmEffect}</span>
+                      {selectedEntry.damageClause && <em>{selectedEntry.damageClause}</em>}
+                    </>
+                  ) : (
+                    <>
+                      <strong>Result hidden from player</strong>
+                      <span>The DM sees the table result and resolves the complication.</span>
+                    </>
+                  )}
+                  <button
+                    className="roll-prompt-button suggested"
+                    type="button"
+                    onClick={() => {
+                      if (onResolveCriticalFailure) {
+                        onResolveCriticalFailure(selectedEntry, criticalFailureKind);
+                      } else {
+                        onChooseOutcome("miss");
+                      }
+                    }}
+                  >
+                    Apply d6 Result / Mark Used
+                  </button>
+                </div>
+              );
+            })()}
+            {(!isPlayerMode || isMonsterActor) && (
+              <details className="critical-failure-dm-table">
+                <summary>DM table reference</summary>
+                <div className="critical-failure-table-grid">
+                  {getCriticalFailureEntries(criticalFailureKind).map((entry) => (
+                    <div key={`${criticalFailureKind}-${entry.id}`} className="critical-failure-entry-button static">
+                      <span className="critical-failure-roll">{entry.roll}</span>
+                      <strong>{entry.title}</strong>
+                      <span>{entry.dmEffect}</span>
+                      {entry.damageClause && <em>{entry.damageClause}</em>}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+            <button className="roll-prompt-button quiet" type="button" onClick={() => onChooseOutcome("miss")}>
+              Simple Miss / Mark Used
             </button>
           </div>
         )}

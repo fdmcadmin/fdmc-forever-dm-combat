@@ -18,6 +18,7 @@ import type { ActorConcentrationState } from "../state/useActorConcentrationStat
 import { actionCostLabels, isUsedActionStateValue, makeUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { AddCombatLogEntryInput } from "../types/combatLog";
 import type { CombatRulesProfile, CommittedRollDamageChoice, CommittedRollOutcome, CommittedRollState, StartCommittedRollInput } from "../types/committedRoll";
+import { formatCriticalFailureLog } from "../data/criticalFailureTables";
 import type { ActorNote, ActorNoteVisibility } from "../state/useActorNotesState";
 import type { ActorAction, TabId } from "../types/tabs";
 import type { ActorStatusTrackerState, StatusTrackerId } from "../types/status";
@@ -3040,6 +3041,20 @@ export function ActorCard({
         attackUseState={attackUseState}
         onNextAttack={attackUseState && attackUseState.current < attackUseState.max ? handleNextAttack : undefined}
         rerollSources={getRerollSources(actor)}
+        isPlayerMode={isPlayerMode}
+        isMonsterActor={actor.kind === "monster"}
+        onResolveCriticalFailure={(entry, kind) => {
+          // Players see the soft player-summary in the shared log; the DM table effect
+          // stays DM-side. The d6 result is always logged so the table has a record.
+          const playerSafe = isPlayerMode && actor.kind !== "monster";
+          onLog({
+            actorName: actor.name,
+            actionName: committedRoll?.actionLabel ?? "Nat 1",
+            tabId: "system",
+            message: formatCriticalFailureLog(entry, kind, actor.level ?? 1, playerSafe),
+          });
+          handleChooseCommittedRollOutcome("miss");
+        }}
         onRerollWithSource={async (source: RerollSource) => {
           // Fire the same roll formula again via Dice+
           if (committedRoll?.attackFormula) {

@@ -187,6 +187,36 @@ export function feature(id: string, label: string, description: string, category
   };
 }
 
+/**
+ * Feat (P-SHEET S3) — lives in the Feats tab. Optional mechanical effects feed the
+ * sheet's derived stats: `statEffects` (addHP / addStat / addAC / setStat …, same shape
+ * equipment uses) and `initiativeBonus`. Effect-less feats are reference-only.
+ * NOTE: don't add an effect that's already baked into the actor's base numbers (e.g. an
+ * ASI already reflected in the ability scores) — that would double-count.
+ */
+export function feat(
+  id: string,
+  label: string,
+  description: string,
+  effects?: { statEffects?: Array<{ type: string; stat?: string; value: number; condition?: string }>; initiativeBonus?: number },
+  category = "Feats",
+): ActorAction {
+  return {
+    id,
+    label,
+    description,
+    metadata: {
+      details: description,
+      ...(effects?.statEffects ? { statEffects: effects.statEffects } : {}),
+      ...(typeof effects?.initiativeBonus === "number" ? { initiativeBonus: effects.initiativeBonus } : {}),
+    },
+    category,
+    actionKind: "feature",
+    logMode: "silent",
+    displayMode: "compact",
+  };
+}
+
 export function reactionFeature(id: string, label: string, description: string, category = "Reaction Features", pinned = true): ActorAction {
   return {
     id,

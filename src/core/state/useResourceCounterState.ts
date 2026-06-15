@@ -21,6 +21,17 @@ import type { ActorAction } from "../types/tabs";
 export type ResourceCounterMap = Record<string, Record<string, number>>;
 // { actorId: { resourceActionId: currentRemaining } }
 
+/** Result of a slot/resource spend (P11) — drives the combat-log entry. */
+export type ConsumeResult = {
+  outcome: "spent" | "empty" | "no-resource";
+  /** The matched resource's label (absent for "no-resource"). */
+  label?: string;
+  /** Charges left after the spend (0 for "empty"). */
+  remaining?: number;
+  /** Max charges for the resource. */
+  max?: number;
+};
+
 const STORAGE_KEY = "fdmc.resource.counters.v1";
 const BROADCAST_CHANNEL = "forever-dm-combat:resource-counters:v1";
 
@@ -175,12 +186,20 @@ export function useResourceCounterState(actors: Actor[]) {
     );
   }, [actors]);
 
-  // ── Consume spell slot by level ───────────────────────────────────────────
-  // Matches "Spell Slots L2", "Pact Slots", etc. by level number in label
+  // ── Consume result (P11) ──────────────────────────────────────────────────
+  // Richer than a bare boolean so the caller can post a precise combat-log entry.
+  //   outcome "spent"   → a charge was decremented (remaining is post-spend)
+  //   outcome "empty"   → resource exists but had 0 left (nothing decremented)
+  //   outcome "no-resource" → actor has no matching resource (untracked — silent)
 
-  const consumeSpellSlot = useCallback((actorId: string, level: number): boolean => {
+  // ── Consume spell slot by level ───────────────────────────────────────────
+  // Matches "Spell Slots L2", "Pact Slots", etc. by level number in label.
+  // Upcasting is data-authored: the spell action carries the level it is cast at
+  // (metadata.spellLevel), so passing that level here spends the correct slot.
+
+  const consumeSpellSlot = useCallback((actorId: string, level: number): ConsumeResult => {
     const actor = actors.find(a => a.id === actorId);
-    if (!actor) return false;
+    if (!actor) return { outcome: "no-resource" };
 
     const resources = actor.tabs.resources ?? [];
 
@@ -191,12 +210,13 @@ export function useResourceCounterState(actors: Actor[]) {
         lbl.includes(`${level}rd`) || lbl.includes(`${level}st`);
     });
 
-    if (!matchingResource) return false;
+    if (!matchingResource) return { outcome: "no-resource" };
     const current = stateRef.current[actorId]?.[matchingResource.id] ?? 0;
-    if (current <= 0) return false;
+    const max = getMaxFromAction(matchingResource);
+    if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 
     decrementResource(actorId, matchingResource.id);
-    return true;
+    return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max };
   }, [actors, decrementResource]);
 
   // ── Consume named resource by label ──────────────────────────────────────
@@ -204,11 +224,11 @@ export function useResourceCounterState(actors: Actor[]) {
   // The action's slotCost field should match (or partially match) the resource label.
   // e.g. slotCost "Channel Divinity" matches resource "Channel Divinity: 2 uses"
 
-  const consumeNamedResource = useCallback((actorId: string, resourceLabel: string): boolean => {
-    if (!resourceLabel.trim()) return false;
+  const consumeNamedResource = useCallback((actorId: string, resourceLabel: string): ConsumeResult => {
+    if (!resourceLabel.trim()) return { outcome: "no-resource" };
 
     const actor = actors.find(a => a.id === actorId);
-    if (!actor) return false;
+    if (!actor) return { outcome: "no-resource" };
 
     const resources = actor.tabs.resources ?? [];
     const needle = resourceLabel.trim().toLowerCase();
@@ -219,12 +239,13 @@ export function useResourceCounterState(actors: Actor[]) {
       return haystack.includes(needle) || needle.includes(haystack);
     });
 
-    if (!matchingResource) return false;
+    if (!matchingResource) return { outcome: "no-resource" };
     const current = stateRef.current[actorId]?.[matchingResource.id] ?? 0;
-    if (current <= 0) return false;
+    const max = getMaxFromAction(matchingResource);
+    if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 
     decrementResource(actorId, matchingResource.id);
-    return true;
+    return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max };
   }, [actors, decrementResource]);
 
   return {

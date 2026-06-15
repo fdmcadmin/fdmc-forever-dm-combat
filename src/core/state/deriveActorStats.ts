@@ -141,7 +141,22 @@ export function deriveActorStats(
   /** Current drain state — reduces effective ability scores */
   drainState?: ActorStatusTrackerState
 ): DerivedStats {
-  const items = equippedItems ?? getEquippedLibraryItems(actor);
+  const equipped = equippedItems ?? getEquippedLibraryItems(actor);
+  // P-SHEET S3: feats with mechanical effects feed the same stat-derivation passes as
+  // equipment. Each feat in the Feats tab that carries metadata.statEffects becomes a
+  // pseudo-item (Tough → +HP, an ASI feat → +STR, etc.). Initiative bonuses are picked
+  // up separately by getTraitInitiativeBonus, which already scans every tab.
+  const featItems: EquipmentItem[] = (actor.tabs.feats ?? [])
+    .filter(f => f.metadata?.statEffects?.length)
+    .map(f => ({
+      id: `feat-${f.id}`,
+      name: f.label,
+      type: "gear",
+      description: f.description ?? "",
+      isUsable: false,
+      statEffects: f.metadata!.statEffects as StatEffect[],
+    }));
+  const items = [...equipped, ...featItems];
 
   // Base values from profile
   const base = {

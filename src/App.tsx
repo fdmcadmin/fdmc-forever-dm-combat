@@ -2639,9 +2639,23 @@ export default function App() {
           const action = Object.values(actorToShow.tabs).flat().find(a => a.id === input.actionId);
           if (!action) return;
 
-          // Spell with slot level → decrement matching slot resource
+          // Spell with slot level → decrement matching slot resource.
+          // Upcasting is data-authored: the spell action carries the level it casts at,
+          // so the slot spent here matches the cast level shown on the card.
           if (action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0) {
-            consumeSpellSlot(actorToShow.id, action.metadata?.spellLevel ?? 1);
+            const lvl = action.metadata?.spellLevel ?? 1;
+            const r = consumeSpellSlot(actorToShow.id, lvl);
+            if (r.outcome === "spent") {
+              addEntry({
+                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
+                message: `${actorToShow.name} casts ${action.label} — expends a Level ${lvl} slot (${r.remaining}/${r.max ?? "?"} left).`,
+              });
+            } else if (r.outcome === "empty") {
+              addEntry({
+                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
+                message: `⚠ ${actorToShow.name} has no Level ${lvl} slots left for ${action.label} — cast not slot-backed.`,
+              });
+            }
             return;
           }
 
@@ -2649,7 +2663,18 @@ export default function App() {
           // e.g. Channel Divinity, Rage, Bardic Inspiration, Fury of the Gods
           const slotCost = action.metadata?.slotCost?.trim();
           if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !slotCost.startsWith("L")) {
-            consumeNamedResource(actorToShow.id, slotCost);
+            const r = consumeNamedResource(actorToShow.id, slotCost);
+            if (r.outcome === "spent") {
+              addEntry({
+                actorName: actorToShow.name, actionName: action.label, tabId: "resources",
+                message: `${actorToShow.name} uses ${r.label ?? slotCost} (${r.remaining}/${r.max ?? "?"} left).`,
+              });
+            } else if (r.outcome === "empty") {
+              addEntry({
+                actorName: actorToShow.name, actionName: action.label, tabId: "resources",
+                message: `⚠ ${actorToShow.name} is out of ${r.label ?? slotCost} — ${action.label} used without a charge.`,
+              });
+            }
           }
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actorToShow.id, result)}

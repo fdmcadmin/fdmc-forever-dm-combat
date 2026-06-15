@@ -53,22 +53,24 @@ type EditorTab =
   | "bonds"
   | "spells"
   | "resources"
+  | "feats"
   | "equipment"
   | "notes";
 
 const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   profile: "Profile",
-  actions: "Actions",
+  actions: "Class Actions",
   bonus: "Bonus",
   reactions: "Reactions",
   bonds: "Bond",
   spells: "Spells",
-  resources: "Resources / Features",
+  resources: "Resources",
+  feats: "Feats",
   equipment: "Equipment",
   notes: "Notes",
 };
 
-const EDITOR_TABS: EditorTab[] = ["profile", "actions", "bonus", "reactions", "bonds", "spells", "resources", "equipment", "notes"];
+const EDITOR_TABS: EditorTab[] = ["profile", "actions", "bonus", "reactions", "bonds", "spells", "resources", "feats", "equipment", "notes"];
 
 // Distinct color accent per creator step (P-UX1). Derived from the shared
 // `tabVisuals` source of truth so the creator's tabs match the character sheet's
@@ -82,6 +84,7 @@ const EDITOR_TAB_ACCENT: Record<EditorTab, string> = {
   bonds: tabAccent("bond"),
   spells: tabAccent("spells"),
   resources: tabAccent("features"),
+  feats: tabAccent("feats"),
   equipment: tabAccent("equipment"),
   notes: tabAccent("notes"),
 };
@@ -98,6 +101,7 @@ const STEP_HINT: Record<EditorTab, string> = {
   bonds: "Optional — bonds & primed additives (Rage, Focus, Pressure, Dark Bargain…).",
   spells: "Optional — spells and slot levels.",
   resources: "Optional — resource pools and class features.",
+  feats: "Optional — feats. Add statEffects in data to feed derived stats (Tough → +HP, ASI → +stat).",
   equipment: "Optional — equipment bag and attached gear.",
   notes: "Optional — freeform notes. Finish to save the character.",
 };
@@ -395,6 +399,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       case "bonds": return (tabsDraft.bond ?? []).length;
       case "spells": return (tabsDraft.spells ?? []).length;
       case "resources": return (tabsDraft.resources ?? []).length;
+      case "feats": return (tabsDraft.feats ?? []).length;
       case "equipment": return (tabsDraft.equipment ?? []).length;
       case "notes": return (tabsDraft.notes ?? []).length;
       default: return 0;
@@ -530,6 +535,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             actions={tabsDraft.resources ?? []}
             onChange={handleTabActions("resources")}
           />
+        )}
+        {activeTab === "feats" && (
+          <ActorEditorActionTab tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} />
         )}
         {activeTab === "equipment" && (
           <EquipmentBagEditor
