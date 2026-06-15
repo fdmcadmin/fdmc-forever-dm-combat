@@ -21,6 +21,8 @@ type TabPanelProps = {
   onPrimeRoll?: (candidate: ReadiedRollCandidate) => void;
   /** Resets the active committed roll so the DM can swap to a different action */
   onResetCommittedRoll?: () => void;
+  /** Resolves @VARIABLE tokens for the action chips (display only). */
+  resolveFormula?: (formula: string) => string;
 };
 
 const tabNotes: Record<TabId, string> = {
@@ -273,6 +275,7 @@ export function TabPanel({
   onCommitRoll,
   onPrimeRoll,
   onResetCommittedRoll,
+  resolveFormula,
 }: TabPanelProps) {
   const compact = isCompactUtilityTab(activeTab);
   const groupedActions = useMemo(() => groupActions(actions), [actions]);
@@ -344,6 +347,7 @@ export function TabPanel({
                   return (
                     <ActionButton
                       action={action}
+                      resolveFormula={resolveFormula}
                       readied={readied}
                       resolved={resolved}
                       committed={committed}

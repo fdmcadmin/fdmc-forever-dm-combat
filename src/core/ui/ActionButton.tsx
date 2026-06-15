@@ -20,6 +20,8 @@ type ActionButtonProps = {
   /** Called when DM wants to reset the active committed roll to swap to this action */
   onResetCommittedRoll?: () => void;
   rollButtonLabel?: string;
+  /** Resolves @VARIABLE tokens for the summary/detail chips (display only). */
+  resolveFormula?: (formula: string) => string;
 };
 
 const summaryRowLabels = new Set(["Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost", "Spell Level", "Concentration"]);
@@ -33,19 +35,24 @@ function formatSwapMessage(willSwapCosts: ActionCost[], actionLabel: string) {
   return `${labels} already readied. Clicking ${actionLabel} will swap your readied ${labels}.`;
 }
 
-function metadataRows(action: ActorAction) {
+function metadataRows(action: ActorAction, resolveFormula?: (formula: string) => string) {
   const metadata = action.metadata;
 
   if (!metadata) {
     return [];
   }
 
+  // Resolve @VARIABLE tokens (@PROF, @STR, …) for display so the chips show real
+  // numbers ("1d8+1+2") instead of the raw template ("1d8+1+@PROF"). Display only —
+  // the roll path resolves independently at commit time.
+  const r = (value?: string) => (value && resolveFormula ? resolveFormula(value) : value);
+
   return [
-    ["Attack", metadata.attack],
-    ["Damage", metadata.damage],
-    ["Crit", metadata.crit],
+    ["Attack", r(metadata.attack)],
+    ["Damage", r(metadata.damage)],
+    ["Crit", r(metadata.crit)],
     ["Crit Range", metadata.critThreshold ? `${metadata.critThreshold}-20` : undefined],
-    ["Save", metadata.saveDc],
+    ["Save", r(metadata.saveDc)],
     ["Range", metadata.range],
     ["Cost", metadata.cost],
     ["Slot Cost", metadata.slotCost],
@@ -77,9 +84,10 @@ export function ActionButton({
   onCommitRoll,
   onResetCommittedRoll,
   rollButtonLabel = "Roll",
+  resolveFormula,
 }: ActionButtonProps) {
   const swapMessage = formatSwapMessage(willSwapCosts, action.label);
-  const rows = metadataRows(action);
+  const rows = metadataRows(action, resolveFormula);
   const summaryRows = rows.filter(([label]) => summaryRowLabels.has(label));
   const detailRows = rows.filter(([label]) => !summaryRowLabels.has(label));
   const isCompact = compact || action.displayMode === "compact" || costs.length === 0;

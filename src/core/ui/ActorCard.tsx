@@ -2254,7 +2254,14 @@ export function ActorCard({
   }
 
   async function completeTriggeredCandidate(candidate: ReadiedRollCandidate, entry: { action: ActorAction; sourceTabId: TabId | "pinned" }) {
-    const rollFormula = entry.action.metadata?.damage ?? entry.action.metadata?.additive ?? entry.action.metadata?.attack;
+    // Resolve @VARIABLE tokens (@PROF, @STR, …) before sending to Dice+. Damage-only and
+    // triggered actions route here (see TabPanel resolveOutcomeMode); without this the raw
+    // "1d8+1+@PROF" was sent to Dice+, which can't parse it — so the dice never rolled.
+    const _derivedForTrigger = deriveActorStats(actor, undefined, status);
+    const rawRollFormula = entry.action.metadata?.damage ?? entry.action.metadata?.additive ?? entry.action.metadata?.attack;
+    const rollFormula = rawRollFormula
+      ? resolveFormulaVars(normalizeFirstRollFormula(rawRollFormula) ?? rawRollFormula, actor, _derivedForTrigger, status)
+      : rawRollFormula;
     const normalizedFormula = rollFormula && hasRollableFormula(rollFormula) ? combineRollFormulas([rollFormula]) : "";
 
     if (normalizedFormula) {
@@ -3155,6 +3162,7 @@ export function ActorCard({
             actorName={actor.name}
             activeTab={activeTab}
             actions={activeActions}
+            resolveFormula={(f) => resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status)}
             actionState={actionState}
             concentration={concentration}
             committedRoll={committedRoll}
@@ -3220,6 +3228,7 @@ export function ActorCard({
             actorName={actor.name}
             activeTab={activeTab}
             actions={activeActions}
+            resolveFormula={(f) => resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status)}
             actionState={actionState}
             concentration={concentration}
             committedRoll={committedRoll}
@@ -3237,6 +3246,7 @@ export function ActorCard({
           actorName={actor.name}
           activeTab={activeTab}
           actions={activeActions}
+          resolveFormula={(f) => resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status)}
           actionState={actionState}
           concentration={concentration}
           committedRoll={committedRoll}
