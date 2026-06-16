@@ -72,6 +72,11 @@ export type EquipmentItem = {
   crit?: string;
   range?: string;
   ac?: string;
+  /** Spellcasting focus (P-UX4 follow-up): bonuses this item adds to the SPELLS cast
+   *  through it (e.g. Wand of the War Mage "+1"). Applied as a clickable additive on
+   *  spell attack / damage rolls. An item can be both a weapon AND a focus. */
+  spellFocusAttack?: string;
+  spellFocusDamage?: string;
   value?: string;
   weight?: string;
   tags?: string[];
@@ -293,6 +298,9 @@ export function itemToAction(item: EquipmentItem): ActorAction {
         item.ac ? `AC ${item.ac}` : undefined,
         item.attack ? `⚔ ${item.attack}` : undefined,
         item.damage ? `💥 ${item.damage}` : undefined,
+        (item.spellFocusAttack || item.spellFocusDamage)
+          ? `🪄 Spell focus${item.spellFocusAttack ? ` · atk ${item.spellFocusAttack}` : ""}${item.spellFocusDamage ? ` · dmg ${item.spellFocusDamage}` : ""}`
+          : undefined,
         item.range ? `Range: ${item.range}` : undefined,
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
@@ -300,6 +308,9 @@ export function itemToAction(item: EquipmentItem): ActorAction {
       // Baked at attach time — no library lookup needed for AC/stat derivation
       statEffects: bakeStatEffects(item),
       acDisplay: item.ac,
+      // Spellcasting focus bonuses — read by the spell roll workspace (clickable additive).
+      spellFocusAttack: item.spellFocusAttack,
+      spellFocusDamage: item.spellFocusDamage,
       charges: item.charges,
       effect: item.effect ? {
         type: item.effect.type as string,
@@ -466,6 +477,17 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
           <input type="text" value={draft.ac ?? ""} onChange={e => set("ac", e.target.value || undefined)} placeholder="14, 12 + DEX mod..." style={inputStyle} />
         </label>
       )}
+
+      {/* Spellcasting focus — bonuses this item adds to the SPELLS cast through it.
+          Leave blank for non-focus items. Works alongside a weapon attack (both). */}
+      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+        <div style={{ fontSize: 11, color: "#9d8cff", marginBottom: 4 }}>🪄 Spellcasting focus <span style={{ color: "#555" }}>(blank = not a focus)</span></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>Spell Attack Bonus <input type="text" value={draft.spellFocusAttack ?? ""} onChange={e => set("spellFocusAttack", e.target.value || undefined)} placeholder="+1" style={inputStyle} /></label>
+          <label style={{ fontSize: 12 }}>Spell Damage Bonus <input type="text" value={draft.spellFocusDamage ?? ""} onChange={e => set("spellFocusDamage", e.target.value || undefined)} placeholder="+1, +1d4..." style={inputStyle} /></label>
+        </div>
+        <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>Added to spell attack/damage rolls as a clickable focus toggle. Put riders (e.g. "ignore Half Cover") in Description.</div>
+      </div>
 
       <label style={{ fontSize: 12 }}>
         Description

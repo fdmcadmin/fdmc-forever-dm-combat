@@ -110,6 +110,10 @@ export type ActorActionMetadata = {
   statEffects?: Array<{ type: string; stat?: string; value: number; condition?: string }>;
   /** AC display string carried from item (e.g. "14", "+2", "11 + DEX") — for equipment tab display only */
   acDisplay?: string;
+  /** Spellcasting focus bonuses carried from an EquipmentItem — added to the spells cast
+   *  through it (clickable additive on spell attack / damage rolls). */
+  spellFocusAttack?: string;
+  spellFocusDamage?: string;
 };
 
 export type ActorAction = {
