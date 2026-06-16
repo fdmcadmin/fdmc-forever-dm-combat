@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
+import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
 import { tabAccent } from "./tabVisuals";
 import type { ActorAction, TabId } from "../types/tabs";
 
@@ -70,6 +71,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     attackBonus: action.metadata?.attack,
     saveDc: action.metadata?.saveDc,
     damage: action.metadata?.damage,
+    damageType: action.metadata?.damageType,
     critDamage: action.metadata?.crit,
     range: action.metadata?.range,
     slotCost: action.metadata?.slotCost,
@@ -103,6 +105,9 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
     }
   );
   const [errors, setErrors] = useState<string[]>([]);
+  // P-UX4 Phase 3: damage-type picker is a standard-type dropdown + a Custom free-text
+  // mode. Start in custom mode when editing an action whose type isn't a standard one.
+  const [customDamageType, setCustomDamageType] = useState(() => isCustomDamageType(initial?.metadata?.damageType));
 
   function set<K extends keyof PcActionDraft>(key: K, value: PcActionDraft[K]) {
     setDraft(d => ({ ...d, [key]: value }));
@@ -223,6 +228,33 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
             placeholder="2d6+@STR"
             showVars={["@STR","@DEX","@CON","@WIS","@CHA"]}
           />
+          {/* P-UX4 Phase 3: damage type — standard D&D defaults + Custom free text so the
+              engine stays all-system, not D&D-locked. */}
+          <label style={{ fontSize: 12 }}>
+            Damage Type
+            <select
+              value={customDamageType ? "__custom__" : (draft.damageType ?? "")}
+              onChange={e => {
+                const v = e.target.value;
+                if (v === "__custom__") { setCustomDamageType(true); }
+                else { setCustomDamageType(false); set("damageType", v || undefined); }
+              }}
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
+            >
+              <option value="">— none —</option>
+              {DAMAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              <option value="__custom__">Custom…</option>
+            </select>
+            {customDamageType && (
+              <input
+                type="text"
+                value={draft.damageType ?? ""}
+                onChange={e => set("damageType", e.target.value || undefined)}
+                placeholder="custom damage type (e.g. shadow, void)"
+                style={{ display: "block", width: "100%", marginTop: 4, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
+              />
+            )}
+          </label>
           {draft.rollMode === "attack" && (
             <FormulaInput
               label="Crit Damage"

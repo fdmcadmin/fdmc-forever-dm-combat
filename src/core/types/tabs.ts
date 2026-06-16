@@ -63,6 +63,8 @@ export type CastingTimeType = "action" | "bonus" | "reaction" | "ritual" | "spec
 export type ActorActionMetadata = {
   attack?: string;
   damage?: string;
+  /** Damage type for the damage formula — standard D&D type or a custom free-text value. */
+  damageType?: string;
   crit?: string;
   saveDc?: string;
   range?: string;

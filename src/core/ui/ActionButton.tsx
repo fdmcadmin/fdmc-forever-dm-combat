@@ -49,7 +49,7 @@ function metadataRows(action: ActorAction, resolveFormula?: (formula: string) =>
 
   return [
     ["Attack", r(metadata.attack)],
-    ["Damage", r(metadata.damage)],
+    ["Damage", metadata.damage ? `${r(metadata.damage)}${metadata.damageType ? ` ${metadata.damageType}` : ""}` : metadata.damage],
     ["Crit", r(metadata.crit)],
     ["Crit Range", metadata.critThreshold ? `${metadata.critThreshold}-20` : undefined],
     ["Save", r(metadata.saveDc)],
@@ -144,6 +144,14 @@ export function ActionButton({
                 <strong>{value}</strong>
               </span>
             ))}
+          </span>
+        )}
+
+        {/* P-UX4 Phase 4: passive equipment shows its effect text inline so players can
+            read it on their own actor card (no roll/use, non-logging). */}
+        {action.actionKind === "equipment" && action.category === "Passive" && action.description && (
+          <span className="action-description" style={{ display: "block", fontSize: 11, color: "#9be9a8", marginTop: 2 }}>
+            ◇ {action.description}
           </span>
         )}
 

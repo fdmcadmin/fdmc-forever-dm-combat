@@ -98,6 +98,7 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
     metadata: {
       attack: typeof normalized.attackBonus === "number" ? String(normalized.attackBonus) : typeof normalized.attackBonus === "string" ? normalized.attackBonus : undefined,
       damage: normalized.damage,
+      damageType: normalized.damageType,
       crit: normalized.critDamage,
       saveDc: typeof normalized.saveDc === "number" ? String(normalized.saveDc) : typeof normalized.saveDc === "string" ? normalized.saveDc : undefined,
       range: normalized.range,

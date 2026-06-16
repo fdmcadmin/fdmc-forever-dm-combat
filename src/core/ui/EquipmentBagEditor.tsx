@@ -64,7 +64,7 @@ export type StatEffect = {
 export type EquipmentItem = {
   id: string;
   name: string;
-  type: "weapon" | "armor" | "shield" | "consumable" | "gear" | "magic" | "tool";
+  type: "weapon" | "armor" | "shield" | "consumable" | "gear" | "magic" | "tool" | "passive";
   description: string;
   isUsable: boolean;
   attack?: string;
@@ -257,11 +257,18 @@ export function itemToAction(item: EquipmentItem): ActorAction {
   const isWeapon = Boolean(item.attack || item.damage);
   // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
   const isConsumable = Boolean(item.charges) && !isWeapon;
+  // P-UX4 Phase 4: passive items (Ward Caches, Convergence gear) are reference/effect
+  // display only — no roll/use, non-logging — and surface their full effect text on the
+  // actor card. Combine description + mechanics so the player can read the whole effect.
+  const isPassive = item.type === "passive";
+  const passiveEffectText = isPassive
+    ? [item.description, item.mechanicsText].filter(Boolean).join(" — ") || item.description
+    : item.description;
 
   return {
     id: `equip-${item.id}`,
     label: item.name,
-    description: item.description,
+    description: passiveEffectText,
     actionKind: "equipment",
     // Weapons: reference-only on equipment tab (roll lives in main tab)
     // Consumables: logged when used so DM/player knows a charge was spent
@@ -337,7 +344,7 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
 
 // ─── Item form ────────────────────────────────────────────────────────────────
 
-const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consumable", "gear", "magic", "tool"];
+const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consumable", "gear", "magic", "tool", "passive"];
 
 type ItemFormProps = {
   initial?: EquipmentItem;
