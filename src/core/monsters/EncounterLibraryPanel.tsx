@@ -375,6 +375,8 @@ type EncounterLibraryPanelProps = {
    * loot-pool section still shows, but the "Create loot" button is hidden.
    */
   onCreateLootForEncounter?: (lootPoolName: string) => void;
+  /** Bumping this opens a fresh monster band picker — Library "+ Create Monster" (P-UX4 Phase 5). */
+  createSignal?: number;
 };
 
 export function EncounterLibraryPanel({
@@ -386,6 +388,7 @@ export function EncounterLibraryPanel({
   autoOpenBandPicker = false,
   hideCreate = false,
   onCreateLootForEncounter,
+  createSignal,
 }: EncounterLibraryPanelProps) {
   // Campaign-library unlock state + snap-back watcher (shared module). The panel itself
   // is NEVER gated — only the Broken Chain (campaign) section reads `unlocked`.
@@ -394,6 +397,11 @@ export function EncounterLibraryPanel({
   // reveals the lock prompt (if locked) or the campaign encounters (if unlocked).
   const [brokenChainOpen, setBrokenChainOpen] = useState(false);
   const [showBandPicker, setShowBandPicker] = useState(autoOpenBandPicker);
+  // P-UX4 Phase 5: the Library "+ Create Monster" button bumps createSignal to open the
+  // band picker without re-opening the whole panel.
+  useEffect(() => {
+    if (createSignal) setShowBandPicker(true);
+  }, [createSignal]);
   const [encounters, setEncounters] = useState<EncounterDefinition[]>([]);
   const [unusedEncounters, setUnusedEncounters] = useState<EncounterDefinition[]>(() => loadUnusedEncounters());
   const [editingId, setEditingId] = useState<string | null>(null);

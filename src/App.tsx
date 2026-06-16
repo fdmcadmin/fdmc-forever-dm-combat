@@ -39,6 +39,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import { CombatLog } from "./core/combat-log/CombatLog";
 import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants, type Combatant } from "./core/ui/CombatTracker";
+import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
 import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -595,6 +596,8 @@ export default function App() {
 
   // ── Actor editor state ────────────────────────────────────────────────────
   const [editingActorId, setEditingActorId] = useState<string | null>(null);
+  // P-UX4 Phase 8 — clickable quick-guide / onboarding overlay
+  const [showReadme, setShowReadme] = useState(false);
 
   // ── Level-up approval queue (DM side) ────────────────────────────────────
   const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>([]);
@@ -1767,8 +1770,11 @@ export default function App() {
     // Player sees a waiting message
     return (
       <main className="fdmc-app">
+        <ReadmeOverlay open={showReadme} onClose={() => setShowReadme(false)} />
         {isDmMode && (
           <header className="fdmc-dm-toolbar" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "6px 10px", background: "#0d0d14", borderBottom: "1px solid #2a2a3e" }}>
+            <button type="button" style={DM_BTN.use} title="Open the quick guide — colors, flow, and controls"
+              onClick={() => setShowReadme(true)}>📖 Guide</button>
             <span style={dmGroupLabel("#3f9d5f")}>Create</span>
             <button type="button" style={DM_CREATE_SHADES[0]} onClick={() => void openDmPanel("library", "actor")}>+ Party Character</button>
             <button type="button" style={DM_CREATE_SHADES[1]} onClick={() => void openDmPanel("library", "monster")}>+ Monster</button>
@@ -1917,21 +1923,19 @@ export default function App() {
   return (
     <main className="fdmc-app">
 
+      <ReadmeOverlay open={showReadme} onClose={() => setShowReadme(false)} />
+
       {/* ── DM toolbar — grouped, color-coded rows (P-UX1) ── */}
       {isDmMode && (
         <header
           className="fdmc-dm-toolbar"
           style={{ display: "flex", flexDirection: "column", gap: 5, padding: "6px 10px", background: "#0d0d14", borderBottom: "1px solid #2a2a3e" }}
         >
-          {/* Row 1 — CREATE (green) · session + status on the right */}
+          {/* Row 1 — session + status. Creation moved into the Library (P-UX4 Phase 5);
+              the top Create buttons are hidden once content exists. */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={dmGroupLabel("#3f9d5f")}>Create</span>
-            <button type="button" style={DM_CREATE_SHADES[0]} title="Build a new Party Character (guided)"
-              onClick={() => void openDmPanel("library", "actor")}>+ Party Character</button>
-            <button type="button" style={DM_CREATE_SHADES[1]} title="Build a new monster — pick a band to scaffold it (saved to My Library)"
-              onClick={() => void openDmPanel("library", "monster")}>+ Monster</button>
-            <button type="button" style={DM_CREATE_SHADES[2]} title="Build a new equipment item"
-              onClick={() => void openDmPanel("library", "equipment")}>+ Equipment</button>
+            <button type="button" style={DM_BTN.use} title="Open the quick guide — colors, flow, and controls"
+              onClick={() => setShowReadme(true)}>📖 Guide</button>
 
             <span style={{ flex: 1, minWidth: 8 }} />
 
@@ -1965,21 +1969,24 @@ export default function App() {
           {/* Row 2 — MANAGE (blue) · housekeeping cluster on the right */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span style={dmGroupLabel("#5f8fd9")}>Manage</span>
-            <button type="button" style={DM_USE_SHADES[0]} onClick={() => void openDmPanel("seatTokens")}>Seats &amp; Tokens</button>
-            <button type="button" style={DM_USE_SHADES[1]} title="Assign the selected map token to a seat or monster"
-              onClick={() => void openDmPanel("tokens")}>🎯 Assign Token</button>
-            <button type="button" style={DM_USE_SHADES[2]} title="Browse & load Party Characters, Monsters and Equipment"
+            {/* Seat & token assignment lives in Seats & Tokens (P-UX4 Phase 7 removed the
+                standalone Assign Token button — seat assignment uses the anchor model). */}
+            <button type="button" style={DM_USE_SHADES[0]} title="Seats, token assignment, and the secondary-token anchor model"
+              onClick={() => void openDmPanel("seatTokens")}>Seats &amp; Tokens</button>
+            <button type="button" style={DM_USE_SHADES[2]} title="Browse, create &amp; load Party Characters, Monsters and Equipment"
               onClick={() => void openDmPanel("library")}>
               Library{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
             </button>
 
             <span style={{ flex: 1, minWidth: 8 }} />
 
-            <button type="button" style={DM_BTN.cleanup} title="Tidy up the encounter — clear defeated monsters and stale state"
+            {/* P-UX4 Phase 6 — labeled DM-control icons: cleanup (yellow), GM room data
+                (teal hammer/wrench), close all (red). */}
+            <button type="button" style={DM_BTN.cleanup} title="Post-combat cleanup — clear defeated monsters and stale state after a fight"
               onClick={() => setOpenPanel("encounterCleanup")}>🧹 Cleanup</button>
-            <button type="button" style={DM_BTN.fix} title="Something looks broken? Open Room Maintenance to repair room state."
-              onClick={() => void openDmPanel("maintenance")}>🛠 Fix something</button>
-            <button type="button" style={DM_BTN.danger} title="Close all floating DM windows"
+            <button type="button" style={DM_BTN.fix} title="GM session-save / room-metadata control — clean room metadata &amp; save actor stats"
+              onClick={() => void openDmPanel("maintenance")}>🛠 GM Data</button>
+            <button type="button" style={DM_BTN.danger} title="Close all DM windows"
               onClick={() => void closeAllDmPanels()}>✕ Close All</button>
           </div>
         </header>

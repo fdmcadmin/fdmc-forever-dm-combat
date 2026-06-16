@@ -414,6 +414,8 @@ function DmPanelApp() {
   // Equipment loot-pool create flow: preset tag + a signal that re-opens the creator.
   const [equipPreset, setEquipPreset] = useState<string | undefined>(lootEncounterParam);
   const [equipCreateSignal, setEquipCreateSignal] = useState(0);
+  // P-UX4 Phase 5: Library "+ Create Monster" trigger (bump opens the band picker).
+  const [monsterCreateSignal, setMonsterCreateSignal] = useState(0);
 
   // Open the equipment creator pre-tagged to a loot pool (from the encounter editor).
   // Switches to the Equipment tab and bumps the signal so the New Item form opens with
@@ -940,8 +942,22 @@ function DmPanelApp() {
                 );
               })}
             </div>
-            <div style={{ padding: "5px 14px", borderBottom: "1px solid #1a1a2e", fontSize: 10, color: "#555", flexShrink: 0 }}>
-              Library = load &amp; edit what exists · use the <strong style={{ color: "#7b68ee" }}>+ Create</strong> button to build something new.
+            {/* P-UX4 Phase 5: creation lives in the Library (the top toolbar's Create
+                buttons are hidden once content exists). Colored per type. */}
+            <div style={{ padding: "6px 14px", borderBottom: "1px solid #1a1a2e", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
+              {libraryTab === "actors" && (
+                <button type="button" onClick={() => setEditingActorId("__new__")}
+                  style={{ fontSize: 12, padding: "4px 12px", background: "#16351f", border: "1px solid #2a6e3f", borderRadius: 5, color: "#7be08a", cursor: "pointer", fontWeight: 600 }}>+ Create Party Character</button>
+              )}
+              {libraryTab === "monsters" && (
+                <button type="button" onClick={() => setMonsterCreateSignal(s => s + 1)}
+                  style={{ fontSize: 12, padding: "4px 12px", background: "#351616", border: "1px solid #6e2a2a", borderRadius: 5, color: "#e08a8a", cursor: "pointer", fontWeight: 600 }}>+ Create Monster</button>
+              )}
+              {libraryTab === "equipment" && (
+                <button type="button" onClick={() => setEquipCreateSignal(s => s + 1)}
+                  style={{ fontSize: 12, padding: "4px 12px", background: "#2a2510", border: "1px solid #6e5a20", borderRadius: 5, color: "#e0c060", cursor: "pointer", fontWeight: 600 }}>+ Create Equipment</button>
+              )}
+              <span style={{ fontSize: 10, color: "#555" }}>Library = load &amp; edit what exists · use <strong style={{ color: "#7b68ee" }}>+ Create</strong> to build something new.</span>
             </div>
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {libraryTab === "actors" && (
@@ -995,6 +1011,7 @@ function DmPanelApp() {
                   monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
                   activeRosterCount={Object.keys(roomLiveState.monsterLiveState).length}
                   autoOpenBandPicker={createParam === "monster"}
+                  createSignal={monsterCreateSignal}
                   hideCreate
                   onCreateLootForEncounter={handleCreateLootForEncounter}
                   onLoadEncounter={(instances) => {
