@@ -51,11 +51,13 @@ function createBlankActor(): Actor {
 // in the Resources list and the runtime automation can decrement/reset them. Manual
 // resources (any id not prefixed "cf-spell-") are preserved untouched.
 function syncClassFeatureSpellResources(tabs: TabActionMap): TabActionMap {
+  try {
   const spells = tabs.spells ?? [];
   const cfSpells = spells.filter(
     s => s.metadata?.spellSlotMode === "freeCast" && (s.metadata?.classFeatureUses ?? 0) > 0,
   );
-  const manualResources = (tabs.resources ?? []).filter(r => !r.id.startsWith("cf-spell-"));
+  // Keep every resource except the auto-managed cf-spell ones (guard non-string ids).
+  const manualResources = (tabs.resources ?? []).filter(r => !(typeof r.id === "string" && r.id.startsWith("cf-spell-")));
   const cfResources: ActorAction[] = cfSpells.map(s => {
     const uses = s.metadata?.classFeatureUses ?? 1;
     const details = `Pool: ${uses} · Reset: Long Rest · Class feature spell`;
@@ -71,6 +73,11 @@ function syncClassFeatureSpellResources(tabs: TabActionMap): TabActionMap {
     };
   });
   return { ...tabs, resources: [...manualResources, ...cfResources] };
+  } catch (err) {
+    // Never block a character save on resource sync.
+    console.error("[ActorEditor] class-feature resource sync failed:", err);
+    return tabs;
+  }
 }
 
 type EditorTab =
@@ -342,6 +349,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   const [tabsDraft, setTabsDraft] = useState<TabActionMap>(() => ({ ...actor.tabs }));
   const [showDanger, setShowDanger] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  // Surface save failures in the UI instead of silently swallowing them (the click
+  // handler would otherwise just "do nothing" if buildEditedActor/onSave throws).
+  const [saveError, setSaveError] = useState<string | null>(null);
   // Pending drafts (P-ROLL3b) — only surfaced when creating a brand-new character
   const isCreateMode = mode === "create-new" && !proposeMode;
   const [actorDrafts, setActorDrafts] = useState<PendingDraft<Actor>[]>(
@@ -379,6 +389,18 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   function finalizeSave(edited: Actor, saveMode: ActorEditorSaveMode) {
     if (activeDraftId) removePendingDraft("actor", activeDraftId);
     onSave(edited, saveMode);
+  }
+
+  // Build + save, surfacing any thrown error in the UI rather than silently failing.
+  function attemptSave(saveMode: ActorEditorSaveMode, newId?: string) {
+    try {
+      setSaveError(null);
+      finalizeSave(buildEditedActor(newId), saveMode);
+    } catch (err) {
+      const message = err instanceof Error ? `${err.message}` : String(err);
+      setSaveError(`Save failed: ${message}`);
+      console.error("[ActorEditor] save failed:", err);
+    }
   }
 
   function handleSaveDraft() {
@@ -568,6 +590,11 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
 
       {/* Save buttons */}
       <div style={{ padding: "10px 14px", borderTop: "1px solid #2a2a3e", display: "flex", flexDirection: "column", gap: 8 }}>
+        {saveError && (
+          <div style={{ background: "#3a1414", border: "1px solid #6e2a2a", borderRadius: 4, padding: "6px 10px", fontSize: 12, color: "#ff9999" }}>
+            ⚠ {saveError}
+          </div>
+        )}
         {/* Guided Back / Next / Finish (DM + create/edit only — not in propose mode) */}
         {!proposeMode && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -593,7 +620,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             ) : (
               <button
                 type="button"
-                onClick={() => finalizeSave(buildEditedActor(), "current-and-library")}
+                onClick={() => attemptSave("current-and-library")}
                 style={{ padding: "7px 22px", background: "#34c759", color: "#06210f", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
               >
                 ✓ Finish &amp; Save
@@ -606,7 +633,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             /* Player propose mode — single submit button, no direct save */
             <button
               type="button"
-              onClick={() => finalizeSave(buildEditedActor(), "current")}
+              onClick={() => attemptSave("current")}
               style={{ flex: 1, padding: "7px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
             >
               Submit for DM Approval
@@ -616,7 +643,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             <>
               <button
                 type="button"
-                onClick={() => finalizeSave(buildEditedActor(), "current-and-library")}
+                onClick={() => attemptSave("current-and-library")}
                 style={{ flex: 1, padding: "6px 12px", background: "transparent", color: "#9a9ab0", border: "1px solid #3a3a52", borderRadius: 4, cursor: "pointer", fontSize: 12 }}
                 title="Save to the library now without stepping through the rest of the flow"
               >
@@ -624,7 +651,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               </button>
               <button
                 type="button"
-                onClick={() => finalizeSave(buildEditedActor(), "current")}
+                onClick={() => attemptSave("current")}
                 style={{ padding: "6px 12px", background: "transparent", color: "#888", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
                 title="Save as session override only — not written to base library (changes lost on next Sync)"
               >
@@ -632,7 +659,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               </button>
               <button
                 type="button"
-                onClick={() => finalizeSave(buildEditedActor(`${actor.id}-copy-${Date.now().toString(36)}`), "duplicate")}
+                onClick={() => attemptSave("duplicate", `${actor.id}-copy-${Date.now().toString(36)}`)}
                 style={{ padding: "7px 12px", background: "transparent", color: "#aaa", border: "1px solid #444", borderRadius: 4, cursor: "pointer", fontSize: 11 }}
               >
                 Duplicate
