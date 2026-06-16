@@ -126,10 +126,25 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
  */
 export function actionFromEditorDraft(draft: PcActionDraft, existingAction?: ActorAction): ActorAction {
   const base = adaptPcActionToActorAction(draft);
+
+  // Stat effects: preserve any non-AC effects already on the action (e.g. a code-authored
+  // feat's +HP / +STR) and apply the editor's AC Bonus as an addAC effect, so feats can
+  // grant AC the same way equipment does (deriveActorStats folds feat statEffects).
+  const preservedEffects = (existingAction?.metadata?.statEffects ?? []).filter(
+    e => e.type !== "addAC" && e.type !== "setAC",
+  );
+  const acEffect = typeof draft.acBonus === "number" && draft.acBonus !== 0
+    ? [{ type: "addAC", value: draft.acBonus }]
+    : [];
+  const statEffects = [...preservedEffects, ...acEffect];
+  const withEffects: ActorAction = statEffects.length
+    ? { ...base, metadata: { ...base.metadata, statEffects } }
+    : base;
+
   if (existingAction) {
-    return { ...base, id: existingAction.id };
+    return { ...withEffects, id: existingAction.id };
   }
-  return base;
+  return withEffects;
 }
 
 /**

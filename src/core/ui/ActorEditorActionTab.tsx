@@ -79,6 +79,9 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     source: action.category,
     visibility: action.logMode === "silent" ? "hidden" : "player",
     initiativeBonus: action.metadata?.initiativeBonus,
+    acBonus: (action.metadata?.statEffects ?? [])
+      .filter(e => e.type === "addAC")
+      .reduce((sum, e) => sum + (e.value ?? 0), 0) || undefined,
   };
 }
 
@@ -281,20 +284,34 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
           style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", resize: "vertical" }} />
       </label>
 
-      {/* Initiative bonus — relevant for feats/features/passives (Alert, Jack of All Trades,
-          etc.). Summed into the actor's initiative roll formula (card + combat tracker). */}
+      {/* Feat/feature passive effects — AC + Initiative. Both fold into the actor's
+          derived stats: AC Bonus → addAC (deriveActorStats), Initiative Bonus → the
+          initiative roll formula (card + combat tracker). */}
       {(tabId === "feats" || tabId === "features" || draft.actionCost === "passive") && (
-        <label style={{ fontSize: 12 }}>
-          Initiative Bonus
-          <input
-            type="number"
-            value={draft.initiativeBonus ?? ""}
-            onChange={e => set("initiativeBonus", e.target.value === "" ? undefined : Number(e.target.value))}
-            placeholder="0 (e.g. +5 for Alert feat)"
-            style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
-          />
-          <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Adds to this actor's initiative roll formula. Use only for feats/features that explicitly grant an initiative bonus.</span>
-        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>
+            AC Bonus
+            <input
+              type="number"
+              value={draft.acBonus ?? ""}
+              onChange={e => set("acBonus", e.target.value === "" ? undefined : Number(e.target.value))}
+              placeholder="0 (e.g. +1 Dual Wielder)"
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
+            />
+            <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Adds to this actor's AC. Use for feats that grant AC (Dual Wielder +1, Medium Armor Master, etc.).</span>
+          </label>
+          <label style={{ fontSize: 12 }}>
+            Initiative Bonus
+            <input
+              type="number"
+              value={draft.initiativeBonus ?? ""}
+              onChange={e => set("initiativeBonus", e.target.value === "" ? undefined : Number(e.target.value))}
+              placeholder="0 (e.g. +5 for Alert feat)"
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
+            />
+            <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Adds to this actor's initiative roll formula. Use only for feats/features that grant an initiative bonus.</span>
+          </label>
+        </div>
       )}
 
       {errors.length > 0 && (

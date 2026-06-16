@@ -45,6 +45,8 @@ export type PcActionDraft = {
   visibility?: PcActionVisibility;
   /** P5 F09 — initiative bonus contributed by this feature (e.g. Alert feat +5) */
   initiativeBonus?: number;
+  /** Feat/feature AC bonus — applied as an addAC stat effect (e.g. Dual Wielder +1). */
+  acBonus?: number;
 };
 
 export type PcActorAction = PcActionDraft & {
