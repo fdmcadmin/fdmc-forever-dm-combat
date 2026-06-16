@@ -32,6 +32,8 @@ type SpellRow = {
   details: string;
   category: string;
   economyCost: "main" | "bonus" | "reaction";
+  /** Class-feature spell: uses per long rest. "" / "0" = normal slot-cast spell. */
+  classFeatureUses: string;
   include: boolean;
 };
 
@@ -60,9 +62,15 @@ function formatSlotLabel(row: SpellRow): string {
 }
 
 function rowToAction(row: SpellRow): ActorAction {
-  const slotLabel = formatSlotLabel(row);
+  // Class-feature spell: spends a dedicated 1-per-long-rest resource (not a spell slot).
+  const cfUses = Number.parseInt(row.classFeatureUses, 10);
+  const isClassFeature = Number.isFinite(cfUses) && cfUses > 0;
+  const slotLabel = isClassFeature
+    ? `${cfUses}/Long Rest`
+    : formatSlotLabel(row);
   const detailParts = [
     row.details,
+    isClassFeature ? `Class feature — ${cfUses}/Long Rest` : "",
     row.upcastNote ? `Upcast: ${row.upcastNote}` : "",
     row.usableSpellLevels.length > 1
       ? `Available at: ${row.usableSpellLevels.map(l => l === 0 ? "Cantrip" : `L${l}`).join(", ")}`
@@ -89,6 +97,8 @@ function rowToAction(row: SpellRow): ActorAction {
       cost: row.economyCost === "main" ? "Action" : row.economyCost === "bonus" ? "Bonus Action" : "Reaction",
       slotCost: slotLabel,
       spellLevel: row.level,
+      // freeCast routes the cast to the dedicated resource (App.tsx consume routing).
+      ...(isClassFeature ? { spellSlotMode: "freeCast" as const, classFeatureUses: cfUses } : {}),
       concentration: row.concentration ? "Yes" : undefined,
       details: detailParts || row.details,
     },
@@ -121,6 +131,9 @@ function actionToRow(action: ActorAction): SpellRow {
     details: action.description ?? action.metadata?.details ?? "",
     category: action.category ?? "Spells",
     economyCost: cost === "bonus" ? "bonus" : cost === "reaction" ? "reaction" : "main",
+    classFeatureUses: action.metadata?.spellSlotMode === "freeCast" && action.metadata?.classFeatureUses
+      ? String(action.metadata.classFeatureUses)
+      : "",
     include: true,
   };
 }
@@ -143,6 +156,7 @@ function makeBlankRow(): SpellRow {
     details: "",
     category: "Spells",
     economyCost: "main",
+    classFeatureUses: "",
     include: false,
   };
 }
@@ -307,6 +321,20 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                   </label>
                 </div>
               )}
+
+              {/* Class-feature spell: dedicated uses/long-rest resource instead of a spell slot */}
+              <label style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 2 }}>
+                <span>Class feature uses / Long Rest <span style={{ color: "#555" }}>(blank = normal spell slot)</span></span>
+                <input type="number" min={0} value={row.classFeatureUses}
+                  onChange={e => setRow(idx, { classFeatureUses: e.target.value })}
+                  placeholder="e.g. 1"
+                  style={{ ...inputStyle, maxWidth: 140 }} />
+                {Number(row.classFeatureUses) > 0 && (
+                  <span style={{ fontSize: 10, color: "#9be9a8" }}>
+                    ◇ Spends a dedicated “{row.name || "spell"}” resource ({row.classFeatureUses}/Long Rest), auto-added to the Resources list — does not use a spell slot.
+                  </span>
+                )}
+              </label>
 
               {/* Roll fields */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>

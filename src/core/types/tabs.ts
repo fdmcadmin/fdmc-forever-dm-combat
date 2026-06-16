@@ -81,8 +81,13 @@ export type ActorActionMetadata = {
   initiativeBonus?: number;
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
-  /** F02 — spell slot mode: which resource pool this spell uses */
+  /** F02 — spell slot mode: which resource pool this spell uses.
+   *  "freeCast" = class-feature spell: spends a dedicated named resource (not a spell
+   *  slot), tracked in the resource list. See classFeatureUses. */
   spellSlotMode?: "standard" | "pact" | "freeCast" | "none";
+  /** Class-feature spell: number of uses per long rest. Drives the auto-generated
+   *  dedicated resource (pool = this value, reset = Long Rest). */
+  classFeatureUses?: number;
   /** F02 — level the spell is currently set to cast at */
   selectedCastLevel?: number | null;
   /** F02 — levels this spell can be cast at (empty = any level) */

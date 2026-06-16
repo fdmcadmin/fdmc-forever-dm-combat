@@ -2725,6 +2725,24 @@ export default function App() {
           const action = Object.values(actorToShow.tabs).flat().find(a => a.id === input.actionId);
           if (!action) return;
 
+          // Class-feature spell ("freeCast"): spends its dedicated N/long-rest resource
+          // (label = spell name), NOT a spell slot. Must run before the slot branch below.
+          if (action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast") {
+            const r = consumeNamedResource(actorToShow.id, action.label);
+            if (r.outcome === "spent") {
+              addEntry({
+                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
+                message: `${actorToShow.name} casts ${action.label} (class feature) — ${r.remaining}/${r.max ?? "?"} uses left.`,
+              });
+            } else if (r.outcome === "empty") {
+              addEntry({
+                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
+                message: `⚠ ${actorToShow.name} has no ${action.label} uses left — cast without a charge.`,
+              });
+            }
+            return;
+          }
+
           // Spell with slot level → decrement matching slot resource.
           // Upcasting is data-authored: the spell action carries the level it casts at,
           // so the slot spent here matches the cast level shown on the card.

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
-import type { TabId, TabActionMap } from "../types/tabs";
+import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { ResourceTableEditor } from "./ResourceTableEditor";
@@ -43,6 +43,34 @@ function createBlankActor(): Actor {
       features: [], feats: [], status: [], equipment: [], resources: [], outOfCombat: [], notes: [],
     },
   };
+}
+
+// Class-feature spells (spellSlotMode "freeCast") spend a dedicated N-per-long-rest
+// resource instead of a spell slot. Keep tabs.resources in sync: regenerate the
+// auto-managed "cf-spell-" resources from the current class-feature spells so they show
+// in the Resources list and the runtime automation can decrement/reset them. Manual
+// resources (any id not prefixed "cf-spell-") are preserved untouched.
+function syncClassFeatureSpellResources(tabs: TabActionMap): TabActionMap {
+  const spells = tabs.spells ?? [];
+  const cfSpells = spells.filter(
+    s => s.metadata?.spellSlotMode === "freeCast" && (s.metadata?.classFeatureUses ?? 0) > 0,
+  );
+  const manualResources = (tabs.resources ?? []).filter(r => !r.id.startsWith("cf-spell-"));
+  const cfResources: ActorAction[] = cfSpells.map(s => {
+    const uses = s.metadata?.classFeatureUses ?? 1;
+    const details = `Pool: ${uses} · Reset: Long Rest · Class feature spell`;
+    return {
+      id: `cf-spell-${s.id}`,
+      label: s.label,
+      description: details,
+      actionKind: "resource",
+      logMode: "silent",
+      displayMode: "compact",
+      category: "Class Features / Resources",
+      metadata: { cost: "Long Rest", details, additive: String(uses), resourceKind: "freeCast" },
+    };
+  });
+  return { ...tabs, resources: [...manualResources, ...cfResources] };
 }
 
 type EditorTab =
@@ -327,7 +355,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       ...actor,
       ...profilePatch,
       id: newId ?? actor.id,
-      tabs: tabsDraft,
+      tabs: syncClassFeatureSpellResources(tabsDraft),
       stats: profilePatch.stats ?? actor.stats,
     };
     // Companion ownership → moduleData.ownerId. The combat tracker groups any
