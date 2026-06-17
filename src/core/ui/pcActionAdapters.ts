@@ -1,6 +1,22 @@
 import type { Actor } from "../types/actor";
-import type { ActorAction, TabId } from "../types/tabs";
-import { normalizePcActionDraft, type PcActionDraft } from "./pcActionTypes";
+import type { ActorAction, ActionOutcomeMode, TabId } from "../types/tabs";
+import { normalizePcActionDraft, type PcActionDraft, type PcRollMode } from "./pcActionTypes";
+
+// Persist the editor's chosen outcome mode so it round-trips (a "Triggered Feature" on a
+// damage action must not re-derive to "Straight Damage" on reopen). inferOutcomeMode honors
+// this explicit value at runtime too.
+function rollModeToOutcomeMode(rollMode: PcRollMode): ActionOutcomeMode | undefined {
+  switch (rollMode) {
+    case "attack": return "attack-roll";
+    case "save": return "dc-check";
+    case "check": return "ability-check";
+    case "damageOnly": return "damage-only";
+    case "healing": return "healing";
+    case "triggered": return "triggered";
+    case "reference": return "reference";
+    default: return undefined; // utility / passive — left to inference
+  }
+}
 
 function tabToActorTab(tab: PcActionDraft["tab"]): TabId {
   switch (tab) {
@@ -111,6 +127,7 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
       spellLevel: normalized.spellLevel,
       attackUses: normalized.attackUses && normalized.attackUses > 1 ? normalized.attackUses : undefined,
       initiativeBonus: normalized.initiativeBonus ?? undefined,
+      outcomeMode: rollModeToOutcomeMode(normalized.rollMode),
     },
     hasDefinedUse: Boolean(normalized.uses),
     pinned: normalized.tab === "reaction",

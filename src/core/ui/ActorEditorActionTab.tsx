@@ -55,7 +55,17 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
   const hasSave = Boolean(action.metadata?.saveDc?.trim());
   const hasDamage = Boolean(action.metadata?.damage?.trim());
 
+  // Honor the explicitly-saved outcome mode first so the editor's choice round-trips
+  // (e.g. "Triggered Feature" on a damage action no longer reverts to "Straight Damage").
+  const explicitOutcome = action.metadata?.outcomeMode;
   const rollMode: PcRollMode =
+    explicitOutcome === "attack-roll" ? "attack" :
+    explicitOutcome === "dc-check" ? "save" :
+    explicitOutcome === "ability-check" ? "check" :
+    explicitOutcome === "damage-only" ? "damageOnly" :
+    explicitOutcome === "healing" ? "healing" :
+    explicitOutcome === "triggered" ? "triggered" :
+    explicitOutcome === "reference" ? "reference" :
     action.actionKind === "check" ? "check" :
     hasAttack ? "attack" :
     hasSave ? "save" :
