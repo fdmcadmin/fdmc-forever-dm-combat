@@ -127,7 +127,10 @@ type ArmedEffect = {
   label: string;
   details: string;
   source: string;
+  /** Bonus added to the DAMAGE roll (existing additive path). */
   formula?: string;
+  /** Bonus added to the ATTACK roll — used by spellcasting focuses (id "focus:*"). */
+  attackFormula?: string;
 };
 
 type ClassOptionContext =
@@ -446,7 +449,8 @@ function formatAdditiveFormulaForDamage(rawFormula: string, isCritDamage: boolea
 }
 
 function isPersistentDamageAdditive(effect: Pick<ArmedEffect, "id">) {
-  return effect.id === "rage-active";
+  // Rage and spellcasting focuses stay armed across rolls until manually toggled off.
+  return effect.id === "rage-active" || effect.id.startsWith("focus:");
 }
 
 
@@ -1875,6 +1879,71 @@ export function ActorCard({
     });
   }
 
+  // ── Spellcasting focus (P-UX4 follow-up) ─────────────────────────────────
+  // Equipped items with a spell focus bonus surface as clickable toggles. When armed,
+  // the focus adds its attack bonus to spell attack rolls (handleCommitRoll) and its
+  // damage bonus to spell damage rolls (getDamageAdditives). Stays armed until toggled.
+  function getEquippedSpellFocuses() {
+    return (actor.tabs.equipment ?? [])
+      .filter(a => a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim())
+      .map(a => ({
+        id: a.id.replace(/^equip-/, ""),
+        label: a.label,
+        attack: a.metadata?.spellFocusAttack?.trim() || undefined,
+        damage: a.metadata?.spellFocusDamage?.trim() || undefined,
+      }));
+  }
+
+  function isSpellFocusArmed(focusId: string) {
+    return armedEffects.some(e => e.id === `focus:${focusId}`);
+  }
+
+  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string }) {
+    const effectId = `focus:${focus.id}`;
+    if (isSpellFocusArmed(focus.id)) {
+      clearArmedEffect(effectId);
+      return;
+    }
+    upsertArmedEffect({
+      id: effectId,
+      label: [focus.attack ? `atk ${focus.attack}` : "", focus.damage ? `dmg ${focus.damage}` : ""].filter(Boolean).join(" · ") || focus.label,
+      details: `${focus.label} — spellcasting focus. Adds to spell attack & damage rolls while armed.`,
+      source: focus.label,
+      formula: focus.damage,
+      attackFormula: focus.attack,
+    });
+  }
+
+  function renderSpellFocusPanel() {
+    const focuses = getEquippedSpellFocuses();
+    if (focuses.length === 0) return null;
+    return (
+      <section className="armed-effects-panel" aria-label="Spell focuses">
+        <div className="armed-effects-header">
+          <span className="stat-label">🪄 Spell Focuses</span>
+          <span>toggle when casting a spell</span>
+        </div>
+        <div className="armed-effect-chip-list">
+          {focuses.map(f => {
+            const armed = isSpellFocusArmed(f.id);
+            return (
+              <button
+                type="button"
+                key={f.id}
+                onClick={() => toggleSpellFocus(f)}
+                className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}
+                style={{ cursor: "pointer", opacity: armed ? 1 : 0.65 }}
+                title={`${f.label}${f.attack ? ` · ${f.attack} to spell attack` : ""}${f.damage ? ` · ${f.damage} to spell damage` : ""} (applies to spell rolls only)`}
+              >
+                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${f.attack}` : ""}{f.damage ? ` dmg ${f.damage}` : ""}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
   function renderArmedEffectsPanel() {
     const visibleEffects = getVisibleArmedEffects();
 
@@ -2423,6 +2492,19 @@ export function ActorCard({
       critThreshold: candidate.critThreshold ?? entry.action.metadata?.critThreshold,
     };
 
+    // Spellcasting focus: when casting a spell, armed focus toggles add their attack bonus
+    // to the spell's attack roll (the damage bonus rides via getDamageAdditives). Focuses
+    // never touch non-spell attacks.
+    const spellAttackFormula = resolvedCandidate.attackFormula?.trim();
+    if (entry.action.actionKind === "spell" && spellAttackFormula) {
+      const focusAttackBonuses = armedEffects
+        .filter(e => e.id.startsWith("focus:") && e.attackFormula?.trim())
+        .map(e => (e.attackFormula as string).trim());
+      if (focusAttackBonuses.length > 0) {
+        resolvedCandidate.attackFormula = combineRollFormulas([spellAttackFormula, ...focusAttackBonuses]);
+      }
+    }
+
     if (resolvedCandidate.outcomeMode === "triggered") {
       await completeTriggeredCandidate(resolvedCandidate, entry);
       return;
@@ -2766,6 +2848,11 @@ export function ActorCard({
           return false;
         }
 
+        // Spellcasting focus bonuses only ride SPELL damage, not weapon/other damage.
+        if (effect.id.startsWith("focus:") && entry?.action.actionKind !== "spell") {
+          return false;
+        }
+
         return true;
       })
       .map((effect) => {
@@ -2999,6 +3086,8 @@ export function ActorCard({
         {renderCompactDebuffSummary()}
         {renderAttackUsePanel()}
       </header>
+
+      {renderSpellFocusPanel()}
 
       {renderArmedEffectsPanel()}
 
