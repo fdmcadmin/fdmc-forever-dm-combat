@@ -137,8 +137,16 @@ export function actionFromEditorDraft(draft: PcActionDraft, existingAction?: Act
     ? [{ type: "addAC", value: draft.acBonus }]
     : [];
   const statEffects = [...preservedEffects, ...acEffect];
-  const withEffects: ActorAction = statEffects.length
-    ? { ...base, metadata: { ...base.metadata, statEffects } }
+
+  // Fighting style toggle (Archery / TWF / GWF) — bonus to matching weapon attacks.
+  const combatStyle = {
+    ...(draft.combatStyleAttack?.trim() ? { combatStyleAttack: draft.combatStyleAttack.trim() } : {}),
+    ...(draft.combatStyleDamage?.trim() ? { combatStyleDamage: draft.combatStyleDamage.trim() } : {}),
+    ...(draft.combatStyleTarget ? { combatStyleTarget: draft.combatStyleTarget } : {}),
+  };
+
+  const withEffects: ActorAction = (statEffects.length || Object.keys(combatStyle).length)
+    ? { ...base, metadata: { ...base.metadata, ...(statEffects.length ? { statEffects } : {}), ...combatStyle } }
     : base;
 
   if (existingAction) {

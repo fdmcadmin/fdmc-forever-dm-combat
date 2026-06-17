@@ -129,8 +129,11 @@ type ArmedEffect = {
   source: string;
   /** Bonus added to the DAMAGE roll (existing additive path). */
   formula?: string;
-  /** Bonus added to the ATTACK roll — used by spellcasting focuses (id "focus:*"). */
+  /** Bonus added to the ATTACK roll — used by spellcasting focuses (id "focus:*") and
+   *  fighting styles (id "buff:*"). */
   attackFormula?: string;
+  /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
+  appliesTo?: "ranged" | "melee" | "weapon";
 };
 
 type ClassOptionContext =
@@ -277,6 +280,15 @@ function isRangedAttackAction(action?: ActorAction | null) {
 
   const searchableText = `${action.label} ${action.description ?? ""} ${action.metadata?.details ?? ""} ${action.metadata?.range ?? ""} ${(action.tags ?? []).join(" ")}`;
   return /\b(?:ranged|range|longbow|shortbow|crossbow|revolver|firearm|pistol|rifle|shot)\b/i.test(searchableText);
+}
+
+// Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
+// Styles/buffs ride WEAPON attacks only (never spells), gated by their target.
+function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null) {
+  if (!action || action.actionKind === "spell") return false;
+  if (appliesTo === "ranged") return isRangedAttackAction(action);
+  if (appliesTo === "melee") return !isRangedAttackAction(action);
+  return true; // "weapon" / undefined → any weapon attack
 }
 
 const orderedTabs: TabId[] = [
@@ -1949,17 +1961,28 @@ export function ActorCard({
   // While armed, the rider damage adds to the actor's WEAPON attacks (getDamageAdditives,
   // gated to non-spell). Persistent until toggled off. Slot/once-per-turn/temp-HP are
   // handled by the player (assisted, not auto).
-  function getWeaponBuffs() {
+  type WeaponBuffOption = { id: string; label: string; attack?: string; damage?: string; appliesTo: "ranged" | "melee" | "weapon" };
+  function getWeaponBuffs(): WeaponBuffOption[] {
     return Object.values(actor.tabs).flat()
-      .filter(a => a.metadata?.weaponBuffDamage?.trim())
-      .map(a => ({ id: a.id, label: a.label, damage: (a.metadata!.weaponBuffDamage as string).trim() }));
+      .filter(a => a.metadata?.weaponBuffDamage?.trim() || a.metadata?.combatStyleAttack?.trim() || a.metadata?.combatStyleDamage?.trim())
+      .map(a => {
+        const m = a.metadata!;
+        const isStyle = Boolean(m.combatStyleAttack?.trim() || m.combatStyleDamage?.trim());
+        return {
+          id: a.id,
+          label: a.label,
+          attack: isStyle ? m.combatStyleAttack?.trim() || undefined : undefined,
+          damage: isStyle ? (m.combatStyleDamage?.trim() || undefined) : (m.weaponBuffDamage as string).trim(),
+          appliesTo: (isStyle ? m.combatStyleTarget : undefined) ?? "weapon",
+        };
+      });
   }
 
   function isWeaponBuffArmed(buffId: string) {
     return armedEffects.some(e => e.id === `buff:${buffId}`);
   }
 
-  function toggleWeaponBuff(buff: { id: string; label: string; damage: string }) {
+  function toggleWeaponBuff(buff: WeaponBuffOption) {
     const effectId = `buff:${buff.id}`;
     if (isWeaponBuffArmed(buff.id)) {
       clearArmedEffect(effectId);
@@ -1967,10 +1990,12 @@ export function ActorCard({
     }
     upsertArmedEffect({
       id: effectId,
-      label: `${buff.damage} dmg`,
-      details: `${buff.label} — weapon buff. Adds ${buff.damage} to your weapon-attack damage while armed. Spend the slot by casting; apply once-per-turn / temp-HP riders manually.`,
+      label: [buff.attack ? `atk ${buff.attack}` : "", buff.damage ? `dmg ${buff.damage}` : ""].filter(Boolean).join(" · ") || buff.label,
+      details: `${buff.label} — ${buff.appliesTo} attacks. Adds ${[buff.attack ? `${buff.attack} to attack` : "", buff.damage ? `${buff.damage} to damage` : ""].filter(Boolean).join(" + ")} while armed.`,
       source: buff.label,
       formula: buff.damage,
+      attackFormula: buff.attack,
+      appliesTo: buff.appliesTo,
     });
   }
 
@@ -1978,14 +2003,15 @@ export function ActorCard({
     const buffs = getWeaponBuffs();
     if (buffs.length === 0) return null;
     return (
-      <section className="armed-effects-panel" aria-label="Weapon buffs">
+      <section className="armed-effects-panel" aria-label="Fighting styles and weapon buffs">
         <div className="armed-effects-header">
-          <span className="stat-label">⚔ Weapon Buffs</span>
+          <span className="stat-label">⚔ Fighting Styles & Buffs</span>
           <span>toggle on while active</span>
         </div>
         <div className="armed-effect-chip-list">
           {buffs.map(b => {
             const armed = isWeaponBuffArmed(b.id);
+            const bonusText = [b.attack ? `${b.attack} atk` : "", b.damage ? `${b.damage} dmg` : ""].filter(Boolean).join(" · ");
             return (
               <button
                 type="button"
@@ -1993,9 +2019,9 @@ export function ActorCard({
                 onClick={() => toggleWeaponBuff(b)}
                 className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}
                 style={{ cursor: "pointer", opacity: armed ? 1 : 0.65 }}
-                title={`${b.label} — adds ${b.damage} to weapon damage while on. Spend the slot by casting; once-per-turn & temp-HP are manual.`}
+                title={`${b.label} — adds ${bonusText} to ${b.appliesTo} attacks while on.`}
               >
-                {armed ? "✓ " : ""}{b.label} (+{b.damage})
+                {armed ? "✓ " : ""}{b.label} <span style={{ opacity: 0.7 }}>({b.appliesTo}: {bonusText})</span>
               </button>
             );
           })}
@@ -2567,6 +2593,18 @@ export function ActorCard({
       }
     }
 
+    // Fighting styles (Archery etc.): armed weapon-buff toggles add their attack bonus to a
+    // matching WEAPON attack roll (gated by target). Damage bonus rides via getDamageAdditives.
+    const weaponAttackFormula = resolvedCandidate.attackFormula?.trim();
+    if (entry.action.actionKind !== "spell" && weaponAttackFormula) {
+      const styleAttackBonuses = armedEffects
+        .filter(e => e.id.startsWith("buff:") && e.attackFormula?.trim() && buffMatchesAttack(e.appliesTo, entry.action))
+        .map(e => resolveFormulaVars((e.attackFormula as string).trim(), actor, _derivedForRoll, status));
+      if (styleAttackBonuses.length > 0) {
+        resolvedCandidate.attackFormula = combineRollFormulas([weaponAttackFormula, ...styleAttackBonuses]);
+      }
+    }
+
     if (resolvedCandidate.outcomeMode === "triggered") {
       await completeTriggeredCandidate(resolvedCandidate, entry);
       return;
@@ -2922,8 +2960,8 @@ export function ActorCard({
           return false;
         }
 
-        // Weapon buffs (Hungering Blade etc.) only ride WEAPON/other attacks, NOT spell damage.
-        if (effect.id.startsWith("buff:") && entry?.action.actionKind === "spell") {
+        // Weapon buffs / fighting styles ride matching WEAPON attacks only (gated by target).
+        if (effect.id.startsWith("buff:") && !buffMatchesAttack(effect.appliesTo, entry?.action)) {
           return false;
         }
 

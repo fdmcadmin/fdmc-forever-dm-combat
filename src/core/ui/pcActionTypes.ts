@@ -47,6 +47,10 @@ export type PcActionDraft = {
   initiativeBonus?: number;
   /** Feat/feature AC bonus — applied as an addAC stat effect (e.g. Dual Wielder +1). */
   acBonus?: number;
+  /** Fighting style toggle — bonus to matching weapon attacks (Archery, TWF, GWF). */
+  combatStyleAttack?: string;
+  combatStyleDamage?: string;
+  combatStyleTarget?: "ranged" | "melee" | "weapon";
 };
 
 export type PcActorAction = PcActionDraft & {

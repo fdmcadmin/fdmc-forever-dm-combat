@@ -117,6 +117,11 @@ export type ActorActionMetadata = {
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;
+  /** Fighting style (Archery, Two-Weapon, Great Weapon): a clickable toggle adding a bonus
+   *  to matching weapon attacks. target gates which attacks it rides. */
+  combatStyleAttack?: string;
+  combatStyleDamage?: string;
+  combatStyleTarget?: "ranged" | "melee" | "weapon";
 };
 
 export type ActorAction = {

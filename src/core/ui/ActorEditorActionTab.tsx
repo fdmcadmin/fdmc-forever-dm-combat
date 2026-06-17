@@ -84,6 +84,9 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     acBonus: (action.metadata?.statEffects ?? [])
       .filter(e => e.type === "addAC")
       .reduce((sum, e) => sum + (e.value ?? 0), 0) || undefined,
+    combatStyleAttack: action.metadata?.combatStyleAttack,
+    combatStyleDamage: action.metadata?.combatStyleDamage,
+    combatStyleTarget: action.metadata?.combatStyleTarget,
   };
 }
 
@@ -313,6 +316,28 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
             />
             <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Adds to this actor's initiative roll formula. Use only for feats/features that grant an initiative bonus.</span>
           </label>
+        </div>
+      )}
+
+      {/* Fighting style toggle (Archery / Two-Weapon / Great Weapon). Shows as a clickable
+          toggle on the card; while on, adds the bonus to matching weapon attacks. */}
+      {(tabId === "feats" || tabId === "features" || draft.actionCost === "passive") && (
+        <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+          <div style={{ fontSize: 11, color: "#e0a85a", marginBottom: 4 }}>⚔ Fighting style toggle <span style={{ color: "#555" }}>(blank = none)</span></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <label style={{ fontSize: 11 }}>Attack bonus
+              <input type="text" value={draft.combatStyleAttack ?? ""} onChange={e => set("combatStyleAttack", e.target.value || undefined)} placeholder="+2 (Archery)" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
+            <label style={{ fontSize: 11 }}>Damage bonus
+              <input type="text" value={draft.combatStyleDamage ?? ""} onChange={e => set("combatStyleDamage", e.target.value || undefined)} placeholder="+@DEX (TWF)" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
+            <label style={{ fontSize: 11 }}>Applies to
+              <select value={draft.combatStyleTarget ?? ""} onChange={e => set("combatStyleTarget", (e.target.value || undefined) as PcActionDraft["combatStyleTarget"])} style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+                <option value="">—</option>
+                <option value="ranged">Ranged</option>
+                <option value="melee">Melee</option>
+                <option value="weapon">Any weapon</option>
+              </select></label>
+          </div>
+          <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Archery → Attack +2 · Ranged. Two-Weapon → Damage +@DEX/@STR · Melee. (Great Weapon Fighting's reroll isn't auto — use a flat damage bonus or a reminder.)</span>
         </div>
       )}
 
