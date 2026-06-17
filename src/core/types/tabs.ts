@@ -52,6 +52,7 @@ export type ActionOutcomeMode =
   | "damage-only"
   | "healing"
   | "triggered"
+  | "additive"
   | "reference";
 
 // F05 — resource kind determines rest reset behavior

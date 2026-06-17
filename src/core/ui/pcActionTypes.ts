@@ -2,7 +2,7 @@ export type PcActionTab = "action" | "bonus" | "reaction" | "bond" | "spell" | "
 
 export type PcActionCost = "action" | "bonus" | "reaction" | "bond" | "free" | "passive";
 
-export type PcRollMode = "attack" | "save" | "check" | "damageOnly" | "healing" | "triggered" | "utility" | "passive" | "reference";
+export type PcRollMode = "attack" | "save" | "check" | "damageOnly" | "healing" | "triggered" | "additive" | "utility" | "passive" | "reference";
 
 export type PcActionVisibility = "player" | "dm" | "hidden";
 

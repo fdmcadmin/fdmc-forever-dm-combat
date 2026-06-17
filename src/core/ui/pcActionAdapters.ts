@@ -13,6 +13,7 @@ function rollModeToOutcomeMode(rollMode: PcRollMode): ActionOutcomeMode | undefi
     case "damageOnly": return "damage-only";
     case "healing": return "healing";
     case "triggered": return "triggered";
+    case "additive": return "additive";
     case "reference": return "reference";
     default: return undefined; // utility / passive — left to inference
   }

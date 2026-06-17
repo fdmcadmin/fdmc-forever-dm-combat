@@ -27,6 +27,7 @@ const OUTCOME_MODE_LABELS: Record<PcRollMode, string> = {
   damageOnly: "Straight Roll / Damage",
   healing: "Healing Roll",
   triggered: "Triggered Feature",
+  additive: "Additive (rides next roll)",
   utility: "Utility",
   passive: "Passive",
   reference: "Reference Only",
@@ -65,6 +66,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     explicitOutcome === "damage-only" ? "damageOnly" :
     explicitOutcome === "healing" ? "healing" :
     explicitOutcome === "triggered" ? "triggered" :
+    explicitOutcome === "additive" ? "additive" :
     explicitOutcome === "reference" ? "reference" :
     action.actionKind === "check" ? "check" :
     hasAttack ? "attack" :
@@ -148,7 +150,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
   const showAttackFields = draft.rollMode === "attack";
   const showSaveFields = draft.rollMode === "save";
   const showCheckFields = draft.rollMode === "check";
-  const showDamageField = ["attack", "save", "damageOnly", "triggered", "healing"].includes(draft.rollMode);
+  const showDamageField = ["attack", "save", "damageOnly", "triggered", "healing", "additive"].includes(draft.rollMode);
 
   return (
     <div className="action-form" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, background: "#1a1a2e", borderRadius: 8 }}>

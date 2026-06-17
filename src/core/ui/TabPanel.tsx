@@ -156,6 +156,8 @@ function inferOutcomeMode(action: ActorAction): CommittedRollOutcomeMode {
     if (explicit === "damage-only")   return "triggered";
     if (explicit === "healing")       return "triggered";
     if (explicit === "triggered")     return "triggered";
+    // additive = a rider; readying it arms it (ActorCard). Standalone Roll = straight roll.
+    if (explicit === "additive")      return "triggered";
     // reference = no roll, handled by hasAttachedDice returning false
     if (explicit === "reference")     return "triggered";
   }

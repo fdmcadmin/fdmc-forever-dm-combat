@@ -1837,57 +1837,59 @@ export function ActorCard({
     );
   }
 
-  function getReadiedBondEffect(): ArmedEffect | null {
-    const readiedBondKey = actionState.bond;
-
-    if (!readiedBondKey) {
-      return null;
-    }
-
-    const entry = getActionForReadiedKey(readiedBondKey);
-
-    if (!entry || entry.sourceTabId !== "bond") {
-      return null;
-    }
-
-    const formula = entry.action.metadata?.damage ?? entry.action.metadata?.additive;
-    const details = entry.action.metadata?.details ?? entry.action.description ?? "Resolve this bond effect manually.";
-
-    return {
-      id: `bond:${entry.action.id}`,
-      label: formula ? `${entry.action.label} (${formula})` : entry.action.label,
-      details,
-      source: "Bond",
-      formula,
-    };
+  // Readied riders: a readied Bond OR any readied action whose outcome mode is "additive"
+  // arms as an armed effect that rides the next damage roll (general bond-style rider, any
+  // tab). Re-derived from the readied state each render; consumed when another action resolves.
+  function getReadiedRiderEffects(): ArmedEffect[] {
+    const effects: ArmedEffect[] = [];
+    (Object.keys(actionState) as ActionCost[]).forEach((slot) => {
+      const key = actionState[slot];
+      if (!key || isUsedActionStateValue(key)) return;
+      const entry = getActionForReadiedKey(key);
+      if (!entry) return;
+      const isBond = entry.sourceTabId === "bond";
+      const isAdditive = entry.action.metadata?.outcomeMode === "additive";
+      if (!isBond && !isAdditive) return;
+      if (effects.some(e => e.id.endsWith(`:${entry.action.id}`))) return;
+      const formula = entry.action.metadata?.damage ?? entry.action.metadata?.additive;
+      const details = entry.action.metadata?.details ?? entry.action.description
+        ?? (isBond ? "Resolve this bond effect manually." : "Additive — adds to your next damage roll.");
+      effects.push({
+        id: `${isBond ? "bond" : "additive"}:${entry.action.id}`,
+        label: formula ? `${entry.action.label} (${formula})` : entry.action.label,
+        details,
+        source: isBond ? "Bond" : "Additive",
+        formula,
+      });
+    });
+    return effects;
   }
 
   function getVisibleArmedEffects() {
-    const bondEffect = getReadiedBondEffect();
-    return bondEffect ? [bondEffect, ...armedEffects] : armedEffects;
+    return [...getReadiedRiderEffects(), ...armedEffects];
   }
 
   function consumeReadiedBondWithResolvedAction(resolvedReadiedKey: string) {
-    const bondKey = actionState.bond;
+    // A readied rider (Bond or "additive" outcome mode) is applied/cleared when a DIFFERENT
+    // action resolves — it rode that action. Scan every readied slot.
+    (Object.keys(actionState) as ActionCost[]).forEach((slot) => {
+      const key = actionState[slot];
+      if (!key || isUsedActionStateValue(key) || key === resolvedReadiedKey) return;
+      const entry = getActionForReadiedKey(key);
+      if (!entry) return;
+      const isBond = entry.sourceTabId === "bond";
+      const isAdditive = entry.action.metadata?.outcomeMode === "additive";
+      if (!isBond && !isAdditive) return;
 
-    if (!bondKey || bondKey === resolvedReadiedKey) {
-      return;
-    }
-
-    const bondEntry = getActionForReadiedKey(bondKey);
-
-    if (!bondEntry || bondEntry.sourceTabId !== "bond") {
-      return;
-    }
-
-    onUnreadyAction(bondKey);
-    onRemovePendingLogEntries([makePendingLogKey(actor.id, bondKey)]);
-    markCostSlotsUsed(["bond"]);
-    onLog({
-      actorName: actor.name,
-      actionName: "Bond Applied",
-      tabId: "system",
-      message: `${actor.name}'s readied bond ${bondEntry.action.label} is applied/cleared with the resolved action.`,
+      onUnreadyAction(key);
+      onRemovePendingLogEntries([makePendingLogKey(actor.id, key)]);
+      markCostSlotsUsed([slot]);
+      onLog({
+        actorName: actor.name,
+        actionName: isBond ? "Bond Applied" : "Additive Applied",
+        tabId: "system",
+        message: `${actor.name}'s readied ${isBond ? "bond" : "additive"} ${entry.action.label} is applied/cleared with the resolved action.`,
+      });
     });
   }
 
@@ -2047,7 +2049,9 @@ export function ActorCard({
           {visibleEffects.map((effect) => (
             <span className={`armed-effect-chip ${effect.id === "rage-active" || effect.id === "rage-pending" ? "rage-armed" : ""}`} key={effect.id} title={effect.details}>
               <strong>{effect.source}</strong> · {effect.label}
-              {!effect.id.startsWith("bond:") && (
+              {/* Bonds & additives are readied riders — clear them by un-readying the action,
+                  not here (the chip is re-derived from the readied state). */}
+              {!effect.id.startsWith("bond:") && !effect.id.startsWith("additive:") && (
                 <button type="button" onClick={() => clearArmedEffect(effect.id)} aria-label={`Clear ${effect.label}`}>
                   Ã—
                 </button>
@@ -2472,8 +2476,8 @@ export function ActorCard({
     }
 
     const nextValue = counter.current - 1;
-    const readiedBond = getReadiedBondEffect();
-    const pairedText = readiedBond ? ` + ${readiedBond.label.replace(/\s*\([^)]*\)/g, "")}` : "";
+    const readiedRiders = getReadiedRiderEffects();
+    const pairedText = readiedRiders.length > 0 ? ` + ${readiedRiders[0].label.replace(/\s*\([^)]*\)/g, "")}` : "";
 
     setSessionCounter("rage", (current) => ({ ...current, current: nextValue, active: true }));
     clearArmedEffect("rage-pending");
