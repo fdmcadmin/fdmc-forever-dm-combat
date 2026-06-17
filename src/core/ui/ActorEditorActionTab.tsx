@@ -328,7 +328,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
             <label style={{ fontSize: 11 }}>Attack bonus
               <input type="text" value={draft.combatStyleAttack ?? ""} onChange={e => set("combatStyleAttack", e.target.value || undefined)} placeholder="+2 (Archery)" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
             <label style={{ fontSize: 11 }}>Damage bonus
-              <input type="text" value={draft.combatStyleDamage ?? ""} onChange={e => set("combatStyleDamage", e.target.value || undefined)} placeholder="+@DEX (TWF)" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
+              <input type="text" value={draft.combatStyleDamage ?? ""} onChange={e => set("combatStyleDamage", e.target.value || undefined)} placeholder="+1d6, +2..." style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
             <label style={{ fontSize: 11 }}>Applies to
               <select value={draft.combatStyleTarget ?? ""} onChange={e => set("combatStyleTarget", (e.target.value || undefined) as PcActionDraft["combatStyleTarget"])} style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
                 <option value="">—</option>
@@ -337,7 +337,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
                 <option value="weapon">Any weapon</option>
               </select></label>
           </div>
-          <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Archery → Attack +2 · Ranged. Two-Weapon → Damage +@DEX/@STR · Melee. (Great Weapon Fighting's reroll isn't auto — use a flat damage bonus or a reminder.)</span>
+          <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>E.g. Archery → Attack +2 · Ranged. (Two-Weapon Fighting isn't a bonus — author the off-hand attack in the Bonus tab without the ability mod. Great Weapon Fighting's reroll isn't auto — use a flat bonus or a reminder.)</span>
         </div>
       )}
 
