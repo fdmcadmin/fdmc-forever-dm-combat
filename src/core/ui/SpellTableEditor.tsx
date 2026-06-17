@@ -34,6 +34,8 @@ type SpellRow = {
   economyCost: "main" | "bonus" | "reaction";
   /** Class-feature spell: uses per long rest. "" / "0" = normal slot-cast spell. */
   classFeatureUses: string;
+  /** Weapon-buff rider (Hungering Blade): damage added to weapon attacks while toggled on. */
+  weaponBuffDamage: string;
   include: boolean;
 };
 
@@ -99,6 +101,7 @@ function rowToAction(row: SpellRow): ActorAction {
       spellLevel: row.level,
       // freeCast routes the cast to the dedicated resource (App.tsx consume routing).
       ...(isClassFeature ? { spellSlotMode: "freeCast" as const, classFeatureUses: cfUses } : {}),
+      ...(row.weaponBuffDamage.trim() ? { weaponBuffDamage: row.weaponBuffDamage.trim() } : {}),
       concentration: row.concentration ? "Yes" : undefined,
       details: detailParts || row.details,
     },
@@ -134,6 +137,7 @@ function actionToRow(action: ActorAction): SpellRow {
     classFeatureUses: action.metadata?.spellSlotMode === "freeCast" && action.metadata?.classFeatureUses
       ? String(action.metadata.classFeatureUses)
       : "",
+    weaponBuffDamage: action.metadata?.weaponBuffDamage ?? "",
     include: true,
   };
 }
@@ -157,6 +161,7 @@ function makeBlankRow(): SpellRow {
     category: "Spells",
     economyCost: "main",
     classFeatureUses: "",
+    weaponBuffDamage: "",
     include: false,
   };
 }
@@ -332,6 +337,21 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                 {Number(row.classFeatureUses) > 0 && (
                   <span style={{ fontSize: 10, color: "#9be9a8" }}>
                     ◇ Spends a dedicated “{row.name || "spell"}” resource ({row.classFeatureUses}/Long Rest), auto-added to the Resources list — does not use a spell slot.
+                  </span>
+                )}
+              </label>
+
+              {/* Weapon-buff rider (Hungering Blade): toggles on as a persistent damage
+                  additive on the actor's WEAPON attacks. */}
+              <label style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 2 }}>
+                <span>Weapon buff rider <span style={{ color: "#555" }}>(blank = none)</span></span>
+                <input type="text" value={row.weaponBuffDamage}
+                  onChange={e => setRow(idx, { weaponBuffDamage: e.target.value })}
+                  placeholder="@CHA, 1d6, 1d6+@WIS..."
+                  style={{ ...inputStyle, maxWidth: 200 }} />
+                {row.weaponBuffDamage.trim() && (
+                  <span style={{ fontSize: 10, color: "#e0a85a" }}>
+                    ⚔ Shows as a clickable toggle on the card; while on, adds {row.weaponBuffDamage} to your weapon-attack damage. Spend the slot by casting; apply once-per-turn / temp-HP riders manually.
                   </span>
                 )}
               </label>

@@ -449,8 +449,8 @@ function formatAdditiveFormulaForDamage(rawFormula: string, isCritDamage: boolea
 }
 
 function isPersistentDamageAdditive(effect: Pick<ArmedEffect, "id">) {
-  // Rage and spellcasting focuses stay armed across rolls until manually toggled off.
-  return effect.id === "rage-active" || effect.id.startsWith("focus:");
+  // Rage, spellcasting focuses, and weapon buffs stay armed across rolls until toggled off.
+  return effect.id === "rage-active" || effect.id.startsWith("focus:") || effect.id.startsWith("buff:");
 }
 
 
@@ -1944,6 +1944,66 @@ export function ActorCard({
     );
   }
 
+  // ── Weapon buffs (Hungering Blade etc.) ──────────────────────────────────
+  // Spells/abilities flagged with metadata.weaponBuffDamage show as clickable toggles.
+  // While armed, the rider damage adds to the actor's WEAPON attacks (getDamageAdditives,
+  // gated to non-spell). Persistent until toggled off. Slot/once-per-turn/temp-HP are
+  // handled by the player (assisted, not auto).
+  function getWeaponBuffs() {
+    return Object.values(actor.tabs).flat()
+      .filter(a => a.metadata?.weaponBuffDamage?.trim())
+      .map(a => ({ id: a.id, label: a.label, damage: (a.metadata!.weaponBuffDamage as string).trim() }));
+  }
+
+  function isWeaponBuffArmed(buffId: string) {
+    return armedEffects.some(e => e.id === `buff:${buffId}`);
+  }
+
+  function toggleWeaponBuff(buff: { id: string; label: string; damage: string }) {
+    const effectId = `buff:${buff.id}`;
+    if (isWeaponBuffArmed(buff.id)) {
+      clearArmedEffect(effectId);
+      return;
+    }
+    upsertArmedEffect({
+      id: effectId,
+      label: `${buff.damage} dmg`,
+      details: `${buff.label} — weapon buff. Adds ${buff.damage} to your weapon-attack damage while armed. Spend the slot by casting; apply once-per-turn / temp-HP riders manually.`,
+      source: buff.label,
+      formula: buff.damage,
+    });
+  }
+
+  function renderWeaponBuffPanel() {
+    const buffs = getWeaponBuffs();
+    if (buffs.length === 0) return null;
+    return (
+      <section className="armed-effects-panel" aria-label="Weapon buffs">
+        <div className="armed-effects-header">
+          <span className="stat-label">⚔ Weapon Buffs</span>
+          <span>toggle on while active</span>
+        </div>
+        <div className="armed-effect-chip-list">
+          {buffs.map(b => {
+            const armed = isWeaponBuffArmed(b.id);
+            return (
+              <button
+                type="button"
+                key={b.id}
+                onClick={() => toggleWeaponBuff(b)}
+                className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}
+                style={{ cursor: "pointer", opacity: armed ? 1 : 0.65 }}
+                title={`${b.label} — adds ${b.damage} to weapon damage while on. Spend the slot by casting; once-per-turn & temp-HP are manual.`}
+              >
+                {armed ? "✓ " : ""}{b.label} (+{b.damage})
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
   function renderArmedEffectsPanel() {
     const visibleEffects = getVisibleArmedEffects();
 
@@ -2842,8 +2902,14 @@ export function ActorCard({
     const derivedForAdditives = deriveActorStats(actor, undefined, status);
 
     return getVisibleArmedEffects()
-      .filter((effect) => {
-        if (!effect.formula?.trim() || !hasRollableFormula(effect.formula)) {
+      .map((effect) => ({
+        // Resolve @VARIABLE tokens up front (e.g. a focus "1d4+@CHA" or a buff "@CHA") so
+        // the rollability check + sent formula use real numbers, not raw @vars.
+        effect,
+        resolvedFormula: effect.formula?.trim() ? resolveFormulaVars(effect.formula, actor, derivedForAdditives, status) : "",
+      }))
+      .filter(({ effect, resolvedFormula }) => {
+        if (!resolvedFormula.trim() || !hasRollableFormula(resolvedFormula)) {
           return false;
         }
 
@@ -2851,17 +2917,19 @@ export function ActorCard({
           return false;
         }
 
-        // Spellcasting focus bonuses only ride SPELL damage, not weapon/other damage.
+        // Spellcasting focus bonuses only ride SPELL damage.
         if (effect.id.startsWith("focus:") && entry?.action.actionKind !== "spell") {
+          return false;
+        }
+
+        // Weapon buffs (Hungering Blade etc.) only ride WEAPON/other attacks, NOT spell damage.
+        if (effect.id.startsWith("buff:") && entry?.action.actionKind === "spell") {
           return false;
         }
 
         return true;
       })
-      .map((effect) => {
-        // Resolve @VARIABLE tokens in the additive (e.g. a focus damage "1d4+@CHA") so the
-        // sent formula carries real numbers, not raw @vars. Flat additives pass through.
-        const resolvedFormula = resolveFormulaVars(effect.formula as string, actor, derivedForAdditives, status);
+      .map(({ effect, resolvedFormula }) => {
         const baseFormula = normalizeRollFormula(resolvedFormula);
         const formula = formatAdditiveFormulaForDamage(resolvedFormula, isCritDamage);
 
@@ -3094,6 +3162,8 @@ export function ActorCard({
       </header>
 
       {renderSpellFocusPanel()}
+
+      {renderWeaponBuffPanel()}
 
       {renderArmedEffectsPanel()}
 
