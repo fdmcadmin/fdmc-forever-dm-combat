@@ -2499,7 +2499,9 @@ export function ActorCard({
     if (entry.action.actionKind === "spell" && spellAttackFormula) {
       const focusAttackBonuses = armedEffects
         .filter(e => e.id.startsWith("focus:") && e.attackFormula?.trim())
-        .map(e => (e.attackFormula as string).trim());
+        // Resolve @VARIABLE tokens in the focus bonus (e.g. a wand "@SPELL+1") — otherwise
+        // the raw @SPELL is sent to Dice+ and only the flat part lands.
+        .map(e => resolveFormulaVars((e.attackFormula as string).trim(), actor, _derivedForRoll, status));
       if (focusAttackBonuses.length > 0) {
         resolvedCandidate.attackFormula = combineRollFormulas([spellAttackFormula, ...focusAttackBonuses]);
       }
@@ -2837,6 +2839,7 @@ export function ActorCard({
   function getDamageAdditives(damageChoice: CommittedRollDamageChoice = "damage") {
     const entry = committedRoll ? getActionForReadiedKey(committedRoll.readiedKey) : null;
     const isCritDamage = damageChoice === "crit";
+    const derivedForAdditives = deriveActorStats(actor, undefined, status);
 
     return getVisibleArmedEffects()
       .filter((effect) => {
@@ -2856,8 +2859,11 @@ export function ActorCard({
         return true;
       })
       .map((effect) => {
-        const baseFormula = normalizeRollFormula(effect.formula as string);
-        const formula = formatAdditiveFormulaForDamage(effect.formula as string, isCritDamage);
+        // Resolve @VARIABLE tokens in the additive (e.g. a focus damage "1d4+@CHA") so the
+        // sent formula carries real numbers, not raw @vars. Flat additives pass through.
+        const resolvedFormula = resolveFormulaVars(effect.formula as string, actor, derivedForAdditives, status);
+        const baseFormula = normalizeRollFormula(resolvedFormula);
+        const formula = formatAdditiveFormulaForDamage(resolvedFormula, isCritDamage);
 
         return {
           id: effect.id,
