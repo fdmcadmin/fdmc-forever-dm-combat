@@ -9,6 +9,8 @@ const ACTION_TAB_HEADING: Partial<Record<TabId, string>> = {
   main: "Actions",
   bonus: "Bonus Actions",
   bond: "Bonds & Additives",
+  features: "Class Actions & Features",
+  feats: "Feats",
   notes: "Notes",
 };
 import type { ActionCost } from "../types/actionEconomy";
@@ -98,7 +100,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
   const [draft, setDraft] = useState<PcActionDraft>(() =>
     initial ? actionToEditorDraft(initial, tabId) : {
       name: "",
-      tab: tabId === "spells" ? "spell" : tabId === "bond" ? "bond" : tabId === "bonus" ? "bonus" : "action",
+      tab: tabId === "spells" ? "spell" : tabId === "bond" ? "bond" : tabId === "bonus" ? "bonus" : tabId === "features" ? "feature" : tabId === "feats" ? "feature" : "action",
       actionCost: tabId === "bonus" ? "bonus" : tabId === "bond" ? "bond" : "action",
       rollMode: "attack",
       // Auto-fill the Category heading so the DM doesn't have to type it:

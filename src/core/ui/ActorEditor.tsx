@@ -83,6 +83,7 @@ function syncClassFeatureSpellResources(tabs: TabActionMap): TabActionMap {
 type EditorTab =
   | "profile"
   | "combat"
+  | "features"
   | "bonds"
   | "spells"
   | "resources"
@@ -93,6 +94,7 @@ type EditorTab =
 const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   profile: "Profile",
   combat: "Combat Actions",
+  features: "Features",
   bonds: "Bond",
   spells: "Spells",
   resources: "Resources",
@@ -101,7 +103,7 @@ const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   notes: "Notes",
 };
 
-const EDITOR_TABS: EditorTab[] = ["profile", "combat", "bonds", "spells", "resources", "feats", "equipment", "notes"];
+const EDITOR_TABS: EditorTab[] = ["profile", "combat", "features", "bonds", "spells", "resources", "feats", "equipment", "notes"];
 
 // Distinct color accent per creator step (P-UX1). Derived from the shared
 // `tabVisuals` source of truth so the creator's tabs match the character sheet's
@@ -110,6 +112,7 @@ const EDITOR_TABS: EditorTab[] = ["profile", "combat", "bonds", "spells", "resou
 const EDITOR_TAB_ACCENT: Record<EditorTab, string> = {
   profile: "#7b68ee",
   combat: tabAccent("main"),
+  features: tabAccent("features"),
   bonds: tabAccent("bond"),
   spells: tabAccent("spells"),
   resources: tabAccent("features"),
@@ -125,6 +128,7 @@ const RECOMMENDED_STEPS = new Set<EditorTab>(["combat"]);
 const STEP_HINT: Record<EditorTab, string> = {
   profile: "Required — name, level, and core stats. Everything else builds on this.",
   combat: "Recommended — add the character's actions, bonus actions, and reactions. Choose each entry's type; it's filed automatically.",
+  features: "Optional — class actions & passive features (the card's 'Class Actions' tab). Edit or remove stale entries here.",
   bonds: "Optional — bonds & primed additives (Rage, Focus, Pressure, Dark Bargain…).",
   spells: "Optional — spells and slot levels.",
   resources: "Optional — resource pools and class features.",
@@ -436,6 +440,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   function stepCount(tab: EditorTab): number {
     switch (tab) {
       case "combat": return (tabsDraft.main ?? []).length + (tabsDraft.bonus ?? []).length;
+      case "features": return (tabsDraft.features ?? []).length;
       case "bonds": return (tabsDraft.bond ?? []).length;
       case "spells": return (tabsDraft.spells ?? []).length;
       case "resources": return (tabsDraft.resources ?? []).length;
@@ -555,6 +560,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             bonusActions={tabsDraft.bonus ?? []}
             onChange={({ main, bonus }) => setTabsDraft(d => ({ ...d, main, bonus }))}
           />
+        )}
+        {activeTab === "features" && (
+          <ActorEditorActionTab tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} />
         )}
         {activeTab === "bonds" && (
           <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} />
