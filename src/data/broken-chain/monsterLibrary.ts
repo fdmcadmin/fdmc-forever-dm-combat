@@ -27,6 +27,7 @@ const act2S1E1Label = "Act 2 S1 E1 - Hollow Pack";
 const act2S1E2Label = "Act 2 S1 E2 - Frozen Hollow";
 const act2S2E1Label = "Act 2 S2 E1 - Corrupted Hunters";
 const act2S2E2Label = "Act 2 S2 E2 - Last Directive";
+const fortCervanBandLabel = "The Fort — Cervan's Band";
 
 export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   // ── Act 1 · Wardenwood — Thornfang Pack ──────────────────────────────────────
@@ -461,5 +462,114 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     resources: [],
     notes: ["Run 3 in Last Directive.", "Damage Immunities: Lightning, Poison.", "Condition Immunities: Exhaustion, Grappled, Paralyzed, Poisoned, Prone, Restrained, Unconscious.", "Senses: Darkvision 120 ft., Passive Perception 12."],
     visibility: { defaultState: "hp-bar", hiddenName: "Grave Light", revealedName: "Grave Light" },
+  },
+  // ── The Fort — Cervan's Band ─────────────────────────────────────────────────
+  // AC / HP / ability scores derived to the listed CR (+5 to hit + 1d8+3 / 1d6+3 pins
+  // STR/DEX 16, prof +2). Tune in the editor if you have exact numbers.
+  {
+    templateId: "broken-chain:fort:cervan-thornwarden:v1",
+    name: "Cervan Thornwarden",
+    encounterId: "fort-cervan-band",
+    encounterLabel: fortCervanBandLabel,
+    stats: { kind: "monster", ac: 15, maxHp: 45, speed: "30 ft" },
+    abilities: [
+      formatAbility("STR", 16, 3),
+      formatAbility("DEX", 12, 1),
+      formatAbility("CON", 15, 2),
+      formatAbility("INT", 11, 0),
+      formatAbility("WIS", 13, 1),
+      formatAbility("CHA", 15, 2),
+    ],
+    traits: [
+      { name: "Thornwarden's Hold", kind: "trait", text: "Allied bandits within 30 ft cannot be frightened and will not flee while he stands." },
+      { name: "A Word, Not a Shout", kind: "trait", text: "At the start of his turn, one ally he can see moves up to 10 ft without provoking opportunity attacks." },
+      { name: "Guard the Root", kind: "trait", text: "If combat reaches the inner storehouse, the Thornwarden stops maneuvering and fights only to hold the door." },
+    ],
+    actions: [
+      { name: "Crowned Multiattack", kind: "action", attackCount: 2, text: "The Thornwarden makes two Antler-Crowned Blade attacks." },
+      { name: "Antler-Crowned Blade", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing." },
+      { name: "Collector's Order", kind: "action", text: "Two allied bandits within 30 ft each immediately make one weapon attack." },
+    ],
+    reactions: [
+      { name: "None Are Spent Yet", kind: "reaction", text: "1/fight. When an ally within 30 ft would drop to 0 HP, that ally drops to 1 HP instead." },
+    ],
+    resources: [],
+    notes: [
+      "CR 2 (450 XP). Elite Leader — Pressure: Elite (6-player only, or 5-player hard mode).",
+      "Never opens the fight personally — Collector's Order and A Word, Not a Shout run the first two rounds.",
+      "Repositions his Reaver toward whichever wall is failing.",
+      "If the storehouse is threatened, all discipline narrows to that door — players should notice the change.",
+      "AC/HP/abilities derived to CR 2 — tune to taste.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Fort Commander", revealedName: "Cervan Thornwarden" },
+  },
+  {
+    templateId: "broken-chain:fort:fortbreaker-reaver:v1",
+    name: "Fortbreaker Reaver",
+    encounterId: "fort-cervan-band",
+    encounterLabel: fortCervanBandLabel,
+    stats: { kind: "monster", ac: 16, maxHp: 45, speed: "30 ft" },
+    abilities: [
+      formatAbility("STR", 16, 3),
+      formatAbility("DEX", 12, 1),
+      formatAbility("CON", 16, 3),
+      formatAbility("INT", 10, 0),
+      formatAbility("WIS", 12, 1),
+      formatAbility("CHA", 13, 1),
+    ],
+    traits: [
+      { name: "No Wall Falls Twice", kind: "trait", text: "While above half HP, allied bandits within 20 ft add +1 to attack rolls." },
+    ],
+    actions: [
+      { name: "Reaver's Multiattack", kind: "action", attackCount: 2, text: "The Reaver makes two Breaching Scimitar attacks." },
+      { name: "Breaching Scimitar", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
+      { name: "Move, Damn You", kind: "action", text: "Bonus Action. One allied bandit within 20 ft moves up to its speed." },
+    ],
+    reactions: [
+      { name: "Turn the Blade", kind: "reaction", text: "When hit by a melee attack, reduce the damage by 1d6." },
+    ],
+    resources: [],
+    notes: [
+      "CR 2 (450 XP). Leader — Pressure: Strong.",
+      "Plugs gaps personally — wherever a bandit just died, the Reaver is there next round.",
+      "Uses Move, Damn You to rotate fresh bodies onto the wall and wounded ones off.",
+      "Surrenders only if the Thornwarden is dead and the fight is clearly lost.",
+      "AC/HP/abilities derived to CR 2 — tune to taste.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "The Shouting One", revealedName: "Fortbreaker Reaver" },
+  },
+  {
+    templateId: "broken-chain:fort:gloamknife-stray:v1",
+    name: "Gloamknife Stray",
+    encounterId: "fort-cervan-band",
+    encounterLabel: fortCervanBandLabel,
+    stats: { kind: "monster", ac: 14, maxHp: 27, speed: "30 ft" },
+    abilities: [
+      formatAbility("STR", 11, 0),
+      formatAbility("DEX", 16, 3),
+      formatAbility("CON", 13, 1),
+      formatAbility("INT", 11, 0),
+      formatAbility("WIS", 13, 1),
+      formatAbility("CHA", 12, 1),
+    ],
+    traits: [
+      { name: "Half-Here", kind: "trait", text: "In dim light or darkness, attacks against the Gloamknife Stray have disadvantage." },
+      { name: "Wrong Silhouette", kind: "trait", text: "The first attack each creature makes against it has disadvantage — its true position is a step from where it appears." },
+    ],
+    actions: [
+      { name: "Gloamknife", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3 + 1d4", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing plus 2 (1d4) cold — a cold that takes warmth out rather than putting chill in." },
+      { name: "Slip Between", kind: "action", text: "Bonus Action. Teleport up to 15 ft between dim light or darkness areas it can see." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: [
+      "CR 1 (200 XP). Skirmisher / Ambusher — Pressure: Strong (dark) / Normal (light).",
+      "Operates at the fight's edges — picks the isolated, the wounded, the one who wandered from torchlight.",
+      "Slips Between every turn; never attacks twice from the same shadow.",
+      "Retreats the moment bright light pins it — and not toward the other bandits.",
+      "Bright light strips Half-Here and grounds Slip Between — a lantern is a weapon against it.",
+      "AC/HP/abilities derived to CR 1 — tune to taste.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "The Wrong Shadow", revealedName: "Gloamknife Stray" },
   },
 ];
