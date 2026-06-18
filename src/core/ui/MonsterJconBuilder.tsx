@@ -876,7 +876,7 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
           </select>
         </label>
         <label>
-          Primary style
+          Classification
           <select value={primaryAbility} onChange={(event) => setPrimaryAbility(event.target.value as MonsterAbilityId)}>
             {abilityIds.map((abilityId) => <option value={abilityId} key={abilityId}>{abilityStyleLabels[abilityId]}</option>)}
           </select>

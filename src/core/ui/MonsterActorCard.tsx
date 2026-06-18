@@ -695,6 +695,19 @@ export function MonsterActorCard({
     return scores.map((s) => ({ label: s.label, modifier: parseAbilityModifier(s.value) }));
   }, [monster]);
 
+  // Named skill checks — read the governing ability modifier from the monster's scores
+  // (Stealth/Acrobatics ← DEX, Perception ← WIS). A correct classification (stat
+  // distribution) in the builder is what makes these land at the right value.
+  const skillChecks = useMemo(() => {
+    const modFor = (ability: string) =>
+      abilityChecks.find((a) => a.label.toUpperCase().includes(ability))?.modifier ?? 0;
+    return [
+      { label: "Stealth", ability: "DEX", modifier: modFor("DEX") },
+      { label: "Perception", ability: "WIS", modifier: modFor("WIS") },
+      { label: "Acrobatics", ability: "DEX", modifier: modFor("DEX") },
+    ];
+  }, [abilityChecks]);
+
   const checkRoll = committedRoll && committedRoll.actionId.startsWith("check-") ? committedRoll : null;
 
   async function handleAbilityCheck(label: string, modifier: number) {
@@ -944,7 +957,7 @@ export function MonsterActorCard({
         {/* 3b. Ability checks & saves + advantage/disadvantage mode */}
         <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: "1px solid #1a1a2e" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Checks &amp; Saves</span>
+            <span style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Checks, Saves &amp; Skills</span>
             <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
               {([
                 { id: "disadv", label: "Disadv", color: "#ff5840" },
@@ -980,6 +993,23 @@ export function MonsterActorCard({
                   <span style={{ fontSize: 10, color: "#999", fontWeight: 600, letterSpacing: 0.5 }}>{ab.label}</span>
                   <span style={{ fontSize: 11, color: "#7b68ee", fontVariantNumeric: "tabular-nums" }}>
                     {ab.modifier >= 0 ? `+${ab.modifier}` : ab.modifier}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {skillChecks.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+              {skillChecks.map((sk) => (
+                <button key={sk.label} type="button" onClick={() => handleAbilityCheck(sk.label, sk.modifier)}
+                  title={`Roll ${sk.label} (${sk.ability}) check${rollMode === "normal" ? "" : ` with ${rollMode === "adv" ? "advantage" : "disadvantage"}`}`}
+                  style={{
+                    flex: "1 1 30%", minWidth: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+                    padding: "4px 2px", background: "#0d0d14", border: "1px solid #232336", borderRadius: 4, cursor: "pointer",
+                  }}>
+                  <span style={{ fontSize: 9, color: "#888", fontWeight: 600, letterSpacing: 0.3 }}>{sk.label}</span>
+                  <span style={{ fontSize: 11, color: "#7b68ee", fontVariantNumeric: "tabular-nums" }}>
+                    {sk.modifier >= 0 ? `+${sk.modifier}` : sk.modifier}
                   </span>
                 </button>
               ))}
