@@ -1851,7 +1851,10 @@ export function ActorCard({
       const isAdditive = entry.action.metadata?.outcomeMode === "additive";
       if (!isBond && !isAdditive) return;
       if (effects.some(e => e.id.endsWith(`:${entry.action.id}`))) return;
-      const formula = entry.action.metadata?.damage ?? entry.action.metadata?.additive;
+      // Rider damage lives in metadata.damage for both bonds and "additive" actions.
+      // (metadata.additive is an overloaded field — resource pool max / reroll flag /
+      // resource name — never a roll formula, so it must not be used here.)
+      const formula = entry.action.metadata?.damage;
       const details = entry.action.metadata?.details ?? entry.action.description
         ?? (isBond ? "Resolve this bond effect manually." : "Additive — adds to your next damage roll.");
       effects.push({

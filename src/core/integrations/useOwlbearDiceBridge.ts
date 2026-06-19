@@ -259,7 +259,12 @@ async function getOwlbearPlayerInfo() {
 
 export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) => void) {
   const [status, setStatus] = useState<DiceBridgeStatus>(() => (hasOwlbearWindow() ? "starting" : "outside-owlbear"));
+  // lastEvent carries ONLY result + error events — the channel every roll consumer
+  // matches against. Frequent, low-value chatter (request seen/sent) goes to lastInfo
+  // so it can never overwrite a result before a card's effect captures it. A roll
+  // result that gets clobbered is exactly the "sits on enter manually" failure.
   const [lastEvent, setLastEvent] = useState<DiceBridgeEvent | null>(null);
+  const [lastInfo, setLastInfo] = useState<DiceBridgeEvent | null>(null);
   // requestId -> sentAt(ms) for Dice+ rolls awaiting a result. Used to suppress
   // duplicate sends of the same roll (the "roll in progress" trigger).
   const inFlightDicePlusRef = useRef<Map<string, number>>(new Map());
@@ -288,7 +293,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
       setStatus("ready");
       unsubRequest = OBR.broadcast.onMessage(FDM_DICE_REQUEST_CHANNEL, (event) => {
         const request = event.data as DiceBridgeRollRequest;
-        setLastEvent({
+        setLastInfo({
           kind: "request-seen",
           message: `Dice request seen for ${request?.actionName ?? "unknown action"}.`,
           request,
@@ -392,7 +397,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
           const incoming = event.data as Record<string, unknown>;
 
           if (incoming.requestId === requestId && incoming.ready === true) {
-            setLastEvent({
+            setLastInfo({
               kind: "dice-plus-ready",
               message: "Dice+ is ready.",
             });
@@ -427,7 +432,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
 
     try {
       await OBR.broadcast.sendMessage(FDM_DICE_REQUEST_CHANNEL, request, { destination: "ALL" });
-      setLastEvent({
+      setLastInfo({
         kind: "request-sent",
         message: `Generic dice request sent for ${request.actionName}.`,
         request,
@@ -466,7 +471,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
     }
     const existing = inFlight.get(request.requestId);
     if (typeof existing === "number" && now - existing <= DICE_PLUS_INFLIGHT_TTL_MS) {
-      setLastEvent({
+      setLastInfo({
         kind: "dice-plus-request-sent",
         message: `${request.actionName} already sent to Dice+ — waiting for the result.`,
         request,
@@ -497,7 +502,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
         { destination: "ALL" }
       );
 
-      setLastEvent({
+      setLastInfo({
         kind: "dice-plus-request-sent",
         message: `Dice+ roll request sent for ${request.actionName}.`,
         request,
@@ -555,6 +560,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
   return {
     status,
     lastEvent,
+    lastInfo,
     requestChannel: FDM_DICE_REQUEST_CHANNEL,
     resultChannel: FDM_DICE_RESULT_CHANNEL,
     dicePlusReadyChannel: DICE_PLUS_READY_CHANNEL,

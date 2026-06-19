@@ -156,7 +156,7 @@ export function resolveFormulaVars(
  * Used to show an indicator on the action card that the formula is dynamic.
  */
 export function formulaHasVars(formula?: string): boolean {
-  return Boolean(formula && /@(STR|DEX|CON|INT|WIS|CHA|PROF|SPELL)/.test(formula));
+  return Boolean(formula && /@(STR|DEX|CON|INT|WIS|CHA|PROF|SPELL|SAVE_BONUS|ATK)/.test(formula));
 }
 
 /**
