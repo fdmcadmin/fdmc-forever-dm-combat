@@ -1,5 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
+
+// How long a Dice+ roll request is considered "in flight" before a resend of the
+// SAME requestId is allowed again. Dice+ is single-flight per rollId and rejects a
+// duplicate with "roll in progress", so we block the duplicate ourselves. The lock
+// is cleared as soon as the matching result or error comes back; this timeout is
+// only a backstop for a result that never arrives.
+const DICE_PLUS_INFLIGHT_TTL_MS = 12000;
 
 export const FDM_DICE_REQUEST_CHANNEL = "forever-dm-combat.roll.request.v1";
 export const FDM_DICE_RESULT_CHANNEL = "forever-dm-combat.roll.result.v1";
@@ -253,6 +260,13 @@ async function getOwlbearPlayerInfo() {
 export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) => void) {
   const [status, setStatus] = useState<DiceBridgeStatus>(() => (hasOwlbearWindow() ? "starting" : "outside-owlbear"));
   const [lastEvent, setLastEvent] = useState<DiceBridgeEvent | null>(null);
+  // requestId -> sentAt(ms) for Dice+ rolls awaiting a result. Used to suppress
+  // duplicate sends of the same roll (the "roll in progress" trigger).
+  const inFlightDicePlusRef = useRef<Map<string, number>>(new Map());
+
+  const clearInFlight = useCallback((requestId?: string) => {
+    if (requestId) inFlightDicePlusRef.current.delete(requestId);
+  }, []);
 
   useEffect(() => {
     if (!hasOwlbearWindow()) {
@@ -288,6 +302,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
           return;
         }
 
+        clearInFlight(result.requestId);
         setLastEvent({
           kind: "result-received",
           message: `Dice result received${result.actionName ? ` for ${result.actionName}` : ""}.`,
@@ -303,6 +318,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
           return;
         }
 
+        clearInFlight(result.requestId);
         setLastEvent({
           kind: "result-received",
           message: `Dice+ result received${result.text ? `: ${result.text}` : ""}.`,
@@ -318,9 +334,11 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
           return;
         }
 
+        // Free the lock so the player can retry (or the next roll isn't blocked).
+        clearInFlight(error.rollId);
         setLastEvent({
           kind: "error",
-          message: `Dice+ roll failed${error.error ? `: ${error.error}` : ""}${error.notation ? ` (${error.notation})` : ""}.`,
+          message: `Dice+ roll failed${error.error ? `: ${error.error}` : ""}${error.notation ? ` (${error.notation})` : ""}. Enter the result manually.`,
         });
       });
     }
@@ -436,21 +454,31 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
       return false;
     }
 
-    // The ready-check is an ADVISORY probe, not a gate. It races / times out for
-    // players even when Dice+ is in the room (it works fine for the GM), which was
-    // hard-blocking every player roll. If the probe doesn't confirm, still SEND the
-    // roll best-effort — Dice+ rolls if present; otherwise the player uses manual
-    // entry (always available in the roll panel).
-    const dicePlusReady = await checkDicePlusReady();
-
-    if (!dicePlusReady) {
+    // De-dupe: Dice+ is single-flight per rollId and rejects a duplicate with
+    // "roll in progress". A double-click (or an auto attack→damage that fires too
+    // fast) would re-send the same requestId, so we drop the duplicate here. The
+    // lock clears as soon as the matching result/error returns; the TTL is only a
+    // backstop for a result that never arrives.
+    const now = Date.now();
+    const inFlight = inFlightDicePlusRef.current;
+    for (const [id, sentAt] of inFlight) {
+      if (now - sentAt > DICE_PLUS_INFLIGHT_TTL_MS) inFlight.delete(id);
+    }
+    const existing = inFlight.get(request.requestId);
+    if (typeof existing === "number" && now - existing <= DICE_PLUS_INFLIGHT_TTL_MS) {
       setLastEvent({
         kind: "dice-plus-request-sent",
-        message: `Dice+ didn't confirm ready — sending ${request.actionName} anyway. Use manual entry if no result appears.`,
+        message: `${request.actionName} already sent to Dice+ — waiting for the result.`,
         request,
       });
+      return true;
     }
+    inFlight.set(request.requestId, now);
 
+    // The old code awaited an ADVISORY ready-probe (up to 2.5s) BEFORE sending,
+    // which stalled every roll and tempted players into a second click. The probe
+    // never gated anything (we send regardless), so send immediately — Dice+ rolls
+    // if present, otherwise manual entry is always available in the roll panel.
     try {
       const { playerId, playerName } = await getOwlbearPlayerInfo();
 
@@ -476,6 +504,8 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
       });
       return true;
     } catch (error) {
+      // Send failed — release the lock so the player can retry immediately.
+      clearInFlight(request.requestId);
       setStatus("error");
       setLastEvent({
         kind: "error",
@@ -484,7 +514,7 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
       });
       return false;
     }
-  }, [checkDicePlusReady, status]);
+  }, [clearInFlight, status]);
 
   const sendMockRollResult = useCallback(async (result: DiceBridgeRollResult) => {
     if (!hasOwlbearWindow() || status !== "ready") {
