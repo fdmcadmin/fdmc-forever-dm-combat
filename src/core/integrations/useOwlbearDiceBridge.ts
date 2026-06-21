@@ -241,10 +241,6 @@ export function formatBridgeRollResult(result: DiceBridgeRollResult) {
   return "";
 }
 
-function createRequestId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
 async function getOwlbearPlayerInfo() {
   const playerApi = OBR.player as unknown as {
     getId?: () => Promise<string>;
@@ -371,54 +367,8 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
     };
   }, [onResult]);
 
-  const checkDicePlusReady = useCallback(async () => {
-    if (!hasOwlbearWindow() || status !== "ready") {
-      return false;
-    }
-
-    const requestId = createRequestId("fdm-dice-plus-ready");
-
-    return new Promise<boolean>((resolve) => {
-      let settled = false;
-      let unsubscribe: (() => void) | undefined;
-
-      function finish(isReady: boolean) {
-        if (settled) {
-          return;
-        }
-
-        settled = true;
-        unsubscribe?.();
-        resolve(isReady);
-      }
-
-      try {
-        unsubscribe = OBR.broadcast.onMessage(DICE_PLUS_READY_CHANNEL, (event) => {
-          const incoming = event.data as Record<string, unknown>;
-
-          if (incoming.requestId === requestId && incoming.ready === true) {
-            setLastInfo({
-              kind: "dice-plus-ready",
-              message: "Dice+ is ready.",
-            });
-            finish(true);
-          }
-        });
-
-        void OBR.broadcast.sendMessage(DICE_PLUS_READY_CHANNEL, { requestId, timestamp: Date.now() }, { destination: "ALL" });
-      } catch (error) {
-        setLastEvent({
-          kind: "error",
-          message: error instanceof Error ? error.message : "Dice+ ready check failed.",
-        });
-        finish(false);
-      }
-
-      // 2.5s window — the old 1200ms raced under live multiplayer load and made the
-      // probe report "not ready" even when Dice+ was present.
-      window.setTimeout(() => finish(false), 2500);
-    });
-  }, [status]);
+  // (The advisory Dice+ ready-probe was removed in 0.6.1.22 — rolls send immediately
+  //  and fall back to manual entry, so the probe was dead weight.)
 
   const sendRollRequest = useCallback(async (request: DiceBridgeRollRequest) => {
     if (!hasOwlbearWindow() || status !== "ready") {

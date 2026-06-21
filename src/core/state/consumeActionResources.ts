@@ -53,8 +53,10 @@ export function consumeActionResourcesOnCommit(params: {
 
   // 3. Any action with a slotCost that references a named resource
   //    (Channel Divinity, Rage, Bardic Inspiration, Fury of the Gods, …).
+  //    Skip spell-slot level tokens ("L1", "L2", …) — those are handled by branch 2 —
+  //    but NOT named resources that merely start with L (Lay on Hands, Luck, …).
   const slotCost = action.metadata?.slotCost?.trim();
-  if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !slotCost.startsWith("L")) {
+  if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !/^L\d/i.test(slotCost)) {
     const r = consumeNamedResource(actorId, slotCost);
     if (r.outcome === "spent") {
       log({ actorName, actionName: action.label, tabId: "resources", message: `${actorName} uses ${r.label ?? slotCost} (${r.remaining}/${r.max ?? "?"} left).` });

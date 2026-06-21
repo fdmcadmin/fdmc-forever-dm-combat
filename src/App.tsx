@@ -1426,14 +1426,19 @@ export default function App() {
   // clicked it (each browser sends its own roll). We remember the requestId here; when
   // the matching result returns, the total is written to SHARED initiative so the GM's
   // tracker — and everyone's — updates. Only the sending instance holds the requestId.
-  const pendingTrackerInitiativeRef = useRef<Map<string, string>>(new Map());
+  const pendingTrackerInitiativeRef = useRef<Map<string, { actorId: string; sentAt: number }>>(new Map());
 
   async function handleRollActorInitiativeViaDicePlus(actorId: string) {
     const actor = actors.find(a => a.id === actorId);
     if (!actor) return;
     const formula = initiativeRollFormula(actor);
     const requestId = `fdm-tracker-init-${Date.now()}-${actorId}-${Math.random().toString(36).slice(2, 8)}`;
-    pendingTrackerInitiativeRef.current.set(requestId, actorId);
+    // Prune any rolls that were sent but never resolved (>60s) so the map can't grow.
+    const cutoff = Date.now() - 60000;
+    for (const [id, entry] of pendingTrackerInitiativeRef.current) {
+      if (entry.sentAt < cutoff) pendingTrackerInitiativeRef.current.delete(id);
+    }
+    pendingTrackerInitiativeRef.current.set(requestId, { actorId, sentAt: Date.now() });
     const sent = await sendDicePlusRollRequest({
       protocol: "forever-dm-combat.roll.request.v1",
       requestId,
@@ -1461,9 +1466,10 @@ export default function App() {
   useEffect(() => {
     const result = diceBridgeLastEvent?.result;
     if (!result?.requestId) return;
-    const actorId = pendingTrackerInitiativeRef.current.get(result.requestId);
-    if (!actorId) return;
+    const entry = pendingTrackerInitiativeRef.current.get(result.requestId);
+    if (!entry) return;
     pendingTrackerInitiativeRef.current.delete(result.requestId);
+    const actor = actors.find(a => a.id === entry.actorId);
     const total = typeof result.total === "number"
       ? result.total
       : (() => {
@@ -1472,9 +1478,11 @@ export default function App() {
           return m ? Number.parseInt(m[1], 10) : null;
         })();
     if (typeof total === "number" && Number.isFinite(total)) {
-      handleSetCombatantInitiative(actorId, total);
-      const actor = actors.find(a => a.id === actorId);
+      handleSetCombatantInitiative(entry.actorId, total);
       addEntry({ actorName: actor?.name ?? "Actor", actionName: "Initiative", tabId: "system", message: `${actor?.name ?? "Actor"} initiative set to ${total} (Dice+).` });
+    } else {
+      // Result arrived but no total could be read — tell the table to set it manually.
+      addEntry({ actorName: actor?.name ?? "Actor", actionName: "Initiative", tabId: "system", message: `⚠ ${actor?.name ?? "Actor"} initiative result couldn't be read from Dice+ — set it manually on the tracker.` });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diceBridgeLastEvent]);
