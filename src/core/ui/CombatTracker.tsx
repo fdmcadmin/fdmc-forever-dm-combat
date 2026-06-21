@@ -193,6 +193,18 @@ function hpColor(current: number, max: number): string {
   return "#4caf50";
 }
 
+// Player-safe HP condition — shown for party members the viewer does NOT control, so
+// other seats read as Healthy/Wounded/… instead of exact numbers (own actors + the DM
+// still see real HP). Same vocabulary monsters use for players.
+function hpConditionLabel(current: number, max: number): string {
+  if (current <= 0) return "Down";
+  const ratio = max > 0 ? current / max : 0;
+  if (ratio <= 0.25) return "Critical";
+  if (ratio <= 0.5)  return "Bloodied";
+  if (ratio <= 0.75) return "Wounded";
+  return "Healthy";
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CombatTracker({
@@ -215,6 +227,11 @@ export function CombatTracker({
 }: CombatTrackerProps) {
   const viewerActorIdSet = new Set(viewerActorIds ?? []);
   const isViewerActive = activeId !== null && viewerActorIdSet.has(activeId);
+
+  // Exact HP is visible to the DM, to the actor's own controller, and (for companions)
+  // to whoever controls the owner. Everyone else sees the abstracted condition label.
+  const canSeeExactHp = (c: { id: string; ownerId?: string }) =>
+    isDmMode || viewerActorIdSet.has(c.id) || (c.ownerId ? viewerActorIdSet.has(c.ownerId) : false);
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null);
   const sorted = sortCombatants(combatants);
   const activeIndex = sorted.findIndex(c => c.id === activeId);
@@ -501,13 +518,21 @@ export function CombatTracker({
                 );
               })()}
 
-              {/* HP numbers — shown for PARTY (actor) rows to EVERYONE so healers can
-                  see who needs healing. Monster true HP stays DM-only (players see only
-                  the condition bar; their monster rows carry a 0–100 ratio, not real HP). */}
+              {/* HP — the DM and an actor's own controller see exact numbers; other seats
+                  see the abstracted condition (Healthy/Wounded/…) for party members they
+                  don't control. Monster true HP stays DM-only (players get the bar only). */}
               <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                 {(isDmMode || combatant.kind === "actor") && (() => {
                   const temp = combatant.hp.temp ?? 0;
                   const displayCurrent = combatant.hp.current + temp;
+                  if (!canSeeExactHp(combatant)) {
+                    // Party member the viewer doesn't control — condition only, no numbers.
+                    return (
+                      <span style={{ fontSize: 10, color: hpColor(combatant.hp.current, combatant.hp.max), minWidth: 48, textAlign: "right" }}>
+                        {combatant.isDead ? "☠ Down" : hpConditionLabel(combatant.hp.current, combatant.hp.max)}
+                      </span>
+                    );
+                  }
                   return (
                     <span style={{ fontSize: 10, color: hpColor(combatant.hp.current, combatant.hp.max), minWidth: 36, textAlign: "right" }}>
                       {combatant.isDead ? "☠" : temp > 0
@@ -564,9 +589,13 @@ export function CombatTracker({
                     </div>
                   );
                 })()}
-                {/* Companions are party actors — show their HP numbers to everyone too. */}
+                {/* Companions follow their owner: exact HP for the owner's controller + DM,
+                    abstracted condition for other seats. */}
                 <span style={{ fontSize: 10, color: hpColor(companion.hp.current, companion.hp.max) }}>
-                  {companion.isDead ? "☠" : `${companion.hp.current}/${companion.hp.max}`}
+                  {companion.isDead ? "☠"
+                    : canSeeExactHp(combatant)
+                      ? `${companion.hp.current}/${companion.hp.max}`
+                      : hpConditionLabel(companion.hp.current, companion.hp.max)}
                 </span>
               </div>
             ))}
