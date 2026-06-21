@@ -22,6 +22,7 @@ import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { useCombatLog } from "./core/combat-log/useCombatLog";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
+import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
 import { loadActorLibrary, loadActorOverrides, resolveActorFromLibrary } from "./core/seats/dmActorLibrary";
 import { loadCachedActors } from "./core/seats/playerActorCache";
 import { resolveActor, buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
@@ -82,7 +83,7 @@ function ActorPopout() {
   const { getActorNotes, addActorNote, deleteActorNote } = useActorNotesState(actorList);
   const { getActorStatus, setActorTracker, resetActorTracker, resetActorStatuses } = useActorStatusState(actorList);
   const { addEntry, removePendingEntries } = useCombatLog();
-  const { counters, resetActorResources } = useResourceCounterState(actorList);
+  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource } = useResourceCounterState(actorList);
   const { status: diceBridgeStatus, lastEvent: diceBridgeLastEvent, sendRollRequest, sendDicePlusRollRequest, sendMockRollResult } = useOwlbearDiceBridge();
 
   if (!actor) {
@@ -124,7 +125,11 @@ function ActorPopout() {
         onResetTurn={() => resetActorTurn(actor.id)}
         onSetConcentration={(next) => setActorConcentration(actor.id, next)}
         onClearConcentration={() => clearActorConcentration(actor.id)}
-        onStartCommittedRoll={(input) => startCommittedRoll(actor.id, input)}
+        onStartCommittedRoll={(input) => {
+          startCommittedRoll(actor.id, input);
+          const action = Object.values(actor.tabs).flat().find(a => a.id === input.actionId);
+          if (action) consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry });
+        }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actor.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actor.id, outcome)}
         onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(actor.id, choice)}
@@ -141,7 +146,7 @@ function ActorPopout() {
         resourceCounters={counters[actor.id]}
         isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actor.id}
         onShortRest={() => { resetActorResources(actor.id, "short"); addEntry({ actorName: actor.name, actionName: "Short Rest", tabId: "system", message: `${actor.name} takes a Short Rest.` }); }}
-        onLongRest={() => { resetActorResources(actor.id, "long"); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest.` }); }}
+        onLongRest={() => { resetActorResources(actor.id, "long"); const m = actor.stats.hp.max; void setActorHp(actor.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
         onLog={addEntry}
       />
     </div>

@@ -51,6 +51,8 @@ import { useActorLiveState } from "./core/state/useActorLiveState";
 import { useActorNotesState } from "./core/state/useActorNotesState";
 import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
+import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
+import { initiativeRollFormula, getActorInitiativeModifier } from "./core/state/initiative";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
 import { getToolPanelTitle, type ToolPanelId } from "./core/runtime-shell/toolPanelTypes";
@@ -1419,6 +1421,64 @@ export default function App() {
     }
   }
 
+  // ── Tracker initiative via Dice+ (player-owned) ──────────────────────────────
+  // The combat tracker's per-actor dice button rolls through Dice+ as the viewer who
+  // clicked it (each browser sends its own roll). We remember the requestId here; when
+  // the matching result returns, the total is written to SHARED initiative so the GM's
+  // tracker — and everyone's — updates. Only the sending instance holds the requestId.
+  const pendingTrackerInitiativeRef = useRef<Map<string, string>>(new Map());
+
+  async function handleRollActorInitiativeViaDicePlus(actorId: string) {
+    const actor = actors.find(a => a.id === actorId);
+    if (!actor) return;
+    const formula = initiativeRollFormula(actor);
+    const requestId = `fdm-tracker-init-${Date.now()}-${actorId}-${Math.random().toString(36).slice(2, 8)}`;
+    pendingTrackerInitiativeRef.current.set(requestId, actorId);
+    const sent = await sendDicePlusRollRequest({
+      protocol: "forever-dm-combat.roll.request.v1",
+      requestId,
+      source: "Forever DM Combat",
+      actorId,
+      actorName: actor.name,
+      actionId: "initiative",
+      actionName: "Initiative",
+      formula: `${formula} # ${actor.name} Initiative`,
+      outcomeMode: "ability-check",
+      sentAt: new Date().toISOString(),
+    });
+    if (!sent) {
+      // No Dice+ bridge — fall back to a local roll so the actor still slots into order.
+      pendingTrackerInitiativeRef.current.delete(requestId);
+      const roll = Math.floor(Math.random() * 20) + 1 + getActorInitiativeModifier(actor);
+      handleSetCombatantInitiative(actorId, roll);
+      addEntry({ actorName: actor.name, actionName: "Initiative", tabId: "system", message: `${actor.name} rolls Initiative ${roll} (Dice+ unavailable — local roll).` });
+      return;
+    }
+    addEntry({ actorName: actor.name, actionName: "Initiative", tabId: "system", message: `${actor.name} rolls Initiative (${formula}) through Dice+.` });
+  }
+
+  // Capture a tracker initiative result and write it to shared initiative.
+  useEffect(() => {
+    const result = diceBridgeLastEvent?.result;
+    if (!result?.requestId) return;
+    const actorId = pendingTrackerInitiativeRef.current.get(result.requestId);
+    if (!actorId) return;
+    pendingTrackerInitiativeRef.current.delete(result.requestId);
+    const total = typeof result.total === "number"
+      ? result.total
+      : (() => {
+          const text = result.result ?? "";
+          const m = text.match(/total\s*(-?\d+)/i) ?? text.match(/(-?\d+)\s*$/);
+          return m ? Number.parseInt(m[1], 10) : null;
+        })();
+    if (typeof total === "number" && Number.isFinite(total)) {
+      handleSetCombatantInitiative(actorId, total);
+      const actor = actors.find(a => a.id === actorId);
+      addEntry({ actorName: actor?.name ?? "Actor", actionName: "Initiative", tabId: "system", message: `${actor?.name ?? "Actor"} initiative set to ${total} (Dice+).` });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diceBridgeLastEvent]);
+
   // ── Tool panel ────────────────────────────────────────────────────────────
   const [openPanel, setOpenPanel] = useState<ToolPanelId>(null);
   const closePanel = useCallback(() => setOpenPanel(null), []);
@@ -2678,6 +2738,7 @@ export default function App() {
             if (isMonster) setActiveMonsterInstanceId(id);
           }}
           onSetInitiative={handleSetCombatantInitiative}
+          onRollInitiative={handleRollActorInitiativeViaDicePlus}
           onSwapInitiative={(idA, idB) => {
             // Swap the initiative values of two combatants
             const initA = allCombatants.find(c => c.id === idA)?.initiative ?? null;
@@ -2727,66 +2788,8 @@ export default function App() {
         onClearConcentration={() => clearActorConcentration(actorToShow.id)}
         onStartCommittedRoll={(input) => {
           startCommittedRoll(actorToShow.id, input);
-
-          // Find the action being committed
           const action = Object.values(actorToShow.tabs).flat().find(a => a.id === input.actionId);
-          if (!action) return;
-
-          // Class-feature spell ("freeCast"): spends its dedicated N/long-rest resource
-          // (label = spell name), NOT a spell slot. Must run before the slot branch below.
-          if (action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast") {
-            const r = consumeNamedResource(actorToShow.id, action.label);
-            if (r.outcome === "spent") {
-              addEntry({
-                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
-                message: `${actorToShow.name} casts ${action.label} (class feature) — ${r.remaining}/${r.max ?? "?"} uses left.`,
-              });
-            } else if (r.outcome === "empty") {
-              addEntry({
-                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
-                message: `⚠ ${actorToShow.name} has no ${action.label} uses left — cast without a charge.`,
-              });
-            }
-            return;
-          }
-
-          // Spell with slot level → decrement matching slot resource.
-          // Upcasting is data-authored: the spell action carries the level it casts at,
-          // so the slot spent here matches the cast level shown on the card.
-          if (action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0) {
-            const lvl = action.metadata?.spellLevel ?? 1;
-            const r = consumeSpellSlot(actorToShow.id, lvl);
-            if (r.outcome === "spent") {
-              addEntry({
-                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
-                message: `${actorToShow.name} casts ${action.label} — expends a Level ${lvl} slot (${r.remaining}/${r.max ?? "?"} left).`,
-              });
-            } else if (r.outcome === "empty") {
-              addEntry({
-                actorName: actorToShow.name, actionName: action.label, tabId: "spells",
-                message: `⚠ ${actorToShow.name} has no Level ${lvl} slots left for ${action.label} — cast not slot-backed.`,
-              });
-            }
-            return;
-          }
-
-          // Any action with a slotCost that references a named resource
-          // e.g. Channel Divinity, Rage, Bardic Inspiration, Fury of the Gods
-          const slotCost = action.metadata?.slotCost?.trim();
-          if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !slotCost.startsWith("L")) {
-            const r = consumeNamedResource(actorToShow.id, slotCost);
-            if (r.outcome === "spent") {
-              addEntry({
-                actorName: actorToShow.name, actionName: action.label, tabId: "resources",
-                message: `${actorToShow.name} uses ${r.label ?? slotCost} (${r.remaining}/${r.max ?? "?"} left).`,
-              });
-            } else if (r.outcome === "empty") {
-              addEntry({
-                actorName: actorToShow.name, actionName: action.label, tabId: "resources",
-                message: `⚠ ${actorToShow.name} is out of ${r.label ?? slotCost} — ${action.label} used without a charge.`,
-              });
-            }
-          }
+          if (action) consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry });
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actorToShow.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actorToShow.id, outcome)}
@@ -3111,7 +3114,11 @@ export default function App() {
                 onResetTurn={() => { resetActorTurn(focusedActorId); setTurnResetVersion(v => v + 1); }}
                 onSetConcentration={(next) => setActorConcentration(focusedActorId, next)}
                 onClearConcentration={() => clearActorConcentration(focusedActorId)}
-                onStartCommittedRoll={(input) => startCommittedRoll(focusedActorId, input)}
+                onStartCommittedRoll={(input) => {
+                  startCommittedRoll(focusedActorId, input);
+                  const action = Object.values(focusedActor.tabs).flat().find(a => a.id === input.actionId);
+                  if (action) consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry });
+                }}
                 onSetCommittedRollResult={(result) => setCommittedRollResult(focusedActorId, result)}
                 onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(focusedActorId, outcome)}
                 onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(focusedActorId, choice)}

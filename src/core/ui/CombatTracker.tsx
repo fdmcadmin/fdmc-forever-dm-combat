@@ -57,6 +57,9 @@ export type CombatTrackerProps = {
   onEndCombat: () => void;
   onSelectCombatant: (id: string) => void;
   onSetInitiative: (id: string, initiative: number) => void;
+  /** Roll an actor's initiative through Dice+ (player-owned). The result writes back via
+   *  onSetInitiative once Dice+ returns. Falls back to a local roll when absent/unavailable. */
+  onRollInitiative?: (combatantId: string) => void;
   /** Swap two combatants' initiative values — Alert feat, class features, DM call */
   onSwapInitiative?: (idA: string, idB: string) => void;
 };
@@ -207,6 +210,7 @@ export function CombatTracker({
   onEndCombat,
   onSelectCombatant,
   onSetInitiative,
+  onRollInitiative,
   onSwapInitiative,
 }: CombatTrackerProps) {
   const viewerActorIdSet = new Set(viewerActorIds ?? []);
@@ -400,10 +404,19 @@ export function CombatTracker({
                       type="button"
                       onClick={e => {
                         e.stopPropagation();
+                        // Actors roll through Dice+ (player-owned, visible dice); the result
+                        // writes initiative back via onSetInitiative. Monsters / no-bridge
+                        // fall back to a local quick-roll for the DM.
+                        if (combatant.kind === "actor" && onRollInitiative) {
+                          onRollInitiative(combatant.id);
+                          return;
+                        }
                         const roll = Math.floor(Math.random() * 20) + 1 + combatant.initiativeBonus;
                         onSetInitiative(combatant.id, roll);
                       }}
-                      title={`Roll 1d20${combatant.initiativeBonus >= 0 ? "+" : ""}${combatant.initiativeBonus}`}
+                      title={combatant.kind === "actor" && onRollInitiative
+                        ? `Roll Initiative (1d20${combatant.initiativeBonus >= 0 ? "+" : ""}${combatant.initiativeBonus}) through Dice+`
+                        : `Roll 1d20${combatant.initiativeBonus >= 0 ? "+" : ""}${combatant.initiativeBonus}`}
                       style={{ fontSize: 9, padding: "1px 3px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
                     >
                       🎲
