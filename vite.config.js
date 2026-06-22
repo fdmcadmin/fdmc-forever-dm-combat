@@ -8,6 +8,7 @@ export default defineConfig({
             input: {
                 main: "index.html",
                 actorPopout: "actor-popout.html",
+                levelupPopout: "levelup-popout.html",
                 dmPanel: "dm-panel.html",
                 monsterPopout: "monster-popout.html",
                 background: "background.html",

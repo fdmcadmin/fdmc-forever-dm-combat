@@ -24,6 +24,9 @@ export type ActorEditorProps = {
   /** When true: replaces all save buttons with a single "Submit for DM Approval" button.
    *  Used by the player-facing level-up flow. The DM receives the full proposed actor. */
   proposeMode?: boolean;
+  /** Label for the single proposeMode button. Defaults to "Submit for DM Approval".
+   *  The level-up workspace overrides it (e.g. "Save as L5 Preset"). */
+  submitLabel?: string;
   /** Candidate owners (player actors) for the Companion "Owner" dropdown. */
   ownerOptions?: OwnerOption[];
 };
@@ -346,7 +349,7 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
 
 // ─── Main editor ──────────────────────────────────────────────────────────────
 
-export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, ownerOptions = [] }: ActorEditorProps) {
+export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, submitLabel = "Submit for DM Approval", ownerOptions = [] }: ActorEditorProps) {
   const actor = actorProp ?? createBlankActor();
   const [activeTab, setActiveTab] = useState<EditorTab>("profile");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => actorToProfileDraft(actor));
@@ -644,7 +647,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               onClick={() => attemptSave("current")}
               style={{ flex: 1, padding: "7px 12px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
             >
-              Submit for DM Approval
+              {submitLabel}
             </button>
           ) : (
             /* DM mode — save now (escape hatch), override-only, and duplicate */

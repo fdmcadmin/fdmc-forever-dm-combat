@@ -1988,6 +1988,35 @@ export default function App() {
   const status = getActorStatus(actorToShow);
   // liveHpByActorId is computed above as a useMemo
 
+  // Open the level-up editor as its own resizable window (frees players from the
+  // cramped combat popover). Falls back to the inline panel outside Owlbear.
+  async function openLevelUpWindow() {
+    if (!OBR.isAvailable) { setShowLevelUpRequest(v => !v); return; }
+    try {
+      const url = new URL(window.location.href);
+      url.pathname = url.pathname.replace(/\/[^/]*$/, "/levelup-popout.html");
+      url.search = "";
+      url.searchParams.set("fdmLevelUp", actorToShow.id);
+      url.searchParams.set("seatId", claimedSeatId ?? "");
+      const sc = seatColorById[actorToShow.id];
+      if (sc) url.searchParams.set("seatColor", sc);
+      await OBR.popover.open({
+        id: "fdm-levelup",
+        url: url.toString(),
+        width: 540,
+        height: 780,
+        anchorReference: "POSITION",
+        anchorPosition: { left: Math.max(16, Math.floor(window.screen.width / 2) - 270), top: 24 },
+        anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+        transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+        disableClickAway: true,
+        marginThreshold: 16,
+      });
+    } catch {
+      setShowLevelUpRequest(v => !v); // window failed — fall back to inline panel
+    }
+  }
+
   return (
     <main className="fdmc-app">
 
@@ -2494,9 +2523,9 @@ export default function App() {
             </button>
             {/* Level-up request — player submits request to DM */}
             {actorToShow && (
-              <button type="button" onClick={() => setShowLevelUpRequest(v => !v)}
+              <button type="button" onClick={() => void openLevelUpWindow()}
                 style={{ fontSize: 10, padding: "1px 6px", background: showLevelUpRequest ? "#7b68ee22" : "transparent", border: "1px solid #7b68ee33", borderRadius: 3, color: "#7b68ee88", cursor: "pointer" }}
-                title="Request level up from DM">
+                title="Open the level-up window (build presets, step up, submit to DM)">
                 ⬆ Level
               </button>
             )}
