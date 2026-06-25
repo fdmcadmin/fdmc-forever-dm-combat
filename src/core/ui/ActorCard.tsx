@@ -606,11 +606,18 @@ export function ActorCard({
   const onSendDicePlusRequest = useCallback(async (request: DiceBridgeRollRequest) => {
     const isD20Roll = request.outcomeMode === "attack-roll" || request.outcomeMode === "ability-check";
     if (!isD20Roll) return onSendDicePlusRequestRaw(request);
-    let formula = applyAdvantage(request.formula, rollMode);
+    // The formula carries a " # Label" suffix for Dice+. Advantage and any one-off
+    // bonus die must modify the DICE part only — appending after the label corrupts
+    // the notation (the die ends up inside the label text).
+    const hashIdx = request.formula.indexOf("#");
+    const dicePart = hashIdx >= 0 ? request.formula.slice(0, hashIdx).trimEnd() : request.formula;
+    const labelPart = hashIdx >= 0 ? request.formula.slice(hashIdx) : "";
+    let dice = applyAdvantage(dicePart, rollMode);
     if (pendingAdditiveDie) {
-      formula = appendBonusDie(formula, pendingAdditiveDie);
+      dice = appendBonusDie(dice, pendingAdditiveDie);
       setPendingAdditiveDie(null);
     }
+    const formula = labelPart ? `${dice} ${labelPart}` : dice;
     return onSendDicePlusRequestRaw(formula === request.formula ? request : { ...request, formula });
   }, [onSendDicePlusRequestRaw, pendingAdditiveDie, rollMode]);
   const sessionBroadcastReadyRef = useRef(false);
