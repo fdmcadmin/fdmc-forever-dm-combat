@@ -417,8 +417,13 @@ function normalizeRollFormula(rawFormula?: string) {
     .replace(/\b(?:healing|piercing|slashing|bludgeoning|force|fire|cold|necrotic|psychic|radiant|acid|poison|lightning|thunder|temp(?:orary)?\s*hp|hp|damage|on\s+hit)\b/gi, " ")
     .replace(/[^0-9dD+\-*/()\s]/g, " ")
     .replace(/\s+/g, "")
-    .replace(/^[+]/, "")
+    // Drop annotation parens left by labels like "+2 (Archery)" -> "+2()" -> "+2".
+    // Keep parens that still contain dice/numbers, e.g. "(1d6+2)".
+    .replace(/\(([^)]*)\)/g, (m, inner) => (/[0-9dD]/.test(inner) ? m : ""))
+    .replace(/^[+*/]+/, "")        // strip a leading operator (keep a leading minus)
     .replace(/\+{2,}/g, "+")
+    .replace(/\+-/g, "-")
+    .replace(/[+\-*/]+$/, "")      // strip any trailing operator
     .trim();
 
   return cleaned;
@@ -1916,6 +1921,20 @@ export function ActorCard({
     return armedEffects.some(e => e.id === `focus:${focusId}`);
   }
 
+  // Resolve @vars and collapse a flat bonus to a single signed number for chip labels,
+  // so a stored "1+@INT+@PROF" reads as "+6" instead of the raw template. Dice keep their
+  // expression (e.g. "1d4+3").
+  function formatBonusForChip(raw?: string): string {
+    if (!raw?.trim()) return "";
+    const resolved = normalizeRollFormula(resolveFormulaVars(raw, actor, deriveActorStats(actor, undefined, status), status));
+    if (!resolved) return "";
+    if (/d/i.test(resolved)) return /^[-(]/.test(resolved) ? resolved : `+${resolved}`;
+    const nums = resolved.match(/[+-]?\d+/g);
+    if (!nums) return resolved;
+    const total = nums.reduce((sum, n) => sum + Number.parseInt(n, 10), 0);
+    return total >= 0 ? `+${total}` : `${total}`;
+  }
+
   function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string }) {
     const effectId = `focus:${focus.id}`;
     if (isSpellFocusArmed(focus.id)) {
@@ -1924,7 +1943,7 @@ export function ActorCard({
     }
     upsertArmedEffect({
       id: effectId,
-      label: [focus.attack ? `atk ${focus.attack}` : "", focus.damage ? `dmg ${focus.damage}` : ""].filter(Boolean).join(" · ") || focus.label,
+      label: [focus.attack ? `atk ${formatBonusForChip(focus.attack)}` : "", focus.damage ? `dmg ${formatBonusForChip(focus.damage)}` : ""].filter(Boolean).join(" · ") || focus.label,
       details: `${focus.label} — spellcasting focus. Adds to spell attack & damage rolls while armed.`,
       source: focus.label,
       formula: focus.damage,
@@ -1996,8 +2015,8 @@ export function ActorCard({
     }
     upsertArmedEffect({
       id: effectId,
-      label: [buff.attack ? `atk ${buff.attack}` : "", buff.damage ? `dmg ${buff.damage}` : ""].filter(Boolean).join(" · ") || buff.label,
-      details: `${buff.label} — ${buff.appliesTo} attacks. Adds ${[buff.attack ? `${buff.attack} to attack` : "", buff.damage ? `${buff.damage} to damage` : ""].filter(Boolean).join(" + ")} while armed.`,
+      label: [buff.attack ? `atk ${formatBonusForChip(buff.attack)}` : "", buff.damage ? `dmg ${formatBonusForChip(buff.damage)}` : ""].filter(Boolean).join(" · ") || buff.label,
+      details: `${buff.label} — ${buff.appliesTo} attacks. Adds ${[buff.attack ? `${formatBonusForChip(buff.attack)} to attack` : "", buff.damage ? `${formatBonusForChip(buff.damage)} to damage` : ""].filter(Boolean).join(" + ")} while armed.`,
       source: buff.label,
       formula: buff.damage,
       attackFormula: buff.attack,

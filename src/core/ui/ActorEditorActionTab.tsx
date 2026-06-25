@@ -335,12 +335,12 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
           toggle on the card; while on, adds the bonus to matching weapon attacks. */}
       {(tabId === "feats" || tabId === "features" || draft.actionCost === "passive") && (
         <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
-          <div style={{ fontSize: 11, color: "#e0a85a", marginBottom: 4 }}>⚔ Fighting style toggle <span style={{ color: "#555" }}>(blank = none)</span></div>
+          <div style={{ fontSize: 11, color: "#e0a85a", marginBottom: 4 }}>⚔ Fighting style toggle <span style={{ color: "#555" }}>(blank = none · numbers/dice only, no labels)</span></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             <label style={{ fontSize: 11 }}>Attack bonus
-              <input type="text" value={draft.combatStyleAttack ?? ""} onChange={e => set("combatStyleAttack", e.target.value || undefined)} placeholder="+2 (Archery)" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
+              <input type="text" value={draft.combatStyleAttack ?? ""} onChange={e => set("combatStyleAttack", e.target.value || undefined)} placeholder="+2" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
             <label style={{ fontSize: 11 }}>Damage bonus
-              <input type="text" value={draft.combatStyleDamage ?? ""} onChange={e => set("combatStyleDamage", e.target.value || undefined)} placeholder="+1d6, +2..." style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
+              <input type="text" value={draft.combatStyleDamage ?? ""} onChange={e => set("combatStyleDamage", e.target.value || undefined)} placeholder="+1d6 or +2" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} /></label>
             <label style={{ fontSize: 11 }}>Applies to
               <select value={draft.combatStyleTarget ?? ""} onChange={e => set("combatStyleTarget", (e.target.value || undefined) as PcActionDraft["combatStyleTarget"])} style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
                 <option value="">—</option>
