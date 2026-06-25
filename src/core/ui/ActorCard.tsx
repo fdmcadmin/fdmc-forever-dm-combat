@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appendBonusDie, applyAdvantage, type RollMode } from "../dice/diceFormula";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
@@ -255,7 +255,7 @@ function firstRollDiceLabel(action: ActorAction | null | undefined, fallbackLabe
   const label = override || fallbackLabel;
 
   // Dice+ labels are safest when they stay compact and do not include punctuation-heavy weapon names.
-  return label.replace(/[â€“â€”]/g, "-").replace(/[^a-zA-Z0-9 +_/-]/g, "").trim() || fallbackLabel;
+  return label.replace(/[–—]/g, "-").replace(/[^a-zA-Z0-9 +_/-]/g, "").trim() || fallbackLabel;
 }
 
 function labeledDiceFormula(formula: string, label: string) {
@@ -487,7 +487,7 @@ function formatDamageRollLabel(actionLabel: string, damageLabel: string, isCritD
     return `${actionLabel} ${damageLabel}`;
   }
 
-  return `CRIT! ${formatCritThresholdLabel(critThreshold)} â€” ${actionLabel} ${damageLabel}`;
+  return `CRIT! ${formatCritThresholdLabel(critThreshold)} — ${actionLabel} ${damageLabel}`;
 }
 
 function additiveShorthandForEffect(effect: ArmedEffect) {
@@ -2057,7 +2057,7 @@ export function ActorCard({
                   not here (the chip is re-derived from the readied state). */}
               {!effect.id.startsWith("bond:") && !effect.id.startsWith("additive:") && (
                 <button type="button" onClick={() => clearArmedEffect(effect.id)} aria-label={`Clear ${effect.label}`}>
-                  Ã—
+                  ✕
                 </button>
               )}
             </span>
@@ -2089,7 +2089,7 @@ export function ActorCard({
             </div>
             <div className="session-counter-controls">
               <button type="button" onClick={() => handleAdjustSessionCounter(counter.id, -1)}>
-                âˆ’
+                −
               </button>
               <button type="button" onClick={() => handleAdjustSessionCounter(counter.id, 1)}>
                 +
@@ -2176,7 +2176,7 @@ export function ActorCard({
                   </div>
                   <div className="compact-debuff-controls">
                     <button type="button" onClick={() => handleAdjustStatusTracker(id, -1)}>
-                      âˆ’
+                      −
                     </button>
                     <button type="button" onClick={() => handleAdjustStatusTracker(id, 1)}>
                       +
@@ -2781,7 +2781,7 @@ export function ActorCard({
     const naturalText = typeof committedRoll.naturalRoll === "number" ? `Nat ${committedRoll.naturalRoll}` : "Natural 1";
     const resultText = formatCommittedRollTableResult();
 
-    return `${actor.name} rolled ${naturalText} â€” simple miss for ${committedRoll.actionLabel}.${resultText} No critical-failure chart used tonight. Marked used until reset.`;
+    return `${actor.name} rolled ${naturalText} — simple miss for ${committedRoll.actionLabel}.${resultText} No critical-failure chart used tonight. Marked used until reset.`;
   }
 
   function handleHoldCommittedRollResult(result: string) {
@@ -2797,7 +2797,7 @@ export function ActorCard({
       actionName: "Roll Result Held",
       tabId: "system",
       message: committedRoll.isCriticalFailure
-        ? `${actor.name} holds ${committedRoll.actionLabel} roll: ${trimmedResult} â€” Nat 1 will resolve as simple miss tonight.`
+        ? `${actor.name} holds ${committedRoll.actionLabel} roll: ${trimmedResult} — Nat 1 will resolve as simple miss tonight.`
         : `${actor.name} holds roll result for ${committedRoll.actionLabel}: ${trimmedResult}.`,
     });
   }
