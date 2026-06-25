@@ -2977,7 +2977,10 @@ export function ActorCard({
       })
       .map(({ effect, resolvedFormula }) => {
         const baseFormula = normalizeRollFormula(resolvedFormula);
-        const formula = formatAdditiveFormulaForDamage(resolvedFormula, isCritDamage);
+        // Bonds never crit — their rider dice are not doubled on a critical hit
+        // (table ruling). Other riders (rage, focus, fighting styles) still double.
+        const applyCrit = isCritDamage && !effect.id.startsWith("bond:");
+        const formula = formatAdditiveFormulaForDamage(resolvedFormula, applyCrit);
 
         return {
           id: effect.id,
@@ -2985,7 +2988,7 @@ export function ActorCard({
           shorthand: additiveShorthandForEffect(effect),
           baseFormula,
           formula,
-          critAdjusted: isCritDamage && Boolean(baseFormula) && formula !== baseFormula,
+          critAdjusted: applyCrit && Boolean(baseFormula) && formula !== baseFormula,
           persistent: isPersistentDamageAdditive(effect),
         };
       });
