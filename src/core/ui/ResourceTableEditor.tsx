@@ -66,7 +66,10 @@ function actionToRow(action: ActorAction): ResourceRow {
     pool: poolMatch?.[1] ?? action.metadata?.additive ?? "",
     reset: resetMatch?.[1]?.trim() ?? action.metadata?.cost ?? "",
     resourceKind: action.metadata?.resourceKind ?? "pool",
-    note: details.replace(/Pool:[^\s·]+\s*·?\s*/g, "").replace(/Reset:[^·]+·?\s*/g, "").trim(),
+    // Strip ALL derived "Pool: …" / "Reset: …" segments (note the space after the colon,
+    // and the `g` flag) so the recovered note never re-absorbs them. This also self-heals
+    // rows whose note already accumulated duplicate "Pool: X ·" prefixes.
+    note: details.replace(/Pool:\s*[^·]*(?:·\s*)?/gi, "").replace(/Reset:\s*[^·]*(?:·\s*)?/gi, "").trim(),
     include: true,
   };
 }
