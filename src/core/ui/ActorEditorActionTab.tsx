@@ -207,7 +207,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
           value={String(draft.attackBonus ?? "")}
           onChange={v => set("attackBonus", v || undefined)}
           placeholder="1d20+@STR+@PROF"
-          showVars={["@STR","@DEX","@ATK","@PROF","@SPELL","@CHA"]}
+          showVars={["@STR","@DEX","@INT","@ATK","@PROF","@SPELL","@CHA"]}
         />
       )}
 
@@ -246,7 +246,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
             value={draft.damage ?? ""}
             onChange={v => set("damage", v || undefined)}
             placeholder="2d6+@STR"
-            showVars={["@STR","@DEX","@CON","@WIS","@CHA"]}
+            showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@SPELL"]}
           />
           {/* P-UX4 Phase 3: damage type — standard D&D defaults + Custom free text so the
               engine stays all-system, not D&D-locked. */}
@@ -281,7 +281,7 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
               value={draft.critDamage ?? ""}
               onChange={v => set("critDamage", v || undefined)}
               placeholder="4d6+@STR"
-              showVars={["@STR","@DEX"]}
+              showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@SPELL"]}
             />
           )}
         </div>

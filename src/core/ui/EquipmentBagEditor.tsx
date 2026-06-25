@@ -672,6 +672,17 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
     onChange({ equipment: newEquipment, ...(hadAtkEntry ? { main: newMain } : {}) });
   }
 
+  // Equip/unequip without removing: flips metadata.equipped so the item stays in the
+  // bag but its stat effects / AC / spell-focus bonuses stop (or resume) applying.
+  function toggleEquipped(actionId: string) {
+    const newEquipment = equippedActions.map(a =>
+      a.id === actionId
+        ? { ...a, metadata: { ...a.metadata, equipped: a.metadata?.equipped === false } }
+        : a,
+    );
+    onChange({ equipment: newEquipment });
+  }
+
   function handleCreateItem(item: EquipmentItem) {
     upsertItem(item);
     refreshLibrary();
@@ -731,11 +742,14 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
             Click "From Library" to attach existing items or "New Item" to create one.
           </p>
         ) : (
-          equippedActions.map(action => (
-            <div key={action.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#161622", borderRadius: 8, border: "1px solid #2a2a3e" }}>
+          equippedActions.map(action => {
+            const isUnequipped = action.metadata?.equipped === false;
+            return (
+            <div key={action.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#161622", borderRadius: 8, border: `1px solid ${isUnequipped ? "#3a3a1a" : "#2a2a3e"}`, opacity: isUnequipped ? 0.6 : 1 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 500 }}>{action.label}</span>
+                  {isUnequipped && <span style={{ fontSize: 10, color: "#c9a227", background: "#2a2410", padding: "1px 6px", borderRadius: 10 }}>○ Unequipped</span>}
                   {action.category && <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 10 }}>{action.category}</span>}
                   {action.hasDefinedUse && <span style={{ fontSize: 10, color: "#7b68ee" }}>● Usable</span>}
                 </div>
@@ -747,13 +761,19 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
                   )}
                 </div>
               </div>
+              <button type="button" onClick={() => toggleEquipped(action.id)}
+                style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: `1px solid ${isUnequipped ? "#2a6e2a" : "#4a4a6e"}`, borderRadius: 3, color: isUnequipped ? "#8fd98f" : "#9d8cff", cursor: "pointer" }}
+                title={isUnequipped ? "Equip — re-apply its bonuses" : "Unequip — keep the item but stop its bonuses"}>
+                {isUnequipped ? "Equip" : "Unequip"}
+              </button>
               <button type="button" onClick={() => detachItem(action.id)}
                 style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #5a3a1a", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}
-                title="Detach from actor — stays in library">
+                title="Detach from actor — removes the item (stays in library)">
                 Detach
               </button>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     );

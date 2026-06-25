@@ -80,6 +80,10 @@ export type ActorActionMetadata = {
   attackUses?: number;
   diceLabel?: string;
   initiativeBonus?: number;
+  /** Equipment-tab items only: false = carried but NOT equipped (its stat effects /
+   *  AC / spell-focus bonuses stop applying). undefined/true = equipped. Lets a player
+   *  unequip an item without removing it from the character. */
+  equipped?: boolean;
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
   /** F02 — spell slot mode: which resource pool this spell uses.

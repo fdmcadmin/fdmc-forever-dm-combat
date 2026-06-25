@@ -109,6 +109,9 @@ export function getEquippedLibraryItems(actor: Actor): EquipmentItem[] {
   const items: EquipmentItem[] = [];
 
   for (const action of equippedActions) {
+    // Carried-but-unequipped items contribute no stat effects (player toggled them off).
+    if (action.metadata?.equipped === false) continue;
+
     // ── Fast path: statEffects baked into the action at attach time (post-snapshot model) ──
     // Actor is self-contained — no library lookup needed.
     if (action.metadata?.statEffects?.length) {

@@ -1902,6 +1902,7 @@ export function ActorCard({
   // damage bonus to spell damage rolls (getDamageAdditives). Stays armed until toggled.
   function getEquippedSpellFocuses() {
     return (actor.tabs.equipment ?? [])
+      .filter(a => a.metadata?.equipped !== false)
       .filter(a => a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim())
       .map(a => ({
         id: a.id.replace(/^equip-/, ""),
