@@ -729,8 +729,20 @@ export default function App() {
     counters,
     consumeSpellSlot,
     consumeNamedResource,
+    spendResource,
     resetActorResources,
   } = useResourceCounterState(isDmMode ? dmActors : playerActors);
+
+  // Spend a variable amount from a pool (Lay on Hands etc.) and log it. Healing is
+  // applied at the table verbally — we only deduct the points here.
+  function handleSpendResource(actorId: string, actorName: string, resourceActionId: string, amount: number) {
+    const r = spendResource(actorId, resourceActionId, amount);
+    if (r.outcome === "spent") {
+      addEntry({ actorName, actionName: r.label ?? "Resource", tabId: "resources", message: `${actorName} spends ${amount} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` });
+    } else {
+      addEntry({ actorName, actionName: r.label ?? "Resource", tabId: "resources", message: `⚠ ${actorName} has nothing left in ${r.label ?? "that pool"}.` });
+    }
+  }
 
   // ── Combat log ────────────────────────────────────────────────────────────
   const { entries: logEntries, addEntry, removePendingEntries, clearEntries } = useCombatLog();
@@ -2842,6 +2854,7 @@ export default function App() {
         onResetStatusTracker={(trackerId) => resetActorTracker(actorToShow, trackerId)}
         onResetAllActorStatuses={() => resetActorStatuses(actorToShow)}
         resourceCounters={counters[actorToShow.id]}
+        onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
         gold={roomLiveState.actorLiveState[actorToShow.id]?.gold}
         onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
         onLongRest={() => { resetActorResources(actorToShow.id, "long"); const m = actorToShow.stats.hp.max; void setActorHp(actorToShow.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
@@ -3170,6 +3183,7 @@ export default function App() {
                 onResetStatusTracker={(trackerId) => resetActorTracker(focusedActor, trackerId)}
                 onResetAllActorStatuses={() => resetActorStatuses(focusedActor)}
                 resourceCounters={counters[focusedActorId]}
+                onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
                 gold={roomLiveState.actorLiveState[focusedActorId]?.gold}
                 onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
                 onLongRest={() => { resetActorResources(focusedActorId, "long"); const m = focusedActor.stats.hp.max; void setActorHp(focusedActorId, { current: m, max: m, temp: 0 }); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}

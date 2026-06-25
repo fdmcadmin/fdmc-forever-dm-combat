@@ -83,7 +83,7 @@ function ActorPopout() {
   const { getActorNotes, addActorNote, deleteActorNote } = useActorNotesState(actorList);
   const { getActorStatus, setActorTracker, resetActorTracker, resetActorStatuses } = useActorStatusState(actorList);
   const { addEntry, removePendingEntries } = useCombatLog();
-  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource } = useResourceCounterState(actorList);
+  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, spendResource } = useResourceCounterState(actorList);
   const { status: diceBridgeStatus, lastEvent: diceBridgeLastEvent, sendRollRequest, sendDicePlusRollRequest, sendMockRollResult } = useOwlbearDiceBridge();
 
   if (!actor) {
@@ -144,6 +144,10 @@ function ActorPopout() {
         onResetStatusTracker={(trackerId) => resetActorTracker(actor, trackerId)}
         onResetAllActorStatuses={() => resetActorStatuses(actor)}
         resourceCounters={counters[actor.id]}
+        onSpendResource={(rid, amt) => {
+          const r = spendResource(actor.id, rid, amt);
+          addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} spends ${amt} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` : `⚠ ${actor.name} has nothing left in ${r.label ?? "that pool"}.` });
+        }}
         isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actor.id}
         onShortRest={() => { resetActorResources(actor.id, "short"); addEntry({ actorName: actor.name, actionName: "Short Rest", tabId: "system", message: `${actor.name} takes a Short Rest.` }); }}
         onLongRest={() => { resetActorResources(actor.id, "long"); const m = actor.stats.hp.max; void setActorHp(actor.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}

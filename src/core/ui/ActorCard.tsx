@@ -87,6 +87,8 @@ type ActorCardProps = {
   combatRound?: number;
   /** Resource counters — remaining count per resource action ID */
   resourceCounters?: Record<string, number>;
+  /** Spend a variable amount from a pool resource (Lay on Hands, Ki, …). */
+  onSpendResource?: (resourceActionId: string, amount: number) => void;
   /** Character gold (gp) from live state — shown as a chip in the header. */
   gold?: number;
   onShortRest?: () => void;
@@ -605,6 +607,7 @@ export function ActorCard({
   isActiveTurn = true,
   combatRound,
   resourceCounters,
+  onSpendResource,
   gold,
   onShortRest,
   onLongRest,
@@ -626,6 +629,8 @@ export function ActorCard({
   const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
   // one-off additive die that rides the NEXT damage roll, then clears
   const [pendingDamageDie, setPendingDamageDie] = useState<string | null>(null);
+  // per-pool "spend N" input value (Lay on Hands etc.), keyed by resource action id
+  const [resourceSpend, setResourceSpend] = useState<Record<string, string>>({});
   const [additiveMenuOpen, setAdditiveMenuOpen] = useState(false);
   // adv / normal / disadv for the player's own d20 rolls (attacks + ability checks).
   const [rollMode, setRollMode] = useState<RollMode>("normal");
@@ -3498,11 +3503,37 @@ export function ActorCard({
                       )}
                       <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>({kind})</span>
                     </div>
-                    {hasCounter && (
-                      <span style={{ fontSize: 12, color: remaining === 0 ? "#555" : remaining <= max * 0.5 ? "#e07b39" : "#4caf50", fontVariantNumeric: "tabular-nums" }}>
-                        {remaining}/{max}
-                      </span>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {/* Spend N from a points pool (Lay on Hands, Ki, …) — deduct only, no auto-heal */}
+                      {hasCounter && onSpendResource && (kind === "pool" || kind === "counter") && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          <input
+                            type="number" min={1} max={remaining} inputMode="numeric"
+                            value={resourceSpend[action.id] ?? ""}
+                            onChange={e => setResourceSpend(s => ({ ...s, [action.id]: e.target.value }))}
+                            placeholder="N"
+                            style={{ width: 40, padding: "1px 4px", fontSize: 11, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd", textAlign: "center" }}
+                          />
+                          <button type="button"
+                            disabled={remaining <= 0}
+                            onClick={() => {
+                              const n = Number.parseInt(resourceSpend[action.id] ?? "", 10);
+                              if (!Number.isFinite(n) || n <= 0) return;
+                              onSpendResource(action.id, n);
+                              setResourceSpend(s => ({ ...s, [action.id]: "" }));
+                            }}
+                            style={{ fontSize: 10, padding: "2px 7px", background: remaining > 0 ? "#2a2a4e" : "#1a1a1a", border: "1px solid #7b68ee55", borderRadius: 3, color: remaining > 0 ? "#9d8cff" : "#555", cursor: remaining > 0 ? "pointer" : "default" }}
+                            title="Spend this many points from the pool">
+                            Spend
+                          </button>
+                        </span>
+                      )}
+                      {hasCounter && (
+                        <span style={{ fontSize: 12, color: remaining === 0 ? "#555" : remaining <= max * 0.5 ? "#e07b39" : "#4caf50", fontVariantNumeric: "tabular-nums" }}>
+                          {remaining}/{max}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

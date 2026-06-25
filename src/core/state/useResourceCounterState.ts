@@ -146,6 +146,25 @@ export function useResourceCounterState(actors: Actor[]) {
     broadcastAndPersist(next);
   }, []);
 
+  // ── Spend a variable amount from a pool (Lay on Hands, Ki points, etc.) ────
+  const spendResource = useCallback((actorId: string, resourceActionId: string, amount: number): ConsumeResult => {
+    const actor = actors.find(a => a.id === actorId);
+    const action = actor?.tabs.resources?.find(r => r.id === resourceActionId);
+    const label = action?.label;
+    const max = action ? getMaxFromAction(action) : undefined;
+    const current = stateRef.current[actorId]?.[resourceActionId] ?? max ?? 0;
+    const spend = Math.max(0, Math.floor(amount));
+    if (spend <= 0) return { outcome: "empty", label, remaining: current, max };
+    if (current <= 0) return { outcome: "empty", label, remaining: 0, max };
+    const applied = Math.min(spend, current);
+    const next = {
+      ...stateRef.current,
+      [actorId]: { ...(stateRef.current[actorId] ?? {}), [resourceActionId]: current - applied },
+    };
+    broadcastAndPersist(next);
+    return { outcome: "spent", label, remaining: current - applied, max };
+  }, [actors]);
+
   // ── Reset resources by reset type ─────────────────────────────────────────
 
   const resetActorResources = useCallback((actorId: string, restType: "short" | "long") => {
@@ -253,6 +272,7 @@ export function useResourceCounterState(actors: Actor[]) {
     getRemaining,
     getMax,
     decrementResource,
+    spendResource,
     resetActorResources,
     findResourceByLabel,
     consumeSpellSlot,
