@@ -443,6 +443,31 @@ function hasRollableFormula(rawFormula?: string) {
   return /\d+d\d+/i.test(rawFormula ?? "") || /^[+-]?\d+$/.test((rawFormula ?? "").trim());
 }
 
+// Collapse the flat +N/-N modifiers in a formula into one signed number, keeping dice
+// terms intact: "1d20+2+3+1+2" -> "1d20+8", "1d6+3+1+2" -> "1d6+6". Skips anything with
+// * / ( ) and bails (returns input) unless the whole string is accounted for, so it never
+// mangles an unexpected formula.
+function condenseFlatModifiers(formula: string): string {
+  if (!formula || /[*/()]/.test(formula)) return formula;
+  const re = /([+-]?)(\d*d\d+(?:k[hl]\d+)?|\d+)/gi;
+  const diceTerms: string[] = [];
+  let flatSum = 0;
+  let consumed = "";
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(formula)) !== null) {
+    consumed += m[0];
+    const neg = m[1] === "-";
+    if (/d/i.test(m[2])) diceTerms.push((neg ? "-" : "") + m[2]);
+    else flatSum += (neg ? -1 : 1) * Number.parseInt(m[2], 10);
+  }
+  if (consumed.replace(/\s/g, "") !== formula.replace(/\s/g, "")) return formula;
+  let out = diceTerms.join("+").replace(/\+-/g, "-");
+  if (flatSum !== 0 || diceTerms.length === 0) {
+    out += out && flatSum >= 0 ? `+${flatSum}` : `${flatSum}`;
+  }
+  return out || formula;
+}
+
 function combineRollFormulas(formulas: string[]) {
   const normalized = formulas
     .map((formula) => normalizeRollFormula(formula))
@@ -452,7 +477,7 @@ function combineRollFormulas(formulas: string[]) {
     return "";
   }
 
-  return normalized.join("+").replace(/\+\+/g, "+").replace(/\+-/g, "-");
+  return condenseFlatModifiers(normalized.join("+").replace(/\+\+/g, "+").replace(/\+-/g, "-"));
 }
 
 function doubleDiceTerms(rawFormula?: string) {
@@ -485,7 +510,7 @@ function normalizeFirstRollFormula(rawFormula?: string) {
   const normalized = normalizeRollFormula(rawFormula);
 
   if (normalized) {
-    return normalized;
+    return condenseFlatModifiers(normalized);
   }
 
   const trimmed = rawFormula?.trim() ?? "";
@@ -1952,6 +1977,16 @@ export function ActorCard({
     return total >= 0 ? `+${total}` : `${total}`;
   }
 
+  // Render-time chip text — always rebuilt from the effect's formulas so @vars resolve and
+  // flat bonuses condense (e.g. "atk +6"), even for effects armed before a fix or with a
+  // stale stored label. Falls back to the stored label when there are no formulas.
+  function armedChipLabel(effect: ArmedEffect): string {
+    const parts: string[] = [];
+    if (effect.attackFormula?.trim()) parts.push(`atk ${formatBonusForChip(effect.attackFormula)}`);
+    if (effect.formula?.trim()) parts.push(`dmg ${formatBonusForChip(effect.formula)}`);
+    return parts.length ? parts.join(" · ") : effect.label;
+  }
+
   function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string }) {
     const effectId = `focus:${focus.id}`;
     if (isSpellFocusArmed(focus.id)) {
@@ -2088,7 +2123,7 @@ export function ActorCard({
         <div className="armed-effect-chip-list">
           {visibleEffects.map((effect) => (
             <span className={`armed-effect-chip ${effect.id === "rage-active" || effect.id === "rage-pending" ? "rage-armed" : ""}`} key={effect.id} title={effect.details}>
-              <strong>{effect.source}</strong> · {effect.label}
+              <strong>{effect.source}</strong> · {armedChipLabel(effect)}
               {/* Bonds & additives are readied riders — clear them by un-readying the action,
                   not here (the chip is re-derived from the readied state). */}
               {!effect.id.startsWith("bond:") && !effect.id.startsWith("additive:") && (
