@@ -3447,7 +3447,7 @@ export function ActorCard({
             actorName={actor.name}
             activeTab={activeTab}
             actions={activeActions}
-            resolveFormula={(f) => resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status)}
+            resolveFormula={(f) => condenseFlatModifiers(resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status))}
             actionState={actionState}
             concentration={concentration}
             committedRoll={committedRoll}
@@ -3513,7 +3513,7 @@ export function ActorCard({
             actorName={actor.name}
             activeTab={activeTab}
             actions={activeActions}
-            resolveFormula={(f) => resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status)}
+            resolveFormula={(f) => condenseFlatModifiers(resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status))}
             actionState={actionState}
             concentration={concentration}
             committedRoll={committedRoll}
@@ -3531,7 +3531,7 @@ export function ActorCard({
           actorName={actor.name}
           activeTab={activeTab}
           actions={activeActions}
-          resolveFormula={(f) => resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status)}
+          resolveFormula={(f) => condenseFlatModifiers(resolveFormulaVars(f, actor, deriveActorStats(actor, undefined, status), status))}
           actionState={actionState}
           concentration={concentration}
           committedRoll={committedRoll}
