@@ -278,8 +278,14 @@ function isRangedAttackAction(action?: ActorAction | null) {
     return false;
   }
 
-  const searchableText = `${action.label} ${action.description ?? ""} ${action.metadata?.details ?? ""} ${action.metadata?.range ?? ""} ${(action.tags ?? []).join(" ")}`;
-  return /\b(?:ranged|range|longbow|shortbow|crossbow|revolver|firearm|pistol|rifle|shot)\b/i.test(searchableText);
+  const range = action.metadata?.range ?? "";
+  // A "normal/long" range like "150/600 ft" or "20/60" means a ranged/thrown weapon.
+  if (/\d+\s*\/\s*\d+/.test(range)) {
+    return true;
+  }
+
+  const searchableText = `${action.label} ${action.description ?? ""} ${action.metadata?.details ?? ""} ${range} ${(action.tags ?? []).join(" ")}`;
+  return /\b(?:ranged|range|bow|longbow|shortbow|crossbow|sling|dart|javelin|blowgun|revolver|firearm|pistol|rifle|shot|thrown)\b/i.test(searchableText);
 }
 
 // Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
@@ -1970,9 +1976,9 @@ export function ActorCard({
                 onClick={() => toggleSpellFocus(f)}
                 className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}
                 style={{ cursor: "pointer", opacity: armed ? 1 : 0.65 }}
-                title={`${f.label}${f.attack ? ` · ${f.attack} to spell attack` : ""}${f.damage ? ` · ${f.damage} to spell damage` : ""} (applies to spell rolls only)`}
+                title={`${f.label}${f.attack ? ` · ${formatBonusForChip(f.attack)} to spell attack` : ""}${f.damage ? ` · ${formatBonusForChip(f.damage)} to spell damage` : ""} (applies to spell rolls only)`}
               >
-                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${f.attack}` : ""}{f.damage ? ` dmg ${f.damage}` : ""}
+                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${formatBonusForChip(f.attack)}` : ""}{f.damage ? ` dmg ${formatBonusForChip(f.damage)}` : ""}
               </button>
             );
           })}
@@ -2036,7 +2042,7 @@ export function ActorCard({
         <div className="armed-effect-chip-list">
           {buffs.map(b => {
             const armed = isWeaponBuffArmed(b.id);
-            const bonusText = [b.attack ? `${b.attack} atk` : "", b.damage ? `${b.damage} dmg` : ""].filter(Boolean).join(" · ");
+            const bonusText = [b.attack ? `${formatBonusForChip(b.attack)} atk` : "", b.damage ? `${formatBonusForChip(b.damage)} dmg` : ""].filter(Boolean).join(" · ");
             return (
               <button
                 type="button"
