@@ -418,6 +418,10 @@ function normalizeRollFormula(rawFormula?: string) {
   }
 
   const cleaned = rawFormula
+    // Drop any unresolved @VAR token outright (e.g. "@DEX", "@PROF"). Without this the
+    // generic char-strip below would keep the "D" from "@DEX" and emit "1d20+D" — invalid
+    // notation. Vars are normally resolved before this runs; this is the safety net.
+    .replace(/@[A-Za-z_]+/g, "")
     .replace(/\bcrit\b.*$/i, "")
     .replace(/\bwith\s+rage\b:?/i, "")
     .replace(/\b(?:healing|piercing|slashing|bludgeoning|force|fire|cold|necrotic|psychic|radiant|acid|poison|lightning|thunder|temp(?:orary)?\s*hp|hp|damage|on\s+hit)\b/gi, " ")
@@ -2455,7 +2459,7 @@ export function ActorCard({
     const _derivedForTrigger = deriveActorStats(actor, undefined, status);
     const rawRollFormula = entry.action.metadata?.damage ?? entry.action.metadata?.additive ?? entry.action.metadata?.attack;
     const rollFormula = rawRollFormula
-      ? resolveFormulaVars(normalizeFirstRollFormula(rawRollFormula) ?? rawRollFormula, actor, _derivedForTrigger, status)
+      ? normalizeFirstRollFormula(resolveFormulaVars(rawRollFormula, actor, _derivedForTrigger, status))
       : rawRollFormula;
     const normalizedFormula = rollFormula && hasRollableFormula(rollFormula) ? combineRollFormulas([rollFormula]) : "";
 
@@ -2545,7 +2549,7 @@ export function ActorCard({
     }
 
     const _derivedForPrime = deriveActorStats(actor, undefined, status);
-    const resolvePrimeFormula = (f?: string) => f ? resolveFormulaVars(normalizeFirstRollFormula(f) ?? f, actor, _derivedForPrime, status) : f;
+    const resolvePrimeFormula = (f?: string) => f ? normalizeFirstRollFormula(resolveFormulaVars(f, actor, _derivedForPrime, status)) : f;
 
     const resolvedCandidate: ReadiedRollCandidate = {
       ...candidate,
@@ -2607,7 +2611,7 @@ export function ActorCard({
 
     // Resolve @VARIABLE tokens using current derived stats (includes equipment + drain)
     const _derivedForRoll = deriveActorStats(actor, undefined, status);
-    const resolveFormula = (f?: string) => f ? resolveFormulaVars(normalizeFirstRollFormula(f) ?? f, actor, _derivedForRoll, status) : f;
+    const resolveFormula = (f?: string) => f ? normalizeFirstRollFormula(resolveFormulaVars(f, actor, _derivedForRoll, status)) : f;
 
     const resolvedCandidate: ReadiedRollCandidate = {
       ...candidate,
