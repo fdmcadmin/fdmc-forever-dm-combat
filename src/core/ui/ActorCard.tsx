@@ -2072,18 +2072,20 @@ export function ActorCard({
   // gated to non-spell). Persistent until toggled off. Slot/once-per-turn/temp-HP are
   // handled by the player (assisted, not auto).
   type WeaponBuffOption = { id: string; label: string; attack?: string; damage?: string; appliesTo: "ranged" | "melee" | "weapon" };
+  // Standing toggles = PASSIVE fighting styles only (Archery, GWF, Dueling). Activated
+  // buffs (weaponBuffDamage — Hunter's Mark, Channel Divinity damage, …) are NOT standing
+  // toggles; they arm their chip when the action is cast/used (see handleUseAction).
   function getWeaponBuffs(): WeaponBuffOption[] {
     return Object.values(actor.tabs).flat()
-      .filter(a => a.metadata?.weaponBuffDamage?.trim() || a.metadata?.combatStyleAttack?.trim() || a.metadata?.combatStyleDamage?.trim())
+      .filter(a => a.metadata?.combatStyleAttack?.trim() || a.metadata?.combatStyleDamage?.trim())
       .map(a => {
         const m = a.metadata!;
-        const isStyle = Boolean(m.combatStyleAttack?.trim() || m.combatStyleDamage?.trim());
         return {
           id: a.id,
           label: a.label,
-          attack: isStyle ? m.combatStyleAttack?.trim() || undefined : undefined,
-          damage: isStyle ? (m.combatStyleDamage?.trim() || undefined) : (m.weaponBuffDamage as string).trim(),
-          appliesTo: (isStyle ? m.combatStyleTarget : undefined) ?? "weapon",
+          attack: m.combatStyleAttack?.trim() || undefined,
+          damage: m.combatStyleDamage?.trim() || undefined,
+          appliesTo: m.combatStyleTarget ?? "weapon",
         };
       });
   }
@@ -2374,6 +2376,27 @@ export function ActorCard({
     if (action.id === "rage" || action.label.toLowerCase() === "rage") {
       handleUseRage();
       return;
+    }
+
+    // Activated weapon buff (Hunter's Mark, Channel Divinity damage, …): casting/using
+    // the action arms a PERSISTENT damage chip that rides weapon attacks until it ends
+    // (clear ✕ / End Combat). Not a standing toggle. Continues the normal use flow below.
+    const buffDamage = action.metadata?.weaponBuffDamage?.trim();
+    if (buffDamage) {
+      upsertArmedEffect({
+        id: `buff:${action.id}`,
+        label: `dmg ${formatBonusForChip(buffDamage)}`,
+        details: `${action.label} — adds ${formatBonusForChip(buffDamage)} to weapon attacks while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
+        source: action.label,
+        formula: buffDamage,
+        appliesTo: "weapon",
+      });
+      onLog({
+        actorName: actor.name,
+        actionName: action.label,
+        tabId: "system",
+        message: `${actor.name} activates ${action.label} — ${formatBonusForChip(buffDamage)} to weapon attacks until it ends.`,
+      });
     }
 
     if (action.logMode === "silent") {
