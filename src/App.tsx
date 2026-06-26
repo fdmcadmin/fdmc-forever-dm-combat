@@ -56,7 +56,7 @@ import { initiativeRollFormula, getActorInitiativeModifier } from "./core/state/
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
 import { getToolPanelTitle, type ToolPanelId } from "./core/runtime-shell/toolPanelTypes";
-import { ActorCard } from "./core/ui/ActorCard";
+import { ActorCard, FDMC_COMBAT_END_CHANNEL } from "./core/ui/ActorCard";
 import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
@@ -1413,6 +1413,10 @@ export default function App() {
   function handleEndCombat() {
     const next = patchCombat(roomLiveState, { phase: "setup", activeActorId: null, round: 1 });
     void commitRoomState(next);
+    // Tell every card to drop armed effects + end active rage (toggles auto-clear at fight end).
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(FDMC_COMBAT_END_CHANNEL, { type: "fdmc:combat-end" }, { destination: "ALL" }).catch(() => undefined);
+    }
     addEntry({ actorName: "System", actionName: "Combat End", tabId: "system", message: "Combat ended. Seats and HP preserved." });
   }
 

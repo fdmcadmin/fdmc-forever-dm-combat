@@ -177,6 +177,10 @@ type AttackUseState = {
 
 const ACTOR_CARD_SESSION_STORAGE_KEY = "fdm:actor-card-session-state:v1";
 const ACTOR_CARD_SESSION_CHANNEL = "forever-dm-combat:actor-card-session-state:v1";
+// Broadcast by App's End Combat — every card clears its armed effects (rage / spell
+// focuses / weapon buffs) and ends any active rage, so toggles persist through the
+// whole fight and auto-clear when combat ends.
+export const FDMC_COMBAT_END_CHANNEL = "forever-dm-combat:combat-end:v1";
 
 type ActorCardSessionSnapshot = {
   resolvedReadiedKeysByActorId?: Record<string, string[]>;
@@ -741,6 +745,30 @@ export function ActorCard({
       suppressNextSessionBroadcastRef.current = true;
       writeActorCardSessionSnapshot(event.data.snapshot);
       applyActorCardSessionSnapshot(event.data.snapshot);
+    });
+  }, []);
+
+  // End Combat → drop every armed effect (rage / spell focus / weapon buff) and end any
+  // active rage (keeping remaining uses). Lets a toggle persist all fight then auto-clear.
+  useEffect(() => {
+    if (!OBR.isAvailable) {
+      return;
+    }
+    return OBR.broadcast.onMessage(FDMC_COMBAT_END_CHANNEL, () => {
+      setArmedEffectsByActorId({});
+      setSessionCountersByActorId((current) => {
+        const next: Record<string, Partial<Record<SessionCounterId, SessionCounter>>> = {};
+        for (const aid of Object.keys(current)) {
+          const counters = current[aid] ?? {};
+          const updated: Partial<Record<SessionCounterId, SessionCounter>> = {};
+          (Object.keys(counters) as SessionCounterId[]).forEach((cid) => {
+            const c = counters[cid];
+            if (c) updated[cid] = { ...c, active: false };
+          });
+          next[aid] = updated;
+        }
+        return next;
+      });
     });
   }, []);
 
