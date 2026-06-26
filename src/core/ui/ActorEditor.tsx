@@ -562,13 +562,14 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             mainActions={tabsDraft.main ?? []}
             bonusActions={tabsDraft.bonus ?? []}
             onChange={({ main, bonus }) => setTabsDraft(d => ({ ...d, main, bonus }))}
+            resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)}
           />
         )}
         {activeTab === "features" && (
-          <ActorEditorActionTab tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} />
+          <ActorEditorActionTab tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "bonds" && (
-          <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} />
+          <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "spells" && (
           <SpellTableEditor
@@ -583,7 +584,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "feats" && (
-          <ActorEditorActionTab tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} />
+          <ActorEditorActionTab tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "equipment" && (
           <EquipmentBagEditor

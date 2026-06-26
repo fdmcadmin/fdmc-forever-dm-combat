@@ -109,9 +109,11 @@ type ActionFormProps = {
   initial?: ActorAction;
   onSave: (action: ActorAction) => void;
   onCancel: () => void;
+  /** The actor's resource labels — populates the "Spends resource" picker. */
+  resourceLabels?: string[];
 };
 
-function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
+function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: ActionFormProps) {
   const [draft, setDraft] = useState<PcActionDraft>(() =>
     initial ? actionToEditorDraft(initial, tabId) : {
       name: "",
@@ -331,6 +333,20 @@ function ActionForm({ tabId, initial, onSave, onCancel }: ActionFormProps) {
         </div>
       )}
 
+      {/* Spends resource — tag this action to a pool so using it deducts a charge
+          (e.g. Vow of Enmity -> Channel Divinity). Spells use the slot level instead. */}
+      {draft.tab !== "spell" && resourceLabels.length > 0 && (
+        <label style={{ fontSize: 12 }}>
+          Spends resource <span style={{ color: "#555", fontSize: 10 }}>(deducts one use when this action is used)</span>
+          <select value={draft.slotCost ?? ""} onChange={e => set("slotCost", e.target.value || undefined)}
+            style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+            <option value="">— none —</option>
+            {draft.slotCost && !resourceLabels.includes(draft.slotCost) && <option value={draft.slotCost}>{draft.slotCost} (current)</option>}
+            {resourceLabels.map(label => <option key={label} value={label}>{label}</option>)}
+          </select>
+        </label>
+      )}
+
       {/* Fighting style toggle (Archery / Two-Weapon / Great Weapon). Shows as a clickable
           toggle on the card; while on, adds the bonus to matching weapon attacks. */}
       {(tabId === "feats" || tabId === "features" || draft.actionCost === "passive") && (
@@ -377,9 +393,10 @@ type ActorEditorActionTabProps = {
   tabId: TabId;
   actions: ActorAction[];
   onChange: (actions: ActorAction[]) => void;
+  resourceLabels?: string[];
 };
 
-export function ActorEditorActionTab({ tabId, actions, onChange }: ActorEditorActionTabProps) {
+export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels }: ActorEditorActionTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
 
@@ -433,6 +450,7 @@ export function ActorEditorActionTab({ tabId, actions, onChange }: ActorEditorAc
               initial={action}
               onSave={handleSaveEdit}
               onCancel={() => setEditingId(null)}
+              resourceLabels={resourceLabels}
             />
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
@@ -455,6 +473,7 @@ export function ActorEditorActionTab({ tabId, actions, onChange }: ActorEditorAc
           tabId={tabId}
           onSave={handleAddNew}
           onCancel={() => setAddingNew(false)}
+          resourceLabels={resourceLabels}
         />
       )}
 
@@ -500,9 +519,10 @@ type CombatActionsTabProps = {
   mainActions: ActorAction[];
   bonusActions: ActorAction[];
   onChange: (next: { main: ActorAction[]; bonus: ActorAction[] }) => void;
+  resourceLabels?: string[];
 };
 
-export function CombatActionsTab({ mainActions, bonusActions, onChange }: CombatActionsTabProps) {
+export function CombatActionsTab({ mainActions, bonusActions, onChange, resourceLabels }: CombatActionsTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
 
@@ -587,6 +607,7 @@ export function CombatActionsTab({ mainActions, bonusActions, onChange }: Combat
                 initial={action}
                 onSave={handleSaveEdit}
                 onCancel={() => setEditingId(null)}
+                resourceLabels={resourceLabels}
               />
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
@@ -611,6 +632,7 @@ export function CombatActionsTab({ mainActions, bonusActions, onChange }: Combat
           tabId="main"
           onSave={handleAddNew}
           onCancel={() => setAddingNew(false)}
+          resourceLabels={resourceLabels}
         />
       )}
 
