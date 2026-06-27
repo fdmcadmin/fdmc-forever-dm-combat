@@ -99,6 +99,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     combatStyleAttack: action.metadata?.combatStyleAttack,
     combatStyleDamage: action.metadata?.combatStyleDamage,
     combatStyleTarget: action.metadata?.combatStyleTarget,
+    weaponBuffDamage: action.metadata?.weaponBuffDamage,
   };
 }
 
@@ -344,6 +345,17 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
             {draft.slotCost && !resourceLabels.includes(draft.slotCost) && <option value={draft.slotCost}>{draft.slotCost} (current)</option>}
             {resourceLabels.map(label => <option key={label} value={label}>{label}</option>)}
           </select>
+        </label>
+      )}
+
+      {/* Activated weapon buff — using/casting this action (a Bonus Action, feature, etc.)
+          arms a PERSISTENT chip that adds this to weapon attacks until it ends. Use for
+          Rage, Hunter's Mark, Channel Divinity damage. Pair with "Spends resource" above so
+          the pool counts down on use; it auto-clears at End Combat. Numbers/dice only. */}
+      {draft.tab !== "spell" && (
+        <label style={{ fontSize: 12 }}>
+          Weapon buff (activated) <span style={{ color: "#555", fontSize: 10 }}>— arms a persistent bonus on weapon attacks when used (Rage, Hunter's Mark)</span>
+          <input type="text" value={draft.weaponBuffDamage ?? ""} onChange={e => set("weaponBuffDamage", e.target.value || undefined)} placeholder="+2 or +1d6" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
         </label>
       )}
 

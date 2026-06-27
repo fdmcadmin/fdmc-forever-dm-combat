@@ -157,10 +157,13 @@ export function actionFromEditorDraft(draft: PcActionDraft, existingAction?: Act
   const statEffects = [...preservedEffects, ...acEffect];
 
   // Fighting style toggle (Archery / TWF / GWF) — bonus to matching weapon attacks.
+  // weaponBuffDamage = activated buff (Rage, Hunter's Mark): using the action arms a
+  // persistent chip; it is NOT a standing toggle.
   const combatStyle = {
     ...(draft.combatStyleAttack?.trim() ? { combatStyleAttack: draft.combatStyleAttack.trim() } : {}),
     ...(draft.combatStyleDamage?.trim() ? { combatStyleDamage: draft.combatStyleDamage.trim() } : {}),
     ...(draft.combatStyleTarget ? { combatStyleTarget: draft.combatStyleTarget } : {}),
+    ...(draft.weaponBuffDamage?.trim() ? { weaponBuffDamage: draft.weaponBuffDamage.trim() } : {}),
   };
 
   const withEffects: ActorAction = (statEffects.length || Object.keys(combatStyle).length)
