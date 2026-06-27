@@ -41,7 +41,6 @@ import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonst
 import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
-import { broadcastSavePrompt } from "../state/savePrompt";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
 const DAMAGE_ADDITIVE_DICE = ["d4", "d6", "d8", "d10", "d12"] as const;
@@ -583,7 +582,6 @@ export function MonsterActorCard({
     // An attack WITH a rider save (has a roll) calls it after damage instead (handleCommit).
     if (action.save && !action.roll) {
       onSaveCall?.(action.name, action.save);
-      broadcastSavePrompt(publicName, action.name, action.save);
     }
     // adv/disadv rewrites the d20 portion of the attack roll only — damage is untouched
     let attackFormula = applyAdvantage(normalizeFormula(action.roll), rollMode);
@@ -678,7 +676,6 @@ export function MonsterActorCard({
       // Attack landed + damage rolled — now call the rider save on the target.
       if (committedRoll.saveRider) {
         onSaveCall?.(committedRoll.actionName, committedRoll.saveRider);
-        broadcastSavePrompt(publicName, committedRoll.actionName, committedRoll.saveRider);
       }
       return;
     }

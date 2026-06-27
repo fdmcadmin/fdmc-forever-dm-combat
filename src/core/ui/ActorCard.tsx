@@ -36,7 +36,6 @@ import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
 import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
-import { broadcastSavePrompt } from "../state/savePrompt";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
@@ -93,6 +92,8 @@ type ActorCardProps = {
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction) => void;
+  /** A save-forcing action fired — the host decides targets (picker) and announces it. */
+  onSaveCall?: (actionName: string, save: string) => void;
   /** Character gold (gp) from live state — shown as a chip in the header. */
   gold?: number;
   onShortRest?: () => void;
@@ -630,6 +631,7 @@ export function ActorCard({
   resourceCounters,
   onSpendResource,
   onConsumeActionResources,
+  onSaveCall,
   gold,
   onShortRest,
   onLongRest,
@@ -2805,16 +2807,16 @@ export function ActorCard({
 
     if (resolvedCandidate.outcomeMode === "dc-check") {
       const saveCall = resolvedCandidate.saveDc?.trim();
-      if (saveCall) broadcastSavePrompt(actor.name, resolvedCandidate.actionLabel, saveCall);
-      onLog({
-        actorName: actor.name,
-        actionName: "Save Call",
-        tabId: "system",
-        tone: "combat",
-        message: saveCall
-          ? `⚠ SAVE — ${actor.name}'s ${resolvedCandidate.actionLabel}: each target must make a ${saveCall} saving throw. (Monsters roll on the card's "Checks & Saves"; players roll their matching save.) Then ${actor.name} marks Applies / No Effect.`
-          : `⚠ ${actor.name}'s ${resolvedCandidate.actionLabel} forces a save. Targets roll, then ${actor.name} marks Applies / No Effect.`,
-      });
+      if (saveCall) {
+        onSaveCall?.(resolvedCandidate.actionLabel, saveCall);
+      } else {
+        onLog({
+          actorName: actor.name,
+          actionName: resolvedCandidate.actionLabel,
+          tabId: "system",
+          message: `${actor.name} uses ${resolvedCandidate.actionLabel} — choose Applies / No Effect.`,
+        });
+      }
     }
 
     if (!canSendRollToDicePlus) {
@@ -3224,14 +3226,7 @@ export function ActorCard({
     // only fire on the primary damage to avoid a double prompt.
     const riderSave = committedRoll.saveDc?.trim();
     if (riderSave && committedRoll.outcomeMode === "attack-roll" && damageChoice !== "crit") {
-      broadcastSavePrompt(actor.name, committedRoll.actionLabel, riderSave);
-      onLog({
-        actorName: actor.name,
-        actionName: "Save Call",
-        tabId: "system",
-        tone: "combat",
-        message: `⚠ SAVE — ${committedRoll.actionLabel} hit: target must make a ${riderSave} saving throw.`,
-      });
+      onSaveCall?.(committedRoll.actionLabel, riderSave);
     }
 
     if (sent) {

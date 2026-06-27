@@ -58,6 +58,7 @@ import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
 import { getToolPanelTitle, type ToolPanelId } from "./core/runtime-shell/toolPanelTypes";
 import { ActorCard, FDMC_COMBAT_END_CHANNEL } from "./core/ui/ActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
+import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
@@ -1124,6 +1125,9 @@ export default function App() {
   const [convergenceSelected, setConvergenceSelected] = useState<string[]>([]);
   const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
   const [levelUpRejectionToast, setLevelUpRejectionToast] = useState<string | null>(null);
+  // A save-forcing action fired; pick which combatants must roll, then broadcast the call.
+  const [pendingSave, setPendingSave] = useState<{ source: string; action: string; save: string } | null>(null);
+  const [saveTargets, setSaveTargets] = useState<Set<string>>(new Set());
 
   // ── Player: refresh + loot delivery via seat broadcast ───────────────────
   useEffect(() => {
@@ -2453,6 +2457,46 @@ export default function App() {
       {/* ── Save-required pop-up (everyone) ── */}
       <SavePromptBanner />
 
+      {/* ── Save target picker — choose which combatants must roll, then announce ── */}
+      {pendingSave && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+          <div style={{ background: "#13131f", border: "1px solid #e0a85a", borderRadius: 10, padding: 16, width: "min(420px, 94vw)", maxHeight: "82vh", overflow: "auto" }}>
+            <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#f0c040" }}>⚠ {pendingSave.save} saving throw</p>
+            <p style={{ margin: "0 0 10px", fontSize: 12, color: "#aaa" }}>{pendingSave.source}: {pendingSave.action}. Pick who must roll.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 12 }}>
+              {allCombatants.filter(c => !c.isDead).map(c => {
+                const name = c.displayName ?? c.name;
+                return (
+                  <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 4px", cursor: "pointer", borderRadius: 4 }}>
+                    <input type="checkbox" checked={saveTargets.has(c.id)}
+                      onChange={e => setSaveTargets(prev => { const n = new Set(prev); if (e.target.checked) n.add(c.id); else n.delete(c.id); return n; })}
+                      style={{ width: 15, height: 15, accentColor: "#e0a85a", cursor: "pointer" }} />
+                    <span style={{ color: c.kind === "monster" ? "#ff8a6a" : "#9d8cff" }}>{name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" onClick={() => setSaveTargets(new Set(allCombatants.filter(c => !c.isDead).map(c => c.id)))}
+                style={{ fontSize: 12, padding: "5px 10px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#aaa", cursor: "pointer" }}>Select all</button>
+              <button type="button"
+                onClick={() => {
+                  const names = allCombatants.filter(c => saveTargets.has(c.id)).map(c => c.displayName ?? c.name);
+                  broadcastSavePrompt(pendingSave.source, pendingSave.action, pendingSave.save, names);
+                  addEntry({ actorName: pendingSave.source, actionName: "Save Call", tabId: "system", tone: "combat",
+                    message: `⚠ SAVE — ${pendingSave.source}'s ${pendingSave.action}: ${names.length ? names.join(", ") : "each target"} must make a ${pendingSave.save} saving throw.` });
+                  setPendingSave(null);
+                }}
+                style={{ flex: 1, fontSize: 13, fontWeight: 600, padding: "6px 12px", background: "#2a6e2a", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer" }}>
+                Call save{saveTargets.size > 0 ? ` (${saveTargets.size})` : " — all"}
+              </button>
+              <button type="button" onClick={() => setPendingSave(null)}
+                style={{ fontSize: 12, padding: "5px 10px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 4, color: "#c77", cursor: "pointer" }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Player loot delivery toast ── */}
       {isPlayerMode && lootToast && (
         <div style={{ padding: "6px 14px", background: "#2a6e2a", fontSize: 12, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2864,6 +2908,7 @@ export default function App() {
         resourceCounters={counters[actorToShow.id]}
         onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
         onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
+        onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         gold={roomLiveState.actorLiveState[actorToShow.id]?.gold}
         onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
         onLongRest={() => { resetActorResources(actorToShow.id, "long"); const m = actorToShow.stats.hp.max; void setActorHp(actorToShow.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
@@ -2887,15 +2932,7 @@ export default function App() {
               message: `${activeMonster.displayName} used ${actionName}.`,
             });
           }}
-          onSaveCall={(actionName, save) => {
-            addEntry({
-              actorName: activeMonster.displayName,
-              actionName: "Save Call",
-              tabId: "system",
-              tone: "combat",
-              message: `⚠ SAVE — ${activeMonster.displayName}'s ${actionName}: each target must make a ${save} saving throw. (Players roll your matching save; monster allies use "Checks & Saves".)`,
-            });
-          }}
+          onSaveCall={(actionName, save) => { setSaveTargets(new Set()); setPendingSave({ source: activeMonster.displayName, action: actionName, save }); }}
         />
       )}
 
@@ -3203,6 +3240,7 @@ export default function App() {
                 resourceCounters={counters[focusedActorId]}
                 onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
                 onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
+                onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 gold={roomLiveState.actorLiveState[focusedActorId]?.gold}
                 onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
                 onLongRest={() => { resetActorResources(focusedActorId, "long"); const m = focusedActor.stats.hp.max; void setActorHp(focusedActorId, { current: m, max: m, temp: 0 }); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}

@@ -12,6 +12,7 @@ import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { MonsterActorCard } from "./core/ui/MonsterActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
+import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { useMonsterPopout } from "./core/monster-state/useMonsterPopout";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import "./styles.css";
@@ -60,6 +61,7 @@ function MonsterPopoutApp() {
         }}
         onSendDicePlusRequest={sendDicePlusRollRequest}
         diceBridgeLastEvent={diceBridgeLastEvent}
+        onSaveCall={(action, save) => broadcastSavePrompt((monster as { displayName?: string; name?: string }).displayName ?? (monster as { name?: string }).name ?? "Monster", action, save)}
       />
     </div>
   );

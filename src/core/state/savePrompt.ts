@@ -14,12 +14,13 @@ export const FDMC_SAVE_PROMPT_CHANNEL = "forever-dm-combat:save-prompt:v1";
 
 export type SavePrompt = {
   id: string;
-  source: string;   // who forced the save (caster / monster)
-  action: string;   // the action/spell name
-  save: string;     // the save text, e.g. "DEX DC 15"
+  source: string;     // who forced the save (caster / monster)
+  action: string;     // the action/spell name
+  save: string;       // the save text, e.g. "DEX DC 15"
+  targets?: string[]; // chosen combatants; empty/undefined = "each target"
 };
 
-export function broadcastSavePrompt(source: string, action: string, save: string): void {
+export function broadcastSavePrompt(source: string, action: string, save: string, targets?: string[]): void {
   const cleanSave = save?.trim();
   if (!OBR.isAvailable || !cleanSave) return;
   const prompt: SavePrompt = {
@@ -27,6 +28,7 @@ export function broadcastSavePrompt(source: string, action: string, save: string
     source,
     action,
     save: cleanSave,
+    targets: targets && targets.length > 0 ? targets : undefined,
   };
   void OBR.broadcast.sendMessage(FDMC_SAVE_PROMPT_CHANNEL, prompt, { destination: "ALL" }).catch(() => undefined);
 }

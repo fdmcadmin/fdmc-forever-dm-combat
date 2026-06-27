@@ -26,7 +26,9 @@ export function SavePromptBanner() {
           Saving Throw — {prompt.save}
         </div>
         <div style={{ fontSize: 11, color: "#cfc7b8" }}>
-          {prompt.source}: {prompt.action}. Affected creatures roll a {prompt.save} save.
+          {prompt.source}: {prompt.action}. {prompt.targets && prompt.targets.length > 0
+            ? `${prompt.targets.join(", ")} must roll a ${prompt.save} save.`
+            : `Affected creatures roll a ${prompt.save} save.`}
         </div>
       </div>
       <button
