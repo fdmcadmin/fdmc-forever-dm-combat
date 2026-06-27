@@ -148,6 +148,7 @@ function ActorPopout() {
           const r = spendResource(actor.id, rid, amt);
           addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} spends ${amt} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` : `⚠ ${actor.name} has nothing left in ${r.label ?? "that pool"}.` });
         }}
+        onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
         isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actor.id}
         onShortRest={() => { resetActorResources(actor.id, "short"); addEntry({ actorName: actor.name, actionName: "Short Rest", tabId: "system", message: `${actor.name} takes a Short Rest.` }); }}
         onLongRest={() => { resetActorResources(actor.id, "long"); const m = actor.stats.hp.max; void setActorHp(actor.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}

@@ -89,6 +89,9 @@ type ActorCardProps = {
   resourceCounters?: Record<string, number>;
   /** Spend a variable amount from a pool resource (Lay on Hands, Ki, …). */
   onSpendResource?: (resourceActionId: string, amount: number) => void;
+  /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
+   *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
+  onConsumeActionResources?: (action: ActorAction) => void;
   /** Character gold (gp) from live state — shown as a chip in the header. */
   gold?: number;
   onShortRest?: () => void;
@@ -612,6 +615,7 @@ export function ActorCard({
   combatRound,
   resourceCounters,
   onSpendResource,
+  onConsumeActionResources,
   gold,
   onShortRest,
   onLongRest,
@@ -2373,7 +2377,10 @@ export function ActorCard({
       }
     }
 
-    if (action.id === "rage" || action.label.toLowerCase() === "rage") {
+    // Built-in Rage only when this actor actually has a Rage session counter. A custom
+    // Rage authored as a resource pool + additive/buff action must NOT be hijacked here —
+    // it flows through the normal use path (and its pool counts down below).
+    if ((action.id === "rage" || action.label.toLowerCase() === "rage") && sessionCounters.rage) {
       handleUseRage();
       return;
     }
@@ -2397,6 +2404,16 @@ export function ActorCard({
         tabId: "system",
         message: `${actor.name} activates ${action.label} — ${formatBonusForChip(buffDamage)} to weapon attacks until it ends.`,
       });
+    }
+
+    // Activated abilities (additive riders / weapon buffs) never go through a committed
+    // roll, so spend their tagged resource HERE, on use — that's what makes the pool
+    // (Rage uses, Channel Divinity, …) count down automatically. Gated to non-rolling
+    // actions so it can't double up with the roll-commit consume.
+    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage);
+    const rollsItsOwn = hasRollableFormula(action.metadata?.attack) || Boolean(action.metadata?.saveDc?.trim());
+    if (isActivatedAbility && !rollsItsOwn) {
+      onConsumeActionResources?.(action);
     }
 
     if (action.logMode === "silent") {
