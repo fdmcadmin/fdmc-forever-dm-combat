@@ -74,6 +74,8 @@ type MonsterActorCardProps = {
   onSendDicePlusRequest?: (request: DiceBridgeRollRequest) => Promise<boolean>;
   diceBridgeLastEvent?: DiceBridgeEvent | null;
   onActionCommit?: (actionName: string) => void;
+  /** Post a "save required" call to the shared log when a save-forcing action is used. */
+  onSaveCall?: (actionName: string, save: string) => void;
 };
 
 // ─── Internal types ───────────────────────────────────────────────────────────
@@ -468,6 +470,7 @@ export function MonsterActorCard({
   onSendDicePlusRequest,
   diceBridgeLastEvent = null,
   onActionCommit,
+  onSaveCall,
 }: MonsterActorCardProps) {
   // ── Local state ─────────────────────────────────────────────────────────────
   const [currentHp, setCurrentHp] = useState(monster.currentHp);
@@ -573,6 +576,11 @@ export function MonsterActorCard({
   // ── Action commit flow ──────────────────────────────────────────────────────
   async function handleUseAction(action: MonsterReaderAction) {
     const actionId = slugify(action.name);
+    // Save-forcing action (breath weapon, etc.) — call out the save to the table so the
+    // affected PCs/monsters know exactly what to roll.
+    if (action.save) {
+      onSaveCall?.(action.name, action.save);
+    }
     // adv/disadv rewrites the d20 portion of the attack roll only — damage is untouched
     let attackFormula = applyAdvantage(normalizeFormula(action.roll), rollMode);
     // a pending additive die rides this roll only when there's an actual d20 attack to roll

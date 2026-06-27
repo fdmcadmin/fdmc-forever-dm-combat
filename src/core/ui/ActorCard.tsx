@@ -2803,11 +2803,15 @@ export function ActorCard({
       Boolean(resolvedCandidate.attackFormula?.trim());
 
     if (resolvedCandidate.outcomeMode === "dc-check") {
+      const saveCall = resolvedCandidate.saveDc?.trim();
       onLog({
         actorName: actor.name,
-        actionName: "Check",
+        actionName: "Save Call",
         tabId: "system",
-        message: `${actor.name} checks ${resolvedCandidate.actionLabel}${resolvedCandidate.saveDc ? ` (${resolvedCandidate.saveDc})` : ""}. Choose Applies or No Effect from the roll workspace.`,
+        tone: "combat",
+        message: saveCall
+          ? `⚠ SAVE — ${actor.name}'s ${resolvedCandidate.actionLabel}: each target must make a ${saveCall} saving throw. (Monsters roll on the card's "Checks & Saves"; players roll their matching save.) Then ${actor.name} marks Applies / No Effect.`
+          : `⚠ ${actor.name}'s ${resolvedCandidate.actionLabel} forces a save. Targets roll, then ${actor.name} marks Applies / No Effect.`,
       });
     }
 

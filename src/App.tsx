@@ -2883,6 +2883,15 @@ export default function App() {
               message: `${activeMonster.displayName} used ${actionName}.`,
             });
           }}
+          onSaveCall={(actionName, save) => {
+            addEntry({
+              actorName: activeMonster.displayName,
+              actionName: "Save Call",
+              tabId: "system",
+              tone: "combat",
+              message: `⚠ SAVE — ${activeMonster.displayName}'s ${actionName}: each target must make a ${save} saving throw. (Players roll your matching save; monster allies use "Checks & Saves".)`,
+            });
+          }}
         />
       )}
 
