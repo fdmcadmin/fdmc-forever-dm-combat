@@ -269,9 +269,8 @@ function firstRollDiceLabel(action: ActorAction | null | undefined, fallbackLabe
 
 function labeledDiceFormula(formula: string, label: string) {
   const cleanFormula = formula.trim();
-  const cleanLabel = label.trim();
 
-  if (!cleanFormula || !cleanLabel) {
+  if (!cleanFormula) {
     return cleanFormula;
   }
 
@@ -279,7 +278,21 @@ function labeledDiceFormula(formula: string, label: string) {
     return cleanFormula;
   }
 
-  return `${cleanFormula} # ${cleanLabel}`;
+  // Dice+ also parses the text after "#" and throws on dice/math tokens (e.g. a label
+  // "Greataxe (dmg +2)" -> "Unexpected token: MATH"). Keep only readable words: strip
+  // dice terms, operators, parens, and bare numbers so the label can never break the roll.
+  const safeLabel = label
+    .replace(/\d*d\d+/gi, " ")
+    .replace(/[+\-*/#=<>()]/g, " ")
+    .replace(/\b\d+\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!safeLabel) {
+    return cleanFormula;
+  }
+
+  return `${cleanFormula} # ${safeLabel}`;
 }
 
 function isRangedAttackAction(action?: ActorAction | null) {
