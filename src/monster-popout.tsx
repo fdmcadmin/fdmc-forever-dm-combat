@@ -11,6 +11,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { MonsterActorCard } from "./core/ui/MonsterActorCard";
+import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { useMonsterPopout } from "./core/monster-state/useMonsterPopout";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import "./styles.css";
@@ -46,6 +47,7 @@ function MonsterPopoutApp() {
 
   return (
     <div style={{ background: "#0d0d14", minHeight: "100vh" }}>
+      <SavePromptBanner />
       <MonsterActorCard
         monster={monster}
         isDmView={true}

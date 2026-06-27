@@ -57,6 +57,7 @@ import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
 import { getToolPanelTitle, type ToolPanelId } from "./core/runtime-shell/toolPanelTypes";
 import { ActorCard, FDMC_COMBAT_END_CHANNEL } from "./core/ui/ActorCard";
+import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
@@ -2448,6 +2449,9 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* ── Save-required pop-up (everyone) ── */}
+      <SavePromptBanner />
 
       {/* ── Player loot delivery toast ── */}
       {isPlayerMode && lootToast && (

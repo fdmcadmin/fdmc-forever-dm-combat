@@ -13,6 +13,7 @@ import React, { useMemo } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import ReactDOM from "react-dom/client";
 import { ActorCard } from "./core/ui/ActorCard";
+import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { useActorLiveState } from "./core/state/useActorLiveState";
 import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useCommittedRollState } from "./core/state/useCommittedRollState";
@@ -104,6 +105,7 @@ function ActorPopout() {
 
   return (
     <div style={{ height: "100vh", overflow: "auto" }}>
+      <SavePromptBanner />
       <ActorCard
         actor={actor}
         seatColor={POPOUT_SEAT_COLOR}

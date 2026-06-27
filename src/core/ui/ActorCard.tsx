@@ -36,6 +36,7 @@ import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
 import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
+import { broadcastSavePrompt } from "../state/savePrompt";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
@@ -2804,6 +2805,7 @@ export function ActorCard({
 
     if (resolvedCandidate.outcomeMode === "dc-check") {
       const saveCall = resolvedCandidate.saveDc?.trim();
+      if (saveCall) broadcastSavePrompt(actor.name, resolvedCandidate.actionLabel, saveCall);
       onLog({
         actorName: actor.name,
         actionName: "Save Call",
@@ -3216,6 +3218,21 @@ export function ActorCard({
     };
 
     const sent = await onSendDicePlusRequest(request);
+
+    // Attack with a rider save ("hit, then DC 14 STR or prone"): now that the hit's damage
+    // is rolled, call the save on the target. Crit and normal damage are the same hit, so
+    // only fire on the primary damage to avoid a double prompt.
+    const riderSave = committedRoll.saveDc?.trim();
+    if (riderSave && committedRoll.outcomeMode === "attack-roll" && damageChoice !== "crit") {
+      broadcastSavePrompt(actor.name, committedRoll.actionLabel, riderSave);
+      onLog({
+        actorName: actor.name,
+        actionName: "Save Call",
+        tabId: "system",
+        tone: "combat",
+        message: `⚠ SAVE — ${committedRoll.actionLabel} hit: target must make a ${riderSave} saving throw.`,
+      });
+    }
 
     if (sent) {
       onLog({
