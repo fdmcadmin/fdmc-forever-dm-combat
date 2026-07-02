@@ -38,7 +38,7 @@ export type PlayerSafeMonster = {
 import OBR from "@owlbear-rodeo/sdk";
 import { CombatLog } from "./core/combat-log/CombatLog";
 import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
-import { CombatTracker, buildCombatants, sortCombatants, type Combatant } from "./core/ui/CombatTracker";
+import { CombatTracker, buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
 import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
 import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
@@ -1321,7 +1321,7 @@ export default function App() {
   }
 
   function handleStartCombat() {
-    const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
+    const sorted = sortCombatants(allCombatants).filter(c => !c.isDead && !isOutOfCombat(c));
     if (sorted.length === 0) return;
     const firstId = sorted[0].id;
     resetCompanionTurns(firstId);
@@ -1350,7 +1350,7 @@ export default function App() {
     }
 
     const currentId = roomLiveState.combat.activeActorId;
-    const sorted = sortCombatants(allCombatants).filter(c => !c.isDead);
+    const sorted = sortCombatants(allCombatants).filter(c => !c.isDead && !isOutOfCombat(c));
     if (sorted.length === 0) return;
 
     // Log turn end
@@ -2464,7 +2464,7 @@ export default function App() {
             <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#f0c040" }}>⚠ {pendingSave.save} saving throw</p>
             <p style={{ margin: "0 0 10px", fontSize: 12, color: "#aaa" }}>{pendingSave.source}: {pendingSave.action}. Pick who must roll.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 12 }}>
-              {allCombatants.filter(c => !c.isDead).map(c => {
+              {allCombatants.filter(c => !c.isDead && !isOutOfCombat(c)).map(c => {
                 const name = c.displayName ?? c.name;
                 return (
                   <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 4px", cursor: "pointer", borderRadius: 4 }}>
@@ -2477,7 +2477,7 @@ export default function App() {
               })}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" onClick={() => setSaveTargets(new Set(allCombatants.filter(c => !c.isDead).map(c => c.id)))}
+              <button type="button" onClick={() => setSaveTargets(new Set(allCombatants.filter(c => !c.isDead && !isOutOfCombat(c)).map(c => c.id)))}
                 style={{ fontSize: 12, padding: "5px 10px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#aaa", cursor: "pointer" }}>Select all</button>
               <button type="button"
                 onClick={() => {

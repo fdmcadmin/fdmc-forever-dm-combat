@@ -64,13 +64,28 @@ export type CombatTrackerProps = {
   onSwapInitiative?: (idA: string, idB: string) => void;
 };
 
+// ─── Out of combat ─────────────────────────────────────────────────────────
+// Design (Christopher): a NEGATIVE initiative means the combatant is sitting this
+// fight out. They stay listed (so they're easy to bring back) but are excluded
+// from Start Combat, Next Turn, and the turn count. Used to bench players whose
+// characters aren't in a given encounter (e.g. short-table nights).
+
+export function isOutOfCombat(c: Pick<Combatant, "initiative">): boolean {
+  return c.initiative !== null && c.initiative < 0;
+}
+
 // ─── Sort combatants by initiative ───────────────────────────────────────────
 
 export function sortCombatants(combatants: Combatant[]): Combatant[] {
   return [...combatants].sort((a, b) => {
-    // Dead actors go to bottom
+    // Dead actors go to the very bottom
     if (a.isDead && !b.isDead) return 1;
     if (!a.isDead && b.isDead) return -1;
+    // Benched (out-of-combat) sit just above the dead, below everyone active
+    const aOut = isOutOfCombat(a);
+    const bOut = isOutOfCombat(b);
+    if (aOut && !bOut) return 1;
+    if (!aOut && bOut) return -1;
     // No initiative goes below those with initiative
     if (a.initiative === null && b.initiative !== null) return 1;
     if (a.initiative !== null && b.initiative === null) return -1;
@@ -235,7 +250,12 @@ export function CombatTracker({
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null);
   const sorted = sortCombatants(combatants);
   const activeIndex = sorted.findIndex(c => c.id === activeId);
-  // Combatants that joined mid-combat with no initiative (need to be slotted)
+  // Everyone actually in the fight — excludes dead AND benched (negative initiative).
+  const inCombat = sorted.filter(c => !c.isDead && !isOutOfCombat(c));
+  // Can only start once at least one non-benched combatant has an initiative.
+  const canStart = inCombat.some(c => c.initiative !== null);
+  // Combatants that joined mid-combat with no initiative (need to be slotted).
+  // Benched combatants (negative initiative) are not "missing" one, so they're skipped.
   const needsInitiative = phase === "combat"
     ? sorted.filter(c => c.initiative === null && !c.isDead)
     : [];
@@ -253,7 +273,7 @@ export function CombatTracker({
           </span>
           {phase === "combat" && activeIndex >= 0 && (
             <span style={{ fontSize: 10, color: "#555" }}>
-              {activeIndex + 1}/{sorted.filter(c => !c.isDead).length}
+              {inCombat.findIndex(c => c.id === activeId) + 1}/{inCombat.length}
             </span>
           )}
         </div>
@@ -281,12 +301,12 @@ export function CombatTracker({
               <button
                 type="button"
                 onClick={onStartCombat}
-                disabled={!sorted.some(c => c.initiative !== null)}
+                disabled={!canStart}
                 style={{
                   fontSize: 11, padding: "2px 10px",
-                  background: sorted.some(c => c.initiative !== null) ? "#2a6e2a" : "#1a2a1a",
-                  color: sorted.some(c => c.initiative !== null) ? "#fff" : "#555",
-                  border: "none", borderRadius: 3, cursor: sorted.some(c => c.initiative !== null) ? "pointer" : "default",
+                  background: canStart ? "#2a6e2a" : "#1a2a1a",
+                  color: canStart ? "#fff" : "#555",
+                  border: "none", borderRadius: 3, cursor: canStart ? "pointer" : "default",
                 }}
               >
                 ▶ Start Combat
@@ -358,13 +378,17 @@ export function CombatTracker({
 
       {/* Turn order list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 8px 6px" }}>
-        {sorted.map((combatant, idx) => {
-          const isActive = combatant.id === activeId;
+        {sorted.map((combatant) => {
+          const rowOut = isOutOfCombat(combatant);
+          const isActive = combatant.id === activeId && !rowOut;
           const isSwapSource = combatant.id === swapSourceId;
           const isSwapTarget = swapSourceId !== null && swapSourceId !== combatant.id;
-          const aliveSorted = sorted.filter(c => !c.isDead);
-          const aliveIdx = aliveSorted.findIndex(c => c.id === activeId);
-          const isNext = phase === "combat" && !isActive && idx === (aliveIdx + 1) % Math.max(1, aliveSorted.length);
+          const aliveIdx = inCombat.findIndex(c => c.id === activeId);
+          const nextInCombat = inCombat.length > 0 ? inCombat[(aliveIdx + 1) % inCombat.length] : undefined;
+          const isNext = phase === "combat" && !isActive && !rowOut && nextInCombat?.id === combatant.id;
+          // Who may bench / rejoin this row: the DM always; a player on their own
+          // actor while initiative is still being set.
+          const canToggleOut = isDmMode || (viewerActorIdSet.has(combatant.id) && (phase === "setup" || phase === "initiative"));
 
           // Identity color — seat color for party characters, monster color for monsters.
           const railColor = combatant.kind === "monster"
@@ -389,7 +413,7 @@ export function CombatTracker({
                 borderLeftWidth: 3,
                 borderLeftColor: railColor,
                 borderRadius: 5,
-                opacity: combatant.isDead ? 0.4 : 1,
+                opacity: combatant.isDead ? 0.4 : rowOut ? 0.55 : 1,
               }}
             >
               {/* Turn indicator */}
@@ -475,6 +499,43 @@ export function CombatTracker({
                   <span style={{ fontSize: 10, color: withAlpha(monsterColor, 0.7), marginLeft: 4 }}>⚔</span>
                 )}
               </button>
+
+              {/* Benched badge — sitting this fight out (negative initiative) */}
+              {rowOut && (
+                <span style={{ fontSize: 9, color: "#8a8aa0", border: "1px solid #3a3a4e", borderRadius: 3, padding: "1px 4px", flexShrink: 0, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                  Out
+                </span>
+              )}
+
+              {/* Bench / Rejoin toggle — DM anytime; a player on their own actor while
+                  initiative is still being set. Bench sets a negative initiative so the
+                  combatant is skipped by Start Combat / Next Turn. */}
+              {canToggleOut && (
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (rowOut) {
+                      if (combatant.kind === "actor" && onRollInitiative) {
+                        onRollInitiative(combatant.id);
+                      } else {
+                        onSetInitiative(combatant.id, Math.floor(Math.random() * 20) + 1 + combatant.initiativeBonus);
+                      }
+                    } else {
+                      onSetInitiative(combatant.id, -1);
+                    }
+                  }}
+                  title={rowOut ? "Rejoin combat (rolls initiative)" : "Bench — sit this fight out (negative initiative)"}
+                  style={{
+                    fontSize: 9, padding: "1px 5px", flexShrink: 0,
+                    background: rowOut ? "#1a2a1a" : "transparent",
+                    border: `1px solid ${rowOut ? "#4caf50" : "#2a2a2a"}`,
+                    borderRadius: 3, color: rowOut ? "#4caf50" : "#666", cursor: "pointer",
+                  }}
+                >
+                  {rowOut ? "Rejoin" : "Bench"}
+                </button>
+              )}
 
               {/* Swap button — DM only, before or during combat */}
               {isDmMode && onSwapInitiative && combatant.initiative !== null && (
