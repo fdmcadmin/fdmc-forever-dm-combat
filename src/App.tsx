@@ -2910,7 +2910,7 @@ export default function App() {
         onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         gold={roomLiveState.actorLiveState[actorToShow.id]?.gold ?? 0}
-        onSetGold={(g) => void setActorGold(actorToShow.id, g)}
+        onSetGold={isDmMode ? ((g) => void setActorGold(actorToShow.id, g)) : undefined}
         onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
         onLongRest={() => { resetActorResources(actorToShow.id, "long"); const m = actorToShow.stats.hp.max; void setActorHp(actorToShow.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
         onLog={addEntry}
@@ -3243,7 +3243,7 @@ export default function App() {
                 onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 gold={roomLiveState.actorLiveState[focusedActorId]?.gold ?? 0}
-                onSetGold={(g) => void setActorGold(focusedActorId, g)}
+                onSetGold={isDmMode ? ((g) => void setActorGold(focusedActorId, g)) : undefined}
                 onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
                 onLongRest={() => { resetActorResources(focusedActorId, "long"); const m = focusedActor.stats.hp.max; void setActorHp(focusedActorId, { current: m, max: m, temp: 0 }); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
                 onLog={addEntry}

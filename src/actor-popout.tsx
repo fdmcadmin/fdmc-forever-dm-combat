@@ -9,7 +9,7 @@
  * Boot model matches the explicit-id pattern described in _specs/P4-SPEC.md.
  */
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import ReactDOM from "react-dom/client";
 import { ActorCard } from "./core/ui/ActorCard";
@@ -72,6 +72,18 @@ function ActorPopout() {
 
   const { roomLiveState, setActorHp, getActorHp, setActorGold } = useActorLiveState(actorList);
 
+  // Gold is DM-granted: only the GM may edit the wallet. Players see the read-only chip.
+  // Outside OBR (dev/standalone) default to editable so it stays testable.
+  const [isGm, setIsGm] = useState<boolean>(!OBR.isAvailable);
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    let active = true;
+    const apply = () => { OBR.player.getRole().then(r => { if (active) setIsGm(r === "GM"); }).catch(() => {}); };
+    let unsub: (() => void) | undefined;
+    OBR.onReady(() => { apply(); unsub = OBR.player.onChange(() => apply()); });
+    return () => { active = false; unsub?.(); };
+  }, []);
+
   // Re-resolve with live HP overlay
   const actor = useMemo(() => {
     if (!baseActor) return undefined;
@@ -112,7 +124,7 @@ function ActorPopout() {
         seatColor={POPOUT_SEAT_COLOR}
         hp={hp}
         gold={roomLiveState.actorLiveState[actor.id]?.gold ?? 0}
-        onSetGold={(g) => void setActorGold(actor.id, g)}
+        onSetGold={isGm ? ((g) => void setActorGold(actor.id, g)) : undefined}
         actionState={actionState}
         concentration={concentration}
         committedRoll={committedRoll}
