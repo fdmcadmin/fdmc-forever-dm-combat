@@ -111,6 +111,7 @@ function ActorPopout() {
         actor={actor}
         seatColor={POPOUT_SEAT_COLOR}
         hp={hp}
+        gold={roomLiveState.actorLiveState[actor.id]?.gold ?? 0}
         actionState={actionState}
         concentration={concentration}
         committedRoll={committedRoll}
