@@ -70,7 +70,7 @@ function ActorPopout() {
   // Need actor in an array for the hooks
   const actorList = useMemo(() => baseActor ? [baseActor] : [], [baseActor]);
 
-  const { roomLiveState, setActorHp, getActorHp } = useActorLiveState(actorList);
+  const { roomLiveState, setActorHp, getActorHp, setActorGold } = useActorLiveState(actorList);
 
   // Re-resolve with live HP overlay
   const actor = useMemo(() => {
@@ -112,6 +112,7 @@ function ActorPopout() {
         seatColor={POPOUT_SEAT_COLOR}
         hp={hp}
         gold={roomLiveState.actorLiveState[actor.id]?.gold ?? 0}
+        onSetGold={(g) => void setActorGold(actor.id, g)}
         actionState={actionState}
         concentration={concentration}
         committedRoll={committedRoll}

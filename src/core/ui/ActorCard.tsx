@@ -96,6 +96,8 @@ type ActorCardProps = {
   onSaveCall?: (actionName: string, save: string) => void;
   /** Character gold (gp) from live state — shown as a chip in the header. */
   gold?: number;
+  /** Set the character's gold total. When provided, the gold chip becomes editable. */
+  onSetGold?: (gold: number) => void;
   onShortRest?: () => void;
   onLongRest?: () => void;
   onLog: (input: AddCombatLogEntryInput) => void;
@@ -633,6 +635,7 @@ export function ActorCard({
   onConsumeActionResources,
   onSaveCall,
   gold,
+  onSetGold,
   onShortRest,
   onLongRest,
   onLog,
@@ -3372,7 +3375,28 @@ export function ActorCard({
             {typeof gold === "number" && (
               <div className="speed-subrow" title="Character gold — DM grants it; merchant purchases spend it">
                 <span className="stat-label">Gold</span>
-                <span className="stat-value" style={{ color: "#e0a030", fontWeight: 700 }}>💰 {gold}</span>
+                {onSetGold ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                    <span style={{ color: "#e0a030" }}>💰</span>
+                    <input
+                      type="number"
+                      min={0}
+                      key={gold}
+                      defaultValue={gold}
+                      onFocus={e => e.currentTarget.select()}
+                      onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                      onBlur={e => {
+                        const v = Math.max(0, Math.floor(Number(e.currentTarget.value)));
+                        if (Number.isFinite(v) && v !== gold) onSetGold(v);
+                        else e.currentTarget.value = String(gold);
+                      }}
+                      style={{ width: 66, fontSize: 12, fontWeight: 700, textAlign: "right", color: "#e0a030", background: "#0d0d14", border: "1px solid #e0a03055", borderRadius: 4, padding: "1px 4px" }}
+                    />
+                    <span style={{ fontSize: 10, color: "#8a7a3a" }}>gp</span>
+                  </span>
+                ) : (
+                  <span className="stat-value" style={{ color: "#e0a030", fontWeight: 700 }}>💰 {gold}</span>
+                )}
               </div>
             )}
           </div>
