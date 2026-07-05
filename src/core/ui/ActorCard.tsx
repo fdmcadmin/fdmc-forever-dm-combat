@@ -1950,8 +1950,10 @@ export function ActorCard({
       if (!key || isUsedActionStateValue(key)) return;
       const entry = getActionForReadiedKey(key);
       if (!entry) return;
-      const isBond = entry.sourceTabId === "bond";
-      const isAdditive = entry.action.metadata?.outcomeMode === "additive";
+      const outcome = entry.action.metadata?.outcomeMode;
+      // Reference / passive bonds are display-only and must NOT arm a rider.
+      const isBond = entry.sourceTabId === "bond" && outcome !== "reference";
+      const isAdditive = outcome === "additive";
       if (!isBond && !isAdditive) return;
       if (effects.some(e => e.id.endsWith(`:${entry.action.id}`))) return;
       // Rider damage lives in metadata.damage for both bonds and "additive" actions.
@@ -1983,8 +1985,10 @@ export function ActorCard({
       if (!key || isUsedActionStateValue(key) || key === resolvedReadiedKey) return;
       const entry = getActionForReadiedKey(key);
       if (!entry) return;
-      const isBond = entry.sourceTabId === "bond";
-      const isAdditive = entry.action.metadata?.outcomeMode === "additive";
+      const outcome = entry.action.metadata?.outcomeMode;
+      // Reference / passive bonds are display-only and must NOT arm a rider.
+      const isBond = entry.sourceTabId === "bond" && outcome !== "reference";
+      const isAdditive = outcome === "additive";
       if (!isBond && !isAdditive) return;
 
       onUnreadyAction(key);
