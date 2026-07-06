@@ -141,8 +141,9 @@ type ArmedEffect = {
   /** Bonus added to the ATTACK roll — used by spellcasting focuses (id "focus:*") and
    *  fighting styles (id "buff:*"). */
   attackFormula?: string;
-  /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
-  appliesTo?: "ranged" | "melee" | "weapon";
+  /** For weapon buffs / fighting styles (id "buff:*") — which attacks it rides.
+   *  ranged/melee/weapon = weapon styles; "spell" = spells only; "any" = weapon + spell. */
+  appliesTo?: "ranged" | "melee" | "weapon" | "spell" | "any";
 };
 
 type ClassOptionContext =
@@ -315,9 +316,14 @@ function isRangedAttackAction(action?: ActorAction | null) {
 }
 
 // Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
-// Styles/buffs ride WEAPON attacks only (never spells), gated by their target.
+// Fighting styles (ranged/melee) ride WEAPON attacks only. Activated damage buffs
+// (Inner Radiance, Divine Favor, …) arm as "any" so they ride both weapon attacks AND
+// spells while active; "spell" rides spells only.
 function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null) {
-  if (!action || action.actionKind === "spell") return false;
+  if (!action) return false;
+  if (appliesTo === "any") return true;
+  if (appliesTo === "spell") return action.actionKind === "spell";
+  if (action.actionKind === "spell") return false; // weapon-targeted styles never ride spells
   if (appliesTo === "ranged") return isRangedAttackAction(action);
   if (appliesTo === "melee") return !isRangedAttackAction(action);
   return true; // "weapon" / undefined → any weapon attack
@@ -556,11 +562,25 @@ function formatDamageRollLabel(actionLabel: string, damageLabel: string, isCritD
   return `CRIT! ${formatCritThresholdLabel(critThreshold)} — ${actionLabel} ${damageLabel}`;
 }
 
-function additiveShorthandForEffect(effect: ArmedEffect) {
-  if (effect.source === "Bond" || effect.id.startsWith("bond:")) {
-    return "B";
-  }
+// Acronym of a rider's NAME for the damage-roll label: "Inner Radiance" → "IR",
+// "Frontier Greataxe" → "FG", "Hunter's Mark" → "HM", "Wand of the War Mage" → "WWM".
+// Drops any "(formula)" and skips small joining words. Single word → first two letters.
+function additiveAcronym(name: string): string {
+  const stop = new Set(["of", "the", "a", "an", "and", "to", "for", "or"]);
+  const words = name
+    .replace(/\([^)]*\)/g, " ")        // drop "(2d6)" / "(dmg +2)"
+    .replace(/[^A-Za-z0-9 ]/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length === 0) return "";
+  const kept = words.filter((w) => !stop.has(w.toLowerCase()));
+  const use = kept.length > 0 ? kept : words;
+  if (use.length === 1) return use[0].slice(0, 2).toUpperCase();
+  return use.map((w) => w[0]!.toUpperCase()).join("");
+}
 
+function additiveShorthandForEffect(effect: ArmedEffect) {
   if (effect.id === "rage-active" || effect.id === "rage-pending") {
     return "R";
   }
@@ -569,7 +589,14 @@ function additiveShorthandForEffect(effect: ArmedEffect) {
     return "RD";
   }
 
-  return effect.label.replace(/\s+/g, " ").trim();
+  // Bonds and one-off additives carry the ability name in `label`; weapon buffs and
+  // spellcasting focuses carry a "dmg +N"/"atk +N" in `label`, with the real feature/item
+  // name in `source`. Acronym whichever names the ability so the tag reads e.g. "IR"/"SB".
+  const carriesNameInLabel = effect.id.startsWith("bond:") || effect.id.startsWith("additive:");
+  const name = carriesNameInLabel
+    ? effect.label
+    : (effect.source && effect.source !== "Bond" && effect.source !== "Additive" ? effect.source : effect.label);
+  return additiveAcronym(name) || effect.label.replace(/\s+/g, " ").trim();
 }
 
 function formatAdditiveShorthand(effects: Array<{ shorthand: string }>) {
@@ -2416,10 +2443,10 @@ export function ActorCard({
       upsertArmedEffect({
         id: `buff:${action.id}`,
         label: `dmg ${formatBonusForChip(buffDamage)}`,
-        details: `${action.label} — adds ${formatBonusForChip(buffDamage)} to weapon attacks while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
+        details: `${action.label} — adds ${formatBonusForChip(buffDamage)} to weapon attacks AND spells while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
         source: action.label,
         formula: buffDamage,
-        appliesTo: "weapon",
+        appliesTo: "any",
       });
       onLog({
         actorName: actor.name,
@@ -3215,8 +3242,11 @@ export function ActorCard({
     // BUILD 0.5.3.1.3: Bond additives are valid damage add-ons, but Dice+ can fail when
     // the outgoing damage formula is label-suffixed with the Bond shorthand. Keep the
     // roll formula clean whenever Bond is attached; the FDMC log still records B/R/RD details.
-    const hasBondAdditive = additiveParts.some((effect) => effect.shorthand === "B" || effect.id.startsWith("bond:"));
-    const diceFormula = additiveLabel && !hasBondAdditive
+    const hasBondAdditive = additiveParts.some((effect) => effect.id.startsWith("bond:"));
+    // Always label the damage roll with the action name (+ rider acronyms) so Dice+ shows
+    // e.g. "1d10+2 # Fire Bolt (IR)" — not a bare "1d10". Bonds still send clean (Dice+ can
+    // choke on the bond-suffixed formula); the FDMC log records the B/R detail regardless.
+    const diceFormula = !hasBondAdditive
       ? labeledDiceFormula(combinedFormula, actionLabelWithAdditives)
       : combinedFormula;
     const request: DiceBridgeRollRequest = {
