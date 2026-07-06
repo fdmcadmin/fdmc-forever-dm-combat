@@ -2429,13 +2429,19 @@ export function ActorCard({
       });
     }
 
-    // Activated abilities (additive riders / weapon buffs) never go through a committed
-    // roll, so spend their tagged resource HERE, on use — that's what makes the pool
-    // (Rage uses, Channel Divinity, …) count down automatically. Gated to non-rolling
-    // actions so it can't double up with the roll-commit consume.
+    // Activated abilities (additive riders / weapon buffs) AND free-cast class-feature
+    // spells spend their tagged resource HERE, on use — that's what makes the pool (Rage
+    // uses, Channel Divinity, class-feature N/Long-Rest, …) count down automatically.
+    // Gated to actions that DON'T produce a committed roll so it can't double up with the
+    // roll-commit consume: a free-cast spell that rolls (attack / save / damage / healing)
+    // spends via onStartCommittedRoll instead; a pure-effect free-cast (Misty Step, …)
+    // never reaches that path, so it must be spent on use.
     const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage);
-    const rollsItsOwn = hasRollableFormula(action.metadata?.attack) || Boolean(action.metadata?.saveDc?.trim());
-    if (isActivatedAbility && !rollsItsOwn) {
+    const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
+    const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
+      || Boolean(action.metadata?.saveDc?.trim())
+      || (isFreeCastSpell && hasRollableFormula(action.metadata?.damage));
+    if ((isActivatedAbility || isFreeCastSpell) && !rollsItsOwn) {
       onConsumeActionResources?.(action);
     }
 
