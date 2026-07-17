@@ -416,7 +416,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Soul-Gorged Guardian",
     encounterId: "act2-s2-e2-last-directive",
     encounterLabel: act2S2E2Label,
-    stats: { kind: "boss", ac: 14, maxHp: 85, speed: "0 ft., fly 5 ft" },
+    stats: { kind: "boss", ac: 14, maxHp: 85, speed: "0 ft., fly 5 ft", kitMultiplier: 1.10 },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 12, 1),
@@ -444,7 +444,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Grave Light",
     encounterId: "act2-s2-e2-last-directive",
     encounterLabel: act2S2E2Label,
-    stats: { kind: "monster", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)" },
+    stats: { kind: "monster", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)", kitMultiplier: 1.50 },
     abilities: [
       formatAbility("STR", 1, -5),
       formatAbility("DEX", 28, 9),

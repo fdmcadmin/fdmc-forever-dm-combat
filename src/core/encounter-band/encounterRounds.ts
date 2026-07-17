@@ -60,6 +60,14 @@ export type PartyLane = "easy" | "standard" | "hard" | "punishing";
  * = 1.18×, which is the "punishing" anchor. A 4-player punishing party (0.8 × 1.18 ≈ 0.95)
  * therefore fights like a 5-player standard one — which is exactly why "2 Lessers at low"
  * felt easy while the checker called it Hard.
+ *
+ * ⚠ WHICH LANE TO ACTUALLY USE (Christopher, 2026-07-17):
+ * The party is **"standard · mixed" for the whole of Act 2**. The lanes only diverge once
+ * the party picks its SPECIALIZATIONS at the end of Act 2 — the 1.18 "punishing" anchor is
+ * a POST-specialization measurement and must NOT be used to size Act 2. Sizing Act 2 at
+ * 1.18 makes every fight read ~18% shorter than it plays; the real fights confirm standard
+ * (Last Directive predicted 2.8 at 1.0× and ran 3.5+ — at 1.18× it would have predicted
+ * 2.4, i.e. further from the truth, not closer).
  */
 export const LANE_MULTIPLIER: Record<PartyLane, number> = {
   easy: 0.87,        // defensive bonds
