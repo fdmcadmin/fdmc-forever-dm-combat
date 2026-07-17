@@ -103,7 +103,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     [encounter, monsterLibrary],
   );
   const est = useMemo(
-    () => estimateRounds(roundsMonsters, partySize, partyLevel, lane, resources),
+    () => estimateRounds(roundsMonsters, partySize, partyLevel, lane, resources, encounter?.classification),
     [roundsMonsters, partySize, partyLevel, lane, resources],
   );
 

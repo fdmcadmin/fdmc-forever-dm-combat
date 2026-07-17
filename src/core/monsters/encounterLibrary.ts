@@ -6,7 +6,7 @@
  * combat roster (monsterCandidates state in App.tsx).
  */
 
-import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
+import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState, MonsterClassification } from "./runtime/mainMonsterRuntime";
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -26,6 +26,18 @@ export type EncounterDefinition = {
   order?: number;
   notes?: string;
   dmNotes?: string;
+  /**
+   * TARGET tier for this FIGHT — which `ROUND_BAND` it should land in.
+   *
+   * This is deliberately a property of the encounter, NOT of its creatures. The Frozen
+   * Hollow is an elite fight made of a Zombie, a Ghoul and a Hollow Mourner: nothing in
+   * it is elite, but their combined HP pushes the round count into the elite band. Tagging
+   * the Ghoul "elite" to force that would then mis-rate the same Ghoul everywhere else.
+   *
+   * Unset = fall back to the strongest creature's own `stats.classification`, which is the
+   * right answer for a solo boss dropped into an ad-hoc fight.
+   */
+  classification?: MonsterClassification;
   entries: EncounterMonsterEntry[];
   /** Which library this encounter belongs to */
   owner?: EncounterLibraryOwner;
@@ -52,7 +64,31 @@ const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-frozencloak";
+const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-classified";
+
+/**
+ * TARGET tier per campaign fight (Christopher, 2026-07-17) — the round band each Act 2
+ * encounter should land in. See `ROUND_BAND` in `encounter-band/encounterRounds.ts`.
+ *
+ * These are FIGHT targets, not creature ratings: the Frozen Hollow is elite purely because
+ * the stacked HP of its chaff pushes the round count into the elite band — which is also
+ * why it is a LOW elite (it should sit at the bottom of 3.25-4.5, not the top).
+ *
+ * The low/solid/high notes below are where inside the band each fight is meant to land.
+ * That is an OUTCOME of HP, not a setting — the model reports it, so use these as the
+ * tuning intent when the panel disagrees.
+ */
+const ENCOUNTER_CLASSIFICATION: Record<string, MonsterClassification> = {
+  // Act 2 ladder, in play order.
+  "act2-s1-e1-hollow-pack": "strong",        // first fight of the act
+  "act2-s1-e2-frozen-hollow": "elite",       // LOW elite — chaff HP is the only thing lifting it
+  "act2-s2-e1-corrupted-hunters": "elite",   // INFERRED — sits between the low and solid elites; confirm
+  "act2-s2-e2-last-directive": "elite",      // SOLID elite
+  "act2-s3-village-defense": "mid-boss",     // the Lesser Wendigo — the act's mid boss
+  "act2-s4-frozen-sentinels": "elite",       // HIGH elite — first fight after the mid boss
+  "act2-s4-pale-drifter": "elite",           // HIGH elite — second fight after the mid boss
+  "act2-s5-wendigo-wight": "act-boss",       // act boss
+};
 
 // ─── Storage operations ───────────────────────────────────────────────────────
 
@@ -221,6 +257,7 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
       id: encounterId,
       name: first.encounterLabel ?? encounterId,
       actTag: encounterId.startsWith("act1") ? "Act 1" : encounterId.startsWith("act2") ? "Act 2" : undefined,
+      classification: ENCOUNTER_CLASSIFICATION[encounterId],
       entries: encounterTemplates.map(t => ({
         templateId: t.templateId,
         count: 1,

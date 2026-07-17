@@ -578,7 +578,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Lesser Wendigo",
     encounterId: "act2-s3-village-defense",
     encounterLabel: "Act 2 S3 - Lesser Wendigos (Village Night Defense)",
-    stats: { kind: "boss", ac: 15, maxHp: 120, speed: "40 ft" },
+    stats: { kind: "boss", ac: 15, maxHp: 120, speed: "40 ft", classification: "mid-boss" },
     abilities: [
       formatAbility("STR", 17, 3),
       formatAbility("DEX", 14, 2),
@@ -825,7 +825,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 2 S5 - Wendigo Wight (The Lake Fight)",
     // kit 1.37: Wrong Cold aura spacing (~5%), Hunger Leap repositioning on ~33% of rounds
     // (~10-15%), legendary-driven downs (~10%), + working Frozen Endurance (~4%).
-    stats: { kind: "boss", ac: 17, maxHp: 340, speed: "40 ft", kitMultiplier: 1.37 },
+    stats: { kind: "boss", ac: 17, maxHp: 340, speed: "40 ft", kitMultiplier: 1.37, classification: "act-boss" },
     abilities: [
       formatAbility("STR", 20, 5),
       formatAbility("DEX", 14, 2),

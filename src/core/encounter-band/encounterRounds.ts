@@ -250,12 +250,18 @@ export function estimateRounds(
   level: number,
   lane: PartyLane = "standard",
   resources: PartyResources = "fresh",
+  /**
+   * The FIGHT's declared tier, when the encounter sets one. It wins over the creatures'
+   * own classifications: a fight can be elite purely because its chaff stacks up enough
+   * HP to push the round count into the elite band, with nothing elite in it.
+   */
+  encounterTier?: MonsterClassification,
 ): RoundsEstimate {
   const rawHp = monsters.reduce((s, m) => s + m.maxHp * Math.max(0, m.count), 0);
   const eff = effectiveHp(monsters);
   const dpr = partyDpr(size, level, lane, resources);
   const rounds = dpr > 0 ? eff / dpr : 0;
-  const classification = encounterClassification(monsters);
+  const classification = encounterTier ?? encounterClassification(monsters);
   const band = ROUND_BAND[classification] ?? ROUND_BAND.normal;
   return {
     rawHp,
