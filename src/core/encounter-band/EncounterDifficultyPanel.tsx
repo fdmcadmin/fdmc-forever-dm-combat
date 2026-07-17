@@ -169,7 +169,14 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Pseudo level</label>
+                  {/* ACTUAL party level. It used to say "pseudo level" and invite a +1 for the
+                      bonds — the DPR table already prices the bonds in, so a +1 double-counts. */}
+                  <label
+                    style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}
+                    title="The party's ACTUAL level. Do not add +1 for bonds — the DPR model already counts one free bond action per round."
+                  >
+                    Party level
+                  </label>
                   <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                     <button type="button" onClick={() => setPartyLevel(l => Math.max(1, l - 1))}
                       style={{ width: 24, fontSize: 14, padding: "3px 0", background: "#0d0d14", color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 4, cursor: "pointer" }}>−</button>

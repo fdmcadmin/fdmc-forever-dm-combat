@@ -26,29 +26,47 @@
 import type { MonsterClassification } from "../monsters/runtime/mainMonsterRuntime";
 
 /**
- * 5-player MIDPOINT expected DPR by pseudo level.
+ * 5-player MIDPOINT expected DPR by ACTUAL PARTY LEVEL — bonds included.
  *
- * MIDPOINT, never peak: L6 peak is 246.7 vs midpoint 112.2, so sizing to peak would make
- * a low-rolling party grind a fight built for 2.2× their real output.
+ * Source of truth: `broken_chain_encounter_dpr_design.xlsx` (5P rerun, 2026-07-17). The
+ * workbook counts, per round:
+ *   - each character's full normal turn,
+ *   - ONE bond action at no action-economy cost (bonds are free actions), and
+ *   - the pack companion's move + attack, costing the ranger nothing.
  *
- * L3/L6/L9/L12 are read off the chart's Encounter DPR Bands. L4/L5 are derived by backing
- * the selected party's ~1.18× premium out of its per-level rows. L5 is a CLIFF — class DPR
- * jumps 53.3 → 102.1 as Extra Attack and 3rd-level spells come online — which is why any
- * ladder tuned before L5 reads ~2× undersized after it.
+ * ⚠ THEREFORE: DO NOT ADD A "+1 PSEUDO LEVEL" FOR THE BONDS. Their damage is already in
+ * these numbers. The old table here held the NO-BOND midpoint (55.0 / 59.3 / 100.5 /
+ * 112.2 / 135.1 / 142.8) — ~16-18% low — and the +1 level was a hand patch for the gap.
+ * Feed this function the party's ACTUAL level; the bonds are priced in.
+ *
+ * MIDPOINT, never peak: sizing to peak would make a low-rolling party grind a fight built
+ * for ~2.2× their real output.
+ *
+ * L5 is still a CLIFF (118.6 vs 68.8 at L4) as Extra Attack and 3rd-level spells come
+ * online — any ladder tuned before L5 reads ~2x undersized after it.
  */
 const MIDPOINT_DPR_5P: ReadonlyArray<readonly [level: number, dpr: number]> = [
-  [3, 55.0],
-  [4, 59.3],
-  [5, 100.5],
-  [6, 112.2],
-  [9, 135.1],
-  [12, 142.8],
+  [3, 63.75],
+  [4, 68.75],
+  [5, 118.625],
+  [6, 132.625],
+  [9, 165.0],
+  [12, 170.625],
 ];
 
 /**
  * Fraction of chart DPR a real table actually lands. The chart is dice EV with no
  * hit-chance, no movement, no rounds spent not attacking. Calibrated from ONE fight —
  * the weakest number in this model. Every prediction scales linearly with it.
+ *
+ * ⚠ THE CURRENT TABLE IS NOT THE BENCHMARK (Christopher, 2026-07-17). Do not calibrate
+ * this — or any kitMultiplier — from the live party's fights:
+ *   - Their bonds were chosen around a SIXTH player running the siphon bond, who is gone.
+ *     The leftover mix puts their DPR ABOVE an average party's.
+ *   - The Frozen Hollow and Last Directive were both fought with a deliberately
+ *     sub-optimised tank (nothing above +3 on any modifier), which drags the other way.
+ * Two confounders pulling in opposite directions means their observed round counts cannot
+ * price a creature. The benchmark is the workbook's SET 5-PLAYER party (MIDPOINT_DPR_5P).
  */
 export const REALIZATION = 0.77;
 
