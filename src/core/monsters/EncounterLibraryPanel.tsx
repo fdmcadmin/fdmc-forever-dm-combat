@@ -334,9 +334,9 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster 
           onChange={e => onChange({ ...entry, hpVariant: e.target.value as EncounterMonsterEntry["hpVariant"] })}
           style={{ fontSize: 11, padding: "2px 4px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#aaa", flex: 1 }}
         >
-          <option value="low">Low HP</option>
-          <option value="standard">Standard</option>
-          <option value="high">High HP</option>
+          <option value="low">4-man</option>
+          <option value="standard">5-man</option>
+          <option value="high">6-man</option>
         </select>
         <select
           value={entry.startingVisibility}

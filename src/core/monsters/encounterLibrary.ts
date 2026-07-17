@@ -64,7 +64,7 @@ const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-classified";
+const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-hpsync";
 
 /**
  * TARGET tier per campaign fight (Christopher, 2026-07-17) — the round band each Act 2
@@ -80,13 +80,13 @@ const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-classified";
  */
 const ENCOUNTER_CLASSIFICATION: Record<string, MonsterClassification> = {
   // Act 2 ladder, in play order.
-  "act2-s1-e1-hollow-pack": "strong",        // first fight of the act
-  // LOW elite. It absorbed the voided Corrupted Hunters' slot in the ladder — which is why
-  // it carries the elite tag AND the HP bump despite being made only of chaff.
+  "act2-s1-e1-hollow-pack": "strong",        // first fight of the act (Stalker 75 + 2x Pack Hunter 26)
+  // ELITE because the Corrupted Hunter (Wight chassis, 82 HP, elite-classed) is a genuine
+  // elite body in the roster — NOT because chaff HP happens to lift it. The fight is
+  // Icebound Zombie + Hollow Mourner + Corrupted Hunter (the Ghoul it replaced is dormant).
   "act2-s1-e2-frozen-hollow": "elite",
-  // "act2-s2-e1-corrupted-hunters" — VOIDED from the campaign (Christopher, 2026-07-17).
-  // Deliberately untagged: it is no longer part of the ladder. The creature + its seeded
-  // encounter still exist in the library as dormant content.
+  // "act2-s2-e1-corrupted-hunters" — voided: the Corrupted Hunter moved into Frozen Hollow,
+  // leaving this standalone encounter with no creatures, so it no longer seeds.
   "act2-s2-e2-last-directive": "elite",      // SOLID elite
   "act2-s3-village-defense": "mid-boss",     // the Lesser Wendigo — the act's mid boss
   // HIGH elite, both. Fought fresh at L5 / pseudo L6 — set the panel to level 6 for these,

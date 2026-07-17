@@ -282,7 +282,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Pack Hunter",
     encounterId: "act2-s1-e1-hollow-pack",
     encounterLabel: act2S1E1Label,
-    stats: { kind: "monster", ac: 12, maxHp: 47, speed: "40 ft" },
+    stats: { kind: "monster", ac: 12, maxHp: 26, speed: "40 ft" },
     abilities: [
       formatAbility("STR", 14, 2),
       formatAbility("DEX", 15, 2),
@@ -305,7 +305,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Icebound Zombie",
     encounterId: "act2-s1-e2-frozen-hollow",
     encounterLabel: act2S1E2Label,
-    stats: { kind: "monster", ac: 12, maxHp: 45, speed: "20 ft" },
+    stats: { kind: "monster", ac: 12, maxHp: 42, speed: "20 ft" },
     abilities: [
       formatAbility("STR", 13, 1),
       formatAbility("DEX", 6, -2),
@@ -329,7 +329,10 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   {
     templateId: "broken-chain:act2-s1:ghoul:v1",
     name: "Ghoul",
-    encounterId: "act2-s1-e2-frozen-hollow",
+    // REPLACED by the Corrupted Hunter in Frozen Hollow (2026-07-17 library sweep; the
+    // authoritative encounter doc). Kept as a dormant library template — no encounterId, so
+    // it is not seeded into any fight.
+    encounterId: undefined,
     encounterLabel: act2S1E2Label,
     stats: { kind: "monster", ac: 12, maxHp: 35, speed: "30 ft" },
     abilities: [
@@ -355,7 +358,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Hollow Mourner",
     encounterId: "act2-s1-e2-frozen-hollow",
     encounterLabel: act2S1E2Label,
-    stats: { kind: "monster", ac: 13, maxHp: 42, speed: "30 ft" },
+    stats: { kind: "monster", ac: 13, maxHp: 36, speed: "30 ft" },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 17, 3),
@@ -380,9 +383,13 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   {
     templateId: "broken-chain:act2-s2:corrupted-hunter:v1",
     name: "Corrupted Hunter",
-    encounterId: "act2-s2-e1-corrupted-hunters",
-    encounterLabel: act2S2E1Label,
-    stats: { kind: "monster", ac: 14, maxHp: 60, speed: "30 ft" },
+    // Moved into Frozen Hollow, replacing the Ghoul (2026-07-17 sweep). Its standalone
+    // "Corrupted Hunters" encounter is voided by having no creatures left in it.
+    // HP 60 -> 82 (Wight chassis kept per the chassis-HP rule); Elite classification is what
+    // places the Frozen Hollow fight in the elite band.
+    encounterId: "act2-s1-e2-frozen-hollow",
+    encounterLabel: act2S1E2Label,
+    stats: { kind: "monster", ac: 14, maxHp: 82, speed: "30 ft", classification: "elite" },
     abilities: [
       formatAbility("STR", 15, 2),
       formatAbility("DEX", 14, 2),
