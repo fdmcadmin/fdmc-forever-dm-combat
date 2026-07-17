@@ -94,6 +94,11 @@ export type Actor = {
   className?: string;
   subclassName?: string;  // e.g. "Battle Master", "Hunter", "Oath of Devotion"
   level: number;
+  /** Extra Attack — how many weapon/unarmed attacks a single Attack action grants.
+   *  2 for martials at L5, 3 for a Fighter at L11. Spells are never affected: casting
+   *  always consumes the whole action regardless of this value. Unset or 1 = one attack.
+   *  A per-action `metadata.attackUses` overrides this for that action only. */
+  attacksPerAction?: number;
   stats: ActorStats;
   abilityScores?: AbilityScores;
   classFeatureTracker?: ClassFeatureTracker;

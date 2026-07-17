@@ -49,8 +49,12 @@ import {
   createEmptyRoomLiveState,
   patchActorHp,
   patchActorGold,
+  grantActorCoin,
+  patchActorCoins,
+  getActorCoins,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
+import { setCoin, type CoinType } from "./core/currency/currency";
 import {
   FDMC_ROOM_LIVE_STATE_KEY,
   FDMC_TABLE_BINDING_KEY,
@@ -346,14 +350,17 @@ function DmPanelApp() {
     }
   }
 
-  // Grant gold to a seat's primary actor. mode "add" = adjust; "set" = absolute.
-  function handleSendGold(seatId: string, amount: number, mode: "add" | "set") {
+  // Grant currency to a seat's primary actor. mode "add" = adjust the coin; "set" = absolute. coin defaults to gp.
+  function handleSendGold(seatId: string, amount: number, mode: "add" | "set", coin: CoinType = "gp") {
     const seat = seats[seatId];
     const actorId = seat?.primaryActorId;
     if (!actorId) return;
-    const currentGold = roomLiveState.actorLiveState[actorId]?.gold ?? 0;
-    const nextGold = mode === "add" ? currentGold + amount : amount;
-    void commitRoomState(patchActorGold(roomLiveState, actorId, nextGold));
+    if (mode === "add") {
+      void commitRoomState(grantActorCoin(roomLiveState, actorId, coin, amount));
+    } else {
+      const next = setCoin(getActorCoins(roomLiveState, actorId), coin, amount);
+      void commitRoomState(patchActorCoins(roomLiveState, actorId, next));
+    }
   }
 
   async function handleConvergenceApprove(req: ConvergenceRequest, outputItemId: string) {

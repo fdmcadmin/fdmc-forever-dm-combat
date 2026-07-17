@@ -12,6 +12,7 @@ import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, imp
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
+import { COIN_TYPES, COIN_LABEL, COIN_ABBR, type CoinType } from "../currency/currency";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
 /** DM sends a single item directly (existing flow) */
@@ -401,8 +402,8 @@ type EquipmentLibraryStandaloneProps = {
   onDeliverLoot?: (seatId: string, item: EquipmentItem, message: string) => Promise<void>;
   /** Called by DM panel to attach MULTIPLE items to one seat's actor in a single push (boss haul). */
   onDeliverLootBundle?: (seatId: string, items: EquipmentItem[], message: string) => Promise<void>;
-  /** Called by DM panel to grant gold to a seat's primary actor. mode "add" = adjust, "set" = absolute. */
-  onSendGold?: (seatId: string, amount: number, mode: "add" | "set") => void;
+  /** Called by DM panel to grant currency to a seat's primary actor. mode "add" = adjust, "set" = absolute; coin defaults to gp. */
+  onSendGold?: (seatId: string, amount: number, mode: "add" | "set", coin?: CoinType) => void;
   /** Open the New Item form immediately on mount (toolbar "+ Equipment" create flow). */
   autoCreate?: boolean;
   /** Pre-fill the encounter/loot-pool tag on a newly created item. */
@@ -441,8 +442,8 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   // Multi-item boss-haul cart: stage several items, then send them all to one seat.
   const [cart, setCart] = useState<EquipmentItem[]>([]);
   const [cartSeatId, setCartSeatId] = useState<string>("");
-  // Gold grant panel: pick a seat + amount, add-to or set the actor's gold.
-  const [goldPanel, setGoldPanel] = useState<{ seatId: string; amount: string } | null>(null);
+  // Currency grant panel: pick a seat + coin + amount, add-to or set the actor's wallet.
+  const [goldPanel, setGoldPanel] = useState<{ seatId: string; amount: string; coin: CoinType } | null>(null);
 
   function refreshLibrary() {
     setCampaignLib(loadEquipmentLibrary("campaign"));
@@ -513,9 +514,14 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     if (!goldPanel || !onSendGold) return;
     const amt = parseInt(goldPanel.amount, 10);
     if (!Number.isFinite(amt)) return;
-    onSendGold(goldPanel.seatId, amt, mode);
+    const coin = goldPanel.coin;
+    onSendGold(goldPanel.seatId, amt, mode, coin);
     const seatLabel = seats.find(s => s.seatId === goldPanel.seatId)?.label ?? goldPanel.seatId;
-    setRecentDelivery(`${mode === "add" ? `Granted ${amt} gp to` : `Set ${seatLabel}'s gold to ${amt} gp —`} ${mode === "add" ? seatLabel : ""}`.trim());
+    setRecentDelivery(
+      mode === "add"
+        ? `Granted ${amt} ${COIN_ABBR[coin]} to ${seatLabel}`
+        : `Set ${seatLabel}'s ${COIN_ABBR[coin]} to ${amt}`
+    );
     setGoldPanel(null);
     setTimeout(() => setRecentDelivery(null), 4000);
   }
@@ -636,9 +642,9 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     const seatLabel = seats.find(s => s.seatId === goldPanel.seatId)?.label ?? goldPanel.seatId;
     return (
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-        <h3 style={{ margin: 0 }}>💰 Send Gold</h3>
+        <h3 style={{ margin: 0 }}>💰 Send Currency</h3>
         <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
-          Grant gold to a player who didn't get boss loot. Gold lands on the seat's primary character and shows on their sheet.
+          Grant coin to a player. It lands on the seat's primary character's wallet and shows on their sheet. Coin types they have none of stay hidden until granted.
         </p>
         <label style={{ fontSize: 12 }}>
           Player seat:
@@ -647,21 +653,30 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
           </select>
         </label>
-        <label style={{ fontSize: 12 }}>
-          Amount (gp):
-          <input type="number" inputMode="numeric" value={goldPanel.amount} autoFocus
-            onChange={e => setGoldPanel(g => g ? { ...g, amount: e.target.value } : g)}
-            placeholder="e.g. 50"
-            style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
-        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <label style={{ fontSize: 12, flex: "0 0 110px" }}>
+            Coin:
+            <select value={goldPanel.coin} onChange={e => setGoldPanel(g => g ? { ...g, coin: e.target.value as CoinType } : g)}
+              style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+              {COIN_TYPES.map(t => <option key={t} value={t}>{COIN_LABEL[t]} ({COIN_ABBR[t]})</option>)}
+            </select>
+          </label>
+          <label style={{ fontSize: 12, flex: 1 }}>
+            Amount:
+            <input type="number" inputMode="numeric" value={goldPanel.amount} autoFocus
+              onChange={e => setGoldPanel(g => g ? { ...g, amount: e.target.value } : g)}
+              placeholder="e.g. 50"
+              style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+          </label>
+        </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={() => handleSendGold("add")}
-            title="Add this amount to the character's current gold"
+            title="Add this amount to the character's current coin"
             style={{ flex: 1, padding: "8px", background: "#4a3a1a", border: "1px solid #e0a03055", color: "#e0a030", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>
-            ＋ Add Gold
+            ＋ Add {COIN_ABBR[goldPanel.coin]}
           </button>
           <button type="button" onClick={() => handleSendGold("set")}
-            title="Set the character's gold to exactly this amount"
+            title="Set this coin to exactly this amount"
             style={{ padding: "8px 12px", background: "transparent", border: "1px solid #555", color: "#aaa", borderRadius: 6, cursor: "pointer" }}>
             Set Total
           </button>
@@ -1139,7 +1154,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             }} />
           </label>
           {onSendGold && seats.some(s => s.seatMode !== "viewer") && (
-            <button type="button" onClick={() => setGoldPanel({ seatId: seats.find(s => s.seatMode !== "viewer")?.seatId ?? "", amount: "" })}
+            <button type="button" onClick={() => setGoldPanel({ seatId: seats.find(s => s.seatMode !== "viewer")?.seatId ?? "", amount: "", coin: "gp" })}
               style={{ fontSize: 11, padding: "3px 10px", background: "#4a3a1a", color: "#e0a030", border: "1px solid #e0a03055", borderRadius: 3, cursor: "pointer" }}
               title="Grant gold to a player (for those who didn't get boss loot)">
               💰 Send Gold

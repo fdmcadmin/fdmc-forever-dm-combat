@@ -283,6 +283,22 @@ function optionalNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Normalizes a typed recharge into the bare range the card's recharge roller parses:
+ * "Recharge 5–6" / "5 - 6" / "recharge 6" all become "5-6" / "6". The roller does
+ * Number() on each side, so a "Recharge " prefix or an en-dash would make it NaN.
+ */
+function normalizeRechargeValue(value: string) {
+  const cleaned = value
+    .toLowerCase()
+    .replace(/recharge/g, "")
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, "")
+    .trim();
+
+  return /^\d(-\d)?$/.test(cleaned) ? cleaned : undefined;
+}
+
 function buildGuidedAbilities(primaryAbility: MonsterAbilityId, band: MonsterLevelBandId): Record<MonsterAbilityId, { score: number; modifier: number }> {
   const bandInfo = levelBands[band];
   const base: Record<MonsterAbilityId, number> = {
@@ -518,7 +534,10 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
       ...(isAttack && actionCritDamage.trim() ? { critDamage: optionalString(actionCritDamage) } : {}),
       ...((isAttack || isSave || isSpecial) && actionDamageType.trim() ? { damageType: optionalString(actionDamageType) } : {}),
       ...(isSpecial && actionUses.trim() ? { uses: optionalString(actionUses) } : {}),
-      ...(isSpecial && actionRecharge.trim() ? { recharge: optionalString(actionRecharge) } : {}),
+      // Recharge is not special-only — an ordinary attack/save action can recharge
+      // (Rend, Hunger Leap, Frost-Weave Pull). Gating it on isSpecial made those
+      // creatures carry "(Recharge 5-6)" in the action NAME instead of the field.
+      ...(actionRecharge.trim() ? { recharge: normalizeRechargeValue(actionRecharge) } : {}),
       description: optionalString(actionDescription),
     };
 
@@ -1047,17 +1066,17 @@ export function MonsterJconBuilder({ onDraftReady }: { onDraftReady: (draft: Dra
             </>
           )}
           {actionIsSpecial && (
-            <>
-              <label>
-                Uses
-                <input value={actionUses} onChange={(event) => setActionUses(event.target.value)} placeholder="1/day, Recharge, 3 uses..." />
-              </label>
-              <label>
-                Recharge
-                <input value={actionRecharge} onChange={(event) => setActionRecharge(event.target.value)} placeholder="Recharge 5–6" />
-              </label>
-            </>
+            <label>
+              Uses
+              <input value={actionUses} onChange={(event) => setActionUses(event.target.value)} placeholder="1/day, Recharge, 3 uses..." />
+            </label>
           )}
+          {/* Recharge is available on every action kind — an ordinary attack or save
+              action can recharge (Rend, Hunger Leap, Frost-Weave Pull). */}
+          <label>
+            Recharge
+            <input value={actionRecharge} onChange={(event) => setActionRecharge(event.target.value)} placeholder="6, 5-6, 4-6" />
+          </label>
           <label className="monster-builder-wide-field">
             Description
             <textarea value={actionDescription} onChange={(event) => setActionDescription(event.target.value)} />

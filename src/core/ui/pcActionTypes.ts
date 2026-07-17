@@ -36,7 +36,10 @@ export type PcActionDraft = {
   lastCastLevel?: number;
   consumesSpellSlot?: boolean;
   uses?: PcActionUses;
-  attackCount?: number;
+  /** Attacks this action grants per use. Overrides the actor's Extra Attack
+   *  (`Actor.attacksPerAction`) for this action only. Spells ignore both — a cast always
+   *  consumes the whole action. Note: monsters use their own `attackCount`; this is the
+   *  PC-side field and the only one `ActorCard` reads. */
   attackUses?: number;
   lockGroup?: string;
   locksWith?: string[];
@@ -81,7 +84,6 @@ function cleanNumber(value: unknown, fallback: number) {
 export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor", index = 0): PcActorAction {
   const safeName = draft.name?.trim() || `Action ${index + 1}`;
   const id = draft.id?.trim() || `${slugifyForActionId(actorName)}-${slugifyForActionId(safeName)}-${index + 1}`;
-  const attackCount = cleanNumber(draft.attackCount, 1);
   const attackUses = cleanNumber(draft.attackUses, 1);
   const spellLevel = draft.spellLevel === undefined ? undefined : cleanNumber(draft.spellLevel, 0);
 
@@ -109,7 +111,6 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.lastCastLevel !== undefined ? { lastCastLevel: cleanNumber(draft.lastCastLevel, 0) } : {}),
     ...(draft.consumesSpellSlot !== undefined ? { consumesSpellSlot: draft.consumesSpellSlot } : {}),
     ...(draft.uses ? { uses: draft.uses } : {}),
-    ...(attackCount > 1 ? { attackCount } : {}),
     ...(attackUses > 1 ? { attackUses } : {}),
     ...(draft.lockGroup?.trim() ? { lockGroup: draft.lockGroup.trim() } : {}),
     ...(draft.locksWith?.length ? { locksWith: draft.locksWith.filter(Boolean) } : {}),

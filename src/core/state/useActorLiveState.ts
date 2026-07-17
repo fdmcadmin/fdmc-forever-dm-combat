@@ -8,6 +8,10 @@ import {
   normalizeFdmcRoomLiveState,
   patchActorHp,
   patchActorGold,
+  patchActorCoins,
+  grantActorCoin,
+  getActorCoins as coinsOf,
+  getActorCopper as copperOf,
   patchActorInitiative,
   patchActorTracker,
   patchActorConditions,
@@ -16,6 +20,7 @@ import {
   type FdmcRoomLiveState,
   type FdmcStatusTracker,
 } from "../table-state/fdmcRoomLiveState";
+import { spendCopper, type Coins, type CoinType } from "../currency/currency";
 import {
   readFdmcRoomStateKey,
   publishFdmcRoomStateKey,
@@ -166,6 +171,23 @@ export function useActorLiveState(actors: Actor[]) {
     await commitState(next);
   }, [commitState]);
 
+  // ── Multi-coin wallet ─────────────────────────────────────────────────────────
+  /** Replace the whole wallet (player edits / merchant change). */
+  const setActorCoins = useCallback(async (actorId: string, coins: Coins) => {
+    await commitState(patchActorCoins(stateRef.current, actorId, coins));
+  }, [commitState]);
+  /** Add (or subtract) one coin type — DM grants, merchant payouts. */
+  const grantActorCoinAmount = useCallback(async (actorId: string, type: CoinType, amount: number) => {
+    await commitState(grantActorCoin(stateRef.current, actorId, type, amount));
+  }, [commitState]);
+  /** Pay a copper price from the wallet, auto-converting + making change. */
+  const spendActorCopper = useCallback(async (actorId: string, copper: number) => {
+    const next = patchActorCoins(stateRef.current, actorId, spendCopper(coinsOf(stateRef.current, actorId), copper));
+    await commitState(next);
+  }, [commitState]);
+  const getActorCoins = useCallback((actorId: string): Coins => coinsOf(stateRef.current, actorId), []);
+  const getActorCopper = useCallback((actorId: string): number => copperOf(stateRef.current, actorId), []);
+
   // ── Read helpers ─────────────────────────────────────────────────────────────
 
   const getActorHp = useCallback((actorId: string): HitPoints => {
@@ -218,6 +240,11 @@ export function useActorLiveState(actors: Actor[]) {
     setActorConditions,
     setActorGold,
     adjustActorGold,
+    setActorCoins,
+    grantActorCoinAmount,
+    spendActorCopper,
+    getActorCoins,
+    getActorCopper,
     getActorHp,
     getActorInitiative,
     getActorTrackers,

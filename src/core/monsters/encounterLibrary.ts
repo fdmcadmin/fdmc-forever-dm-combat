@@ -52,7 +52,7 @@ const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act1-wardenwood";
+const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-frozencloak";
 
 // ─── Storage operations ───────────────────────────────────────────────────────
 

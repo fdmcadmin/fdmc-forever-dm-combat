@@ -26,6 +26,8 @@ import { getStatusTrackerLabel } from "../types/status";
 import { formatMovementSpeed } from "../utils/movement";
 import type { DiceBridgeEvent, DiceBridgeRollRequest, DiceBridgeStatus } from "../integrations/useOwlbearDiceBridge";
 import { AbilityScoreRow } from "./AbilityScoreRow";
+import { WalletPanel } from "./WalletPanel";
+import type { Coins } from "../currency/currency";
 import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
 import { BondSummary } from "./BondSummary";
@@ -94,10 +96,12 @@ type ActorCardProps = {
   onConsumeActionResources?: (action: ActorAction) => void;
   /** A save-forcing action fired — the host decides targets (picker) and announces it. */
   onSaveCall?: (actionName: string, save: string) => void;
-  /** Character gold (gp) from live state — shown as a chip in the header. */
+  /** Character gold (gp) — legacy; superseded by `coins`. */
   gold?: number;
-  /** Set the character's gold total. When provided, the gold chip becomes editable. */
-  onSetGold?: (gold: number) => void;
+  /** Character wallet (cp/sp/gp/pp) from live state — shown on the sheet. */
+  coins?: Coins;
+  /** When provided, the wallet is player-editable and commits via this callback. */
+  onUpdateCoins?: (coins: Coins) => void;
   onShortRest?: () => void;
   onLongRest?: () => void;
   onLog: (input: AddCombatLogEntryInput) => void;
@@ -141,8 +145,7 @@ type ArmedEffect = {
   /** Bonus added to the ATTACK roll — used by spellcasting focuses (id "focus:*") and
    *  fighting styles (id "buff:*"). */
   attackFormula?: string;
-  /** For weapon buffs / fighting styles (id "buff:*") — which attacks it rides.
-   *  ranged/melee/weapon = weapon styles; "spell" = spells only; "any" = weapon + spell. */
+  /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
   appliesTo?: "ranged" | "melee" | "weapon" | "spell" | "any";
 };
 
@@ -316,9 +319,7 @@ function isRangedAttackAction(action?: ActorAction | null) {
 }
 
 // Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
-// Fighting styles (ranged/melee) ride WEAPON attacks only. Activated damage buffs
-// (Inner Radiance, Divine Favor, …) arm as "any" so they ride both weapon attacks AND
-// spells while active; "spell" rides spells only.
+// Styles/buffs ride WEAPON attacks only (never spells), gated by their target.
 function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null) {
   if (!action) return false;
   if (appliesTo === "any") return true;
@@ -661,8 +662,8 @@ export function ActorCard({
   onSpendResource,
   onConsumeActionResources,
   onSaveCall,
-  gold,
-  onSetGold,
+  coins,
+  onUpdateCoins,
   onShortRest,
   onLongRest,
   onLog,
@@ -1242,11 +1243,45 @@ export function ActorCard({
     });
   }
 
-  function getAttackUseMax(action?: ActorAction | null) {
-    const configuredUses = action?.metadata?.attackUses;
+  /** Spells never benefit from Extra Attack — a cast always consumes the whole action,
+   *  even when it resolves as an attack roll (Fire Bolt, Eldritch Blast). */
+  function isSpellEntry(entry: ReturnType<typeof getActionForReadiedKey>) {
+    if (!entry) {
+      return false;
+    }
+
+    if (entry.sourceTabId === "spells") {
+      return true;
+    }
+
+    const metadata = entry.action.metadata;
+    if (!metadata) {
+      return false;
+    }
+
+    return metadata.spellLevel !== undefined
+      || Boolean(metadata.slotCost)
+      || (metadata.spellSlotMode !== undefined && metadata.spellSlotMode !== "none");
+  }
+
+  /** Attacks granted by a single Attack action. Weapon/unarmed attacks scale with the
+   *  actor's Extra Attack (2 at L5, 3 at Fighter L11); a per-action attackUses overrides
+   *  it for that action only. Spells always resolve as one cast. */
+  function getAttackUseMax(entry: ReturnType<typeof getActionForReadiedKey>) {
+    if (!entry || isSpellEntry(entry)) {
+      return 1;
+    }
+
+    const configuredUses = entry.action.metadata?.attackUses;
 
     if (typeof configuredUses === "number" && configuredUses > 1) {
       return Math.floor(configuredUses);
+    }
+
+    const actorAttacks = actor.attacksPerAction;
+
+    if (typeof actorAttacks === "number" && actorAttacks > 1) {
+      return Math.floor(actorAttacks);
     }
 
     return 1;
@@ -1262,12 +1297,12 @@ export function ActorCard({
     }
 
     const entry = getActionForReadiedKey(state.readiedKey);
-    return getAttackUseMax(entry?.action ?? null) > 1;
+    return getAttackUseMax(entry) > 1;
   }
 
   function recordAttackUse(state: CommittedRollState) {
     const entry = getActionForReadiedKey(state.readiedKey);
-    const max = getAttackUseMax(entry?.action ?? null);
+    const max = getAttackUseMax(entry);
 
     if (max <= 1) {
       return { current: 1, max, slotComplete: true };
@@ -2443,7 +2478,7 @@ export function ActorCard({
       upsertArmedEffect({
         id: `buff:${action.id}`,
         label: `dmg ${formatBonusForChip(buffDamage)}`,
-        details: `${action.label} — adds ${formatBonusForChip(buffDamage)} to weapon attacks AND spells while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
+        details: `${action.label} — adds ${formatBonusForChip(buffDamage)} to weapon attacks while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
         source: action.label,
         formula: buffDamage,
         appliesTo: "any",
@@ -2456,13 +2491,13 @@ export function ActorCard({
       });
     }
 
-    // Activated abilities (additive riders / weapon buffs) AND free-cast class-feature
-    // spells spend their tagged resource HERE, on use — that's what makes the pool (Rage
-    // uses, Channel Divinity, class-feature N/Long-Rest, …) count down automatically.
-    // Gated to actions that DON'T produce a committed roll so it can't double up with the
-    // roll-commit consume: a free-cast spell that rolls (attack / save / damage / healing)
-    // spends via onStartCommittedRoll instead; a pure-effect free-cast (Misty Step, …)
-    // never reaches that path, so it must be spent on use.
+    // Activated abilities (additive riders / weapon buffs) never go through a committed
+    // roll, so spend their tagged resource HERE, on use — that's what makes the pool
+    // (Rage uses, Channel Divinity, …) count down automatically. Gated to non-rolling
+    // actions so it can't double up with the roll-commit consume.
+    // Free-cast class-feature spells spend here too: a pure-effect free cast (no attack /
+    // save / damage roll — Misty Step, Shield…) never reaches onStartCommittedRoll, so its
+    // N/Long-Rest pool would never count down. Rolled free-casts still spend via commit.
     const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage);
     const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
@@ -2714,11 +2749,15 @@ export function ActorCard({
 
     const _derivedForPrime = deriveActorStats(actor, undefined, status);
     const resolvePrimeFormula = (f?: string) => f ? normalizeFirstRollFormula(resolveFormulaVars(f, actor, _derivedForPrime, status)) : f;
+    // Save DC is descriptive save text (e.g. "CON DC 12"), NOT a dice formula. Resolve only
+    // @VARIABLE tokens; never run it through normalizeFirstRollFormula — that collapsed
+    // "CON DC 12" to "D12" in the save-prompt broadcast (dropping the ability).
+    const resolvePrimeSaveText = (f?: string) => f ? resolveFormulaVars(f, actor, _derivedForPrime, status) : f;
 
     const resolvedCandidate: ReadiedRollCandidate = {
       ...candidate,
       attackFormula: resolvePrimeFormula(candidate.attackFormula ?? entry.action.metadata?.attack),
-      saveDc: resolvePrimeFormula(candidate.saveDc ?? entry.action.metadata?.saveDc),
+      saveDc: resolvePrimeSaveText(candidate.saveDc ?? entry.action.metadata?.saveDc),
       damageFormula: resolvePrimeFormula(candidate.damageFormula ?? entry.action.metadata?.damage),
       critDamageFormula: resolvePrimeFormula(candidate.critDamageFormula ?? entry.action.metadata?.crit),
       critThreshold: candidate.critThreshold ?? entry.action.metadata?.critThreshold,
@@ -2776,11 +2815,15 @@ export function ActorCard({
     // Resolve @VARIABLE tokens using current derived stats (includes equipment + drain)
     const _derivedForRoll = deriveActorStats(actor, undefined, status);
     const resolveFormula = (f?: string) => f ? normalizeFirstRollFormula(resolveFormulaVars(f, actor, _derivedForRoll, status)) : f;
+    // Save DC is descriptive save text (e.g. "CON DC 12"), NOT a dice formula. Resolve only
+    // @VARIABLE tokens; never dice-normalize it (that collapsed "CON DC 12" to "D12" in the
+    // save-prompt broadcast, dropping the ability the table needs to roll).
+    const resolveSaveText = (f?: string) => f ? resolveFormulaVars(f, actor, _derivedForRoll, status) : f;
 
     const resolvedCandidate: ReadiedRollCandidate = {
       ...candidate,
       attackFormula: resolveFormula(candidate.attackFormula ?? entry.action.metadata?.attack),
-      saveDc: resolveFormula(candidate.saveDc ?? entry.action.metadata?.saveDc),
+      saveDc: resolveSaveText(candidate.saveDc ?? entry.action.metadata?.saveDc),
       damageFormula: resolveFormula(candidate.damageFormula ?? entry.action.metadata?.damage),
       critDamageFormula: resolveFormula(candidate.critDamageFormula ?? entry.action.metadata?.crit),
       critThreshold: candidate.critThreshold ?? entry.action.metadata?.critThreshold,
@@ -3412,33 +3455,9 @@ export function ActorCard({
               <span className="stat-label">Speed</span>
               <span className="stat-value speed-value">{formatMovementSpeed(actor.stats.speed)}</span>
             </div>
-            {typeof gold === "number" && (
-              <div className="speed-subrow" title="Character gold — DM grants it; merchant purchases spend it">
-                <span className="stat-label">Gold</span>
-                {onSetGold ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-                    <span style={{ color: "#e0a030" }}>💰</span>
-                    <input
-                      type="number"
-                      min={0}
-                      key={gold}
-                      defaultValue={gold}
-                      onFocus={e => e.currentTarget.select()}
-                      onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }}
-                      onBlur={e => {
-                        const v = Math.max(0, Math.floor(Number(e.currentTarget.value)));
-                        if (Number.isFinite(v) && v !== gold) onSetGold(v);
-                        else e.currentTarget.value = String(gold);
-                      }}
-                      style={{ width: 66, fontSize: 12, fontWeight: 700, textAlign: "right", color: "#e0a030", background: "#0d0d14", border: "1px solid #e0a03055", borderRadius: 4, padding: "1px 4px" }}
-                    />
-                    <span style={{ fontSize: 10, color: "#8a7a3a" }}>gp</span>
-                  </span>
-                ) : (
-                  <span className="stat-value" style={{ color: "#e0a030", fontWeight: 700 }}>💰 {gold}</span>
-                )}
-              </div>
-            )}
+            <div className="speed-subrow" title="Character wallet — DM grants coin; merchant purchases spend it. Coins you have none of stay hidden.">
+              <WalletPanel coins={coins ?? {}} editable={Boolean(onUpdateCoins)} onChange={(c) => onUpdateCoins?.(c)} />
+            </div>
           </div>
         </div>
 

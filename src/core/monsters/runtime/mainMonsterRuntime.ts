@@ -2,6 +2,26 @@ import type { MonsterCombatCandidate, MonsterReaderAction } from "../MonsterJcon
 
 export type MainMonsterVisibilityState = "hidden" | "label-only" | "condition" | "hp-bar" | "full";
 
+/**
+ * How big a threat a creature is, in the campaign's own vocabulary.
+ *
+ * This exists because `kind: "monster" | "npc" | "boss"` was doing two unrelated jobs —
+ * card styling AND threat weight — and answered neither well. `kind: "boss"` was worth a
+ * hidden ×1.6 in the old threat model, which is how 2× Lesser Wendigo (a MID-BOSS you
+ * field two of) got rated "Hard" for a party of four and then died in 4 rounds.
+ *
+ * Keep the two separate: `kind` = what it IS (creature vs NPC, drives the card).
+ * `classification` = how big a threat it is (drives the expected fight length).
+ */
+export type MonsterClassification =
+  | "normal"
+  | "strong"
+  | "elite"
+  | "mid-boss"
+  | "act-boss"
+  /** The final three bosses of the story — the longest fights in the campaign. */
+  | "final-boss";
+
 export type MainMonsterTemplate = {
   templateId: string;
   name: string;
@@ -12,6 +32,31 @@ export type MainMonsterTemplate = {
     ac: number | string;
     maxHp: number;
     speed: string;
+    /** Attacks this creature makes per turn. Set it here and the multiattack counter uses
+     *  it directly — no action needs to be named "Multiattack". Falls back to the
+     *  attackCount on an action when unset. */
+    attacksPerTurn?: number;
+    /**
+     * Effective-HP multiplier from this creature's KIT, for the rounds-to-kill estimate.
+     * Raw HP ÷ party DPR badly under-counts anything with resistances, teleports, or
+     * control: the Wendigo Wight's aura + Hunger Leap + legendary-driven downs cost the
+     * party ~25% of its uptime, so 340 raw plays like ~450 (1.37). 1.0 (or unset) = a
+     * static punching bag that takes every hit.
+     *
+     * These are ESTIMATES read off stat blocks, not measurements — the widest error bar
+     * in the encounter model. They live here, as visible data, precisely so they can be
+     * corrected from real fights instead of hiding in code the way BOSS_MULT did.
+     */
+    kitMultiplier?: number;
+    /**
+     * How big a threat this creature is — drives the expected fight length (see
+     * `ROUND_BAND` in `encounter-band/encounterRounds.ts`). Separate from `kind`,
+     * which is only what the thing IS (creature vs NPC) and drives the card.
+     *
+     * The encounter's band comes from the HIGHEST classification it fields, so a
+     * mid-boss with chaff is judged as a mid-boss fight. Unset = "normal".
+     */
+    classification?: MonsterClassification;
   };
   abilities: { label: string; value: string }[];
   traits: MonsterReaderAction[];
@@ -61,29 +106,50 @@ function monsterActionMentionedInText(actionName: string, sourceText: string): b
   return Boolean(normalizedAction) && normalizedSource.includes(normalizedAction);
 }
 
-export function deriveMonsterActionCounter(actions: MonsterReaderAction[]): MonsterCombatCandidate["actionCounter"] {
-  const multiattackAction = actions.find(
-    (action) => action.name.toLowerCase() === "multiattack" && (action.attackCount ?? 0) > 1,
-  );
+/**
+ * Multiattack is driven by the creature's data, not by what its action is called.
+ *
+ * `attacksPerTurn` on the creature wins when set. Otherwise any action declaring
+ * `attackCount > 1` supplies the counter, whatever its name — "Multiattack", "Raking
+ * Multiattack" and "Hunger Multiattack" all count. The earlier rule required the name to
+ * equal "multiattack" exactly, so every creature with a flavored multiattack name silently
+ * lost its counter.
+ */
+export function deriveMonsterActionCounter(
+  actions: MonsterReaderAction[],
+  attacksPerTurn?: number,
+): MonsterCombatCandidate["actionCounter"] {
+  const explicitTotal = typeof attacksPerTurn === "number" && attacksPerTurn > 1
+    ? Math.floor(attacksPerTurn)
+    : undefined;
+  const multiattackAction = actions.find((action) => (action.attackCount ?? 0) > 1);
+  const total = explicitTotal ?? multiattackAction?.attackCount;
 
-  if (!multiattackAction?.attackCount) {
+  if (!total || total < 2) {
     return undefined;
   }
 
-  const multiattackText = `${multiattackAction.name} ${multiattackAction.text ?? ""}`;
+  // With attacksPerTurn set and no multiattack-ish action, fall back to naming the counter
+  // after the creature's own attacks rather than a non-existent "Multiattack" action.
+  const sourceName = multiattackAction?.name ?? "Multiattack";
+  const multiattackText = `${sourceName} ${multiattackAction?.text ?? ""}`;
   const referencedStandardActions = actions
-    .filter((action) => action.name !== multiattackAction.name && isStandardMonsterAction(action))
+    .filter((action) => action.name !== sourceName && isStandardMonsterAction(action))
     .filter((action) => monsterActionMentionedInText(action.name, multiattackText))
     .map((action) => action.name);
+  // "Two Rime Claw attacks, or casts two Rime Bolts" is a CHOICE, not a combo — joining
+  // those with "+" reads as one of each. The ", or" wording marks the choice; a bare "or"
+  // is not enough ("one Dagger attack (melee or thrown)" is still a combo).
+  const joiner = /,\s*or\b/i.test(multiattackAction?.text ?? "") ? " or " : " + ";
   const label = referencedStandardActions.length > 0
-    ? `${multiattackAction.name}: ${referencedStandardActions.join(" + ")}`
-    : `${multiattackAction.name} x${multiattackAction.attackCount}`;
+    ? `${sourceName}: ${referencedStandardActions.join(joiner)}`
+    : `${sourceName} x${total}`;
 
   return {
     label,
-    total: multiattackAction.attackCount,
-    remaining: multiattackAction.attackCount,
-    sourceActionName: multiattackAction.name,
+    total,
+    remaining: total,
+    sourceActionName: sourceName,
     actionNames: referencedStandardActions,
   };
 }
@@ -217,7 +283,8 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     reactions: template.reactions,
     traits: template.traits,
     spells: [],
-    actionCounter: deriveMonsterActionCounter(template.actions),
+    attacksPerTurn: template.stats.attacksPerTurn,
+    actionCounter: deriveMonsterActionCounter(template.actions, template.stats.attacksPerTurn),
     usedActionNames: [],
   };
 }

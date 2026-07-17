@@ -93,6 +93,9 @@ export type MonsterCombatCandidate = {
   traits?: MonsterReaderAction[];
   spells?: MonsterReaderAction[];
   actionCounter?: MonsterActionCounter;
+  /** Attacks per turn declared on the creature — drives the multiattack counter directly,
+   *  independent of what any action is named. */
+  attacksPerTurn?: number;
   usedActionNames?: string[];
   // Main runtime absorption fields from Monster Cards BUILD 0.3.0c.
   // These keep the template/source record separate from live encounter state.

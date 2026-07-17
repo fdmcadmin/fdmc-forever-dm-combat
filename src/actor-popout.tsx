@@ -70,10 +70,10 @@ function ActorPopout() {
   // Need actor in an array for the hooks
   const actorList = useMemo(() => baseActor ? [baseActor] : [], [baseActor]);
 
-  const { roomLiveState, setActorHp, getActorHp, setActorGold } = useActorLiveState(actorList);
+  const { roomLiveState, setActorHp, getActorHp, setActorCoins } = useActorLiveState(actorList);
 
-  // Gold is DM-granted: only the GM may edit the wallet. Players see the read-only chip.
-  // Outside OBR (dev/standalone) default to editable so it stays testable.
+  // The wallet is DM-granted: only the GM may edit coins. Players still SEE their wallet
+  // (read-only); the merchant still spends from it. Outside OBR (dev) default to editable.
   const [isGm, setIsGm] = useState<boolean>(!OBR.isAvailable);
   useEffect(() => {
     if (!OBR.isAvailable) return;
@@ -123,8 +123,6 @@ function ActorPopout() {
         actor={actor}
         seatColor={POPOUT_SEAT_COLOR}
         hp={hp}
-        gold={roomLiveState.actorLiveState[actor.id]?.gold ?? 0}
-        onSetGold={isGm ? ((g) => void setActorGold(actor.id, g)) : undefined}
         actionState={actionState}
         concentration={concentration}
         committedRoll={committedRoll}
@@ -170,6 +168,8 @@ function ActorPopout() {
           broadcastSavePrompt(actor.name, action, save);
           addEntry({ actorName: actor.name, actionName: "Save Call", tabId: "system", message: `⚠ SAVE — ${actor.name}'s ${action}: each target must make a ${save} saving throw.` });
         }}
+        coins={roomLiveState.actorLiveState[actor.id]?.coins ?? {}}
+        onUpdateCoins={isGm ? ((c) => void setActorCoins(actor.id, c)) : undefined}
         isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actor.id}
         onShortRest={() => { resetActorResources(actor.id, "short"); addEntry({ actorName: actor.name, actionName: "Short Rest", tabId: "system", message: `${actor.name} takes a Short Rest.` }); }}
         onLongRest={() => { resetActorResources(actor.id, "long"); const m = actor.stats.hp.max; void setActorHp(actor.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}

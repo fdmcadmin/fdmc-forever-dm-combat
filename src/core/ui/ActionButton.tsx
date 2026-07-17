@@ -57,6 +57,7 @@ function metadataRows(action: ActorAction, resolveFormula?: (formula: string) =>
     ["Cost", metadata.cost],
     ["Slot Cost", metadata.slotCost],
     ["Spell Level", metadata.spellLevel !== undefined ? String(metadata.spellLevel) : undefined],
+    ["Duration", metadata.duration],
     ["Concentration", metadata.concentration],
     ["Modifier", metadata.withModifier],
     ["Additive", metadata.additive],

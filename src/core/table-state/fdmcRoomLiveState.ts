@@ -1,5 +1,6 @@
 import type { HitPoints } from "../types/actor";
 import type { MonsterVisibilityMode } from "../types/monsterTypes";
+import { type Coins, type CoinType, normalizeCoins, coinsFromGold, addCoin, coinsToCopper } from "../currency/currency";
 
 // ─── Seat types ───────────────────────────────────────────────────────────────
 
@@ -30,8 +31,10 @@ export type FdmcActorLiveState = {
   initiative: number | null;
   statusTrackers: Record<string, FdmcStatusTracker>;
   activeConditions: string[];
-  /** Character gold (gp). DM grants it; merchant purchases deduct it. Persists across encounters. */
+  /** Character gold (gp). Legacy mirror of `coins.gp`, kept for back-compat readers. */
   gold?: number;
+  /** Character wallet (cp/sp/gp/pp). DM grants add; merchant purchases deduct. Persists across encounters. */
+  coins?: Coins;
 };
 
 // ─── Live monster state ───────────────────────────────────────────────────────
@@ -124,12 +127,16 @@ function normalizeActorLiveState(val: unknown): FdmcActorLiveState {
   const a = (val && typeof val === "object" ? val : {}) as Partial<FdmcActorLiveState>;
   const rawTrackers = (a.statusTrackers && typeof a.statusTrackers === "object" ? a.statusTrackers : {}) as Record<string, unknown>;
   const conditions = Array.isArray(a.activeConditions) ? a.activeConditions.filter((c): c is string => typeof c === "string") : [];
+  // Wallet: prefer the multi-coin record; migrate a legacy single `gold` (gp) if no coins yet.
+  const coins = a.coins ? normalizeCoins(a.coins) : coinsFromGold(a.gold);
+  const goldMirror = coins.gp ?? 0;
   return {
     hp: normalizeHp(a.hp),
     initiative: typeof a.initiative === "number" && Number.isFinite(a.initiative) ? a.initiative : null,
     statusTrackers: Object.fromEntries(Object.entries(rawTrackers).map(([k, v]) => [k, normalizeTracker(v)])),
     activeConditions: conditions,
-    ...(typeof a.gold === "number" && Number.isFinite(a.gold) ? { gold: Math.max(0, Math.floor(a.gold)) } : {}),
+    coins,
+    ...(goldMirror > 0 ? { gold: goldMirror } : {}),
   };
 }
 
@@ -225,13 +232,45 @@ export function patchActorHp(state: FdmcRoomLiveState, actorId: string, hp: HitP
   });
 }
 
-export function patchActorGold(state: FdmcRoomLiveState, actorId: string, gold: number): FdmcRoomLiveState {
-  const current = state.actorLiveState[actorId] ?? { hp: { current: 1, max: 1, temp: 0 }, initiative: null, statusTrackers: {}, activeConditions: [] };
-  const next = Math.max(0, Math.floor(gold));
+const EMPTY_LIVE: FdmcActorLiveState = { hp: { current: 1, max: 1, temp: 0 }, initiative: null, statusTrackers: {}, activeConditions: [] };
+
+/** Current wallet for an actor, migrating a legacy gold value if needed. */
+export function getActorCoins(state: FdmcRoomLiveState, actorId: string): Coins {
+  const a = state.actorLiveState[actorId];
+  if (!a) return {};
+  return a.coins ? normalizeCoins(a.coins) : coinsFromGold(a.gold);
+}
+
+function writeCoins(state: FdmcRoomLiveState, actorId: string, coins: Coins): FdmcRoomLiveState {
+  const current = state.actorLiveState[actorId] ?? EMPTY_LIVE;
+  const next = normalizeCoins(coins);
+  const goldMirror = next.gp ?? 0;
   return stamp({
     ...state,
-    actorLiveState: { ...state.actorLiveState, [actorId]: { ...current, gold: next } },
+    actorLiveState: { ...state.actorLiveState, [actorId]: { ...current, coins: next, gold: goldMirror } },
   });
+}
+
+/** Replace the whole wallet (used by the player-editable Wallet). */
+export function patchActorCoins(state: FdmcRoomLiveState, actorId: string, coins: Coins): FdmcRoomLiveState {
+  return writeCoins(state, actorId, coins);
+}
+
+/** Add (or subtract, if negative) one coin type — used by DM grants and merchant payouts. */
+export function grantActorCoin(state: FdmcRoomLiveState, actorId: string, type: CoinType, amount: number): FdmcRoomLiveState {
+  return writeCoins(state, actorId, addCoin(getActorCoins(state, actorId), type, amount));
+}
+
+/** Total wallet value in copper (for merchant affordability / sorting). */
+export function getActorCopper(state: FdmcRoomLiveState, actorId: string): number {
+  return coinsToCopper(getActorCoins(state, actorId));
+}
+
+/** Back-compat: set gp directly (keeps the gp coin + gold mirror aligned). */
+export function patchActorGold(state: FdmcRoomLiveState, actorId: string, gold: number): FdmcRoomLiveState {
+  const coins = getActorCoins(state, actorId);
+  coins.gp = Math.max(0, Math.floor(gold));
+  return writeCoins(state, actorId, coins);
 }
 
 export function patchActorInitiative(state: FdmcRoomLiveState, actorId: string, initiative: number | null): FdmcRoomLiveState {

@@ -74,6 +74,8 @@ export type ActorActionMetadata = {
   spellLevel?: number;
   details?: string;
   concentration?: string;
+  /** How long the effect lasts, e.g. "1 minute", "Concentration, up to 10 min", "Instantaneous". Display only. */
+  duration?: string;
   withModifier?: string;
   additive?: string;
   critThreshold?: number;

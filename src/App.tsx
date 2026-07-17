@@ -48,6 +48,7 @@ import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useActorConcentrationState } from "./core/state/useActorConcentrationState";
 import { useCommittedRollState } from "./core/state/useCommittedRollState";
 import { useActorLiveState } from "./core/state/useActorLiveState";
+import { parsePriceCopper, coinsToCopper, formatCopperPrice, formatCoins } from "./core/currency/currency";
 import { useActorNotesState } from "./core/state/useActorNotesState";
 import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
@@ -622,9 +623,9 @@ export default function App() {
     getActorHp,
     setActorInitiative,
     getActorInitiative,
-    setActorGold,
-    adjustActorGold,
-    getActorGold,
+    setActorCoins,
+    spendActorCopper,
+    getActorCopper,
     getRoomStateBytes,
     commitRoomState,
     refreshFromRoom,
@@ -861,22 +862,23 @@ export default function App() {
       const item = allItems.find(i => i.id === msg.chosenItemId);
       if (!item) return;
 
-      // Merchant purchase — re-check the buyer can afford it (authoritative), then deduct gold.
-      const cost = typeof msg.cost === "number" && msg.cost > 0 ? Math.floor(msg.cost) : 0;
-      let goldLeft = 0;
-      if (cost > 0) {
-        const balance = getActorGold(actor.id);
-        if (balance < cost) {
+      // Merchant purchase — re-check the buyer can afford it (authoritative), then pay from the
+      // wallet (auto-convert across coins + make change). Price comes from the item's value tag.
+      const costCopper = parsePriceCopper(item.value) || (typeof msg.cost === "number" && msg.cost > 0 ? Math.floor(msg.cost) * 100 : 0);
+      let walletLeftLabel = "";
+      if (costCopper > 0) {
+        const balanceCopper = getActorCopper(actor.id);
+        if (balanceCopper < costCopper) {
           void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
             type: "fdmc:purchase-denied",
             seatId: msg.seatId,
             itemName: item.name,
-            reason: `Not enough gold — ${item.name} costs ${cost} gp, you have ${balance} gp.`,
+            reason: `Not enough coin — ${item.name} costs ${formatCopperPrice(costCopper)}, you have ${formatCopperPrice(balanceCopper)}.`,
           }, { destination: "REMOTE" });
           return;
         }
-        goldLeft = balance - cost;
-        void adjustActorGold(actor.id, -cost);
+        void spendActorCopper(actor.id, costCopper);
+        walletLeftLabel = formatCopperPrice(balanceCopper - costCopper);
       }
 
       // Build the equipment action and add it
@@ -902,10 +904,10 @@ export default function App() {
 
       addEntry({
         actorName: actor.name,
-        actionName: cost > 0 ? "Item Purchased" : "Item Equipped",
+        actionName: costCopper > 0 ? "Item Purchased" : "Item Equipped",
         tabId: "system",
-        message: cost > 0
-          ? `${actor.name} bought ${item.name} for ${cost} gp (${goldLeft} gp left).`
+        message: costCopper > 0
+          ? `${actor.name} bought ${item.name} for ${formatCopperPrice(costCopper)} (${walletLeftLabel} left).`
           : `${actor.name} received ${item.name}.`,
       });
     });
@@ -2162,13 +2164,14 @@ export default function App() {
           addEntry({ actorName: actorToShow!.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow!.name} chose ${item.name}.` });
         }
 
-        // Merchant (buy-many) — player's current gold + what they already own, both reactive.
-        const myGold = roomLiveState.actorLiveState[actorToShow!.id]?.gold ?? 0;
+        // Merchant (buy-many) — player's wallet (copper) + what they already own, both reactive.
+        const myCoins = roomLiveState.actorLiveState[actorToShow!.id]?.coins ?? {};
+        const myCopper = coinsToCopper(myCoins);
         const ownedIds = new Set((actorToShow!.tabs.equipment ?? []).map(e => e.id.replace(/^equip-/, "")));
         function buyItem(item: import("./core/ui/EquipmentBagEditor").EquipmentItem) {
-          const cost = parseGoldCost(item.value);
-          if (cost > myGold) {
-            setLootToast(`✗ Not enough gold for ${item.name} — costs ${cost} gp, you have ${myGold} gp.`);
+          const costCopper = parsePriceCopper(item.value);
+          if (costCopper > myCopper) {
+            setLootToast(`✗ Not enough coin for ${item.name} — costs ${formatCopperPrice(costCopper)}, you have ${formatCopperPrice(myCopper)}.`);
             setTimeout(() => setLootToast(null), 4000);
             return;
           }
@@ -2178,7 +2181,7 @@ export default function App() {
             offerId: lootOffer!.offerId,
             chosenItemId: item.id,
             actorId: actorToShow!.id,
-            cost,
+            cost: parseGoldCost(item.value),
           } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
         }
 
@@ -2227,14 +2230,15 @@ export default function App() {
               <div style={{ textAlign: "center" }}>
                 <p style={{ margin: "0 0 4px", fontSize: 11, color: "#e0a030", textTransform: "uppercase", letterSpacing: 2 }}>Merchant</p>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#fff" }}>🛒 {lootOffer.message}</p>
-                <p style={{ margin: "6px 0 0", fontSize: 14, color: "#e0a030", fontWeight: 700 }}>💰 {myGold} gp</p>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#555" }}>Buy what you can afford — gold is deducted as you purchase.</p>
+                <p style={{ margin: "6px 0 0", fontSize: 14, color: "#e0a030", fontWeight: 700 }}>💰 {formatCoins(myCoins)}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#555" }}>Buy what you can afford — coin is deducted (and change made) as you purchase.</p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
                 {lootOffer.items.map(item => {
-                  const cost = parseGoldCost(item.value);
+                  const costCopper = parsePriceCopper(item.value);
                   const owned = ownedIds.has(item.id);
-                  const tooPoor = cost > myGold;
+                  const unpriced = costCopper <= 0;
+                  const tooPoor = !unpriced && costCopper > myCopper;
                   return (
                   <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e", opacity: owned ? 0.55 : 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
@@ -2246,16 +2250,16 @@ export default function App() {
                         </div>
                         <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
                         {item.mechanicsText && <p style={{ margin: "0 0 6px", fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
-                        <span style={{ fontSize: 13, color: "#e0a030", fontWeight: 600 }}>💰 {cost > 0 ? `${cost} gp` : (item.value ?? "—")}</span>
+                        <span style={{ fontSize: 13, color: unpriced ? "#777" : "#e0a030", fontWeight: 600 }}>💰 {unpriced ? "No price set" : formatCopperPrice(costCopper)}</span>
                       </div>
-                      <button type="button" disabled={owned || tooPoor} onClick={() => buyItem(item)}
-                        title={owned ? "Already in your bag" : tooPoor ? "Not enough gold" : `Buy for ${cost} gp`}
+                      <button type="button" disabled={owned || tooPoor || unpriced} onClick={() => buyItem(item)}
+                        title={owned ? "Already in your bag" : unpriced ? "No price set — the DM must price this item" : tooPoor ? "Not enough coin" : `Buy for ${formatCopperPrice(costCopper)}`}
                         style={{ fontSize: 13, padding: "8px 14px", borderRadius: 6, fontWeight: 600, flexShrink: 0,
-                          background: owned ? "#1a2a1a" : tooPoor ? "#1a1a1a" : "#4a3a1a",
-                          border: `1px solid ${owned ? "#2a6e2a55" : tooPoor ? "#333" : "#e0a03055"}`,
-                          color: owned ? "#4caf50" : tooPoor ? "#555" : "#e0a030",
-                          cursor: owned || tooPoor ? "default" : "pointer" }}>
-                        {owned ? "✓ Owned" : tooPoor ? "Can't afford" : "Buy"}
+                          background: owned ? "#1a2a1a" : (tooPoor || unpriced) ? "#1a1a1a" : "#4a3a1a",
+                          border: `1px solid ${owned ? "#2a6e2a55" : (tooPoor || unpriced) ? "#333" : "#e0a03055"}`,
+                          color: owned ? "#4caf50" : (tooPoor || unpriced) ? "#555" : "#e0a030",
+                          cursor: owned || tooPoor || unpriced ? "default" : "pointer" }}>
+                        {owned ? "✓ Owned" : unpriced ? "No price" : tooPoor ? "Can't afford" : "Buy"}
                       </button>
                     </div>
                   </div>
@@ -2909,8 +2913,8 @@ export default function App() {
         onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
         onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
-        gold={roomLiveState.actorLiveState[actorToShow.id]?.gold ?? 0}
-        onSetGold={isDmMode ? ((g) => void setActorGold(actorToShow.id, g)) : undefined}
+        coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
+        onUpdateCoins={isDmMode ? ((c) => void setActorCoins(actorToShow.id, c)) : undefined}
         onShortRest={() => { resetActorResources(actorToShow.id, "short"); addEntry({ actorName: actorToShow.name, actionName: "Short Rest", tabId: "system", message: `${actorToShow.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
         onLongRest={() => { resetActorResources(actorToShow.id, "long"); const m = actorToShow.stats.hp.max; void setActorHp(actorToShow.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actorToShow.name, actionName: "Long Rest", tabId: "system", message: `${actorToShow.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
         onLog={addEntry}
@@ -3242,8 +3246,8 @@ export default function App() {
                 onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
                 onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
-                gold={roomLiveState.actorLiveState[focusedActorId]?.gold ?? 0}
-                onSetGold={isDmMode ? ((g) => void setActorGold(focusedActorId, g)) : undefined}
+                coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}
+                onUpdateCoins={isDmMode ? ((c) => void setActorCoins(focusedActorId, c)) : undefined}
                 onShortRest={() => { resetActorResources(focusedActorId, "short"); addEntry({ actorName: focusedActor.name, actionName: "Short Rest", tabId: "system", message: `${focusedActor.name} takes a Short Rest — short-rest resources reset. Spend Hit Dice from the Resources tab to heal.` }); }}
                 onLongRest={() => { resetActorResources(focusedActorId, "long"); const m = focusedActor.stats.hp.max; void setActorHp(focusedActorId, { current: m, max: m, temp: 0 }); addEntry({ actorName: focusedActor.name, actionName: "Long Rest", tabId: "system", message: `${focusedActor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
                 onLog={addEntry}

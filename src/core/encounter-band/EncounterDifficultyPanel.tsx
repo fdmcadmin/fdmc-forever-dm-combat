@@ -12,8 +12,23 @@ import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { recommendAdjustment, unitThreat, type ThreatMonster, type Difficulty } from "./encounterDifficulty";
+import {
+  estimateRounds, partyDpr, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
+  CLASSIFICATION_LABEL,
+  type PartyLane, type PartyResources, type RoundsMonster, type RoundsEstimate,
+} from "./encounterRounds";
 
 const PARTY_SIZES = [4, 5, 6] as const;
+const LANES: PartyLane[] = ["easy", "standard", "hard", "punishing"];
+const RESOURCES: PartyResources[] = ["fresh", "shortRest", "depleted"];
+
+const VERDICT_COLOR: Record<RoundsEstimate["verdict"], string> = {
+  Throwaway: "#ff4444",
+  Short: "#e07b39",
+  "On target": "#4caf50",
+  Long: "#e07b39",
+  Slog: "#ff4444",
+};
 
 const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   Trivial: "#8a8aa0",
@@ -46,6 +61,23 @@ function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTe
   return out;
 }
 
+function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[]): RoundsMonster[] {
+  const out: RoundsMonster[] = [];
+  for (const entry of encounter.entries) {
+    const t = library.find(m => m.templateId === entry.templateId);
+    if (!t) continue;
+    out.push({
+      id: entry.templateId,
+      name: t.name,
+      maxHp: hpForVariant(t.stats.maxHp, entry.hpVariant),
+      count: entry.count,
+      kitMultiplier: t.stats.kitMultiplier ?? 1,
+      classification: t.stats.classification ?? "normal",
+    });
+  }
+  return out;
+}
+
 export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   encounters: EncounterDefinition[];
   monsterLibrary: MainMonsterTemplate[];
@@ -54,6 +86,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const [encounterId, setEncounterId] = useState<string>("");
   const [partySize, setPartySize] = useState<number>(6);
   const [partyLevel, setPartyLevel] = useState<number>(1);
+  const [lane, setLane] = useState<PartyLane>("standard");
+  const [resources, setResources] = useState<PartyResources>("fresh");
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
   const monsters = useMemo(
@@ -64,8 +98,17 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     () => recommendAdjustment(monsters, partySize, partyLevel),
     [monsters, partySize, partyLevel],
   );
+  const roundsMonsters = useMemo(
+    () => (encounter ? toRoundsMonsters(encounter, monsterLibrary) : []),
+    [encounter, monsterLibrary],
+  );
+  const est = useMemo(
+    () => estimateRounds(roundsMonsters, partySize, partyLevel, lane, resources),
+    [roundsMonsters, partySize, partyLevel, lane, resources],
+  );
 
   const diffColor = DIFFICULTY_COLOR[rec.difficulty];
+  const vColor = VERDICT_COLOR[est.verdict];
 
   return (
     <section style={{ marginBottom: 12, background: "#11131a", border: "1px solid #2a2a3e", borderLeft: "3px solid #4f9dff", borderRadius: 6 }}>
@@ -137,13 +180,95 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                 </div>
               </div>
 
-              {/* Verdict */}
+              {/* Party bond lane — a party of 4 running all-offence fights like a 5 */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Party bond lane</label>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {LANES.map(l => {
+                    const active = lane === l;
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setLane(l)}
+                        title={`${LANE_LABEL[l]} — ${LANE_MULTIPLIER[l]}× midpoint DPR`}
+                        style={{
+                          fontSize: 10, fontWeight: active ? 700 : 500, padding: "3px 8px",
+                          background: active ? "#4f9dff" : "#0d0d14",
+                          color: active ? "#fff" : "#8a8aa0",
+                          border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
+                        }}
+                      >
+                        {LANE_LABEL[l]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Resource state — fixed by the MAP, not chance (e.g. no long rest between
+                  the Sentinels and the Drifter), so it belongs in the prediction. */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Resources at fight start</label>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {RESOURCES.map(r => {
+                    const active = resources === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setResources(r)}
+                        title={`${RESOURCE_LABEL[r]} — ${RESOURCE_MULTIPLIER[r]}× party DPR`}
+                        style={{
+                          fontSize: 10, fontWeight: active ? 700 : 500, padding: "3px 8px",
+                          background: active ? "#4f9dff" : "#0d0d14",
+                          color: active ? "#fff" : "#8a8aa0",
+                          border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
+                        }}
+                      >
+                        {RESOURCE_LABEL[r]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ROUNDS TO KILL — the falsifiable number: predict here, count at the table */}
+              <div style={{ background: "#0d0d14", border: `1px solid ${vColor}`, borderRadius: 6, padding: "8px 10px", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: vColor, lineHeight: 1 }}>
+                    {est.rounds.toFixed(1)}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#aaa" }}>rounds to kill</span>
+                  {/* The band this fight is judged against — set by its strongest creature. */}
+                  <span
+                    style={{ fontSize: 10, color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 10, padding: "2px 7px" }}
+                    title={`${CLASSIFICATION_LABEL[est.classification]} target: ${est.band.min}–${est.band.max} rounds. The band is the wiggle room — anywhere inside it is On target.`}
+                  >
+                    {CLASSIFICATION_LABEL[est.classification]} · target {est.band.min}–{est.band.max}
+                  </span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${vColor}22`, border: `1px solid ${vColor}`, color: vColor }}>
+                    {est.verdict}
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, color: "#777", lineHeight: 1.5 }}>
+                  {Math.round(est.rawHp)} raw HP × kit → <strong style={{ color: "#aaa" }}>{Math.round(est.effectiveHp)} effective</strong>
+                  {" ÷ "}
+                  <strong style={{ color: "#aaa" }}>{partyDpr(partySize, partyLevel, lane, resources).toFixed(1)} DPR</strong>
+                  {" "}({partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest · 77% realization)
+                </div>
+                <div style={{ fontSize: 9, color: "#666", marginTop: 4, fontStyle: "italic" }}>
+                  Count the real rounds and compare. A mismatch means the model is wrong, not your table.
+                </div>
+              </div>
+
+              {/* Legacy threat/budget verdict — unitless, kept for reference only */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 12, background: `${diffColor}22`, border: `1px solid ${diffColor}`, color: diffColor }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 12, background: `${diffColor}22`, border: `1px solid ${diffColor}`, color: diffColor }}>
                   {rec.difficulty}
                 </span>
-                <span style={{ fontSize: 11, color: "#aaa" }}>
-                  {rec.ratio.toFixed(2)}× party budget · threat {Math.round(rec.threat)} vs {Math.round(rec.budget)}
+                <span style={{ fontSize: 10, color: "#666" }}>
+                  legacy: {rec.ratio.toFixed(2)}× budget · threat {Math.round(rec.threat)} vs {Math.round(rec.budget)}
                 </span>
               </div>
 

@@ -547,8 +547,8 @@ export function MonsterActorCard({
 
   // actionCounter is derived from THIS monster's template only
   const actionCounter = useMemo(
-    () => deriveMonsterActionCounter(monster.actions ?? []),
-    [monster.actions],
+    () => deriveMonsterActionCounter(monster.actions ?? [], monster.attacksPerTurn),
+    [monster.actions, monster.attacksPerTurn],
   );
 
   const allActions = useMemo(
@@ -1112,6 +1112,7 @@ export function MonsterActorCard({
         {/* 7. Resources / Recharge — small chips derived from action text */}
         {(() => {
           const rechargeable = allActions.filter(a =>
+            a.recharge ||
             a.text?.toLowerCase().includes("recharge") ||
             a.name?.toLowerCase().includes("recharge") ||
             a.text?.match(/\d+\s*\/\s*(?:day|encounter|rest)/i)
@@ -1124,7 +1125,9 @@ export function MonsterActorCard({
                 {rechargeable.map(a => {
                   const m = a.text?.match(/recharge\s+([\d–\-]+)/i) ?? a.name?.match(/recharge\s+([\d–\-]+)/i);
                   const d = a.text?.match(/(\d+)\s*\/\s*(day|encounter|rest)/i);
-                  const badge = m ? `Recharge ${m[1]}` : d ? `${d[1]}/${d[2]}` : "Limited";
+                  // The recharge field is authoritative; the regexes only cover creatures
+                  // that mention recharge in prose without setting the field.
+                  const badge = a.recharge ? `Recharge ${a.recharge}` : m ? `Recharge ${m[1]}` : d ? `${d[1]}/${d[2]}` : "Limited";
                   return (
                     <div key={a.name} style={{ display: "flex", gap: 5, padding: "2px 8px", background: "#161622", border: "1px solid #2a2a3e", borderRadius: 10, fontSize: 10 }}>
                       <span style={{ color: "#888" }}>{a.name}</span>

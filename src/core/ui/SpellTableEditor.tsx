@@ -28,6 +28,7 @@ type SpellRow = {
   damage: string;
   crit: string;
   range: string;
+  duration: string;
   concentration: boolean;
   details: string;
   category: string;
@@ -96,6 +97,7 @@ function rowToAction(row: SpellRow): ActorAction {
       crit: row.crit || undefined,
       saveDc: row.saveDc || undefined,
       range: row.range || undefined,
+      duration: row.duration || undefined,
       cost: row.economyCost === "main" ? "Action" : row.economyCost === "bonus" ? "Bonus Action" : "Reaction",
       slotCost: slotLabel,
       spellLevel: row.level,
@@ -130,6 +132,7 @@ function actionToRow(action: ActorAction): SpellRow {
     damage: action.metadata?.damage ?? "",
     crit: action.metadata?.crit ?? "",
     range: action.metadata?.range ?? "",
+    duration: action.metadata?.duration ?? "",
     concentration: Boolean(action.concentration),
     details: action.description ?? action.metadata?.details ?? "",
     category: action.category ?? "Spells",
@@ -156,6 +159,7 @@ function makeBlankRow(): SpellRow {
     damage: "",
     crit: "",
     range: "",
+    duration: "",
     concentration: false,
     details: "",
     category: "Spells",
@@ -388,6 +392,11 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                   Range
                   <input type="text" value={row.range} onChange={e => setRow(idx, { range: e.target.value })}
                     placeholder="150 ft" style={{ ...inputStyle, marginTop: 2 }} />
+                </label>
+                <label style={{ fontSize: 11 }}>
+                  Duration
+                  <input type="text" value={row.duration} onChange={e => setRow(idx, { duration: e.target.value })}
+                    placeholder="Instantaneous, 1 min, Conc. up to 10 min…" style={{ ...inputStyle, marginTop: 2 }} />
                 </label>
                 <label style={{ fontSize: 11 }}>
                   Card Group

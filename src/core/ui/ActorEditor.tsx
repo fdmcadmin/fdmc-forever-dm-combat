@@ -157,6 +157,8 @@ type ProfileDraft = {
   /** e.g. "3 / 2" for Fighter 3 / Rogue 2. Left blank for single-class. */
   multiclassLevels: string;
   level: string;
+  /** Extra Attack — weapon/unarmed attacks per Attack action. Spells always cast once. */
+  attacksPerAction: string;
   ac: string;
   hpMax: string;
   hpCurrent: string;
@@ -177,6 +179,7 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
     className: actor.className ?? "",
     multiclassLevels: "",  // not stored separately yet — DM enters manually when building
     level: String(actor.level),
+    attacksPerAction: String(actor.attacksPerAction ?? 1),
     ac: String(actor.stats.ac),
     hpMax: String(actor.stats.hp.max),
     hpCurrent: String(actor.stats.hp.current),
@@ -195,6 +198,7 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
 
 function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
   const level = Number.parseInt(draft.level, 10);
+  const attacksPerAction = Number.parseInt(draft.attacksPerAction, 10);
   const ac = Number.parseInt(draft.ac, 10);
   const hpMax = Number.parseInt(draft.hpMax, 10);
   const hpCurrent = Math.min(Number.parseInt(draft.hpCurrent, 10), hpMax);
@@ -219,6 +223,7 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
     // For multiclass: store "Fighter / Rogue" in className so the card shows it correctly
     className: draft.className.trim() || undefined,
     level: Number.isFinite(level) ? level : 1,
+    attacksPerAction: Number.isFinite(attacksPerAction) && attacksPerAction > 1 ? attacksPerAction : undefined,
     stats: {
       ac: Number.isFinite(ac) ? ac : 10,
       hp: {
@@ -317,6 +322,14 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
         )}
         <label style={labelStyle}>Level <input type="number" min={1} max={20} value={draft.level} onChange={e => set("level", e.target.value)} style={inputStyle} /></label>
         <label style={labelStyle}>AC <input type="number" min={1} max={30} value={draft.ac} onChange={e => set("ac", e.target.value)} style={inputStyle} /></label>
+        <label style={{ ...labelStyle, gridColumn: "span 2" }}>
+          Attacks per Attack action
+          <input type="number" min={1} max={4} value={draft.attacksPerAction} onChange={e => set("attacksPerAction", e.target.value)} style={inputStyle} />
+          <span style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+            Extra Attack — 1 until L5, 2 for martials at L5, 3 for a Fighter at L11. Applies to
+            weapon/unarmed attacks only; casting a spell always uses the whole action.
+          </span>
+        </label>
         <label style={labelStyle}>HP Max <input type="number" min={1} value={draft.hpMax} onChange={e => set("hpMax", e.target.value)} style={inputStyle} /></label>
         <label style={labelStyle}>HP Current <input type="number" min={0} value={draft.hpCurrent} onChange={e => set("hpCurrent", e.target.value)} style={inputStyle} /></label>
         <label style={{ ...labelStyle, gridColumn: "span 2" }}>Speed <input type="text" value={draft.speed} onChange={e => set("speed", e.target.value)} style={inputStyle} /></label>
