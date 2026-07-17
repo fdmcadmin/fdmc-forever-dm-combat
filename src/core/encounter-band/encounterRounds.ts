@@ -26,32 +26,36 @@
 import type { MonsterClassification } from "../monsters/runtime/mainMonsterRuntime";
 
 /**
- * 5-player MIDPOINT expected DPR by ACTUAL PARTY LEVEL — bonds included.
+ * 5-player MIDPOINT expected DPR by ACTUAL PARTY LEVEL.
  *
- * Source of truth: `broken_chain_encounter_dpr_design.xlsx` (5P rerun, 2026-07-17). The
- * workbook counts, per round:
- *   - each character's full normal turn,
- *   - ONE bond action at no action-economy cost (bonds are free actions), and
- *   - the pack companion's move + attack, costing the ranger nothing.
+ * SOURCE OF TRUTH: the "Encounter DPR Bands" table in
+ * `broken_chain_encounter_dpr_design.xlsx` — the **Midpoint Expected** column, read at its
+ * checkpoints: L3 = 55.0, L6 = 112.2, L9 = 135.1, L12 = 142.8. L4/L5 are derived between
+ * the L3 and L6 checkpoints.
  *
- * ⚠ THEREFORE: DO NOT ADD A "+1 PSEUDO LEVEL" FOR THE BONDS. Their damage is already in
- * these numbers. The old table here held the NO-BOND midpoint (55.0 / 59.3 / 100.5 /
- * 112.2 / 135.1 / 142.8) — ~16-18% low — and the +1 level was a hand patch for the gap.
- * Feed this function the party's ACTUAL level; the bonds are priced in.
+ * ⚠ USE THE BANDS TABLE — NOT A PARTY SNAPSHOT. A 2026-07-17 rerun of the CURRENT party
+ * reported 63.75 / 68.75 / 118.625 / 132.625 / 165 / 170.625. Those are ~16% higher and
+ * they are NOT the benchmark: that party's bonds were picked around a 6th player running
+ * the siphon bond and its DPR sits above average. It only tells us how the party finishing
+ * Act 2 would fare. Pasting it in here silently re-tunes every encounter in the campaign.
  *
- * MIDPOINT, never peak: sizing to peak would make a low-rolling party grind a fight built
- * for ~2.2× their real output.
+ * ⚠ NO "+1 PSEUDO LEVEL". The bands table carries a "Fight Build Level — Already Used"
+ * column (L3 → L4, L6 → L7, L9 → L10, L12 → L13): the +1 is ALREADY baked into these
+ * numbers. Feed this function the party's ACTUAL level; adding a level double-counts it.
  *
- * L5 is still a CLIFF (118.6 vs 68.8 at L4) as Extra Attack and 3rd-level spells come
- * online — any ladder tuned before L5 reads ~2x undersized after it.
+ * MIDPOINT, never peak: L6 peak is 246.7 vs midpoint 112.2, so sizing to peak would make a
+ * low-rolling party grind a fight built for 2.2× their real output.
+ *
+ * L5 is a CLIFF (100.5 vs 59.3 at L4) as Extra Attack and 3rd-level spells come online —
+ * which is why any ladder tuned before L5 reads ~2× undersized after it.
  */
 const MIDPOINT_DPR_5P: ReadonlyArray<readonly [level: number, dpr: number]> = [
-  [3, 63.75],
-  [4, 68.75],
-  [5, 118.625],
-  [6, 132.625],
-  [9, 165.0],
-  [12, 170.625],
+  [3, 55.0],
+  [4, 59.3],
+  [5, 100.5],
+  [6, 112.2],
+  [9, 135.1],
+  [12, 142.8],
 ];
 
 /**
