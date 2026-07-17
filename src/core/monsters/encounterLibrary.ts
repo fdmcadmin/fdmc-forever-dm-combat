@@ -81,12 +81,19 @@ const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-classified";
 const ENCOUNTER_CLASSIFICATION: Record<string, MonsterClassification> = {
   // Act 2 ladder, in play order.
   "act2-s1-e1-hollow-pack": "strong",        // first fight of the act
-  "act2-s1-e2-frozen-hollow": "elite",       // LOW elite — chaff HP is the only thing lifting it
-  "act2-s2-e1-corrupted-hunters": "elite",   // INFERRED — sits between the low and solid elites; confirm
+  // LOW elite. It absorbed the voided Corrupted Hunters' slot in the ladder — which is why
+  // it carries the elite tag AND the HP bump despite being made only of chaff.
+  "act2-s1-e2-frozen-hollow": "elite",
+  // "act2-s2-e1-corrupted-hunters" — VOIDED from the campaign (Christopher, 2026-07-17).
+  // Deliberately untagged: it is no longer part of the ladder. The creature + its seeded
+  // encounter still exist in the library as dormant content.
   "act2-s2-e2-last-directive": "elite",      // SOLID elite
   "act2-s3-village-defense": "mid-boss",     // the Lesser Wendigo — the act's mid boss
-  "act2-s4-frozen-sentinels": "elite",       // HIGH elite — first fight after the mid boss
-  "act2-s4-pale-drifter": "elite",           // HIGH elite — second fight after the mid boss
+  // HIGH elite, both. Fought fresh at L5 / pseudo L6 — set the panel to level 6 for these,
+  // not 5. The Sentinels sit at the top of the band on purpose: it is the first time the
+  // party faces three spellcasters at once.
+  "act2-s4-frozen-sentinels": "elite",
+  "act2-s4-pale-drifter": "elite",
   "act2-s5-wendigo-wight": "act-boss",       // act boss
 };
 
