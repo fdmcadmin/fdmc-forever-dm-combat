@@ -623,15 +623,15 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act2-s4-frozen-sentinels",
     encounterLabel: "Act 2 S4 - Frozen Sentinels",
     // HP grounded in chassis (2026-07-17): Deathlock (MMotM CR 4) chassis = 8d8; its dispel
-    // magic is the Glacial Freeze counterspell. Tactician (INT) archetype sets CON +2, so
-    // 8d8 avg 36 + 2x8 = 52 (was a guessed 65). kit 1.80 = the line's control stack
-    // (~0.60-0.70 party uptime) plus the frost-thrall HP the two casters raise, which maxHp
-    // cannot see. Thralls are ~1.0 chaff (no spells) — they add raw HP, not denial.
-    stats: { kind: "monster", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
+    // magic is the Glacial Freeze counterspell. Tactician (INT) archetype — leaned MORE caster,
+    // LESS body: CON +1 (not +2), so 8d8 avg 36 + 1x8 = 44 (was a guessed 65). kit 1.80 = the
+    // line's control stack (~0.60-0.70 party uptime) plus the frost-thrall HP the two casters
+    // raise, which maxHp cannot see. Thralls are ~1.0 chaff (no spells) — raw HP, not denial.
+    stats: { kind: "monster", ac: 15, maxHp: 44, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
     abilities: [
       formatAbility("STR", 11, 0),
       formatAbility("DEX", 15, 2),
-      formatAbility("CON", 14, 2),
+      formatAbility("CON", 12, 1),
       formatAbility("INT", 16, 3),
       formatAbility("WIS", 12, 1),
       formatAbility("CHA", 16, 3),
@@ -645,7 +645,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Multiattack", kind: "action", attackCount: 2, text: "Two Rime Claw attacks, or casts two Rime Bolts. When it casts two Rime Bolts, ONLY the first carries the icy-tendril restrain." },
       { name: "Rime Claw", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 3", text: "+6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) cold. The wound crusts over with black frost." },
       { name: "Rime Bolt", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +6 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success." },
-      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a frost-thrall. FROST-THRALL: rises at 33% of its own maximum HP — Sentinel 17, Frostbound Warden 12, Frost-Weaver 25 — loses ALL spellcasting and every reaction (no Frost Ward, no Bind in Ice, no Glacial Freeze, no Whiteout), and attacks only with Rime Claw. One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
+      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a frost-thrall. FROST-THRALL: rises at 33% of its own maximum HP — Sentinel 15, Frostbound Warden 15, Frost-Weaver 25 — loses ALL spellcasting and every reaction (no Frost Ward, no Bind in Ice, no Glacial Freeze, no Whiteout), and attacks only with Rime Claw. One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
       { name: "Rimestep (Bonus Action, 1st slot)", kind: "action", text: "Teleport 30 ft to a space it can see, holding the line." },
     ],
     reactions: [
@@ -655,8 +655,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     resources: [],
     notes: [
       "Elite anchor / control caster — the homebrew 'deathlock' of the frozen north (original creature; WotC stat block used only as mechanical inspiration).",
-      "HP by party band: 39 (4P) / 52 (5P baseline) / 65 (6P). The S4 line is Sentinel 52 + Frostbound Warden 37 + Frost-Weaver 75 = 164 base at 5P (chassis-grounded 2026-07-17), plus ~54 in frost-thralls if both casters raise.",
-      "ENCOUNTER MATH (chassis-grounded, 2026-07-17): party fights S4 AND S5 at L5. Balance to 5P MIDPOINT DPR (~100.5 expected, ~77.4 effective at 77% realization) — never to peak. Base 164 (Sentinel 52 + Warden 37 + Weaver 75) x kit 1.80 = ~295 effective = ~3.8 rounds, landing the fight in the elite band (target 3.25-4.5) and correctly UNDER the Wendigo Wight's act-boss ~6.0. The old 225 base was a guess and read 5.23 (over the elite ceiling); grounding each body in its chassis fixed it. kit 1.80 is still a stat-block estimate (control stack + thrall HP) pending the DPR sheet.",
+      "HP by party band: 33 (4P) / 44 (5P baseline) / 55 (6P). The S4 line is Sentinel 44 + Frostbound Warden 45 + Frost-Weaver 75 = 164 base at 5P (chassis-grounded 2026-07-17), plus ~55 in frost-thralls if both casters raise.",
+      "ENCOUNTER MATH (chassis-grounded, 2026-07-17): party fights S4 AND S5 at L5. Balance to 5P MIDPOINT DPR (~100.5 expected, ~77.4 effective at 77% realization) — never to peak. Base 164 (Sentinel 44 + Warden 45 + Weaver 75) x kit 1.80 = ~295 effective = ~3.8 rounds, landing the fight in the elite band (target 3.25-4.5) and correctly UNDER the Wendigo Wight's act-boss ~6.0. The old 225 base was a guess and read 5.23 (over the elite ceiling); grounding each body in its chassis fixed it. Sentinel and Warden HP were rebalanced within the same total (Sentinel 52->44 leaning more caster, Warden 37->45 on the Haze Wight frontline chassis) so the round count is unchanged. kit 1.80 is still a stat-block estimate (control stack + thrall HP) pending the DPR sheet.",
       "Holds a line and never chases. Glacial Freeze (its reskinned Counterspell) fires on the party's first real spell — freezes the components solid. Raise the Frozen patches the line the moment one falls: drop two fast.",
       "Track Glacial Freeze (1/day per Sentinel), Raise-the-Frozen slots, Warding Line active count, Frost Ward reaction uses, and any icy-tendril restrains (repeat save as an action).",
       "Drop: Gold at performance band + Potion of Resistance (Cold) x1 + Antitoxin x2.",
@@ -670,20 +670,22 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Frostbound Warden",
     encounterId: "act2-s4-frozen-sentinels",
     encounterLabel: "Act 2 S4 - Frozen Sentinels",
-    // HP grounded in chassis (2026-07-17): Deathlock Wight (MMotM CR 3) chassis = 5d8+15;
-    // its Life Drain (max-HP reduction) = Withering Frost, fear = Wail, hold person = Bind
-    // in Ice. Bruiser (STR) archetype keeps CON +3, so 5d8 avg 22.5 + 15 = 37 (was a guessed
-    // 85). NOTE: the Warden is a GLASS BRUTE by chassis — 5 hit dice puts it below the
-    // Sentinel on HP even though it is the front-line rusher; its threat is damage, not
-    // durability. kit 1.80: shares the S4 line's control stack + thrall HP (see Frozen Sentinel).
-    stats: { kind: "monster", ac: 15, maxHp: 37, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
+    // HP grounded in chassis (2026-07-17, rev 2): re-chassised off the HAZE WIGHT (Dungeons
+    // of Drakkenheim, Ghostfire Gaming — CR 3, undead wight, 6d8+18) instead of the Deathlock
+    // Wight, because the Warden is a FRONTLINE body, not a spellcaster. Bruiser (STR)
+    // archetype off the Haze Wight base (STR 15 / DEX 14 / CON 16 / INT 10 / WIS 13 / CHA 15),
+    // shifted: STR -> 16, CON 16 kept, CHA -> 14. HP = 6d8 avg 27 + CON +3 x6 = 45. It is now
+    // the line's durable front body (45 > Sentinel 44), fixing the earlier glass-brute
+    // inversion, while the line's 5P total is unchanged (Sentinel dropped 8, Warden gained 8).
+    // kit 1.80: shares the S4 line's control stack + thrall HP (see Frozen Sentinel).
+    stats: { kind: "monster", ac: 15, maxHp: 45, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
     abilities: [
-      formatAbility("STR", 11, 0),
+      formatAbility("STR", 16, 3),
       formatAbility("DEX", 14, 2),
       formatAbility("CON", 16, 3),
-      formatAbility("INT", 12, 1),
-      formatAbility("WIS", 14, 2),
-      formatAbility("CHA", 16, 3),
+      formatAbility("INT", 10, 0),
+      formatAbility("WIS", 13, 1),
+      formatAbility("CHA", 14, 2),
     ],
     traits: [
       { name: "Frozen Nature", kind: "trait", text: "Immune to cold; needs no air, food, drink, or sleep. Fire and radiant damage cut through the frost unhindered." },
@@ -701,8 +703,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     resources: [],
     notes: [
-      "FRONT-LINE RUSHER — the homebrew 'deathlock wight' step-up (original creature; WotC stat block used only as mechanical inspiration). A GLASS BRUTE: on the CR-3 Deathlock Wight chassis (5 hit dice) it has the LOWEST HP of the line despite closing the front — its threat is damage and control (Withering Frost, Wail), not durability. It crashes in, the two casters hold the back.",
-      "HP band: 28 (4P) / 37 (5P baseline) / 46 (6P). It is NOT a raiser — only the two casters (Sentinel, Frost-Weaver) carry Raise the Frozen. Raised as a frost-thrall it returns at 12 HP with Rime Claw only, losing Wail and Frost Ward.",
+      "FRONT-LINE RUSHER — homebrew off the Haze Wight frontline chassis (Dungeons of Drakkenheim, Ghostfire Gaming; original names/flavor, stat block used only as mechanical inspiration). The line's durable front body (45 HP, tied-highest with the Weaver's role split): it crashes the front rank while the two casters hold the back. Bruiser STR 16 / CON 16.",
+      "HP band: 34 (4P) / 45 (5P baseline) / 56 (6P). It is NOT a raiser — only the two casters (Sentinel, Frost-Weaver) carry Raise the Frozen. Raised as a frost-thrall it returns at 15 HP with Rime Claw only, losing Wail and Frost Ward.",
       "Withering Frost is the attrition clock: max-HP reduction until a long rest. Wail of the Frozen Dead scatters the front line for a round. Frost Ward soaks the first big hit each round.",
       "Track Wail (1/day), Withering Frost max-HP reductions per target, Frost Ward reaction uses, and Bind in Ice targets.",
       "Homebrew — original names/flavor; tune AC/HP/DCs to taste.",
@@ -739,7 +741,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
       { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +7 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it." },
       { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Warden's claws, and the killing frost." },
-      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a frost-thrall: 33% of its own maximum HP (Sentinel 17, Warden 12, Frost-Weaver 25), no spellcasting, no reactions, Rime Claw only. One raise per caster; each body once." },
+      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a frost-thrall: 33% of its own maximum HP (Sentinel 15, Warden 15, Frost-Weaver 25), no spellcasting, no reactions, Rime Claw only. One raise per caster; each body once." },
       { name: "Rimestep (Bonus Action)", kind: "action", text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
     ],
     reactions: [],
