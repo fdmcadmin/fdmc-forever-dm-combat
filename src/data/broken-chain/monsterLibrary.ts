@@ -893,8 +893,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // 20 -> 18 (-> to-hit +8 -> +7, claw/bite damage +5 -> +4). Both melee attacks are now pure
     // cold (Devouring Claw 2d10+4, Hunger Bite 3d8+4) — the 1d8/2d8 cold additives are folded in,
     // not stacked. NOTE: all-cold means any cold resistance halves the whole melee kit (a real
-    // frozen-act failure point). The Hunger Bite max-HP drain is deliberately VARIABLE ("by the
-    // cold damage dealt" = the full bite) rather than a flat cap, so the attrition tracks the roll.
+    // frozen-act failure point). The Hunger Bite max-HP drain is deliberately VARIABLE — HALF the
+    // cold damage dealt (dice-tracked, not a flat cap), so the attrition clock tracks the roll. No
+    // self-heal: it drains the target's max HP, it does not return HP to the Wight.
     stats: { kind: "boss", ac: 15, maxHp: 340, speed: "40 ft", kitMultiplier: 1.37, classification: "act-boss" },
     abilities: [
       formatAbility("STR", 18, 4),
@@ -912,7 +913,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     actions: [
       { name: "Hunger Multiattack", kind: "action", attackCount: 2, text: "Two Devouring Claw attacks, plus one Hunger Bite if a creature is grappled." },
       { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", save: "STR DC 15", text: "+7 to hit, reach 5 ft. Hit: 15 (2d10 + 4) cold. DC 15 STR save or grappled." },
-      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 7", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by the cold damage dealt (the full bite) until a long rest — a creature reduced to 0 max HP dies and freezes." },
+      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 7", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
       { name: "Hunger Leap", kind: "action", recharge: "5-6", save: "STR DC 15", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
       { name: "Legendary Actions (3/round)", kind: "action", text: "The Wendigo Wight can take 3 legendary actions, choosing from the options below; only one at a time and only at the end of another creature's turn. It regains all spent legendary actions at the start of its turn." },
       { name: "Mark Prey (Legendary — 1 action)", kind: "action", text: "Marks one creature it can see. Until the end of that creature's next turn, the Wendigo has advantage on attacks against it and ignores any bonus to its AC from shields." },
@@ -927,7 +928,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       "ENCOUNTER MATH: fought at L5 (pseudo +1), FRESH off the minimum-hours long rest, so the party is at full 5P midpoint DPR (~77.4 effective). 340 raw x ~1.33 kit (Wrong Cold aura spacing, Hunger Leap repositioning ~33% of rounds, legendary-driven downs) = ~450 effective = 5.8 rounds, hitting the ~6-round act-boss target. Solving forward gives 349 vs the doc's 340 — within 3%, so the document is correct and an earlier 370 bump was reverted.",
       "Frozen Endurance REWRITTEN (was dead): the old 'DC 10 + damage taken' CON save could never be passed — a 25-damage killing blow set DC 35 against a d20+4 — so it only fired on chip damage and its fire/radiant counterplay was meaningless. It is now automatic and once per fight, which makes the fire/radiant bypass a real decision. Costs the party roughly one extra attack (~+4% effective HP), so the kit multiplier moves ~1.33 -> ~1.37 and 340 lands at 6.0 rounds — still on target, no HP change needed.",
       "Open ice field — no cover, no darkness. The whole fight is about managing the 10-ft Wrong Cold aura; Hunger Leap resets positions so the party can't just kite. Grapple + Hunger Bite is the max-HP attrition clock.",
-      "Frozen Endurance is bypassed by fire and radiant. Track Wrong Cold per round, grapple + max-HP reduction per creature, Hunger Leap recharge, Mark Prey (1/round), and the 6P Bone Field Raise flag. Level 6 gate on kill.",
+      "HUNGER BITE DRAIN (2026-07-19): the max-HP reduction is HALF the cold damage dealt (dice-variable, not the full bite). Half was the intended attrition rate; the full-bite version shipped in 0.6.3.12 was a misread. No self-heal — this drains the target's max HP only, it does NOT return HP to the Wight (kit multiplier stays 1.37, no survivability change).",
+      "Frozen Endurance is bypassed by fire and radiant. Track Wrong Cold per round, grapple + max-HP reduction (half the bite) per creature, Hunger Leap recharge, Mark Prey (1/round), and the 6P Bone Field Raise flag. Level 6 gate on kill.",
       "AC/abilities reconstructed from the encounter doc's to-hit / DCs — tune to taste.",
     ],
     visibility: { defaultState: "hp-bar", hiddenName: "The Thing at the Center of the Lake", revealedName: "Wendigo Wight" },
