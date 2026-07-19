@@ -2,10 +2,20 @@ import { useMemo, useState } from "react";
 import type { MonsterAbilityId } from "../types/monsterTypes";
 import { FormulaInput } from "./FormulaInput";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
+import {
+  buildGuidedAbilities,
+  abilityModifier,
+  ABILITY_IDS as abilityIds,
+  LEVEL_BANDS as levelBands,
+  ABILITY_STYLE_LABELS as abilityStyleLabels,
+  PRESSURE_LABELS as pressureLabels,
+  PRESSURE_NOTES as pressureNotes,
+  type MonsterLevelBandId,
+  type MonsterPressureId,
+  type HpReference,
+} from "../monsters/creator/monsterCreatorModel";
 
-type MonsterLevelBandId = "low" | "mid" | "high" | "extreme" | "final";
 type MonsterBuildMode = "guided" | "custom";
-type MonsterPressureId = "standard" | "strong" | "elite" | "bossGate";
 type MonsterBuilderPurpose = "encounter" | "publication";
 type ActionDraftCost = "Action" | "Bonus Action" | "Reaction" | "Legendary Action";
 type ActionDraftKind = "attack" | "save" | "manual" | "special" | "trait-trigger";
@@ -96,7 +106,6 @@ type DraftResource = {
   note?: string;
 };
 
-const abilityIds: MonsterAbilityId[] = ["str", "dex", "con", "int", "wis", "cha"];
 const actionCosts: ActionDraftCost[] = ["Action", "Bonus Action", "Reaction", "Legendary Action"];
 const actionKinds: ActionDraftKind[] = ["attack", "save", "manual", "special", "trait-trigger"];
 
@@ -119,142 +128,6 @@ const abilityLabels: Record<MonsterAbilityId, string> = {
   cha: "CHA",
 };
 
-const abilityStyleLabels: Record<MonsterAbilityId, string> = {
-  str: "STR bruiser / brute",
-  dex: "DEX hunter / skirmisher",
-  con: "CON endurance / guardian",
-  int: "INT caster / tactician",
-  wis: "WIS predator / mystic",
-  cha: "CHA presence / commander",
-};
-
-const pressureLabels: Record<MonsterPressureId, string> = {
-  standard: "Standard table",
-  strong: "Strong party",
-  elite: "Elite creature",
-  bossGate: "Boss / gate phase",
-};
-
-const pressureNotes: Record<MonsterPressureId, string> = {
-  standard: "baseline quick combat creature",
-  strong: "stronger party, magic items, or favorable player action economy",
-  elite: "mini-boss, dangerous solo, or sturdy named enemy",
-  bossGate: "boss, phase wall, ritual gate, or set-piece endurance target",
-};
-
-type HpReference = {
-  low: number;
-  high: number | null;
-  suggested: number;
-};
-
-type MonsterLevelBandInfo = {
-  label: string;
-  shortLabel: string;
-  primary: number;
-  secondary: number;
-  floor: number;
-  attackBonus: number;
-  damage: string;
-  critDamage: string;
-  suggestedHp: number;
-  suggestedAc: number;
-  hpReferences: Record<MonsterPressureId, HpReference>;
-};
-
-const levelBands: Record<MonsterLevelBandId, MonsterLevelBandInfo> = {
-  low: {
-    label: "Low party level 1–4",
-    shortLabel: "low 1–4",
-    primary: 14,
-    secondary: 12,
-    floor: 8,
-    attackBonus: 4,
-    damage: "1d6 + 2",
-    critDamage: "2d6 + 2",
-    suggestedHp: 22,
-    suggestedAc: 13,
-    hpReferences: {
-      standard: { low: 11, high: 35, suggested: 22 },
-      strong: { low: 35, high: 55, suggested: 44 },
-      elite: { low: 55, high: 75, suggested: 65 },
-      bossGate: { low: 75, high: null, suggested: 90 },
-    },
-  },
-  mid: {
-    label: "Mid party level 5–8",
-    shortLabel: "mid 5–8",
-    primary: 16,
-    secondary: 14,
-    floor: 10,
-    attackBonus: 6,
-    damage: "2d6 + 3",
-    critDamage: "4d6 + 3",
-    suggestedHp: 65,
-    suggestedAc: 15,
-    hpReferences: {
-      standard: { low: 45, high: 90, suggested: 65 },
-      strong: { low: 90, high: 135, suggested: 110 },
-      elite: { low: 135, high: 190, suggested: 160 },
-      bossGate: { low: 190, high: null, suggested: 220 },
-    },
-  },
-  high: {
-    label: "High party level 9–12",
-    shortLabel: "high 9–12",
-    primary: 18,
-    secondary: 16,
-    floor: 10,
-    attackBonus: 8,
-    damage: "3d8 + 4",
-    critDamage: "6d8 + 4",
-    suggestedHp: 135,
-    suggestedAc: 17,
-    hpReferences: {
-      standard: { low: 90, high: 160, suggested: 125 },
-      strong: { low: 160, high: 235, suggested: 195 },
-      elite: { low: 235, high: 320, suggested: 275 },
-      bossGate: { low: 320, high: null, suggested: 360 },
-    },
-  },
-  extreme: {
-    label: "Extreme party level 13–16",
-    shortLabel: "extreme 13–16",
-    primary: 20,
-    secondary: 18,
-    floor: 12,
-    attackBonus: 10,
-    damage: "4d10 + 5",
-    critDamage: "8d10 + 5",
-    suggestedHp: 230,
-    suggestedAc: 19,
-    hpReferences: {
-      standard: { low: 160, high: 260, suggested: 215 },
-      strong: { low: 260, high: 380, suggested: 315 },
-      elite: { low: 380, high: 520, suggested: 450 },
-      bossGate: { low: 520, high: null, suggested: 600 },
-    },
-  },
-  final: {
-    label: "Final party level 17–20",
-    shortLabel: "final 17–20",
-    primary: 22,
-    secondary: 20,
-    floor: 12,
-    attackBonus: 12,
-    damage: "6d10 + 6",
-    critDamage: "12d10 + 6",
-    suggestedHp: 360,
-    suggestedAc: 21,
-    hpReferences: {
-      standard: { low: 260, high: 420, suggested: 340 },
-      strong: { low: 420, high: 650, suggested: 520 },
-      elite: { low: 650, high: 900, suggested: 760 },
-      bossGate: { low: 900, high: null, suggested: 1000 },
-    },
-  },
-};
-
 function slugify(value: string) {
   const slug = value
     .toLowerCase()
@@ -262,10 +135,6 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 
   return slug || "custom-monster";
-}
-
-function abilityModifier(score: number) {
-  return Math.floor((score - 10) / 2);
 }
 
 function cleanNumber(value: string, fallback: number) {
@@ -297,42 +166,6 @@ function normalizeRechargeValue(value: string) {
     .trim();
 
   return /^\d(-\d)?$/.test(cleaned) ? cleaned : undefined;
-}
-
-function buildGuidedAbilities(primaryAbility: MonsterAbilityId, band: MonsterLevelBandId): Record<MonsterAbilityId, { score: number; modifier: number }> {
-  const bandInfo = levelBands[band];
-  const base: Record<MonsterAbilityId, number> = {
-    str: bandInfo.floor,
-    dex: bandInfo.floor,
-    con: bandInfo.secondary,
-    int: bandInfo.floor,
-    wis: bandInfo.floor,
-    cha: bandInfo.floor,
-  };
-
-  base[primaryAbility] = bandInfo.primary;
-
-  if (primaryAbility !== "dex") {
-    base.dex = Math.max(base.dex, bandInfo.floor + 2);
-  }
-
-  if (primaryAbility !== "con") {
-    base.con = Math.max(base.con, bandInfo.secondary);
-  }
-
-  if (primaryAbility === "int" || primaryAbility === "wis" || primaryAbility === "cha") {
-    base.wis = Math.max(base.wis, bandInfo.secondary - 2);
-  }
-
-  return Object.fromEntries(
-    abilityIds.map((abilityId) => [
-      abilityId,
-      {
-        score: base[abilityId],
-        modifier: abilityModifier(base[abilityId]),
-      },
-    ])
-  ) as Record<MonsterAbilityId, { score: number; modifier: number }>;
 }
 
 function customAbilitiesFromInputs(inputs: Record<MonsterAbilityId, string>) {
