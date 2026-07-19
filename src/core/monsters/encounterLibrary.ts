@@ -64,7 +64,7 @@ const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-frozenhusk";
+const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-ww-crfix";
 
 /**
  * TARGET tier per campaign fight (Christopher, 2026-07-17) — the round band each Act 2
