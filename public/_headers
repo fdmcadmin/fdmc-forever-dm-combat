@@ -29,6 +29,12 @@
 /assets/combatWindow.js
   Cache-Control: no-cache, must-revalidate
 
+/player-tracker.html
+  Cache-Control: no-cache, must-revalidate
+
+/assets/playerTracker.js
+  Cache-Control: no-cache, must-revalidate
+
 /manifest.json
   Cache-Control: no-cache, must-revalidate
 

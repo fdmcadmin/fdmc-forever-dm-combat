@@ -2632,6 +2632,38 @@ export default function App() {
                 ⬆ Level
               </button>
             )}
+            {/* Turn-order tracker overlay (Monster Gate B2) — opens ALONGSIDE the
+                character card(s); distinct popover id so neither closes the other. */}
+            {OBR.isAvailable && (
+              <button type="button"
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      const url = new URL(window.location.href);
+                      url.pathname = url.pathname.replace(/\/[^/]*$/, "/player-tracker.html");
+                      url.search = "";
+                      const sc = actorToShow ? seatColorById[actorToShow.id] : undefined;
+                      if (sc) url.searchParams.set("seatColor", sc);
+                      await OBR.popover.open({
+                        id: "fdm-player-tracker",
+                        url: url.toString(),
+                        width: 300,
+                        height: 540,
+                        anchorReference: "POSITION",
+                        anchorPosition: { left: 16, top: 60 },
+                        anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+                        transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+                        disableClickAway: true,
+                        marginThreshold: 16,
+                      });
+                    } catch { /* outside OBR there is no overlay */ }
+                  })();
+                }}
+                style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #4caf5033", borderRadius: 3, color: "#4caf5099", cursor: "pointer" }}
+                title="Open the turn-order tracker — party HP + monsters, alongside your character card">
+                ⚔ Tracker
+              </button>
+            )}
             {/* Always give players a way back to the seat picker */}
             <button type="button" onClick={releaseSeat}
               style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #2a2a3e", borderRadius: 3, color: "#555", cursor: "pointer" }}

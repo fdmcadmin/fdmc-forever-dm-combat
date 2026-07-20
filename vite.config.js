@@ -12,6 +12,7 @@ export default defineConfig({
                 dmPanel: "dm-panel.html",
                 monsterPopout: "monster-popout.html",
                 combatWindow: "combat-window.html",
+                playerTracker: "player-tracker.html",
                 background: "background.html",
             },
             output: {
