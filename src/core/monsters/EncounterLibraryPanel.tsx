@@ -19,6 +19,7 @@ import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, do
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyPanel";
+import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
 
 // ─── Module unlock ────────────────────────────────────────────────────────────
 // The campaign ("Broken Chain") library is gated behind a LOCAL SOFT password.
@@ -113,170 +114,9 @@ const visibilityOptions: { value: MainMonsterVisibilityState; label: string }[] 
   { value: "full", label: "Full Reveal" },
 ];
 
-// ─── Inline monster template editor ──────────────────────────────────────────
-
-type MonsterTemplateEditorProps = {
-  template: MainMonsterTemplate;
-  onSave: (updated: MainMonsterTemplate) => void;
-  onCancel: () => void;
-};
-
-function MonsterTemplateEditor({ template, onSave, onCancel }: MonsterTemplateEditorProps) {
-  const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
-
-  function updateStat<K extends keyof MainMonsterTemplate["stats"]>(key: K, val: MainMonsterTemplate["stats"][K]) {
-    setDraft(d => ({ ...d, stats: { ...d.stats, [key]: val } }));
-  }
-
-  function updateAction(list: "actions" | "traits" | "reactions", idx: number, field: keyof MonsterReaderAction, val: string) {
-    setDraft(d => {
-      const next = [...d[list]] as MonsterReaderAction[];
-      next[idx] = { ...next[idx], [field]: val };
-      return { ...d, [list]: next };
-    });
-  }
-
-  function addAction(list: "actions" | "traits" | "reactions") {
-    const newAction: MonsterReaderAction = { name: "", kind: list === "traits" ? "trait" : list === "reactions" ? "reaction" : "action" };
-    setDraft(d => ({ ...d, [list]: [...d[list], newAction] }));
-  }
-
-  function removeAction(list: "actions" | "traits" | "reactions", idx: number) {
-    setDraft(d => ({ ...d, [list]: d[list].filter((_, i) => i !== idx) }));
-  }
-
-  const actionRowStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 3, background: "#0d0d14", borderRadius: 4, padding: "6px 8px", marginBottom: 4 };
-  const inputStyle: React.CSSProperties = { padding: "2px 6px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 11, width: "100%" };
-  const labelStyle: React.CSSProperties = { fontSize: 10, color: "#666", marginBottom: 1, display: "block" };
-
-  function renderActionList(list: "actions" | "traits" | "reactions", title: string, accent: string, emptyHint: string) {
-    const count = draft[list].length;
-    return (
-      <div style={{ marginTop: 12, borderLeft: `3px solid ${accent}`, paddingLeft: 8 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: accent, textTransform: "uppercase", letterSpacing: 1 }}>
-            {title}
-            {count > 0 && (
-              <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: accent, color: "#0d0d14", letterSpacing: 0 }}>{count}</span>
-            )}
-          </span>
-          <button type="button" onClick={() => addAction(list)} style={{ fontSize: 10, padding: "1px 7px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>+ Add</button>
-        </div>
-        {draft[list].map((a, i) => (
-          <div key={i} style={actionRowStyle}>
-            <div style={{ display: "flex", gap: 4 }}>
-              <div style={{ flex: 2 }}>
-                <span style={labelStyle}>Name</span>
-                <input value={a.name} onChange={e => updateAction(list, i, "name", e.target.value)} style={inputStyle} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={labelStyle}>Roll</span>
-                <input value={a.roll ?? ""} onChange={e => updateAction(list, i, "roll", e.target.value)} placeholder="1d20+4" style={inputStyle} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={labelStyle}>Dmg</span>
-                <input value={a.damage ?? ""} onChange={e => updateAction(list, i, "damage", e.target.value)} placeholder="1d6+2" style={inputStyle} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={labelStyle}>Recharge</span>
-                <input value={(a as MonsterReaderAction & { recharge?: string }).recharge ?? ""} onChange={e => updateAction(list, i, "recharge" as keyof MonsterReaderAction, e.target.value)} placeholder="5-6" style={inputStyle} title="Recharge range e.g. '6' or '5-6'" />
-              </div>
-              <button type="button" onClick={() => removeAction(list, i)} style={{ alignSelf: "flex-end", fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
-            </div>
-            <div>
-              <span style={labelStyle}>Text</span>
-              <input value={a.text ?? ""} onChange={e => updateAction(list, i, "text", e.target.value)} style={inputStyle} />
-            </div>
-          </div>
-        ))}
-        {draft[list].length === 0 && <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: "2px 0 0" }}>{emptyHint}</p>}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      {/* Header */}
-      <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>Edit Monster</span>
-          <span title="Monsters you create are saved to your personal My Library" style={{ fontSize: 9, padding: "1px 7px", borderRadius: 8, background: "#16291b", border: "1px solid #2f7d3f", color: "#7be08a", textTransform: "uppercase", letterSpacing: 1 }}>My Library</span>
-        </span>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" onClick={() => onSave(draft)}
-            style={{ fontSize: 11, padding: "3px 12px", background: "#34c759", color: "#06210f", border: "none", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>
-            ✓ Save to My Library
-          </button>
-          <button type="button" onClick={onCancel}
-            style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
-        {/* Name + kind */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 2 }}>
-            <span style={labelStyle}>Name</span>
-            <input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-              style={{ ...inputStyle, fontSize: 13, fontWeight: 500 }} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Kind</span>
-            <select value={draft.stats.kind} onChange={e => updateStat("kind", e.target.value as MainMonsterTemplate["stats"]["kind"])}
-              style={{ ...inputStyle, fontSize: 11 }}>
-              <option value="monster">Monster</option>
-              <option value="boss">Boss</option>
-              <option value="npc">NPC</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Max HP</span>
-            <input type="number" value={draft.stats.maxHp} onChange={e => updateStat("maxHp", Number(e.target.value))} style={inputStyle} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>AC</span>
-            <input value={String(draft.stats.ac)} onChange={e => updateStat("ac", isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value))} style={inputStyle} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Speed</span>
-            <input value={draft.stats.speed} onChange={e => updateStat("speed", e.target.value)} style={inputStyle} />
-          </div>
-        </div>
-
-        {/* Visibility */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Default Visibility</span>
-            <select value={draft.visibility.defaultState}
-              onChange={e => setDraft(d => ({ ...d, visibility: { ...d.visibility, defaultState: e.target.value as MainMonsterVisibilityState } }))}
-              style={{ ...inputStyle, fontSize: 11 }}>
-              {visibilityOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Hidden Name</span>
-            <input value={draft.visibility.hiddenName}
-              onChange={e => setDraft(d => ({ ...d, visibility: { ...d.visibility, hiddenName: e.target.value } }))}
-              style={inputStyle} />
-          </div>
-        </div>
-
-        {/* Actions / Traits / Reactions — each section color-accented.
-            Recharge actions: set the Recharge field on a row (e.g. "5-6").
-            Bonus actions: name the row and note "bonus" in its Text. */}
-        {renderActionList("actions", "Actions", "#ff6b5e", "No actions yet — click + Add for an attack, multiattack, bonus, or recharge action.")}
-        {renderActionList("reactions", "Reactions", "#9be9a8", "No reactions yet — click + Add for a triggered reaction.")}
-        {renderActionList("traits", "Traits", "#e07bff", "No traits yet — click + Add for passive or signature traits.")}
-      </div>
-    </div>
-  );
-}
+// ─── Monster template editor — extracted to MonsterTemplateEditor.tsx ─────────
+// (Monster Gate WS-A: the flat inline form became the A1–A7 stepper. Both create
+// and edit open it, so the three axes are editable after creation.)
 
 // ─── Encounter entry editor ───────────────────────────────────────────────────
 
@@ -635,6 +475,7 @@ export function EncounterLibraryPanel({
       return (
         <MonsterTemplateEditor
           template={template}
+          chassisOptions={resolvedLibrary.filter(t => t.templateId !== template.templateId)}
           onSave={handleSaveMonsterTemplate}
           onCancel={() => setEditingMonsterTemplateId(null)}
         />
