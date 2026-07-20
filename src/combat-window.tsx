@@ -1,0 +1,367 @@
+/**
+ * Combat Window — the GM seat's single combat view (Monster Gate WS-B/B1).
+ *
+ * One large popover (id "fdm-combat") with three panes:
+ *   left   — Encounter Roster: every in-combat monster, HP bars, active-turn marker
+ *   center — the active creature's FULL card (MonsterActorCard)
+ *   right  — Player View: what the table sees — PCs in turn order with HP, plus
+ *            player-safe monster rows honoring each creature's visibilityState
+ *
+ * S0 architecture (MONSTER-GATE-SPEC.md): in-combat monsters are DM-local roster
+ * COPIES (monsterRosterStorage) that never write back to the library, so this window
+ * needs NO metadata rework. The one trap S0 found: each card's per-round live state
+ * (economy / used actions / recharge discharge) is component-local useState — so this
+ * window mounts EVERY in-combat card at once and only toggles visibility to swap.
+ * Nothing unmounts between turns; swapping creatures never resets their round state.
+ */
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactDOM from "react-dom/client";
+import OBR from "@owlbear-rodeo/sdk";
+import { MonsterActorCard } from "./core/ui/MonsterActorCard";
+import { SavePromptBanner } from "./core/ui/SavePromptBanner";
+import { broadcastSavePrompt } from "./core/state/savePrompt";
+import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
+import { loadMonsterRoster, saveMonsterRoster } from "./core/monsters/runtime/monsterRosterStorage";
+import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
+import type { MainEncounterMonsterInstance } from "./core/monsters/runtime/mainMonsterRuntime";
+import { buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
+import { loadActorLibrary } from "./core/seats/dmActorLibrary";
+import { FDMC_ROOM_LIVE_STATE_KEY } from "./core/table-state/sharedTableState";
+import { subscribeFdmcRoomStateKey } from "./core/table-state/roomStateBridge";
+import { normalizeFdmcRoomLiveState, createEmptyRoomLiveState, type FdmcRoomLiveState } from "./core/table-state/fdmcRoomLiveState";
+import type { Actor } from "./core/types/actor";
+import "./styles.css";
+
+const COMBAT_WINDOW_POPOVER_ID = "fdm-combat";
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+function hpColor(current: number, max: number): string {
+  if (current <= 0) return "#555";
+  const ratio = max > 0 ? current / max : 0;
+  if (ratio <= 0.25) return "#ff4444";
+  if (ratio <= 0.5) return "#e07b39";
+  if (ratio <= 0.75) return "#f0c040";
+  return "#4caf50";
+}
+
+function hpConditionLabel(current: number, max: number): string {
+  if (current <= 0) return "Down";
+  const r = max > 0 ? current / max : 0;
+  if (r <= 0.25) return "Critical";
+  if (r <= 0.5) return "Bloodied";
+  if (r <= 0.75) return "Wounded";
+  return "Healthy";
+}
+
+function HpBar({ current, max }: { current: number; max: number }) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0;
+  return (
+    <div style={{ height: 6, background: "#1c1c2c", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ width: `${pct}%`, height: "100%", background: hpColor(current, max), transition: "width 0.25s" }} />
+    </div>
+  );
+}
+
+// ─── Left pane: encounter roster ──────────────────────────────────────────────
+
+function RosterPane({ monsters, selectedId, activeId, onSelect }: {
+  monsters: MainEncounterMonsterInstance[];
+  selectedId: string | null;
+  activeId: string | null;
+  onSelect: (instanceId: string) => void;
+}) {
+  return (
+    <div style={{ overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="fdmc-section-head" style={{ color: "#e05555", fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+        ⚔ Encounter Roster
+      </div>
+      {monsters.length === 0 && (
+        <div style={{ fontSize: 11, color: "#666", padding: "12px 4px" }}>
+          No monsters in combat. Load an encounter from the Monsters panel.
+        </div>
+      )}
+      {monsters.map(m => {
+        const isSelected = m.instanceId === selectedId;
+        const isActiveTurn = m.instanceId === activeId;
+        const dead = m.currentHp <= 0;
+        return (
+          <button
+            key={m.instanceId}
+            onClick={() => onSelect(m.instanceId)}
+            style={{
+              textAlign: "left", cursor: "pointer", borderRadius: 8, padding: "8px 10px",
+              background: isSelected ? "#241a1a" : "#161622",
+              border: `1px solid ${isSelected ? "#e05555" : "#2a2a3e"}`,
+              opacity: dead ? 0.55 : 1,
+              display: "flex", flexDirection: "column", gap: 5,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {isActiveTurn && <span title="Active turn" style={{ color: "#f0c040", fontSize: 11 }}>▶</span>}
+              <strong style={{ fontSize: 12.5, color: dead ? "#777" : "#eee", flex: 1 }}>
+                {m.revealedName || m.displayName || m.name}
+              </strong>
+            </div>
+            <div style={{ fontSize: 10.5, color: hpColor(m.currentHp, m.maxHp) }}>
+              {dead ? "Down" : `${m.currentHp} / ${m.maxHp} HP`}{m.tempHp > 0 ? ` (+${m.tempHp} temp)` : ""}
+            </div>
+            <HpBar current={m.currentHp} max={m.maxHp} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Right pane: player view (what the table sees) ────────────────────────────
+
+function PlayerViewPane({ combatants, monsters }: {
+  combatants: Combatant[];
+  monsters: MainEncounterMonsterInstance[];
+}) {
+  const byInstanceId = useMemo(() => new Map(monsters.map(m => [m.instanceId, m])), [monsters]);
+  return (
+    <div style={{ overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="fdmc-section-head" style={{ color: "#7ec4e0", fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+        👁 Player View
+      </div>
+      <div style={{ fontSize: 10, color: "#666", marginBottom: 2 }}>
+        Turn order as the table sees it — PC HP visible, monsters per visibility.
+      </div>
+      {combatants.map(c => {
+        const monster = c.kind === "monster" ? byInstanceId.get(c.id) : undefined;
+        const vis = monster?.visibilityState ?? "full";
+        // Hidden monsters never appear in the player view.
+        if (monster && vis === "hidden") return null;
+        const benched = isOutOfCombat(c);
+        const showBar = c.kind === "actor" || vis === "hp-bar" || vis === "full";
+        const showNumbers = c.kind === "actor" || vis === "full";
+        const showCondition = monster && vis === "condition";
+        return (
+          <div
+            key={c.id}
+            style={{
+              borderRadius: 7, padding: "6px 9px",
+              background: c.isActive ? "#1d2433" : "#141420",
+              border: `1px solid ${c.isActive ? "#f0c040" : "#23233a"}`,
+              opacity: c.isDead || benched ? 0.5 : 1,
+              display: "flex", flexDirection: "column", gap: 4,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {c.isActive && <span style={{ color: "#f0c040", fontSize: 10 }}>▶</span>}
+              <span style={{ fontSize: 12, color: c.kind === "monster" ? "#e08585" : "#dfe4ff", fontWeight: 600, flex: 1 }}>
+                {c.name}
+              </span>
+              <span style={{ fontSize: 10, color: "#667" }}>
+                {benched ? "out" : c.initiative !== null ? `init ${c.initiative}` : "—"}
+              </span>
+            </div>
+            {showNumbers && (
+              <div style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max) }}>
+                {c.hp.current} / {c.hp.max} HP{c.hp.temp ? ` (+${c.hp.temp})` : ""}
+              </div>
+            )}
+            {showCondition && (
+              <div style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max) }}>
+                {hpConditionLabel(c.hp.current, c.hp.max)}
+              </div>
+            )}
+            {showBar && <HpBar current={c.hp.current} max={c.hp.max} />}
+          </div>
+        );
+      })}
+      {combatants.length === 0 && (
+        <div style={{ fontSize: 11, color: "#666", padding: "10px 4px" }}>No combatants yet.</div>
+      )}
+    </div>
+  );
+}
+
+// ─── The window ───────────────────────────────────────────────────────────────
+
+function CombatWindowApp() {
+  const [roster, setRoster] = useState<MainEncounterMonsterInstance[]>(() => loadMonsterRoster());
+  const [roomState, setRoomState] = useState<FdmcRoomLiveState>(() => createEmptyRoomLiveState());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [actorsById, setActorsById] = useState<Record<string, Actor>>(() => loadActorLibrary());
+  const { lastEvent: diceBridgeLastEvent, sendDicePlusRollRequest } = useOwlbearDiceBridge();
+
+  // Track roster ids we've seen so a newly-added monster auto-selects when nothing is.
+  const selectedRef = useRef<string | null>(null);
+  selectedRef.current = selectedId;
+
+  const refreshRoster = useCallback(() => {
+    const next = loadMonsterRoster();
+    setRoster(next);
+    // Keep a valid selection: fall back to the first living creature.
+    if (!next.find(m => m.instanceId === selectedRef.current)) {
+      setSelectedId(next.find(m => m.currentHp > 0)?.instanceId ?? next[0]?.instanceId ?? null);
+    }
+  }, []);
+
+  // Initial selection
+  useEffect(() => {
+    if (!selectedRef.current) refreshRoster();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Roster stays fresh: storage events (other windows write localStorage), the popout
+  // HP channel (LOCAL broadcasts on every HP commit), and a slow fallback poll.
+  useEffect(() => {
+    const onStorage = () => { refreshRoster(); setActorsById(loadActorLibrary()); };
+    window.addEventListener("storage", onStorage);
+    const poll = window.setInterval(refreshRoster, 3000);
+    let unsubHp: (() => void) | undefined;
+    if (OBR.isAvailable) {
+      unsubHp = OBR.broadcast.onMessage(MONSTER_POPOUT_HP_CHANNEL, () => refreshRoster());
+    }
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.clearInterval(poll);
+      unsubHp?.();
+    };
+  }, [refreshRoster]);
+
+  // Room live state — combat phase/round/active + initiative + actor live HP.
+  useEffect(() => {
+    return subscribeFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState, (state) => {
+      setRoomState(state);
+    });
+  }, []);
+
+  // HP commits from the mounted cards — same write path as the single monster popout:
+  // update the DM-local roster copy + LOCAL broadcast so the main window re-syncs.
+  const commitHpFor = useCallback((instanceId: string, hp: { current: number; max: number; temp: number }) => {
+    const full = loadMonsterRoster();
+    const next = full.map(m =>
+      m.instanceId === instanceId
+        ? { ...m, currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp, hp: `${hp.current}/${hp.max}` }
+        : m
+    );
+    saveMonsterRoster(next);
+    setRoster(next);
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(
+        MONSTER_POPOUT_HP_CHANNEL,
+        { type: "fdmc:monster-popout-hp", instanceId, currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp },
+        { destination: "LOCAL" },
+      ).catch(() => undefined);
+    }
+  }, []);
+
+  // Player-view combatants: player-safe naming (isDmMode=false) + hidden monsters excluded
+  // inside the pane. Actors limited to those live in the room (seeded into actorLiveState).
+  const playerCombatants = useMemo(() => {
+    const liveIds = new Set(Object.keys(roomState.actorLiveState));
+    const allActors = Object.values(actorsById);
+    const actors = liveIds.size > 0 ? allActors.filter(a => liveIds.has(a.id)) : allActors;
+    const initiativeByActor: Record<string, number | null> = {};
+    for (const [id, live] of Object.entries(roomState.actorLiveState)) initiativeByActor[id] = live.initiative;
+    const initiativeByMonster: Record<string, number | null> = {};
+    for (const [id, live] of Object.entries(roomState.monsterLiveState)) initiativeByMonster[id] = live.initiative;
+    const liveHpByActorId: Record<string, { current: number; max: number }> = {};
+    for (const [id, live] of Object.entries(roomState.actorLiveState)) liveHpByActorId[id] = { current: live.hp.current, max: live.hp.max };
+    return sortCombatants(buildCombatants(
+      actors, roster, roomState.combat.activeActorId,
+      initiativeByActor, initiativeByMonster, false, liveHpByActorId,
+    ));
+  }, [actorsById, roster, roomState]);
+
+  const activeMonsterId = roster.find(m => m.instanceId === roomState.combat.activeActorId)?.instanceId ?? null;
+  const phaseLabel = roomState.combat.phase === "combat"
+    ? `Round ${roomState.combat.round}`
+    : roomState.combat.phase === "initiative" ? "Rolling initiative" : "Setup";
+
+  return (
+    <div style={{ background: "#0d0d14", minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
+      <SavePromptBanner />
+      {/* Header */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+        borderBottom: "1px solid #2a2a3e", background: "#12121c", position: "sticky", top: 0, zIndex: 5,
+      }}>
+        <strong style={{ color: "#e05555", fontSize: 13, letterSpacing: 0.5 }}>⚔ FDMC Combat</strong>
+        <span style={{
+          fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
+          color: roomState.combat.phase === "combat" ? "#4caf50" : "#f0c040",
+          border: `1px solid ${roomState.combat.phase === "combat" ? "#2c5231" : "#5a4a1e"}`,
+        }}>
+          {phaseLabel}
+        </span>
+        <span style={{ fontSize: 10.5, color: "#667" }}>{roster.length} in combat</span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => {
+            if (OBR.isAvailable) void OBR.popover.close(COMBAT_WINDOW_POPOVER_ID).catch(() => window.close());
+            else window.close();
+          }}
+          style={{ background: "#2a1a1a", color: "#e08585", border: "1px solid #5a2a2a", borderRadius: 6, padding: "3px 10px", fontSize: 11, cursor: "pointer" }}
+        >
+          ✕ Close
+        </button>
+      </div>
+
+      {/* 3-pane body */}
+      <div style={{
+        flex: 1, display: "grid", minHeight: 0,
+        gridTemplateColumns: "232px minmax(420px, 1fr) 252px",
+      }}>
+        <div style={{ borderRight: "1px solid #23233a", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <RosterPane monsters={roster} selectedId={selectedId} activeId={activeMonsterId} onSelect={setSelectedId} />
+        </div>
+
+        {/* Center: EVERY in-combat card stays mounted; only the selected one is visible.
+            This is the S0 keep-all-mounted rule — swapping creatures must never reset
+            their per-round economy/recharge state, which lives inside each card. */}
+        <div style={{ minHeight: 0, overflowY: "auto" }}>
+          {roster.length === 0 && (
+            <div style={{ padding: 40, textAlign: "center", color: "#555", fontSize: 12 }}>
+              Load an encounter to begin.
+            </div>
+          )}
+          {roster.map(m => (
+            <div key={m.instanceId} style={{ display: m.instanceId === selectedId ? "block" : "none" }}>
+              <MonsterActorCard
+                monster={m}
+                isDmView={true}
+                onHpChange={(patch) => {
+                  commitHpFor(m.instanceId, {
+                    current: typeof patch.currentHp === "number" ? patch.currentHp : m.currentHp,
+                    max: m.maxHp,
+                    temp: typeof patch.tempHp === "number" ? patch.tempHp : m.tempHp,
+                  });
+                }}
+                onSendDicePlusRequest={sendDicePlusRollRequest}
+                diceBridgeLastEvent={diceBridgeLastEvent}
+                onSaveCall={(action, save) => broadcastSavePrompt(m.revealedName || m.displayName || m.name || "Monster", action, save)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ borderLeft: "1px solid #23233a", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <PlayerViewPane combatants={playerCombatants} monsters={roster} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function mountCombatWindow() {
+  const root = document.getElementById("root");
+  if (!root) return;
+  ReactDOM.createRoot(root).render(
+    <React.StrictMode>
+      <CombatWindowApp />
+    </React.StrictMode>
+  );
+}
+
+if (OBR.isAvailable) {
+  OBR.onReady(mountCombatWindow);
+} else {
+  mountCombatWindow();
+}

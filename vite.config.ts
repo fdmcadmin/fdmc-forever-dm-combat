@@ -12,6 +12,7 @@ export default defineConfig({
         levelupPopout: "levelup-popout.html",
         dmPanel: "dm-panel.html",
         monsterPopout: "monster-popout.html",
+        combatWindow: "combat-window.html",
         background: "background.html",
       },
       output: {

@@ -23,6 +23,12 @@
 /background.html
   Cache-Control: no-cache, must-revalidate
 
+/combat-window.html
+  Cache-Control: no-cache, must-revalidate
+
+/assets/combatWindow.js
+  Cache-Control: no-cache, must-revalidate
+
 /manifest.json
   Cache-Control: no-cache, must-revalidate
 

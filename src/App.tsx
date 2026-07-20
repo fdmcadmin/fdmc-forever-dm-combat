@@ -1523,6 +1523,7 @@ export default function App() {
     await Promise.all([
       ...DM_PANEL_IDS.map(id => OBR.popover.close(id).catch(() => undefined)),
       OBR.popover.close("fdm-actor-card").catch(() => undefined),
+      OBR.popover.close("fdm-combat").catch(() => undefined),
     ]);
   }, []);
 
@@ -2011,6 +2012,34 @@ export default function App() {
   const status = getActorStatus(actorToShow);
   // liveHpByActorId is computed above as a useMemo
 
+  // Open the GM combat window (Monster Gate WS-B/B1) — the single large DM combat
+  // view: encounter roster · active creature card · player view. Distinct popover id,
+  // so it coexists with the DM panels and actor card (S0: one DM window is all we need).
+  async function openCombatWindow() {
+    if (!OBR.isAvailable) return;
+    try {
+      const url = new URL(window.location.href);
+      url.pathname = url.pathname.replace(/\/[^/]*$/, "/combat-window.html");
+      url.search = "";
+      const width = Math.min(1240, Math.max(960, window.screen.width - 80));
+      const height = Math.min(880, Math.max(700, window.screen.height - 60));
+      await OBR.popover.open({
+        id: "fdm-combat",
+        url: url.toString(),
+        width,
+        height,
+        anchorReference: "POSITION",
+        anchorPosition: { left: Math.max(8, Math.floor((window.screen.width - width) / 2)), top: 16 },
+        anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+        transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+        disableClickAway: true,
+        marginThreshold: 16,
+      });
+    } catch {
+      // no-op — outside OBR there is no combat window
+    }
+  }
+
   // Open the level-up editor as its own resizable window (frees players from the
   // cramped combat popover). Falls back to the inline panel outside Owlbear.
   async function openLevelUpWindow() {
@@ -2096,6 +2125,12 @@ export default function App() {
             <button type="button" style={DM_USE_SHADES[2]} title="Browse, create &amp; load Party Characters, Monsters and Equipment"
               onClick={() => void openDmPanel("library")}>
               Library{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
+            </button>
+            <button type="button"
+              title="Open the GM combat window — roster, active creature card, and player view in one window"
+              style={{ background: "#2a1515", border: "1px solid #8a3434", color: "#e08585", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+              onClick={() => void openCombatWindow()}>
+              ⚔ Combat{monsterCandidates.length > 0 ? ` (${monsterCandidates.length})` : ""}
             </button>
 
             <span style={{ flex: 1, minWidth: 8 }} />
