@@ -25,6 +25,9 @@ export type MonsterReaderAction = {
   attackCount?: number;
   /** Recharge range e.g. "6", "5-6", "4-6" — ability re-enables on successful 1d6 roll */
   recharge?: string;
+  /** Legendary-action cost (1 or 2). Set = this is a legendary action spending from the
+   *  creature's `stats.legendaryPerRound` pool (Monster Gate A6). */
+  legendaryCost?: number;
 };
 
 export type MonsterActionCounter = {

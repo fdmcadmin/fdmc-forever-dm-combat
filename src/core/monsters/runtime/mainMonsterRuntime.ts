@@ -19,8 +19,25 @@ export type MonsterClassification =
   | "elite"
   | "mid-boss"
   | "act-boss"
-  /** The final three bosses of the story — the longest fights in the campaign. */
+  /** The final three bosses of the story — the longest fights in the campaign.
+   *  UI label: "Major Story Boss" (Christopher, Monster Gate). */
   | "final-boss";
+
+/**
+ * How a creature FIGHTS — the six FDMC styles (Monster Gate WS-A / A1).
+ * A THIRD axis, distinct from both `kind` (what it is — drives the card) and
+ * `classification` (how big a threat — drives fight length). The archetype does not
+ * generate ability scores: scores come from the CHASSIS (or the encounter document),
+ * and swapping the archetype REDISTRIBUTES that same score pool into a new shape
+ * (see `creator/monsterCreatorModel.ts`).
+ */
+export type MonsterArchetype =
+  | "bruiser"      // STR — brute, giant, mauler
+  | "skirmisher"   // DEX — hunter, mobile striker
+  | "guardian"     // CON — endurance, tank, undead wall
+  | "tactician"    // INT — caster, controller, planner
+  | "mystic"       // WIS — predator, divine/nature mystic
+  | "commander";   // CHA — presence, leader, fear
 
 export type MainMonsterTemplate = {
   templateId: string;
@@ -57,6 +74,17 @@ export type MainMonsterTemplate = {
      * mid-boss with chaff is judged as a mid-boss fight. Unset = "normal".
      */
     classification?: MonsterClassification;
+    /** How it FIGHTS — the six FDMC styles. First-class + editable after creation
+     *  (Monster Gate A1; was flattened into the old JCON subtitle). */
+    archetype?: MonsterArchetype;
+    /** Creature type — "undead", "beast", "fiend"… First-class + editable after
+     *  creation (Monster Gate A1; deferred item 1). */
+    creatureType?: string;
+    /** Size category — Tiny/Small/Medium/Large/Huge/Gargantuan. */
+    size?: string;
+    /** Legendary actions per round (Monster Gate A6). Actions carrying a
+     *  `legendaryCost` spend from this pool; unset = no legendary actions. */
+    legendaryPerRound?: number;
   };
   abilities: { label: string; value: string }[];
   traits: MonsterReaderAction[];
