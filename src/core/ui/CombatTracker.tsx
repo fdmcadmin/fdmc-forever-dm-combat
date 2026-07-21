@@ -62,6 +62,13 @@ export type CombatTrackerProps = {
   onRollInitiative?: (combatantId: string) => void;
   /** Swap two combatants' initiative values — Alert feat, class features, DM call */
   onSwapInitiative?: (idA: string, idB: string) => void;
+  /**
+   * Condensed mode (Monster Gate B3): the in-app tracker becomes a slim NAMES + ORDER
+   * strip — full HP / economy dots / swap / bench live in the combat window (DM) and the
+   * player tracker overlay now. Keeps the header phase controls (Start/Next/End) and the
+   * per-row initiative cell so combat can still be rolled and started from here.
+   */
+  condensed?: boolean;
 };
 
 // ─── Out of combat ─────────────────────────────────────────────────────────
@@ -239,6 +246,7 @@ export function CombatTracker({
   onSetInitiative,
   onRollInitiative,
   onSwapInitiative,
+  condensed = false,
 }: CombatTrackerProps) {
   const viewerActorIdSet = new Set(viewerActorIds ?? []);
   const isViewerActive = activeId !== null && viewerActorIdSet.has(activeId);
@@ -510,7 +518,7 @@ export function CombatTracker({
               {/* Bench / Rejoin toggle — DM anytime; a player on their own actor while
                   initiative is still being set. Bench sets a negative initiative so the
                   combatant is skipped by Start Combat / Next Turn. */}
-              {canToggleOut && (
+              {!condensed && canToggleOut && (
                 <button
                   type="button"
                   onClick={e => {
@@ -538,7 +546,7 @@ export function CombatTracker({
               )}
 
               {/* Swap button — DM only, before or during combat */}
-              {isDmMode && onSwapInitiative && combatant.initiative !== null && (
+              {!condensed && isDmMode && onSwapInitiative && combatant.initiative !== null && (
                 <button
                   type="button"
                   onClick={e => {
@@ -558,7 +566,7 @@ export function CombatTracker({
               )}
 
               {/* Economy dots — DM only, actor combatants */}
-              {isDmMode && combatant.kind === "actor" && actionStateByActorId && (() => {
+              {!condensed && isDmMode && combatant.kind === "actor" && actionStateByActorId && (() => {
                 const state = actionStateByActorId[combatant.id];
                 if (!state) return null;
                 const costs = ["main", "bonus", "reaction"] as const;
@@ -581,8 +589,9 @@ export function CombatTracker({
 
               {/* HP — the DM and an actor's own controller see exact numbers; other seats
                   see the abstracted condition (Healthy/Wounded/…) for party members they
-                  don't control. Monster true HP stays DM-only (players get the bar only). */}
-              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                  don't control. Monster true HP stays DM-only (players get the bar only).
+                  Condensed (B3): hidden — HP lives in the combat window / player overlay. */}
+              {!condensed && <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                 {(isDmMode || combatant.kind === "actor") && (() => {
                   const temp = combatant.hp.temp ?? 0;
                   const displayCurrent = combatant.hp.current + temp;
@@ -611,7 +620,7 @@ export function CombatTracker({
                     borderRadius: 2,
                   }} />
                 </div>
-              </div>
+              </div>}
             </div>
 
             {/* Companion sub-entries — act on owner's turn, inherit initiative */}
@@ -630,7 +639,7 @@ export function CombatTracker({
                   <span style={{ fontSize: 9, color: "#444", marginLeft: 4 }}>acts on {combatant.name}'s turn</span>
                 </span>
                 {/* Economy dots — companion row */}
-                {isDmMode && actionStateByActorId && (() => {
+                {!condensed && isDmMode && actionStateByActorId && (() => {
                   const cState = actionStateByActorId[companion.id];
                   if (!cState) return null;
                   const costs = ["main", "bonus", "reaction"] as const;

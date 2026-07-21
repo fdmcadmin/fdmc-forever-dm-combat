@@ -2883,9 +2883,14 @@ export default function App() {
       )}
 
 
-      {/* ── Combat Tracker — shows whenever there are combatants ── */}
-      {allCombatants.length > 0 && (
+      {/* ── Combat Tracker (Monster Gate B3) — a condensed NAMES + ORDER strip. Only
+             appears once a fight is actually staged (a monster is in the roster) or combat
+             is running — the party alone no longer keeps it on screen. Full HP / economy /
+             swap / bench live in the combat window (DM) and the player tracker overlay. ── */}
+      {allCombatants.length > 0
+        && (allCombatants.some(c => c.kind === "monster") || roomLiveState.combat.phase === "combat") && (
         <CombatTracker
+          condensed
           combatants={allCombatants}
           activeId={roomLiveState.combat.activeActorId}
           round={roomLiveState.combat.round}
