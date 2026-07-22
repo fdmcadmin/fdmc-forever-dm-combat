@@ -9,70 +9,95 @@
  * Rounds-to-kill is falsifiable: the panel predicts a number, the DM counts rounds at
  * the table, and a mismatch means the model is wrong. That feedback loop is the point.
  *
- *   rounds = Σ(rawHP × kitMultiplier × count) ÷ (midpointDPR × size/5 × lane × REALIZATION)
+ *   rounds = Σ(rawHP × kitMultiplier × count) ÷ (dpr4P × size/4 × lane × rest × REALIZATION)
  *
- * CALIBRATION (2026-07: single data point — treat as provisional):
- *   2× Lesser Wendigo @ 90 HP = 180 HP died in 3.5–4.5 rounds to a 4P party at L4.
- *   Chart expected 58.1 → ~45 actual, so REALIZATION ≈ 0.77.
+ * SOURCE OF TRUTH (2026-07-21): `Broken_Chain_v12_Full_DPR_and_Encounter_Rerun.xlsx`
+ * (100,000 Monte Carlo trials per lane; hit/save-adjusted). It supersedes the older
+ * `broken_chain_encounter_dpr_design.xlsx` completely.
  *
- * Source of truth for DPR: `broken_chain_encounter_dpr_design.xlsx` (bond + class, 5P).
+ * BASELINE IS A **4-PLAYER** PARTY. The supported spread is 3 / 4 / 5, so the `low` /
+ * `standard` / `high` HP variants mean 3P / 4P / 5P and an encounter's authored HP is its
+ * 4-player total. (Previously 4/5/6, which was one player too generous.)
  *
  * The predicted number is judged against a TARGET BAND chosen by the encounter's
- * classification (see `ROUND_BAND`) — a normal fight and an act boss are no longer held
- * to the same window.
+ * classification (see `ROUND_BAND`) — a normal fight and an act boss are not held to the
+ * same window.
+ *
+ * ⚠ THIS IS A **PACING CHECK, NOT THE DIFFICULTY CALCULATION.** D&D balances encounters via
+ * the Low/Moderate/High XP budget per character. A fight can pass pacing and still be
+ * officially over-budget (the Wendigo Wight paces as an act boss while its CR 12 is "Above
+ * High" for five level-5 characters). Read the two side by side; neither replaces the other.
  */
 
 // Type-only: erased at compile, so this module stays dependency-free for the test harness.
 import type { MonsterClassification } from "../monsters/runtime/mainMonsterRuntime";
 
 /**
- * 5-player MIDPOINT expected DPR by ACTUAL PARTY LEVEL.
+ * **4-player** BALANCE CENTER expected DPR by ACTUAL PARTY LEVEL.
  *
- * SOURCE OF TRUTH: the "Encounter DPR Bands" table in
- * `broken_chain_encounter_dpr_design.xlsx` — the **Midpoint Expected** column, read at its
- * checkpoints: L3 = 55.0, L6 = 112.2, L9 = 135.1, L12 = 142.8. L4/L5 are derived between
- * the L3 and L6 checkpoints.
+ * SOURCE OF TRUTH (2026-07-21): `Broken_Chain_v12_Full_DPR_and_Encounter_Rerun.xlsx` →
+ * **Size Summary**, the *Balance Center* column at party size 4. This supersedes the old
+ * 5-player `broken_chain_encounter_dpr_design.xlsx` bands entirely.
  *
- * ⚠ USE THE BANDS TABLE — NOT A PARTY SNAPSHOT. A 2026-07-17 rerun of the CURRENT party
- * reported 63.75 / 68.75 / 118.625 / 132.625 / 165 / 170.625. Those are ~16% higher and
- * they are NOT the benchmark: that party's bonds were picked around a 6th player running
- * the siphon bond and its DPR sits above average. It only tells us how the party finishing
- * Act 2 would fare. Pasting it in here silently re-tunes every encounter in the campaign.
+ * ⚠ THE BASELINE PARTY IS **4**, NOT 5 (Christopher, 2026-07-21). D&D's own XP budget is
+ * per-character against a 4-character norm; the campaign had been authored against a 4/5/6
+ * spread, which is one player too generous. The supported spread is now **3 / 4 / 5**, so
+ * `low` / `standard` / `high` mean 3P / 4P / 5P and the AUTHORED (standard) HP of every
+ * encounter is its 4-player value.
  *
- * ⚠ NO "+1 PSEUDO LEVEL". The bands table carries a "Fight Build Level — Already Used"
- * column (L3 → L4, L6 → L7, L9 → L10, L12 → L13): the +1 is ALREADY baked into these
- * numbers. Feed this function the party's ACTUAL level; adding a level double-counts it.
+ * That reconciles exactly against the workbook's authored bands — Frozen Sentinels
+ * 129 / **172** / 215, Drifter+Cloak 166 / **221** / 276, Lesser Wendigos 180 / **240** / 300
+ * — each 0.75× / 1.0× / 1.25× around the 4P figure.
  *
- * MIDPOINT, never peak: L6 peak is 246.7 vs midpoint 112.2, so sizing to peak would make a
- * low-rolling party grind a fight built for 2.2× their real output.
+ * ⚠ BALANCE CENTER, not the current party. The workbook keeps them deliberately separate:
+ * Balance Center is the generic authoring baseline across all legal shells; "Current Party"
+ * (5P, 109.15 @L5) is this specific tank-heavy table, which sits at the ~10th percentile —
+ * "lower-output, survival-forward". Authoring against the live party silently re-tunes the
+ * whole campaign to one roster.
  *
- * L5 is a CLIFF (100.5 vs 59.3 at L4) as Extra Attack and 3rd-level spells come online —
- * which is why any ladder tuned before L5 reads ~2× undersized after it.
+ * ⚠ NO "+1 PSEUDO LEVEL" — feed this the party's ACTUAL level; the stage mapping
+ * (L5 Realized, L6 Metamorphosis, L9/L12 Tempered) is already baked in.
+ *
+ * MIDPOINT, never peak: legal burst is a resource ceiling, not a balancing value — sizing to
+ * it makes a low-rolling party grind a fight built for far more than their real output.
  */
-const MIDPOINT_DPR_5P: ReadonlyArray<readonly [level: number, dpr: number]> = [
-  [3, 55.0],
-  [4, 59.3],
-  [5, 100.5],
-  [6, 112.2],
-  [9, 135.1],
-  [12, 142.8],
+const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> = [
+  // v12 "Size Summary" → Balance Center, party size 4. L3 is extrapolated below L5 on the
+  // L5→L6 slope; the workbook's own checkpoints start at L5.
+  [3, 92.0],
+  [4, 101.0],
+  [5, 110.4],
+  [6, 122.2],
+  [9, 153.1],
+  [12, 185.3],
 ];
 
 /**
- * Fraction of chart DPR a real table actually lands. The chart is dice EV with no
- * hit-chance, no movement, no rounds spent not attacking. Calibrated from ONE fight —
- * the weakest number in this model. Every prediction scales linearly with it.
+ * Dice-EV → real-table discount. **Now 1.0 — deliberately inert.**
  *
- * ⚠ THE CURRENT TABLE IS NOT THE BENCHMARK (Christopher, 2026-07-17). Do not calibrate
- * this — or any kitMultiplier — from the live party's fights:
- *   - Their bonds were chosen around a SIXTH player running the siphon bond, who is gone.
- *     The leftover mix puts their DPR ABOVE an average party's.
- *   - The Frozen Hollow and Last Directive were both fought with a deliberately
- *     sub-optimised tank (nothing above +3 on any modifier), which drags the other way.
- * Two confounders pulling in opposite directions means their observed round counts cannot
- * price a creature. The benchmark is the workbook's SET 5-PLAYER party (MIDPOINT_DPR_5P).
+ * The old 0.77 existed because the previous workbook was raw dice EV with no hit chance. The
+ * v12 model's Expected DPR is already **hit/save-adjusted** against the per-level target AC
+ * (L5 15 · L6 16 · L9 17 · L12 18), so applying 0.77 on top would double-discount every
+ * encounter by ~23%. Kept as a named constant rather than deleted so the term stays visible
+ * in the formula and can be re-armed if a future model reverts to raw EV.
+ *
+ * ⚠ THE CURRENT TABLE IS NOT THE BENCHMARK. Do not calibrate this — or any kitMultiplier —
+ * from the live party's fights. The v12 rerun puts them at the ~10th percentile
+ * ("lower-output, survival-forward", 109.15 vs a 141.14 five-player median), and their
+ * earlier fights carried two confounders pulling opposite ways (a bond mix built around a
+ * departed 6th player vs a deliberately sub-optimised tank). Author against Balance Center.
  */
-export const REALIZATION = 0.77;
+export const REALIZATION = 1.0;
+
+/**
+ * The party size the campaign is AUTHORED against. `low`/`standard`/`high` HP variants mean
+ * 3P / **4P** / 5P, so an encounter's authored (standard) HP is its 4-player total and the
+ * 0.75/1.25 variants produce the 3P and 5P bands.
+ */
+export const BASELINE_PARTY_SIZE = 4;
+
+/** The party sizes the model supports, low → high. */
+export const SUPPORTED_PARTY_SIZES = [3, 4, 5] as const;
 
 /** Party bond posture. Multiplier = that party's DPR ÷ midpoint DPR. */
 export type PartyLane = "easy" | "standard" | "hard" | "punishing";
@@ -106,25 +131,48 @@ export const LANE_LABEL: Record<PartyLane, string> = {
 };
 
 /**
- * TARGET FIGHT LENGTH per classification, in rounds (Christopher, 2026-07-17).
+ * TARGET FIGHT LENGTH per classification, in rounds.
  *
- * The band IS the wiggle room: anywhere inside it is "On target". Below min the party
- * walked through it; above max it is turning into a slog. Note there is no single
- * 3-round floor — a `normal` fight is *supposed* to end in 2-2.5; the floor only ever
- * applied to bosses.
+ * REVISED 2026-07-21 from the v12 rerun's "Round-Pacing Bands" table
+ * (`Broken_Chain_v12_Full_DPR_and_Encounter_Rerun.xlsx` → **Last 3 Rerun**, 100,000 trials
+ * per lane). Changes from the 2026-07-17 set: normal 2–2.5 → **2–3**, strong 2.25–3.5 →
+ * **2.5–3.5**, elite 3.25–4.5 → **3–4.5**, final-boss 6–8 → **6–7.5 with 8 a hard cap**.
+ * mid-boss and act-boss are unchanged.
  *
- * Data, not code — on purpose. These are the targets every encounter is judged against,
- * so they must be correctable from real fights rather than buried in a threshold chain
- * (the mistake `BOSS_MULT` made).
+ * ⚠ PACING CHECK, NOT THE DIFFICULTY CALCULATION. D&D balances encounters through the
+ * Low/Moderate/High **XP budget per character**, not round counts. This table says whether a
+ * fight PACES right; it does not say whether it is officially survivable. The two are
+ * independent and neither replaces the other — the Wendigo Wight passes act-boss pacing
+ * while its projected CR 12 is officially "Above High" for five level-5 characters.
+ *
+ * The band IS the wiggle room: anywhere inside it is "On target". Below min the party walked
+ * through it; above max it is turning into a slog. There is no single 3-round floor — a
+ * `normal` fight is *supposed* to end in 2–3.
+ *
+ * Data, not code — on purpose. These are the targets every encounter is judged against, so
+ * they must be correctable from real fights rather than buried in a threshold chain (the
+ * mistake `BOSS_MULT` made).
  */
 export const ROUND_BAND: Record<MonsterClassification, { min: number; max: number }> = {
-  normal: { min: 2, max: 2.5 },
-  strong: { min: 2.25, max: 3.5 },
-  elite: { min: 3.25, max: 4.5 },
+  normal: { min: 2, max: 3 },
+  strong: { min: 2.5, max: 3.5 },
+  elite: { min: 3, max: 4.5 },
   "mid-boss": { min: 4, max: 5.5 },
   "act-boss": { min: 5, max: 6.5 },
-  "final-boss": { min: 6, max: 8 },
+  "final-boss": { min: 6, max: 7.5 },
 };
+
+/**
+ * Rounds a result may sit below a band's `min` and still PASS (v12 "Floor tolerance" = 0.1).
+ * A 2.92-round elite result is treated as functionally 3 rounds rather than a miss.
+ */
+export const BAND_FLOOR_TOLERANCE = 0.1;
+
+/**
+ * Hard ceiling on fight length, in rounds — no encounter should ever be authored past this,
+ * including a final boss (v12: "6–7.5; 8 is a hard cap").
+ */
+export const ABSOLUTE_ROUND_CAP = 8;
 
 export const CLASSIFICATION_LABEL: Record<MonsterClassification, string> = {
   normal: "Normal",
@@ -160,6 +208,80 @@ export function encounterClassification(monsters: RoundsMonster[]): MonsterClass
   return CLASSIFICATION_ORDER[top]!;
 }
 
+// ─── The two defensive axes, kept separate ────────────────────────────────────
+//
+// The v12 workbook models `rounds = effectiveHP ÷ AC-adjusted DPR` — AC is a penalty on the
+// PARTY'S OUTPUT, while traits are an uplift on the CREATURE'S HP. The old single
+// `kitMultiplier` collapsed both into one opaque number, so you could never tell whether a
+// creature was hard to kill because it was hard to HIT or because it had more effective HP.
+// Splitting them makes each term mean exactly one thing — and makes the defensive side a
+// real, itemised check instead of a guess.
+
+/**
+ * The AC the party's DPR is calibrated against, per level (v12 Assumptions: L5 15 · L6 16 ·
+ * L9 17 · L12 18). A creature AT this AC is exactly "average to hit" and scores acFactor 1.0.
+ */
+const BASELINE_TARGET_AC: ReadonlyArray<readonly [level: number, ac: number]> = [
+  [3, 13], [4, 14], [5, 15], [6, 16], [9, 17], [12, 18],
+];
+
+/** Typical party attack bonus by level (proficiency + a maxed attack stat). */
+const PARTY_ATTACK_BONUS: ReadonlyArray<readonly [level: number, bonus: number]> = [
+  [3, 6], [4, 6], [5, 7], [6, 7], [9, 9], [12, 10],
+];
+
+function lerpTable(table: ReadonlyArray<readonly [number, number]>, level: number): number {
+  const lv = Math.max(1, Math.min(20, Math.floor(level || 1)));
+  if (lv <= table[0][0]) return table[0][1];
+  if (lv >= table[table.length - 1][0]) return table[table.length - 1][1];
+  for (let i = 0; i < table.length - 1; i++) {
+    const [l0, v0] = table[i];
+    const [l1, v1] = table[i + 1];
+    if (lv >= l0 && lv <= l1) return l1 === l0 ? v0 : v0 + ((v1 - v0) * (lv - l0)) / (l1 - l0);
+  }
+  return table[table.length - 1][1];
+}
+
+/** Chance a level-appropriate attack lands against `ac`, clamped to the nat-1/nat-20 band. */
+export function hitChance(ac: number, level: number): number {
+  const need = ac - lerpTable(PARTY_ATTACK_BONUS, level);
+  return Math.max(0.05, Math.min(0.95, (21 - need) / 20));
+}
+
+/**
+ * How much a creature's AC scales the party's damage against IT, relative to a
+ * level-appropriate target. Below 1.0 = harder to hit than baseline, so the fight runs long.
+ *
+ * This is pure arithmetic from AC — no judgement, nothing to calibrate. It is deliberately
+ * NOT part of the defensive (EHP) number: raising a creature's AC and giving it a second
+ * life are different things and should never share a dial.
+ */
+export function acFactor(ac: number, level: number): number {
+  return hitChance(ac, level) / hitChance(lerpTable(BASELINE_TARGET_AC, level), level);
+}
+
+/**
+ * One named defensive trait and what it is worth as an effective-HP multiplier.
+ *
+ * ITEMISED ON PURPOSE. "Reknit in the Cold returns it at 40% once" is checkable at the table;
+ * a bare 1.84 is not. Multipliers compose (they multiply), so a creature with a 40% revival
+ * and a 10% resistance uplift is 1.40 × 1.10 = 1.54.
+ */
+export type MonsterDefense = {
+  /** The trait's actual name, as printed on the stat block. */
+  name: string;
+  /** Effective-HP multiplier. 1.40 = "this trait is worth 40% more HP". */
+  ehpMultiplier: number;
+  /** Why it is worth that — the arithmetic, so a future session can re-check it. */
+  note?: string;
+};
+
+/** Product of a creature's defensive traits. No traits = 1.0 (a plain HP bar). */
+export function defensiveMultiplier(defenses: readonly MonsterDefense[] | undefined): number {
+  if (!defenses || defenses.length === 0) return 1;
+  return defenses.reduce((acc, d) => acc * (d.ehpMultiplier || 1), 1);
+}
+
 export type RoundsMonster = {
   id: string;
   name: string;
@@ -168,19 +290,22 @@ export type RoundsMonster = {
   count: number;
   /** Threat tier — sets the target band for the fight. Unset = "normal". */
   classification?: MonsterClassification;
+  /** Armour Class — drives the OFFENSIVE side (how much party damage actually lands). */
+  ac?: number;
+  /** Itemised defensive traits — drives the EFFECTIVE-HP side. */
+  defenses?: readonly MonsterDefense[];
   /**
-   * Effective-HP multiplier from the creature's KIT — resistances, teleport/reposition,
-   * control that denies party turns, and downs. Raw HP ÷ DPR badly under-counts: the
-   * Wendigo Wight's aura + Hunger Leap + legendary-driven downs cost ~25% of party uptime,
-   * so 340 raw plays like ~450. 1.0 = a static punching bag.
+   * @deprecated Legacy single-number kit estimate that conflated AC with defensive traits.
+   * Still honoured for creatures not yet migrated to `ac` + `defenses`, so nothing silently
+   * reads 1.0 mid-migration. Prefer the two split terms.
    */
-  kitMultiplier: number;
+  kitMultiplier?: number;
 };
 
 /** Linear interpolation across the chart's level checkpoints. */
 export function midpointDprForLevel(level: number): number {
   const lv = Math.max(1, Math.min(20, Math.floor(level || 1)));
-  const pts = MIDPOINT_DPR_5P;
+  const pts = MIDPOINT_DPR_4P;
   if (lv <= pts[0][0]) return pts[0][1];
   if (lv >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
   for (let i = 0; i < pts.length - 1; i++) {
@@ -201,26 +326,58 @@ export function partyDpr(
   lane: PartyLane = "standard",
   resources: PartyResources = "fresh",
 ): number {
-  const s = Math.max(1, Math.floor(size || 5));
+  // Baseline is a FOUR-player party (3/4/5 spread), so scale off 4, not 5.
+  const s = Math.max(1, Math.floor(size || BASELINE_PARTY_SIZE));
   return midpointDprForLevel(level)
-    * (s / 5)
+    * (s / BASELINE_PARTY_SIZE)
     * LANE_MULTIPLIER[lane]
     * RESOURCE_MULTIPLIER[resources]
     * REALIZATION;
 }
 
-/** Total effective HP the party must chew through, kit included. */
+/**
+ * The DEFENSIVE check, on its own: how much effective HP the party must actually chew
+ * through, from itemised traits only. AC is deliberately absent — it belongs to the party's
+ * damage, not the creature's HP.
+ *
+ * A creature still carrying only a legacy `kitMultiplier` falls back to it so nothing reads
+ * 1.0 mid-migration; once it declares `defenses`, those win.
+ */
 export function effectiveHp(monsters: RoundsMonster[]): number {
-  return monsters.reduce(
-    (sum, m) => sum + m.maxHp * (m.kitMultiplier || 1) * Math.max(0, m.count),
-    0,
-  );
+  return monsters.reduce((sum, m) => {
+    const mult = m.defenses?.length ? defensiveMultiplier(m.defenses) : (m.kitMultiplier || 1);
+    return sum + m.maxHp * mult * Math.max(0, m.count);
+  }, 0);
+}
+
+/**
+ * The OFFENSIVE-side adjustment: the HP-weighted average `acFactor` across the fight, i.e.
+ * how much of the party's damage actually lands. Weighting by effective HP (not by body
+ * count) is what makes a 288-HP AC-17 boss escorted by two AC-13 chaff read as a hard-to-hit
+ * fight rather than an average-AC one.
+ */
+export function encounterAcFactor(monsters: RoundsMonster[], level: number): number {
+  let weighted = 0;
+  let total = 0;
+  for (const m of monsters) {
+    const n = Math.max(0, m.count);
+    if (n <= 0) continue;
+    const mult = m.defenses?.length ? defensiveMultiplier(m.defenses) : (m.kitMultiplier || 1);
+    const w = m.maxHp * mult * n;
+    total += w;
+    weighted += w * (m.ac === undefined ? 1 : acFactor(m.ac, level));
+  }
+  return total > 0 ? weighted / total : 1;
 }
 
 export type RoundsEstimate = {
   rawHp: number;
   effectiveHp: number;
   dpr: number;
+  /** Party DPR AFTER the encounter's AC adjustment — the damage that actually lands. */
+  landedDpr: number;
+  /** HP-weighted AC adjustment. <1 = harder to hit than a level-appropriate target. */
+  acFactor: number;
   rounds: number;
   /** The tier this fight is judged as — the strongest creature in it. */
   classification: MonsterClassification;
@@ -243,8 +400,10 @@ export function verdictForRounds(
   classification: MonsterClassification = "normal",
 ): RoundsEstimate["verdict"] {
   const band = ROUND_BAND[classification] ?? ROUND_BAND.normal;
+  // Floor tolerance (v12): a result up to 0.1 rounds under the band still PASSES — the
+  // rerun treats the Frozen Sentinels' 2.92 as functionally a 3-round elite result.
   if (rounds < band.min * 0.75) return "Throwaway";
-  if (rounds < band.min) return "Short";
+  if (rounds < band.min - BAND_FLOOR_TOLERANCE) return "Short";
   if (rounds <= band.max) return "On target";
   if (rounds <= band.max * 1.25) return "Long";
   return "Slog";
@@ -288,15 +447,21 @@ export function estimateRounds(
   encounterTier?: MonsterClassification,
 ): RoundsEstimate {
   const rawHp = monsters.reduce((s, m) => s + m.maxHp * Math.max(0, m.count), 0);
+  // Defensive side (creature HP × its traits) and offensive side (party DPR × how much of
+  // it lands against these ACs) are computed independently, then divided.
   const eff = effectiveHp(monsters);
   const dpr = partyDpr(size, level, lane, resources);
-  const rounds = dpr > 0 ? eff / dpr : 0;
+  const ac = encounterAcFactor(monsters, level);
+  const landedDpr = dpr * ac;
+  const rounds = landedDpr > 0 ? eff / landedDpr : 0;
   const classification = encounterTier ?? encounterClassification(monsters);
   const band = ROUND_BAND[classification] ?? ROUND_BAND.normal;
   return {
     rawHp,
     effectiveHp: eff,
     dpr,
+    landedDpr,
+    acFactor: ac,
     rounds,
     classification,
     band,

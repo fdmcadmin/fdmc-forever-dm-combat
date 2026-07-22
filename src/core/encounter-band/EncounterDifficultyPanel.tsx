@@ -18,7 +18,9 @@ import {
   type PartyLane, type PartyResources, type RoundsMonster, type RoundsEstimate,
 } from "./encounterRounds";
 
-const PARTY_SIZES = [4, 5, 6] as const;
+// 3 / 4 / 5 — the campaign is authored against a FOUR-player baseline (Christopher,
+// 2026-07-21). low/standard/high HP = 3P/4P/5P; an encounter's authored HP is its 4P total.
+const PARTY_SIZES = [3, 4, 5] as const;
 const LANES: PartyLane[] = ["easy", "standard", "hard", "punishing"];
 const RESOURCES: PartyResources[] = ["fresh", "shortRest", "depleted"];
 
@@ -71,7 +73,9 @@ function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTe
       name: t.name,
       maxHp: hpForVariant(t.stats.maxHp, entry.hpVariant),
       count: entry.count,
-      kitMultiplier: t.stats.kitMultiplier ?? 1,
+      ac: typeof t.stats.ac === "number" ? t.stats.ac : Number.parseInt(String(t.stats.ac), 10) || undefined,
+      defenses: t.stats.defenses,
+      kitMultiplier: t.stats.kitMultiplier,
       classification: t.stats.classification ?? "normal",
     });
   }
@@ -84,7 +88,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
 }) {
   const [open, setOpen] = useState(false);
   const [encounterId, setEncounterId] = useState<string>("");
-  const [partySize, setPartySize] = useState<number>(6);
+  const [partySize, setPartySize] = useState<number>(4);
   const [partyLevel, setPartyLevel] = useState<number>(1);
   const [lane, setLane] = useState<PartyLane>("standard");
   const [resources, setResources] = useState<PartyResources>("fresh");
@@ -258,12 +262,38 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     {est.verdict}
                   </span>
                 </div>
-                <div style={{ fontSize: 10, color: "#777", lineHeight: 1.5 }}>
-                  {Math.round(est.rawHp)} raw HP × kit → <strong style={{ color: "#aaa" }}>{Math.round(est.effectiveHp)} effective</strong>
-                  {" ÷ "}
-                  <strong style={{ color: "#aaa" }}>{partyDpr(partySize, partyLevel, lane, resources).toFixed(1)} DPR</strong>
-                  {" "}({partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest · 77% realization)
+                {/* The two sides shown separately — defence (their HP) over offence (your
+                    damage, after AC). Splitting them is what makes this a true check. */}
+                <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6 }}>
+                  <div>
+                    <span style={{ color: "#e0a87b" }}>DEF</span>{" "}
+                    {Math.round(est.rawHp)} raw HP × traits → <strong style={{ color: "#aaa" }}>{Math.round(est.effectiveHp)} effective</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#7bc8e0" }}>OFF</span>{" "}
+                    {partyDpr(partySize, partyLevel, lane, resources).toFixed(1)} DPR × {est.acFactor.toFixed(2)} AC → <strong style={{ color: "#aaa" }}>{est.landedDpr.toFixed(1)} landed</strong>
+                  </div>
+                  <div style={{ color: "#666" }}>
+                    {partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest
+                  </div>
                 </div>
+                {/* Itemised defensive traits — every uplift is named and checkable. */}
+                {(() => {
+                  const rows = roundsMonsters.flatMap(m =>
+                    (m.defenses ?? []).map(d => ({ who: m.name, ...d })));
+                  if (rows.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: 6, paddingTop: 5, borderTop: "1px solid #1e1e2e", fontSize: 9, color: "#777" }}>
+                      {rows.map((d, i) => (
+                        <div key={`${d.who}-${d.name}-${i}`} style={{ display: "flex", gap: 6, padding: "1px 0" }} title={d.note}>
+                          <span style={{ color: "#e0a87b", minWidth: 34 }}>×{d.ehpMultiplier.toFixed(2)}</span>
+                          <span style={{ color: "#999" }}>{d.name}</span>
+                          <span style={{ color: "#555", marginLeft: "auto" }}>{d.who}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 <div style={{ fontSize: 9, color: "#666", marginTop: 4, fontStyle: "italic" }}>
                   Count the real rounds and compare. A mismatch means the model is wrong, not your table.
                 </div>

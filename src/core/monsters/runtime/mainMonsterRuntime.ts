@@ -1,4 +1,7 @@
 import type { MonsterCombatCandidate, MonsterReaderAction } from "../MonsterJconScanner";
+// Type-only (erased at compile), so this does not create a runtime import cycle with
+// encounterRounds.ts, which imports MonsterClassification back from here.
+import type { MonsterDefense } from "../../encounter-band/encounterRounds";
 
 export type MainMonsterVisibilityState = "hidden" | "label-only" | "condition" | "hp-bar" | "full";
 
@@ -65,6 +68,18 @@ export type MainMonsterTemplate = {
      * corrected from real fights instead of hiding in code the way BOSS_MULT did.
      */
     kitMultiplier?: number;
+    /**
+     * ITEMISED defensive traits — the effective-HP side of the fight-length check, split out
+     * of the old single `kitMultiplier` so each number means exactly one thing.
+     *
+     * AC is NOT in here: armour scales the party's damage (an offensive-side term computed
+     * from `ac`), while these scale the creature's HP. A second life and a high AC are
+     * different kinds of durable and must never share a dial.
+     *
+     * Multipliers compose. Each entry should carry the arithmetic in its `note` so a later
+     * session can re-check it instead of trusting it.
+     */
+    defenses?: readonly MonsterDefense[];
     /**
      * How big a threat this creature is — drives the expected fight length (see
      * `ROUND_BAND` in `encounter-band/encounterRounds.ts`). Separate from `kind`,

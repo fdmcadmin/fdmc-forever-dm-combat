@@ -628,7 +628,17 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // line's control stack (~0.60-0.70 party uptime) plus the Frozen Husk(s) any raiser can
     // add, which maxHp cannot see. A husk is ~1.0 chaff (no spells, its own AC14/HP25 template
     // — see "Frozen Husk" below) — raw HP, not denial.
-    stats: { kind: "monster", ac: 15, maxHp: 44, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
+    // HP 52 = authored 4P standard (v12 encounter doc: "HP 52 · AC 15. 7d8 + 21 at CON 16").
+    // Formation defenses (shared by all three bodies — the v12 MC constrains the encounter
+    // total, not each creature). AC now handled separately on the offensive side.
+    stats: {
+      kind: "monster", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2,
+      defenses: [
+        { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Two casters each raise one body as a 33%-HP frost-thrall; the formation's own revival value, ~+30% HP across the fight." },
+        { name: "Frost Ward (reaction)", ehpMultiplier: 1.14, note: "+5 AC on a hit, once per round per body — a spent reaction turns roughly one landed attack per round into a miss." },
+        { name: "Control denial (Whiteout / Bind in Ice / Glacial Freeze)", ehpMultiplier: 1.26, note: "Heavy obscurement, paralysis, restraints and an outright countered spell cost the party attacking turns." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 11, 0),
       formatAbility("DEX", 15, 2),
@@ -678,7 +688,16 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // STR 16 / DEX 12 / CON 16 / INT 12 / WIS 11 / CHA 14. Kit estimate carried at the S4
     // line's shared 1.80 (control stack + any Frozen Husks raised) — the sheet flags its OWN
     // kit as "not yet assigned," pending the new archetype-driven creator.
-    stats: { kind: "monster", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
+    // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel); AC 17 is its own
+    // offensive-side term and is what makes it the formation's hardest body to hit.
+    stats: {
+      kind: "monster", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2,
+      defenses: [
+        { name: "Frozen Resurrection", ehpMultiplier: 1.30, note: "Raises one destroyed ally per fight as a 40%-HP husk; matched to the formation's shared revival value." },
+        { name: "Unbroken Rank", ehpMultiplier: 1.14, note: "Half-speed riders and formation discipline cost the party positioning turns." },
+        { name: "Control denial (formation)", ehpMultiplier: 1.26, note: "Shares the line's Whiteout / Bind in Ice / Glacial Freeze denial." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 12, 1),
@@ -764,7 +783,16 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // The commander is the line's highest body on purpose (52 Sentinel < 75 Weaver). kit 1.80:
     // Whiteout (heavily obscured = disadvantage in), restraining bolts, Frost-Weave Pull,
     // Rimestep — the line's densest denial — plus any Frozen Husks raised.
-    stats: { kind: "boss", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2, kitMultiplier: 1.80 },
+    // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel). AC 14 is the
+    // softest of the three — the offensive-side term now shows that instead of hiding it.
+    stats: {
+      kind: "boss", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
+      defenses: [
+        { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Second caster of the line; raises one body per fight as a 33%-HP frost-thrall." },
+        { name: "Frost Ward (reaction)", ehpMultiplier: 1.14, note: "+5 AC on a hit, once per round — turns roughly one landed attack per round into a miss." },
+        { name: "Whiteout / Grasping Rime / Frost-Weave Pull", ehpMultiplier: 1.26, note: "The line's densest denial: heavy obscurement, restraints and forced repositioning cost the party attacking turns." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 10, 0),
       formatAbility("DEX", 16, 3),
@@ -807,7 +835,16 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 2 S4 - Pale Drifter",
     // kit 1.30: Shadow Shift every turn (melee never gets a full round on it, ~0.85
     // uptime) + Soul-Touched (~1.1 now that magic weapons are common).
-    stats: { kind: "boss", ac: 16, maxHp: 120, speed: "30 ft", kitMultiplier: 1.30 },
+    // HP 136 = authored 4P standard (v12 doc: "HP 136 · AC 17. 16d8 + 64 at CON 18" — CON
+    // rose to 18, which is also what lifts Death Burst to DC 15). AC 17 is now its own
+    // offensive-side term; only traits remain below.
+    stats: {
+      kind: "boss", ac: 17, maxHp: 136, speed: "30 ft",
+      defenses: [
+        { name: "Wrapped in the Pale", ehpMultiplier: 1.32, note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
+        { name: "Shadow Shift", ehpMultiplier: 1.16, note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 18, 4),
       formatAbility("DEX", 14, 2),
@@ -847,7 +884,15 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // kit 1.84 = (85 raw + 34 Reknit) x 1.31 denial, expressed against maxHp 85.
     // Reknit's second life is NOT in maxHp, so the multiplier must carry it or the
     // rounds estimate silently under-counts this creature by 40%.
-    stats: { kind: "monster", ac: 14, maxHp: 85, speed: "30 ft, fly 30 ft (hover)", kitMultiplier: 1.84 },
+    // The 34-HP Reknit is a DEFENSE, not extra maxHp — keeping it here means the panel
+    // shows why this creature outlasts its bar, and that bright light removes it.
+    stats: {
+      kind: "monster", ac: 15, maxHp: 85, speed: "30 ft, fly 30 ft (hover)",
+      defenses: [
+        { name: "Reknit in the Cold", ehpMultiplier: 1.40, note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
+        { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 1, -5),
       formatAbility("DEX", 17, 3),
@@ -896,7 +941,19 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // frozen-act failure point). The Hunger Bite max-HP drain is deliberately VARIABLE — HALF the
     // cold damage dealt (dice-tracked, not a flat cap), so the attrition clock tracks the roll. No
     // self-heal: it drains the target's max HP, it does not return HP to the Wight.
-    stats: { kind: "boss", ac: 15, maxHp: 340, speed: "40 ft", kitMultiplier: 1.37, classification: "act-boss" },
+    // FINAL v12 TUNING: 360 HP / AC 17 / hidden Bone Armor at 180, decided at 5 players —
+    // so the authored 4P standard is 360 ÷ 1.25 = 288 (3P 216 / 4P 288 / 5P 360). This
+    // supersedes the encounter doc's 425 @5P.
+    // AC 17 now drives the OFFENSIVE side on its own (acFactor 0.846 at L5). What remains
+    // here is purely defensive traits; together they reproduce the v12 MC's 5.05 rounds.
+    stats: {
+      kind: "boss", ac: 17, maxHp: 288, speed: "40 ft", classification: "act-boss",
+      defenses: [
+        { name: "Hidden Bone Armor", ehpMultiplier: 1.25, note: "Resistance phase revealed at half HP (180 of 360 @5P). Adapts after observed resistance, so the back half of the bar costs ~25% more to chew through." },
+        { name: "Frozen Endurance", ehpMultiplier: 1.06, note: "One free survival at 0 HP (drops to 1 instead) = roughly one extra round of incoming damage across a ~5-round fight. Fire/radiant bypass it entirely." },
+        { name: "Wrong Cold + Hunger Leap denial", ehpMultiplier: 1.23, note: "Aura spacing, Leap repositioning on ~33% of rounds, and legendary-driven downs cost the party turns it would otherwise attack in." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 18, 4),
       formatAbility("DEX", 14, 2),
@@ -926,7 +983,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       "ACT 2 FINAL BOSS. HP: 310 (4P) / 340 (5P baseline) / 370 (6P) per the encounter document — do NOT re-derive this from raw HP. Runs 3 Legendary Actions/round (Mark Prey, Frozen Prowl, Wrong Cold Pulse) so the solo boss keeps action-economy pace with 4-6 PCs; claws +7, both cold, grapple DC 15 — all flat at every party size. At 6P add 1x Lesser Wendigo (70 HP) to the ROSTER; Bone Field Raise is merely how it arrives on round 2. That is a count change, not a band-gated ability.",
       "CR REDUCTION (2026-07-17): a traditional CR calc had this at CR 12+ (offense-driven: the old grapple-bite loop hit ~69 raw); the act's intent is ~CR 9. HP was deliberately NOT touched — it is the survivability counterweight that keeps the fight at ~6 rounds, and dropping it would only make a still-lethal boss a swingy glass cannon. Instead the offense/defense levers came down: AC 17->15, STR 20->18 (to-hit +8->+7), and the melee loop from ~69 raw grapple / 41 ungrappled to ~48 / 30 (all cold now). That reads ~CR 6-7 offense grappled / ~CR 5 ungrappled, pulling the whole creature toward the CR 8-9 neighborhood. The FDMC round count is unchanged (~6.0, act-boss on target) because the model has no monster-AC/DPR term — the fight stays the same LENGTH while its per-round LETHALITY and rules-facing CR come down.",
       "ENCOUNTER MATH: fought at L5 (pseudo +1), FRESH off the minimum-hours long rest, so the party is at full 5P midpoint DPR (~77.4 effective). 340 raw x ~1.33 kit (Wrong Cold aura spacing, Hunger Leap repositioning ~33% of rounds, legendary-driven downs) = ~450 effective = 5.8 rounds, hitting the ~6-round act-boss target. Solving forward gives 349 vs the doc's 340 — within 3%, so the document is correct and an earlier 370 bump was reverted.",
-      "Frozen Endurance REWRITTEN (was dead): the old 'DC 10 + damage taken' CON save could never be passed — a 25-damage killing blow set DC 35 against a d20+4 — so it only fired on chip damage and its fire/radiant counterplay was meaningless. It is now automatic and once per fight, which makes the fire/radiant bypass a real decision. Costs the party roughly one extra attack (~+4% effective HP), so the kit multiplier moves ~1.33 -> ~1.37 and 340 lands at 6.0 rounds — still on target, no HP change needed.",
+      "Frozen Endurance REWRITTEN and KEPT REWRITTEN (Christopher, 2026-07-21): the original 'DC 10 + damage taken' CON save could never be passed — a 25-damage killing blow sets DC 35 against a d20+4 — so it only ever fired on chip damage and its fire/radiant counterplay was meaningless. It is automatic and once per fight, which makes the fire/radiant bypass a real decision. NOTE the v12 encounter document still prints the old unpassable wording; that is a stale carry-over and this version wins.",
       "Open ice field — no cover, no darkness. The whole fight is about managing the 10-ft Wrong Cold aura; Hunger Leap resets positions so the party can't just kite. Grapple + Hunger Bite is the max-HP attrition clock.",
       "HUNGER BITE DRAIN (2026-07-19): the max-HP reduction is HALF the cold damage dealt (dice-variable, not the full bite). Half was the intended attrition rate; the full-bite version shipped in 0.6.3.12 was a misread. No self-heal — this drains the target's max HP only, it does NOT return HP to the Wight (kit multiplier stays 1.37, no survivability change).",
       "Frozen Endurance is bypassed by fire and radiant. Track Wrong Cold per round, grapple + max-HP reduction (half the bite) per creature, Hunger Leap recharge, Mark Prey (1/round), and the 6P Bone Field Raise flag. Level 6 gate on kill.",
