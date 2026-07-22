@@ -36,7 +36,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Thornfang Wolf",
     encounterId: "act1-thornfang-pack",
     encounterLabel: act1ThornfangPackLabel,
-    stats: { kind: "monster", ac: 13, maxHp: 18, speed: "50 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 13, maxHp: 18, speed: "50 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Pack Tactics is offensive (advantage to hit), not durability. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 13, 1),
       formatAbility("DEX", 15, 2),
@@ -65,7 +72,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act1ThornfangPackLabel,
     // HP tuned down 39→33 after the Act 1 opener ran ~6 rounds (high variant hit 48,
     // above a standard dire wolf). Standard 33 / low 24 / high 41 — run standard for L1.
-    stats: { kind: "monster", ac: 14, maxHp: 33, speed: "50 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 14, maxHp: 33, speed: "50 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Leads the pack but takes damage normally. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 17, 3),
       formatAbility("DEX", 15, 2),
@@ -94,7 +108,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Mosshide Owlbear",
     encounterId: "act1-mosshide-owlbear",
     encounterLabel: act1MosshideLabel,
-    stats: { kind: "monster", ac: 13, maxHp: 59, speed: "40 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 13, maxHp: 59, speed: "40 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Big HP pool, no resistances or revival. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 20, 5),
       formatAbility("DEX", 12, 1),
@@ -123,7 +144,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Greenwood Reaver",
     encounterId: "act1-greenwood-reaver",
     encounterLabel: act1ReaverLabel,
-    stats: { kind: "monster", ac: 15, maxHp: 65, speed: "30 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 15, maxHp: 65, speed: "30 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 15, 2),
       formatAbility("DEX", 16, 3),
@@ -154,7 +182,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Threadbare Spider",
     encounterId: "act1-threadbare-spider-nest",
     encounterLabel: act1SpiderNestLabel,
-    stats: { kind: "monster", ac: 13, maxHp: 22, speed: "30 ft., climb 30 ft." },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 13, maxHp: 22, speed: "30 ft., climb 30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Webbing slows the party but does not make the spider harder to kill. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 12, 1),
       formatAbility("DEX", 16, 3),
@@ -182,7 +217,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Swamp Ambusher",
     encounterId: "act1-swamp-ambush",
     encounterLabel: act1SwampLabel,
-    stats: { kind: "monster", ac: 13, maxHp: 26, speed: "30 ft." },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 13, maxHp: 26, speed: "30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Ambush is an opener, not durability. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 12, 1),
       formatAbility("DEX", 14, 2),
@@ -210,7 +252,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Mirage Stalker",
     encounterId: "act1-boss",
     encounterLabel: act1BossLabel,
-    stats: { kind: "boss", ac: 14, maxHp: 100, speed: "50 ft" },
+    // Act 1 boss. No v12 workbook lane, but unlike the Act 1 chaff it has a real defensive
+    // trait, so it is itemised rather than flattened to 1.0. ESTIMATE — no MC run.
+    stats: {
+      kind: "boss", ac: 14, maxHp: 100, speed: "50 ft",
+      defenses: [
+        { name: "Phantom Step", ehpMultiplier: 1.18, note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 19, 4),
       formatAbility("DEX", 14, 2),
@@ -253,7 +302,16 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Pale Stalker",
     encounterId: "act2-s1-e1-hollow-pack",
     encounterLabel: act2S1E1Label,
-    stats: { kind: "monster", ac: 13, maxHp: 75, speed: "50 ft" },
+    // Hollow Pack formation defense (shared with Pack Hunter) — derived from the v12
+    // Encounter Safety screen: 159 HP @5P won in 1.48 rounds, lifted onto the Monte Carlo
+    // scale by the ×1.27 dynamics factor the two MC-run fights show. PROVISIONAL: this
+    // fight has no MC lane of its own yet.
+    stats: {
+      kind: "monster", ac: 13, maxHp: 75, speed: "50 ft",
+      defenses: [
+        { name: "Ambush + Apex Unleashed", ehpMultiplier: 1.40, note: "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 18, 4),
       formatAbility("DEX", 13, 1),
@@ -282,7 +340,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Pack Hunter",
     encounterId: "act2-s1-e1-hollow-pack",
     encounterLabel: act2S1E1Label,
-    stats: { kind: "monster", ac: 12, maxHp: 26, speed: "40 ft" },
+    // Shares the Hollow Pack formation defense (see Pale Stalker). AC 12 is its own
+    // offensive-side term — it is the easiest body in the fight to hit.
+    stats: {
+      kind: "monster", ac: 12, maxHp: 26, speed: "40 ft",
+      defenses: [
+        { name: "Pack coordination", ehpMultiplier: 1.40, note: "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 14, 2),
       formatAbility("DEX", 15, 2),
@@ -305,7 +370,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Icebound Zombie",
     encounterId: "act2-s1-e2-frozen-hollow",
     encounterLabel: act2S1E2Label,
-    stats: { kind: "monster", ac: 12, maxHp: 42, speed: "20 ft" },
+    // Frozen Hollow formation defense (shared across all three bodies) — v12 Encounter
+    // Safety: 200 HP @5P won in 2.02 rounds, × 1.27 dynamics. PROVISIONAL, no MC lane yet.
+    stats: {
+      kind: "monster", ac: 12, maxHp: 42, speed: "20 ft",
+      defenses: [
+        { name: "Hollow Fortitude", ehpMultiplier: 1.45, note: "DC 5 + damage CON save at 0 HP drops it to 1 instead (radiant or a crit bypasses), so kills must be confirmed. Carries the Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 13, 1),
       formatAbility("DEX", 6, -2),
@@ -334,7 +406,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // it is not seeded into any fight.
     encounterId: undefined,
     encounterLabel: act2S1E2Label,
-    stats: { kind: "monster", ac: 12, maxHp: 35, speed: "30 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 12, maxHp: 35, speed: "30 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Unused legacy creature (no encounter). Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 13, 1),
       formatAbility("DEX", 15, 2),
@@ -358,7 +437,13 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Hollow Mourner",
     encounterId: "act2-s1-e2-frozen-hollow",
     encounterLabel: act2S1E2Label,
-    stats: { kind: "monster", ac: 13, maxHp: 36, speed: "30 ft" },
+    // Shares the Frozen Hollow formation defense (see Icebound Zombie).
+    stats: {
+      kind: "monster", ac: 13, maxHp: 36, speed: "30 ft",
+      defenses: [
+        { name: "Cold Aura + paralysis", ehpMultiplier: 1.45, note: "Aura saves compound with the Hunter's drain and paralysis removes whole PC turns. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 17, 3),
@@ -389,7 +474,13 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // places the Frozen Hollow fight in the elite band.
     encounterId: "act2-s1-e2-frozen-hollow",
     encounterLabel: act2S1E2Label,
-    stats: { kind: "monster", ac: 14, maxHp: 82, speed: "30 ft", classification: "elite" },
+    // Shares the Frozen Hollow formation defense (see Icebound Zombie).
+    stats: {
+      kind: "monster", ac: 14, maxHp: 82, speed: "30 ft", classification: "elite",
+      defenses: [
+        { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1.45, note: "Halves nonmagical weapon damage and drains STR (cap 6), softening every later hit. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 15, 2),
       formatAbility("DEX", 14, 2),
@@ -423,7 +514,15 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Soul-Gorged Guardian",
     encounterId: "act2-s2-e2-last-directive",
     encounterLabel: act2S2E2Label,
-    stats: { kind: "boss", ac: 14, maxHp: 85, speed: "0 ft., fly 5 ft", kitMultiplier: 1.10 },
+    // Re-derived under the split model. The old 1.10 was calibrated when kitMultiplier still
+    // absorbed AC; now AC 14 is its own offensive-side term, so this number is traits only.
+    // v12 Encounter Safety: Last Directive 151 HP @5P won in 1.74 rounds × 1.27 dynamics.
+    stats: {
+      kind: "boss", ac: 14, maxHp: 85, speed: "0 ft., fly 5 ft",
+      defenses: [
+        { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 12, 1),
@@ -451,7 +550,15 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Grave Light",
     encounterId: "act2-s2-e2-last-directive",
     encounterLabel: act2S2E2Label,
-    stats: { kind: "monster", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)", kitMultiplier: 1.50 },
+    // The old 1.50 was almost entirely its AC 19 wearing a defensive costume. With AC split
+    // out (acFactor 0.62 at L4 — by far the hardest thing to hit in the act) what remains is
+    // the shared Last Directive formation value, not a second helping of the same armour.
+    stats: {
+      kind: "monster", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)",
+      defenses: [
+        { name: "Patrol screen", ehpMultiplier: 1.64, note: "Three Lights tracked separately; magical vs nonmagical matters per attacker. Shares the Last Directive formation value. PROVISIONAL — analytic-derived, no MC lane yet." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 1, -5),
       formatAbility("DEX", 28, 9),
@@ -478,7 +585,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Cervan Thornwarden",
     encounterId: "fort-cervan-band",
     encounterLabel: fortCervanBandLabel,
-    stats: { kind: "monster", ac: 15, maxHp: 45, speed: "30 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 15, maxHp: 45, speed: "30 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 12, 1),
@@ -515,7 +629,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Fortbreaker Reaver",
     encounterId: "fort-cervan-band",
     encounterLabel: fortCervanBandLabel,
-    stats: { kind: "monster", ac: 16, maxHp: 45, speed: "30 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 16, maxHp: 45, speed: "30 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 16, 3),
       formatAbility("DEX", 12, 1),
@@ -550,7 +671,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Gloamknife Stray",
     encounterId: "fort-cervan-band",
     encounterLabel: fortCervanBandLabel,
-    stats: { kind: "monster", ac: 14, maxHp: 27, speed: "30 ft" },
+    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
+    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
+    stats: {
+      kind: "monster", ac: 14, maxHp: 27, speed: "30 ft",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Slip Between repositions it; bright light grounds that entirely. Plain HP bar." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 11, 0),
       formatAbility("DEX", 16, 3),
@@ -585,7 +713,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Lesser Wendigo",
     encounterId: "act2-s3-village-defense",
     encounterLabel: "Act 2 S3 - Lesser Wendigos (Village Night Defense)",
-    stats: { kind: "boss", ac: 15, maxHp: 120, speed: "40 ft", classification: "mid-boss" },
+    // v12 Encounter Safety: Lesser Wendigos 300 HP @5P (2× 120 at 4P) won in 2.46 rounds
+    // × 1.27 dynamics. PROVISIONAL — analytic-derived, no MC lane of its own yet.
+    stats: {
+      kind: "boss", ac: 15, maxHp: 120, speed: "40 ft", classification: "mid-boss",
+      defenses: [
+        { name: "Two fronts + Grab", ehpMultiplier: 1.21, note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 17, 3),
       formatAbility("DEX", 14, 2),
@@ -747,7 +882,16 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // — do not reduce the raised body's own card. AC 14 / HP 25 sit in the middle of what
     // the old per-body husks spread across (AC 12-15, 18-30 HP), so this is not a power
     // change, just a fixed, visible number instead of a derived one.
-    stats: { kind: "monster", ac: 14, maxHp: 25, speed: "30 ft" },
+    // DELIBERATELY 1.0. The husk's whole value is already priced into the raisers' "Raise
+    // the Frozen" / "Frozen Resurrection" defenses — counting it again here would double-bill
+    // the same revival. It is also a stripped body (Rime Claw only, no spells, no reactions),
+    // so on its own it really is a plain HP bar.
+    stats: {
+      kind: "monster", ac: 14, maxHp: 25, speed: "30 ft",
+      defenses: [
+        { name: "None (stripped husk)", ehpMultiplier: 1.0, note: "Revival value is carried by the creature that raised it, not by the husk. Do not add an uplift here." },
+      ],
+    },
     abilities: [
       formatAbility("STR", 14, 2),
       formatAbility("DEX", 10, 0),
