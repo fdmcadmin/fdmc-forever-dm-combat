@@ -128,7 +128,7 @@ export type ActorActionMetadata = {
    *  to matching weapon attacks. target gates which attacks it rides. */
   combatStyleAttack?: string;
   combatStyleDamage?: string;
-  combatStyleTarget?: "ranged" | "melee" | "weapon";
+  combatStyleTarget?: "ranged" | "melee" | "weapon" | "two-handed";
 };
 
 export type ActorAction = {

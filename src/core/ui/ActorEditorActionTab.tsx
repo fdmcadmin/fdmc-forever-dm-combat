@@ -374,6 +374,7 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
                 <option value="">—</option>
                 <option value="ranged">Ranged</option>
                 <option value="melee">Melee</option>
+                <option value="two-handed">Two-handed / Heavy (GWF, GWM)</option>
                 <option value="weapon">Any weapon</option>
               </select></label>
           </div>

@@ -53,7 +53,7 @@ export type PcActionDraft = {
   /** Fighting style toggle — bonus to matching weapon attacks (Archery, TWF, GWF). */
   combatStyleAttack?: string;
   combatStyleDamage?: string;
-  combatStyleTarget?: "ranged" | "melee" | "weapon";
+  combatStyleTarget?: "ranged" | "melee" | "weapon" | "two-handed";
   /** Activated weapon buff — using/casting the action arms a persistent damage chip that
    *  rides weapon attacks until it ends (Rage, Hunter's Mark, Channel Divinity damage). */
   weaponBuffDamage?: string;

@@ -146,7 +146,7 @@ type ArmedEffect = {
    *  fighting styles (id "buff:*"). */
   attackFormula?: string;
   /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
-  appliesTo?: "ranged" | "melee" | "weapon" | "spell" | "any";
+  appliesTo?: "ranged" | "melee" | "weapon" | "two-handed" | "spell" | "any";
 };
 
 type ClassOptionContext =
@@ -318,6 +318,21 @@ function isRangedAttackAction(action?: ActorAction | null) {
   return /\b(?:ranged|range|bow|longbow|shortbow|crossbow|sling|dart|javelin|blowgun|revolver|firearm|pistol|rifle|shot|thrown)\b/i.test(searchableText);
 }
 
+// Whether the attacked weapon is a TWO-HANDED / Heavy melee weapon — the gate for Great
+// Weapon Fighting / Great Weapon Master, which apply only when swinging one. Mirrors
+// isRangedAttackAction: reads the action's name/description/details/tags. A weapon flagged
+// "versatile" is treated as two-handed here (the wielder is assumed to grip it two-handed
+// to qualify the style). Ranged weapons never count, even the two-handed ones (a longbow is
+// a ranged style's business, not GWF's).
+function isTwoHandedAttack(action?: ActorAction | null) {
+  if (!action || isRangedAttackAction(action)) return false;
+  const text = `${action.label} ${action.description ?? ""} ${action.metadata?.details ?? ""} ${action.category ?? ""} ${(action.tags ?? []).join(" ")}`;
+  // Structural flags the loot already uses ("Melee Two-Handed", "Versatile") + unambiguous
+  // heavy two-handed weapon names. Versatile weapons match via their flag/category, since a
+  // player only toggles the style on while actually gripping such a weapon two-handed.
+  return /\b(?:two[-\s]?handed|2h|versatile|heavy|pole\s?arm|greatsword|greataxe|greatclub|maul|glaive|halberd|pike|lance)\b/i.test(text);
+}
+
 // Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
 // Styles/buffs ride WEAPON attacks only (never spells), gated by their target.
 function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null) {
@@ -327,6 +342,7 @@ function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAc
   if (action.actionKind === "spell") return false; // weapon-targeted styles never ride spells
   if (appliesTo === "ranged") return isRangedAttackAction(action);
   if (appliesTo === "melee") return !isRangedAttackAction(action);
+  if (appliesTo === "two-handed") return isTwoHandedAttack(action);
   return true; // "weapon" / undefined → any weapon attack
 }
 
@@ -2160,7 +2176,7 @@ export function ActorCard({
   // While armed, the rider damage adds to the actor's WEAPON attacks (getDamageAdditives,
   // gated to non-spell). Persistent until toggled off. Slot/once-per-turn/temp-HP are
   // handled by the player (assisted, not auto).
-  type WeaponBuffOption = { id: string; label: string; attack?: string; damage?: string; appliesTo: "ranged" | "melee" | "weapon" };
+  type WeaponBuffOption = { id: string; label: string; attack?: string; damage?: string; appliesTo: "ranged" | "melee" | "weapon" | "two-handed" };
   // Standing toggles = PASSIVE fighting styles only (Archery, GWF, Dueling). Activated
   // buffs (weaponBuffDamage — Hunter's Mark, Channel Divinity damage, …) are NOT standing
   // toggles; they arm their chip when the action is cast/used (see handleUseAction).
