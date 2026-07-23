@@ -287,39 +287,43 @@ export function CombatTracker({
         </div>
 
         <div style={{ display: "flex", gap: 4 }}>
+          {/* Roll initiative for any monster that still lacks one. Deliberately NOT phase-gated:
+              reinforcements that arrive mid-fight need to be slotted into the order without
+              leaving combat (previously this was setup/initiative only, so the DM had to close
+              the window). The button only appears when something actually needs a roll. */}
+          {isDmMode && sorted.some(c => c.kind === "monster" && c.initiative === null && !c.isDead) && (
+            <button
+              type="button"
+              onClick={() => {
+                sorted
+                  .filter(c => c.kind === "monster" && c.initiative === null && !c.isDead)
+                  .forEach(c => {
+                    const roll = Math.floor(Math.random() * 20) + 1 + c.initiativeBonus;
+                    onSetInitiative(c.id, roll);
+                  });
+              }}
+              style={{ fontSize: 11, padding: "2px 8px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
+              title={phase === "combat"
+                ? "Roll 1d20 + DEX for monsters that joined mid-fight — they slot straight into the order"
+                : "Auto-roll 1d20 + DEX for all monsters without initiative"}
+            >
+              🎲 Roll Monsters
+            </button>
+          )}
           {isDmMode && (phase === "setup" || phase === "initiative") && (
-            <>
-              {sorted.some(c => c.kind === "monster" && c.initiative === null && !c.isDead) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sorted
-                      .filter(c => c.kind === "monster" && c.initiative === null && !c.isDead)
-                      .forEach(c => {
-                        const roll = Math.floor(Math.random() * 20) + 1 + c.initiativeBonus;
-                        onSetInitiative(c.id, roll);
-                      });
-                  }}
-                  style={{ fontSize: 11, padding: "2px 8px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
-                  title="Auto-roll 1d20 + DEX for all monsters without initiative"
-                >
-                  🎲 Roll Monsters
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onStartCombat}
-                disabled={!canStart}
-                style={{
-                  fontSize: 11, padding: "2px 10px",
-                  background: canStart ? "#2a6e2a" : "#1a2a1a",
-                  color: canStart ? "#fff" : "#555",
-                  border: "none", borderRadius: 3, cursor: canStart ? "pointer" : "default",
-                }}
-              >
-                ▶ Start Combat
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={onStartCombat}
+              disabled={!canStart}
+              style={{
+                fontSize: 11, padding: "2px 10px",
+                background: canStart ? "#2a6e2a" : "#1a2a1a",
+                color: canStart ? "#fff" : "#555",
+                border: "none", borderRadius: 3, cursor: canStart ? "pointer" : "default",
+              }}
+            >
+              ▶ Start Combat
+            </button>
           )}
           {isDmMode && phase === "combat" && (
             <>

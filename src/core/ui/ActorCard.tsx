@@ -2516,10 +2516,16 @@ export function ActorCard({
     // N/Long-Rest pool would never count down. Rolled free-casts still spend via commit.
     const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage);
     const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
+    // A LEVELLED spell spends a slot whether or not it rolls anything. Most of them don't
+    // roll (Shield of Faith, Protection from Evil, Find Steed, Aid…) — those never reach
+    // onStartCommittedRoll, so before this they silently cast for free forever. Rolled
+    // spells still spend on commit; `rollsItsOwn` keeps the two paths from double-spending.
+    const isLevelledSpell = action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0;
+    const isSpendingSpell = isFreeCastSpell || isLevelledSpell;
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
       || Boolean(action.metadata?.saveDc?.trim())
-      || (isFreeCastSpell && hasRollableFormula(action.metadata?.damage));
-    if ((isActivatedAbility || isFreeCastSpell) && !rollsItsOwn) {
+      || (isSpendingSpell && hasRollableFormula(action.metadata?.damage));
+    if ((isActivatedAbility || isSpendingSpell) && !rollsItsOwn) {
       onConsumeActionResources?.(action);
     }
 
@@ -3700,8 +3706,11 @@ export function ActorCard({
                       <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>({kind})</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {/* Spend N from a points pool (Lay on Hands, Ki, …) — deduct only, no auto-heal */}
-                      {hasCounter && onSpendResource && (kind === "pool" || kind === "counter") && (
+                      {/* Spend N by hand. Points pools (Lay on Hands, Ki…) always had this;
+                          spell slots and free casts now do too, as the manual fallback for
+                          when an auto-spend doesn't fire (unusual spell shapes, DM fiat,
+                          a cast made outside the card). Deduct only — never auto-heals. */}
+                      {hasCounter && onSpendResource && (kind === "pool" || kind === "counter" || kind === "spellSlot" || kind === "freeCast") && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                           <input
                             type="number" min={1} max={remaining} inputMode="numeric"
