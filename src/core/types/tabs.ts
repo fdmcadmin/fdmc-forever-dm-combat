@@ -124,6 +124,11 @@ export type ActorActionMetadata = {
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;
+  /** Activated ATTACK-roll rider — the counterpart to weaponBuffDamage, for abilities that
+   *  buff to-hit rather than damage (Sacred Weapon +CHA, Bless-style bonuses). Using the
+   *  action arms a persistent chip that rides weapon attack rolls until cleared or End
+   *  Combat. An ability may set both fields to buff attack and damage together. */
+  weaponBuffAttack?: string;
   /** Fighting style (Archery, Two-Weapon, Great Weapon): a clickable toggle adding a bonus
    *  to matching weapon attacks. target gates which attacks it rides. */
   combatStyleAttack?: string;

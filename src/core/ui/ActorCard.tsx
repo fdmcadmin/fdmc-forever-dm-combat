@@ -2490,20 +2490,28 @@ export function ActorCard({
     // the action arms a PERSISTENT damage chip that rides weapon attacks until it ends
     // (clear ✕ / End Combat). Not a standing toggle. Continues the normal use flow below.
     const buffDamage = action.metadata?.weaponBuffDamage?.trim();
-    if (buffDamage) {
+    const buffAttack = action.metadata?.weaponBuffAttack?.trim();
+    if (buffDamage || buffAttack) {
+      // One chip carries both halves, so Sacred Weapon (+CHA to hit) and Hunter's Mark
+      // (+1d6 damage) use the same lifecycle: armed on use, cleared by ✕ or End Combat.
+      const parts = [
+        buffAttack ? `atk ${formatBonusForChip(buffAttack)}` : "",
+        buffDamage ? `dmg ${formatBonusForChip(buffDamage)}` : "",
+      ].filter(Boolean);
       upsertArmedEffect({
         id: `buff:${action.id}`,
-        label: `dmg ${formatBonusForChip(buffDamage)}`,
-        details: `${action.label} — adds ${formatBonusForChip(buffDamage)} to weapon attacks while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
+        label: parts.join(" · "),
+        details: `${action.label} — adds ${parts.join(" and ")} to weapon attacks while active. Clear it (✕) when it ends; auto-clears at End Combat.`,
         source: action.label,
-        formula: buffDamage,
+        ...(buffDamage ? { formula: buffDamage } : {}),
+        ...(buffAttack ? { attackFormula: buffAttack } : {}),
         appliesTo: "any",
       });
       onLog({
         actorName: actor.name,
         actionName: action.label,
         tabId: "system",
-        message: `${actor.name} activates ${action.label} — ${formatBonusForChip(buffDamage)} to weapon attacks until it ends.`,
+        message: `${actor.name} activates ${action.label} — ${parts.join(" and ")} to weapon attacks until it ends.`,
       });
     }
 
@@ -2514,7 +2522,7 @@ export function ActorCard({
     // Free-cast class-feature spells spend here too: a pure-effect free cast (no attack /
     // save / damage roll — Misty Step, Shield…) never reaches onStartCommittedRoll, so its
     // N/Long-Rest pool would never count down. Rolled free-casts still spend via commit.
-    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage);
+    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage) || Boolean(buffAttack);
     const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
     // A LEVELLED spell spends a slot whether or not it rolls anything. Most of them don't
     // roll (Shield of Faith, Protection from Evil, Find Steed, Aid…) — those never reach
