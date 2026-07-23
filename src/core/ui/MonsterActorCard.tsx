@@ -285,6 +285,37 @@ function rollRecharge(recharge: string): { roll: number; success: boolean } {
   return { roll, success: roll >= lo && roll <= hi };
 }
 
+// Traits are reference text a DM reads mid-fight (auras, resistances, save riders). Same
+// deal as action text: it was clipped at 200 chars with no way to see the rest.
+function TraitCard({ name, text }: { name: string; text?: string }) {
+  const [open, setOpen] = useState(false);
+  const full = (text ?? "").trim();
+  const isClipped = full.length > 200 || full.includes("\n");
+  const shown = open || !isClipped ? full : `${full.split("\n")[0].slice(0, 200).trimEnd()}…`;
+  return (
+    <div style={{ padding: "5px 8px", borderRadius: 3, background: "#111", border: "1px solid #1a1a1a", marginBottom: 3 }}>
+      <strong style={{ fontSize: 10, color: "#777" }}>{name}</strong>
+      {full && (
+        <p
+          onClick={isClipped ? () => setOpen(v => !v) : undefined}
+          title={isClipped ? (open ? "Click to collapse" : "Click to read the full text") : undefined}
+          style={{
+            margin: "2px 0 0", fontSize: 10, color: open ? "#8a8a9a" : "#444", lineHeight: 1.4,
+            whiteSpace: "pre-wrap", cursor: isClipped ? "pointer" : "default",
+          }}
+        >
+          {shown}
+          {isClipped && (
+            <span style={{ color: "#7b68ee", marginLeft: 6, fontWeight: 600, whiteSpace: "nowrap" }}>
+              {open ? "less" : "more"}
+            </span>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ActionCard({
   action, isUsed, isReaction = false, isDischarged = false, committedRoll,
   attackCounter, stepsUsed,
@@ -292,6 +323,8 @@ function ActionCard({
   onStepUsed, onStepReset, onRecharge,
 }: ActionCardProps) {
   const actionId = slugify(action.name);
+  // Per-action expand for the rules text (see the description block below).
+  const [textExpanded, setTextExpanded] = useState(false);
   const isThisAction = committedRoll?.actionId === actionId;
   const isCrit = isThisAction
     && typeof committedRoll?.naturalRoll === "number"
@@ -345,11 +378,32 @@ function ActionCard({
               <span style={{ fontSize: 10, color: "#f0c040" }}>🛡 {action.save}</span>
             )}
           </div>
-          {action.text && (
-            <p style={{ margin: 0, fontSize: 10, color: "#555", lineHeight: 1.4 }}>
-              {action.text.split("\n")[0].slice(0, 140)}
-            </p>
-          )}
+          {action.text && (() => {
+            // Rules text used to be hard-clipped to the first line's first 140 chars with no
+            // way to read the rest — so a save DC, a rider, or the back half of a trait just
+            // vanished mid-sentence. Click the text (or "more") to expand the whole thing.
+            const full = action.text.trim();
+            const preview = full.split("\n")[0];
+            const isClipped = full.length > 140 || full.includes("\n");
+            const shown = textExpanded || !isClipped ? full : `${preview.slice(0, 140).trimEnd()}…`;
+            return (
+              <p
+                onClick={isClipped ? (e) => { e.stopPropagation(); setTextExpanded(v => !v); } : undefined}
+                title={isClipped ? (textExpanded ? "Click to collapse" : "Click to read the full text") : undefined}
+                style={{
+                  margin: 0, fontSize: 10, color: textExpanded ? "#8a8a9a" : "#555", lineHeight: 1.4,
+                  whiteSpace: "pre-wrap", cursor: isClipped ? "pointer" : "default",
+                }}
+              >
+                {shown}
+                {isClipped && (
+                  <span style={{ color: "#7b68ee", marginLeft: 6, fontWeight: 600, whiteSpace: "nowrap" }}>
+                    {textExpanded ? "less" : "more"}
+                  </span>
+                )}
+              </p>
+            );
+          })()}
         </div>
         <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
           {isDischarged && action.recharge && onRecharge && (
@@ -1145,14 +1199,7 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Traits" count={traits.length} collapsible open={traitsOpen} onToggle={() => setTraitsOpen(o => !o)} />
             {traitsOpen && traits.map(a => (
-              <div key={a.name} style={{ padding: "5px 8px", borderRadius: 3, background: "#111", border: "1px solid #1a1a1a", marginBottom: 3 }}>
-                <strong style={{ fontSize: 10, color: "#777" }}>{a.name}</strong>
-                {a.text && (
-                  <p style={{ margin: "2px 0 0", fontSize: 10, color: "#444", lineHeight: 1.4 }}>
-                    {a.text.split("\n")[0].slice(0, 200)}
-                  </p>
-                )}
-              </div>
+              <TraitCard key={a.name} name={a.name} text={a.text} />
             ))}
           </>
         )}
