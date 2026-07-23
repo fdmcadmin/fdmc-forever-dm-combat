@@ -2522,10 +2522,17 @@ export function ActorCard({
     // spells still spend on commit; `rollsItsOwn` keeps the two paths from double-spending.
     const isLevelledSpell = action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0;
     const isSpendingSpell = isFreeCastSpell || isLevelledSpell;
+    // Any action that NAMES a resource spends it on use — Rage, Sacred Weapon (Channel
+    // Divinity), Lay on Hands, Second Wind, Action Surge, Psionic Energy Dice, Luck Points.
+    // These are mostly pure-effect (no attack, no save), so like the levelled spells above
+    // they never reached a committed roll and their pools sat full all session.
+    const namedCost = action.metadata?.slotCost?.trim();
+    const hasNamedResourceCost = Boolean(namedCost)
+      && namedCost !== "Cantrip" && namedCost !== "No Slot" && !/^L\d/i.test(namedCost!);
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
       || Boolean(action.metadata?.saveDc?.trim())
-      || (isSpendingSpell && hasRollableFormula(action.metadata?.damage));
-    if ((isActivatedAbility || isSpendingSpell) && !rollsItsOwn) {
+      || ((isSpendingSpell || hasNamedResourceCost) && hasRollableFormula(action.metadata?.damage));
+    if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost) && !rollsItsOwn) {
       onConsumeActionResources?.(action);
     }
 
@@ -3077,9 +3084,16 @@ export function ActorCard({
       return;
     }
 
-    markReadiedKeyResolved(committedRoll.readiedKey);
     const attackUse = isMultiAttackCandidate(committedRoll) ? recordAttackUse(committedRoll) : null;
-    const costsToMarkUsed = attackUse && !attackUse.slotComplete
+    // Extra Attack: while swings remain, the Attack action itself is NOT finished. Retiring
+    // the readied key here is what stopped a PC from swinging the SAME weapon twice — the
+    // economy correctly kept "main" free, but the action was already marked resolved, so the
+    // card refused it until a turn reset. Only retire it once the last swing is spent.
+    const multiAttackContinues = Boolean(attackUse && !attackUse.slotComplete);
+    if (!multiAttackContinues) {
+      markReadiedKeyResolved(committedRoll.readiedKey);
+    }
+    const costsToMarkUsed = multiAttackContinues
       ? committedRoll.costs.filter((cost) => cost !== "main")
       : committedRoll.costs;
 
