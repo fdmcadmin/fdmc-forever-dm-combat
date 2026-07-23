@@ -253,11 +253,15 @@ function CombatWindowApp() {
   }, []);
 
   // Player-view combatants: player-safe naming (isDmMode=false) + hidden monsters excluded
-  // inside the pane. Actors limited to those live in the room (seeded into actorLiveState).
+  // inside the pane.
+  //
+  // Combat reads EVERY loaded PARTY character sheet — not only the ones already seeded into
+  // the room's live state. A newly imported PC (a replacement tank, an added companion) shows
+  // up in combat the moment it is in the library, with no separate seating step: buildCombatants
+  // falls back to the sheet's HP and shows init "—" until rolled, and a seated actor still uses
+  // its live HP/initiative. (Non-party library actors — monsters/NPCs — are excluded by kind.)
   const playerCombatants = useMemo(() => {
-    const liveIds = new Set(Object.keys(roomState.actorLiveState));
-    const allActors = Object.values(actorsById);
-    const actors = liveIds.size > 0 ? allActors.filter(a => liveIds.has(a.id)) : allActors;
+    const actors = Object.values(actorsById).filter(a => a.kind === "player" || a.kind === "companion");
     const initiativeByActor: Record<string, number | null> = {};
     for (const [id, live] of Object.entries(roomState.actorLiveState)) initiativeByActor[id] = live.initiative;
     const initiativeByMonster: Record<string, number | null> = {};
