@@ -31,6 +31,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
+import { splitTypedDamage, damageTypeVisual } from "../constants/damageTypeVisuals";
 import {
   formatBridgeRollResult,
   type DiceBridgeEvent,
@@ -371,9 +372,21 @@ function ActionCard({
             {action.roll && (
               <span style={{ fontSize: 10, color: "#7b68ee" }}>⚔ {action.roll}</span>
             )}
-            {action.damage && (
-              <span style={{ fontSize: 10, color: "#e07b39" }}>💥 {action.damage}</span>
-            )}
+            {action.damage && splitTypedDamage(action.damage, action.text).map((c, i) => {
+              const v = damageTypeVisual(c.type);
+              return (
+                <span
+                  key={`${c.dice}-${i}`}
+                  title={c.type ? `${c.dice} ${c.type}` : c.dice}
+                  style={{
+                    fontSize: 10, color: v.color, background: `${v.color}18`,
+                    border: `1px solid ${v.color}44`, borderRadius: 4, padding: "0 5px", fontWeight: 600,
+                  }}
+                >
+                  {c.dice} {v.icon}
+                </span>
+              );
+            })}
             {action.save && (
               <span style={{ fontSize: 10, color: "#f0c040" }}>🛡 {action.save}</span>
             )}
