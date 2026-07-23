@@ -111,7 +111,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 13, maxHp: 59, speed: "40 ft",
+      kind: "monster", ac: 13, maxHp: 59, attacksPerTurn: 2, speed: "40 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Big HP pool, no resistances or revival. Plain HP bar." },
       ],
@@ -129,7 +129,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Thornhide", kind: "trait", text: "Briar and broken bark are matted into the owlbear's pelt. A creature that hits it with a melee attack while within 5 feet takes 2 (1d4) piercing damage." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "The owlbear makes one Beak attack and one Raking Claws attack." },
       { name: "Beak", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 5", text: "+7 to hit, reach 5 ft., one creature. Hit: 10 (1d10 + 5) piercing." },
       { name: "Raking Claws", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 5", text: "+7 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing." },
     ],
@@ -147,7 +146,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 15, maxHp: 65, speed: "30 ft",
+      kind: "monster", ac: 15, maxHp: 65, attacksPerTurn: 3, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -164,7 +163,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Woodwise", kind: "trait", text: "The Reaver ignores difficult terrain from thickets and undergrowth, and has advantage on Dexterity (Stealth) checks made to hide in forest cover." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 3, text: "The Reaver makes two Notched Scimitar attacks and one Dagger attack (melee or thrown)." },
       { name: "Notched Scimitar", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
       { name: "Dagger", kind: "attack", roll: "1d20 + 5", damage: "1d4 + 3", text: "+5 to hit, melee or thrown 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing." },
       { name: "Cruel Command", kind: "action", text: "Bonus Action. One ally within 30 feet that can hear the Reaver can use its reaction to make one weapon attack." },
@@ -255,7 +253,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Act 1 boss. No v12 workbook lane, but unlike the Act 1 chaff it has a real defensive
     // trait, so it is itemised rather than flattened to 1.0. ESTIMATE — no MC run.
     stats: {
-      kind: "boss", ac: 14, maxHp: 100, speed: "50 ft",
+      kind: "boss", ac: 14, maxHp: 100, attacksPerTurn: 2, speed: "50 ft",
       defenses: [
         { name: "Phantom Step", ehpMultiplier: 1.18, note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
       ],
@@ -274,7 +272,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Condition Immunity - Frightened", kind: "trait", text: "The Stalker is immune to the frightened condition." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "The Mirage Stalker makes one Phantom Rake attack and one Hollow Stamp attack." },
       { name: "Phantom Rake", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", text: "Melee Weapon Attack: +6 to hit, reach 10 ft., one target. Hit: 13 (2d8 + 4) piercing damage. The strike lands a half-second before the creature appears to move." },
       { name: "Hollow Stamp", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 4", text: "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage. The hooves connect with a sound that is wrong." },
       { name: "Phantom Charge", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", save: "STR DC 14", text: "Recharge 5-6. Melee Weapon Attack after at least 20 ft. of straight-line movement. On hit after the movement requirement, target must succeed on the Strength save or be pushed 10 ft. and knocked prone." },
@@ -476,7 +473,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
-      kind: "monster", ac: 14, maxHp: 82, speed: "30 ft", classification: "elite",
+      kind: "monster", ac: 14, maxHp: 82, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
         { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1.45, note: "Halves nonmagical weapon damage and drains STR (cap 6), softening every later hit. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
       ],
@@ -491,7 +488,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [{ name: "Coordinated Strike", kind: "trait", text: "When this creature hits a target already hit by another Corrupted Hunter this round, it deals an additional 1d8 necrotic damage." }],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "The Hunter makes two Corrupted Claw attacks." },
       {
         name: "Corrupted Claw",
         kind: "attack",
@@ -518,7 +514,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // absorbed AC; now AC 14 is its own offensive-side term, so this number is traits only.
     // v12 Encounter Safety: Last Directive 151 HP @5P won in 1.74 rounds × 1.27 dynamics.
     stats: {
-      kind: "boss", ac: 14, maxHp: 85, speed: "0 ft., fly 5 ft",
+      kind: "boss", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft",
       defenses: [
         { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
       ],
@@ -536,7 +532,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Mad Certainty", kind: "trait", text: "Immune to Charmed. It genuinely believes it is still doing holy work." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "The Guardian makes two Corrupted Smite attacks." },
       { name: "Corrupted Smite", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", text: "+6 to hit. Hit: 13 (2d8 + 4) necrotic damage." },
       { name: "Soul Vomit", kind: "action", damage: "6d6", save: "CON DC 13", text: "Recharge 5-6. Each creature in a 15-foot cone takes necrotic damage on a failed save, or half on success. Rattled creatures save at disadvantage." },
     ],
@@ -588,7 +583,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 15, maxHp: 45, speed: "30 ft",
+      kind: "monster", ac: 15, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -607,7 +602,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Guard the Root", kind: "trait", text: "If combat reaches the inner storehouse, the Thornwarden stops maneuvering and fights only to hold the door." },
     ],
     actions: [
-      { name: "Crowned Multiattack", kind: "action", attackCount: 2, text: "The Thornwarden makes two Antler-Crowned Blade attacks." },
       { name: "Antler-Crowned Blade", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing." },
       { name: "Collector's Order", kind: "action", text: "Two allied bandits within 30 ft each immediately make one weapon attack." },
     ],
@@ -632,7 +626,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 16, maxHp: 45, speed: "30 ft",
+      kind: "monster", ac: 16, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -649,7 +643,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "No Wall Falls Twice", kind: "trait", text: "While above half HP, allied bandits within 20 ft add +1 to attack rolls." },
     ],
     actions: [
-      { name: "Reaver's Multiattack", kind: "action", attackCount: 2, text: "The Reaver makes two Breaching Scimitar attacks." },
       { name: "Breaching Scimitar", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
       { name: "Move, Damn You", kind: "action", text: "Bonus Action. One allied bandit within 20 ft moves up to its speed." },
     ],
@@ -716,7 +709,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // v12 Encounter Safety: Lesser Wendigos 300 HP @5P (2× 120 at 4P) won in 2.46 rounds
     // × 1.27 dynamics. PROVISIONAL — analytic-derived, no MC lane of its own yet.
     stats: {
-      kind: "boss", ac: 15, maxHp: 120, speed: "40 ft", classification: "mid-boss",
+      kind: "boss", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
       defenses: [
         { name: "Two fronts + Grab", ehpMultiplier: 1.21, note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
       ],
@@ -735,7 +728,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Husk on Death", kind: "trait", text: "At 0 HP it collapses into a drained, withered husk — the same shape the villagers described from the silent town. Narrative only." },
     ],
     actions: [
-      { name: "Raking Multiattack", kind: "action", attackCount: 2, text: "Two Claw attacks. It can replace one Claw with Grab." },
       { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 3 + 1d6", text: "+6 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing plus 3 (1d6) cold." },
       { name: "Rend", kind: "action", recharge: "4-6", save: "STR DC 13", text: "If both Claws hit the same creature this turn: +3d6 slashing, DC 13 STR save or knocked prone." },
       { name: "Grab (replaces one Claw)", kind: "action", save: "STR DC 13", text: "DC 13 STR save or grappled. A grappled creature takes 2d8 automatic damage at the start of each of the Wendigo's turns until it escapes." },
@@ -768,6 +760,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // total, not each creature). AC now handled separately on the offensive side.
     stats: {
       kind: "monster", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2,
+      spellSlots: [{ level: 1, max: 4 }, { level: 2, max: 3 }, { level: 3, max: 2 }],
       defenses: [
         { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Two casters each raise one body as a 33%-HP frost-thrall; the formation's own revival value, ~+30% HP across the fight." },
         { name: "Frost Ward (reaction)", ehpMultiplier: 1.14, note: "+5 AC on a hit, once per round per body — a spent reaction turns roughly one landed attack per round into a miss." },
@@ -788,14 +781,13 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Rimebound Spellcasting (INT, DC 14, +6)", kind: "trait", text: "Cantrips: Rime Touch, Killing Frost. 1st (4 slots): Frost Ward, Rimestep. 2nd (3 slots): Bind in Ice (holds a creature fast, as hold person). 3rd (2 slots): Raise the Frozen." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "Two Rime Claw attacks, or casts two Rime Bolts. When it casts two Rime Bolts, ONLY the first carries the icy-tendril restrain." },
       { name: "Rime Claw", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 3", text: "+6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) cold. The wound crusts over with black frost." },
       { name: "Rime Bolt", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +6 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success." },
-      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance; it is not a reduced copy of the raised body). One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
-      { name: "Rimestep (Bonus Action, 1st slot)", kind: "action", text: "Teleport 30 ft to a space it can see, holding the line." },
+      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance; it is not a reduced copy of the raised body). One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
+      { name: "Rimestep (Bonus Action, 1st slot)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, holding the line." },
     ],
     reactions: [
-      { name: "Frost Ward (Reaction, 1st slot)", kind: "reaction", text: "+5 AC until the start of its next turn when hit by an attack." },
+      { name: "Frost Ward (Reaction, 1st slot)", kind: "reaction", spellSlotLevel: 1, text: "+5 AC until the start of its next turn when hit by an attack." },
       { name: "Glacial Freeze (Reaction, 1/day) — its Counterspell", kind: "reaction", text: "When a creature within 60 ft tries to cast a spell, the Sentinel snaps its fingers and a flash of supernatural frost instantly encases the caster's hands and arcane focus — the verbal and somatic components freeze solid before the spell can leave them. The spell fails and its slot is wasted if it is 3rd level or lower; for 4th level or higher, the Sentinel makes an INT check (DC 10 + the spell's level), and the spell fails on a success. ONLY the Frozen Sentinel has this — the Frost-Weaver does not." },
     ],
     resources: [],
@@ -848,7 +840,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Frostbite Injection", kind: "trait", text: "The first time a target is hit by a Longsword or Rime Bolt on each of the Wight's turns, DC 13 CON or the target's maximum HP falls by the total damage taken until it finishes a long rest. A creature reduced to 0 maximum HP dies and freezes." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "Two Longsword attacks, or two Rime Bolts. It commits to melee or to range — it does not mix." },
       { name: "Longsword", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 3) slashing. One-handed behind the shield." },
       { name: "Rime Bolt", kind: "attack", roll: "1d20 + 5", damage: "2d8 + 3", text: "+5 to hit, range 30 ft., one target. Hit: 12 (2d8 + 3) cold. This version does not restrain." },
       { name: "Frozen Resurrection (1/fight)", kind: "action", text: "If a destroyed ally within 30 ft has lain dead a full turn — it fell on an earlier round and is still down at the start of the Wight's turn — the Wight raises it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — spawn/add it as a new monster instance, not a reduced copy of the raised body). Full form only: once the Wight has itself been raised into a husk, it can no longer do this. A husk cannot raise anything; one revival per body, and the chain ends." },
@@ -931,6 +922,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // softest of the three — the offensive-side term now shows that instead of hiding it.
     stats: {
       kind: "boss", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
+      spellSlots: [{ level: 1, max: 3 }, { level: 2, max: 2 }, { level: 3, max: 2 }, { level: 4, max: 1 }],
       defenses: [
         { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Second caster of the line; raises one body per fight as a 33%-HP frost-thrall." },
         { name: "Frost Ward (reaction)", ehpMultiplier: 1.14, note: "+5 AC on a hit, once per round — turns roughly one landed attack per round into a miss." },
@@ -951,12 +943,11 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Weave Spellcasting (INT, DC 15, +7)", kind: "trait", text: "Cantrips: Rime Touch, Killing Frost. Control kit: Whiteout, Bind in Ice (as hold person), Grasping Rime (a 20-ft sphere of clutching frost, as hunger of hadar), Rimestep. It has NO Glacial Freeze — the Sentinel silences casters, the Weaver moves and pins them." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "Casts two Rime Bolts. Both carry the icy-tendril restrain — the Weaver is the one creature in the line whose every bolt binds. It gives this up whenever Whiteout or Frost-Weave Pull is the better play, which is most turns." },
-      { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
+      { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", spellSlotLevel: 4, save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
       { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +7 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it." },
       { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
-      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
-      { name: "Rimestep (Bonus Action)", kind: "action", text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
+      { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
+      { name: "Rimestep (Bonus Action)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
     ],
     reactions: [],
     resources: [],
@@ -983,7 +974,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // rose to 18, which is also what lifts Death Burst to DC 15). AC 17 is now its own
     // offensive-side term; only traits remain below.
     stats: {
-      kind: "boss", ac: 17, maxHp: 136, speed: "30 ft",
+      kind: "boss", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
       defenses: [
         { name: "Wrapped in the Pale", ehpMultiplier: 1.32, note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
         { name: "Shadow Shift", ehpMultiplier: 1.16, note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
@@ -1003,7 +994,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Death Burst", kind: "trait", text: "At 0 HP the Drifter comes apart. Every creature within 15 ft makes a DC 14 CON save, taking 21 (6d6) cold on a fail, half on a success. Flat DC, flat radius, every party size — the band moves HP, never abilities. Spread before the killing blow." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", attackCount: 2, text: "Two Frost Slam attacks." },
       { name: "Frost Slam", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", text: "+7 to hit, reach 10 ft., one target. Hit: 15 (2d10 + 4) cold." },
       { name: "Shadow Shift (Bonus Action)", kind: "action", text: "Teleport up to 20 ft between dim light or darkness areas it can see — a flat 20 ft at every party size. Magical effect, so Counterspell can attempt to block it. It never attacks twice from the same position." },
     ],
@@ -1091,7 +1081,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // AC 17 now drives the OFFENSIVE side on its own (acFactor 0.846 at L5). What remains
     // here is purely defensive traits; together they reproduce the v12 MC's 5.05 rounds.
     stats: {
-      kind: "boss", ac: 17, maxHp: 288, speed: "40 ft", classification: "act-boss",
+      kind: "boss", ac: 17, maxHp: 288, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
       defenses: [
         { name: "Hidden Bone Armor", ehpMultiplier: 1.25, note: "Resistance phase revealed at half HP (180 of 360 @5P). Adapts after observed resistance, so the back half of the bar costs ~25% more to chew through." },
         { name: "Frozen Endurance", ehpMultiplier: 1.06, note: "One free survival at 0 HP (drops to 1 instead) = roughly one extra round of incoming damage across a ~5-round fight. Fire/radiant bypass it entirely." },
@@ -1112,7 +1102,6 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Frozen Endurance", kind: "trait", text: "The FIRST time the Wendigo Wight drops to 0 hit points, it drops to 1 hit point instead — the wrong cold knits it back together before it can finish dying. No save, no roll. Once per fight. Fire or radiant damage bypasses this completely: if the blow that reduced it to 0 was fire or radiant, it dies then and there." },
     ],
     actions: [
-      { name: "Hunger Multiattack", kind: "action", attackCount: 2, text: "Two Devouring Claw attacks, plus one Hunger Bite if a creature is grappled." },
       { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", save: "STR DC 15", text: "+7 to hit, reach 5 ft. Hit: 15 (2d10 + 4) cold. DC 15 STR save or grappled." },
       { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 7", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
       { name: "Hunger Leap", kind: "action", recharge: "5-6", save: "STR DC 15", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },

@@ -100,6 +100,9 @@ export type MainMonsterTemplate = {
     /** Legendary actions per round (Monster Gate A6). Actions carrying a
      *  `legendaryCost` spend from this pool; unset = no legendary actions. */
     legendaryPerRound?: number;
+    /** Spell slots this creature has, per level. A slot-costed action (see
+     *  MonsterReaderAction.spellSlotLevel) spends from the matching pool. Casters only. */
+    spellSlots?: { level: number; max: number }[];
   };
   abilities: { label: string; value: string }[];
   traits: MonsterReaderAction[];
@@ -327,6 +330,7 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     traits: template.traits,
     spells: [],
     attacksPerTurn: template.stats.attacksPerTurn,
+    spellSlots: template.stats.spellSlots,
     actionCounter: deriveMonsterActionCounter(template.actions, template.stats.attacksPerTurn),
     usedActionNames: [],
   };

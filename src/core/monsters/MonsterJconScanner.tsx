@@ -25,6 +25,9 @@ export type MonsterReaderAction = {
   attackCount?: number;
   /** Recharge range e.g. "6", "5-6", "4-6" — ability re-enables on successful 1d6 roll */
   recharge?: string;
+  /** Spell-slot level this action spends (1–9). Shows a level pill on the row and decrements
+   *  the creature's matching `stats.spellSlots` pool on use. */
+  spellSlotLevel?: number;
   /** Legendary-action cost (1 or 2). Set = this is a legendary action spending from the
    *  creature's `stats.legendaryPerRound` pool (Monster Gate A6). */
   legendaryCost?: number;
@@ -99,6 +102,8 @@ export type MonsterCombatCandidate = {
   /** Attacks per turn declared on the creature — drives the multiattack counter directly,
    *  independent of what any action is named. */
   attacksPerTurn?: number;
+  /** Spell slots per level, carried from the template so the card can track them. */
+  spellSlots?: { level: number; max: number }[];
   usedActionNames?: string[];
   // Main runtime absorption fields from Monster Cards BUILD 0.3.0c.
   // These keep the template/source record separate from live encounter state.

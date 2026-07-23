@@ -185,6 +185,34 @@ function StatBox({ label, value, color }: { label: string; value: string; color?
   );
 }
 
+const ordinal = (n: number) => `${n}${["th", "st", "nd", "rd"][(n % 100 - n % 10 === 10 ? 0 : n % 10)] ?? "th"}`;
+
+// ─── Action budget — the attacks-per-turn dots ────────────────────────────────
+// Replaces the old single "Action" dot + Multiattack step tracker. One filled dot per
+// action used; empty per action still available. Clicking a dot sets the budget to it.
+function ActionBudget({ max, used, onSet }: { max: number; used: number; onSet: (n: number) => void }) {
+  const remaining = Math.max(0, max - used);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+      <div style={{ display: "flex", gap: 4 }}>
+        {Array.from({ length: max }).map((_, i) => {
+          const spent = i < used;
+          const color = spent ? "#ff5840" : "#4bb469";
+          return (
+            <button key={i} type="button"
+              onClick={() => onSet(spent ? i : i + 1)}
+              title={`Action ${i + 1} of ${max} — ${spent ? "used, click to restore" : "available, click to mark used"}`}
+              style={{ width: 12, height: 12, borderRadius: "50%", background: color, border: "none", padding: 0, cursor: "pointer", boxShadow: `0 0 6px ${color}88` }} />
+          );
+        })}
+      </div>
+      <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>
+        {max > 1 ? `Actions · ${remaining} left` : "Action"}
+      </span>
+    </div>
+  );
+}
+
 // ─── Economy dot toggle ───────────────────────────────────────────────────────
 // Clicking a dot cycles: ready (green) → used (red) → ready
 
@@ -259,6 +287,8 @@ type ActionCardProps = {
   isUsed: boolean;
   isReaction?: boolean;
   isDischarged?: boolean;   // recharge ability used this turn — locked until recharge succeeds
+  /** Slots left for this action's spell level (null = doesn't cost a slot). */
+  slotRemaining?: number | null;
   committedRoll: CommittedRoll | null;
   attackCounter: ReturnType<typeof deriveMonsterActionCounter> | undefined;
   stepsUsed: number;
@@ -318,7 +348,7 @@ function TraitCard({ name, text }: { name: string; text?: string }) {
 }
 
 function ActionCard({
-  action, isUsed, isReaction = false, isDischarged = false, committedRoll,
+  action, isUsed, isReaction = false, isDischarged = false, slotRemaining = null, committedRoll,
   attackCounter, stepsUsed,
   onUse, onRollResult, onCommit, onClearRoll,
   onStepUsed, onStepReset, onRecharge,
@@ -387,6 +417,19 @@ function ActionCard({
                 </span>
               );
             })}
+            {action.spellSlotLevel && (
+              <span
+                title={slotRemaining !== null ? `${slotRemaining} slot${slotRemaining === 1 ? "" : "s"} left at this level` : "Spell slot"}
+                style={{
+                  fontSize: 10, fontWeight: 700, padding: "0 6px", borderRadius: 4,
+                  color: slotRemaining === 0 ? "#666" : "#57c07a",
+                  background: slotRemaining === 0 ? "#1a1a1a" : "#57c07a18",
+                  border: `1px solid ${slotRemaining === 0 ? "#333" : "#57c07a55"}`,
+                }}
+              >
+                {ordinal(action.spellSlotLevel)}{slotRemaining !== null ? ` · ${slotRemaining}` : ""}
+              </span>
+            )}
             {action.save && (
               <span style={{ fontSize: 10, color: "#f0c040" }}>🛡 {action.save}</span>
             )}
@@ -618,6 +661,23 @@ export function MonsterActorCard({
     [monster.actions, monster.attacksPerTurn],
   );
 
+  // Action budget replaces the old "Multiattack row + step counter". A creature gets
+  // `actionsMax` main-action uses per turn (its attacks-per-turn, default 1). Each ATTACK
+  // spends one; a full-action ability (a cast, Raise the Frozen) spends the whole budget —
+  // so it's "2 attacks, OR one other action", the way a real stat block reads. Tracked in
+  // economy.stepsUsed. No "Multiattack" action is needed or wanted.
+  const actionsMax = Math.max(1, monster.attacksPerTurn ?? actionCounter?.total ?? 1);
+
+  // Spell slots spent this fight, per level. Unlike the action budget these do NOT reset on
+  // turn advance — a monster's slots persist until it would long rest, i.e. the whole fight.
+  const [slotsUsedByLevel, setSlotsUsedByLevel] = useState<Record<number, number>>({});
+  const spellSlots = monster.spellSlots ?? [];
+  const slotRemaining = (level: number) => {
+    const pool = spellSlots.find(s => s.level === level);
+    if (!pool) return null;
+    return Math.max(0, pool.max - (slotsUsedByLevel[level] ?? 0));
+  };
+
   const allActions = useMemo(
     () => [...(monster.actions ?? []), ...(monster.reactions ?? []), ...(monster.traits ?? [])],
     [monster.actions, monster.reactions, monster.traits],
@@ -671,16 +731,28 @@ export function MonsterActorCard({
       phase: attackFormula ? "pending" : "held",
     };
     setCommittedRoll(roll);
-    // Mark economy slot and broadcast
+    // Mark economy slot and broadcast. Main actions draw on the action budget: an ATTACK
+    // spends one, any other main action spends the whole budget (a cast is the turn's action).
+    const isBonus = (action as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() === "bonus";
     setEconomy(e => {
-      const next = action.kind === "reaction"
-        ? { ...e, reactionUsed: true }
-        : (action as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() === "bonus"
-          ? { ...e, bonusUsed: true }
-          : { ...e, actionUsed: true };
+      let next: InstanceEconomy;
+      if (action.kind === "reaction") {
+        next = { ...e, reactionUsed: true };
+      } else if (isBonus) {
+        next = { ...e, bonusUsed: true };
+      } else if (action.kind === "attack") {
+        const steps = Math.min(actionsMax, e.stepsUsed + 1);
+        next = { ...e, stepsUsed: steps, actionUsed: steps >= actionsMax };
+      } else {
+        next = { ...e, stepsUsed: actionsMax, actionUsed: true };
+      }
       broadcastMonsterEconomy(monster.instanceId, next);
       return next;
     });
+    // Spend a spell slot if this action costs one (persists until the fight ends).
+    if (action.spellSlotLevel && slotRemaining(action.spellSlotLevel) !== null) {
+      setSlotsUsedByLevel(prev => ({ ...prev, [action.spellSlotLevel!]: (prev[action.spellSlotLevel!] ?? 0) + 1 }));
+    }
     // Mark recharge action as discharged — requires recharge roll to re-enable
     if (action.recharge) {
       setDischargedActionIds(prev => new Set([...prev, slugify(action.name)]));
@@ -1023,14 +1095,35 @@ export function MonsterActorCard({
 
         {/* 3. Economy row — clickable dot toggles */}
         <div style={{ display: "flex", gap: 12, marginBottom: 8, padding: "5px 0", borderBottom: "1px solid #1a1a2e" }}>
-          <EconomyDot label="Action"   used={economy.actionUsed}   onClick={() => { const next = { ...economy, actionUsed: !economy.actionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
+          <ActionBudget max={actionsMax} used={economy.stepsUsed}
+            onSet={(n) => { const next = { ...economy, stepsUsed: n, actionUsed: n >= actionsMax }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
           {hasBonusActions && (
             <EconomyDot label="Bonus"  used={economy.bonusUsed}    onClick={() => { const next = { ...economy, bonusUsed: !economy.bonusUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
           )}
           <EconomyDot label="Reaction" used={economy.reactionUsed} onClick={() => { const next = { ...economy, reactionUsed: !economy.reactionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
-          {/* Quick turn reset */}
+          {/* Spell slots — DM-local, persist across turns until a long rest / fight end */}
+          {spellSlots.map(s => {
+            const left = slotRemaining(s.level) ?? 0;
+            return (
+              <div key={s.level} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{ display: "flex", gap: 3 }}>
+                  {Array.from({ length: s.max }).map((_, i) => {
+                    const spent = i >= left;
+                    return (
+                      <button key={i} type="button"
+                        onClick={() => setSlotsUsedByLevel(prev => ({ ...prev, [s.level]: spent ? i : i + 1 }))}
+                        title={`${ordinal(s.level)}-level slot ${i + 1} of ${s.max} — ${spent ? "spent, click to restore" : "available, click to spend"}`}
+                        style={{ width: 9, height: 9, borderRadius: 2, background: spent ? "#2a2a2a" : "#57c07a", border: "none", padding: 0, cursor: "pointer" }} />
+                    );
+                  })}
+                </div>
+                <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{ordinal(s.level)} · {left}</span>
+              </div>
+            );
+          })}
+          {/* Quick turn reset — clears the action budget + bonus/reaction, NOT spell slots */}
           <button type="button"
-            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); /* discharged stays — recharge roll needed */ addLog(`${publicName} turn reset.`); }}
+            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}
             style={{ marginLeft: "auto", fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#444", cursor: "pointer" }}>
             Reset Turn
           </button>
@@ -1124,13 +1217,18 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Actions" count={mainActions.length} />
             {mainActions.map(a => (
-              <ActionCard key={a.name} action={a} isUsed={usedActionIds.has(slugify(a.name))}
+              // Main actions share the turn's action budget: usable until the budget is spent,
+              // or until this specific action is out of slots. Not gated per-action.
+              <ActionCard key={a.name} action={a}
+                isUsed={economy.stepsUsed >= actionsMax
+                  || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
+                slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
                 isDischarged={dischargedActionIds.has(slugify(a.name))}
                 committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
                 attackCounter={actionCounter} stepsUsed={economy.stepsUsed}
                 onUse={handleUseAction} onRollResult={handleRollResult}
                 onCommit={handleCommit} onClearRoll={handleClearRoll}
-                onStepUsed={() => setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionCounter?.total ?? 1) }))}
+                onStepUsed={() => setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionsMax) }))}
                 onStepReset={() => setEconomy(e => ({ ...e, stepsUsed: 0 }))}
                 onRecharge={(action) => {
                   const { roll, success } = rollRecharge(action.recharge ?? "6");
@@ -1147,7 +1245,9 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Bonus Actions" count={bonusActions.length} />
             {bonusActions.map(a => (
-              <ActionCard key={a.name} action={a} isUsed={usedActionIds.has(slugify(a.name))}
+              <ActionCard key={a.name} action={a}
+                isUsed={economy.bonusUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
+                slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
                 isDischarged={dischargedActionIds.has(slugify(a.name))}
                 committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
                 attackCounter={undefined} stepsUsed={0}
@@ -1164,7 +1264,9 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Reactions" count={reactions.length} />
             {reactions.map(a => (
-              <ActionCard key={a.name} action={a} isReaction isUsed={usedActionIds.has(slugify(a.name))}
+              <ActionCard key={a.name} action={a} isReaction
+                isUsed={economy.reactionUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
+                slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
                 isDischarged={dischargedActionIds.has(slugify(a.name))}
                 committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
                 attackCounter={undefined} stepsUsed={0}
