@@ -627,21 +627,38 @@ export function CombatTracker({
               </div>}
             </div>
 
-            {/* Companion sub-entries — act on owner's turn, inherit initiative */}
+            {/* Companion sub-entries — act on owner's turn, inherit initiative.
+                The name is a button: a companion is never its own combatant in the
+                initiative order, so clicking here is the ONLY way to open its card
+                and spend its action during the owner's turn. */}
             {combatant.companions?.map(companion => (
               <div
                 key={companion.id}
                 style={{
                   display: "flex", alignItems: "center", gap: 4,
                   padding: "2px 6px 2px 28px", // indented
-                  opacity: companion.isDead ? 0.4 : 0.8,
+                  // Lit up while the owner is the active turn — that's when it can act.
+                  background: isActive ? withAlpha(railColor, 0.08) : "transparent",
+                  borderRadius: 4,
+                  opacity: companion.isDead ? 0.4 : isActive ? 1 : 0.8,
                 }}
               >
-                <span style={{ fontSize: 10, color: "#555", flexShrink: 0 }}>└</span>
-                <span style={{ fontSize: 11, color: "#666", flex: 1 }}>
+                <span style={{ fontSize: 10, color: isActive ? railColor : "#555", flexShrink: 0 }}>└</span>
+                <button
+                  type="button"
+                  onClick={() => onSelectCombatant(companion.id)}
+                  title={`Open ${companion.name}'s card — acts on ${combatant.name}'s turn`}
+                  style={{
+                    flex: 1, textAlign: "left", padding: 0, cursor: "pointer",
+                    background: "transparent", border: "none",
+                    fontSize: 11, fontWeight: isActive ? 600 : 500,
+                    color: companion.isDead ? "#555" : isActive ? railColor : "#666",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}
+                >
                   {companion.name}
-                  <span style={{ fontSize: 9, color: "#444", marginLeft: 4 }}>acts on {combatant.name}'s turn</span>
-                </span>
+                  <span style={{ fontSize: 9, color: isActive ? "#8a8aa0" : "#444", marginLeft: 4 }}>acts on {combatant.name}'s turn</span>
+                </button>
                 {/* Economy dots — companion row */}
                 {!condensed && isDmMode && actionStateByActorId && (() => {
                   const cState = actionStateByActorId[companion.id];
