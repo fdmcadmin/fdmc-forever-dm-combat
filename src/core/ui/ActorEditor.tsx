@@ -163,7 +163,7 @@ type ProfileDraft = {
   hpMax: string;
   hpCurrent: string;
   speed: string;
-  abilities: Record<AbilityId, { score: string; modifier: string }>;
+  abilities: Record<AbilityId, { score: string; modifier: string; save: string }>;
   classFeatureLabel: string;
   classFeatureValue: string;
   classFeatureNote: string;
@@ -188,6 +188,9 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
       ABILITY_IDS.map(id => [id, {
         score: String(actor.abilityScores?.[id]?.score ?? ""),
         modifier: String(actor.abilityScores?.[id]?.modifier ?? ""),
+        // Read the save back in. Without this the editor rebuilds abilityScores from
+        // score+modifier only, silently wiping every save on the next save-and-close.
+        save: String(actor.abilityScores?.[id]?.save ?? ""),
       }])
     ) as ProfileDraft["abilities"],
     classFeatureLabel: actor.classFeatureTracker?.label ?? "",
@@ -207,10 +210,14 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
   for (const id of ABILITY_IDS) {
     const score = Number.parseInt(draft.abilities[id].score, 10);
     const modifier = Number.parseInt(draft.abilities[id].modifier, 10);
-    if (Number.isFinite(score) || Number.isFinite(modifier)) {
+    // A save of 0 is meaningful (CHA 10, no proficiency), so test for a finite number
+    // rather than truthiness — and a blank field means "no override", not zero.
+    const save = Number.parseInt(draft.abilities[id].save, 10);
+    if (Number.isFinite(score) || Number.isFinite(modifier) || Number.isFinite(save)) {
       abilities[id] = {
         ...(Number.isFinite(score) ? { score } : {}),
         ...(Number.isFinite(modifier) ? { modifier } : {}),
+        ...(Number.isFinite(save) ? { save } : {}),
       };
     }
   }
@@ -255,7 +262,7 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
     onChange({ ...draft, [key]: value });
   }
 
-  function setAbility(id: AbilityId, field: "score" | "modifier", value: string) {
+  function setAbility(id: AbilityId, field: "score" | "modifier" | "save", value: string) {
     onChange({ ...draft, abilities: { ...draft.abilities, [id]: { ...draft.abilities[id], [field]: value } } });
   }
 
@@ -336,6 +343,15 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
       </div>
 
       <h4 style={{ margin: "4px 0 0" }}>Ability Scores</h4>
+      {/* Three rows per ability: score, modifier, then the saving throw.
+          The save row is the override — leave it BLANK and the card shows the save as
+          equal to the modifier (correct for a non-proficient save). Fill it in for a
+          proficient save, or for a summon whose saves key off its owner rather than
+          its own scores (Faelar's Primal Bond adds Lyrielle's PB to all six). */}
+      <p style={{ margin: 0, fontSize: 11, color: "#666" }}>
+        Rows: <span style={{ color: "#aaa" }}>score</span> · <span style={{ color: "#aaa" }}>modifier</span> · <span style={{ color: "#d7b36a" }}>save</span>.
+        Leave <span style={{ color: "#d7b36a" }}>save</span> blank when it equals the modifier; fill it in for proficient saves.
+      </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
         {ABILITY_IDS.map(id => (
           <div key={id} style={{ textAlign: "center" }}>
@@ -346,6 +362,9 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
             <input type="number" value={draft.abilities[id].modifier} onChange={e => setAbility(id, "modifier", e.target.value)}
               placeholder="mod" title="Modifier"
               style={{ width: "100%", padding: "2px 4px", borderRadius: 3, border: "1px solid #222", background: "#0d0d0d", color: "#aaa", fontSize: 11, textAlign: "center", marginTop: 2 }} />
+            <input type="number" value={draft.abilities[id].save} onChange={e => setAbility(id, "save", e.target.value)}
+              placeholder="sv" title="Saving throw — leave blank when the save equals the modifier. Fill it in for a proficient save, or a summon whose saves key off its owner."
+              style={{ width: "100%", padding: "2px 4px", borderRadius: 3, border: "1px solid #3a2f18", background: "#0d0d0d", color: "#d7b36a", fontSize: 11, textAlign: "center", marginTop: 2 }} />
           </div>
         ))}
       </div>
