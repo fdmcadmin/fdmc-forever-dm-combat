@@ -94,7 +94,10 @@ export const faelar: Actor = {
           `Melee attack. To-hit equals Lyrielle's spell attack modifier (${fmt(BEAST_ATTACK)}); damage is 1d8 + 2 + her Wisdom modifier. ` +
           "Bludgeoning, piercing or slashing — the type is chosen when the beast is summoned. " +
           "If the beast moved at least 20 ft. straight toward the target before the hit, it deals an extra 1d6 of the " +
-          "same type and the target has the Prone condition if it is Large or smaller.",
+          "same type and the target has the Prone condition if it is Large or smaller. " +
+          "CRITS (bonds v13): this is the companion's STAT BLOCK attack, so it crits normally — double its dice, " +
+          "including the charge 1d6. Bond dice never crit: from Metamorphosis on, Pack Instinct's additive die " +
+          "(+1d4, then +1d6 at Apex, +1d8 at Unbroken) is rolled once and added flat.",
         economyCost: ["main"],
       }),
       normalizedAction({
