@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
+import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
@@ -89,8 +90,12 @@ export type EquipmentItem = {
   // ── Campaign library fields (preserved from fdmc-items.json schema) ──
   /** Campaign item — DM cannot edit or delete */
   isLocked?: boolean;
-  /** Item subkind from the canonical library (e.g. "Melee One-Handed", "Heavy Armor") */
+  /** Item subkind from the canonical library (e.g. "Melee One-Handed", "Heavy Armor").
+   *  Weapons use WEAPON_CATEGORIES: melee splits 1H / 2H / Versatile, ranged 1H / 2H. */
   category?: string;
+  /** Weapon Mastery property (2024 rules). Picked in the equipment creator; its rules
+   *  text is appended under Information on the generated attack. */
+  mastery?: WeaponMasteryName;
   /** Item tier from campaign module (e.g. "Tier 1", "Tier 2") */
   tier?: string;
   /** Act tag from source library */
@@ -302,6 +307,7 @@ export function itemToAction(item: EquipmentItem): ActorAction {
           ? `🪄 Spell focus${item.spellFocusAttack ? ` · atk ${item.spellFocusAttack}` : ""}${item.spellFocusDamage ? ` · dmg ${item.spellFocusDamage}` : ""}`
           : undefined,
         item.range ? `Range: ${item.range}` : undefined,
+        item.mastery ? `Mastery: ${item.mastery}` : undefined,
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
       ].filter(Boolean).join(" · "),
@@ -347,7 +353,11 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
       crit: item.crit,
       range: item.range,
       cost: "Action",
-      details: item.range ? `Range: ${item.range}` : undefined,
+      // Information on the attack: range, then the chosen Weapon Mastery's rules text.
+      details: [
+        item.range ? `Range: ${item.range}` : undefined,
+        masteryInfoLine(item.mastery),
+      ].filter(Boolean).join("\n\n") || undefined,
       // No outcomeMode — TabPanel infers "attack-roll" from attack formula (correct behavior)
     },
   };
@@ -466,6 +476,49 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
             <label style={{ fontSize: 12 }}>Damage <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)} placeholder="1d8+3" style={inputStyle} /></label>
             <label style={{ fontSize: 12 }}>Crit <input type="text" value={draft.crit ?? ""} onChange={e => set("crit", e.target.value || undefined)} placeholder="2d8+3" style={inputStyle} /></label>
             <label style={{ fontSize: 12 }}>Range <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value || undefined)} placeholder="5 ft, 150/600 ft..." style={inputStyle} /></label>
+          </div>
+
+          {/* Hand count + Weapon Mastery.
+              Mastery is deliberately a FREE CHOICE, never derived from the weapon name:
+              a mastery is only live when the character has a feature unlocking it for that
+              weapon, so the same longsword is Sap for a Fighter and nothing for a Wizard.
+              Picking one appends its rules text under Information on the generated attack. */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <label style={{ fontSize: 12 }}>
+              Category
+              <select
+                value={draft.category ?? ""}
+                onChange={e => set("category", e.target.value || undefined)}
+                style={{ ...inputStyle, marginTop: 2 }}
+              >
+                <option value="">— none —</option>
+                {WEAPON_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </label>
+            <label style={{ fontSize: 12 }}>
+              Weapon Mastery
+              <select
+                value={draft.mastery ?? ""}
+                onChange={e => set("mastery", (e.target.value || undefined) as WeaponMasteryName | undefined)}
+                style={{ ...inputStyle, marginTop: 2 }}
+              >
+                <option value="">— none —</option>
+                {WEAPON_MASTERY_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </label>
+          </div>
+          {draft.mastery && WEAPON_MASTERIES[draft.mastery] && (
+            <p style={{ margin: 0, fontSize: 11, lineHeight: 1.45, color: "#8a8aa0", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+              <strong style={{ color: "#d7b36a" }}>{draft.mastery}.</strong>{" "}
+              {WEAPON_MASTERIES[draft.mastery].summary}
+              <br />
+              <span style={{ color: "#5a5a6e" }}>
+                Officially on: {WEAPON_MASTERIES[draft.mastery].weapons.join(", ")}. Applies only if the character has a feature unlocking it.
+              </span>
+            </p>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <span />
           </div>
         </div>
       )}
