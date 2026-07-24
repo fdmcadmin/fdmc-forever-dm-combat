@@ -869,6 +869,22 @@ button {
   font-size: 0.78rem;
 }
 
+/* Saving-throw line — the bottom of each ability box. Muted by default (save == the
+   ability modifier), accented when an explicit save override differs from the raw mod
+   (a proficient PC save, or a summon's summoner-keyed save). */
+.ability-save {
+  display: block;
+  margin-top: 1px;
+  color: #6b7080;
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+}
+
+.ability-save-proficient {
+  color: #d7b36a;
+  font-weight: 700;
+}
+
 .notes-panel {
   display: grid;
   gap: 12px;

@@ -22,7 +22,14 @@ export type AbilityId = "str" | "dex" | "con" | "int" | "wis" | "cha";
 
 export type AbilityScore = {
   score?: number;
+  /** Explicit override for the displayed ability modifier. When unset, the card
+   *  derives it as floor((score - 10) / 2). */
   modifier?: number;
+  /** Explicit saving-throw modifier for this ability. When unset, the save equals
+   *  the ability modifier (the "no proficiency" default). Set it when the stat block
+   *  lists a save that differs from the raw score — proficient PC saves, or summons
+   *  like the ranger's Beast of the Land whose saves are keyed to the summoner. */
+  save?: number;
 };
 
 export type AbilityScores = Partial<Record<AbilityId, AbilityScore>>;
