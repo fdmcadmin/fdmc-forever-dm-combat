@@ -80,6 +80,7 @@ import {
   loadActorOverrides,
   saveActorLibrary,
   saveActorOverride,
+  clearActorOverride,
   upsertActorInLibrary,
 } from "./core/seats/dmActorLibrary";
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
@@ -103,6 +104,7 @@ import {
   patchMonsterInitiative,
   patchMonsterHp,
   pushRecentEvent,
+  removeActorFromRoomState,
   normalizeFdmcRoomLiveState,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
@@ -450,12 +452,24 @@ export default function App() {
 
     if (isDeleted) {
       const realId = editedActor.id.replace("--DELETED", "");
-      setActorLibrary(lib => {
-        const next = { ...lib };
-        delete next[realId];
-        saveActorLibrary(next);
-        return next;
-      });
+      const freshLib = { ...actorLibrary };
+      delete freshLib[realId];
+      saveActorLibrary(freshLib);
+      setActorLibrary(freshLib);
+
+      // Drop the actor's override too — otherwise a same-id actor re-imported later
+      // silently inherits the dead delta.
+      clearActorOverride(realId);
+      const freshOverrides = loadActorOverrides();
+      setActorOverrides(freshOverrides);
+
+      // Scrub the actor out of room metadata (live state, seat membership, bindings,
+      // active pointer) so a viewer joining no longer sees the removed character, then
+      // re-push the corrected roster to every connected seat. The party-tracker and
+      // viewer-party broadcasts refire automatically when actorLibrary changes.
+      void commitRoomState(removeActorFromRoomState(roomLiveState, realId));
+      pushActorsToAllSeats({ freshLibrary: freshLib, freshOverrides });
+
       setEditingActorId(null);
       closePanel();
       return;

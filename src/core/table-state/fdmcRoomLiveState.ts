@@ -339,6 +339,45 @@ export function patchCombat(state: FdmcRoomLiveState, patch: Partial<FdmcRoomLiv
   return stamp({ ...state, combat: { ...state.combat, ...patch } });
 }
 
+/**
+ * Scrub every trace of a deleted actor out of room metadata. Deleting an actor from the
+ * library used to leave its live state, its seat membership, and any seat bound to it
+ * behind — so a viewer joining still saw the removed character on the party list. This
+ * removes:
+ *   - its actorLiveState entry (stale HP / coins / initiative)
+ *   - the id from every seat's actorIds, and from primaryActorId (promoting the next
+ *     actor when the primary is the one removed)
+ *   - any seat left with NO actors, plus that seat's binding (an emptied player seat is
+ *     meaningless once its only character is gone)
+ *   - the active combatant pointer, if it was this actor
+ */
+export function removeActorFromRoomState(state: FdmcRoomLiveState, actorId: string): FdmcRoomLiveState {
+  const actorLiveState = { ...state.actorLiveState };
+  delete actorLiveState[actorId];
+
+  const seats: Record<string, FdmcSeat> = {};
+  const removedSeatIds: string[] = [];
+  for (const [seatId, seat] of Object.entries(state.seats)) {
+    const actorIds = seat.actorIds.filter(id => id !== actorId);
+    if (actorIds.length === 0 && seat.actorIds.includes(actorId)) {
+      // This seat existed only for the deleted actor — drop it (and its binding below).
+      removedSeatIds.push(seatId);
+      continue;
+    }
+    const primaryActorId = seat.primaryActorId === actorId ? (actorIds[0] ?? "") : seat.primaryActorId;
+    seats[seatId] = { ...seat, actorIds, primaryActorId };
+  }
+
+  const seatBindings = { ...state.seatBindings };
+  for (const seatId of removedSeatIds) delete seatBindings[seatId];
+
+  const combat = state.combat.activeActorId === actorId
+    ? { ...state.combat, activeActorId: null }
+    : state.combat;
+
+  return stamp({ ...state, actorLiveState, seats, seatBindings, combat });
+}
+
 const RING_SIZE = 7;
 
 export function pushRecentEvent(
