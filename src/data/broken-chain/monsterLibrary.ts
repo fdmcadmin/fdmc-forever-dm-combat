@@ -834,7 +834,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       formatAbility("CHA", 14, 2),
     ],
     traits: [
-      { name: "Frozen Nature", kind: "trait", text: "Immune to cold; needs no air, food, drink, or sleep. Fire and radiant damage cut straight through it — it has vulnerability to both." },
+      { name: "Frozen Nature", kind: "trait", text: "Immune to cold; needs no air, food, drink, or sleep. Fire and radiant damage cut through the frost unhindered." },
       { name: "Turn Resistance", kind: "trait", text: "Advantage on saving throws against any effect that turns undead." },
       { name: "Unbroken Rank", kind: "trait", text: "When both of the Rime Wight's Longsword attacks hit the same creature on its turn, the cold sets into the wounds: that creature's speed is halved until the end of its next turn. The front rank slows around it — the soldier it was never let a line move through, and neither does this." },
       { name: "Frostbite Injection", kind: "trait", text: "The first time a target is hit by a Longsword or Rime Bolt on each of the Wight's turns, DC 13 CON or the target's maximum HP falls by the total damage taken until it finishes a long rest. A creature reduced to 0 maximum HP dies and freezes." },
@@ -850,7 +850,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     notes: [
       "ELITE ARMORED FRONT-LINER — homebrew (original creature, archetype-authored; no chassis stat block reused beyond the HP basis, see the version history). Bruiser (STR): high STR with CON matched at the same lean, mid DEX, everything else lower. A sword-and-shield front body — takes the front rank, commits fully to melee or fully to range, and shrinks max HP with every landed hit. Its one revival is a keystone effect, not a commander's kit; identity and primary stat stay STR melee.",
       "AC 17 full form (plate + shield). HP band: 34 (4P) / 45 (5P baseline) / 56 (6P). Save DC 13 (CON). Senses darkvision 60 ft., intelligence retained. When raised, it is NOT itself at reduced HP — swap the card for the separate 'Frozen Husk' template (see below).",
-      "Immunities: cold, poison; exhaustion, frightened, poisoned. Vulnerabilities: fire, radiant — cuts straight through Frozen Nature and ends it outright.",
+      "Immunities: cold, poison; exhaustion, frightened, poisoned. Fire and radiant are UNHINDERED (normal damage, not doubled) — they cut through Frozen Nature rather than being resisted by it. Unified across the whole frozen line 2026-07-25; the Rime Wight and its husk previously carried a lone 'vulnerability to both' that no other member had.",
       "It is a RAISER (Frozen Resurrection, 1/fight) alongside the two casters (Sentinel, Frost-Weaver's Raise the Frozen) — the line now has three ways to bring a body back. Unlike the casters' slot-based raise, this is a natural 1/fight power gated to its own full form: once the Wight itself is a husk, it can no longer raise. The resurrection is delayed (target must have been down a full turn) and one-time per body — the party gets a full turn to deny it (finish the corpse, drag it past 30 ft, or kill the Wight first).",
       "Tactics: takes the front rank sword-and-board, or plants at range for two Rime Bolts (does not mix). Landing both Longswords on one target halves its speed (Unbroken Rank) — spread out and it never triggers. Rimestep (recharge 5-6) re-plants it in a runner's path or back into Frozen Resurrection range of a fallen ally. Frostbite Injection works the max-HP attrition on whichever target is already shrinking.",
       "Track: max-HP reductions by target (Frostbite Injection); Unbroken Rank half-speed riders; Frozen Resurrection 1/fight + full-form gate; Rimestep recharge; husk conversions.",
@@ -892,7 +892,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       formatAbility("CHA", 3, -4),
     ],
     traits: [
-      { name: "Frozen Nature", kind: "trait", text: "Immune to cold; needs no air, food, drink, or sleep. Fire and radiant damage cut straight through it — it has vulnerability to both." },
+      { name: "Frozen Nature", kind: "trait", text: "Immune to cold; needs no air, food, drink, or sleep. Fire and radiant damage cut through the frost unhindered." },
       { name: "Mindless Remnant", kind: "trait", text: "Nothing of the raised creature's spellcasting, reactions, or other kit survives the raise — no intelligence, no plans, no defenses beyond the claw. It attacks the nearest target until destroyed." },
     ],
     actions: [
@@ -993,8 +993,16 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       formatAbility("CHA", 8, -1),
     ],
     traits: [
-      { name: "Wrought Cold", kind: "trait", text: "All of the Pale Drifter's attacks are magical and overcome resistance to nonmagical damage. It does not strike with a body; it strikes with the cold that is wearing one." },
-      { name: "Soul-Touched", kind: "trait", text: "Nonmagical weapon attacks deal half damage. Magical weapons connect fully, and fire and radiant damage bypass this reduction outright." },
+      // 2026-07-25 (Christopher): the doc had these two names on each other's text.
+      // Soul-Touched is the OFFENSIVE trait — its attacks touch the soul, so they are
+      // magical. The defensive half was "Wrought Cold", which is REPLACED here by the
+      // frozen line's shared Frozen Nature: all five creatures before the boss carry it,
+      // so the Drifter should not have a bespoke trait doing the same job under its own
+      // name. This drops the old nonmagical-half-damage resistance, which the defenses
+      // array never counted (kit = Wrapped in the Pale 1.32 × Shadow Shift 1.16), so the
+      // encounter's verified 3.39-round result is unaffected.
+      { name: "Soul-Touched", kind: "trait", text: "All of the Pale Drifter's attacks are magical and overcome resistance to nonmagical damage. It does not strike with a body; it strikes with the cold that is wearing one." },
+      { name: "Frozen Nature", kind: "trait", text: "Immune to cold; needs no air, food, drink, or sleep. Fire and radiant damage cut through the frost unhindered." },
       { name: "Wrapped in the Pale", kind: "trait", text: "While the Pale Drifter is in dim light or darkness — which its own aura supplies by default — reduce the damage of each attack against it by 3. Bright light suppresses this entirely: a lit brazier, a lantern, or Sacred Weapon turns it off." },
       { name: "Pale Aura", kind: "trait", text: "Sheds dim light 20 ft in wrong-temperature blue-white. Darkness zones near it are highly visible — Shadow Shift targets are predictable if the party maps them." },
       { name: "Death Burst", kind: "trait", text: "At 0 HP the Drifter comes apart. Every creature within 15 ft makes a DC 15 CON save, taking 21 (6d6) cold on a fail, half on a success. Flat DC, flat radius, every party size — the band moves HP, never abilities. Spread before the killing blow." },
