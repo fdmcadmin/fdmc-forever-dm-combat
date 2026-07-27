@@ -1079,10 +1079,10 @@ export function MonsterActorCard({
           {/* Identity line: creature type • role • tier. The encounter doc's Act/Session
               line is deliberately NOT here — that is encounter detail, and the panel is
               under a size lock. Only renders when the template actually carries the data. */}
-          {(monster.creatureType || monster.archetype || monster.classification) && (
+          {(monster.kind || monster.archetype || monster.classification) && (
             <span style={{ fontSize: 9.5, color: "#6a6a80", letterSpacing: 0.2 }}>
               {[
-                monster.creatureType,
+                monster.kind === "unspecified" ? undefined : monster.kind,
                 monster.archetype,
                 monster.classification ? CLASSIFICATION_LABEL[monster.classification] : undefined,
               ].filter(Boolean).join(" • ")}

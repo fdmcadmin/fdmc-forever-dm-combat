@@ -8,7 +8,7 @@ import {
 import OBR, { type Item, type Metadata } from "@owlbear-rodeo/sdk";
 // Type-only, so it is erased at compile — mainMonsterRuntime already type-imports from
 // this file, and neither side gains a runtime dependency on the other.
-import type { MonsterClassification } from "./runtime/mainMonsterRuntime";
+import type { MonsterClassification, MonsterKind } from "./runtime/mainMonsterRuntime";
 
 type JconScanStatus =
   | "idle"
@@ -99,7 +99,7 @@ type JconScanState = {
 export type MonsterCombatCandidate = {
   id: string;
   name: string;
-  kind: "monster" | "npc" | "boss";
+  kind: MonsterKind;
   hp?: string;
   ac?: string;
   sourceFlavor: string;
@@ -209,7 +209,7 @@ function isMonsterCombatCandidate(value: unknown): value is MonsterCombatCandida
   return (
     typeof value.id === "string" &&
     typeof value.name === "string" &&
-    (value.kind === "monster" || value.kind === "npc" || value.kind === "boss")
+    typeof value.kind === "string"
   );
 }
 
@@ -346,7 +346,7 @@ function toMonsterCombatCandidate(candidate: JconScanCandidate): MonsterCombatCa
   return {
     id: `monster:${candidate.id}`,
     name: candidate.preview?.name ?? candidate.name,
-    kind: "monster",
+    kind: "unspecified",
     hp: candidate.preview?.hp,
     ac: candidate.preview?.ac,
     speed: candidate.preview?.speed,

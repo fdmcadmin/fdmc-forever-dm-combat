@@ -7,6 +7,7 @@
  */
 
 import type { MainMonsterTemplate } from "./runtime/mainMonsterRuntime";
+import { MONSTER_KINDS, type MonsterKind } from "./runtime/mainMonsterRuntime";
 import type { NormalizedMonsterActor, MonsterAction as NMonsterAction } from "../types/monsterTypes";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
 
@@ -183,7 +184,11 @@ export function normalizedToTemplate(
     encounterId: opts.encounterId,
     encounterLabel: opts.encounterLabel,
     stats: {
-      kind: (monster.kind === "boss" ? "boss" : monster.kind === "npc" ? "npc" : "monster") as "monster" | "npc" | "boss",
+      // Legacy "monster"/"boss" said nothing about creature TYPE, so they cannot be
+      // mapped to one — they become "unspecified" and surface as incomplete in the editor.
+      kind: (MONSTER_KINDS as readonly string[]).includes(monster.kind as string)
+        ? (monster.kind as MonsterKind)
+        : "unspecified",
       ac: monster.defense.ac,
       maxHp: monster.defense.hp.max,
       speed: monster.defense.speed,

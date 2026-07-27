@@ -19,6 +19,7 @@
 
 import React, { useMemo, useState } from "react";
 import type { MainMonsterTemplate, MainMonsterVisibilityState, MonsterArchetype, MonsterClassification } from "./runtime/mainMonsterRuntime";
+import { MONSTER_KINDS } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
 import {
   ABILITY_ORDER,
@@ -69,7 +70,6 @@ const visibilityOptions: { value: MainMonsterVisibilityState; label: string }[] 
   { value: "full", label: "Full Reveal" },
 ];
 
-const CREATURE_TYPE_SUGGESTIONS = ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"];
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -210,18 +210,20 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   function renderIdentity() {
     return (
       <>
-        <p style={hintStyle}>What it IS (kind), what it's MADE OF (type), how BIG a threat (classification), and how it FIGHTS (archetype). All four are real fields — editable any time, never buried in a subtitle.</p>
+        <p style={hintStyle}>What it IS (kind — its D&amp;D creature type), how BIG a threat it is (classification), and how it FIGHTS (archetype). Three separate questions, three separate fields. Kind no longer carries threat: a Boss is an <em>elite / act-boss classification</em>, not a kind.</p>
         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
           <div style={{ flex: 2 }}>
             <span style={labelStyle}>Name</span>
             <input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} style={{ ...inputStyle, fontSize: 13, fontWeight: 500 }} />
           </div>
           <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Kind (card class)</span>
+            <span style={labelStyle}>Kind (creature type)</span>
             <select value={draft.stats.kind} onChange={e => updateStat("kind", e.target.value as MainMonsterTemplate["stats"]["kind"])} style={inputStyle}>
-              <option value="monster">Monster</option>
-              <option value="boss">Boss</option>
-              <option value="npc">NPC</option>
+              {MONSTER_KINDS.map(k => (
+                <option key={k} value={k}>
+                  {k === "unspecified" ? "— not set —" : k === "npc" ? "NPC" : k[0].toUpperCase() + k.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
           <div style={{ flex: 1 }}>
@@ -231,14 +233,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
               {SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Creature type</span>
-            <input value={draft.stats.creatureType ?? ""} onChange={e => updateStat("creatureType", e.target.value || undefined)}
-              placeholder="undead, beast…" list="fdmc-creature-types" style={inputStyle} />
-            <datalist id="fdmc-creature-types">
-              {CREATURE_TYPE_SUGGESTIONS.map(t => <option key={t} value={t} />)}
-            </datalist>
-          </div>
+
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>

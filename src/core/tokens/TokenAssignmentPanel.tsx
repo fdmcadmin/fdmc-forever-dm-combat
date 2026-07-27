@@ -171,7 +171,9 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
           actorType: "player",
         } : {
           instanceId: selectedInstanceId,
-          actorType: (monster?.kind as FdmcTokenBinding["actorType"]) ?? "monster",
+          // Token bindings classify the TOKEN (player / companion / monster / npc), not the
+          // creature's D&D type — so every creature type except npc collapses to "monster".
+          actorType: monster?.kind === "npc" ? "npc" : "monster",
         }),
       };
       for (const { item } of selectedTokens) {

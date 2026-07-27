@@ -16,6 +16,35 @@ export type MainMonsterVisibilityState = "hidden" | "label-only" | "condition" |
  * Keep the two separate: `kind` = what it IS (creature vs NPC, drives the card).
  * `classification` = how big a threat it is (drives the expected fight length).
  */
+/**
+ * What a creature IS — its D&D creature type.
+ *
+ * This used to be `"monster" | "npc" | "boss"`, which was three different questions in one
+ * field: a type slot, a THREAT level ("boss"), and a disposition ("npc"). That is why the
+ * Pale Drifter could read kind "boss" and classification "elite" at the same time and both
+ * be "true" — they were answering different questions with contradictory words.
+ *
+ * Threat now lives entirely in `classification`. This field is identity only, and uses the
+ * official 5e creature types because publication requires one of them — a campaign flavour
+ * name like "cold-woven entity" is prose, not a type (the Frozen Cloak publishes as a fiend
+ * on its Shadow Demon chassis). `npc` is kept as a value at Christopher's call.
+ *
+ * `unspecified` exists so an un-migrated creature is VISIBLY incomplete in the editor
+ * rather than silently defaulting to a plausible-but-wrong type.
+ */
+export type MonsterKind =
+  | "aberration" | "beast" | "celestial" | "construct" | "dragon" | "elemental"
+  | "fey" | "fiend" | "giant" | "humanoid" | "monstrosity" | "ooze" | "plant" | "undead"
+  | "npc"
+  | "unspecified";
+
+/** Every value, in menu order — the editor's dropdown reads from this. */
+export const MONSTER_KINDS: readonly MonsterKind[] = [
+  "aberration", "beast", "celestial", "construct", "dragon", "elemental",
+  "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead",
+  "npc", "unspecified",
+];
+
 export type MonsterClassification =
   | "normal"
   | "strong"
@@ -48,7 +77,7 @@ export type MainMonsterTemplate = {
   encounterId?: string;
   encounterLabel?: string;
   stats: {
-    kind: "monster" | "npc" | "boss";
+    kind: MonsterKind;
     ac: number | string;
     maxHp: number;
     speed: string;
@@ -212,7 +241,7 @@ export const MIRAGE_STALKER_TEMPLATE: MainMonsterTemplate = {
   encounterId: "act1-boss",
   encounterLabel: "Act 1 Boss",
   stats: {
-    kind: "boss",
+    kind: "unspecified",
     ac: 14,
     maxHp: 100,
     speed: "50 ft",

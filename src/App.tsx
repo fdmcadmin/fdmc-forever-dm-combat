@@ -1011,7 +1011,12 @@ export default function App() {
         const monsterName = inst.revealedName || inst.displayName || inst.name;
         logHpChange(instanceId, monsterName, delta, roomLiveState.combat.round);
         // P8: boss kill detection
-        if (patch.currentHp <= 0 && inst.currentHp > 0 && (inst.kind === "boss")) {
+        // A kill is "boss-worthy" by THREAT TIER, not by kind. kind is identity (what the
+        // creature is); classification is how big a threat it is. Mid-boss and up qualify.
+        const isBossKill = inst.classification === "mid-boss"
+          || inst.classification === "act-boss"
+          || inst.classification === "final-boss";
+        if (patch.currentHp <= 0 && inst.currentHp > 0 && isBossKill) {
           const encId = inst.templateRef ?? instanceId;
           const encName = inst.revealedName || inst.name;
           appendLogEntry({

@@ -55,7 +55,12 @@ function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTe
       id: entry.templateId,
       name: t.name,
       maxHp: hpForVariant(t.stats.maxHp, entry.hpVariant),
-      isBoss: t.stats.kind === "boss",
+      // Threat weight comes from classification, never from kind. kind: "boss" driving a
+      // hidden x1.6 here is the exact double-count MonsterClassification was introduced to
+      // kill — it survived in this legacy panel until 2026-07-25.
+      isBoss: t.stats.classification === "mid-boss"
+        || t.stats.classification === "act-boss"
+        || t.stats.classification === "final-boss",
       multiattack: (t.actions ?? []).some(a => /multiattack/i.test(a.name ?? "")),
       count: entry.count,
     });

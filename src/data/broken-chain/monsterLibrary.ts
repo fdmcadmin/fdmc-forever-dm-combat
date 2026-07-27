@@ -48,7 +48,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 13, maxHp: 18, speed: "50 ft",
+      kind: "beast", ac: 13, maxHp: 18, speed: "50 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Pack Tactics is offensive (advantage to hit), not durability. Plain HP bar." },
       ],
@@ -84,7 +84,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 14, maxHp: 33, speed: "50 ft",
+      kind: "beast", ac: 14, maxHp: 33, speed: "50 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Leads the pack but takes damage normally. Plain HP bar." },
       ],
@@ -120,7 +120,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 13, maxHp: 59, attacksPerTurn: 2, speed: "40 ft",
+      kind: "monstrosity", ac: 13, maxHp: 59, attacksPerTurn: 2, speed: "40 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Big HP pool, no resistances or revival. Plain HP bar." },
       ],
@@ -155,7 +155,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 15, maxHp: 65, attacksPerTurn: 3, speed: "30 ft",
+      kind: "unspecified", ac: 15, maxHp: 65, attacksPerTurn: 3, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -192,7 +192,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 13, maxHp: 22, speed: "30 ft., climb 30 ft.",
+      kind: "beast", ac: 13, maxHp: 22, speed: "30 ft., climb 30 ft.",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Webbing slows the party but does not make the spider harder to kill. Plain HP bar." },
       ],
@@ -227,7 +227,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 13, maxHp: 26, speed: "30 ft.",
+      kind: "unspecified", ac: 13, maxHp: 26, speed: "30 ft.",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Ambush is an opener, not durability. Plain HP bar." },
       ],
@@ -262,7 +262,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Act 1 boss. No v12 workbook lane, but unlike the Act 1 chaff it has a real defensive
     // trait, so it is itemised rather than flattened to 1.0. ESTIMATE — no MC run.
     stats: {
-      kind: "boss", ac: 14, maxHp: 100, attacksPerTurn: 2, speed: "50 ft",
+      kind: "unspecified", ac: 14, maxHp: 100, attacksPerTurn: 2, speed: "50 ft",
       defenses: [
         { name: "Phantom Step", ehpMultiplier: 1.18, note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
       ],
@@ -313,7 +313,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // scale by the ×1.27 dynamics factor the two MC-run fights show. PROVISIONAL: this
     // fight has no MC lane of its own yet.
     stats: {
-      kind: "monster", ac: 13, maxHp: 75, speed: "50 ft",
+      kind: "beast", ac: 13, maxHp: 75, speed: "50 ft",
       defenses: [
         { name: "Ambush + Apex Unleashed", ehpMultiplier: 1.40, note: "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics." },
       ],
@@ -349,7 +349,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Hollow Pack formation defense (see Pale Stalker). AC 12 is its own
     // offensive-side term — it is the easiest body in the fight to hit.
     stats: {
-      kind: "monster", ac: 12, maxHp: 26, speed: "40 ft",
+      kind: "beast", ac: 12, maxHp: 26, speed: "40 ft",
       defenses: [
         { name: "Pack coordination", ehpMultiplier: 1.40, note: "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet." },
       ],
@@ -379,7 +379,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Frozen Hollow formation defense (shared across all three bodies) — v12 Encounter
     // Safety: 200 HP @5P won in 2.02 rounds, × 1.27 dynamics. PROVISIONAL, no MC lane yet.
     stats: {
-      kind: "monster", ac: 12, maxHp: 42, speed: "20 ft",
+      kind: "undead", ac: 12, maxHp: 42, speed: "20 ft",
       defenses: [
         { name: "Hollow Fortitude", ehpMultiplier: 1.45, note: "DC 5 + damage CON save at 0 HP drops it to 1 instead (radiant or a crit bypasses), so kills must be confirmed. Carries the Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics." },
       ],
@@ -415,7 +415,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 12, maxHp: 35, speed: "30 ft",
+      kind: "undead", ac: 12, maxHp: 35, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Unused legacy creature (no encounter). Plain HP bar." },
       ],
@@ -445,7 +445,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
-      kind: "monster", ac: 13, maxHp: 36, speed: "30 ft",
+      kind: "undead", ac: 13, maxHp: 36, speed: "30 ft",
       defenses: [
         { name: "Cold Aura + paralysis", ehpMultiplier: 1.45, note: "Aura saves compound with the Hunter's drain and paralysis removes whole PC turns. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
       ],
@@ -482,7 +482,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
-      kind: "monster", ac: 14, maxHp: 82, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
+      kind: "undead", ac: 14, maxHp: 82, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
         { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1.45, note: "Halves nonmagical weapon damage and drains STR (cap 6), softening every later hit. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
       ],
@@ -523,7 +523,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // absorbed AC; now AC 14 is its own offensive-side term, so this number is traits only.
     // v12 Encounter Safety: Last Directive 151 HP @5P won in 1.74 rounds × 1.27 dynamics.
     stats: {
-      kind: "boss", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft",
+      kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft",
       defenses: [
         { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
       ],
@@ -558,7 +558,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // out (acFactor 0.62 at L4 — by far the hardest thing to hit in the act) what remains is
     // the shared Last Directive formation value, not a second helping of the same armour.
     stats: {
-      kind: "monster", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)",
+      kind: "undead", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)",
       defenses: [
         { name: "Patrol screen", ehpMultiplier: 1.64, note: "Three Lights tracked separately; magical vs nonmagical matters per attacker. Shares the Last Directive formation value. PROVISIONAL — analytic-derived, no MC lane yet." },
       ],
@@ -592,7 +592,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 15, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
+      kind: "unspecified", ac: 15, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -635,7 +635,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 16, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
+      kind: "unspecified", ac: 16, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -676,7 +676,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monster", ac: 14, maxHp: 27, speed: "30 ft",
+      kind: "unspecified", ac: 14, maxHp: 27, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Slip Between repositions it; bright light grounds that entirely. Plain HP bar." },
       ],
@@ -718,8 +718,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // v12 Encounter Safety: Lesser Wendigos 300 HP @5P (2× 120 at 4P) won in 2.46 rounds
     // × 1.27 dynamics. PROVISIONAL — analytic-derived, no MC lane of its own yet.
     stats: {
-      kind: "boss", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
-      size: "Large", creatureType: "undead", archetype: "skirmisher",
+      kind: "undead", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
+      size: "Large", archetype: "skirmisher",
       defenses: [
         { name: "Two fronts + Grab", ehpMultiplier: 1.21, note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
       ],
@@ -769,8 +769,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Formation defenses (shared by all three bodies — the v12 MC constrains the encounter
     // total, not each creature). AC now handled separately on the offensive side.
     stats: {
-      kind: "monster", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2,
-      size: "Medium", creatureType: "undead", classification: "elite", archetype: "tactician",
+      kind: "undead", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "tactician",
       spellSlots: [{ level: 1, max: 4 }, { level: 2, max: 3 }, { level: 3, max: 2 }],
       defenses: [
         { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Two casters each raise one body as a 33%-HP frost-thrall; the formation's own revival value, ~+30% HP across the fight." },
@@ -829,8 +829,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel); AC 17 is its own
     // offensive-side term and is what makes it the formation's hardest body to hit.
     stats: {
-      kind: "monster", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2,
-      size: "Medium", creatureType: "undead", classification: "elite", archetype: "bruiser",
+      kind: "undead", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "bruiser",
       defenses: [
         { name: "Frozen Resurrection", ehpMultiplier: 1.30, note: "Raises one destroyed ally per fight as a 40%-HP husk; matched to the formation's shared revival value." },
         { name: "Unbroken Rank", ehpMultiplier: 1.14, note: "Half-speed riders and formation discipline cost the party positioning turns." },
@@ -890,7 +890,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // the same revival. It is also a stripped body (Rime Claw only, no spells, no reactions),
     // so on its own it really is a plain HP bar.
     stats: {
-      kind: "monster", ac: 14, maxHp: 25, speed: "30 ft",
+      kind: "undead", ac: 14, maxHp: 25, speed: "30 ft",
       defenses: [
         { name: "None (stripped husk)", ehpMultiplier: 1.0, note: "Revival value is carried by the creature that raised it, not by the husk. Do not add an uplift here." },
       ],
@@ -933,8 +933,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel). AC 14 is the
     // softest of the three — the offensive-side term now shows that instead of hiding it.
     stats: {
-      kind: "boss", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
-      size: "Medium", creatureType: "undead", classification: "elite", archetype: "commander",
+      kind: "undead", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "commander",
       spellSlots: [{ level: 1, max: 3 }, { level: 2, max: 2 }, { level: 3, max: 2 }, { level: 4, max: 1 }],
       defenses: [
         { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Second caster of the line; raises one body per fight as a 33%-HP frost-thrall." },
@@ -991,8 +991,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // lifts Death Burst to DC 15 and recomputes Frost Slam to +5 to hit / 2d8+2 cold
     // (STR +2, PB +3). AC 17 is unaffected — it's authored natural armour, not from DEX.
     stats: {
-      kind: "boss", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
-      size: "Large", creatureType: "undead", classification: "elite", archetype: "guardian",
+      kind: "undead", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
+      size: "Large", classification: "elite", archetype: "guardian",
       defenses: [
         { name: "Wrapped in the Pale", ehpMultiplier: 1.32, note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
         { name: "Shadow Shift", ehpMultiplier: 1.16, note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
@@ -1049,11 +1049,11 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // The 34-HP Reknit is a DEFENSE, not extra maxHp — keeping it here means the panel
     // shows why this creature outlasts its bar, and that bright light removes it.
     stats: {
-      kind: "monster", ac: 15, maxHp: 85, speed: "30 ft, fly 30 ft (hover)",
+      kind: "fiend", ac: 15, maxHp: 85, speed: "30 ft, fly 30 ft (hover)",
       // Official 5e creature type, not the flavour name: the chassis is the 2024 Shadow
       // Demon, so it publishes as a FIEND. "Incorporeal Cold-Woven Entity" is the campaign
       // description; publication needs a real type (Christopher, 2026-07-25).
-      size: "Medium", creatureType: "fiend", classification: "elite", archetype: "skirmisher",
+      size: "Medium", classification: "elite", archetype: "skirmisher",
       defenses: [
         { name: "Reknit in the Cold", ehpMultiplier: 1.40, note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
         { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },
@@ -1121,8 +1121,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // AC 17 now drives the OFFENSIVE side on its own (acFactor 0.846 at L5). What remains
     // here is purely defensive traits; together they reproduce the v12 MC's 5.05 rounds.
     stats: {
-      kind: "boss", ac: 17, maxHp: 288, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
-      size: "Huge", creatureType: "undead", archetype: "bruiser",
+      kind: "undead", ac: 17, maxHp: 288, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
+      size: "Huge", archetype: "bruiser",
       defenses: [
         { name: "Hidden Bone Armor", ehpMultiplier: 1.25, note: "Resistance phase revealed at half HP (180 of 360 @5P). Adapts after observed resistance, so the back half of the bar costs ~25% more to chew through." },
         { name: "Frozen Endurance", ehpMultiplier: 1.06, note: "One free survival at 0 HP (drops to 1 instead) = roughly one extra round of incoming damage across a ~5-round fight. Fire/radiant bypass it entirely." },

@@ -85,7 +85,11 @@ export function buildBandedMonster(band: MonsterBand): MainMonsterTemplate {
     templateId: `custom-${Date.now().toString(36)}`,
     name: band === "boss" ? "New Boss" : "New Monster",
     stats: {
-      kind: band === "boss" ? "boss" : "monster",
+      // The band is a THREAT statement, so it seeds `classification`, not `kind`. kind is
+      // the creature's D&D type and only the author can say what it is — it starts
+      // "unspecified" so the editor shows it as still needing a decision.
+      kind: "unspecified",
+      classification: band === "boss" ? "mid-boss" : band === "elite" ? "elite" : band === "strong" ? "strong" : "normal",
       ac: band === "boss" ? 16 : band === "elite" ? 14 : 12,
       maxHp: band === "boss" ? 120 : band === "elite" ? 60 : band === "strong" ? 35 : 20,
       speed: "30 ft",
