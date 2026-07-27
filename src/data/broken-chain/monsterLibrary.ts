@@ -719,6 +719,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // × 1.27 dynamics. PROVISIONAL — analytic-derived, no MC lane of its own yet.
     stats: {
       kind: "boss", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
+      size: "Large", creatureType: "undead", archetype: "skirmisher",
       defenses: [
         { name: "Two fronts + Grab", ehpMultiplier: 1.21, note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
       ],
@@ -769,6 +770,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // total, not each creature). AC now handled separately on the offensive side.
     stats: {
       kind: "monster", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2,
+      size: "Medium", creatureType: "undead", classification: "elite", archetype: "tactician",
       spellSlots: [{ level: 1, max: 4 }, { level: 2, max: 3 }, { level: 3, max: 2 }],
       defenses: [
         { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Two casters each raise one body as a 33%-HP frost-thrall; the formation's own revival value, ~+30% HP across the fight." },
@@ -828,6 +830,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // offensive-side term and is what makes it the formation's hardest body to hit.
     stats: {
       kind: "monster", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2,
+      size: "Medium", creatureType: "undead", classification: "elite", archetype: "bruiser",
       defenses: [
         { name: "Frozen Resurrection", ehpMultiplier: 1.30, note: "Raises one destroyed ally per fight as a 40%-HP husk; matched to the formation's shared revival value." },
         { name: "Unbroken Rank", ehpMultiplier: 1.14, note: "Half-speed riders and formation discipline cost the party positioning turns." },
@@ -931,6 +934,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // softest of the three — the offensive-side term now shows that instead of hiding it.
     stats: {
       kind: "boss", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
+      size: "Medium", creatureType: "undead", classification: "elite", archetype: "commander",
       spellSlots: [{ level: 1, max: 3 }, { level: 2, max: 2 }, { level: 3, max: 2 }, { level: 4, max: 1 }],
       defenses: [
         { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Second caster of the line; raises one body per fight as a 33%-HP frost-thrall." },
@@ -988,6 +992,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // (STR +2, PB +3). AC 17 is unaffected — it's authored natural armour, not from DEX.
     stats: {
       kind: "boss", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
+      size: "Large", creatureType: "undead", classification: "elite", archetype: "guardian",
       defenses: [
         { name: "Wrapped in the Pale", ehpMultiplier: 1.32, note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
         { name: "Shadow Shift", ehpMultiplier: 1.16, note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
@@ -1045,6 +1050,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // shows why this creature outlasts its bar, and that bright light removes it.
     stats: {
       kind: "monster", ac: 15, maxHp: 85, speed: "30 ft, fly 30 ft (hover)",
+      size: "Medium", creatureType: "cold-woven entity", classification: "elite", archetype: "skirmisher",
       defenses: [
         { name: "Reknit in the Cold", ehpMultiplier: 1.40, note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
         { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },
@@ -1113,6 +1119,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // here is purely defensive traits; together they reproduce the v12 MC's 5.05 rounds.
     stats: {
       kind: "boss", ac: 17, maxHp: 288, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
+      size: "Huge", creatureType: "undead", archetype: "bruiser",
       defenses: [
         { name: "Hidden Bone Armor", ehpMultiplier: 1.25, note: "Resistance phase revealed at half HP (180 of 360 @5P). Adapts after observed resistance, so the back half of the bar costs ~25% more to chew through." },
         { name: "Frozen Endurance", ehpMultiplier: 1.06, note: "One free survival at 0 HP (drops to 1 instead) = roughly one extra round of incoming damage across a ~5-round fight. Fire/radiant bypass it entirely." },
