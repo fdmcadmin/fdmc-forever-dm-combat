@@ -1050,7 +1050,10 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // shows why this creature outlasts its bar, and that bright light removes it.
     stats: {
       kind: "monster", ac: 15, maxHp: 85, speed: "30 ft, fly 30 ft (hover)",
-      size: "Medium", creatureType: "cold-woven entity", classification: "elite", archetype: "skirmisher",
+      // Official 5e creature type, not the flavour name: the chassis is the 2024 Shadow
+      // Demon, so it publishes as a FIEND. "Incorporeal Cold-Woven Entity" is the campaign
+      // description; publication needs a real type (Christopher, 2026-07-25).
+      size: "Medium", creatureType: "fiend", classification: "elite", archetype: "skirmisher",
       defenses: [
         { name: "Reknit in the Cold", ehpMultiplier: 1.40, note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
         { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },

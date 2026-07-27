@@ -198,6 +198,21 @@ export const CLASSIFICATION_ORDER: readonly MonsterClassification[] = [
  * fight (4-5.5), not an average of the two. Chaff still adds HP, so it pushes the
  * estimate up inside that band rather than changing which band applies.
  */
+/**
+ * The higher of two tiers. Used so a declared encounter tier can only ESCALATE the fight's
+ * band above what its roster already justifies, never soften it — the balance rules allow
+ * escalation levers only.
+ */
+export function maxClassification(
+  a: MonsterClassification | undefined,
+  b: MonsterClassification,
+): MonsterClassification {
+  if (!a) return b;
+  const ia = CLASSIFICATION_ORDER.indexOf(a);
+  const ib = CLASSIFICATION_ORDER.indexOf(b);
+  return ia >= ib ? a : b;
+}
+
 export function encounterClassification(monsters: RoundsMonster[]): MonsterClassification {
   let top = 0;
   for (const m of monsters) {
@@ -454,7 +469,14 @@ export function estimateRounds(
   const ac = encounterAcFactor(monsters, level);
   const landedDpr = dpr * ac;
   const rounds = landedDpr > 0 ? eff / landedDpr : 0;
-  const classification = encounterTier ?? encounterClassification(monsters);
+  // The band ALWAYS derives from the strongest creature in the fight (Christopher,
+  // 2026-07-25). A declared encounter tier may only ESCALATE above that — never below it.
+  // `encounterTier ?? derived` used to let a declared tier win outright, which is a
+  // de-escalation lever: an act boss sitting in an encounter tagged "normal" would have
+  // been judged against a 2-3 round band. ENCOUNTER-BALANCE-RULES is explicit that the
+  // levers are escalation-only, so this takes the max of the two instead.
+  const derivedTier = encounterClassification(monsters);
+  const classification = maxClassification(encounterTier, derivedTier);
   const band = ROUND_BAND[classification] ?? ROUND_BAND.normal;
   return {
     rawHp,
