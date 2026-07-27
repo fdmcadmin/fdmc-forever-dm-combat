@@ -277,13 +277,43 @@ function CombatWindowApp() {
     ));
   }, [actorsById, roster, roomState]);
 
+  // ── Minimize ────────────────────────────────────────────────────────────────
+  // The window is an opaque overlay on the map, so during token work the DM was
+  // zooming the MAP out just to see around it. Collapsing the popover to its title bar
+  // frees the map without closing combat: OBR.popover.setWidth/setHeight resize it in
+  // place, and the expanded size is remembered so Expand restores exactly what was there.
+  const [minimized, setMinimized] = useState(false);
+  const expandedSize = useRef<{ w: number; h: number } | null>(null);
+
+  const toggleMinimize = useCallback(async () => {
+    if (!OBR.isAvailable) { setMinimized(m => !m); return; }
+    const id = COMBAT_WINDOW_POPOVER_ID;
+    try {
+      if (!minimized) {
+        const [w, h] = await Promise.all([OBR.popover.getWidth(id), OBR.popover.getHeight(id)]);
+        expandedSize.current = { w: w ?? 1100, h: h ?? 800 };
+        setMinimized(true);
+        await OBR.popover.setWidth(id, 340);
+        await OBR.popover.setHeight(id, 46);
+      } else {
+        const s = expandedSize.current ?? { w: 1100, h: 800 };
+        setMinimized(false);
+        await OBR.popover.setWidth(id, s.w);
+        await OBR.popover.setHeight(id, s.h);
+      }
+    } catch { /* resize unsupported — the local flag still hides the body */ }
+  }, [minimized]);
+
   const activeMonsterId = roster.find(m => m.instanceId === roomState.combat.activeActorId)?.instanceId ?? null;
   const phaseLabel = roomState.combat.phase === "combat"
     ? `Round ${roomState.combat.round}`
     : roomState.combat.phase === "initiative" ? "Rolling initiative" : "Setup";
 
   return (
-    <div style={{ background: "#0d0d14", minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
+    // height (not minHeight) locks the shell to the popover: the three panes scroll
+    // internally instead of the document scrolling, so the header — and its Close
+    // button — can never be pushed out of reach.
+    <div style={{ background: "#0d0d14", height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
       <SavePromptBanner />
       {/* Header */}
       <div style={{
@@ -300,6 +330,17 @@ function CombatWindowApp() {
         </span>
         <span style={{ fontSize: 10.5, color: "#667" }}>{roster.length} in combat</span>
         <div style={{ flex: 1 }} />
+        {/* Minimize — collapses the popover to this header bar so the map underneath is
+            usable. Closing loses nothing (all state is persisted), but re-opening costs a
+            click and re-selection; collapsing keeps the roster selection and every card's
+            per-round economy exactly where it was. */}
+        <button
+          onClick={() => void toggleMinimize()}
+          title={minimized ? "Expand the combat window" : "Collapse to the title bar so you can see and move tokens"}
+          style={{ background: "#1a1a2a", color: "#9d8cff", border: "1px solid #33334e", borderRadius: 6, padding: "3px 10px", fontSize: 11, cursor: "pointer" }}
+        >
+          {minimized ? "▢ Expand" : "— Minimize"}
+        </button>
         <button
           onClick={() => {
             if (OBR.isAvailable) void OBR.popover.close(COMBAT_WINDOW_POPOVER_ID).catch(() => window.close());
@@ -310,10 +351,16 @@ function CombatWindowApp() {
           ✕ Close
         </button>
       </div>
+      {minimized && (
+        <div style={{ padding: "6px 12px", fontSize: 10.5, color: "#555" }}>
+          Collapsed — the map is clear. Combat state is untouched.
+        </div>
+      )}
 
-      {/* 3-pane body */}
+      {/* 3-pane body — `display: none` rather than unmounting, so collapsing never resets
+          a card's per-round economy (the S0 keep-all-mounted rule). */}
       <div style={{
-        flex: 1, display: "grid", minHeight: 0,
+        flex: 1, display: minimized ? "none" : "grid", minHeight: 0,
         gridTemplateColumns: "232px minmax(420px, 1fr) 252px",
       }}>
         <div style={{ borderRight: "1px solid #23233a", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>

@@ -2026,6 +2026,26 @@ export default function App() {
   const status = getActorStatus(actorToShow);
   // liveHpByActorId is computed above as a useMemo
 
+  /**
+   * The space a popover can actually occupy, in CSS px.
+   *
+   * `window.screen` is the PHYSICAL MONITOR. It does not subtract browser chrome, does not
+   * notice a browser window that isn't maximised, and on Windows at 125/150% display
+   * scaling it reports logical pixels that don't match the usable area either. Sizing a
+   * popover from it produces a window BIGGER than the room available — which is why the
+   * combat window covered the map and pushed its own Close button out of reach.
+   *
+   * OBR.viewport is the authoritative measure of the map area the extension lives in.
+   * Falls back to the iframe's own innerWidth/Height, then to a conservative default.
+   */
+  async function getUsableViewport(): Promise<{ w: number; h: number }> {
+    try {
+      const [w, h] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
+      if (w > 0 && h > 0) return { w, h };
+    } catch { /* not in OBR, or the call failed — fall through */ }
+    return { w: window.innerWidth || 1024, h: window.innerHeight || 768 };
+  }
+
   // Open the GM combat window (Monster Gate WS-B/B1) — the single large DM combat
   // view: encounter roster · active creature card · player view. Distinct popover id,
   // so it coexists with the DM panels and actor card (S0: one DM window is all we need).
@@ -2035,15 +2055,20 @@ export default function App() {
       const url = new URL(window.location.href);
       url.pathname = url.pathname.replace(/\/[^/]*$/, "/combat-window.html");
       url.search = "";
-      const width = Math.min(1240, Math.max(960, window.screen.width - 80));
-      const height = Math.min(880, Math.max(700, window.screen.height - 60));
+      // Size against the REAL viewport, not window.screen — see getUsableViewport.
+      // The old floors (960 × 700) were larger than a laptop's usable area once browser
+      // chrome and OS scaling are subtracted, so the window could not shrink to fit and
+      // spilled over the map: you had to zoom the browser out to reach Close or the tokens.
+      const { w: vw, h: vh } = await getUsableViewport();
+      const width = Math.min(1240, Math.max(680, vw - 48));
+      const height = Math.min(880, Math.max(420, vh - 48));
       await OBR.popover.open({
         id: "fdm-combat",
         url: url.toString(),
         width,
         height,
         anchorReference: "POSITION",
-        anchorPosition: { left: Math.max(8, Math.floor((window.screen.width - width) / 2)), top: 16 },
+        anchorPosition: { left: Math.max(8, Math.floor((vw - width) / 2)), top: 16 },
         anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
         transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
         disableClickAway: true,
