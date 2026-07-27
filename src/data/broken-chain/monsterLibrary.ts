@@ -1050,14 +1050,14 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       formatAbility("CHA", 14, 2),
     ],
     traits: [
-      // DELIBERATELY NOT "Frozen Nature" (Christopher, 2026-07-25). Every other creature in
+      // DELIBERATELY NOT "Frozen Nature" (Christopher, 2026-07-25): every other creature in
       // the S4/S5 line shares Frozen Nature, but the Cloak is an incorporeal cold-woven
       // entity, not frozen undead — Cold-Woven is its own unique trait and stays that way.
-      // Its VULNERABLE-to-radiant also STANDS, even though the encounter doc prints
-      // "fire and radiant damage are unhindered" for it: radiant vulnerability is the spine
-      // of this creature's "kill it in the light" design and of Reknit's counterplay.
-      // Do not "fix" either of these against the doc on a future sync.
-      { name: "Cold-Woven", kind: "trait", text: "Resistant to nonmagical bludgeoning, piercing, and slashing. Immune to cold, necrotic, and poison. VULNERABLE to radiant. Immune to the exhaustion, grappled, paralyzed, petrified, poisoned, prone, and restrained conditions — there is no body here to hold down." },
+      // Text matches the encounter doc verbatim. Fire and radiant are UNHINDERED (normal
+      // damage) — the app previously said "VULNERABLE to radiant", which was wrong. The
+      // "kill it in the light" counterplay does NOT come from a damage multiplier: it comes
+      // from Reknit being denied by radiant/bright light, plus Light-Struck's disadvantage.
+      { name: "Cold-Woven", kind: "trait", text: "Immune to cold, necrotic, and poison; needs no air, food, drink, or sleep. Fire and radiant damage are unhindered. Resistant to nonmagical bludgeoning, piercing, and slashing. Immune to the exhaustion, grappled, paralyzed, petrified, poisoned, prone, and restrained conditions — there is no body here to hold down." },
       { name: "Unfixed Shape", kind: "trait", text: "The Cloak has no settled outline until something connects with it. Attack rolls against it have disadvantage until the first time it's hit on a turn; after that hit, attacks resolve normally until the start of its next turn. A cheap attack can strip this before the party commits its big strike — that choice is the counterplay." },
       { name: "Reknit in the Cold", kind: "trait", text: "When the Frozen Cloak drops to 0 hit points while standing in dim light or darkness, it does not die — it comes apart into a drift of frost and reknits at the START of its next turn with 34 hit points, in an unoccupied space it can see within 20 ft. Once per fight. It CANNOT reknit if the blow that dropped it was radiant, or if it is standing in bright light when it falls. Kill it in the light, or kill it twice." },
       { name: "Bodiless Drift", kind: "trait", text: "Moves through creatures and objects as if they were difficult terrain. Takes 5 (1d10) force damage if it ends its turn inside an object." },
