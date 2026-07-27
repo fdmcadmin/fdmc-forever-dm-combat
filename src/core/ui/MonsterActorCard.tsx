@@ -42,6 +42,11 @@ import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonst
 import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
+import { rollFormulaLocally } from "../dice/localRoller";
+
+/** How long a roll waits on a dice app before the math takes over. Long enough that a
+ *  slow-but-working Dice+ still wins the race; short enough that the table isn't stuck. */
+const LOCAL_ROLL_FALLBACK_MS = 6000;
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
 const DAMAGE_ADDITIVE_DICE = ["d4", "d6", "d8", "d10", "d12"] as const;
@@ -101,6 +106,11 @@ type CommittedRoll = {
   damageResult?: string;
   /** Rider save text on an attack ("STR DC 14") — called after the damage roll. */
   saveRider?: string;
+  /** The exact formula sent to the dice app for the CURRENT pending phase — crit-doubled
+   *  and additive-appended where that applies. The local-roller fallback needs this: the
+   *  damage formula is computed at commit time, so without it a timed-out damage roll has
+   *  nothing to roll. */
+  pendingFormula?: string;
   phase: "pending" | "held" | "damage-pending" | "damage-held" | "done";
 };
 
@@ -500,7 +510,7 @@ function ActionCard({
       {isThisAction && committedRoll && (
         <div style={{ marginTop: 6, padding: "6px 8px", background: "#0d0d14", borderRadius: 3, border: `1px solid ${isCrit ? "#f0c040" : "#7b68ee33"}` }}>
           {committedRoll.phase === "pending" && (
-            <p style={{ margin: 0, fontSize: 11, color: "#7b68ee" }}>⏳ Waiting for Dice+…</p>
+            <p style={{ margin: 0, fontSize: 11, color: "#7b68ee" }}>⏳ Waiting for Dice+… <span style={{ color: "#555" }}>math rolls it if nothing answers</span></p>
           )}
           {(committedRoll.phase === "held") && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -531,7 +541,7 @@ function ActionCard({
             </div>
           )}
           {committedRoll.phase === "damage-pending" && (
-            <p style={{ margin: 0, fontSize: 11, color: "#e07b39" }}>⏳ Waiting for damage…</p>
+            <p style={{ margin: 0, fontSize: 11, color: "#e07b39" }}>⏳ Waiting for damage… <span style={{ color: "#555" }}>math rolls it if nothing answers</span></p>
           )}
           {committedRoll.phase === "damage-held" && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -647,6 +657,34 @@ export function MonsterActorCard({
     }
   }, [diceBridgeLastEvent, committedRoll]);
 
+  // ── Math fallback: no dice app answered ─────────────────────────────────────
+  // Dice+ gets first refusal on every roll. When nothing comes back — no dice extension
+  // installed, or the request timed out — the math takes over rather than leaving the
+  // table stuck on "Waiting for Dice+…" and forcing the DM to roll it by hand. The result
+  // is written into the same fields a real dice result would fill, so the card cannot tell
+  // the difference and the natural roll still drives crits.
+  const phase = committedRoll?.phase;
+  const pendingFormula = committedRoll?.pendingFormula;
+  const pendingRequestId = committedRoll?.requestId;
+  useEffect(() => {
+    if (phase !== "pending" && phase !== "damage-pending") return;
+    if (!pendingFormula) return;
+    const timer = window.setTimeout(() => {
+      setCommittedRoll(r => {
+        // Re-check inside the setter: a real result may have landed while the timer ran.
+        if (!r || r.requestId !== pendingRequestId) return r;
+        if (r.phase !== "pending" && r.phase !== "damage-pending") return r;
+        const rolled = rollFormulaLocally(pendingFormula);
+        if (!rolled) return r;
+        const text = `${rolled.text} (math)`;
+        return r.phase === "pending"
+          ? { ...r, result: text, naturalRoll: rolled.naturalRoll, phase: "held" }
+          : { ...r, damageResult: text, phase: "damage-held" };
+      });
+    }, LOCAL_ROLL_FALLBACK_MS);
+    return () => window.clearTimeout(timer);
+  }, [phase, pendingFormula, pendingRequestId]);
+
   // ── Derived values ──────────────────────────────────────────────────────────
   const condition = hpCondition(currentHp, displayMaxHp);
   const hpRatio = displayMaxHp > 0 ? Math.max(0, Math.min(1, currentHp / displayMaxHp)) : 0;
@@ -735,6 +773,7 @@ export function MonsterActorCard({
       critThreshold: (action as MonsterReaderAction & { critThreshold?: number }).critThreshold ?? 20,
       result: "",
       saveRider: action.save && action.roll ? action.save : undefined,
+      pendingFormula: attackFormula || undefined,
       phase: attackFormula ? "pending" : "held",
     };
     setCommittedRoll(roll);
@@ -804,7 +843,7 @@ export function MonsterActorCard({
         setPendingDamageDie(null);
       }
       const dmgId = makeRequestId(monster.instanceId, committedRoll.actionId, "damage");
-      setCommittedRoll(r => r && { ...r, phase: "damage-pending", requestId: dmgId });
+      setCommittedRoll(r => r && { ...r, phase: "damage-pending", requestId: dmgId, pendingFormula: dmgFormula });
       if (onSendDicePlusRequest) {
         await onSendDicePlusRequest({
           protocol: "forever-dm-combat.roll.request.v1",
