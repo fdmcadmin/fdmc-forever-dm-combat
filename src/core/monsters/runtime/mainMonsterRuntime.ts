@@ -103,8 +103,14 @@ export type MainMonsterTemplate = {
     /** Spell slots this creature has, per level. A slot-costed action (see
      *  MonsterReaderAction.spellSlotLevel) spends from the matching pool. Casters only. */
     spellSlots?: { level: number; max: number }[];
+    /** The skills THIS creature actually has, with their modifiers. Per-creature because a
+     *  Frost-Weaver and a Pale Drifter share no skill list — the card previously hardcoded
+     *  Stealth/Perception/Acrobatics for every creature alike. Unset = derive nothing. */
+    skills?: { label: string; modifier: number }[];
   };
-  abilities: { label: string; value: string }[];
+  /** `save` is the saving-throw modifier when the creature is PROFICIENT in that save;
+   *  omit it and the save equals the ability modifier. */
+  abilities: { label: string; value: string; save?: number }[];
   traits: MonsterReaderAction[];
   actions: MonsterReaderAction[];
   reactions: MonsterReaderAction[];
@@ -330,6 +336,10 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     traits: template.traits,
     spells: [],
     attacksPerTurn: template.stats.attacksPerTurn,
+    classification: template.stats.classification,
+    creatureType: template.stats.creatureType,
+    archetype: template.stats.archetype,
+    skills: template.stats.skills,
     spellSlots: template.stats.spellSlots,
     actionCounter: deriveMonsterActionCounter(template.actions, template.stats.attacksPerTurn),
     usedActionNames: [],

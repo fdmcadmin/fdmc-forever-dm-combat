@@ -6,6 +6,9 @@ import {
   createPublicMonsterSnapshot,
 } from "../jcon/jconStorageBoundary";
 import OBR, { type Item, type Metadata } from "@owlbear-rodeo/sdk";
+// Type-only, so it is erased at compile — mainMonsterRuntime already type-imports from
+// this file, and neither side gains a runtime dependency on the other.
+import type { MonsterClassification } from "./runtime/mainMonsterRuntime";
 
 type JconScanStatus =
   | "idle"
@@ -49,7 +52,15 @@ export type MonsterReaderPreview = {
   hp?: string;
   ac?: string;
   speed?: string;
-  abilityScores: { label: string; value: string }[];
+  /**
+   * `value` is the display string ("14 (+2)"); the check modifier is parsed out of it.
+   *
+   * `save` is the SAVING-THROW modifier, which is NOT the same number as the check for a
+   * creature proficient in that save (5e lists "Saving Throws: CON +6" independently of
+   * "Skills: Perception +5"). Leave it undefined and the save equals the check — correct
+   * for a creature with no save proficiency, which is every Act 2 creature as authored.
+   */
+  abilityScores: { label: string; value: string; save?: number }[];
   traits: MonsterReaderAction[];
   actions: MonsterReaderAction[];
   reactions: MonsterReaderAction[];
@@ -104,6 +115,14 @@ export type MonsterCombatCandidate = {
   attacksPerTurn?: number;
   /** Spell slots per level, carried from the template so the card can track them. */
   spellSlots?: { level: number; max: number }[];
+  /** Threat tier, carried from the template. Drives the heavy HP bar for mid-boss+ in the
+   *  roster and the players' tracker. */
+  classification?: MonsterClassification;
+  /** Identity line on the card header: "Undead • Controller • Act Boss". */
+  creatureType?: string;
+  archetype?: string;
+  /** Per-creature skill list, carried from the template. */
+  skills?: { label: string; modifier: number }[];
   usedActionNames?: string[];
   // Main runtime absorption fields from Monster Cards BUILD 0.3.0c.
   // These keep the template/source record separate from live encounter state.

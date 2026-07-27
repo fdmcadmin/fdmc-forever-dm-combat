@@ -19,6 +19,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { MonsterActorCard } from "./core/ui/MonsterActorCard";
+import { ThreatHpBar, isHeavyTier, tierAccent, tierMark, playerSafeTier } from "./core/ui/ThreatHpBar";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
@@ -98,16 +99,24 @@ function RosterPane({ monsters, selectedId, activeId, onSelect }: {
               display: "flex", flexDirection: "column", gap: 5,
             }}
           >
+            {/* Name and HP share one row — the readout used to own a line of its own,
+                which cost ~22px per creature across the roster. */}
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {isActiveTurn && <span title="Active turn" style={{ color: "#f0c040", fontSize: 11 }}>▶</span>}
+              {isHeavyTier(m.classification) && (
+                <span title={m.classification} style={{ color: tierAccent(m.classification), fontSize: 10 }}>
+                  {tierMark(m.classification)}
+                </span>
+              )}
               <strong style={{ fontSize: 12.5, color: dead ? "#777" : "#eee", flex: 1 }}>
                 {m.revealedName || m.displayName || m.name}
               </strong>
+              <span style={{ fontSize: 10, color: hpColor(m.currentHp, m.maxHp), fontVariantNumeric: "tabular-nums" }}>
+                {dead ? "Down" : `${m.currentHp}/${m.maxHp}`}{m.tempHp > 0 ? ` +${m.tempHp}` : ""}
+              </span>
             </div>
-            <div style={{ fontSize: 10.5, color: hpColor(m.currentHp, m.maxHp) }}>
-              {dead ? "Down" : `${m.currentHp} / ${m.maxHp} HP`}{m.tempHp > 0 ? ` (+${m.tempHp} temp)` : ""}
-            </div>
-            <HpBar current={m.currentHp} max={m.maxHp} />
+            {/* The DM roster is not player-facing, so the tier is shown unconditionally. */}
+            <ThreatHpBar ratio={m.maxHp > 0 ? m.currentHp / m.maxHp : 0} tier={m.classification} isDown={dead} />
           </button>
         );
       })}
@@ -150,26 +159,45 @@ function PlayerViewPane({ combatants, monsters }: {
               display: "flex", flexDirection: "column", gap: 4,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {c.isActive && <span style={{ color: "#f0c040", fontSize: 10 }}>▶</span>}
-              <span style={{ fontSize: 12, color: c.kind === "monster" ? "#e08585" : "#dfe4ff", fontWeight: 600, flex: 1 }}>
-                {c.name}
-              </span>
-              <span style={{ fontSize: 10, color: "#667" }}>
-                {benched ? "out" : c.initiative !== null ? `init ${c.initiative}` : "—"}
-              </span>
-            </div>
-            {showNumbers && (
-              <div style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max) }}>
-                {c.hp.current} / {c.hp.max} HP{c.hp.temp ? ` (+${c.hp.temp})` : ""}
-              </div>
-            )}
-            {showCondition && (
-              <div style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max) }}>
-                {hpConditionLabel(c.hp.current, c.hp.max)}
-              </div>
-            )}
-            {showBar && <HpBar current={c.hp.current} max={c.hp.max} />}
+            {/* Tier is reveal-gated: an unrevealed boss shows an ordinary bar, so the
+                heavy treatment never gives away what is standing there. */}
+            {(() => {
+              const tier = playerSafeTier(monster?.classification, Boolean(monster?.isNameRevealed));
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {c.isActive && <span style={{ color: "#f0c040", fontSize: 10 }}>▶</span>}
+                    {isHeavyTier(tier) && (
+                      <span title={tier} style={{ color: tierAccent(tier), fontSize: 10 }}>{tierMark(tier)}</span>
+                    )}
+                    <span style={{ fontSize: 12, color: c.kind === "monster" ? "#e08585" : "#dfe4ff", fontWeight: 600, flex: 1 }}>
+                      {c.name}
+                    </span>
+                    {/* Exact HP moves inline with the name — one row instead of two. */}
+                    {showNumbers && (
+                      <span style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max), fontVariantNumeric: "tabular-nums" }}>
+                        {c.hp.current}/{c.hp.max}{c.hp.temp ? ` +${c.hp.temp}` : ""}
+                      </span>
+                    )}
+                    {showCondition && (
+                      <span style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max) }}>
+                        {hpConditionLabel(c.hp.current, c.hp.max)}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 10, color: "#667" }}>
+                      {benched ? "out" : c.initiative !== null ? `init ${c.initiative}` : "—"}
+                    </span>
+                  </div>
+                  {showBar && (
+                    <ThreatHpBar
+                      ratio={c.hp.max > 0 ? c.hp.current / c.hp.max : 0}
+                      tier={tier}
+                      isDown={c.isDead}
+                    />
+                  )}
+                </>
+              );
+            })()}
           </div>
         );
       })}

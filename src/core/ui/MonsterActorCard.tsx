@@ -40,8 +40,23 @@ import {
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
+import { CLASSIFICATION_LABEL } from "../encounter-band/encounterRounds";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
+import { tabAccent } from "./tabVisuals";
+
+/** Section accents. Reuses the character sheet's tab palette so a monster's Actions /
+ *  Bonus / Spells read in the same colour language as a PC's tabs. Legendary has no PC
+ *  equivalent, so it borrows the bond accent — the only "this creature is special" colour. */
+const SECTION_ACCENT = {
+  actions:   tabAccent("main"),
+  bonus:     tabAccent("bonus"),
+  spells:    tabAccent("spells"),
+  reactions: "#7b68ee",
+  legendary: tabAccent("bond"),
+  resources: tabAccent("resources"),
+  traits:    tabAccent("features"),
+} as const;
 import { rollFormulaLocally } from "../dice/localRoller";
 
 /** How long a roll waits on a dice app before the math takes over. Long enough that a
@@ -184,13 +199,13 @@ function StatBox({ label, value, color }: { label: string; value: string; color?
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "6px 4px", background: "#111", borderRadius: 4,
+      padding: "3px 4px", background: "#111", borderRadius: 4,
       border: "1px solid #2a2a3e", minWidth: 0,
     }}>
-      <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>
+      <span style={{ fontSize: 8, color: "#555", textTransform: "uppercase", letterSpacing: 1, lineHeight: 1.2 }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: color ?? "#ccc" }}>{value}</span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: color ?? "#ccc", lineHeight: 1.25 }}>{value}</span>
     </div>
   );
 }
@@ -564,14 +579,26 @@ function ActionCard({
 
 // ─── Section label ────────────────────────────────────────────────────────────
 
-function SectionLabel({ text, count, collapsible, open, onToggle }: {
+function SectionLabel({ text, count, collapsible, open, onToggle, accent }: {
   text: string; count: number; collapsible?: boolean; open?: boolean; onToggle?: () => void;
+  /** Per-type colour from tabVisuals, so a monster's sections read in the same language
+   *  as the PC sheet's tabs. Falls back to the old violet. */
+  accent?: string;
 }) {
+  const c = accent ?? "#7b68ee";
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "10px 0 4px" }}>
-      <span style={{ fontSize: 9, color: "#7b68ee88", textTransform: "uppercase", letterSpacing: 1.2 }}>{text}</span>
+    // The whole strip is the click target when collapsible — a 9px chevron is a poor one.
+    <div
+      onClick={collapsible ? onToggle : undefined}
+      style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        margin: "6px 0 3px", padding: "2px 6px", borderRadius: 4,
+        borderLeft: `2px solid ${c}`, background: `${c}0d`,
+        cursor: collapsible ? "pointer" : undefined,
+      }}>
+      <span style={{ fontSize: 9, color: c, textTransform: "uppercase", letterSpacing: 1.2, fontWeight: 700 }}>{text}</span>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <span style={{ fontSize: 9, color: "#444", background: "#1a1a2e", padding: "1px 5px", borderRadius: 8 }}>{count}</span>
+        <span style={{ fontSize: 9, color: c, background: `${c}1f`, padding: "1px 5px", borderRadius: 8 }}>{count}</span>
         {collapsible && (
           <button type="button" onClick={onToggle}
             style={{ fontSize: 9, padding: "1px 5px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#444", cursor: "pointer" }}>
@@ -613,6 +640,12 @@ export function MonsterActorCard({
   // rechargedActionIds — actions with recharge that have been USED this turn and not yet recharged
   const [dischargedActionIds, setDischargedActionIds] = useState<Set<string>>(() => new Set());
   const [traitsOpen, setTraitsOpen] = useState(false);
+  // Only Actions is expanded by default — the rest collapse to a one-line header with a
+  // count. This is where the card's height actually goes; the header/economy trims are
+  // worth ~130px, collapsing these is worth roughly twice that on a full stat block.
+  const [bonusOpen, setBonusOpen] = useState(false);
+  const [reactionsOpen, setReactionsOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
 
   // ── Sync live HP from parent (both current and max — hpVariant scaling) ────
   useEffect(() => {
@@ -890,15 +923,27 @@ export function MonsterActorCard({
   // ── Ability check / save roll ────────────────────────────────────────────────
   // Rolls a raw 1d20 + ability modifier (with the current adv/disadv mode) and routes
   // it through the same Dice+ bridge as actions. Result lands via the dice listener.
+  // Checks and saves are DIFFERENT numbers for a creature proficient in a save. `save`
+  // is the override; when absent the save equals the check (no proficiency).
   const abilityChecks = useMemo(() => {
-    const scores = (monster as { abilityScores?: { label: string; value: string }[] }).abilityScores ?? [];
-    return scores.map((s) => ({ label: s.label, modifier: parseAbilityModifier(s.value) }));
+    const scores = (monster as { abilityScores?: { label: string; value: string; save?: number }[] }).abilityScores ?? [];
+    return scores.map((s) => {
+      const modifier = parseAbilityModifier(s.value);
+      return { label: s.label, modifier, save: typeof s.save === "number" ? s.save : modifier };
+    });
   }, [monster]);
 
   // Named skill checks — read the governing ability modifier from the monster's scores
   // (Stealth/Acrobatics ← DEX, Perception ← WIS). A correct classification (stat
   // distribution) in the builder is what makes these land at the right value.
+  // PER-CREATURE. A creature that declares its own skills shows exactly those; only a
+  // creature with none falls back to the generic trio, so a Drifter stops advertising
+  // Acrobatics it never had.
   const skillChecks = useMemo(() => {
+    const authored = (monster as { skills?: { label: string; modifier: number }[] }).skills;
+    if (authored && authored.length > 0) {
+      return authored.map(s => ({ label: s.label, ability: "", modifier: s.modifier }));
+    }
     const modFor = (ability: string) =>
       abilityChecks.find((a) => a.label.toUpperCase().includes(ability))?.modifier ?? 0;
     return [
@@ -906,7 +951,7 @@ export function MonsterActorCard({
       { label: "Perception", ability: "WIS", modifier: modFor("WIS") },
       { label: "Acrobatics", ability: "DEX", modifier: modFor("DEX") },
     ];
-  }, [abilityChecks]);
+  }, [abilityChecks, monster]);
 
   const checkRoll = committedRoll && committedRoll.actionId.startsWith("check-") ? committedRoll : null;
 
@@ -1028,11 +1073,23 @@ export function MonsterActorCard({
       style={{ background: "#0d0d14", borderRadius: 6, border: "1px solid #2a2a3e", borderLeft: `3px solid ${MONSTER_COLOR}`, overflow: "hidden" }}>
 
       {/* 1. Header — GM/monster red identity so it never reads as a party card */}
-      <div style={{ padding: "8px 12px", borderBottom: "1px solid #1a1a2e", background: withAlpha(MONSTER_COLOR, 0.08), display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h3 style={{ margin: "0 0 1px", fontSize: 14, color: "#fff" }}>{publicName}</h3>
+      <div style={{ padding: "5px 12px", borderBottom: "1px solid #1a1a2e", background: withAlpha(MONSTER_COLOR, 0.08), display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ minWidth: 0 }}>
+          <h3 style={{ margin: 0, fontSize: 14, color: "#fff", lineHeight: 1.2 }}>{publicName}</h3>
+          {/* Identity line: creature type • role • tier. The encounter doc's Act/Session
+              line is deliberately NOT here — that is encounter detail, and the panel is
+              under a size lock. Only renders when the template actually carries the data. */}
+          {(monster.creatureType || monster.archetype || monster.classification) && (
+            <span style={{ fontSize: 9.5, color: "#6a6a80", letterSpacing: 0.2 }}>
+              {[
+                monster.creatureType,
+                monster.archetype,
+                monster.classification ? CLASSIFICATION_LABEL[monster.classification] : undefined,
+              ].filter(Boolean).join(" • ")}
+            </span>
+          )}
           {monster.displayName && monster.displayName !== publicName && (
-            <span style={{ fontSize: 10, color: "#444" }}>{monster.displayName}</span>
+            <span style={{ fontSize: 10, color: "#444", marginLeft: 6 }}>{monster.displayName}</span>
           )}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1216,19 +1273,36 @@ export function MonsterActorCard({
           </div>
           {abilityChecks.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {abilityChecks.map((ab) => (
-                <button key={ab.label} type="button" onClick={() => handleAbilityCheck(ab.label, ab.modifier)}
-                  title={`Roll ${ab.label} check / save${rollMode === "normal" ? "" : ` with ${rollMode === "adv" ? "advantage" : "disadvantage"}`}`}
-                  style={{
-                    flex: "1 1 30%", minWidth: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-                    padding: "4px 2px", background: "#111", border: "1px solid #2a2a3e", borderRadius: 4, cursor: "pointer",
-                  }}>
-                  <span style={{ fontSize: 10, color: "#999", fontWeight: 600, letterSpacing: 0.5 }}>{ab.label}</span>
-                  <span style={{ fontSize: 11, color: "#7b68ee", fontVariantNumeric: "tabular-nums" }}>
-                    {ab.modifier >= 0 ? `+${ab.modifier}` : ab.modifier}
-                  </span>
-                </button>
-              ))}
+              {abilityChecks.map((ab) => {
+                // A proficient save is a different number from the check. Show the SV line
+                // always (so the DM never has to guess which it is) but accent it only when
+                // it actually differs — otherwise it is just the modifier restated.
+                const saveDiffers = ab.save !== ab.modifier;
+                return (
+                  <div key={ab.label}
+                    style={{
+                      flex: "1 1 30%", minWidth: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
+                      padding: "3px 2px", background: "#111", border: "1px solid #2a2a3e", borderRadius: 4,
+                    }}>
+                    <span style={{ fontSize: 10, color: "#999", fontWeight: 600, letterSpacing: 0.5 }}>{ab.label}</span>
+                    <button type="button" onClick={() => handleAbilityCheck(ab.label, ab.modifier)}
+                      title={`Roll ${ab.label} CHECK${rollMode === "normal" ? "" : ` with ${rollMode === "adv" ? "advantage" : "disadvantage"}`}`}
+                      style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, fontSize: 11, color: "#7b68ee", fontVariantNumeric: "tabular-nums" }}>
+                      {ab.modifier >= 0 ? `+${ab.modifier}` : ab.modifier}
+                    </button>
+                    <button type="button" onClick={() => handleAbilityCheck(`${ab.label} save`, ab.save)}
+                      title={`Roll ${ab.label} SAVING THROW${saveDiffers ? " (proficient)" : ""}`}
+                      style={{
+                        background: "transparent", border: "none", cursor: "pointer", padding: 0,
+                        fontSize: 8.5, letterSpacing: 0.3, fontVariantNumeric: "tabular-nums",
+                        color: saveDiffers ? "#d7b36a" : "#5a5a6a",
+                        fontWeight: saveDiffers ? 700 : 400,
+                      }}>
+                      SV {ab.save >= 0 ? `+${ab.save}` : ab.save}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           {skillChecks.length > 0 && (
@@ -1273,7 +1347,7 @@ export function MonsterActorCard({
         {/* 4. Actions — true action-cost only */}
         {mainActions.length > 0 && (
           <>
-            <SectionLabel text="Actions" count={mainActions.length} />
+            <SectionLabel text="Actions" count={mainActions.length} accent={SECTION_ACCENT.actions} />
             {mainActions.map(a => (
               // Main actions share the turn's action budget: usable until the budget is spent,
               // or until this specific action is out of slots. Not gated per-action.
@@ -1301,8 +1375,9 @@ export function MonsterActorCard({
         {/* 5. Bonus Actions — only if present */}
         {hasBonusActions && (
           <>
-            <SectionLabel text="Bonus Actions" count={bonusActions.length} />
-            {bonusActions.map(a => (
+            <SectionLabel text="Bonus Actions" count={bonusActions.length} accent={SECTION_ACCENT.bonus}
+              collapsible open={bonusOpen} onToggle={() => setBonusOpen(o => !o)} />
+            {bonusOpen && bonusActions.map(a => (
               <ActionCard key={a.name} action={a}
                 isUsed={economy.bonusUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
@@ -1320,8 +1395,9 @@ export function MonsterActorCard({
         {/* 6. Reactions — separate, quieter section */}
         {reactions.length > 0 && (
           <>
-            <SectionLabel text="Reactions" count={reactions.length} />
-            {reactions.map(a => (
+            <SectionLabel text="Reactions" count={reactions.length} accent={SECTION_ACCENT.reactions}
+              collapsible open={reactionsOpen} onToggle={() => setReactionsOpen(o => !o)} />
+            {reactionsOpen && reactions.map(a => (
               <ActionCard key={a.name} action={a} isReaction
                 isUsed={economy.reactionUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
@@ -1347,8 +1423,9 @@ export function MonsterActorCard({
           if (rechargeable.length === 0) return null;
           return (
             <>
-              <SectionLabel text="Resources / Recharge" count={rechargeable.length} />
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              <SectionLabel text="Resources / Recharge" count={rechargeable.length} accent={SECTION_ACCENT.resources}
+                collapsible open={resourcesOpen} onToggle={() => setResourcesOpen(o => !o)} />
+              <div style={{ display: resourcesOpen ? "flex" : "none", flexWrap: "wrap", gap: 4 }}>
                 {rechargeable.map(a => {
                   const m = a.text?.match(/recharge\s+([\d–\-]+)/i) ?? a.name?.match(/recharge\s+([\d–\-]+)/i);
                   const d = a.text?.match(/(\d+)\s*\/\s*(day|encounter|rest)/i);
@@ -1370,7 +1447,7 @@ export function MonsterActorCard({
         {/* 8. Traits — collapsed, reference only, not roll buttons */}
         {traits.length > 0 && (
           <>
-            <SectionLabel text="Traits" count={traits.length} collapsible open={traitsOpen} onToggle={() => setTraitsOpen(o => !o)} />
+            <SectionLabel text="Traits" count={traits.length} collapsible open={traitsOpen} onToggle={() => setTraitsOpen(o => !o)} accent={SECTION_ACCENT.traits} />
             {traitsOpen && traits.map(a => (
               <TraitCard key={a.name} name={a.name} text={a.text} />
             ))}

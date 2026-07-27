@@ -34,12 +34,18 @@ export type PlayerSafeMonster = {
   reactionNames: string[];
   /** Whether monster has bonus actions — shows "Bonus" category pill on player card */
   hasBonusActions: boolean;
+  /** Threat tier — drives the heavy HP bar in the players' tracker so a boss reads as a
+   *  boss across the table. REVEAL-GATED: only populated once the name is revealed, or
+   *  the bar would telegraph "this is the boss" while it is still an unknown shape. */
+  classification?: MonsterClassification;
 };
+import type { MonsterClassification } from "./core/monsters/runtime/mainMonsterRuntime";
 import OBR from "@owlbear-rodeo/sdk";
 import { CombatLog } from "./core/combat-log/CombatLog";
 import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
 import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
+import { playerSafeTier } from "./core/ui/ThreatHpBar";
 import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -826,6 +832,8 @@ export default function App() {
         actionNames: vis !== "hidden" ? (m.actions ?? []).map(a => a.name).filter(Boolean) : [],
         reactionNames: vis !== "hidden" ? (m.reactions ?? []).map(a => a.name).filter(Boolean) : [],
         hasBonusActions: vis !== "hidden" && (m.actions ?? []).some(a => (a as MonsterReaderAction & { economyCost?: string }).economyCost === "bonus"),
+        // Reveal-gated in one place so no call site can leak the tier early.
+        classification: playerSafeTier(m.classification, Boolean(m.isNameRevealed)),
       };
     });
     void obrSend(

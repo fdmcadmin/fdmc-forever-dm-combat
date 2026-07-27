@@ -22,6 +22,8 @@ import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
+import { ThreatHpBar, isHeavyTier, tierAccent, tierMark } from "./core/ui/ThreatHpBar";
+import type { MonsterClassification } from "./core/monsters/runtime/mainMonsterRuntime";
 import { FDMC_ROOM_LIVE_STATE_KEY } from "./core/table-state/sharedTableState";
 import { subscribeFdmcRoomStateKey } from "./core/table-state/roomStateBridge";
 import { normalizeFdmcRoomLiveState, createEmptyRoomLiveState, type FdmcRoomLiveState } from "./core/table-state/fdmcRoomLiveState";
@@ -42,6 +44,9 @@ type OverlayMonster = {
   hpRatio: number;
   isDown: boolean;
   conditionLabel: string;
+  /** Reveal-gated threat tier — already withheld by the DM before reveal, so this is
+   *  safe to render directly. Drives the heavy boss bar the table can read. */
+  classification?: MonsterClassification;
 };
 
 function hpColor(current: number, max: number): string {
@@ -174,25 +179,37 @@ function PlayerTrackerApp() {
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {c.isActive && <span style={{ color: "#f0c040", fontSize: 10 }}>▶</span>}
+                {isHeavyTier(monster?.classification) && (
+                  <span title={monster?.classification} style={{ color: tierAccent(monster?.classification), fontSize: 10 }}>
+                    {tierMark(monster?.classification)}
+                  </span>
+                )}
                 <span style={{ fontSize: 12, fontWeight: 600, flex: 1, color: c.kind === "monster" ? "#e08585" : "#dfe4ff" }}>
                   {c.name}
                 </span>
+                {/* HP moves inline with the name — the readout no longer owns a row. */}
+                {showNumbers && (
+                  <span style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max), fontVariantNumeric: "tabular-nums" }}>
+                    {c.hp.current}/{c.hp.max}{c.hp.temp ? ` +${c.hp.temp}` : ""}
+                  </span>
+                )}
+                {showCondition && (
+                  <span style={{ fontSize: 10, color: "#e08585" }}>{monster.conditionLabel}</span>
+                )}
+                {c.isDead && c.kind === "monster" && (
+                  <span style={{ fontSize: 10, color: "#777" }}>Down</span>
+                )}
                 <span style={{ fontSize: 10, color: "#667" }}>
                   {benched ? "out" : c.initiative !== null ? `init ${c.initiative}` : "—"}
                 </span>
               </div>
-              {showNumbers && (
-                <div style={{ fontSize: 10, color: hpColor(c.hp.current, c.hp.max) }}>
-                  {c.hp.current} / {c.hp.max} HP{c.hp.temp ? ` (+${c.hp.temp})` : ""}
-                </div>
+              {showBar && (
+                <ThreatHpBar
+                  ratio={c.hp.max > 0 ? c.hp.current / c.hp.max : 0}
+                  tier={monster?.classification}
+                  isDown={c.isDead}
+                />
               )}
-              {showCondition && (
-                <div style={{ fontSize: 10, color: "#e08585" }}>{monster.conditionLabel}</div>
-              )}
-              {c.isDead && c.kind === "monster" && (
-                <div style={{ fontSize: 10, color: "#777" }}>Down</div>
-              )}
-              {showBar && <HpBar current={c.hp.current} max={c.hp.max} />}
               {/* Companions ride their owner's turn — show them nested */}
               {c.companions?.map(comp => (
                 <div key={comp.id} style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 12 }}>

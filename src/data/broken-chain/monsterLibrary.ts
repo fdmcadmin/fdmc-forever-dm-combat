@@ -1,9 +1,18 @@
 import type { MonsterReaderAction } from "../../core/monsters/MonsterJconScanner";
 import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
 
-function formatAbility(label: string, score: number, modifier: number) {
+/**
+ * `save` is the SAVING-THROW modifier when it differs from the ability modifier — i.e.
+ * when the creature is proficient in that save. Omit it and the save equals the check,
+ * which is correct for a creature with no save proficiency.
+ *
+ * NOTE: no Act 2 creature currently authors saves, so every one of them saves at its raw
+ * modifier. That matters most for the Wendigo Wight: a solo act boss with no proficient
+ * saves is very exposed to save-or-suck, since its HP only matters if it gets to act.
+ */
+function formatAbility(label: string, score: number, modifier: number, save?: number) {
   const signed = modifier >= 0 ? `+${modifier}` : `${modifier}`;
-  return { label, value: `${score} (${signed})` };
+  return { label, value: `${score} (${signed})`, ...(typeof save === "number" ? { save } : {}) };
 }
 
 function saveText(save: string | undefined, dc: number | undefined) {
