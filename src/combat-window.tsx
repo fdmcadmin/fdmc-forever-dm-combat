@@ -234,11 +234,14 @@ function CombatWindowApp() {
 
   // HP commits from the mounted cards — same write path as the single monster popout:
   // update the DM-local roster copy + LOCAL broadcast so the main window re-syncs.
-  const commitHpFor = useCallback((instanceId: string, hp: { current: number; max: number; temp: number }) => {
+  // isNameRevealed rides along here (not a separate write path) so a first-HP-change
+  // auto-reveal and a manual Reveal click both land through the one place that persists
+  // the roster the player-safe pane actually reads.
+  const commitHpFor = useCallback((instanceId: string, hp: { current: number; max: number; temp: number }, isNameRevealed?: boolean) => {
     const full = loadMonsterRoster();
     const next = full.map(m =>
       m.instanceId === instanceId
-        ? { ...m, currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp, hp: `${hp.current}/${hp.max}` }
+        ? { ...m, currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp, hp: `${hp.current}/${hp.max}`, ...(isNameRevealed ? { isNameRevealed: true } : {}) }
         : m
     );
     saveMonsterRoster(next);
@@ -246,7 +249,7 @@ function CombatWindowApp() {
     if (OBR.isAvailable) {
       void OBR.broadcast.sendMessage(
         MONSTER_POPOUT_HP_CHANNEL,
-        { type: "fdmc:monster-popout-hp", instanceId, currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp },
+        { type: "fdmc:monster-popout-hp", instanceId, currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp, ...(isNameRevealed ? { isNameRevealed: true } : {}) },
         { destination: "LOCAL" },
       ).catch(() => undefined);
     }
@@ -336,7 +339,7 @@ function CombatWindowApp() {
                     current: typeof patch.currentHp === "number" ? patch.currentHp : m.currentHp,
                     max: m.maxHp,
                     temp: typeof patch.tempHp === "number" ? patch.tempHp : m.tempHp,
-                  });
+                  }, patch.isNameRevealed);
                 }}
                 onSendDicePlusRequest={sendDicePlusRollRequest}
                 diceBridgeLastEvent={diceBridgeLastEvent}

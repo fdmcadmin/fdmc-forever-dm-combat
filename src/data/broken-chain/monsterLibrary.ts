@@ -970,9 +970,13 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 2 S4 - Pale Drifter",
     // kit 1.30: Shadow Shift every turn (melee never gets a full round on it, ~0.85
     // uptime) + Soul-Touched (~1.1 now that magic weapons are common).
-    // HP 136 = authored 4P standard (v12 doc: "HP 136 · AC 17. 16d8 + 64 at CON 18" — CON
-    // rose to 18, which is also what lifts Death Burst to DC 15). AC 17 is now its own
-    // offensive-side term; only traits remain below.
+    // HP 136 = authored 4P standard (v12 doc: "HP 136 · AC 17. 16d8 + 64 at CON 18").
+    // 2026-07-25: the ability array/Death Burst DC/Frost Slam formula previously lagged
+    // this comment's own derivation (still showed the pre-rebuild CON 16/DC 14/+7 to hit).
+    // Applied the rebuild the comment already describes: STR 14/DEX 10/CON 18/INT 8/WIS
+    // 10/CHA 8 (Guardian order STR>DEX preserved on the chassis's 68-point pool), which
+    // lifts Death Burst to DC 15 and recomputes Frost Slam to +5 to hit / 2d8+2 cold
+    // (STR +2, PB +3). AC 17 is unaffected — it's authored natural armour, not from DEX.
     stats: {
       kind: "boss", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
       defenses: [
@@ -981,27 +985,27 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       ],
     },
     abilities: [
-      formatAbility("STR", 18, 4),
-      formatAbility("DEX", 14, 2),
-      formatAbility("CON", 16, 3),
-      formatAbility("INT", 6, -2),
-      formatAbility("WIS", 12, 1),
-      formatAbility("CHA", 10, 0),
+      formatAbility("STR", 14, 2),
+      formatAbility("DEX", 10, 0),
+      formatAbility("CON", 18, 4),
+      formatAbility("INT", 8, -1),
+      formatAbility("WIS", 10, 0),
+      formatAbility("CHA", 8, -1),
     ],
     traits: [
-      { name: "Soul-Touched", kind: "trait", text: "Nonmagical weapon attacks deal half damage. Magical weapons connect fully." },
+      { name: "Soul-Touched", kind: "trait", text: "Nonmagical weapon attacks deal half damage. Magical weapons connect fully, and fire and radiant damage bypass this reduction outright." },
       { name: "Pale Aura", kind: "trait", text: "Sheds dim light 20 ft in wrong-temperature blue-white. Darkness zones near it are highly visible — Shadow Shift targets are predictable if the party maps them." },
-      { name: "Death Burst", kind: "trait", text: "At 0 HP the Drifter comes apart. Every creature within 15 ft makes a DC 14 CON save, taking 21 (6d6) cold on a fail, half on a success. Flat DC, flat radius, every party size — the band moves HP, never abilities. Spread before the killing blow." },
+      { name: "Death Burst", kind: "trait", text: "At 0 HP the Drifter comes apart. Every creature within 15 ft makes a DC 15 CON save, taking 21 (6d6) cold on a fail, half on a success. Flat DC, flat radius, every party size — the band moves HP, never abilities. Spread before the killing blow." },
     ],
     actions: [
-      { name: "Frost Slam", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", text: "+7 to hit, reach 10 ft., one target. Hit: 15 (2d10 + 4) cold." },
+      { name: "Frost Slam", kind: "attack", roll: "1d20 + 5", damage: "2d8 + 2", text: "+5 to hit, reach 10 ft., one target. Hit: 11 (2d8 + 2) cold." },
       { name: "Shadow Shift (Bonus Action)", kind: "action", text: "Teleport up to 20 ft between dim light or darkness areas it can see — a flat 20 ft at every party size. Magical effect, so Counterspell can attempt to block it. It never attacks twice from the same position." },
     ],
     reactions: [],
     resources: [],
     notes: [
       "Elite Solo. HP: 90 (4P) / 120 (5P baseline) / 150 (6P) — HP is the ONLY thing the band moves.",
-      "BANDS DO NOT CHANGE ABILITIES. Death Burst is a flat DC 14 / 6d6 / 15-ft radius at every party size (was DC 12/14/15 with a 20-ft radius at 6P — that scaling is removed). Shadow Shift is a flat 20 ft (was 15 ft at 4P). Numbers checked: at a depleted 20 HP, 6d6 downs at least one of the three melee ~5.3 times in 10 and all three ~0.11 in 10 — it hurts, it does not execute. It cannot touch anyone above 36 HP.",
+      "BANDS DO NOT CHANGE ABILITIES. Death Burst is a flat DC 15 / 6d6 / 15-ft radius at every party size (was DC 12/14/15 with a 20-ft radius at 6P — that scaling is removed; DC rose again to 15 with the CON 16→18 rebuild). Shadow Shift is a flat 20 ft (was 15 ft at 4P). Numbers checked: at a depleted 20 HP, 6d6 downs at least one of the three melee ~5.3 times in 10 and all three ~0.11 in 10 — it hurts, it does not execute. It cannot touch anyone above 36 HP.",
       "Uses Shadow Shift every turn (never attacks twice from the same position) and targets whoever just spent a resource or is holding concentration.",
       "Death Burst is the exam — it does not warn the party. Flag party spread positions before the kill blow. Soul-Touched resistance flagged per attacker (magical vs nonmagical).",
       "Drop: Gold at performance band + Potion of Greater Healing x2. Camp before stepping onto the ice.",
@@ -1037,6 +1041,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Cold-Woven", kind: "trait", text: "Resistant to nonmagical bludgeoning, piercing, and slashing. Immune to cold, necrotic, and poison. VULNERABLE to radiant. Immune to the exhaustion, grappled, paralyzed, petrified, poisoned, prone, and restrained conditions — there is no body here to hold down." },
+      { name: "Unfixed Shape", kind: "trait", text: "The Cloak has no settled outline until something connects with it. Attack rolls against it have disadvantage until the first time it's hit on a turn; after that hit, attacks resolve normally until the start of its next turn. A cheap attack can strip this before the party commits its big strike — that choice is the counterplay." },
       { name: "Reknit in the Cold", kind: "trait", text: "When the Frozen Cloak drops to 0 hit points while standing in dim light or darkness, it does not die — it comes apart into a drift of frost and reknits at the START of its next turn with 34 hit points, in an unoccupied space it can see within 20 ft. Once per fight. It CANNOT reknit if the blow that dropped it was radiant, or if it is standing in bright light when it falls. Kill it in the light, or kill it twice." },
       { name: "Bodiless Drift", kind: "trait", text: "Moves through creatures and objects as if they were difficult terrain. Takes 5 (1d10) force damage if it ends its turn inside an object." },
       { name: "Light-Struck", kind: "trait", text: "In bright light, the Cloak has disadvantage on attack rolls and ability checks. A lantern is a weapon against it — and against Reknit in the Cold." },

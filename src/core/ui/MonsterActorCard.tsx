@@ -71,7 +71,7 @@ function broadcastMonsterEconomy(instanceId: string, eco: { actionUsed: boolean;
 type MonsterActorCardProps = {
   monster: MainEncounterMonsterInstance;
   isDmView: boolean;
-  onHpChange: (patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "tempHp" | "status">>) => void;
+  onHpChange: (patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "tempHp" | "status" | "isNameRevealed">>) => void;
   onSendDicePlusRequest?: (request: DiceBridgeRollRequest) => Promise<boolean>;
   diceBridgeLastEvent?: DiceBridgeEvent | null;
   onActionCommit?: (actionName: string) => void;
@@ -695,10 +695,17 @@ export function MonsterActorCard({
   function addLog(_msg: string) { /* noop — log strip removed, tracked via encounter log */ }
 
   // ── HP controls ─────────────────────────────────────────────────────────────
+  // First HP move reveals the DM's real name to players — the "it just moved so
+  // everyone at the table sees it react" beat. A manual Reveal button (below) covers
+  // the case where the DM wants the name known before anyone lands a hit.
   function adjustHp(delta: number) {
     const next = Math.max(0, Math.min(displayMaxHp, currentHp + delta));
     setCurrentHp(next);
-    onHpChange({ currentHp: next, status: next <= 0 ? "down" : monster.status });
+    onHpChange({
+      currentHp: next,
+      status: next <= 0 ? "down" : monster.status,
+      ...(monster.isNameRevealed ? {} : { isNameRevealed: true }),
+    });
     addLog(`${publicName} ${delta > 0 ? "healed" : "took"} ${Math.abs(delta)} ${delta > 0 ? "HP" : "damage"}.`);
   }
 
@@ -990,6 +997,18 @@ export function MonsterActorCard({
           )}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {/* DM-only: reveal the real name to players before anyone lands a hit. Once
+              revealed there's no un-reveal — the moment has already happened at the table. */}
+          {!monster.isNameRevealed && (
+            <button
+              type="button"
+              onClick={() => { onHpChange({ isNameRevealed: true }); addLog(`${publicName} identity revealed to the table.`); }}
+              title="Reveal the real name to players now, instead of waiting for the first HP change"
+              style={{ fontSize: 10, padding: "3px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}
+            >
+              👁 Reveal
+            </button>
+          )}
           <span style={{ fontSize: 10, color: MONSTER_COLOR, background: withAlpha(MONSTER_COLOR, 0.14), border: `1px solid ${withAlpha(MONSTER_COLOR, 0.4)}`, padding: "2px 7px", borderRadius: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>
             {monster.kind ?? "monster"}
           </span>
