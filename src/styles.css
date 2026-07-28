@@ -6300,3 +6300,112 @@ body,
   border-color: rgba(103, 165, 255, 0.22);
   background: rgba(103, 165, 255, 0.04);
 }
+
+/* ─── Encounter summary (combat log) ─────────────────────────────────────────
+   Totals under the transcript: who dealt/took the most, who healed, who spent
+   resources, and each combatant's action economy. Grouped by side so "who
+   carried the fight" is a party question. */
+
+.log-summary {
+  border-top: 1px solid #2a2a3e;
+  padding: 10px 14px 12px;
+  background: rgba(123, 104, 238, 0.04);
+}
+
+.log-summary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.log-summary-head h3 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9d8cff;
+}
+
+.log-summary-meta { font-size: 10px; color: #667; }
+
+.log-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 4px 12px;
+  margin-bottom: 10px;
+}
+
+.log-summary-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  min-width: 0;
+}
+
+.log-summary-stat-label { color: #667; flex-shrink: 0; }
+.log-summary-stat-name {
+  color: #dfe4ff; font-weight: 600; flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.log-summary-stat-value { color: #f0c040; font-variant-numeric: tabular-nums; }
+
+.log-summary-subhead {
+  margin: 8px 0 3px;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #55596b;
+}
+
+.log-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
+}
+
+.log-summary-table th {
+  text-align: right;
+  font-weight: 600;
+  color: #55596b;
+  padding: 2px 5px;
+  border-bottom: 1px solid #23233a;
+  white-space: nowrap;
+}
+.log-summary-table th:first-child { text-align: left; }
+
+.log-summary-table td {
+  text-align: right;
+  padding: 2px 5px;
+  color: #aab;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid #1a1a2e;
+}
+.log-summary-table td:first-child {
+  text-align: left;
+  color: #dfe4ff;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-summary-economy { color: #7b68ee; white-space: nowrap; }
+.log-summary-inferred { color: #e07b39; cursor: help; }
+
+.log-summary-note {
+  margin: 8px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #8a7a5a;
+}
+
+.log-summary-scope {
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #55596b;
+  margin: -4px 0 7px;
+}
