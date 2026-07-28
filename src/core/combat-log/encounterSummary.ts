@@ -103,7 +103,7 @@ export function summarizeEncounter(entries: CombatLogEntry[]): EncounterSummary 
         actor.damageDealt += amount;
         // The receiving side is a different combatant — credit it separately so
         // "took the most damage" is a real total and not the inverse of dealt.
-        if (e.targetId || e.targetName) get(e.targetId, e.targetName ?? "").damageTaken += amount;
+        if (e.targetId || e.targetName) get(e.targetId, e.targetName ?? "", e.targetSide).damageTaken += amount;
         break;
       case "healing":
         actor.healingDone += amount;

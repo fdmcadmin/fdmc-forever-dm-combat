@@ -1222,6 +1222,13 @@ export default function App() {
   const [bossKillAlert, setBossKillAlert] = useState<{ name: string; encounterId: string; encounterName: string } | null>(null);
 
   // P7/P8: log HP change to encounter log + ring buffer
+  /**
+   * `actorId` here is WHOSE HP MOVED — the target, not the cause. The cause is not known
+   * at this level (the DM is adjusting a bar), so the summary credits whoever's turn it
+   * is and marks the entry INFERRED. A committed attack roll should credit its own actor
+   * and mark it "attributed"; that wiring is still to come, and until it lands these
+   * totals are honest estimates rather than claims.
+   */
   function logHpChange(actorId: string, actorName: string, delta: number, round: number) {
     if (!isDmMode || delta === 0) return;
     appendLogEntry({
@@ -1229,6 +1236,37 @@ export default function App() {
       type: "hp-change", code: makeActionCode(actorName, "HP"),
       actorId, actorName, val: delta, message: delta < 0 ? `${actorName} took ${Math.abs(delta)} damage` : `${actorName} healed ${delta} HP`,
     });
+    // Feed the summary log too — it reads CombatLogEntry, not the localStorage encounter
+    // log, so without this the panel counted nothing at all.
+    {
+      const causeId = roomLiveState.combat.activeActorId ?? undefined;
+      const causeActor = actors.find(a => a.id === causeId);
+      const causeMonster = monsterCandidates.find(m => (m as MainEncounterMonsterInstance).instanceId === causeId) as MainEncounterMonsterInstance | undefined;
+      const causeName = causeActor?.name ?? causeMonster?.revealedName ?? causeMonster?.displayName ?? "Unknown";
+      // Companions count as PARTY — Faelar's damage is the ranger's damage.
+      const causeSide: "party" | "monster" | undefined = causeActor
+        ? "party"
+        : causeMonster ? "monster" : undefined;
+      const targetSide: "party" | "monster" = actors.some(a => a.id === actorId) ? "party" : "monster";
+      addEntry({
+        actorName: causeName,
+        actionName: delta < 0 ? "Damage" : "Healing",
+        tabId: "system",
+        message: delta < 0
+          ? `${causeName} dealt ${Math.abs(delta)} damage to ${actorName}.`
+          : `${causeName} healed ${actorName} for ${delta}.`,
+        actorId: causeId,
+        actorSide: causeSide,
+        targetId: actorId,
+        targetName: actorName,
+        // The target's own side, so "took the most damage" groups correctly.
+        targetSide,
+        amount: Math.abs(delta),
+        category: delta < 0 ? "damage" : "healing",
+        attribution: "inferred",
+        round,
+      });
+    }
     if (OBR.isAvailable) {
       const next = pushRecentEvent(roomLiveState, {
         actorId, type: "hp-change", code: makeActionCode(actorName, "HP"), val: delta, round,

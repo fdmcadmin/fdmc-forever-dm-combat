@@ -18,6 +18,9 @@ export type CombatLogFacts = {
   actorSide?: "party" | "monster";
   targetId?: string;
   targetName?: string;
+  /** The TARGET's side. Without it a damaged monster has no side of its own and falls
+   *  into the unassigned group instead of the Monsters table. */
+  targetSide?: "party" | "monster";
   /** Damage dealt, healing done, or resource points spent — always POSITIVE. */
   amount?: number;
   /** Which total this feeds. `hp-change` alone cannot tell damage from healing. */
