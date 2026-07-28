@@ -177,20 +177,44 @@ function doubleDice(formula: string): string {
  *   3. economyCost === "bonus" → bonusActions
  *   4. everything else      → mainActions (true action-cost)
  */
+/**
+ * Bonus-action detection reads the NAME as well as `economyCost`.
+ *
+ * Monster stat blocks mark the cost in the action's own name — "Rimestep (Bonus Action,
+ * 1st slot)" — because that is how a printed block reads. The old check looked only at
+ * `economyCost`, which monster data does not set, so EVERY monster bonus action was
+ * silently filed as a main action and spent the whole action budget when used.
+ */
+function isBonusAction(a: MonsterReaderAction): boolean {
+  const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
+  if (ec === "bonus") return true;
+  return /\(\s*bonus action/i.test(a.name ?? "");
+}
+
+/** A spell is anything that spends a slot. That is the only unambiguous signal a monster
+ *  stat block gives — `kind: "spell"` is not set on templates. */
+function isSpellAction(a: MonsterReaderAction): boolean {
+  return a.spellSlotLevel !== undefined || a.kind === "spell";
+}
+
 function classifyActions(all: MonsterReaderAction[]) {
   const mainActions:  MonsterReaderAction[] = [];
   const bonusActions: MonsterReaderAction[] = [];
+  const spells:       MonsterReaderAction[] = [];
   const reactions:    MonsterReaderAction[] = [];
   const traits:       MonsterReaderAction[] = [];
 
   for (const a of all) {
+    // Reaction/trait win first — a slot-costed REACTION (Frost Ward) is still a reaction.
     if (a.kind === "reaction") { reactions.push(a);    continue; }
     if (a.kind === "trait")    { traits.push(a);       continue; }
-    const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
-    if (ec === "bonus")        { bonusActions.push(a); continue; }
+    // Bonus beats spell: a bonus-action cantrip belongs under Bonus Actions, where its
+    // economy actually lives. Its slot pill still shows on the row.
+    if (isBonusAction(a))      { bonusActions.push(a); continue; }
+    if (isSpellAction(a))      { spells.push(a);       continue; }
     mainActions.push(a);
   }
-  return { mainActions, bonusActions, reactions, traits };
+  return { mainActions, bonusActions, spells, reactions, traits };
 }
 
 // ─── Stat box ─────────────────────────────────────────────────────────────────
@@ -646,6 +670,7 @@ export function MonsterActorCard({
   const [bonusOpen, setBonusOpen] = useState(false);
   const [reactionsOpen, setReactionsOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [spellsOpen, setSpellsOpen] = useState(false);
 
   // ── Sync live HP from parent (both current and max — hpVariant scaling) ────
   useEffect(() => {
@@ -754,7 +779,7 @@ export function MonsterActorCard({
     [monster.actions, monster.reactions, monster.traits],
   );
 
-  const { mainActions, bonusActions, reactions, traits } = useMemo(
+  const { mainActions, bonusActions, spells, reactions, traits } = useMemo(
     () => classifyActions(allActions),
     [allActions],
   );
@@ -1367,6 +1392,28 @@ export function MonsterActorCard({
                   addLog(`${publicName} recharge roll for ${action.name}: ${roll} — ${success ? "✓ recharged!" : "✗ failed"}`);
                   if (success) setDischargedActionIds(prev => { const next = new Set(prev); next.delete(slugify(action.name)); return next; });
                 }}
+              />
+            ))}
+          </>
+        )}
+
+        {/* 4b. Spells — slot-costed main actions, split out of Actions so a caster's
+            control kit reads separately from its claws. Collapsed by default. */}
+        {spells.length > 0 && (
+          <>
+            <SectionLabel text="Spells" count={spells.length} accent={SECTION_ACCENT.spells}
+              collapsible open={spellsOpen} onToggle={() => setSpellsOpen(o => !o)} />
+            {spellsOpen && spells.map(a => (
+              <ActionCard key={a.name} action={a}
+                isUsed={economy.stepsUsed >= actionsMax
+                  || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
+                slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
+                isDischarged={dischargedActionIds.has(slugify(a.name))}
+                committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
+                attackCounter={undefined} stepsUsed={0}
+                onUse={handleUseAction} onRollResult={handleRollResult}
+                onCommit={handleCommit} onClearRoll={handleClearRoll}
+                onStepUsed={() => undefined} onStepReset={() => undefined}
               />
             ))}
           </>
