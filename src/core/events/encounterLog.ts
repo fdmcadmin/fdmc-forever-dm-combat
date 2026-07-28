@@ -17,7 +17,76 @@ export type EncounterLogEntry = {
   targetName?: string;
   val: number;         // roll total, damage amount, tracker value
   message: string;
+
+  // ── Attribution (0.6.8.3) ──────────────────────────────────────────────────
+  // The summary stats — most damage dealt, damage taken, healing, resources — are only
+  // as good as who each entry is credited to, and "whoever's turn it is" is WRONG for a
+  // whole class of events.
+
+  /**
+   * Which economy the entry came from. Reactions and legendary actions interject into
+   * SOMEONE ELSE'S turn, so this is what stops them being credited to the turn owner.
+   */
+  sourceKind?: "action" | "bonus" | "reaction" | "legendary" | "free";
+  /**
+   * Whose turn this happened during, when that differs from `actorId`. A PC's opportunity
+   * attack on the boss's turn is actorId = the PC, turnOwnerId = the boss — the damage is
+   * the PC's, the turn is not.
+   */
+  turnOwnerId?: string;
+  turnOwnerName?: string;
+  /**
+   * How confident the credit is.
+   *   "attributed" — the event came from a known card's action, so the actor is exact.
+   *                  Every reaction is attributed, because it is committed from a button.
+   *   "inferred"   — derived from the active turn (a manual HP adjustment with no roll
+   *                  behind it). Exports should be able to show this, rather than
+   *                  silently overstating someone's total.
+   */
+  attribution?: "attributed" | "inferred";
+  /** Bucket for the summary stats. `hp-change` alone cannot tell damage from healing. */
+  category?: "damage" | "healing" | "resource" | "roll" | "flow";
 };
+
+/**
+ * Credit an event to the right actor.
+ *
+ * A reaction or legendary action fires during another creature's turn, so the turn owner
+ * is NOT the actor — crediting by turn would hand a PC's opportunity-attack damage to the
+ * monster it interrupted. Anything committed from a card carries its own actor and is
+ * exact; only a bare HP adjustment has to fall back to the active turn, and that case is
+ * marked "inferred" so it can be reported as such rather than trusted silently.
+ */
+export function attributeEvent(input: {
+  /** The card that acted, when the event came from one. */
+  cardActorId?: string;
+  cardActorName?: string;
+  /** Whose turn it currently is. */
+  turnOwnerId?: string;
+  turnOwnerName?: string;
+  sourceKind?: EncounterLogEntry["sourceKind"];
+}): Pick<EncounterLogEntry, "actorId" | "actorName" | "turnOwnerId" | "turnOwnerName" | "sourceKind" | "attribution"> {
+  const interjected = input.sourceKind === "reaction" || input.sourceKind === "legendary";
+  if (input.cardActorId) {
+    return {
+      actorId: input.cardActorId,
+      actorName: input.cardActorName ?? "",
+      // Only record the turn owner when it is someone else — that is the interesting case.
+      turnOwnerId: interjected || input.turnOwnerId !== input.cardActorId ? input.turnOwnerId : undefined,
+      turnOwnerName: interjected || input.turnOwnerId !== input.cardActorId ? input.turnOwnerName : undefined,
+      sourceKind: input.sourceKind,
+      attribution: "attributed",
+    };
+  }
+  return {
+    actorId: input.turnOwnerId ?? "",
+    actorName: input.turnOwnerName ?? "Unknown",
+    turnOwnerId: input.turnOwnerId,
+    turnOwnerName: input.turnOwnerName,
+    sourceKind: input.sourceKind,
+    attribution: "inferred",
+  };
+}
 
 const ENCOUNTER_LOG_KEY = "fdmc.dm.encounterLog.v1";
 
