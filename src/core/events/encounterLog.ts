@@ -20,7 +20,29 @@ export type EncounterLogEntry = {
 };
 
 const ENCOUNTER_LOG_KEY = "fdmc.dm.encounterLog.v1";
-const ENCOUNTER_LOG_MAX = 150;
+
+/**
+ * How many entries a combat may hold before the OLDEST are dropped.
+ *
+ * This was 150, which silently truncated exactly the fights it mattered most for. The
+ * tracked window is [first initiative roll → End Combat], and one attack is already THREE
+ * entries (attack roll, damage roll, HP change), so the count scales with action economy —
+ * which is precisely where high-level combat gets blurred and the log is needed.
+ *
+ * Derivation of the worst realistic case, so this is a budget rather than a guess:
+ *
+ *   combatants     11   (a 5-6 PC party + companion, a boss and ~4 adds)
+ *   rounds          8   (ABSOLUTE_ROUND_CAP in encounterRounds.ts)
+ *   entries/turn   ~22  (turn-start, 3-6 attacks x 3 entries, a bonus action,
+ *                        a reaction, a resource spend, turn-end)
+ *   ---------------------------------------------------------------
+ *   11 x 8 x 22   ~1,940, plus legendary actions (3/round x 8), initiative
+ *                  rolls and system markers  ->  ~2,050
+ *
+ * 2500 clears that with headroom while staying bounded, so a runaway loop cannot fill
+ * localStorage. At roughly 220 bytes an entry that is ~550KB against a ~5MB budget.
+ */
+const ENCOUNTER_LOG_MAX = 2500;
 
 export function readEncounterLog(): EncounterLogEntry[] {
   try {

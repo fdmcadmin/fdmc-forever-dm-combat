@@ -1363,7 +1363,11 @@ export default function App() {
     })();
     setSelectedActorId(actors.find(a => a.id === firstId)?.id ?? selectedActorId);
     setActiveMonsterInstanceId(monsterCandidates.find(m => (m as MainEncounterMonsterInstance).instanceId === firstId) ? firstId : "");
-    clearEncounterLog(); // P8: fresh log per combat session
+    // NOT cleared here. The tracked window starts at the FIRST INITIATIVE ROLL, and those
+    // are logged during the setup/initiative phase — clearing on Start Combat destroyed
+    // every one of them before the fight it belongs to had begun. The log now spans
+    // initiative → End Combat, delimited by these Combat Start / Combat End markers so an
+    // export can segment sessions, and the DM clears it by hand from the log panel.
     addEntry({ actorName: "System", actionName: "Combat Start", tabId: "system", message: `Round 1 begins. ${sorted[0]?.name ?? "First combatant"} goes first.` });
   }
 
