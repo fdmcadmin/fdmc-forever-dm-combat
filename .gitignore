@@ -35,3 +35,9 @@ push.bat
 # Logs
 *.log
 npm-debug.log*
+
+# Design/method documents — Christopher's, NOT the app's.
+# MASTER, the phase specs, the balance rules and the build log describe HOW this was
+# built. They live one level up in candidates/0.6.0-clean-rebuild/_specs/ and must stay
+# out of the repository: shipping the method alongside the product gives it away.
+_specs/
