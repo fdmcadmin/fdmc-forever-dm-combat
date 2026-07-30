@@ -33,6 +33,7 @@ import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
 import { BondSummary } from "./BondSummary";
 import { ClassFeatureTrackerBox } from "./ClassFeatureTrackerBox";
+import { SpellLevelPicker } from "./SpellLevelPicker";
 import { CommittedRollPanel, type ReadiedRollCandidate } from "./CommittedRollPanel";
 import { getRerollSources } from "../state/rerollSources";
 import type { RerollSource } from "../state/rerollSources";
@@ -95,7 +96,7 @@ type ActorCardProps = {
   onSpendResource?: (resourceActionId: string, amount: number) => void;
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
-  onConsumeActionResources?: (action: ActorAction) => void;
+  onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
   /** A save-forcing action fired — the host decides targets (picker) and announces it. */
   onSaveCall?: (actionName: string, save: string) => void;
   /** Character gold (gp) — legacy; superseded by `coins`. */
@@ -211,6 +212,9 @@ type ActorCardSessionSnapshot = {
   classOptionsDismissedByActorId?: Record<string, boolean>;
   initiativeByActorId?: Record<string, InitiativeRollState | null>;
   attackUseByActorId?: Record<string, AttackUseState | null>;
+  /** Chosen cast level per spell, keyed `actorId:actionId`. Survives window switches so a
+   *  player who picks L4 in the popout sees L4 on the tracker card. */
+  castLevelByActionKey?: Record<string, number>;
 };
 
 function readActorCardSessionSnapshot(): ActorCardSessionSnapshot {
@@ -718,6 +722,7 @@ export function ActorCard({
   const [classOptionsDismissedByActorId, setClassOptionsDismissedByActorId] = useState<Record<string, boolean>>(() => readActorCardSessionSnapshot().classOptionsDismissedByActorId ?? {});
   const [initiativeByActorId, setInitiativeByActorId] = useState<Record<string, InitiativeRollState | null>>(() => readActorCardSessionSnapshot().initiativeByActorId ?? {});
   const [attackUseByActorId, setAttackUseByActorId] = useState<Record<string, AttackUseState | null>>(() => readActorCardSessionSnapshot().attackUseByActorId ?? {});
+  const [castLevelByActionKey, setCastLevelByActionKey] = useState<Record<string, number>>(() => readActorCardSessionSnapshot().castLevelByActionKey ?? {});
   const [debuffNote, setDebuffNote] = useState("");
   // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
   const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
@@ -774,6 +779,7 @@ export function ActorCard({
       classOptionsDismissedByActorId,
       initiativeByActorId,
       attackUseByActorId,
+      castLevelByActionKey,
     };
 
     if (suppressNextSessionBroadcastRef.current) {
@@ -792,6 +798,7 @@ export function ActorCard({
     classOptionsDismissedByActorId,
     initiativeByActorId,
     attackUseByActorId,
+    castLevelByActionKey,
     broadcastActorCardSession,
   ]);
 
@@ -804,6 +811,7 @@ export function ActorCard({
     setClassOptionsDismissedByActorId(snapshot.classOptionsDismissedByActorId ?? {});
     setInitiativeByActorId(snapshot.initiativeByActorId ?? {});
     setAttackUseByActorId(snapshot.attackUseByActorId ?? {});
+    setCastLevelByActionKey(snapshot.castLevelByActionKey ?? {});
   }
 
   useEffect(() => {
@@ -1325,7 +1333,11 @@ export function ActorCard({
     }
 
     if (isSpellEntry(entry)) {
-      return spellAttackRollCount(entry.action.metadata);
+      // The upcast pick decides the ray count: Scorching Ray at L4 is 5 rays, not 3.
+      return spellAttackRollCount({
+        ...entry.action.metadata,
+        selectedCastLevel: getCastLevel(entry.action),
+      });
     }
 
     const configuredUses = entry.action.metadata?.attackUses;
@@ -2533,6 +2545,107 @@ export function ActorCard({
     return `${actor.name} notes ${action.label} from ${tabLabels[tabId]}.`;
   }
 
+  // ── Cast level (upcasting) ──────────────────────────────────────────────────
+  // Upcasting used to be data-authored: an action spent the level it was written at, so
+  // casting Scorching Ray at L4 meant authoring a second card. The picker below makes the
+  // level a runtime choice, and everything downstream — which slot is spent, how many rays
+  // roll, the out-of-charges gate — reads it through `getCastLevel`.
+
+  function castLevelKey(action: ActorAction) {
+    return `${actor.id}:${action.id}`;
+  }
+
+  /** The level this spell will actually be cast at: the player's pick, else as authored. */
+  function getCastLevel(action: ActorAction): number {
+    const authored = action.metadata?.spellLevel ?? 0;
+    const picked = castLevelByActionKey[castLevelKey(action)];
+    if (picked === undefined) {
+      return authored;
+    }
+
+    // A pick below the spell's own level is not castable — ignore stale state.
+    return picked >= authored ? picked : authored;
+  }
+
+  function setCastLevel(action: ActorAction, level: number) {
+    setCastLevelByActionKey((current) => ({ ...current, [castLevelKey(action)]: level }));
+  }
+
+  /** The slot resource that backs a given level, matched the same way `consumeSpellSlot` does. */
+  function slotResourceForLevel(level: number): ActorAction | undefined {
+    return (actor.tabs.resources ?? []).find(r => {
+      const lbl = r.label.toLowerCase();
+      return lbl.includes(`l${level}`) || lbl.includes(`level ${level}`) ||
+        lbl.includes(`${level}th`) || lbl.includes(`${level}nd`) ||
+        lbl.includes(`${level}rd`) || lbl.includes(`${level}st`);
+    });
+  }
+
+  /**
+   * Levels this spell may be cast at, up to 9.
+   *
+   * An authored `usableSpellLevels` is respected as-is — that is the author saying "this
+   * spell is only worth these levels". With nothing authored the spell opens up from its own
+   * level to 9, so no slot is ever locked out.
+   *
+   * `remaining: null` means the actor tracks no pool for that level, which is allowed (the
+   * cast simply isn't slot-backed) — the same rule the spend path and the gate already use.
+   */
+  function castLevelOptionsFor(action: ActorAction): Array<{ level: number; remaining: number | null; max: number | null }> {
+    const base = action.metadata?.spellLevel ?? 0;
+    if (action.actionKind !== "spell" || base < 1) {
+      return [];
+    }
+
+    // Pact slots cast at one fixed level, and a free cast spends no slot at all.
+    const mode = action.metadata?.spellSlotMode;
+    if (mode === "freeCast" || mode === "pact") {
+      return [];
+    }
+
+    const authored = (action.metadata?.usableSpellLevels ?? [])
+      .filter(level => Number.isFinite(level) && level >= base && level <= 9);
+    const levels = authored.length > 0
+      ? Array.from(new Set(authored)).sort((a, b) => a - b)
+      : Array.from({ length: 9 - base + 1 }, (_, i) => base + i);
+
+    return levels.map(level => {
+      const res = slotResourceForLevel(level);
+      if (!res) {
+        return { level, remaining: null, max: null };
+      }
+
+      const parsedMax = Number.parseInt(res.metadata?.additive ?? "", 10);
+      const max = Number.isFinite(parsedMax) && parsedMax > 0 ? parsedMax : 0;
+      return { level, remaining: resourceCounters?.[res.id] ?? max, max };
+    });
+  }
+
+  /** The spell editor writes its upcast note into the details as "Upcast: …" — pull it back
+   *  out so the picker can tell the player what a higher slot actually buys. */
+  function extractUpcastNote(action: ActorAction): string | undefined {
+    const details = action.metadata?.details ?? action.description ?? "";
+    const match = details.match(/Upcast:\s*([^·]+)/i);
+    return match?.[1]?.trim() || undefined;
+  }
+
+  /** The upcast picker for a spell card, or nothing when the spell has no choice to make. */
+  function renderCastLevelPicker(action: ActorAction) {
+    const options = castLevelOptionsFor(action);
+    if (options.length <= 1) {
+      return null;
+    }
+
+    return (
+      <SpellLevelPicker
+        options={options}
+        selected={getCastLevel(action)}
+        onSelect={(level) => setCastLevel(action, level)}
+        upcastNote={extractUpcastNote(action)}
+      />
+    );
+  }
+
   /**
    * Charges left in the pool an action SPENDS, or null when it spends nothing trackable.
    *
@@ -2562,15 +2675,12 @@ export function ActorCard({
       return res ? remainingFor(res) : null;
     }
 
-    // 2. Levelled spell — the slot pool for that level.
-    const lvl = action.actionKind === "spell" ? (action.metadata?.spellLevel ?? 0) : 0;
+    // 2. Levelled spell — the slot pool for the level it will actually be cast at, which is
+    //    the player's upcast pick when there is one. Reading the authored level here would
+    //    let a spell upcast to L5 pass the gate on the strength of its L2 slots.
+    const lvl = action.actionKind === "spell" ? getCastLevel(action) : 0;
     if (lvl > 0) {
-      const res = resources.find(r => {
-        const lbl = r.label.toLowerCase();
-        return lbl.includes(`l${lvl}`) || lbl.includes(`level ${lvl}`) ||
-          lbl.includes(`${lvl}th`) || lbl.includes(`${lvl}nd`) ||
-          lbl.includes(`${lvl}rd`) || lbl.includes(`${lvl}st`);
-      });
+      const res = slotResourceForLevel(lvl);
       return res ? remainingFor(res) : null;
     }
 
@@ -2692,7 +2802,7 @@ export function ActorCard({
       || Boolean(action.metadata?.saveDc?.trim())
       || ((isSpendingSpell || hasNamedResourceCost) && hasRollableFormula(action.metadata?.damage));
     if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost) && !rollsItsOwn) {
-      onConsumeActionResources?.(action);
+      onConsumeActionResources?.(action, getCastLevel(action));
     }
 
     if (action.logMode === "silent") {
@@ -2984,6 +3094,7 @@ export function ActorCard({
       bridgeRequestId,
       rulesProfile,
       continuesMultiRoll: isMultiRollContinuation(resolvedCandidate.readiedKey),
+      castLevel: getCastLevel(entry.action),
     });
 
     onLog({
@@ -3072,6 +3183,7 @@ export function ActorCard({
       bridgeRequestId,
       rulesProfile,
       continuesMultiRoll: isMultiRollContinuation(resolvedCandidate.readiedKey),
+      castLevel: getCastLevel(entry.action),
     });
 
     const canSendRollToDicePlus =
@@ -3840,6 +3952,7 @@ export function ActorCard({
             resolvedReadiedKeys={resolvedReadiedKeys}
             usedCostSlots={usedCostSlots}
             onUseAction={handleUseAction}
+            renderCastLevelPicker={renderCastLevelPicker}
             onUnreadyAction={handleUnreadyAction}
             onCommitRoll={handleCommitRoll}
             onPrimeRoll={handlePrimeRoll}
@@ -3935,6 +4048,7 @@ export function ActorCard({
             resolvedReadiedKeys={resolvedReadiedKeys}
             usedCostSlots={usedCostSlots}
             onUseAction={handleUseAction}
+            renderCastLevelPicker={renderCastLevelPicker}
             onUnreadyAction={handleUnreadyAction}
             onCommitRoll={handleCommitRoll}
             onPrimeRoll={handlePrimeRoll}
@@ -3953,6 +4067,7 @@ export function ActorCard({
           resolvedReadiedKeys={resolvedReadiedKeys}
           usedCostSlots={usedCostSlots}
           onUseAction={handleUseAction}
+          renderCastLevelPicker={renderCastLevelPicker}
           onUnreadyAction={handleUnreadyAction}
           onCommitRoll={handleCommitRoll}
           onPrimeRoll={handlePrimeRoll}

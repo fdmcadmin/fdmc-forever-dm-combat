@@ -58,8 +58,10 @@ export function consumeActionResourcesOnCommit(params: {
   log: (entry: AddCombatLogEntryInput) => void;
   /** This actor's resource labels — enables the `metadata.cost` prose fallback. */
   resourceLabels?: string[];
+  /** Level the spell is actually cast at — the player's upcast pick. Absent = as authored. */
+  castLevel?: number;
 }): void {
-  const { actorId, actorName, action, consumeSpellSlot, consumeNamedResource, log, resourceLabels = [] } = params;
+  const { actorId, actorName, action, consumeSpellSlot, consumeNamedResource, log, resourceLabels = [], castLevel } = params;
 
   // 1. Class-feature spell ("freeCast"): spends its dedicated N/long-rest resource
   //    (label = spell name), NOT a spell slot. Must run before the slot branch below.
@@ -73,10 +75,12 @@ export function consumeActionResourcesOnCommit(params: {
     return;
   }
 
-  // 2. Spell with slot level → decrement matching slot resource. Upcasting is
-  //    data-authored: the action carries the level it casts at (metadata.spellLevel).
+  // 2. Spell with slot level → decrement matching slot resource. The level comes from the
+  //    card's upcast picker when the player chose one, and falls back to the level the
+  //    action was authored at. A pick below the spell's own level is not castable.
   if (action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0) {
-    const lvl = action.metadata?.spellLevel ?? 1;
+    const authored = action.metadata?.spellLevel ?? 1;
+    const lvl = castLevel !== undefined && castLevel >= authored ? castLevel : authored;
     const r = consumeSpellSlot(actorId, lvl);
     if (r.outcome === "spent") {
       log({ actorName, actionName: action.label, tabId: "spells", message: `${actorName} casts ${action.label} — expends a Level ${lvl} slot (${r.remaining}/${r.max ?? "?"} left).` });

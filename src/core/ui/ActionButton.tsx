@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { actionCostLabels } from "../types/actionEconomy";
 import type { ActionCost } from "../types/actionEconomy";
 import type { ActorAction } from "../types/tabs";
@@ -22,6 +23,9 @@ type ActionButtonProps = {
   rollButtonLabel?: string;
   /** Resolves @VARIABLE tokens for the summary/detail chips (display only). */
   resolveFormula?: (formula: string) => string;
+  /** Upcast level picker for a levelled spell. Rendered outside the action <button>,
+   *  since its chips are buttons and nesting them would be invalid HTML. */
+  castLevelPicker?: ReactNode;
 };
 
 const summaryRowLabels = new Set(["Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost", "Spell Level", "Concentration"]);
@@ -86,6 +90,7 @@ export function ActionButton({
   onResetCommittedRoll,
   rollButtonLabel = "Roll",
   resolveFormula,
+  castLevelPicker,
 }: ActionButtonProps) {
   const swapMessage = formatSwapMessage(willSwapCosts, action.label);
   const rows = metadataRows(action, resolveFormula);
@@ -176,6 +181,8 @@ export function ActionButton({
         {resolved && <span className="action-description resolved-text">Used — reset before using again.</span>}
         {swapMessage && !readied && !resolved && <span className="action-description warning-text">{swapMessage}</span>}
       </button>
+
+      {castLevelPicker}
 
       <div className="action-card-footer-row">
         {/* Visible unready button — shown for any readied economy-costed action, not just right-click */}

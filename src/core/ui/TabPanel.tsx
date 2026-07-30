@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ActionButton } from "./ActionButton";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
@@ -23,6 +24,9 @@ type TabPanelProps = {
   onResetCommittedRoll?: () => void;
   /** Resolves @VARIABLE tokens for the action chips (display only). */
   resolveFormula?: (formula: string) => string;
+  /** Renders the upcast level picker for a spell card. TabPanel stays dumb about slots —
+   *  ActorCard owns the chosen level and the remaining-slot counts. */
+  renderCastLevelPicker?: (action: ActorAction) => ReactNode;
 };
 
 const tabNotes: Record<TabId, string> = {
@@ -278,6 +282,7 @@ export function TabPanel({
   onPrimeRoll,
   onResetCommittedRoll,
   resolveFormula,
+  renderCastLevelPicker,
 }: TabPanelProps) {
   const compact = isCompactUtilityTab(activeTab);
   const groupedActions = useMemo(() => groupActions(actions), [actions]);
@@ -395,6 +400,7 @@ export function TabPanel({
                       onCommitRoll={readied ? () => onCommitRoll(createCandidate(action, activeTab, costs, readiedKey)) : undefined}
                       onResetCommittedRoll={commitBlocked ? onResetCommittedRoll : undefined}
                       rollButtonLabel={rollButtonLabelForMode(outcomeMode, action)}
+                      castLevelPicker={renderCastLevelPicker?.(action)}
                     />
                   );
                 })}

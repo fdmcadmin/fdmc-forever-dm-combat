@@ -144,7 +144,7 @@ function ActorPopout() {
           startCommittedRoll(actor.id, input);
           const action = Object.values(actor.tabs).flat().find(a => a.id === input.actionId);
           // Ray 2+ of a multi-roll cast: the slot was already spent on ray 1.
-          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label) });
+          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actor.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actor.id, outcome)}
@@ -164,7 +164,7 @@ function ActorPopout() {
           const r = spendResource(actor.id, rid, amt);
           addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} spends ${amt} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` : `⚠ ${actor.name} has nothing left in ${r.label ?? "that pool"}.` });
         }}
-        onConsumeActionResources={(action) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label) })}
+        onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => {
           broadcastSavePrompt(actor.name, action, save);
           addEntry({ actorName: actor.name, actionName: "Save Call", tabId: "system", message: `⚠ SAVE — ${actor.name}'s ${action}: each target must make a ${save} saving throw.` });

@@ -79,6 +79,8 @@ export type StartCommittedRollInput = {
    * one cast. One cast, one slot.
    */
   continuesMultiRoll?: boolean;
+  /** The level a spell is being cast at, when the player upcast it. Absent = as authored. */
+  castLevel?: number;
 };
 
 export type CommittedRollMap = Record<string, CommittedRollState | null>;
