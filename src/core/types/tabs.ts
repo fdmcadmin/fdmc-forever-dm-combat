@@ -95,6 +95,17 @@ export type ActorActionMetadata = {
    */
   attackRolls?: number;
   attackRollsPerLevel?: number;
+  /**
+   * Upcast rider: what ONE extra slot level adds to this spell's damage (or healing).
+   *
+   * Authored once — "1d6" for Fireball, "2d8" for Cure Wounds — and multiplied by how far
+   * above its base level the spell is actually cast. This replaces authoring a separate card
+   * per level: the base formula stays the base, and the level picker decides the rider.
+   *
+   * Leave blank when a spell upcasts by something OTHER than damage — Scorching Ray adds a
+   * ray (`attackRollsPerLevel`), not dice; setting both would double-count.
+   */
+  upcastDamage?: string;
   diceLabel?: string;
   initiativeBonus?: number;
   /** Equipment-tab items only: false = carried but NOT equipped (its stat effects /

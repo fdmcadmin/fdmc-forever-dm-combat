@@ -21,6 +21,8 @@ type SpellRow = {
   level: SpellActionLevel;              // base / minimum slot level (0 = cantrip)
   usableSpellLevels: SpellActionLevel[]; // which slot levels this can be cast at
   upcastNote: string;                   // e.g. "+1d6 per level above 3rd"
+  /** What ONE extra slot level adds to damage/healing (Fireball = "1d6"). "" = nothing. */
+  upcastDamage: string;
   /** Separate attack rolls one cast makes at the base level (Scorching Ray = 3). "" = 1. */
   attackRolls: string;
   /** Extra rolls per slot level above base (Scorching Ray = 1). "" = no scaling. */
@@ -108,6 +110,7 @@ function rowToAction(row: SpellRow): ActorAction {
       // Also written to metadata (not just tags) so upcast ray scaling can find the spell's
       // base level from the action alone.
       usableSpellLevels: row.usableSpellLevels,
+      ...(row.upcastDamage.trim() ? { upcastDamage: row.upcastDamage.trim() } : {}),
       ...(Number(row.attackRolls) > 1 ? { attackRolls: Number(row.attackRolls) } : {}),
       ...(Number(row.attackRollsPerLevel) > 0 ? { attackRollsPerLevel: Number(row.attackRollsPerLevel) } : {}),
       // freeCast routes the cast to the dedicated resource (App.tsx consume routing).
@@ -122,6 +125,18 @@ function rowToAction(row: SpellRow): ActorAction {
 function actionToRow(action: ActorAction): SpellRow {
   const cost = action.economyCost?.[0];
   const baseLevel = (action.metadata?.spellLevel ?? 0) as SpellActionLevel;
+  // `rowToAction` composes the details as "notes · Upcast: … · Available at: …". Reading the
+  // whole string back as the note re-composed those derived segments on every save, so a
+  // spell edited twice grew "Upcast: x · Upcast: x". Recover the note into its own field and
+  // strip the derived parts, which also self-heals rows that already doubled up.
+  const composedDetails = action.description ?? action.metadata?.details ?? "";
+  const recoveredUpcast = composedDetails.match(/Upcast:\s*([^·]+)/i)?.[1]?.trim() ?? "";
+  const plainDetails = composedDetails
+    .replace(/Upcast:\s*[^·]*(?:·\s*)?/gi, "")
+    .replace(/Available at:\s*[^·]*(?:·\s*)?/gi, "")
+    .replace(/Class feature\s*—\s*[^·]*(?:·\s*)?/gi, "")
+    .replace(/\s*·\s*$/, "")
+    .trim();
   // Recover usable levels from tags
   const usable = (action.tags ?? [])
     .filter(t => t.startsWith("spell-level:"))
@@ -133,7 +148,7 @@ function actionToRow(action: ActorAction): SpellRow {
     name: action.label,
     level: baseLevel,
     usableSpellLevels: usable.length > 0 ? usable : [baseLevel],
-    upcastNote: "",
+    upcastNote: recoveredUpcast,
     slotCost: action.metadata?.slotCost ?? (baseLevel === 0 ? "Cantrip" : `L${baseLevel}`),
     consumesSlot: baseLevel > 0,
     attack: action.metadata?.attack ?? "",
@@ -143,13 +158,14 @@ function actionToRow(action: ActorAction): SpellRow {
     range: action.metadata?.range ?? "",
     duration: action.metadata?.duration ?? "",
     concentration: Boolean(action.concentration),
-    details: action.description ?? action.metadata?.details ?? "",
+    details: plainDetails,
     category: action.category ?? "Spells",
     economyCost: cost === "bonus" ? "bonus" : cost === "reaction" ? "reaction" : "main",
     classFeatureUses: action.metadata?.spellSlotMode === "freeCast" && action.metadata?.classFeatureUses
       ? String(action.metadata.classFeatureUses)
       : "",
     weaponBuffDamage: action.metadata?.weaponBuffDamage ?? "",
+    upcastDamage: action.metadata?.upcastDamage ?? "",
     attackRolls: action.metadata?.attackRolls ? String(action.metadata.attackRolls) : "",
     attackRollsPerLevel: action.metadata?.attackRollsPerLevel ? String(action.metadata.attackRollsPerLevel) : "",
     include: true,
@@ -163,6 +179,7 @@ function makeBlankRow(): SpellRow {
     level: 1,
     usableSpellLevels: [1],
     upcastNote: "",
+    upcastDamage: "",
     attackRolls: "",
     attackRollsPerLevel: "",
     slotCost: "",
@@ -340,6 +357,25 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                     <input type="text" value={row.upcastNote} onChange={e => setRow(idx, { upcastNote: e.target.value })}
                       placeholder="+1d6 per level above 3rd, +1d8 healing per level above 1st…"
                       style={{ ...inputStyle, marginTop: 2 }} />
+                  </label>
+
+                  {/* The machine version of the note above: authored once, multiplied by how
+                      far the cast is above base. This is what actually gets rolled. */}
+                  <label style={{ fontSize: 11, marginTop: 6, display: "block" }}>
+                    Upcast rider — added per level above L{Math.min(...row.usableSpellLevels, row.level)}
+                    <input type="text" value={row.upcastDamage}
+                      onChange={e => setRow(idx, { upcastDamage: e.target.value })}
+                      placeholder="1d6, 2d8, 1d8+2… (blank = no automatic scaling)"
+                      style={{ ...inputStyle, marginTop: 2 }} />
+                    {row.upcastDamage.trim() && (
+                      <span style={{ fontSize: 10, color: "#9be9a8", display: "block", marginTop: 2 }}>
+                        ⚡ Rolled automatically: {row.damage || "base"} at L{Math.min(...row.usableSpellLevels, row.level)},
+                        {" "}+{row.upcastDamage.trim()} for each level above.
+                        {Number(row.attackRollsPerLevel) > 0 && (
+                          <span style={{ color: "#e0a85a" }}> ⚠ This spell also gains a roll per level — using both double-counts the upcast.</span>
+                        )}
+                      </span>
+                    )}
                   </label>
                 </div>
               )}

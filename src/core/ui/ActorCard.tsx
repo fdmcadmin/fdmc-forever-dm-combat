@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { appendBonusDie, applyAdvantage, type RollMode } from "../dice/diceFormula";
+import { appendBonusDie, applyAdvantage, scaleUpcastRider, type RollMode } from "../dice/diceFormula";
 
 const ADDITIVE_DICE = ["d4", "d6", "d8", "d10"] as const;
 // Standard combat actions (5e 2024) — declared from a dropdown above the actions list,
@@ -963,9 +963,16 @@ export function ActorCard({
   const isCompanionCard = actor.kind === "companion";
   const levelDisplay = isCompanionCard && actor.level <= 0 ? "Ref" : `${actor.level}`;
   const pinnedReactions = useMemo(() => getPinnedReactionShortcuts(actor), [actor]);
+  // Upcast riders are folded in HERE, at the single point the tab's actions are handed to
+  // TabPanel — which builds both the summary chips and the roll candidate from the same
+  // object, so the damage shown and the damage rolled cannot drift apart. Ids and metadata
+  // the rest of the card keys off (spellLevel, resource matching, readied keys) are untouched.
   const activeActions = useMemo(
-    () => (actor.tabs[activeTab] ?? []).filter((action) => !isPinnedReactionAction(action)),
-    [actor.tabs, activeTab]
+    () => (actor.tabs[activeTab] ?? [])
+      .filter((action) => !isPinnedReactionAction(action))
+      .map((action) => withUpcastRiders(action)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
+    [actor.tabs, activeTab, castLevelByActionKey]
   );
 
   const readiedLabelMap = useMemo(() => {
@@ -2619,6 +2626,44 @@ export function ActorCard({
       const max = Number.isFinite(parsedMax) && parsedMax > 0 ? parsedMax : 0;
       return { level, remaining: resourceCounters?.[res.id] ?? max, max };
     });
+  }
+
+  /**
+   * Fold a spell's upcast rider into its damage for the level it is being cast at.
+   *
+   * The card and the roll both read the returned action, so the chips a player sees and the
+   * dice that actually get rolled can never disagree — Fireball at L5 reads 8d6 + 2d6 in both
+   * places. Returns the action untouched when there is nothing to add, so a non-spell, a
+   * spell cast at its own level, or one with no rider authored costs nothing.
+   */
+  function withUpcastRiders(action: ActorAction): ActorAction {
+    const metadata = action.metadata;
+    const rider = metadata?.upcastDamage?.trim();
+    if (!metadata || !rider || action.actionKind !== "spell") {
+      return action;
+    }
+
+    const steps = getCastLevel(action) - (metadata.spellLevel ?? 0);
+    if (steps <= 0) {
+      return action;
+    }
+
+    const damageRider = scaleUpcastRider(rider, steps);
+    const critRider = scaleUpcastRider(rider, steps, true);
+    if (!damageRider) {
+      return action;
+    }
+
+    return {
+      ...action,
+      metadata: {
+        ...metadata,
+        damage: metadata.damage ? `${metadata.damage} + ${damageRider}` : damageRider,
+        // Only extend a crit line that already exists — inventing one would turn a spell that
+        // cannot crit (a save-based spell) into one that shows crit damage.
+        crit: metadata.crit ? `${metadata.crit} + ${critRider}` : metadata.crit,
+      },
+    };
   }
 
   /** The spell editor writes its upcast note into the details as "Upcast: …" — pull it back

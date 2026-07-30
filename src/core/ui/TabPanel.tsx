@@ -290,18 +290,19 @@ export function TabPanel({
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [selectedRollKey, setSelectedRollKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!collapsibleCategories) {
-      setOpenCategories({});
-      return;
-    }
+  // Which actions are present, not which object identities. Depending on `actions` itself
+  // collapsed every category (and dropped the selected roll) whenever the array was rebuilt
+  // for a reason that isn't a change of contents — upcasting a spell re-derives its damage,
+  // which used to snap the whole spell list shut under the player mid-choice.
+  const actionsSignature = useMemo(() => actions.map((action) => action.id).join("|"), [actions]);
 
+  useEffect(() => {
     setOpenCategories({});
-  }, [activeTab, actorName, actions, collapsibleCategories]);
+  }, [activeTab, actorName, actionsSignature, collapsibleCategories]);
 
   useEffect(() => {
     setSelectedRollKey(null);
-  }, [activeTab, actorName, actions, committedRoll?.readiedKey]);
+  }, [activeTab, actorName, actionsSignature, committedRoll?.readiedKey]);
 
   function toggleCategory(key: string) {
     setOpenCategories((current) => ({

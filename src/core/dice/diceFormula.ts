@@ -40,6 +40,66 @@ export function appendBonusDie(formula: string, die: string): string {
   return `${formula} + 1${clean}`;
 }
 
+/**
+ * Scale an upcast rider — "what ONE extra slot level adds" — by the number of levels above
+ * the spell's base, so a rider can be authored once instead of per level.
+ *
+ *   scaleUpcastRider("1d6", 2)            → "2d6"     (Fireball at L5)
+ *   scaleUpcastRider("2d8", 3)            → "6d8"     (Cure Wounds at L4)
+ *   scaleUpcastRider("1d8+2", 2)          → "2d8 + 4"
+ *   scaleUpcastRider("1d6", 2, true)      → "4d6"     (crit: dice double, see below)
+ *
+ * On a CRIT only the dice double, never the flat modifiers (PHB) — so the dice count is
+ * multiplied by `steps × 2` while flat terms stay on `steps`.
+ *
+ * Anything the parser cannot safely multiply (an @VAR, arithmetic, parentheses) is repeated
+ * `steps` times joined by "+" instead. That is uglier but always arithmetically right, which
+ * matters more than tidiness for something feeding a real roll.
+ */
+export function scaleUpcastRider(formula: string, steps: number, crit = false): string {
+  const trimmed = (formula ?? "").trim().replace(/^\+\s*/, "");
+  if (!trimmed || steps <= 0) {
+    return "";
+  }
+
+  const diceSteps = crit ? steps * 2 : steps;
+  const repeat = () => Array.from({ length: steps }, () => trimmed).join(" + ");
+
+  // A variable or arithmetic term can't be folded into a single coefficient safely.
+  if (/[@*/()]/.test(trimmed)) {
+    return steps === 1 && !crit ? trimmed : repeat();
+  }
+
+  const parts = trimmed.split(/(?=[+-])/).map((part) => part.trim()).filter(Boolean);
+  const scaled: Array<{ sign: string; body: string }> = [];
+
+  for (const part of parts) {
+    const sign = part.startsWith("-") ? "-" : "+";
+    const body = part.replace(/^[+-]\s*/, "");
+
+    const dice = body.match(/^(\d*)d(\d+)$/i);
+    if (dice) {
+      const count = dice[1] === "" ? 1 : Number.parseInt(dice[1], 10);
+      scaled.push({ sign, body: `${count * diceSteps}d${dice[2]}` });
+      continue;
+    }
+
+    const flat = body.match(/^\d+$/);
+    if (flat) {
+      scaled.push({ sign, body: String(Number.parseInt(body, 10) * steps) });
+      continue;
+    }
+
+    return repeat();
+  }
+
+  return scaled
+    .map((term, index) => (index === 0
+      ? (term.sign === "-" ? `-${term.body}` : term.body)
+      : ` ${term.sign} ${term.body}`))
+    .join("");
+}
+
 /** Build a raw ability-check / save formula from a modifier: "1d20+3" / "1d20-1". */
 export function abilityCheckFormula(modifier: number): string {
   return `1d20${modifier >= 0 ? `+${modifier}` : `${modifier}`}`;
