@@ -2874,6 +2874,28 @@ body,
 /* BUILD 1.3.1j Class option response dice */
 .abs-check-panel {
   margin: 8px 0 10px;
+  /* The card renders in a ~420px OBR popover whose ancestors are overflow:hidden, so an
+     inline row of Checks + Disadv/Normal/Adv + "+ Additive" ran past the right edge and
+     the Adv button was cut to an unclickable sliver. A wrapping flex row keeps every
+     control inside the card at any width. */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Full-width rows inside the wrapping panel — the toggle owns its own line, and the
+   drawer / additive menu always start on a fresh one. */
+.abs-check-panel > .abs-check-toggle,
+.abs-check-panel > .abs-check-drawer,
+.abs-check-panel > .abs-check-additive-menu {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+.abs-check-panel > .abs-check-rollmode,
+.abs-check-panel > .abs-check-additive {
+  margin-left: 0;
 }
 
 .abs-check-toggle {

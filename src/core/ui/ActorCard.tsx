@@ -38,6 +38,7 @@ import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
 import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
+import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
@@ -1962,7 +1963,7 @@ export function ActorCard({
             );
           })}
         </span>
-        <span className="abs-check-additive" style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, flexWrap: "wrap" }}>
+        <span className="abs-check-additive" style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <button
             className="secondary-button compact"
             type="button"
@@ -1990,29 +1991,34 @@ export function ActorCard({
               </button>
             </span>
           )}
-          {additiveMenuOpen && (
-            <span style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, zIndex: 30, display: "inline-flex", flexDirection: "column", gap: 4, padding: "6px 8px", border: "1px solid #3a3a52", borderRadius: 6, background: "#13131f", boxShadow: "0 6px 18px rgba(0,0,0,0.5)", whiteSpace: "nowrap" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 10, color: "#9d8cff", minWidth: 62 }}>To roll</span>
-                {ADDITIVE_DICE.map((die) => (
-                  <button key={die} className="secondary-button compact quiet" type="button"
-                    onClick={() => { setPendingAdditiveDie(die); setAdditiveMenuOpen(false); }}>
-                    +1{die}
-                  </button>
-                ))}
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 10, color: "#e9a66a", minWidth: 62 }}>To damage</span>
-                {DAMAGE_ADDITIVE_DICE.map((die) => (
-                  <button key={die} className="secondary-button compact quiet" type="button"
-                    onClick={() => { setPendingDamageDie(die); setAdditiveMenuOpen(false); }}>
-                    +1{die}
-                  </button>
-                ))}
-              </span>
-            </span>
-          )}
         </span>
+        {/* Additive dice menu — rendered IN FLOW (full width of the panel), not as an
+            absolutely-positioned popup. The card lives in a 420px OBR popover whose
+            ancestors are overflow:hidden, so an absolute menu with nowrap was clipped at
+            the right edge (most dice unreachable) and overlapped the Checks drawer. In
+            flow it wraps, pushes content down, and can never be cut off. */}
+        {additiveMenuOpen && (
+          <div className="abs-check-additive-menu" style={{ display: "flex", flexDirection: "column", gap: 4, padding: "6px 8px", border: "1px solid #3a3a52", borderRadius: 6, background: "#13131f" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, color: "#9d8cff", minWidth: 62 }}>To roll</span>
+              {ADDITIVE_DICE.map((die) => (
+                <button key={die} className="secondary-button compact quiet" type="button"
+                  onClick={() => { setPendingAdditiveDie(die); setAdditiveMenuOpen(false); }}>
+                  +1{die}
+                </button>
+              ))}
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, color: "#e9a66a", minWidth: 62 }}>To damage</span>
+              {DAMAGE_ADDITIVE_DICE.map((die) => (
+                <button key={die} className="secondary-button compact quiet" type="button"
+                  onClick={() => { setPendingDamageDie(die); setAdditiveMenuOpen(false); }}>
+                  +1{die}
+                </button>
+              ))}
+            </span>
+          </div>
+        )}
         {absCheckOpen && (
           <div className="abs-check-drawer">
             <div>
@@ -2523,8 +2529,10 @@ export function ActorCard({
     }
 
     // 3. Named resource cost (Rage, Channel Divinity, Second Wind, Action Surge, …).
-    const slotCost = action.metadata?.slotCost?.trim();
-    if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !/^L\d/i.test(slotCost)) {
+    //    Resolved via the shared helper so the prose fallback (cost text naming a pool)
+    //    is honored identically here and in the spend path.
+    const slotCost = resolveNamedResourceCost(action, resources.map(r => r.label));
+    if (slotCost) {
       const needle = slotCost.toLowerCase();
       const res = resources.find(r => {
         const hay = r.label.toLowerCase();
@@ -2628,9 +2636,12 @@ export function ActorCard({
     // Divinity), Lay on Hands, Second Wind, Action Surge, Psionic Energy Dice, Luck Points.
     // These are mostly pure-effect (no attack, no save), so like the levelled spells above
     // they never reached a committed roll and their pools sat full all session.
-    const namedCost = action.metadata?.slotCost?.trim();
-    const hasNamedResourceCost = Boolean(namedCost)
-      && namedCost !== "Cantrip" && namedCost !== "No Slot" && !/^L\d/i.test(namedCost!);
+    // Resolved through the shared helper so an action whose pool is named only in its
+    // human cost text ("Bonus Action; 1 Channel Divinity") still spends — those were the
+    // cards that did nothing at all on click.
+    const hasNamedResourceCost = Boolean(
+      resolveNamedResourceCost(action, (actor.tabs.resources ?? []).map(r => r.label))
+    );
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
       || Boolean(action.metadata?.saveDc?.trim())
       || ((isSpendingSpell || hasNamedResourceCost) && hasRollableFormula(action.metadata?.damage));
@@ -3718,12 +3729,14 @@ export function ActorCard({
       <div className="standard-actions-row" style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0 2px" }}>
         <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>Standard action</span>
         <select
-          defaultValue=""
+          value=""
           onChange={(e) => {
             const action = e.target.value;
             if (!action) return;
-            onLog({ actorName: actor.name, actionName: action, tabId: "system", message: `${actor.name} takes the ${action} action.` });
-            e.target.value = "";
+            // Log as "main", NOT "system": RecentEventsWidget filters every system entry
+            // out, so a declared Dash/Dodge produced an entry the table never saw and the
+            // dropdown read as dead. A declared standard action IS a main-action beat.
+            onLog({ actorName: actor.name, actionName: action, tabId: "main", message: `${actor.name} takes the ${action} action.` });
           }}
           style={{ flex: 1, minWidth: 0, fontSize: 12, padding: "3px 6px", background: "#111", border: "1px solid #3a3a52", borderRadius: 4, color: "#ccc" }}
           title="Declare a standard combat action — logs it to the encounter log"
