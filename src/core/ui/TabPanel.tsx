@@ -30,7 +30,7 @@ const tabNotes: Record<TabId, string> = {
   bonus: "Ready Bonus Actions. Spell bonus actions live under Spells but still use the Bonus Action slot.",
   spells: "Choose a spell group to expand it. Spell cards show action economy cost, slot cost when known, and concentration reminders.",
   bond: "Choose a Homebrew group to expand it. This campaign classifies the Homebrew slot as Bonds.",
-  checks: "Choose a check group to expand it. Checks are table tools and do not hold action slots in BUILD 0.4.0b.",
+  checks: "Choose a check group to expand it. Checks are table tools and do not hold action slots.",
   features: "Class actions & class/species features. Choose a group to expand it; reference-only passives do not write log spam.",
   feats: "Feats. Mechanical feats (Tough, ASI, initiative) feed the sheet's derived stats; the rest are reference.",
   status: "Track STR Drain, Life Drain, and other numeric debuffs here.",

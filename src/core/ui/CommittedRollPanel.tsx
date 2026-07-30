@@ -424,7 +424,7 @@ export function CommittedRollPanel({
     <section className="committed-roll-panel" aria-label="Roll flow">
       <div className="committed-roll-header">
         <div>
-          <p className="eyebrow">BUILD 0.5.3.1 Roll Gate</p>
+          <p className="eyebrow">Roll Gate</p>
           <h3>{modeLabel(committedRoll.outcomeMode)} workspace</h3>
         </div>
         <span className="committed-roll-phase">{committedRoll.phase.replaceAll("-", " ")}</span>
