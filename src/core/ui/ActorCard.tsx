@@ -263,8 +263,22 @@ function formatModifier(modifier?: number) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
-function abilityRollFormula(actor: Actor, ability: AbilityId) {
-  return `1d20${formatModifier(actor.abilityScores?.[ability]?.modifier)}`;
+/**
+ * Ability check / saving throw formula.
+ *
+ * A SAVE uses the ability's explicit `save` modifier when the sheet carries one (that is
+ * what `AbilityScore.save` is for — a proficient PC save already includes its proficiency
+ * bonus), falling back to the plain ability modifier when unset ("no proficiency").
+ *
+ * Before 2026-07-30 this ignored `save` entirely and every saving throw rolled the ability
+ * modifier alone, so a Paladin whose sheet read CHA SV +6 rolled +3.
+ */
+function abilityRollFormula(actor: Actor, ability: AbilityId, rollType: "check" | "save" = "check") {
+  const entry = actor.abilityScores?.[ability];
+  const value = rollType === "save" && typeof entry?.save === "number"
+    ? entry.save
+    : entry?.modifier;
+  return `1d20${formatModifier(value)}`;
 }
 
 function firstRollDiceLabel(action: ActorAction | null | undefined, fallbackLabel: string) {
@@ -1102,13 +1116,20 @@ export function ActorCard({
   }
 
   function damageAmount(amount: number) {
+    // Temporary HP absorbs damage FIRST and is spent doing so (5e). Only the excess
+    // reaches real HP. Previously temp was passed through untouched and every point
+    // came off current, so a character with 7 temp took the full 7 to real HP.
+    const startTemp = hp.temp ?? 0;
+    const absorbed = Math.min(startTemp, amount);
+    const toCurrent = amount - absorbed;
     const next = {
-      current: Math.max(0, hp.current - amount),
+      current: Math.max(0, hp.current - toCurrent),
       max: hp.max,
-      temp: hp.temp ?? 0,
+      temp: startTemp - absorbed,
     };
 
-    if (next.current === hp.current) {
+    // No-op only when NOTHING moved — temp-only damage still changes state.
+    if (next.current === hp.current && next.temp === startTemp) {
       return;
     }
 
@@ -1117,7 +1138,9 @@ export function ActorCard({
       actorName: actor.name,
       actionName: `Damage ${amount}`,
       tabId: "system",
-      message: `${actor.name} takes ${amount} damage. HP ${formatHp(hp.current)} → ${formatHp(next.current)}.`,
+      message: absorbed > 0
+        ? `${actor.name} takes ${amount} damage — ${absorbed} absorbed by temp HP${toCurrent > 0 ? `, ${toCurrent} to HP` : ""}. HP ${formatHp(hp.current)} → ${formatHp(next.current)} (temp ${startTemp} → ${next.temp}).`
+        : `${actor.name} takes ${amount} damage. HP ${formatHp(hp.current)} → ${formatHp(next.current)}.`,
     });
   }
 
@@ -1848,7 +1871,7 @@ export function ActorCard({
 
   async function handleStartAbsCheck(ability: AbilityId, rollType: "check" | "save") {
     const label = `${abilityLabels[ability]} ${rollType === "save" ? "Save" : "Check"}`;
-    const formula = abilityRollFormula(actor, ability);
+    const formula = abilityRollFormula(actor, ability, rollType);
     const bridgeRequestId = createDiceRequestId("fdm-abs", `${ability}-${rollType}`);
 
     onStartCommittedRoll({
@@ -2458,9 +2481,80 @@ export function ActorCard({
     return `${actor.name} notes ${action.label} from ${tabLabels[tabId]}.`;
   }
 
+  /**
+   * Charges left in the pool an action SPENDS, or null when it spends nothing trackable.
+   *
+   * Mirrors `consumeActionResourcesOnCommit`'s matching, in the same priority order, so the
+   * gate below can never disagree with what the spend path would actually decrement:
+   *   1. free-cast class-feature spell → its own named pool (label = spell name)
+   *   2. levelled spell → the spell-slot resource for that level
+   *   3. any action naming a resource in `slotCost` → that named pool
+   */
+  function chargesLeftForAction(action: ActorAction): { remaining: number; label: string } | null {
+    const resources = actor.tabs.resources ?? [];
+    if (resources.length === 0) return null;
+
+    const remainingFor = (res: ActorAction) => {
+      const max = Number.parseInt(res.metadata?.additive ?? "", 10);
+      const fallback = Number.isFinite(max) && max > 0 ? max : 0;
+      return { remaining: resourceCounters?.[res.id] ?? fallback, label: res.label };
+    };
+
+    // 1. Free-cast class-feature spell — pool named for the spell itself.
+    if (action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast") {
+      const needle = action.label.trim().toLowerCase();
+      const res = resources.find(r => {
+        const hay = r.label.toLowerCase();
+        return hay.includes(needle) || needle.includes(hay);
+      });
+      return res ? remainingFor(res) : null;
+    }
+
+    // 2. Levelled spell — the slot pool for that level.
+    const lvl = action.actionKind === "spell" ? (action.metadata?.spellLevel ?? 0) : 0;
+    if (lvl > 0) {
+      const res = resources.find(r => {
+        const lbl = r.label.toLowerCase();
+        return lbl.includes(`l${lvl}`) || lbl.includes(`level ${lvl}`) ||
+          lbl.includes(`${lvl}th`) || lbl.includes(`${lvl}nd`) ||
+          lbl.includes(`${lvl}rd`) || lbl.includes(`${lvl}st`);
+      });
+      return res ? remainingFor(res) : null;
+    }
+
+    // 3. Named resource cost (Rage, Channel Divinity, Second Wind, Action Surge, …).
+    const slotCost = action.metadata?.slotCost?.trim();
+    if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !/^L\d/i.test(slotCost)) {
+      const needle = slotCost.toLowerCase();
+      const res = resources.find(r => {
+        const hay = r.label.toLowerCase();
+        return hay.includes(needle) || needle.includes(hay);
+      });
+      return res ? remainingFor(res) : null;
+    }
+
+    return null;
+  }
+
   function handleUseAction(input: { action: ActorAction; tabId: TabId; costs: ActionCost[] }) {
     const { action, tabId, costs } = input;
     const readiedKey = makeReadiedKey(tabId, action.id);
+
+    // Out-of-charges gate: an action whose pool is empty cannot be used. Previously the
+    // spend path only LOGGED "no slots left — cast not slot-backed" and let the cast
+    // proceed, so a Paladin could keep casting at 0 slots and an exhausted Celestial
+    // Revelation (0/1) still offered all three options. Spending is the DM's to override
+    // by hand from the resource row, not something a click should do silently.
+    const charges = chargesLeftForAction(action);
+    if (charges && charges.remaining <= 0) {
+      onLog({
+        actorName: actor.name,
+        actionName: action.label,
+        tabId: "system",
+        message: `${actor.name} has no ${charges.label} left — ${action.label} not used. Restore the pool (rest) or spend it manually from Resources to override.`,
+      });
+      return;
+    }
 
     // Off-turn gate: block main/bonus/bond actions when it is not this actor's turn during combat.
     // Reactions (cost "reaction") are always allowed — they fire on other turns by design.
