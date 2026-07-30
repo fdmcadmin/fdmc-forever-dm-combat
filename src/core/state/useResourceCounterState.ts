@@ -182,7 +182,24 @@ export function useResourceCounterState(actors: Actor[]) {
         // Long rest resets everything except manual-only counters
         if (kind !== "counter") actorCounters[action.id] = max;
       } else if (restType === "short") {
-        // Short rest resets: pactSlot, toggle, pool(short), and explicit "short rest" reset
+        // An explicit shortRestRegain wins over everything and is the only way to express
+        // PARTIAL recovery — "2 per Long Rest, regain one after a Short Rest" (Channel
+        // Divinity, Rage, Bardic Inspiration, Superiority Dice). It also bypasses the prose
+        // scan below, which is a trap: a cost reading "Long Rest; one back on a Short Rest"
+        // contains "short" and would otherwise restore the pool to FULL.
+        const regain = action.metadata?.shortRestRegain;
+        if (regain !== undefined) {
+          if (regain === "all") {
+            actorCounters[action.id] = max;
+          } else if (typeof regain === "number" && regain > 0) {
+            const current = actorCounters[action.id] ?? max;
+            actorCounters[action.id] = Math.min(max, current + regain);
+          }
+          // regain 0 / anything else → deliberately nothing on a short rest
+          continue;
+        }
+        // Legacy fallback for resources authored before shortRestRegain existed. Note this
+        // only ever restores to FULL — partial recovery is not expressible this way.
         const resetsOnShort = kind === "pactSlot" || kind === "toggle" ||
           (kind === "pool" && reset.includes("short")) ||
           (!kind && reset.includes("short"));

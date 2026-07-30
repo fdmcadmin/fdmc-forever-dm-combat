@@ -41,6 +41,48 @@ export function normalizeUsableSpellLevels(value: unknown, fallback: SpellAction
   return levels.length > 0 ? levels : fallback;
 }
 
+/**
+ * How many separate attack rolls one cast of this spell makes.
+ *
+ * Scorching Ray: base level 2, `attackRolls: 3`, `attackRollsPerLevel: 1` — cast at L2 it is
+ * 3 rays, at L4 it is 5. Each ray is its own d20 resolved hit/miss with its own damage, but
+ * the cast spends exactly ONE slot (see `continuesMultiRoll` on the committed-roll input).
+ *
+ * The base level is the lowest level the spell can be cast at, so upcast scaling works
+ * whether the level comes from a runtime pick (`selectedCastLevel`) or from an action
+ * authored at a higher level — which is how upcasting is expressed today.
+ *
+ * Returns 1 for anything that does not declare a ray count, so every existing single-roll
+ * spell is untouched.
+ */
+export function spellAttackRollCount(metadata: {
+  attackRolls?: number;
+  attackRollsPerLevel?: number;
+  spellLevel?: number;
+  selectedCastLevel?: number | null;
+  usableSpellLevels?: number[];
+} | undefined): number {
+  const base = Math.floor(metadata?.attackRolls ?? 0);
+  if (!Number.isFinite(base) || base < 1) {
+    return 1;
+  }
+
+  const perLevel = Math.floor(metadata?.attackRollsPerLevel ?? 0);
+  if (!Number.isFinite(perLevel) || perLevel <= 0) {
+    return base;
+  }
+
+  const declaredLevel = metadata?.spellLevel ?? 0;
+  const usable = (metadata?.usableSpellLevels ?? []).filter((level) => Number.isFinite(level));
+  // Base level = the lowest slot this spell can go in. A Scorching Ray action authored at L4
+  // still knows it is a level-2 spell because L2 is in its usable list.
+  const baseLevel = usable.length > 0 ? Math.min(...usable, declaredLevel) : declaredLevel;
+  const castLevel = metadata?.selectedCastLevel ?? declaredLevel;
+  const above = Math.max(0, Math.floor(castLevel) - Math.floor(baseLevel));
+
+  return base + perLevel * above;
+}
+
 export function makeSpellCastingData(params: Partial<SpellCastingActionData> & { baseSpellLevel?: unknown }) {
   const baseSpellLevel = clampSpellActionLevel(params.baseSpellLevel, 0);
   const usableSpellLevels = normalizeUsableSpellLevels(params.usableSpellLevels, [baseSpellLevel]);

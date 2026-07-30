@@ -38,9 +38,14 @@ export type PcActionDraft = {
   uses?: PcActionUses;
   /** Attacks this action grants per use. Overrides the actor's Extra Attack
    *  (`Actor.attacksPerAction`) for this action only. Spells ignore both — a cast always
-   *  consumes the whole action. Note: monsters use their own `attackCount`; this is the
-   *  PC-side field and the only one `ActorCard` reads. */
+   *  consumes the whole action, and gets extra rolls from `attackRolls` instead. Note:
+   *  monsters use their own `attackCount`; this is the PC-side field and the only one
+   *  `ActorCard` reads. */
   attackUses?: number;
+  /** Multi-roll spell: separate attack rolls from ONE cast (Scorching Ray = 3, +1 per slot
+   *  level above base). One cast, one slot, several to-hit rolls. */
+  attackRolls?: number;
+  attackRollsPerLevel?: number;
   lockGroup?: string;
   locksWith?: string[];
   description?: string;
@@ -112,6 +117,8 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.consumesSpellSlot !== undefined ? { consumesSpellSlot: draft.consumesSpellSlot } : {}),
     ...(draft.uses ? { uses: draft.uses } : {}),
     ...(attackUses > 1 ? { attackUses } : {}),
+    ...(cleanNumber(draft.attackRolls, 1) > 1 ? { attackRolls: cleanNumber(draft.attackRolls, 1) } : {}),
+    ...(cleanNumber(draft.attackRollsPerLevel, 0) > 0 ? { attackRollsPerLevel: cleanNumber(draft.attackRollsPerLevel, 0) } : {}),
     ...(draft.lockGroup?.trim() ? { lockGroup: draft.lockGroup.trim() } : {}),
     ...(draft.locksWith?.length ? { locksWith: draft.locksWith.filter(Boolean) } : {}),
     ...(draft.description?.trim() ? { description: draft.description.trim() } : {}),

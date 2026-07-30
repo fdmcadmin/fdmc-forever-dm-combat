@@ -80,6 +80,21 @@ export type ActorActionMetadata = {
   additive?: string;
   critThreshold?: number;
   attackUses?: number;
+  /**
+   * Multi-roll spells — ONE cast, ONE slot, but several separate attack rolls that are each
+   * resolved hit/miss with their own damage. Scorching Ray is the canonical case: 3 rays at
+   * L2, each its own ranged spell attack. Eldritch Blast, Eldritch Spear, Hail of Thorns and
+   * every "make N attacks" spell use the same shape.
+   *
+   * This is NOT `attackUses` (weapon Extra Attack) — that scales off the actor and grants
+   * repeat uses of the Attack ACTION. A ray count belongs to the spell and must never let the
+   * cast spend its slot more than once.
+   *
+   * `attackRolls` is the count at the spell's BASE level; `attackRollsPerLevel` is how many
+   * more rays each slot level above base adds (Scorching Ray: 3 and 1).
+   */
+  attackRolls?: number;
+  attackRollsPerLevel?: number;
   diceLabel?: string;
   initiativeBonus?: number;
   /** Equipment-tab items only: false = carried but NOT equipped (its stat effects /
@@ -88,6 +103,22 @@ export type ActorActionMetadata = {
   equipped?: boolean;
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
+  /**
+   * How much of this pool comes back on a SHORT rest.
+   *
+   * D&D is full of "N per Long Rest, regain ONE after a Short Rest" — Channel Divinity
+   * (PHB-2024 p.110), Rage, Bardic Inspiration, Superiority Dice. The reset used to be
+   * binary (short OR long), so partial recovery could not be expressed at all: authoring it
+   * as Long under-restored, and as Short over-restored to full.
+   *
+   *   undefined → nothing on a short rest (unless the legacy `cost` prose says "short")
+   *   a number  → regain that many, capped at max
+   *   "all"     → full reset, same as a long rest
+   *
+   * The LONG rest always restores fully, which is true of every D&D resource that recovers
+   * at all — so there is deliberately no `longRestRegain` counterpart.
+   */
+  shortRestRegain?: number | "all";
   /** F02 — spell slot mode: which resource pool this spell uses.
    *  "freeCast" = class-feature spell: spends a dedicated named resource (not a spell
    *  slot), tracked in the resource list. See classFeatureUses. */

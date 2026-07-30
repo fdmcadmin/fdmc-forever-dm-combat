@@ -21,6 +21,10 @@ type SpellRow = {
   level: SpellActionLevel;              // base / minimum slot level (0 = cantrip)
   usableSpellLevels: SpellActionLevel[]; // which slot levels this can be cast at
   upcastNote: string;                   // e.g. "+1d6 per level above 3rd"
+  /** Separate attack rolls one cast makes at the base level (Scorching Ray = 3). "" = 1. */
+  attackRolls: string;
+  /** Extra rolls per slot level above base (Scorching Ray = 1). "" = no scaling. */
+  attackRollsPerLevel: string;
   slotCost: string;                     // display label: "Cantrip", "Pact Slot", "L1–L5", etc.
   consumesSlot: boolean;
   attack: string;
@@ -101,6 +105,11 @@ function rowToAction(row: SpellRow): ActorAction {
       cost: row.economyCost === "main" ? "Action" : row.economyCost === "bonus" ? "Bonus Action" : "Reaction",
       slotCost: slotLabel,
       spellLevel: row.level,
+      // Also written to metadata (not just tags) so upcast ray scaling can find the spell's
+      // base level from the action alone.
+      usableSpellLevels: row.usableSpellLevels,
+      ...(Number(row.attackRolls) > 1 ? { attackRolls: Number(row.attackRolls) } : {}),
+      ...(Number(row.attackRollsPerLevel) > 0 ? { attackRollsPerLevel: Number(row.attackRollsPerLevel) } : {}),
       // freeCast routes the cast to the dedicated resource (App.tsx consume routing).
       ...(isClassFeature ? { spellSlotMode: "freeCast" as const, classFeatureUses: cfUses } : {}),
       ...(row.weaponBuffDamage.trim() ? { weaponBuffDamage: row.weaponBuffDamage.trim() } : {}),
@@ -141,6 +150,8 @@ function actionToRow(action: ActorAction): SpellRow {
       ? String(action.metadata.classFeatureUses)
       : "",
     weaponBuffDamage: action.metadata?.weaponBuffDamage ?? "",
+    attackRolls: action.metadata?.attackRolls ? String(action.metadata.attackRolls) : "",
+    attackRollsPerLevel: action.metadata?.attackRollsPerLevel ? String(action.metadata.attackRollsPerLevel) : "",
     include: true,
   };
 }
@@ -152,6 +163,8 @@ function makeBlankRow(): SpellRow {
     level: 1,
     usableSpellLevels: [1],
     upcastNote: "",
+    attackRolls: "",
+    attackRollsPerLevel: "",
     slotCost: "",
     consumesSlot: true,
     attack: "",
@@ -356,6 +369,31 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                 {row.weaponBuffDamage.trim() && (
                   <span style={{ fontSize: 10, color: "#e0a85a" }}>
                     ⚔ Shows as a clickable toggle on the card; while on, adds {row.weaponBuffDamage} to your weapon-attack damage. Spend the slot by casting; apply once-per-turn / temp-HP riders manually.
+                  </span>
+                )}
+              </label>
+
+              {/* Multi-roll spells — ONE cast, ONE slot, several separate attack rolls that
+                  each resolve hit/miss with their own damage (Scorching Ray's rays). */}
+              <label style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 2 }}>
+                <span>Attack rolls per cast <span style={{ color: "#555" }}>(blank = 1 — a single roll)</span></span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <input type="number" min={1} value={row.attackRolls}
+                    onChange={e => setRow(idx, { attackRolls: e.target.value })}
+                    placeholder="3" style={{ ...inputStyle, maxWidth: 70, textAlign: "center" }} />
+                  <span style={{ color: "#555" }}>+</span>
+                  <input type="number" min={0} value={row.attackRollsPerLevel}
+                    onChange={e => setRow(idx, { attackRollsPerLevel: e.target.value })}
+                    placeholder="1" style={{ ...inputStyle, maxWidth: 70, textAlign: "center" }} />
+                  <span style={{ color: "#666", fontSize: 10 }}>per slot level above L{Math.min(...row.usableSpellLevels, row.level)}</span>
+                </div>
+                {Number(row.attackRolls) > 1 && (
+                  <span style={{ fontSize: 10, color: "#9be9a8" }}>
+                    ⚡ {Number(row.attackRolls)} rolls at L{Math.min(...row.usableSpellLevels, row.level)}
+                    {Number(row.attackRollsPerLevel) > 0
+                      ? `, ${Number(row.attackRolls) + Number(row.attackRollsPerLevel)} at L${Math.min(...row.usableSpellLevels, row.level) + 1}…`
+                      : ""}
+                    . Each is its own to-hit and damage; the cast still spends one slot.
                   </span>
                 )}
               </label>

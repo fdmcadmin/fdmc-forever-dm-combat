@@ -69,6 +69,16 @@ export type StartCommittedRollInput = {
   critThreshold?: number;
   rulesProfile?: CombatRulesProfile;
   bridgeRequestId?: string;
+  /**
+   * This commit is a later roll of an action already in progress — ray 2+ of a multi-roll
+   * spell, or swing 2+ of Extra Attack — not a new use of it.
+   *
+   * Resource spending hangs off this flag. Every committed roll normally spends the action's
+   * resources, which is right for a weapon (it has none) and right for a single-roll spell.
+   * A 3-ray Scorching Ray commits three times, so without this it would spend three slots for
+   * one cast. One cast, one slot.
+   */
+  continuesMultiRoll?: boolean;
 };
 
 export type CommittedRollMap = Record<string, CommittedRollState | null>;

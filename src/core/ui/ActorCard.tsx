@@ -21,6 +21,7 @@ import type { CombatRulesProfile, CommittedRollDamageChoice, CommittedRollOutcom
 import { formatCriticalFailureLog } from "../data/criticalFailureTables";
 import type { ActorNote, ActorNoteVisibility } from "../state/useActorNotesState";
 import type { ActorAction, TabId } from "../types/tabs";
+import { spellAttackRollCount } from "../types/spellSlots";
 import type { ActorStatusTrackerState, StatusTrackerId } from "../types/status";
 import { getStatusTrackerLabel } from "../types/status";
 import { formatMovementSpeed } from "../utils/movement";
@@ -185,6 +186,13 @@ type AttackUseState = {
   current: number;
   max: number;
   label: string;
+  /** Which readied action this counter belongs to. Without it the counter leaks across
+   *  actions — swinging twice then casting Scorching Ray started the spell at ray 2 — and a
+   *  multi-roll cast cannot tell a continuation from a fresh cast, which is what keeps it
+   *  from spending its slot again on every ray. */
+  readiedKey?: string;
+  /** What one use is called: "Attack" for weapons, "Ray" for a multi-roll spell. */
+  noun?: string;
 };
 
 const ACTOR_CARD_SESSION_STORAGE_KEY = "fdm:actor-card-session-state:v1";
@@ -1306,10 +1314,18 @@ export function ActorCard({
 
   /** Attacks granted by a single Attack action. Weapon/unarmed attacks scale with the
    *  actor's Extra Attack (2 at L5, 3 at Fighter L11); a per-action attackUses overrides
-   *  it for that action only. Spells always resolve as one cast. */
+   *  it for that action only.
+   *
+   *  A spell is still ONE cast — it never gets Extra Attack — but a multi-roll spell makes
+   *  several attack rolls from that single cast (Scorching Ray's rays). Those come from the
+   *  spell's own ray count, never from the actor's attacksPerAction. */
   function getAttackUseMax(entry: ReturnType<typeof getActionForReadiedKey>) {
-    if (!entry || isSpellEntry(entry)) {
+    if (!entry) {
       return 1;
+    }
+
+    if (isSpellEntry(entry)) {
+      return spellAttackRollCount(entry.action.metadata);
     }
 
     const configuredUses = entry.action.metadata?.attackUses;
@@ -1327,17 +1343,39 @@ export function ActorCard({
     return 1;
   }
 
-  function getCurrentAttackUse() {
-    return attackUseState?.current ?? 0;
+  /** Uses already spent on THIS readied action. A counter left over from a different action
+   *  reads as zero, so a fresh cast/attack always starts at use 1. */
+  function getCurrentAttackUse(readiedKey: string) {
+    if (!attackUseState || attackUseState.readiedKey !== readiedKey) {
+      return 0;
+    }
+
+    return attackUseState.current;
   }
 
   function isMultiAttackCandidate(state: CommittedRollState) {
-    if (!state.costs.includes("main") || state.outcomeMode !== "attack-roll") {
+    // Note: no "main" requirement. Extra Attack is always a main action, but a multi-roll
+    // spell need not be, and gating on "main" would mark a bonus-action cast's slot used
+    // after its first ray — which blocks every ray after it.
+    if (state.outcomeMode !== "attack-roll") {
       return false;
     }
 
     const entry = getActionForReadiedKey(state.readiedKey);
     return getAttackUseMax(entry) > 1;
+  }
+
+  /**
+   * True while a multi-roll action has rolls left to make — i.e. this commit is ray 2+ of a
+   * cast, not a new one. The resource spend hangs off this: one cast spends one slot, and
+   * every ray after the first must NOT spend again.
+   */
+  function isMultiRollContinuation(readiedKey: string) {
+    if (!attackUseState || attackUseState.readiedKey !== readiedKey) {
+      return false;
+    }
+
+    return attackUseState.current > 0 && attackUseState.current < attackUseState.max;
   }
 
   function recordAttackUse(state: CommittedRollState) {
@@ -1348,7 +1386,8 @@ export function ActorCard({
       return { current: 1, max, slotComplete: true };
     }
 
-    const nextCurrent = Math.min(max, getCurrentAttackUse() + 1);
+    const nextCurrent = Math.min(max, getCurrentAttackUse(state.readiedKey) + 1);
+    const noun = entry && isSpellEntry(entry) ? "Ray" : "Attack";
 
     setAttackUseByActorId((current) => ({
       ...current,
@@ -1356,12 +1395,15 @@ export function ActorCard({
         current: nextCurrent,
         max,
         label: state.actionLabel,
+        readiedKey: state.readiedKey,
+        noun,
       },
     }));
 
     return {
       current: nextCurrent,
       max,
+      noun,
       slotComplete: nextCurrent >= max,
     };
   }
@@ -2356,9 +2398,13 @@ export function ActorCard({
 
     return (
       <section className="attack-use-panel" aria-label="Attack use counter">
-        <span className="stat-label">Attack Uses</span>
-        <strong>Attack {attackUseState.current}/{attackUseState.max}</strong>
-        <span>{attackUseState.current >= attackUseState.max ? "Main slot used" : "Main slot still available"}</span>
+        <span className="stat-label">{attackUseState.noun === "Ray" ? "Rays" : "Attack Uses"}</span>
+        <strong>{attackUseState.noun ?? "Attack"} {attackUseState.current}/{attackUseState.max}</strong>
+        <span>
+          {attackUseState.current >= attackUseState.max
+            ? "Action spent"
+            : `${attackUseState.max - attackUseState.current} left — roll again`}
+        </span>
       </section>
     );
   }
@@ -2937,6 +2983,7 @@ export function ActorCard({
       critThreshold: resolvedCandidate.critThreshold,
       bridgeRequestId,
       rulesProfile,
+      continuesMultiRoll: isMultiRollContinuation(resolvedCandidate.readiedKey),
     });
 
     onLog({
@@ -3024,6 +3071,7 @@ export function ActorCard({
       critThreshold: resolvedCandidate.critThreshold,
       bridgeRequestId,
       rulesProfile,
+      continuesMultiRoll: isMultiRollContinuation(resolvedCandidate.readiedKey),
     });
 
     const canSendRollToDicePlus =
@@ -3206,9 +3254,11 @@ export function ActorCard({
     if (!multiAttackContinues) {
       markReadiedKeyResolved(committedRoll.readiedKey);
     }
-    const costsToMarkUsed = multiAttackContinues
-      ? committedRoll.costs.filter((cost) => cost !== "main")
-      : committedRoll.costs;
+    // While rolls remain the action is not finished, so NONE of its cost slots are spent yet
+    // — `hasUsedCostSlot` would otherwise refuse the next roll. (For weapons this is the same
+    // set as before: an Attack action's only cost is "main".) They are all marked on the last
+    // roll, so a bonus-action multi-roll spell burns its bonus exactly once, at the end.
+    const costsToMarkUsed = multiAttackContinues ? [] : committedRoll.costs;
 
     markCostSlotsUsed(costsToMarkUsed);
     consumeReadiedBondWithResolvedAction(committedRoll.readiedKey);
@@ -3225,8 +3275,8 @@ export function ActorCard({
     onClearCommittedRoll();
     const attackUseText = attackUse && attackUse.max > 1
       ? attackUse.slotComplete
-        ? ` Attack ${attackUse.current}/${attackUse.max}; Main slot is now used.`
-        : ` Attack ${attackUse.current}/${attackUse.max}; Main slot remains available.`
+        ? ` ${attackUse.noun} ${attackUse.current}/${attackUse.max}; the action is now spent.`
+        : ` ${attackUse.noun} ${attackUse.current}/${attackUse.max}; ${attackUse.max - attackUse.current} still to roll.`
       : "";
 
     onLog({

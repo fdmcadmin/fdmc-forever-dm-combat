@@ -3060,7 +3060,8 @@ export default function App() {
         onStartCommittedRoll={(input) => {
           startCommittedRoll(actorToShow.id, input);
           const action = Object.values(actorToShow.tabs).flat().find(a => a.id === input.actionId);
-          if (action) consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label) });
+          // Ray 2+ of a multi-roll cast: the slot was already spent on ray 1.
+          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label) });
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actorToShow.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actorToShow.id, outcome)}
@@ -3393,7 +3394,8 @@ export default function App() {
                 onStartCommittedRoll={(input) => {
                   startCommittedRoll(focusedActorId, input);
                   const action = Object.values(focusedActor.tabs).flat().find(a => a.id === input.actionId);
-                  if (action) consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label) });
+                  // Ray 2+ of a multi-roll cast: the slot was already spent on ray 1.
+          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label) });
                 }}
                 onSetCommittedRollResult={(result) => setCommittedRollResult(focusedActorId, result)}
                 onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(focusedActorId, outcome)}

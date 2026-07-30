@@ -17,6 +17,8 @@ type ResourceRow = {
   pool: string;           // e.g. "2", "4", "∞"
   reset: string;          // "Short Rest" | "Long Rest" | "Per Encounter" | "Manual" | ""
   resourceKind: ResourceKind;
+  /** How much comes back on a SHORT rest: "" (nothing) · "all" · a number. */
+  shortRegain: string;
   note: string;
   include: boolean;       // the [ ] checkbox — whether to include on the actor card
 };
@@ -52,6 +54,11 @@ function rowToAction(row: ResourceRow): ActorAction {
       details,
       additive: row.pool || undefined,
       resourceKind: row.resourceKind,
+      // "" → undefined so an untouched resource keeps the legacy prose behaviour.
+      shortRestRegain: row.shortRegain === "" ? undefined
+        : row.shortRegain === "all" ? "all"
+        : Number.isFinite(Number(row.shortRegain)) ? Number(row.shortRegain)
+        : undefined,
     },
   };
 }
@@ -66,6 +73,8 @@ function actionToRow(action: ActorAction): ResourceRow {
     pool: poolMatch?.[1] ?? action.metadata?.additive ?? "",
     reset: resetMatch?.[1]?.trim() ?? action.metadata?.cost ?? "",
     resourceKind: action.metadata?.resourceKind ?? "pool",
+    shortRegain: action.metadata?.shortRestRegain === undefined ? ""
+      : String(action.metadata.shortRestRegain),
     // Strip ALL derived "Pool: …" / "Reset: …" segments (note the space after the colon,
     // and the `g` flag) so the recovered note never re-absorbs them. This also self-heals
     // rows whose note already accumulated duplicate "Pool: X ·" prefixes.
@@ -81,6 +90,7 @@ function makeBlankRow(): ResourceRow {
     pool: "",
     reset: "Long Rest",
     resourceKind: "pool",
+    shortRegain: "",
     note: "",
     include: false,
   };
@@ -134,8 +144,8 @@ export function ResourceTableEditor({ actions, onChange }: ResourceTableEditorPr
       </p>
 
       {/* Table header */}
-      <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 110px 1fr 32px", gap: 4, padding: "4px 6px", background: "#0d0d14", borderRadius: 4 }}>
-        {["Enter?", "Resource Label", "Pool", "Reset", "Note", ""].map(h => (
+      <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 110px 92px 1fr 32px", gap: 4, padding: "4px 6px", background: "#0d0d14", borderRadius: 4 }}>
+        {["Enter?", "Resource Label", "Pool", "Reset", "Short rest", "Note", ""].map(h => (
           <span key={h} style={{ fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{h}</span>
         ))}
       </div>
@@ -143,7 +153,7 @@ export function ResourceTableEditor({ actions, onChange }: ResourceTableEditorPr
       {/* Rows */}
       {rows.map((row, idx) => (
         <div key={row.id} style={{ background: row.include ? "#1a1a2e" : "#111", borderRadius: 4, border: `1px solid ${row.include ? "#7b68ee33" : "#2a2a2a"}`, padding: "4px 6px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 110px 1fr 32px", gap: 4, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 80px 110px 92px 1fr 32px", gap: 4, alignItems: "center" }}>
             {/* Enter checkbox */}
             <input
               type="checkbox"
@@ -164,6 +174,14 @@ export function ResourceTableEditor({ actions, onChange }: ResourceTableEditorPr
               <option value="">—</option>
               {RESET_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
+            {/* Short-rest recovery — the only way to express "N per Long Rest, regain ONE
+                after a Short Rest" (Channel Divinity, Rage, Bardic Inspiration, Superiority
+                Dice). Blank keeps the legacy behaviour for resources authored before this. */}
+            <input type="text" value={row.shortRegain}
+              onChange={e => setRow(idx, { shortRegain: e.target.value.trim() })}
+              placeholder="—"
+              title={"What comes back on a SHORT rest.\n\n  blank   nothing\n  1, 2 …  regain that many (capped at the pool max)\n  all     full reset, same as a long rest\n\nA long rest always restores this pool fully."}
+              style={{ ...inputStyle, textAlign: "center" }} />
             {/* Note */}
             <input type="text" value={row.note} onChange={e => setRow(idx, { note: e.target.value })}
               placeholder="e.g. spell actions spend matching slot" style={inputStyle} />
@@ -186,7 +204,9 @@ export function ResourceTableEditor({ actions, onChange }: ResourceTableEditorPr
                 <option value="counter">Counter (free track)</option>
               </select>
               <span style={{ fontSize: 10, color: "#444" }}>
-                {row.resourceKind === "spellSlot" ? "Resets: Long Rest" :
+                {row.shortRegain === "all" ? "Resets: Short + Long Rest" :
+                 row.shortRegain !== "" ? `Long Rest · +${row.shortRegain} on a Short Rest` :
+                 row.resourceKind === "spellSlot" ? "Resets: Long Rest" :
                  row.resourceKind === "pactSlot" ? "Resets: Short + Long Rest" :
                  row.resourceKind === "freeCast" ? "Resets: Long Rest" :
                  row.resourceKind === "toggle" ? "Resets: Short + Long Rest" :
