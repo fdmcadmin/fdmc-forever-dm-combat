@@ -170,7 +170,19 @@ function ActorPopout() {
         }}
         coins={roomLiveState.actorLiveState[actor.id]?.coins ?? {}}
         onUpdateCoins={isGm ? ((c) => void setActorCoins(actor.id, c)) : undefined}
-        isActiveTurn={roomLiveState.combat.phase !== "combat" || roomLiveState.combat.activeActorId === actor.id}
+        isActiveTurn={
+          roomLiveState.combat.phase !== "combat" ||
+          roomLiveState.combat.activeActorId === actor.id ||
+          // A COMPANION acts on its owner's turn — it never becomes the active combatant
+          // itself (buildCombatants renders it as a sub-entry with isActive:false), so
+          // without this it was permanently off-turn in this window and every main/bonus
+          // action was blocked. Both App.tsx card sites already did this; the popout — the
+          // window players actually use — did not, which is why a companion had to be
+          // re-tagged as a "player" to be usable at all.
+          (actor.kind === "companion" &&
+            roomLiveState.combat.activeActorId ===
+              (actor.moduleData as { ownerId?: string } | undefined)?.ownerId)
+        }
         onShortRest={() => { resetActorResources(actor.id, "short"); addEntry({ actorName: actor.name, actionName: "Short Rest", tabId: "system", message: `${actor.name} takes a Short Rest.` }); }}
         onLongRest={() => { resetActorResources(actor.id, "long"); const m = actor.stats.hp.max; void setActorHp(actor.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
         onLog={addEntry}
