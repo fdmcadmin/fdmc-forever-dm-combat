@@ -62,14 +62,52 @@ import type { MonsterClassification } from "../monsters/runtime/mainMonsterRunti
  * it makes a low-rolling party grind a fight built for far more than their real output.
  */
 const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> = [
-  // v12 "Size Summary" → Balance Center, party size 4. L3 is extrapolated below L5 on the
-  // L5→L6 slope; the workbook's own checkpoints start at L5.
-  [3, 92.0],
-  [4, 101.0],
-  [5, 110.4],
-  [6, 122.2],
-  [9, 153.1],
-  [12, 185.3],
+  // `broken_chain_monster_builder_final.xlsx` → DPR Progression, Balanced Center, 4 players.
+  // Every level 3-12 is a measured checkpoint; nothing here is extrapolated.
+  //
+  // REPLACES the v12 "Size Summary" line (92.0/101.0/110.4/122.2/153.1/185.3), which that
+  // rebuild's own Dashboard retired: "replaces the stale 77.8/82 raw package… Do not use the
+  // old min/max midpoint." The old figures were the MIDPOINT OF THE MIN AND MAX party; the
+  // balanced center is the MEDIAN Representative roster, which is a different statistic and
+  // materially lower — the app was reading ~30% high at L5 and ~66% high at L3, so every
+  // round projection came out short.
+  //
+  // Bonds are inside every line. Milestones step only at 3 / 6 / 9 (Realized → Metamorphosis
+  // → Tempered); L5 carries no bond-stage change, which is why L4→L5 jumps on class scaling
+  // alone.
+  [3, 55.326198999647474],
+  [4, 61.508746605488156],
+  [5, 84.84412478359376],
+  [6, 93.0275296940514],
+  [7, 99.67880132295765],
+  [8, 105.32106696944203],
+  [9, 122.63781622094879],
+  [10, 124.93782204032968],
+  [11, 132.31131608847656],
+  [12, 141.35406796347655],
+];
+
+/**
+ * MEASURED party DPR by size — the workbook publishes 3P/4P/5P separately because party DPR
+ * does NOT scale linearly with headcount. At L5 the real spread is 60.3 / 84.8 / 102.9, i.e.
+ * 0.711× and 1.213× the four-player line, not the 0.75/1.25 that `size/4` produces.
+ *
+ * ⚠ `partyDpr` below still scales `size/4`. That is a known ~5% over-read at 3P and ~3%
+ * under-read at 5P, left in place deliberately rather than changed in the same pass as the
+ * anchors above. HP bands are a different matter and ARE 0.75/1.00/1.25 exactly — the
+ * workbook is explicit that only HP pools scale with party size.
+ */
+export const MEASURED_DPR_BY_SIZE: ReadonlyArray<readonly [level: number, p3: number, p4: number, p5: number]> = [
+  [3, 38.50192181484375, 55.326198999647474, 68.42592204155778],
+  [4, 43.08726575234376, 61.508746605488156, 76.40621331594727],
+  [5, 60.309482572680835, 84.84412478359376, 102.92559929977443],
+  [6, 64.58007797139516, 93.0275296940514, 114.34205158661106],
+  [7, 70.1160813568118, 99.67880132295765, 123.36641491835779],
+  [8, 75.01458474222848, 105.32106696944203, 131.35016854557293],
+  [9, 86.5929474419797, 122.63781622094879, 151.97582660864634],
+  [10, 88.27317173876719, 124.93782204032968, 155.5936813184245],
+  [11, 94.31408658251719, 132.31131608847656, 164.1939843751604],
+  [12, 100.17739725960053, 141.35406796347655, 173.8682408014625],
 ];
 
 /**

@@ -1,169 +1,211 @@
 /**
- * Encounter CONSTRUCTION targets — the inverse of `encounterRounds.ts`.
+ * Encounter CONSTRUCTION — the Broken Chain Monster Builder model.
  *
- * `estimateRounds` answers "I built this creature, does it pace right?". This module answers
- * the question a DM building their own creature actually has first: **"what should I build?"**
- * Given a tier, it hands back the two numbers that define the fight —
+ * Source: `broken_chain_monster_builder_final.xlsx` (Christopher, 2026-07-31), which is the
+ * governing workbook for building creatures. `encounterRounds.ts` answers "I built this, does
+ * it pace right?"; this module answers the question a builder has first — **what should I
+ * build?** — and carries the second clock that the rounds model never had.
  *
- *   Monster Sustain = D_P50,4 × R          (how much effective HP the creature needs)
- *   Monster DPR     = (S_P50,4 × P) ÷ R    (how hard it must hit)
+ * TWO CLOCKS, not one. The old model only ever projected fight length; this one pairs it with
+ * the party-collapse clock, and the ratio between them is the actual risk statement:
  *
- * where D_P50,4 is the four-player balanced-middle party DPR, S_P50,4 the four-player
- * balanced-middle party SUSTAINABILITY, R the target rounds and P the share of party sustain
- * the fight is meant to consume.
+ *   PCER  = Monster Sustain ÷ PC Effective Damage      how long the fight lasts
+ *   MER   = Party Sustain   ÷ Monster Sustained Damage how long until the party collapses
+ *   Pressure     = PCER ÷ MER                          share of the collapse clock consumed
+ *   Round Margin = MER − PCER                          space left between winning and dying
  *
- * Everything here is authored against a FOUR-player party, the size the campaign is written
- * for (`BASELINE_PARTY_SIZE`). Scale the result with `hpForPartySize` for other party sizes —
- * do not re-derive the targets per size.
+ * MER is deliberately NOT the desired fight length. A fight that ends at PCER 4.5 with MER 6
+ * is a boss; the same PCER with MER 4.6 is a coin flip.
+ *
+ * Authoring baseline is FOUR players (README §1). HP pools scale 0.75 / 1.00 / 1.25 for
+ * 3P/4P/5P via `hpForPartySize` — and nothing else does: "Scale HP and guaranteed HP pools,
+ * not damage or DCs."
  */
 
-import { midpointDprForLevel, BASELINE_PARTY_SIZE } from "./encounterRounds";
+import { midpointDprForLevel } from "./encounterRounds";
 import type { MonsterClassification } from "../monsters/runtime/mainMonsterRuntime";
 
-// ─── Construction targets ─────────────────────────────────────────────────────
+// ─── Party sustain — S_P50,4 ──────────────────────────────────────────────────
 
 /**
- * Tiers as the BUILDER sees them. This is `MonsterClassification` plus one split: an act boss
- * is authored at one of two output profiles, because the same total threat can be delivered
- * fast or slow and the two want different fight lengths.
- */
-export type ConstructionTier =
-  | "strong"
-  | "elite"
-  | "mid-boss"
-  | "act-boss-high"
-  | "act-boss-moderate";
-
-export type ConstructionTarget = {
-  label: string;
-  /**
-   * CENTER duration in rounds — the number the fight is built around, not a band edge.
-   * `ROUND_BAND` in encounterRounds.ts is the tolerance around this: strong 3 → 2.5-3.5,
-   * elite 3.75 → 3-4.5, mid-boss 4.75 → 4-5.5. Those three already agree with the bands
-   * that shipped; only the act boss splits.
-   */
-  centerRounds: number;
-  /** P — the share of the party's total sustain the fight is meant to consume. */
-  sustainConsumed: number;
-  /** What the table should actually FEEL like at this tier. */
-  intent: string;
-  /** The classification this tier reports as, once built. */
-  classification: MonsterClassification;
-};
-
-/**
- * Four-player construction targets (Christopher, 2026-07-31).
+ * Four-player balanced-middle PARTY SUSTAIN, in effective HP ("Model Inputs" →
+ * Four-Player Balanced Sustain).
  *
- * The two act-boss rows carry the SAME sustain consumption (70-75%) and differ only in how
- * fast it is delivered: a high-output boss spends the party's resources over 4.5 rounds, a
- * moderate-output one takes 5.5 to do the same damage. Both are "1-2 downs, no deaths".
+ * This is raw party HP × a 1.25 recovery/mitigation factor — the healing and damage
+ * prevention a party actually converts into extra survivable damage. It is the denominator's
+ * partner to `midpointDprForLevel`: that says how fast the party kills, this says how long it
+ * lives.
  */
-export const CONSTRUCTION_TARGET: Record<ConstructionTier, ConstructionTarget> = {
-  strong: {
-    label: "Strong", centerRounds: 3, sustainConsumed: 0.35, classification: "strong",
-    intent: "Noticeable resources, occasional down",
-  },
-  elite: {
-    label: "Elite", centerRounds: 3.75, sustainConsumed: 0.50, classification: "elite",
-    intent: "Healing required, approximately one down",
-  },
-  "mid-boss": {
-    label: "Mid-boss", centerRounds: 4.75, sustainConsumed: 0.60, classification: "mid-boss",
-    intent: "Multiple defensive decisions, 1-2 downs possible",
-  },
-  "act-boss-high": {
-    label: "High-output Act Boss", centerRounds: 4.5, sustainConsumed: 0.725, classification: "act-boss",
-    intent: "1-2 expected downs, no expected deaths",
-  },
-  "act-boss-moderate": {
-    label: "Moderate-output Act Boss", centerRounds: 5.5, sustainConsumed: 0.725, classification: "act-boss",
-    intent: "Same overall threat delivered more slowly",
-  },
-};
+const PARTY_SUSTAIN_4P: ReadonlyArray<readonly [level: number, rawPartyHp: number, sustain: number]> = [
+  [3, 96, 120],
+  [4, 124, 155],
+  [5, 152, 190],
+  [6, 180, 225],
+  [7, 208, 260],
+  [8, 236, 295],
+  [9, 264, 330],
+  [10, 292, 365],
+  [11, 320, 400],
+  [12, 348, 435],
+];
 
-/**
- * PARTY SUSTAINABILITY at the four-player balance centre — S_P50,4.
- *
- * ⚠ NOT YET SOURCED. Every other constant in the encounter model is traceable to a workbook
- * sheet; this one has no source yet, so it is deliberately left EMPTY rather than guessed.
- * `monsterDprTarget` returns undefined while it is empty, and the panel must show "needs
- * S_P50,4" instead of a number — a fabricated sustain figure would silently mis-size the
- * damage half of every creature a DM builds.
- *
- * Fill from the same rerun that produced `MIDPOINT_DPR_4P`: total effective HP pool of a
- * four-player balance-centre party at each level checkpoint, healing included.
- */
-const PARTY_SUSTAIN_4P: ReadonlyArray<readonly [level: number, sustain: number]> = [];
+/** The recovery/mitigation factor turning raw party HP into sustain. Authored, editable. */
+export const PARTY_RECOVERY_FACTOR = 1.25;
 
-/** Linear interpolation across whatever checkpoints S_P50,4 has. Undefined while unsourced. */
-export function partySustainForLevel(level: number): number | undefined {
-  const pts = PARTY_SUSTAIN_4P;
-  if (pts.length === 0) return undefined;
+function interpolate(
+  pts: ReadonlyArray<readonly [number, ...number[]]>,
+  level: number,
+  idx: number,
+): number {
   const lv = Math.max(1, Math.min(20, Math.floor(level || 1)));
-  if (lv <= pts[0][0]) return pts[0][1];
-  if (lv >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
+  if (lv <= pts[0][0]) return pts[0][idx] as number;
+  const last = pts[pts.length - 1];
+  if (lv >= last[0]) return last[idx] as number;
   for (let i = 0; i < pts.length - 1; i++) {
-    const [l0, s0] = pts[i];
-    const [l1, s1] = pts[i + 1];
-    if (lv >= l0 && lv <= l1) {
-      if (l1 === l0) return s0;
-      return s0 + ((s1 - s0) * (lv - l0)) / (l1 - l0);
+    const a = pts[i];
+    const b = pts[i + 1];
+    if (lv >= a[0] && lv <= b[0]) {
+      if (b[0] === a[0]) return a[idx] as number;
+      const t = (lv - a[0]) / (b[0] - a[0]);
+      return (a[idx] as number) + ((b[idx] as number) - (a[idx] as number)) * t;
     }
   }
-  return pts[pts.length - 1][1];
+  return last[idx] as number;
 }
 
-// ─── The two formulas ─────────────────────────────────────────────────────────
-
-/**
- * Monster Sustain = D_P50,4 × R.
- *
- * The EFFECTIVE HP the creature needs to survive R rounds of the party's damage — so it is
- * compared against `rawHp × defensiveMultiplier(defenses)`, NOT against raw HP. A creature
- * with a 1.6 kit hits this target at 1/1.6 of the raw HP a punching bag would need.
- */
-export function monsterSustainTarget(level: number, rounds: number): number {
-  return midpointDprForLevel(level) * rounds;
+/** S_P50,4 — four-player balanced-middle party sustain (effective HP) at a level. */
+export function partySustainForLevel(level: number): number {
+  return interpolate(PARTY_SUSTAIN_4P, level, 2);
 }
 
-/**
- * Monster DPR = (S_P50,4 × P) ÷ R.
- *
- * Undefined until PARTY_SUSTAIN_4P is sourced — see the note there.
- */
-export function monsterDprTarget(level: number, rounds: number, sustainConsumed: number): number | undefined {
-  const sustain = partySustainForLevel(level);
-  if (sustain === undefined || rounds <= 0) return undefined;
-  return (sustain * sustainConsumed) / rounds;
+/** Raw four-player party HP at a level, before the recovery factor. */
+export function rawPartyHpForLevel(level: number): number {
+  return interpolate(PARTY_SUSTAIN_4P, level, 1);
 }
 
-export type BuildTarget = {
-  tier: ConstructionTier;
+// ─── The escalation ladder ────────────────────────────────────────────────────
+
+export type EscalationId =
+  | "strong-opener"
+  | "early-elite"
+  | "late-elite"
+  | "early-mid-boss"
+  | "later-mid-boss"
+  | "gate-mid-boss"
+  | "high-output-act-boss"
+  | "moderate-output-act-boss"
+  | "final-boss-center";
+
+export type EscalationPosition = {
+  id: EscalationId;
+  order: number;
   label: string;
-  rounds: number;
-  /** Effective HP to aim for. */
-  sustain: number;
-  /** Damage per round to aim for, or undefined while S_P50,4 is unsourced. */
-  dpr: number | undefined;
+  classification: MonsterClassification;
+  /** Target PCER — the fight-length center this position is built around. */
+  targetPcer: number;
+  /** Target Pressure — the share of the collapse clock the fight should consume. */
+  pressure: number;
   intent: string;
-  partySize: number;
 };
 
-/** Both targets for a tier at a given party level, for the four-player baseline. */
-export function buildTargetsForTier(tier: ConstructionTier, level: number): BuildTarget {
-  const t = CONSTRUCTION_TARGET[tier];
+/**
+ * Generic Encounter Escalation ("Model Inputs" → Generic Encounter Escalation).
+ *
+ * A RISING SAWTOOTH (README §8): pressure climbs within an act, and a level-up resets it
+ * before the climb resumes. Note two pairs share a kill clock and differ only in pressure —
+ * early vs later mid-boss are both 4.75 rounds at 0.625 vs 0.65 — which is the whole point of
+ * carrying MER separately: same fight length, more danger.
+ */
+export const ESCALATION_LADDER: readonly EscalationPosition[] = [
+  { id: "strong-opener", order: 1, label: "Strong opener", classification: "strong", targetPcer: 3, pressure: 0.35, intent: "Baseline threat; comfortable collapse margin." },
+  { id: "early-elite", order: 2, label: "Early elite", classification: "elite", targetPcer: 3.5, pressure: 0.45, intent: "First meaningful pressure step." },
+  { id: "late-elite", order: 3, label: "Late elite", classification: "elite", targetPcer: 4, pressure: 0.525, intent: "Longer and more punishing than the early elite." },
+  { id: "early-mid-boss", order: 4, label: "Early mid-boss", classification: "mid-boss", targetPcer: 4.75, pressure: 0.625, intent: "Major set piece with a clear safety margin." },
+  { id: "later-mid-boss", order: 5, label: "Later mid-boss", classification: "mid-boss", targetPcer: 4.75, pressure: 0.65, intent: "Same kill clock, higher offensive pressure." },
+  { id: "gate-mid-boss", order: 6, label: "Gate mid-boss", classification: "mid-boss", targetPcer: 5, pressure: 0.7, intent: "Late-act gate; tactics and resources matter." },
+  { id: "high-output-act-boss", order: 7, label: "High-output act boss", classification: "act-boss", targetPcer: 4.5, pressure: 0.725, intent: "Shorter act boss with sharper damage." },
+  { id: "moderate-output-act-boss", order: 8, label: "Moderate-output act boss", classification: "act-boss", targetPcer: 5.5, pressure: 0.8, intent: "Longer act boss; sustained pressure stays bounded." },
+  { id: "final-boss-center", order: 9, label: "Final boss center", classification: "final-boss", targetPcer: 7, pressure: 0.85, intent: "Campaign-ceiling center; validate phases and recovery carefully." },
+];
+
+export function escalationById(id: EscalationId): EscalationPosition | undefined {
+  return ESCALATION_LADDER.find(p => p.id === id);
+}
+
+// ─── The four clocks ──────────────────────────────────────────────────────────
+
+/** PCER — how long the fight lasts. Monster Sustain is EFFECTIVE HP, kit included. */
+export function pcer(monsterSustain: number, pcEffectiveDamage: number): number {
+  return pcEffectiveDamage > 0 ? monsterSustain / pcEffectiveDamage : 0;
+}
+
+/** MER — how long until the party collapses. */
+export function mer(partySustain: number, monsterSustainedDamage: number): number {
+  return monsterSustainedDamage > 0 ? partySustain / monsterSustainedDamage : Infinity;
+}
+
+/** Pressure — share of the collapse clock the fight consumes. */
+export function pressure(pcerValue: number, merValue: number): number {
+  return merValue > 0 && Number.isFinite(merValue) ? pcerValue / merValue : 0;
+}
+
+/** Round margin — expected space between winning and collapsing. */
+export function roundMargin(merValue: number, pcerValue: number): number {
+  return merValue - pcerValue;
+}
+
+// ─── Building to a target ─────────────────────────────────────────────────────
+
+export type BuildTarget = {
+  position: EscalationPosition;
+  level: number;
+  /** Effective HP to build to — compare against rawHp × defensiveMultiplier(defenses). */
+  monsterSustain: number;
+  /** Sustained damage per round to cap at. */
+  monsterDamage: number;
+  /** The collapse clock this produces. */
+  mer: number;
+  roundMargin: number;
+  pcDamage: number;
+  partySustain: number;
+};
+
+/**
+ * The two numbers that define a creature at an escalation position, for a four-player party.
+ *
+ *   Monster Sustain = PC Effective Damage × target PCER
+ *   Monster Damage  = (Party Sustain × Pressure) ÷ target PCER
+ *
+ * Scale the resulting HP with `hpForPartySize` for 3P/5P. Do NOT scale the damage.
+ */
+export function buildTargetFor(id: EscalationId, level: number): BuildTarget | undefined {
+  const position = escalationById(id);
+  if (!position) return undefined;
+
+  const pcDamage = midpointDprForLevel(level);
+  const partySustain = partySustainForLevel(level);
+  const monsterSustain = pcDamage * position.targetPcer;
+  const monsterDamage = (partySustain * position.pressure) / position.targetPcer;
+  const merValue = mer(partySustain, monsterDamage);
+
   return {
-    tier,
-    label: t.label,
-    rounds: t.centerRounds,
-    sustain: monsterSustainTarget(level, t.centerRounds),
-    dpr: monsterDprTarget(level, t.centerRounds, t.sustainConsumed),
-    intent: t.intent,
-    partySize: BASELINE_PARTY_SIZE,
+    position,
+    level,
+    monsterSustain,
+    monsterDamage,
+    mer: merValue,
+    roundMargin: roundMargin(merValue, position.targetPcer),
+    pcDamage,
+    partySustain,
   };
 }
 
-// ─── Estimating what a creature ACTUALLY does ─────────────────────────────────
+/** Every position at a level, in escalation order — the builder's ladder view. */
+export function buildLadderFor(level: number): BuildTarget[] {
+  return ESCALATION_LADDER.map(p => buildTargetFor(p.id, level)).filter((b): b is BuildTarget => Boolean(b));
+}
+
+// ─── Auditing what a creature ACTUALLY does ───────────────────────────────────
 
 /** Average of a dice expression's rolled part: "2d10" → 11. */
 function diceAverage(count: number, faces: number): number {
@@ -171,27 +213,21 @@ function diceAverage(count: number, faces: number): number {
 }
 
 /**
- * Expected value of a damage string.
- *
- * Handles the shapes the scanner and the creature editor actually produce:
- *   "2d10 + 4"                       → 15
- *   "1d8 + 2 slashing + 1d4 cold"    → 9 (every die and flat term counts, types ignored)
- *   "15 (2d10 + 4)"                  → 15 (a leading pre-averaged total is preferred)
- *
- * Damage TYPE is deliberately ignored: resistance lives on the target, and the party's
- * resistances are not modelled here.
+ * Expected value of a damage string. Handles the shapes the scanner and creature editor
+ * actually produce:
+ *   "2d10 + 4"                     → 15
+ *   "1d8 + 2 slashing + 1d4 cold"  → 9   (every die and flat term counts, types ignored)
+ *   "15 (2d10 + 4)"                → 15  (a leading pre-averaged total wins)
  */
 export function damageExpressionAverage(expr: string | undefined): number {
   if (!expr) return 0;
   const text = expr.trim();
   if (!text) return 0;
 
-  // Stat-block form "15 (2d10 + 4)" — the leading number is already the average.
   const preAveraged = text.match(/^\s*(\d+)\s*\(/);
   if (preAveraged) return Number.parseInt(preAveraged[1], 10);
 
   let total = 0;
-  // Dice terms, with their sign.
   for (const m of text.matchAll(/([+-]?)\s*(\d*)d(\d+)/gi)) {
     const sign = m[1] === "-" ? -1 : 1;
     const count = m[2] === "" ? 1 : Number.parseInt(m[2], 10);
@@ -200,7 +236,6 @@ export function damageExpressionAverage(expr: string | undefined): number {
       total += sign * diceAverage(count, faces);
     }
   }
-  // Flat terms — only those NOT glued to a die (strip dice first so "1d8" doesn't add 8).
   const withoutDice = text.replace(/[+-]?\s*\d*d\d+/gi, " ");
   for (const m of withoutDice.matchAll(/([+-])\s*(\d+)/g)) {
     total += (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10);
@@ -208,12 +243,7 @@ export function damageExpressionAverage(expr: string | undefined): number {
   return Math.max(0, total);
 }
 
-/**
- * Probability a recharge ability is up on an average round.
- *
- * "5-6" → 2 faces of 6 → 1/3. A blank/absent recharge is always available. This is the
- * steady-state share, not the round-1 guarantee, which is the right average across a fight.
- */
+/** Probability a recharge ability is up on an average round. "5-6" → 1/3. */
 export function rechargeAvailability(recharge: string | undefined): number {
   if (!recharge) return 1;
   const m = recharge.match(/(\d)\s*(?:-\s*(\d))?/);
@@ -225,19 +255,37 @@ export function rechargeAvailability(recharge: string | undefined): number {
   return faces > 0 ? faces / 6 : 1;
 }
 
-/** Chance a +N attack lands against AC. Clamped to the 5%/95% nat-1/nat-20 rails. */
+/** Chance a +N attack lands against AC, clamped to the nat-1/nat-20 rails. */
 export function hitChance(attackBonus: number, targetAc: number): number {
-  const needed = targetAc - attackBonus;
-  const raw = (21 - needed) / 20;
+  const raw = (21 - (targetAc - attackBonus)) / 20;
   return Math.max(0.05, Math.min(0.95, raw));
 }
 
-/** Pulls "+7" out of "1d20 + 7". Returns 0 when absent. */
+/** Pulls "+7" out of "1d20 + 7". */
 export function attackBonusFromRoll(roll: string | undefined): number {
   if (!roll) return 0;
   const m = roll.match(/([+-])\s*(\d+)\s*$/);
-  if (!m) return 0;
-  return (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10);
+  return m ? (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10) : 0;
+}
+
+/**
+ * Party AC and save bonus by level ("Model Inputs" → Target AC / Damage Save). The DPR
+ * progression is already target-resolved against these, which is why a monster's own AC must
+ * never be folded in a second time.
+ */
+const PARTY_DEFENCE_BY_LEVEL: ReadonlyArray<readonly [level: number, targetAc: number, damageSave: number]> = [
+  [3, 14, 2], [4, 15, 2], [5, 16, 3], [6, 16, 3], [7, 16, 3],
+  [8, 17, 4], [9, 17, 4], [10, 18, 4], [11, 18, 5], [12, 18, 5],
+];
+
+/** The AC a monster's attacks are landing against at this party level. */
+export function partyTargetAcForLevel(level: number): number {
+  return Math.round(interpolate(PARTY_DEFENCE_BY_LEVEL, level, 1));
+}
+
+/** The party's damage-save bonus at this level. */
+export function partyDamageSaveForLevel(level: number): number {
+  return interpolate(PARTY_DEFENCE_BY_LEVEL, level, 2);
 }
 
 export type DprEstimateAction = {
@@ -251,49 +299,47 @@ export type DprEstimateAction = {
   legendaryCost?: number;
 };
 
-export type MonsterDprEstimate = {
+export type MonsterDamageEstimate = {
+  /** Sustained damage per round — the MER denominator. */
   dpr: number;
-  /** Per-action contribution, largest first — so a DM can see WHERE the damage comes from. */
+  /** Per-action contribution, largest first, so a builder sees WHERE the damage is. */
   breakdown: { name: string; dpr: number; note: string }[];
-  /** What the estimate could not read, so the number is never trusted blindly. */
+  /** What could not be parsed — never silently counted as zero. */
   unread: string[];
 };
 
 /**
- * Estimate a creature's damage per round FROM ITS ABILITIES, to compare against the
- * `Monster DPR` construction target.
+ * Estimate a creature's SUSTAINED damage per round from its abilities, for the MER clock.
  *
- * This is a REFERENCE ESTIMATE, in the same spirit as the rest of the creator: it reads the
- * damage the creature can actually roll and says roughly how hard it hits. It deliberately
- * does NOT model: conditions and control (a stunned party takes more than this says), riders
- * with saves, target resistances, or focus-fire. Anything it cannot parse is reported in
- * `unread` rather than silently counted as zero.
- *
- * Save-based damage is counted at HALF on a successful save, the 5e default, using the
- * party's assumed save rate.
+ * A reference estimate, in the same spirit as the rest of the creator. It reads what the
+ * creature can actually roll; it does not model burst, focus fire, control, or recovery
+ * timing — README §7 is explicit that those stay a second axis to be validated separately
+ * even when the clocks look healthy.
  */
-export function estimateMonsterDpr(
+export function estimateMonsterDamage(
   actions: readonly DprEstimateAction[] | undefined,
   options: {
-    /** Attacks the creature makes per turn — overrides an action's own attackCount. */
     attacksPerTurn?: number;
-    /** Party AC the attacks are landing against. */
+    /** Defaults to the authored party AC for the level. */
     targetAc?: number;
-    /** Chance a party member SAVES against a DC. */
+    partyLevel?: number;
+    /** Chance a party member saves. Defaults from the level's damage-save bonus vs the DC. */
     partySaveRate?: number;
-    /** Legendary actions available each round. */
-    legendaryPerRound?: number;
+    saveDc?: number;
   } = {},
-): MonsterDprEstimate {
-  const targetAc = options.targetAc ?? 16;
-  const saveRate = options.partySaveRate ?? 0.5;
-  const breakdown: MonsterDprEstimate["breakdown"] = [];
+): MonsterDamageEstimate {
+  const level = options.partyLevel ?? 5;
+  const targetAc = options.targetAc ?? partyTargetAcForLevel(level);
+  const saveRate = options.partySaveRate
+    ?? (options.saveDc
+      ? Math.max(0.05, Math.min(0.95, (21 - (options.saveDc - partyDamageSaveForLevel(level))) / 20))
+      : 0.5);
+
+  const breakdown: MonsterDamageEstimate["breakdown"] = [];
   const unread: string[] = [];
 
   for (const a of actions ?? []) {
-    if (!a) continue;
-    // Traits and reactions are not part of the creature's own turn output.
-    if (a.kind === "trait") continue;
+    if (!a || a.kind === "trait") continue;
 
     const avg = damageExpressionAverage(a.damage);
     if (avg <= 0) {
@@ -307,24 +353,63 @@ export function estimateMonsterDpr(
     let expected: number;
     let note: string;
     if (a.roll) {
-      const bonus = attackBonusFromRoll(a.roll);
-      const hit = hitChance(bonus, targetAc);
+      const hit = hitChance(attackBonusFromRoll(a.roll), targetAc);
       expected = avg * hit * count * uptime;
-      note = `${avg.toFixed(1)} dmg × ${(hit * 100).toFixed(0)}% hit${count > 1 ? ` × ${count}` : ""}${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
+      note = `${avg.toFixed(1)} × ${(hit * 100).toFixed(0)}% hit${count > 1 ? ` × ${count}` : ""}${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
     } else if (a.save) {
-      // Half on a save.
-      const effective = avg * (1 - saveRate) + avg * 0.5 * saveRate;
-      expected = effective * uptime;
-      note = `${avg.toFixed(1)} dmg, ${(saveRate * 100).toFixed(0)}% save for half${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
+      expected = (avg * (1 - saveRate) + avg * 0.5 * saveRate) * uptime;
+      note = `${avg.toFixed(1)}, ${(saveRate * 100).toFixed(0)}% save for half${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
     } else {
       expected = avg * uptime;
       note = `${avg.toFixed(1)} automatic${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
     }
-
     breakdown.push({ name: a.name ?? "unnamed", dpr: expected, note });
   }
 
   breakdown.sort((x, y) => y.dpr - x.dpr);
-  const dpr = breakdown.reduce((s, b) => s + b.dpr, 0);
-  return { dpr, breakdown, unread };
+  return { dpr: breakdown.reduce((s, b) => s + b.dpr, 0), breakdown, unread };
+}
+
+// ─── Auditing a built creature against the ladder ─────────────────────────────
+
+export type EncounterAudit = {
+  pcer: number;
+  mer: number;
+  pressure: number;
+  roundMargin: number;
+  /** Nearest ladder position by PCER, for "what did I actually build?" */
+  nearest: EscalationPosition;
+  /** Set when a target was named: how far off each clock is. */
+  target?: { position: EscalationPosition; pcerDelta: number; pressureDelta: number };
+};
+
+/** Read a creature's two clocks and place it on the ladder. */
+export function auditEncounter(params: {
+  monsterSustain: number;
+  monsterDamage: number;
+  level: number;
+  target?: EscalationId;
+}): EncounterAudit {
+  const pcDamage = midpointDprForLevel(params.level);
+  const partySustain = partySustainForLevel(params.level);
+  const p = pcer(params.monsterSustain, pcDamage);
+  const m = mer(partySustain, params.monsterDamage);
+  const pr = pressure(p, m);
+
+  let nearest = ESCALATION_LADDER[0];
+  for (const pos of ESCALATION_LADDER) {
+    if (Math.abs(pos.targetPcer - p) < Math.abs(nearest.targetPcer - p)) nearest = pos;
+  }
+
+  const targetPos = params.target ? escalationById(params.target) : undefined;
+  return {
+    pcer: p,
+    mer: m,
+    pressure: pr,
+    roundMargin: roundMargin(m, p),
+    nearest,
+    target: targetPos
+      ? { position: targetPos, pcerDelta: p - targetPos.targetPcer, pressureDelta: pr - targetPos.pressure }
+      : undefined,
+  };
 }
