@@ -8,15 +8,25 @@
 
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState, MonsterClassification } from "./runtime/mainMonsterRuntime";
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
+import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/encounterRounds";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type EncounterMonsterEntry = {
   templateId: string;
   count: number;
-  hpVariant: "standard" | "low" | "high";
   startingVisibility: MainMonsterVisibilityState;
   hiddenNameOverride?: string;
+  /**
+   * @deprecated Per-creature party-size band. The band is a property of the FIGHT (Lever 1
+   * of ENCOUNTER-BALANCE-RULES), not of each body in it — authoring it per row allowed a
+   * boss scaled for 5 players to stand next to its adds scaled for 3, and let the HP side
+   * of the estimate disagree with the party size driving party DPR.
+   *
+   * Retained only so encounters already saved to localStorage still parse. Nothing reads it:
+   * scaling now comes from `hpForPartySize(base, partySize)` applied to the whole encounter.
+   */
+  hpVariant?: "standard" | "low" | "high";
 };
 
 export type EncounterDefinition = {
@@ -268,7 +278,6 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
       entries: encounterTemplates.map(t => ({
         templateId: t.templateId,
         count: 1,
-        hpVariant: "standard",
         startingVisibility: t.visibility.defaultState,
         hiddenNameOverride: t.visibility.hiddenName,
       })),
@@ -292,7 +301,12 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
 
 export function spawnEncounterInstances(
   encounter: EncounterDefinition,
-  library: MainMonsterTemplate[]
+  library: MainMonsterTemplate[],
+  /**
+   * The party actually fighting this — Lever 1. Defaults to the size the campaign is
+   * AUTHORED against, so an un-passed call spawns the encounter exactly as written.
+   */
+  partySize: number = BASELINE_PARTY_SIZE,
 ): MainEncounterMonsterInstance[] {
   const instances: MainEncounterMonsterInstance[] = [];
 
@@ -303,15 +317,13 @@ export function spawnEncounterInstances(
     for (let i = 0; i < entry.count; i++) {
       const instance = createEncounterMonsterInstance(template);
 
-      // Apply HP variant
-      if (entry.hpVariant === "low") {
-        const low = Math.max(1, Math.floor(instance.maxHp * 0.75));
-        instance.currentHp = low;
-        instance.maxHp = low;
-      } else if (entry.hpVariant === "high") {
-        const high = Math.floor(instance.maxHp * 1.25);
-        instance.currentHp = high;
-        instance.maxHp = high;
+      // Lever 1 — the party-size HP band, applied to the WHOLE encounter. The multiplier is
+      // uniform, so scaling each body is the same total as scaling the sum, but the decision
+      // is now made once for the fight instead of once per row.
+      const scaled = hpForPartySize(instance.maxHp, partySize);
+      if (scaled !== instance.maxHp) {
+        instance.currentHp = scaled;
+        instance.maxHp = scaled;
       }
 
       instance.visibilityState = entry.startingVisibility;

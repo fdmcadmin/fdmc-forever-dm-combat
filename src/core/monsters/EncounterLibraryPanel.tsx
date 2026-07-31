@@ -13,6 +13,7 @@ import {
   type EncounterDefinition,
   type EncounterMonsterEntry,
 } from "./encounterLibrary";
+import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/encounterRounds";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
@@ -20,6 +21,9 @@ import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEdit
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyPanel";
 import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
+
+/** One table, one party — persisted so every encounter loads scaled to it. */
+const PARTY_SIZE_KEY = "fdmc.dm.encounterPartySize.v1";
 
 // ─── Module unlock ────────────────────────────────────────────────────────────
 // The campaign ("Broken Chain") library is gated behind a LOCAL SOFT password.
@@ -172,16 +176,10 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster 
         </button>
         <button type="button" onClick={onRemove} style={{ fontSize: 11, padding: "2px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
       </div>
+      {/* No per-creature HP band here on purpose: the party-size band is a property of the
+          FIGHT, set once for the panel. A row-level dial let a boss be scaled for 5 players
+          while its adds were scaled for 3, and disagreed with the party size driving DPR. */}
       <div style={{ display: "flex", gap: 6 }}>
-        <select
-          value={entry.hpVariant}
-          onChange={e => onChange({ ...entry, hpVariant: e.target.value as EncounterMonsterEntry["hpVariant"] })}
-          style={{ fontSize: 11, padding: "2px 4px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#aaa", flex: 1 }}
-        >
-          <option value="low">4-man</option>
-          <option value="standard">5-man</option>
-          <option value="high">6-man</option>
-        </select>
         <select
           value={entry.startingVisibility}
           onChange={e => onChange({ ...entry, startingVisibility: e.target.value as MainMonsterVisibilityState })}
@@ -265,6 +263,24 @@ export function EncounterLibraryPanel({
   const [confirmClear, setConfirmClear] = useState(false);
   const [activeTab, setActiveTab] = useState<"library" | "staged">("library");
   const [saveTargetDraft, setSaveTargetDraft] = useState<"campaign" | "dm">("dm");
+  /**
+   * The party actually at the table — Lever 1, and the ONLY thing that may change about a
+   * locked encounter. Set once for the panel rather than per encounter or per creature: one
+   * table has one party, and every fight it loads is scaled to it.
+   */
+  const [partySize, setPartySize] = useState<number>(() => {
+    try {
+      const raw = window.localStorage.getItem(PARTY_SIZE_KEY);
+      const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+      return SUPPORTED_PARTY_SIZES.includes(parsed as never) ? parsed : BASELINE_PARTY_SIZE;
+    } catch { return BASELINE_PARTY_SIZE; }
+  });
+
+  function changePartySize(next: number) {
+    setPartySize(next);
+    try { window.localStorage.setItem(PARTY_SIZE_KEY, String(next)); } catch { /* ok */ }
+  }
+
   // Staged queue — instances ready to push to combat, persisted in localStorage
   const [staged, setStaged] = useState<StagedEntry[]>(() => {
     try {
@@ -314,7 +330,7 @@ export function EncounterLibraryPanel({
   }
 
   function stageEncounter(encounter: EncounterDefinition) {
-    const instances = spawnEncounterInstances(encounter, resolvedLibrary);
+    const instances = spawnEncounterInstances(encounter, resolvedLibrary, partySize);
     const entry: StagedEntry = {
       id: `staged-${Date.now().toString(36)}`,
       encounterId: encounter.id,
@@ -397,7 +413,6 @@ export function EncounterLibraryPanel({
       entries: [...editDraft.entries, {
         templateId: addingTemplateId,
         count: 1,
-        hpVariant: "standard",
         startingVisibility: template.visibility.defaultState,
         hiddenNameOverride: template.visibility.hiddenName,
       }],
@@ -406,7 +421,7 @@ export function EncounterLibraryPanel({
   }
 
   function handleLoadEncounter(encounter: EncounterDefinition) {
-    const instances = spawnEncounterInstances(encounter, resolvedLibrary);
+    const instances = spawnEncounterInstances(encounter, resolvedLibrary, partySize);
     onLoadEncounter(instances);
   }
 
@@ -808,6 +823,37 @@ export function EncounterLibraryPanel({
 
       {/* Encounter list */}
       {activeTab === "library" && <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
+        {/* Lever 1 — the party at the table. The ONE thing that changes about a locked
+            encounter; every Load/Stage below scales to it. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 10px", background: "#161622", border: "1px solid #2a2a3e", borderRadius: 8 }}>
+          <span style={{ fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1 }}>Party size</span>
+          <div style={{ display: "flex", gap: 4 }}>
+            {SUPPORTED_PARTY_SIZES.map(size => {
+              const active = partySize === size;
+              const mult = PARTY_SIZE_HP_MULTIPLIER[size] ?? 1;
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => changePartySize(size)}
+                  title={`${size} players — encounter HP ×${mult}${size === BASELINE_PARTY_SIZE ? " (as authored)" : ""}`}
+                  style={{
+                    width: 30, fontSize: 13, fontWeight: active ? 700 : 500, padding: "4px 0",
+                    background: active ? "#4f9dff" : "#0d0d14",
+                    color: active ? "#fff" : "#8a8aa0",
+                    border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
+                  }}
+                >
+                  {size}
+                </button>
+              );
+            })}
+          </div>
+          <span style={{ fontSize: 10, color: "#666" }}>
+            encounter HP ×{PARTY_SIZE_HP_MULTIPLIER[partySize] ?? 1}
+            {partySize === BASELINE_PARTY_SIZE ? " · as authored" : ""}
+          </span>
+        </div>
         {(() => {
             const campaign = encounters.filter(e => e.owner === "campaign" || (!e.owner && unlocked));
             const dm = encounters.filter(e => e.owner === "dm");

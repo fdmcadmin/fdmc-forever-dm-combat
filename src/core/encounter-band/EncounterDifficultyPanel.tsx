@@ -13,7 +13,7 @@ import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { recommendAdjustment, unitThreat, type ThreatMonster, type Difficulty } from "./encounterDifficulty";
 import {
-  estimateRounds, partyDpr, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
+  estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
   CLASSIFICATION_LABEL,
   type PartyLane, type PartyResources, type RoundsMonster, type RoundsEstimate,
 } from "./encounterRounds";
@@ -40,13 +40,11 @@ const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   Deadly: "#ff4444",
 };
 
-function hpForVariant(base: number, variant: "standard" | "low" | "high"): number {
-  if (variant === "low") return Math.max(1, Math.floor(base * 0.75));
-  if (variant === "high") return Math.floor(base * 1.25);
-  return base;
-}
+// HP now scales off the SAME party size that drives partyDpr below. It used to come from a
+// per-creature `entry.hpVariant`, so the defensive and offensive sides of the estimate could
+// be told two different party sizes — a 5-man HP bar divided by 3-man damage.
 
-function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[]): ThreatMonster[] {
+function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[], partySize: number): ThreatMonster[] {
   const out: ThreatMonster[] = [];
   for (const entry of encounter.entries) {
     const t = library.find(m => m.templateId === entry.templateId);
@@ -54,7 +52,7 @@ function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTe
     out.push({
       id: entry.templateId,
       name: t.name,
-      maxHp: hpForVariant(t.stats.maxHp, entry.hpVariant),
+      maxHp: hpForPartySize(t.stats.maxHp, partySize),
       // Threat weight comes from classification, never from kind. kind: "boss" driving a
       // hidden x1.6 here is the exact double-count MonsterClassification was introduced to
       // kill — it survived in this legacy panel until 2026-07-25.
@@ -68,7 +66,7 @@ function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTe
   return out;
 }
 
-function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[]): RoundsMonster[] {
+function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[], partySize: number): RoundsMonster[] {
   const out: RoundsMonster[] = [];
   for (const entry of encounter.entries) {
     const t = library.find(m => m.templateId === entry.templateId);
@@ -76,7 +74,7 @@ function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTe
     out.push({
       id: entry.templateId,
       name: t.name,
-      maxHp: hpForVariant(t.stats.maxHp, entry.hpVariant),
+      maxHp: hpForPartySize(t.stats.maxHp, partySize),
       count: entry.count,
       ac: typeof t.stats.ac === "number" ? t.stats.ac : Number.parseInt(String(t.stats.ac), 10) || undefined,
       defenses: t.stats.defenses,
@@ -100,16 +98,16 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
   const monsters = useMemo(
-    () => (encounter ? toThreatMonsters(encounter, monsterLibrary) : []),
-    [encounter, monsterLibrary],
+    () => (encounter ? toThreatMonsters(encounter, monsterLibrary, partySize) : []),
+    [encounter, monsterLibrary, partySize],
   );
   const rec = useMemo(
     () => recommendAdjustment(monsters, partySize, partyLevel),
     [monsters, partySize, partyLevel],
   );
   const roundsMonsters = useMemo(
-    () => (encounter ? toRoundsMonsters(encounter, monsterLibrary) : []),
-    [encounter, monsterLibrary],
+    () => (encounter ? toRoundsMonsters(encounter, monsterLibrary, partySize) : []),
+    [encounter, monsterLibrary, partySize],
   );
   const est = useMemo(
     () => estimateRounds(roundsMonsters, partySize, partyLevel, lane, resources, encounter?.classification),

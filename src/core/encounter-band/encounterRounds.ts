@@ -99,6 +99,38 @@ export const BASELINE_PARTY_SIZE = 4;
 /** The party sizes the model supports, low → high. */
 export const SUPPORTED_PARTY_SIZES = [3, 4, 5] as const;
 
+/**
+ * Lever 1 of ENCOUNTER-BALANCE-RULES: the party-size HP band.
+ *
+ * Scales an encounter's AUTHORED (4-player) HP to the size actually fighting it. This is the
+ * ONLY thing that may change about a locked encounter — a creature's kit and authored
+ * `stats.maxHp` are written once, for what the creature IS.
+ *
+ * It is a property of the ENCOUNTER, not of each creature: the multiplier is uniform, so
+ * scaling every body by it is arithmetically identical to scaling the total, but authoring
+ * it per-creature allowed incoherent fights (a boss at 5P sitting next to its adds at 3P).
+ * One fight, one party, one band.
+ *
+ * Deliberately keyed off the same party size that drives `partyDpr`, so the offensive and
+ * defensive sides of the estimate can never be told two different party sizes — which they
+ * could when HP scaled off a separate per-creature `hpVariant` dial.
+ */
+export const PARTY_SIZE_HP_MULTIPLIER: Record<number, number> = { 3: 0.75, 4: 1.0, 5: 1.25 };
+
+/**
+ * An encounter's authored 4P HP scaled to the party actually fighting it.
+ *
+ * ROUNDS, not floors. The old per-creature scaler floored, which read one HP light against
+ * the v12 workbook's own published bands — Pale Drifter + Frozen Cloak is 166 at 3P, and
+ * floor(221 × 0.75) = 165. Rounding reproduces every band in the rerun exactly
+ * (129/172/215, 166/221/276, 180/240/300, and the Wight's 216/288/360).
+ */
+export function hpForPartySize(baseHp: number, partySize: number): number {
+  const mult = PARTY_SIZE_HP_MULTIPLIER[partySize] ?? 1;
+  if (mult === 1) return baseHp;
+  return Math.max(1, Math.round(baseHp * mult));
+}
+
 /** Party bond posture. Multiplier = that party's DPR ÷ midpoint DPR. */
 export type PartyLane = "easy" | "standard" | "hard" | "punishing";
 
