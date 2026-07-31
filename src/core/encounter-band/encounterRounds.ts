@@ -93,10 +93,15 @@ const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> = [
  * exist so a built encounter can be checked against the tables that will actually run it —
  * "author at 4P, validate 3P/5P with HP bands".
  *
- * Party DPR does not scale linearly with headcount (L5 is really 60.3 / 84.8 / 102.9 = 0.711×
- * and 1.213×), which is exactly why party size is expressed as an HP band rather than a DPR
- * dial: HP pools scale 0.75/1.00/1.25 and nothing else does — not damage, attack bonuses,
- * save DCs, or traits.
+ * ⚠ DO NOT read these three columns as a scaling curve. They are medians of three DIFFERENT
+ * roster populations (36 / 192 / 816 legal scenarios), not one party with a member added or
+ * removed — per-player DPR at L5 comes out 20.10 / 21.21 / 20.59, which is not even monotonic.
+ * The ratios between them (0.711×, 1.213×) are an artefact of comparing separate samples, not
+ * a measurement of what a player is worth.
+ *
+ * `partyDpr` therefore scales `size/4` = 0.75 / 1.00 / 1.25, matching the HP band. That is the
+ * campaign's stated party-size lever and it applies to the whole model; these columns are only
+ * ever a sanity check that a built encounter is survivable at the other two table sizes.
  */
 export const MEASURED_DPR_BY_SIZE: ReadonlyArray<readonly [level: number, p3: number, p4: number, p5: number]> = [
   [3, 38.50192181484375, 55.326198999647474, 68.42592204155778],
@@ -381,6 +386,14 @@ export type RoundsMonster = {
   /** Itemised defensive traits — drives the EFFECTIVE-HP side. */
   defenses?: readonly MonsterDefense[];
   /**
+   * Share of its turns the party actually spends attacking THIS creature. A tempo tax:
+   * auras that force spacing, leaps that reset position, forced movement. It reduces damage
+   * DELIVERED and is applied to party DPR — it is NOT resistance and must never be folded
+   * into effective HP, which would charge the party for it twice.
+   * Unset = 1.0 (the party attacks freely).
+   */
+  damageUptime?: number;
+  /**
    * @deprecated Legacy single-number kit estimate that conflated AC with defensive traits.
    * Still honoured for creatures not yet migrated to `ac` + `defenses`, so nothing silently
    * reads 1.0 mid-migration. Prefer the two split terms.
@@ -533,12 +546,18 @@ export function estimateRounds(
   encounterTier?: MonsterClassification,
 ): RoundsEstimate {
   const rawHp = monsters.reduce((s, m) => s + m.maxHp * Math.max(0, m.count), 0);
-  // Defensive side (creature HP × its traits) and offensive side (party DPR × how much of
-  // it lands against these ACs) are computed independently, then divided.
+  // AC IS NOT APPLIED HERE. The balanced-center DPR curve is already TARGET-RESOLVED against
+  // the party's per-level AC/save profile — resolving it a second time against the creature's
+  // AC is the double-count the model forbids ("resolve AC and saves in party DPR once").
+  // `acFactor`/`encounterAcFactor` are retained for callers that want to re-resolve the curve
+  // for a creature whose AC materially differs from the level baseline, which is a
+  // replacement for the published number, never a multiplier on top of it.
   const eff = effectiveHp(monsters);
   const dpr = partyDpr(size, level, lane, resources);
-  const ac = encounterAcFactor(monsters, level);
-  const landedDpr = dpr * ac;
+  // Encounter damage UPTIME — the lowest uptime in the fight governs, since the creature
+  // imposing the worst tempo tax is the one dictating where the party can stand.
+  const uptime = monsters.reduce((lo, m) => Math.min(lo, m.damageUptime ?? 1), 1);
+  const landedDpr = dpr * uptime;
   const rounds = landedDpr > 0 ? eff / landedDpr : 0;
   // The band ALWAYS derives from the strongest creature in the fight (Christopher,
   // 2026-07-25). A declared encounter tier may only ESCALATE above that — never below it.
@@ -554,7 +573,7 @@ export function estimateRounds(
     effectiveHp: eff,
     dpr,
     landedDpr,
-    acFactor: ac,
+    acFactor: 1,
     rounds,
     classification,
     band,

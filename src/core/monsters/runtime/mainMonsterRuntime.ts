@@ -109,6 +109,8 @@ export type MainMonsterTemplate = {
      * session can re-check it instead of trusting it.
      */
     defenses?: readonly MonsterDefense[];
+    /** Party damage uptime against this creature (tempo tax). 1.0 = attacks freely. */
+    damageUptime?: number;
     /**
      * How big a threat this creature is — drives the expected fight length (see
      * `ROUND_BAND` in `encounter-band/encounterRounds.ts`). Separate from `kind`,

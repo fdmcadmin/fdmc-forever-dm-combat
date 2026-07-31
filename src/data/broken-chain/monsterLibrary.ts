@@ -1136,6 +1136,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // the Wight's defenses.
     stats: {
       kind: "aberration", ac: 17, maxHp: 130, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
+      damageUptime: 0.86, // aura spacing + Hungering Leap repositioning, per the workbook calibration
       size: "Large", archetype: "bruiser",
       defenses: [
         { name: "Bone Armor (resistance phase)", ehpMultiplier: 1.3, note: "Back half of the bar only. Resistance to all damage except fire/radiant, with a 0.25 bypass share, gives a 0.625 weighted pass fraction: the armored 65 raw costs 104. Across the whole bar that is (65 unarmored + 104 armored) / 130 = 1.30." },

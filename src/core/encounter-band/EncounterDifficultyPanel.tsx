@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { recommendAdjustment, unitThreat, type ThreatMonster, type Difficulty } from "./encounterDifficulty";
+import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
 import {
   estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
   CLASSIFICATION_LABEL,
@@ -78,6 +79,7 @@ function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTe
       count: entry.count,
       ac: typeof t.stats.ac === "number" ? t.stats.ac : Number.parseInt(String(t.stats.ac), 10) || undefined,
       defenses: t.stats.defenses,
+      damageUptime: t.stats.damageUptime,
       kitMultiplier: t.stats.kitMultiplier,
       classification: t.stats.classification ?? "normal",
     });
@@ -92,6 +94,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const [open, setOpen] = useState(false);
   const [encounterId, setEncounterId] = useState<string>("");
   const [partySize, setPartySize] = useState<number>(4);
+  const [targetPosition, setTargetPosition] = useState<EscalationId | undefined>(undefined);
   const [partyLevel, setPartyLevel] = useState<number>(1);
   const [lane, setLane] = useState<PartyLane>("standard");
   const [resources, setResources] = useState<PartyResources>("fresh");
@@ -274,12 +277,87 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                   </div>
                   <div>
                     <span style={{ color: "#7bc8e0" }}>OFF</span>{" "}
-                    {partyDpr(partySize, partyLevel, lane, resources).toFixed(1)} DPR × {est.acFactor.toFixed(2)} AC → <strong style={{ color: "#aaa" }}>{est.landedDpr.toFixed(1)} landed</strong>
+                    <strong style={{ color: "#aaa" }}>{est.landedDpr.toFixed(1)} DPR</strong>
+                    <span style={{ color: "#555" }}> · already target-resolved vs the L{partyLevel} AC/save profile</span>
                   </div>
                   <div style={{ color: "#666" }}>
                     {partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest
                   </div>
                 </div>
+                {/* ── The escalation ladder: PCER against MER ────────────────────────
+                    The rounds figure above only answers "how long". This answers "how
+                    close to collapse", which is the half the old model could not see —
+                    two fights can share a kill clock and be completely different fights. */}
+                {(() => {
+                  const monsterDamage = estimateMonsterDamage(
+                    roundsMonsters.flatMap(m => {
+                      const t = monsterLibrary.find(x => x.templateId === m.id);
+                      return (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
+                    }),
+                    { partyLevel },
+                  );
+                  const audit = auditEncounter({
+                    monsterSustain: est.effectiveHp,
+                    monsterDamage: monsterDamage.dpr,
+                    level: partyLevel,
+                    target: targetPosition,
+                  });
+                  const marginColor = audit.roundMargin >= 1 ? "#4caf50" : audit.roundMargin >= 0 ? "#e07b39" : "#ff4444";
+                  return (
+                    <div style={{ marginTop: 7, paddingTop: 6, borderTop: "1px solid #1e1e2e" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+                        <span style={{ fontSize: 9, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1 }}>Ladder</span>
+                        <select
+                          value={targetPosition ?? ""}
+                          onChange={e => setTargetPosition((e.target.value || undefined) as EscalationId | undefined)}
+                          style={{ fontSize: 10, padding: "1px 4px", borderRadius: 3, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#aaa" }}
+                        >
+                          <option value="">— reads as: {audit.nearest.label} —</option>
+                          {ESCALATION_LADDER.map(p => (
+                            <option key={p.id} value={p.id}>{p.order}. {p.label} · {p.targetPcer} rds · {Math.round(p.pressure * 100)}%</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6 }}>
+                        <div>
+                          <span style={{ color: "#7be08a" }}>PCER</span> {audit.pcer.toFixed(2)} rds
+                          <span style={{ color: "#555" }}> · fight length</span>
+                          {audit.target && (
+                            <span style={{ color: Math.abs(audit.target.pcerDelta) <= 0.5 ? "#4caf50" : "#e07b39" }}>
+                              {"  "}{audit.target.pcerDelta >= 0 ? "+" : ""}{audit.target.pcerDelta.toFixed(2)} vs target
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <span style={{ color: "#e07be0" }}>MER</span>{" "}
+                          {Number.isFinite(audit.mer) ? `${audit.mer.toFixed(2)} rds` : "—"}
+                          <span style={{ color: "#555" }}> · party collapse, at {monsterDamage.dpr.toFixed(1)} monster DPR</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "#e0c87b" }}>PRESSURE</span> {(audit.pressure * 100).toFixed(0)}%
+                          {audit.target && (
+                            <span style={{ color: Math.abs(audit.target.pressureDelta) <= 0.08 ? "#4caf50" : "#e07b39" }}>
+                              {"  "}{audit.target.pressureDelta >= 0 ? "+" : ""}{(audit.target.pressureDelta * 100).toFixed(0)}pts vs target
+                            </span>
+                          )}
+                          <span style={{ color: "#555" }}> · margin </span>
+                          <strong style={{ color: marginColor }}>{audit.roundMargin.toFixed(2)} rds</strong>
+                        </div>
+                      </div>
+                      {monsterDamage.unread.length > 0 && (
+                        <div style={{ fontSize: 9, color: "#8a6a2a", marginTop: 3 }}>
+                          ⚠ monster DPR is incomplete — could not read: {monsterDamage.unread.slice(0, 3).join("; ")}
+                        </div>
+                      )}
+                      {monsterDamage.dpr <= 0 && (
+                        <div style={{ fontSize: 9, color: "#8a6a2a", marginTop: 3 }}>
+                          ⚠ no readable damage on these creatures, so MER and pressure are not meaningful yet.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Itemised defensive traits — every uplift is named and checkable. */}
                 {(() => {
                   const rows = roundsMonsters.flatMap(m =>
