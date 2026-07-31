@@ -1104,7 +1104,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act2-s5-wendigo-wight",
     encounterLabel: "Act 2 S5 - Wendigo Wight (The Lake Fight)",
     // kit 1.37: Wrong Cold aura spacing (~5%), Hunger Leap repositioning on ~33% of rounds
-    // (~10-15%), legendary-driven downs (~10%), + working Frozen Endurance (~4%).
+    // (~10-15%), legendary-driven downs (~10%).
     // 2026-07-17 CR-reduction pass: the fight was on-target in the FDMC round model (~6 rounds)
     // but a traditional CR calc read this at CR 12+, an untenable gap from the act's ~CR 9
     // intent. Lowered the two levers that drive that number WITHOUT touching HP (the survivability
@@ -1115,51 +1115,67 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // frozen-act failure point). The Hunger Bite max-HP drain is deliberately VARIABLE — HALF the
     // cold damage dealt (dice-tracked, not a flat cap), so the attrition clock tracks the roll. No
     // self-heal: it drains the target's max HP, it does not return HP to the Wight.
-    // FINAL v12 TUNING: 360 HP / AC 17 / hidden Bone Armor at 180, decided at 5 players —
-    // so the authored 4P standard is 360 ÷ 1.25 = 288 (3P 216 / 4P 288 / 5P 360). This
-    // supersedes the encounter doc's 425 @5P.
-    // AC 17 now drives the OFFENSIVE side on its own (acFactor 0.846 at L5). What remains
-    // here is purely defensive traits; together they reproduce the v12 MC's 5.05 rounds.
+    // AUTHORED 4P BASELINE: 130 HP (3P 98 / 5P 163), per the encounter doc's creature table
+    // and the Monster Builder workbook's worked calibration. Both agree.
+    //
+    // This REPLACES the old 288 (from "360 @5P ÷ 1.25"), which was tuned against the retired
+    // v12 DPR line — the one that turned out to be the midpoint of the min and max party
+    // rather than the balanced center, and read ~30% high at L5. With the corrected
+    // denominator the fight is authored at 130, not re-derived from a 5-player figure: 4P is
+    // the baseline every CR is built around, and 3P/5P come from the HP band, never the
+    // other way round.
+    //
+    // Sustain is PHASE-AWARE, not one flat number (workbook rule: count each feature once,
+    // and resolve AC in party DPR rather than folding it into EHP). The three entries below
+    // reproduce the sheet's 236.2 personal EHP from 130 raw:
+    //   Phase 1  65 raw, unarmored            →  65.0
+    //   Phase 2  65 raw ÷ 0.625 pass fraction → 104.0
+    //   Regen    3 ticks × 14 ÷ 0.625         →  67.2
+    //                                          = 236.2  (÷130 = 1.817)
+    // The Lesser Wendigo's 45 is a SEPARATE add pool and is deliberately not multiplied by
+    // the Wight's defenses.
     stats: {
-      kind: "undead", ac: 17, maxHp: 288, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
-      size: "Huge", archetype: "bruiser",
+      kind: "aberration", ac: 17, maxHp: 130, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
+      size: "Large", archetype: "bruiser",
       defenses: [
-        { name: "Hidden Bone Armor", ehpMultiplier: 1.25, note: "Resistance phase revealed at half HP (180 of 360 @5P). Adapts after observed resistance, so the back half of the bar costs ~25% more to chew through." },
-        { name: "Frozen Endurance", ehpMultiplier: 1.06, note: "One free survival at 0 HP (drops to 1 instead) = roughly one extra round of incoming damage across a ~5-round fight. Fire/radiant bypass it entirely." },
-        { name: "Wrong Cold + Hunger Leap denial", ehpMultiplier: 1.23, note: "Aura spacing, Leap repositioning on ~33% of rounds, and legendary-driven downs cost the party turns it would otherwise attack in." },
+        { name: "Bone Armor (resistance phase)", ehpMultiplier: 1.3, note: "Back half of the bar only. Resistance to all damage except fire/radiant, with a 0.25 bypass share, gives a 0.625 weighted pass fraction: the armored 65 raw costs 104. Across the whole bar that is (65 unarmored + 104 armored) / 130 = 1.30." },
+        { name: "Bone Armor regeneration", ehpMultiplier: 1.3976, note: "2d10+3 (avg 14) at the start of each turn while armor is active, expected 3 ticks = 42 healing, which costs 42 / 0.625 = 67.2 of party output. Composes onto the 169 above: 236.2 / 169 = 1.3976, giving 236.2 total personal EHP (= 130 x 1.817)." },
+        { name: "Wrong Cold + Hungering Leap tempo", ehpMultiplier: 1.0, note: "Aura spacing and Leap repositioning are an UPTIME tax on the party (0.86 in the workbook), not extra HP. Counted on the damage clock via pcEffectiveDamage, never here — folding it in would double-charge it." },
       ],
     },
     abilities: [
       formatAbility("STR", 18, 4),
-      formatAbility("DEX", 14, 2),
-      formatAbility("CON", 18, 4),
+      formatAbility("DEX", 16, 3),
+      formatAbility("CON", 16, 3),
       formatAbility("INT", 8, -1),
       formatAbility("WIS", 14, 2),
       formatAbility("CHA", 12, 1),
     ],
     traits: [
-      { name: "Bone-Nest Camouflage", kind: "trait", text: "While motionless within its nest, the Wendigo Wight is indistinguishable from the surrounding remains. When it begins to rise, creatures within 30 ft must succeed on a DC 14 Wisdom (Perception) check to notice the movement in time. A creature whose passive Perception is 14 or higher notices automatically, as does a creature that has already detected it through magic." },
-      { name: "Wrong Cold (Aura)", kind: "trait", text: "At the start of the Wendigo Wight's turn, all creatures within 10 ft take 1d8 cold damage automatically. No save. This is not weather." },
-      { name: "Bone Field Raise", kind: "trait", text: "The bone field under the ice is full of what it has already eaten. On round 2, as a bonus action, the Wight hauls one Lesser Wendigo (70 HP — freshly pulled from the ice, hasn't fed) up through the ice. Once per fight. The Wight ALWAYS has this trait; whether there is a body to raise is a ROSTER question — add 1x Lesser Wendigo to this encounter at 6P and this is simply how it walks on. At 4-5P the roster holds none and the trait never fires. Count changes with the band; abilities do not." },
-      { name: "Frozen Endurance", kind: "trait", text: "The FIRST time the Wendigo Wight drops to 0 hit points, it drops to 1 hit point instead — the wrong cold knits it back together before it can finish dying. No save, no roll. Once per fight. Fire or radiant damage bypasses this completely: if the blow that reduced it to 0 was fire or radiant, it dies then and there." },
+      { name: "Bone-Nest Camouflage", kind: "trait", text: "While motionless within its bone nest, the Wendigo Wight is indistinguishable from the surrounding remains. When it begins to assemble, each creature within 30 feet must succeed on a DC 14 Wisdom (Perception) check to notice the movement in time. A creature whose passive Perception is 14 or higher notices automatically. A creature that fails is Surprised during the opening round: it cannot move or take an action on its first turn, and it cannot take a reaction until that turn ends. Bone-Nest Camouflage does not impose disadvantage on initiative." },
+      { name: "Wrong Cold (Aura)", kind: "trait", text: "The area within 15 feet of the Wight is difficult terrain for hostile creatures. At the start of the Wight's turn, each conscious hostile creature in that area must make a DC 15 Constitution saving throw, taking 1d10 cold damage on a failed save or half as much on a successful one. Creatures at 0 hit points are unaffected. This is not weather." },
+      { name: "Bone-Pile Return", kind: "trait", text: "The first time damage leaves the Wight at half its hit point maximum or fewer, resolve that damage completely. If the Wight is grappling a creature, it ends the grapple by throwing that creature into its space; the creature has the prone condition. Hungering Leap immediately recharges, and the Wight uses it to move to its bone pile without provoking opportunity attacks. This special use causes no landing damage, push, prone condition, or Devouring Claw. On landing, the Wight returns to half its hit point maximum, Bone Armor forms, and Bone Field Raise resolves. Hungering Leap is then expended normally." },
+      { name: "Bone Armor", kind: "trait", text: "While Bone Armor is active, the Wight has resistance to all damage except fire and radiant. At the start of each of its turns while Bone Armor is active, the Wight regains 14 (2d10+3) hit points, up to its hit point maximum." },
+      { name: "Bone Field Raise", kind: "trait", text: "When Bone-Pile Return resolves, one Lesser Wendigo rises from the bone field. Roll initiative for it immediately. It has its own initiative count: if that count has not passed in the current round, it acts this round; otherwise, its first turn is in the next round. The Lesser uses the party-size HP band (34 / 45 / 56 for 3P / 4P / 5P) and is a SEPARATE add pool — its HP is never multiplied by the Wight's own defences." },
     ],
     actions: [
       { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", save: "STR DC 15", text: "+7 to hit, reach 5 ft. Hit: 15 (2d10 + 4) cold. DC 15 STR save or grappled." },
-      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 7", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
-      { name: "Hunger Leap", kind: "action", recharge: "5-6", save: "STR DC 15", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
+      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 8", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
+      { name: "Hungering Leap", kind: "action", recharge: "5-6", save: "STR DC 16", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
       { name: "Mark Prey (Legendary Action, 1/round)", kind: "action", text: "The Wendigo marks one creature it can see. Until the end of that creature's next turn, the Wendigo has advantage on attacks against it and ignores any bonus to its AC from shields. This is its ONLY legendary action — one per round." },
     ],
     reactions: [],
     resources: [],
     notes: [
-      "ACT 2 FINAL BOSS. HP 288 (4P) / 360 (5P) / 216 (3P) — the 360 @5P final tuning divided by the 1.25 band, confirmed against broken_chain_full_dpr_3-4-5_final_pack.xlsx (Last 3 Rerun). AC 17 likewise from that final sheet. Do NOT re-derive either from raw HP.",
-      "LEGENDARY ACTIONS: Mark Prey ONLY, 1/round (Christopher, 2026-07-25, confirming the REVISED encounter doc). Frozen Prowl and Wrong Cold Pulse were removed — they were never in the encounter document. Claws +7, both cold, grapple DC 15 — all flat at every party size. At 6P add 1x Lesser Wendigo (70 HP) to the ROSTER; Bone Field Raise is merely how it arrives on round 2. That is a count change, not a band-gated ability.",
+      "ACT 2 ACT BOSS. HP 130 (4P) — the AUTHORED baseline, with 98 (3P) / 163 (5P) from the uniform band. Source: the archetyped encounter doc's creature table and the Monster Builder workbook's worked L5 calibration, which agree. 4P is the baseline every CR is built around; 3P/5P come FROM it and are never the thing it is derived from. This replaces the old 288, which was '360 @5P ÷ 1.25' against the retired v12 DPR line — that line was the midpoint of the min and max party rather than the balanced center, and read ~30% high at L5, so anything sized against it came out heavy.",
+      "WORKED CALIBRATION (4P, L5): personal sustain 236.2 EHP from 130 raw (phase 1 65, armored phase 104, regen 67.2) plus a SEPARATE 45-HP Lesser = 281.2 monster sustain. PC effective damage 68.36 (79.49 target-resolved vs AC 17, x 0.86 uptime for aura/leap/repositioning). PCER 4.11, MER 5.59, pressure 0.736, margin 1.47 — a high-output act boss (ladder target 4.5 / 0.725).",
+      "LEGENDARY ACTIONS: Mark Prey ONLY, 1/round (Christopher, 2026-07-25, confirming the REVISED encounter doc). Frozen Prowl and Wrong Cold Pulse were removed — they were never in the encounter document. Claws +7, both cold, grapple DC 15 — all flat at every party size. Bone Field Raise ALWAYS fires when Bone-Pile Return resolves, at every party size - the Lesser is part of the standard fight, not a 6P-only roster add. It uses the band 34 / 45 / 56 and rolls its own initiative.",
       "CR REDUCTION (2026-07-17): a traditional CR calc had this at CR 12+ (offense-driven: the old grapple-bite loop hit ~69 raw); the act's intent is ~CR 9. HP was deliberately NOT touched — it is the survivability counterweight that keeps the fight at ~6 rounds, and dropping it would only make a still-lethal boss a swingy glass cannon. Instead the offense/defense levers came down: AC 17->15, STR 20->18 (to-hit +8->+7), and the melee loop from ~69 raw grapple / 41 ungrappled to ~48 / 30 (all cold now). That reads ~CR 6-7 offense grappled / ~CR 5 ungrappled, pulling the whole creature toward the CR 8-9 neighborhood. The FDMC round count is unchanged (~6.0, act-boss on target) because the model has no monster-AC/DPR term — the fight stays the same LENGTH while its per-round LETHALITY and rules-facing CR come down.",
       "ENCOUNTER MATH: fought at L5 (pseudo +1), FRESH off the minimum-hours long rest, so the party is at full 5P midpoint DPR (~77.4 effective). 340 raw x ~1.33 kit (Wrong Cold aura spacing, Hunger Leap repositioning ~33% of rounds, legendary-driven downs) = ~450 effective = 5.8 rounds, hitting the ~6-round act-boss target. Solving forward gives 349 vs the doc's 340 — within 3%, so the document is correct and an earlier 370 bump was reverted.",
-      "Frozen Endurance REWRITTEN and KEPT REWRITTEN (Christopher, 2026-07-21): the original 'DC 10 + damage taken' CON save could never be passed — a 25-damage killing blow sets DC 35 against a d20+4 — so it only ever fired on chip damage and its fire/radiant counterplay was meaningless. It is automatic and once per fight, which makes the fire/radiant bypass a real decision. NOTE the v12 encounter document still prints the old unpassable wording; that is a stale carry-over and this version wins.",
+      "Frozen Endurance was REMOVED from the encounter model. It is absent from the archetyped encounter doc and from the Monster Builder workbook's phase mechanics, both of which list only Bone-Nest Camouflage, Wrong Cold, Bone-Pile Return, Bone Armor and Bone Field Raise. Its old 1.06 ehpMultiplier came off the defences with it; the armored phase and its regeneration now carry the whole back half of the bar.",
       "Open ice field — no cover, no darkness. The whole fight is about managing the 10-ft Wrong Cold aura; Hunger Leap resets positions so the party can't just kite. Grapple + Hunger Bite is the max-HP attrition clock.",
       "HUNGER BITE DRAIN (2026-07-19): the max-HP reduction is HALF the cold damage dealt (dice-variable, not the full bite). Half was the intended attrition rate; the full-bite version shipped in 0.6.3.12 was a misread. No self-heal — this drains the target's max HP only, it does NOT return HP to the Wight (kit multiplier stays 1.37, no survivability change).",
-      "Frozen Endurance is bypassed by fire and radiant. Track Wrong Cold per round, grapple + max-HP reduction (half the bite) per creature, Hunger Leap recharge, Mark Prey (1/round), and the 6P Bone Field Raise flag. Level 6 gate on kill.",
+      "Track Wrong Cold per round, grapple + max-HP reduction (half the bite) per creature, Hunger Leap recharge, Mark Prey (1/round), and the 6P Bone Field Raise flag. Level 6 gate on kill.",
       "AC/abilities reconstructed from the encounter doc's to-hit / DCs — tune to taste.",
     ],
     visibility: { defaultState: "hp-bar", hiddenName: "The Thing at the Center of the Lake", revealedName: "Wendigo Wight" },
