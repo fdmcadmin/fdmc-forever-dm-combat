@@ -383,6 +383,44 @@ export type EncounterAudit = {
   target?: { position: EscalationPosition; pcerDelta: number; pressureDelta: number };
 };
 
+/**
+ * PC EFFECTIVE damage — the PCER denominator.
+ *
+ * Two adjustments sit between the published balanced center and what the party actually lands,
+ * and the Wight calibration shows both: the generic L5 4P center is 84.84 (already resolved
+ * against the level's baseline AC 16), target-resolving it against the Wight's AC 17 and save
+ * profile gives 79.49, and an 0.86 uptime for "leap, aura, and repositioning tax" gives the
+ * 68.36 the sheet divides by.
+ *
+ * Uptime is a CLOCK factor, not resistance — it reduces damage delivered, it does not multiply
+ * the creature's HP. Counting it as sustain would be the double-count the model forbids.
+ */
+export function pcEffectiveDamage(targetResolvedDpr: number, uptime = 1): number {
+  return targetResolvedDpr * Math.max(0, Math.min(1, uptime));
+}
+
+/**
+ * The worked four-player level-5 Wendigo Wight calibration, kept as a regression anchor.
+ *
+ * It is a CALIBRATION EXAMPLE, not a rule for future monsters — the generic model is the
+ * ladder above. Recorded so a later change to the clocks can be checked against a case whose
+ * answer is published.
+ */
+export const WIGHT_L5_CALIBRATION = {
+  hpByPartySize: { 3: 98, 4: 130, 5: 163 },
+  lesserHpByPartySize: { 3: 34, 4: 45, 5: 56 },
+  targetResolvedDpr: 79.492684475,
+  uptime: 0.86,
+  pcEffectiveDamage: 68.36370864850001,
+  monsterSustain: 281.2,
+  monsterSustainedDamage: 34,
+  partySustain: 190,
+  pcer: 4.1132935231150585,
+  mer: 5.588235294117647,
+  pressure: 0.7360630515048,
+  roundMargin: 1.4749417710025883,
+} as const;
+
 /** Read a creature's two clocks and place it on the ladder. */
 export function auditEncounter(params: {
   monsterSustain: number;

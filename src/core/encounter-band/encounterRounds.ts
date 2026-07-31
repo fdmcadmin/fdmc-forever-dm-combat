@@ -65,12 +65,10 @@ const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> = [
   // `broken_chain_monster_builder_final.xlsx` → DPR Progression, Balanced Center, 4 players.
   // Every level 3-12 is a measured checkpoint; nothing here is extrapolated.
   //
-  // REPLACES the v12 "Size Summary" line (92.0/101.0/110.4/122.2/153.1/185.3), which that
-  // rebuild's own Dashboard retired: "replaces the stale 77.8/82 raw package… Do not use the
-  // old min/max midpoint." The old figures were the MIDPOINT OF THE MIN AND MAX party; the
-  // balanced center is the MEDIAN Representative roster, which is a different statistic and
-  // materially lower — the app was reading ~30% high at L5 and ~66% high at L3, so every
-  // round projection came out short.
+  // REPLACES the v12 "Size Summary" line (92.0/101.0/110.4/122.2/153.1/185.3). Those were the
+  // MIDPOINT OF THE MIN AND MAX party; the balanced center is the MEDIAN Representative
+  // roster (README §2), a different statistic and materially lower — the app was reading ~30%
+  // high at L5 and ~66% high at L3, so every round projection came out short.
   //
   // Bonds are inside every line. Milestones step only at 3 / 6 / 9 (Realized → Metamorphosis
   // → Tempered); L5 carries no bond-stage change, which is why L4→L5 jumps on class scaling
@@ -88,14 +86,17 @@ const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> = [
 ];
 
 /**
- * MEASURED party DPR by size — the workbook publishes 3P/4P/5P separately because party DPR
- * does NOT scale linearly with headcount. At L5 the real spread is 60.3 / 84.8 / 102.9, i.e.
- * 0.711× and 1.213× the four-player line, not the 0.75/1.25 that `size/4` produces.
+ * Measured party DPR at 3P and 5P — for VALIDATION only.
  *
- * ⚠ `partyDpr` below still scales `size/4`. That is a known ~5% over-read at 3P and ~3%
- * under-read at 5P, left in place deliberately rather than changed in the same pass as the
- * anchors above. HP bands are a different matter and ARE 0.75/1.00/1.25 exactly — the
- * workbook is explicit that only HP pools scale with party size.
+ * **Everything is authored at four players.** 4P is the publishing baseline every CR is built
+ * around (README §1); a fight is never built around a five-player party. The other two columns
+ * exist so a built encounter can be checked against the tables that will actually run it —
+ * "author at 4P, validate 3P/5P with HP bands".
+ *
+ * Party DPR does not scale linearly with headcount (L5 is really 60.3 / 84.8 / 102.9 = 0.711×
+ * and 1.213×), which is exactly why party size is expressed as an HP band rather than a DPR
+ * dial: HP pools scale 0.75/1.00/1.25 and nothing else does — not damage, attack bonuses,
+ * save DCs, or traits.
  */
 export const MEASURED_DPR_BY_SIZE: ReadonlyArray<readonly [level: number, p3: number, p4: number, p5: number]> = [
   [3, 38.50192181484375, 55.326198999647474, 68.42592204155778],
