@@ -313,13 +313,32 @@ export function encounterClassification(monsters: RoundsMonster[]): MonsterClass
  * L9 17 · L12 18). A creature AT this AC is exactly "average to hit" and scores acFactor 1.0.
  */
 const BASELINE_TARGET_AC: ReadonlyArray<readonly [level: number, ac: number]> = [
-  [3, 13], [4, 14], [5, 15], [6, 16], [9, 17], [12, 18],
+  // Monster Builder workbook → Model Inputs → Target AC. Every level is authored.
+  [3, 14], [4, 15], [5, 16], [6, 16], [7, 16], [8, 17], [9, 17], [10, 18], [11, 18], [12, 18],
 ];
 
-/** Typical party attack bonus by level (proficiency + a maxed attack stat). */
+/** Party attack bonus by level — Model Inputs → Martial +hit. */
 const PARTY_ATTACK_BONUS: ReadonlyArray<readonly [level: number, bonus: number]> = [
-  [3, 6], [4, 6], [5, 7], [6, 7], [9, 9], [12, 10],
+  [3, 6], [4, 7], [5, 8], [6, 8], [7, 8], [8, 9], [9, 10], [10, 10], [11, 10], [12, 10],
 ];
+
+/**
+ * The share of party damage that is delivered by ATTACK ROLLS, and therefore the only share a
+ * creature's AC can touch. Save-half, save-none and automatic damage are unaffected by armour.
+ *
+ * 0.82 is back-solved from the workbook's own pair of published L5 figures: the generic
+ * balanced center 84.844 (resolved vs the level's AC 16) and the same party re-resolved
+ * against the Wendigo Wight's AC 17, 79.493. One point of AC moves a martial attack from a
+ * 65% to a 60% hit rate — a 7.69% cut to attack-roll damage — yet total party DPR falls only
+ * 6.31%, and 6.31 / 7.69 = 0.82.
+ *
+ * ⚠ This is a property of the BALANCED-CENTER roster mix, not a universal constant. Model
+ * Inputs → Class Resolution carries per-class attack shares that run from 0.10 (Wizard) to
+ * 1.00 (Fighter); a caster-heavy table sits well below 0.82 and a martial one approaches 1.0.
+ * It is the right number for authoring against the publishing center, which is what this model
+ * is for.
+ */
+export const PARTY_ATTACK_SHARE = 0.82;
 
 function lerpTable(table: ReadonlyArray<readonly [number, number]>, level: number): number {
   const lv = Math.max(1, Math.min(20, Math.floor(level || 1)));
@@ -340,15 +359,32 @@ export function hitChance(ac: number, level: number): number {
 }
 
 /**
- * How much a creature's AC scales the party's damage against IT, relative to a
- * level-appropriate target. Below 1.0 = harder to hit than baseline, so the fight runs long.
+ * RE-RESOLVE the published party DPR against a creature whose AC differs from the level
+ * baseline. Multiply the balanced-center figure by this.
  *
- * This is pure arithmetic from AC — no judgement, nothing to calibrate. It is deliberately
- * NOT part of the defensive (EHP) number: raising a creature's AC and giving it a second
- * life are different things and should never share a dial.
+ * ⚠ This is a SUBSTITUTION, not a penalty stacked on top. The DPR curve is already
+ * target-resolved against the level's baseline AC, so `hitChance(ac) / hitChance(baseline)`
+ * — the old implementation — asked the party to roll to hit twice. It was wrong twice over:
+ * it double-counted, AND it applied the full attack-roll penalty to save-based and automatic
+ * damage that armour cannot affect at all. At L5 vs AC 17 it returned 0.846 where the real
+ * answer is 0.937, reading party damage ~10% low and every armoured fight correspondingly
+ * long.
+ *
+ * Only the attack-roll share moves:
+ *
+ *   factor = 1 − attackShare × (1 − hit(creatureAC) / hit(baselineAC))
+ *
+ * At the baseline AC this is exactly 1.0, so an average-armoured creature uses the published
+ * number untouched. It reproduces the workbook's own re-resolved pair to five decimals:
+ * 84.844 × 0.936923 = 79.4927 against a published 79.492684475.
+ *
+ * Still deliberately NOT part of the defensive (EHP) number — armour is a tax on the party's
+ * output, a second life is a bigger HP bar, and they must never share a dial.
  */
 export function acFactor(ac: number, level: number): number {
-  return hitChance(ac, level) / hitChance(lerpTable(BASELINE_TARGET_AC, level), level);
+  const baseline = hitChance(lerpTable(BASELINE_TARGET_AC, level), level);
+  if (baseline <= 0) return 1;
+  return 1 - PARTY_ATTACK_SHARE * (1 - hitChance(ac, level) / baseline);
 }
 
 /**
@@ -546,18 +582,21 @@ export function estimateRounds(
   encounterTier?: MonsterClassification,
 ): RoundsEstimate {
   const rawHp = monsters.reduce((s, m) => s + m.maxHp * Math.max(0, m.count), 0);
-  // AC IS NOT APPLIED HERE. The balanced-center DPR curve is already TARGET-RESOLVED against
-  // the party's per-level AC/save profile — resolving it a second time against the creature's
-  // AC is the double-count the model forbids ("resolve AC and saves in party DPR once").
-  // `acFactor`/`encounterAcFactor` are retained for callers that want to re-resolve the curve
-  // for a creature whose AC materially differs from the level baseline, which is a
-  // replacement for the published number, never a multiplier on top of it.
+  // PC EFFECTIVE DAMAGE, exactly as the workbook builds it:
+  //     published balanced center  ×  AC re-resolution  ×  encounter uptime
+  // The two adjustments are different in kind and must both be present.
+  //   · AC RE-RESOLVES the curve to the armour actually in this fight. It is a substitution,
+  //     not a stacked penalty — see `acFactor`. At the level's baseline AC it is exactly 1.0.
+  //   · UPTIME is a CLOCK term: aura spacing, forced repositioning, lost turns. It reduces
+  //     damage delivered and must never be folded into the creature's EHP instead.
+  // Wight check: 84.844 × 0.9369 × 0.86 = 68.36, the sheet's PC effective damage.
   const eff = effectiveHp(monsters);
   const dpr = partyDpr(size, level, lane, resources);
+  const ac = encounterAcFactor(monsters, level);
   // Encounter damage UPTIME — the lowest uptime in the fight governs, since the creature
   // imposing the worst tempo tax is the one dictating where the party can stand.
   const uptime = monsters.reduce((lo, m) => Math.min(lo, m.damageUptime ?? 1), 1);
-  const landedDpr = dpr * uptime;
+  const landedDpr = dpr * ac * uptime;
   const rounds = landedDpr > 0 ? eff / landedDpr : 0;
   // The band ALWAYS derives from the strongest creature in the fight (Christopher,
   // 2026-07-25). A declared encounter tier may only ESCALATE above that — never below it.
@@ -573,7 +612,7 @@ export function estimateRounds(
     effectiveHp: eff,
     dpr,
     landedDpr,
-    acFactor: 1,
+    acFactor: ac,
     rounds,
     classification,
     band,

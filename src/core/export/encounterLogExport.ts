@@ -9,14 +9,6 @@ export type PostCombatSummary = {
   encounterName: string;
   completedAt: string;
   rounds: number;
-  bossKillShot?: {
-    actorId: string;
-    actorName: string;
-    actionCode: string;
-    actionName: string;
-    round: number;
-    damageDealt: number;
-  };
   damageDealt: Array<{ actorId: string; actorName: string; total: number }>;
   damageTaken: Array<{ actorId: string; actorName: string; total: number }>;
   resourcesUsed: Array<{ actorId: string; actorName: string; count: number }>;
@@ -35,7 +27,6 @@ export function generatePostCombatSummary(
   const damageTakenByActor: Record<string, { actorId: string; actorName: string; total: number }> = {};
   const resourcesByActor: Record<string, { actorId: string; actorName: string; count: number }> = {};
 
-  let bossKillShot: PostCombatSummary["bossKillShot"] | undefined;
 
   for (const entry of log) {
     if (entry.type === "roll-damage" && entry.val > 0) {
@@ -52,18 +43,9 @@ export function generatePostCombatSummary(
       if (!resourcesByActor[entry.actorId]) resourcesByActor[entry.actorId] = { actorId: entry.actorId, actorName: entry.actorName, count: 0 };
       resourcesByActor[entry.actorId].count += 1;
     }
-    if (entry.type === "boss-killed" && !bossKillShot) {
-      // Find the last damage entry by the killing actor in the same round
-      const killEntry = log.find(e => e.type === "roll-damage" && e.round === entry.round && e.actorId === entry.actorId);
-      bossKillShot = {
-        actorId: entry.actorId,
-        actorName: entry.actorName,
-        actionCode: entry.code,
-        actionName: entry.message,
-        round: entry.round,
-        damageDealt: killEntry?.val ?? entry.val,
-      };
-    }
+    // No KILL SHOT is singled out. The log already shows the turn the creature died on, so
+    // naming a "killer" adds nothing the record does not have and quietly awards the fight to
+    // whoever happened to land last — usually a matter of initiative order, not contribution.
   }
 
   return {
@@ -71,7 +53,6 @@ export function generatePostCombatSummary(
     encounterName,
     completedAt: new Date().toLocaleString(),
     rounds,
-    bossKillShot,
     damageDealt: Object.values(damageByActor).sort((a, b) => b.total - a.total),
     damageTaken: Object.values(damageTakenByActor).sort((a, b) => b.total - a.total),
     resourcesUsed: Object.values(resourcesByActor).sort((a, b) => b.count - a.count),
@@ -86,10 +67,6 @@ export function exportSummaryAsText(summary: PostCombatSummary): string {
     "",
   ];
 
-  if (summary.bossKillShot) {
-    const k = summary.bossKillShot;
-    lines.push(`KILL SHOT: ${k.actorName} — ${k.actionName} [Round ${k.round}] — ${k.damageDealt} damage`, "");
-  }
 
   if (summary.damageDealt.length > 0) {
     lines.push("TOP DAMAGE DEALT");
@@ -112,8 +89,19 @@ export function exportSummaryAsText(summary: PostCombatSummary): string {
   return lines.join("\n");
 }
 
-export function exportSummaryAsJson(summary: PostCombatSummary): string {
-  return JSON.stringify(summary, null, 2);
+/**
+ * A filename that NAMES ITS FIGHT. Every combat produces one of these, so
+ * `fdmc-encounter-1730412345.txt` gives the DM a folder of indistinguishable files —
+ * the encounter name is the only part that makes a living record readable later.
+ */
+export function exportFilename(encounterName: string, completedAt: string): string {
+  const slug = (encounterName || "encounter")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "encounter";
+  const stamp = (completedAt || new Date().toISOString()).slice(0, 19).replace(/[:T]/g, "-");
+  return `fdmc-${slug}-${stamp}.txt`;
 }
 
 export function downloadExport(content: string, filename: string, mimeType = "text/plain"): void {

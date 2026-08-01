@@ -126,7 +126,7 @@ import type { Actor } from "./core/types/actor";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
-import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "./core/export/encounterLogExport";
+import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "./core/export/encounterLogExport";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -3118,19 +3118,9 @@ export default function App() {
             <button type="button"
               onClick={() => {
                 const summary = generatePostCombatSummary(readEncounterLog(), bossKillAlert.encounterId, bossKillAlert.encounterName);
-                downloadExport(exportSummaryAsText(summary), `fdmc-${bossKillAlert.encounterId}-${Date.now()}.txt`);
+                downloadExport(exportSummaryAsText(summary), exportFilename(summary.encounterName, summary.completedAt));
               }}
-              style={{ fontSize: 11, padding: "4px 12px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
-              Export Text
-            </button>
-            <button type="button"
-              onClick={() => {
-                const summary = generatePostCombatSummary(readEncounterLog(), bossKillAlert.encounterId, bossKillAlert.encounterName);
-                downloadExport(exportSummaryAsJson(summary), `fdmc-${bossKillAlert.encounterId}-${Date.now()}.json`, "application/json");
-              }}
-              style={{ fontSize: 11, padding: "4px 12px", background: "#2a3a4e", color: "#7b68ee", border: "1px solid #7b68ee44", borderRadius: 4, cursor: "pointer" }}>
-              Export JSON
-            </button>
+              style={{ fontSize: 11, padding: "4px 12px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Export Log</button>
             <button type="button" onClick={() => setBossKillAlert(null)}
               style={{ fontSize: 11, padding: "4px 12px", background: "transparent", color: "#666", border: "1px solid #444", borderRadius: 4, cursor: "pointer" }}>
               Dismiss

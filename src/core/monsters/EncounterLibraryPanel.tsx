@@ -16,7 +16,7 @@ import {
 import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/encounterRounds";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
-import { generatePostCombatSummary, exportSummaryAsText, exportSummaryAsJson, downloadExport } from "../export/encounterLogExport";
+import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyPanel";
@@ -1034,20 +1034,9 @@ export function EncounterLibraryPanel({
                 onClick={() => {
                   const bk = log.find((e: EncounterLogEntry) => e.type === "boss-killed");
                   const summary = generatePostCombatSummary(log, bk?.actorId ?? "encounter", bk?.actorName ?? "Encounter");
-                  downloadExport(exportSummaryAsText(summary), `fdmc-encounter-${Date.now()}.txt`);
+                  downloadExport(exportSummaryAsText(summary), exportFilename(summary.encounterName, summary.completedAt));
                 }}
-                style={{ fontSize: 11, padding: "3px 10px", background: "#2a6e2a22", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>
-                ↓ Export Text
-              </button>
-              <button type="button"
-                onClick={() => {
-                  const bk = log.find((e: EncounterLogEntry) => e.type === "boss-killed");
-                  const summary = generatePostCombatSummary(log, bk?.actorId ?? "encounter", bk?.actorName ?? "Encounter");
-                  downloadExport(exportSummaryAsJson(summary), `fdmc-encounter-${Date.now()}.json`, "application/json");
-                }}
-                style={{ fontSize: 11, padding: "3px 10px", background: "#2a2a3e", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
-                ↓ Export JSON
-              </button>
+                style={{ fontSize: 11, padding: "3px 10px", background: "#2a6e2a22", border: "1px solid #2a6e2a55", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>↓ Export Log</button>
             </div>
           </div>
         );
