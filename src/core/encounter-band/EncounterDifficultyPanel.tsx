@@ -5,13 +5,12 @@
  * level, and get a difficulty rating + an add/remove recommendation to land the
  * fight in the "Standard" band (fair, not overpowered). Reads only the encounter
  * definitions + monster template library passed in as props; mutates nothing and
- * touches no P0–P9 state. Difficulty math lives in `encounterDifficulty.ts`.
+ * touches no P0-P9 state. The model lives in `encounterRounds.ts` + `encounterConstruction.ts`.
  */
 
 import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
-import { recommendAdjustment, unitThreat, type ThreatMonster, type Difficulty } from "./encounterDifficulty";
 import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
 import {
   estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
@@ -33,39 +32,9 @@ const VERDICT_COLOR: Record<RoundsEstimate["verdict"], string> = {
   Slog: "#ff4444",
 };
 
-const DIFFICULTY_COLOR: Record<Difficulty, string> = {
-  Trivial: "#8a8aa0",
-  Easy: "#5aa0e0",
-  Standard: "#4caf50",
-  Hard: "#e07b39",
-  Deadly: "#ff4444",
-};
-
 // HP now scales off the SAME party size that drives partyDpr below. It used to come from a
 // per-creature `entry.hpVariant`, so the defensive and offensive sides of the estimate could
 // be told two different party sizes — a 5-man HP bar divided by 3-man damage.
-
-function toThreatMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[], partySize: number): ThreatMonster[] {
-  const out: ThreatMonster[] = [];
-  for (const entry of encounter.entries) {
-    const t = library.find(m => m.templateId === entry.templateId);
-    if (!t) continue;
-    out.push({
-      id: entry.templateId,
-      name: t.name,
-      maxHp: hpForPartySize(t.stats.maxHp, partySize),
-      // Threat weight comes from classification, never from kind. kind: "boss" driving a
-      // hidden x1.6 here is the exact double-count MonsterClassification was introduced to
-      // kill — it survived in this legacy panel until 2026-07-25.
-      isBoss: t.stats.classification === "mid-boss"
-        || t.stats.classification === "act-boss"
-        || t.stats.classification === "final-boss",
-      multiattack: (t.actions ?? []).some(a => /multiattack/i.test(a.name ?? "")),
-      count: entry.count,
-    });
-  }
-  return out;
-}
 
 function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[], partySize: number): RoundsMonster[] {
   const out: RoundsMonster[] = [];
@@ -100,14 +69,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const [resources, setResources] = useState<PartyResources>("fresh");
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
-  const monsters = useMemo(
-    () => (encounter ? toThreatMonsters(encounter, monsterLibrary, partySize) : []),
-    [encounter, monsterLibrary, partySize],
-  );
-  const rec = useMemo(
-    () => recommendAdjustment(monsters, partySize, partyLevel),
-    [monsters, partySize, partyLevel],
-  );
   const roundsMonsters = useMemo(
     () => (encounter ? toRoundsMonsters(encounter, monsterLibrary, partySize) : []),
     [encounter, monsterLibrary, partySize],
@@ -117,7 +78,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     [roundsMonsters, partySize, partyLevel, lane, resources],
   );
 
-  const diffColor = DIFFICULTY_COLOR[rec.difficulty];
   const vColor = VERDICT_COLOR[est.verdict];
 
   return (
@@ -380,55 +340,32 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                 </div>
               </div>
 
-              {/* Legacy threat/budget verdict — unitless, kept for reference only */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 12, background: `${diffColor}22`, border: `1px solid ${diffColor}`, color: diffColor }}>
-                  {rec.difficulty}
-                </span>
-                <span style={{ fontSize: 10, color: "#666" }}>
-                  legacy: {rec.ratio.toFixed(2)}× budget · threat {Math.round(rec.threat)} vs {Math.round(rec.budget)}
-                </span>
-              </div>
-
-              {/* Recommendation */}
-              <p style={{
-                margin: "0 0 8px", fontSize: 12, lineHeight: 1.4,
-                color: rec.action === "none" ? "#7be08a" : "#e0c98a",
-                background: rec.action === "none" ? "#13251a" : "#1f1a12",
-                border: `1px solid ${rec.action === "none" ? "#2f7d3f" : "#5a4a1a"}`,
-                borderRadius: 5, padding: "6px 8px",
-              }}>
-                {rec.action === "none" ? "✓ " : "→ "}{rec.summary}
-                {rec.action !== "none" && (
-                  <span style={{ color: "#888" }}> (projected {rec.projectedRatio.toFixed(2)}×)</span>
-                )}
-              </p>
-
-              {/* Per-template breakdown */}
+              {/* Roster — read off the SAME model as the clocks above, not a second one.
+                  The old threat/budget verdict lived here ("1.25x budget", "threat 360 vs
+                  288"). Its units were invented, so a DM could never check it against
+                  anything at the table, and it rated 2x Lesser Wendigo as Hard for a fight
+                  that ran 3.5-4.5 rounds with nobody down. Rounds and pressure are
+                  falsifiable; that number never was. */}
               <div style={{ fontSize: 11, color: "#888" }}>
-                {monsters.map(m => {
-                  const change = rec.changes.find(c => c.id === m.id);
-                  return (
-                    <div key={m.id} style={{ display: "flex", justifyContent: "space-between", padding: "1px 0" }}>
-                      <span>
-                        {m.count}× {m.name}
-                        {m.isBoss && <span style={{ color: "#c8472e" }}> · boss</span>}
-                        {m.multiattack && <span style={{ color: "#7b68ee" }}> · multiattack</span>}
-                        {change && (
-                          <span style={{ color: change.delta > 0 ? "#7be08a" : "#ff9999", fontWeight: 600 }}>
-                            {"  "}{change.delta > 0 ? `+${change.delta}` : change.delta} → {change.resultingCount}
-                          </span>
-                        )}
-                      </span>
-                      <span style={{ color: "#666" }}>{Math.round(unitThreat(m) * m.count)}</span>
-                    </div>
-                  );
-                })}
+                {roundsMonsters.map(m => (
+                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", padding: "1px 0" }}>
+                    <span>
+                      {m.count}× {m.name}
+                      {m.classification && m.classification !== "normal" && (
+                        <span style={{ color: "#8a8aa0" }}> · {CLASSIFICATION_LABEL[m.classification]}</span>
+                      )}
+                    </span>
+                    <span style={{ color: "#666" }}>
+                      {Math.round(m.maxHp * m.count)} HP{m.ac !== undefined ? ` · AC ${m.ac}` : ""}
+                    </span>
+                  </div>
+                ))}
               </div>
 
               <p style={{ margin: "8px 0 0", fontSize: 9, color: "#555", lineHeight: 1.4 }}>
-                Homebrew guide only (HP-based threat × party size/level) — not official CR. A lone
-                boss often plays easier than its number says (action economy); tune to your table.
+                Homebrew pacing guide, not official CR. Authored at four players; 3P/5P scale HP
+                only. Check the round margin as well as the fight length — the same kill clock
+                can be a comfortable boss or a coin flip.
               </p>
             </>
           )}

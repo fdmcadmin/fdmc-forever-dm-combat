@@ -1,7 +1,8 @@
 /**
  * encounterRounds.ts — predicted ROUNDS-TO-KILL for an encounter.
  *
- * WHY THIS EXISTS: `encounterDifficulty.ts` reports `threat 360 vs budget 288 = 1.25×`.
+ * WHY THIS EXISTS: the old `encounterDifficulty.ts` (deleted 2026-07-31) reported
+ * `threat 360 vs budget 288 = 1.25×`.
  * Those units are invented — nothing at the table is 288 of anything, so the DM cannot
  * check the claim against reality. It rated 2× Lesser Wendigo at low as "Hard" for a
  * party of 4; the fight ran 3.5–4.5 rounds and nobody went down.

@@ -1219,7 +1219,7 @@ export default function App() {
   const [turnResetVersion, setTurnResetVersion] = useState(0);
   const [focusedActorId, setFocusedActorId] = useState<string | null>(null);
   // P8: boss kill alert
-  const [bossKillAlert, setBossKillAlert] = useState<{ name: string; encounterId: string; encounterName: string } | null>(null);
+  const [bossKillAlert, setBossKillAlert] = useState<{ name: string; encounterId: string; encounterName: string; reason?: "boss" | "combat-end" } | null>(null);
 
   // P7/P8: log HP change to encounter log + ring buffer
   /**
@@ -1494,6 +1494,25 @@ export default function App() {
       void OBR.broadcast.sendMessage(FDMC_COMBAT_END_CHANNEL, { type: "fdmc:combat-end" }, { destination: "ALL" }).catch(() => undefined);
     }
     addEntry({ actorName: "System", actionName: "Combat End", tabId: "system", message: "Combat ended. Seats and HP preserved." });
+    // OFFER the log after every combat — a living record is only living if each fight can be
+    // kept, and most fights never involve a boss. Deliberately an offer, never an automatic
+    // download: plenty of campaigns will not want a file per encounter, and silently writing
+    // to someone's disk at the end of every fight is not ours to decide. Whatever the alert
+    // already says wins, so a boss kill keeps its own wording.
+    setBossKillAlert(prev => prev ?? {
+      name: "Combat",
+      encounterId: "encounter",
+      encounterName: activeEncounterName(),
+      reason: "combat-end",
+    });
+  }
+
+  /**
+   * Best available name for the fight that just ended, for the export filename. Prefers the
+   * strongest creature actually in the roster, which is what a DM would call the encounter.
+   */
+  function activeEncounterName(): string {
+    return monsterCandidates.find(m => m?.name)?.name ?? "Encounter";
   }
 
   function handleSetCombatantInitiative(combatantId: string, initiative: number) {
@@ -3112,7 +3131,9 @@ export default function App() {
       {isDmMode && bossKillAlert && (
         <div style={{ margin: "8px 12px", padding: "10px 14px", background: "#1a0a0a", border: "1px solid #8b000088", borderRadius: 6, display: "flex", flexDirection: "column", gap: 8 }}>
           <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#ff9999" }}>
-            ⚔ {bossKillAlert.name} defeated — export encounter log?
+            {bossKillAlert.reason === "combat-end"
+              ? `📜 Combat ended — export the log for ${bossKillAlert.encounterName}?`
+              : `⚔ ${bossKillAlert.name} defeated — export encounter log?`}
           </p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <button type="button"
