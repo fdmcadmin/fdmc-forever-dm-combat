@@ -84,6 +84,11 @@ export function HitPointBadge({
                 type="number"
                 value={amountText}
                 onChange={(event) => setAmountText(event.target.value)}
+                // Double-click selects the whole value so the next keystroke replaces it.
+                // A number input has no "word" to select, so the browser's default
+                // double-click does nothing here and the DM had to click then Ctrl+A
+                // before every damage/heal entry.
+                onDoubleClick={(event) => event.currentTarget.select()}
               />
             </label>
 

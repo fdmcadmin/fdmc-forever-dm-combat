@@ -3638,16 +3638,17 @@ export function ActorCard({
     const actionLabelWithAdditives = `${committedRoll.actionLabel}${additiveLabel}`;
     const displayLabel = formatDamageRollLabel(actionLabelWithAdditives, label, isCritDamage, committedRoll.critThreshold);
 
-    // BUILD 0.5.3.1.3: Bond additives are valid damage add-ons, but Dice+ can fail when
-    // the outgoing damage formula is label-suffixed with the Bond shorthand. Keep the
-    // roll formula clean whenever Bond is attached; the FDMC log still records B/R/RD details.
-    const hasBondAdditive = additiveParts.some((effect) => effect.id.startsWith("bond:"));
     // Always label the damage roll with the action name (+ rider acronyms) so Dice+ shows
-    // e.g. "1d10+2 # Fire Bolt (IR)" — not a bare "1d10". Bonds still send clean (Dice+ can
-    // choke on the bond-suffixed formula); the FDMC log records the B/R detail regardless.
-    const diceFormula = !hasBondAdditive
-      ? labeledDiceFormula(combinedFormula, actionLabelWithAdditives)
-      : combinedFormula;
+    // e.g. "1d10+2 # Fire Bolt (IR)" — not a bare "1d10".
+    //
+    // The old BUILD 0.5.3.1.3 workaround here sent the formula UNLABELED whenever a Bond
+    // rider was attached, because a bond-suffixed label used to break Dice+ with
+    // "Unexpected token: MATH". That root cause was fixed in 0.6.2.4: labeledDiceFormula()
+    // now sanitizes the label, stripping dice terms, operators, parens and bare numbers, so
+    // no rider shorthand can reach the parser. The bypass outlived its cause and was the
+    // reason spell rolls posted bare ("2d8+3") for a party where every PC carries a bond,
+    // while weapon ATTACK rolls — which never had the bypass — stayed labeled.
+    const diceFormula = labeledDiceFormula(combinedFormula, actionLabelWithAdditives);
     const request: DiceBridgeRollRequest = {
       protocol: "forever-dm-combat.roll.request.v1",
       requestId: createDiceRequestId("fdm-dmg", committedRoll.actionId),
@@ -4053,6 +4054,10 @@ export function ActorCard({
                             type="number" min={1} max={remaining} inputMode="numeric"
                             value={resourceSpend[action.id] ?? ""}
                             onChange={e => setResourceSpend(s => ({ ...s, [action.id]: e.target.value }))}
+                            // Double-click selects the value (a number input has no "word"
+                            // for the browser default to grab) — otherwise every re-entry
+                            // needs a click then Ctrl+A.
+                            onDoubleClick={e => e.currentTarget.select()}
                             placeholder="N"
                             style={{ width: 40, padding: "1px 4px", fontSize: 11, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd", textAlign: "center" }}
                           />
