@@ -14,6 +14,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import { HitPointBadge } from "../hp/HitPointBadge";
 import { getHpStatus } from "../hp/hpStatus";
 import type { AbilityId, Actor, DrainTracker, HitPoints, PinnedReaction } from "../types/actor";
+import { effectiveMaxHp } from "../types/actor";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
 import { actionCostLabels, isUsedActionStateValue, makeUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { AddCombatLogEntryInput } from "../types/combatLog";
@@ -1150,6 +1151,7 @@ export function ActorCard({
       current: Math.max(0, hp.current - toCurrent),
       max: hp.max,
       temp: startTemp - absorbed,
+      bonusMax: hp.bonusMax,
     };
 
     // No-op only when NOTHING moved — temp-only damage still changes state.
@@ -1170,9 +1172,11 @@ export function ActorCard({
 
   function healAmount(amount: number) {
     const next = {
-      current: Math.min(hp.max, hp.current + amount),
+      // Heal up to the EFFECTIVE max so a timed max-HP boost (Aid) is actually usable.
+      current: Math.min(effectiveMaxHp(hp), hp.current + amount),
       max: hp.max,
       temp: hp.temp ?? 0,
+      bonusMax: hp.bonusMax,
     };
     const restoredAmount = next.current - hp.current;
 
@@ -1275,7 +1279,43 @@ export function ActorCard({
       actorName: actor.name,
       actionName: "Reset HP",
       tabId: "system",
-      message: `${actor.name} HP reset to ${actor.stats.hp.current}/${actor.stats.hp.max}.`,
+      message: `${actor.name} HP reset to full: ${effectiveMaxHp(hp)}/${effectiveMaxHp(hp)}.`,
+    });
+  }
+
+  /**
+   * Timed max-HP boost (Aid, Heroes' Feast) — raises the ceiling for a duration and heals
+   * the same amount, exactly as Aid does. The AUTHORED max is never written, so the effect
+   * can be removed cleanly later.
+   */
+  function gainBonusMaxHp(amount: number) {
+    if (amount <= 0) return;
+    const nextBonus = (hp.bonusMax ?? 0) + amount;
+    onHpChange({
+      current: hp.current + amount,
+      max: hp.max,
+      temp: hp.temp ?? 0,
+      bonusMax: nextBonus,
+    });
+    onLog({
+      actorName: actor.name,
+      actionName: `+${amount} Max HP`,
+      tabId: "system",
+      message: `${actor.name} gains ${amount} temporary maximum HP (now ${hp.max} + ${nextBonus}). Base max is unchanged; clear it when the effect ends.`,
+    });
+  }
+
+  /** The effect ended: drop the bonus and trim current HP back under the authored max. */
+  function clearBonusMaxHp() {
+    const bonus = hp.bonusMax ?? 0;
+    if (bonus <= 0) return;
+    const trimmed = Math.min(hp.current, hp.max);
+    onHpChange({ current: trimmed, max: hp.max, temp: hp.temp ?? 0, bonusMax: 0 });
+    onLog({
+      actorName: actor.name,
+      actionName: "Max HP effect ended",
+      tabId: "system",
+      message: `${actor.name} loses ${bonus} temporary maximum HP. HP ${formatHp(hp.current)} → ${formatHp(trimmed)} of ${hp.max}.`,
     });
   }
 
@@ -3790,6 +3830,8 @@ export function ActorCard({
             onResetTempHp={resetTempHp}
             onSetZero={setZero}
             onResetHp={resetHp}
+            onBonusMaxGain={gainBonusMaxHp}
+            onClearBonusMax={clearBonusMaxHp}
             controlsSlot={renderAbsCheckPanel()}
           />
           <div className="stat-box compact-defense-box ac-speed-box">

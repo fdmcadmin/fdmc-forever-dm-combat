@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-import type { HitPoints } from "../types/actor";
+import { effectiveMaxHp, type HitPoints } from "../types/actor";
 import { getHpStatus } from "./hpStatus";
 
 type HitPointBadgeProps = {
@@ -11,6 +11,10 @@ type HitPointBadgeProps = {
   onResetTempHp: () => void;
   onSetZero: () => void;
   onResetHp: () => void;
+  /** Raise max HP for a duration (Aid, Heroes' Feast). Authored max is untouched. */
+  onBonusMaxGain?: (amount: number) => void;
+  /** Effect ended — drop the bonus and trim current HP back to the authored max. */
+  onClearBonusMax?: () => void;
   controlsSlot?: ReactNode;
 };
 
@@ -33,6 +37,8 @@ export function HitPointBadge({
   onResetTempHp,
   onSetZero,
   onResetHp,
+  onBonusMaxGain,
+  onClearBonusMax,
   controlsSlot,
 }: HitPointBadgeProps) {
   const status = getHpStatus(hp);
@@ -40,6 +46,8 @@ export function HitPointBadge({
   const [toolsOpen, setToolsOpen] = useState(false);
   const amount = parseAmount(amountText);
   const tempHp = hp.temp ?? 0;
+  const bonusMax = hp.bonusMax ?? 0;
+  const shownMax = effectiveMaxHp(hp);
 
   return (
     <div className={`hp-field ${status}`}>
@@ -48,8 +56,19 @@ export function HitPointBadge({
           <span className="stat-label">HP</span>
           <div className="hp-main-line">
             <span className="stat-value">
-              {hp.current}/{hp.max}
+              {hp.current}/{shownMax}
             </span>
+            {/* A timed max-HP boost shows as "+N" beside the max so the raised ceiling is
+                visible and obviously temporary — the authored max is never overwritten. */}
+            {bonusMax > 0 && (
+              <span
+                className="hp-bonus-max"
+                title={`+${bonusMax} temporary max HP (base max ${hp.max}). Clear it in HP Tools when the effect ends.`}
+                style={{ fontSize: 10, color: "#7ec8e3", marginLeft: 4 }}
+              >
+                +{bonusMax}
+              </span>
+            )}
             {status === "down" && <span className="hp-skull" title="0 HP">KO</span>}
           </div>
         </div>
@@ -110,6 +129,28 @@ export function HitPointBadge({
                 <button type="button" onClick={onResetTempHp}>Clear Temp</button>
               </div>
             </div>
+
+            {/* Timed max-HP boost (Aid, Heroes' Feast): raises the ceiling for a duration
+                WITHOUT touching the authored max, so when it expires "Clear Max" restores
+                the true value instead of the sheet being permanently edited. */}
+            {(onBonusMaxGain || onClearBonusMax) && (
+              <div className="hp-control-group" aria-label="Temporary maximum HP controls">
+                <span className="hp-control-group-label" title="Temporary increase to MAX HP for a duration — not temp HP">
+                  Max{bonusMax > 0 ? ` +${bonusMax}` : ""}
+                </span>
+                <div className="hp-control-buttons">
+                  {onBonusMaxGain && (
+                    <button type="button" title="Raise max HP by the Amount for a duration (also heals that much, like Aid)"
+                      onClick={() => onBonusMaxGain(amount)}>+Max</button>
+                  )}
+                  {onClearBonusMax && (
+                    <button type="button" disabled={bonusMax <= 0}
+                      title="Effect ended — remove the bonus and trim current HP back to the authored max"
+                      onClick={onClearBonusMax}>Clear Max</button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

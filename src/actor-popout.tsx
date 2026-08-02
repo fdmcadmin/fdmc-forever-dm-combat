@@ -28,6 +28,7 @@ import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResour
 import { loadActorLibrary, loadActorOverrides, resolveActorFromLibrary } from "./core/seats/dmActorLibrary";
 import { loadCachedActors } from "./core/seats/playerActorCache";
 import { resolveActor, buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
+import { fullHeal } from "./core/types/actor";
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import "./styles.css";
@@ -133,7 +134,7 @@ function ActorPopout() {
         diceBridgeStatus={diceBridgeStatus}
         diceBridgeLastEvent={diceBridgeLastEvent}
         onHpChange={(nextHp) => void setActorHp(actor.id, nextHp)}
-        onResetHp={() => void setActorHp(actor.id, actor.stats.hp)}
+        onResetHp={() => void setActorHp(actor.id, fullHeal(actor.stats.hp))}
         onReadyActionCosts={(costs, readiedKey) => readyActionCosts(actor.id, costs, readiedKey)}
         onUnreadyAction={(readiedKey) => unreadyActionKey(actor.id, readiedKey)}
         onRemovePendingLogEntries={removePendingEntries}

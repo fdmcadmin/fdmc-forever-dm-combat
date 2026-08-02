@@ -123,6 +123,7 @@ import {
 } from "./core/table-state/sharedTableState";
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import type { Actor } from "./core/types/actor";
+import { fullHeal } from "./core/types/actor";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
@@ -3069,7 +3070,7 @@ export default function App() {
         diceBridgeStatus={diceBridgeStatus}
         diceBridgeLastEvent={diceBridgeLastEvent}
         onHpChange={(nextHp) => void setActorHp(actorToShow.id, nextHp)}
-        onResetHp={() => void setActorHp(actorToShow.id, actorToShow.stats.hp)}
+        onResetHp={() => void setActorHp(actorToShow.id, fullHeal(actorToShow.stats.hp))}
         onReadyActionCosts={(costs, readiedKey) => readyActionCosts(actorToShow.id, costs, readiedKey)}
         onUnreadyAction={(readiedKey) => unreadyActionKey(actorToShow.id, readiedKey)}
         onRemovePendingLogEntries={removePendingEntries}
@@ -3395,7 +3396,7 @@ export default function App() {
                 diceBridgeStatus={diceBridgeStatus}
                 diceBridgeLastEvent={diceBridgeLastEvent}
                 onHpChange={(nextHp) => void setActorHp(focusedActorId, nextHp)}
-                onResetHp={() => void setActorHp(focusedActorId, focusedActor.stats.hp)}
+                onResetHp={() => void setActorHp(focusedActorId, fullHeal(focusedActor.stats.hp))}
                 onReadyActionCosts={(costs, readiedKey) => readyActionCosts(focusedActorId, costs, readiedKey)}
                 onUnreadyAction={(readiedKey) => unreadyActionKey(focusedActorId, readiedKey)}
                 onRemovePendingLogEntries={removePendingEntries}
