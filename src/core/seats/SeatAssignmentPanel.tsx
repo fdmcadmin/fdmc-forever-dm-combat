@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Actor } from "../types/actor";
 import type { FdmcSeat, FdmcSeatBinding } from "./seatTypes";
 import type { SeatAssignmentInput } from "./useSeatSystem";
-import { getSeatColor, withAlpha } from "./seatColors";
+import { getSeatColor, withAlpha, isValidHexColor } from "./seatColors";
 
 type SeatAssignmentPanelProps = {
   actors: Actor[];
@@ -15,6 +15,9 @@ type SeatAssignmentPanelProps = {
   onKickFromSeat?: (seatId: string) => void;
   /** DM removes a seat entirely — clears seat + binding from room metadata */
   onRemoveSeat?: (seatId: string) => Promise<void>;
+  /** Connected OBR players — lets a seat adopt a player.s own Owlbear color so the
+   *  map token and the app agree. Empty outside OBR. */
+  obrPlayers?: Array<{ id: string; name: string; color: string; role?: string }>;
 };
 
 function nextSeatId(seats: Record<string, FdmcSeat>): string {
@@ -34,6 +37,7 @@ export function SeatAssignmentPanel({
   onPushActorsToAllSeats,
   onKickFromSeat,
   onRemoveSeat,
+  obrPlayers = [],
 }: SeatAssignmentPanelProps) {
   // Dynamic seat ID list — starts from existing seats, grows with Add Seat
   const [seatIds, setSeatIds] = useState<string[]>(() => {
@@ -41,12 +45,13 @@ export function SeatAssignmentPanel({
     return fromRoom.length > 0 ? fromRoom : ["seat-1", "seat-2", "seat-3", "seat-4"];
   });
 
-  const [drafts, setDrafts] = useState<Record<string, { label: string; seatMode: "player" | "viewer" | "co-dm"; primaryActorId: string; actorIds: string[] }>>(
+  const [drafts, setDrafts] = useState<Record<string, { label: string; seatMode: "player" | "viewer" | "co-dm"; primaryActorId: string; actorIds: string[]; color?: string }>>(
     () => Object.fromEntries(seatIds.map(id => [id, {
       label: seats[id]?.label ?? `Player ${id.replace("seat-", "")}`,
       seatMode: seats[id]?.seatMode ?? "player",
       primaryActorId: seats[id]?.primaryActorId ?? "",
       actorIds: seats[id]?.actorIds ?? [],
+      color: seats[id]?.color,
     }]))
   );
   const [saving, setSaving] = useState<string | null>(null);
@@ -90,8 +95,13 @@ export function SeatAssignmentPanel({
       seatMode: draft.seatMode ?? "player",
       actorIds: draft.seatMode === "viewer" ? [] : draft.actorIds,
       primaryActorId: draft.seatMode === "viewer" ? "" : (draft.primaryActorId || draft.actorIds[0] || ""),
+      color: isValidHexColor(draft.color) ? draft.color : undefined,
     });
     setSaving(null);
+  }
+
+  function setSeatColor(seatId: string, color: string | undefined) {
+    setDrafts(c => ({ ...c, [seatId]: { ...c[seatId], color } }));
   }
 
   return (
@@ -124,18 +134,59 @@ export function SeatAssignmentPanel({
 
           const isViewer = draft.seatMode === "viewer";
           const isCoDm = draft.seatMode === "co-dm";
-          const seatColor = isViewer ? "#4caf50" : isCoDm ? "#e0a030" : getSeatColor(seatId);
+          // A custom color wins over the derived palette color for real player seats.
+          const customColor = isValidHexColor(draft.color) ? draft.color!.trim() : undefined;
+          const seatColor = isViewer ? "#4caf50" : isCoDm ? "#e0a030" : (customColor ?? getSeatColor(seatId));
           return (
             <div key={seatId} style={{ border: `1px solid ${isViewer ? "#2a3a2a" : "#2a2a3e"}`, borderLeft: `4px solid ${seatColor}`, borderRadius: 6, padding: 10, background: withAlpha(seatColor, 0.05) }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <span title="Seat color" style={{ width: 12, height: 12, borderRadius: "50%", background: seatColor, flexShrink: 0, boxShadow: `0 0 0 2px ${withAlpha(seatColor, 0.25)}` }} />
+                  {/* The swatch IS the picker for player seats — click to choose any color.
+                      Viewer/co-DM seats keep their fixed role colors. */}
+                  {isViewer || isCoDm ? (
+                    <span title="Seat color" style={{ width: 12, height: 12, borderRadius: "50%", background: seatColor, flexShrink: 0, boxShadow: `0 0 0 2px ${withAlpha(seatColor, 0.25)}` }} />
+                  ) : (
+                    <input
+                      type="color"
+                      value={seatColor}
+                      onChange={e => setSeatColor(seatId, e.target.value)}
+                      title="Seat color — click to pick any color. Save the seat to apply it everywhere."
+                      style={{ width: 16, height: 16, padding: 0, border: "none", borderRadius: "50%", background: "transparent", cursor: "pointer", flexShrink: 0 }}
+                    />
+                  )}
                   <input
                     type="text"
                     value={draft.label}
                     onChange={e => setDrafts(c => ({ ...c, [seatId]: { ...c[seatId], label: e.target.value } }))}
                     style={{ fontWeight: "bold", background: "transparent", border: "none", borderBottom: "1px solid #555", color: "inherit", fontSize: 13, width: 120 }}
                   />
+                  {/* Match a connected Owlbear player's own color, so the seat, its cards
+                      and that player's OBR identity all read as the same colour. Falls back
+                      to the swatch picker for any hue OBR doesn't offer. */}
+                  {!isViewer && !isCoDm && obrPlayers.length > 0 && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, marginLeft: 2 }}>
+                      {obrPlayers.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setSeatColor(seatId, p.color)}
+                          title={`Use ${p.name}'s Owlbear color (${p.color})`}
+                          style={{
+                            width: 13, height: 13, borderRadius: "50%", padding: 0, cursor: "pointer",
+                            background: p.color, flexShrink: 0,
+                            border: seatColor.toLowerCase() === p.color.toLowerCase() ? "2px solid #fff" : "1px solid #0006",
+                          }}
+                        />
+                      ))}
+                    </span>
+                  )}
+                  {customColor && (
+                    <button type="button" onClick={() => setSeatColor(seatId, undefined)}
+                      title="Clear the custom color — go back to this seat's default palette color"
+                      style={{ fontSize: 9, padding: "1px 5px", background: "transparent", border: "1px solid #3a3a52", borderRadius: 3, color: "#777", cursor: "pointer" }}>
+                      reset
+                    </button>
+                  )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {/* Seat type cycle: Player → Co-DM (DM editing tools) → Viewer */}

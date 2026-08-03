@@ -25,6 +25,7 @@ import {
   type SeatClaimBroadcast,
 } from "./seatTypes";
 import { resolveActorsForSeat } from "./dmActorLibrary";
+import { registerSeatColors } from "./seatColors";
 import { cacheActors, loadCachedActors } from "./playerActorCache";
 import type { ActorOverrideMap } from "../table-state/actorHydrationBoundary";
 
@@ -90,6 +91,8 @@ export type SeatAssignmentInput = {
   seatMode: "player" | "viewer" | "co-dm";
   actorIds: string[];
   primaryActorId: string;
+  /** Custom seat color (#rrggbb); undefined keeps the derived palette color. */
+  color?: string;
 };
 
 export function useDmSeatSystem({
@@ -99,6 +102,9 @@ export function useDmSeatSystem({
   onRoomStateChange,
 }: UseDmSeatSystemOptions) {
   const [seats, setSeats] = useState<Record<string, FdmcSeat>>(() => loadSeatConfig());
+  // Seat colors may be customised per seat; keep the shared resolver in sync on load
+  // so every getSeatColor() call site picks up the override.
+  useEffect(() => { registerSeatColors(seats); }, [seats]);
   const [seatBindings, setSeatBindings] = useState<Record<string, FdmcSeatBinding>>({});
   const libraryRef = useRef(actorLibrary);
   const overridesRef = useRef(actorOverrides);
@@ -182,9 +188,11 @@ export function useDmSeatSystem({
       seatMode: input.seatMode ?? "player",
       actorIds: input.actorIds,
       primaryActorId: input.primaryActorId,
+      color: input.color,
     };
 
     const nextSeats = { ...seatsRef.current, [input.seatId]: seat };
+    registerSeatColors(nextSeats);
     setSeats(nextSeats);
     saveSeatConfig(nextSeats);
 

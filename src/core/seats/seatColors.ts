@@ -64,12 +64,49 @@ export function getSeatColorIndex(seatId: string | null | undefined): number {
   return Math.abs(hash) % SEAT_COLOR_PALETTE.length;
 }
 
+// ─── Custom seat colors ───────────────────────────────────────────────────────
+//
+// A seat may override its palette color (`FdmcSeat.color`) so a table can pick hues that
+// read as distinct for them — the palette wraps at 8 and can seat similar hues together.
+//
+// `getSeatColor(seatId)` is called from many places that only hold a seat ID, so the
+// overrides live in a small module-level registry refreshed whenever seats load, rather
+// than being threaded through every call site. Still no React and no SDK in this module.
+
+let seatColorOverrides: Record<string, string> = {};
+
+/** True for a usable #rgb / #rrggbb value. Anything else is ignored. */
+export function isValidHexColor(value: string | null | undefined): boolean {
+  return typeof value === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
+}
+
+/**
+ * Refresh the custom-color registry from the current seats. Call wherever seats are
+ * loaded or saved; passing seats with no `color` simply clears their override.
+ */
+export function registerSeatColors(
+  seats: Record<string, { seatId: string; color?: string }> | Array<{ seatId: string; color?: string }> | undefined | null,
+): void {
+  const next: Record<string, string> = {};
+  const list = !seats ? [] : Array.isArray(seats) ? seats : Object.values(seats);
+  for (const seat of list) {
+    if (seat?.seatId && isValidHexColor(seat.color)) next[seat.seatId] = seat.color!.trim();
+  }
+  seatColorOverrides = next;
+}
+
+/** The custom color set for a seat, if any. */
+export function getSeatColorOverride(seatId: string | null | undefined): string | undefined {
+  return seatId ? seatColorOverrides[seatId] : undefined;
+}
+
 /**
  * Stable seat color from a seat id such as "seat-1".
- * Falls back to a deterministic hash for non-numeric ids.
+ * A registered custom color wins; otherwise the palette color for the seat's index
+ * (deterministic hash for non-numeric ids).
  */
 export function getSeatColor(seatId: string | null | undefined): string {
-  return getSeatColorByIndex(getSeatColorIndex(seatId));
+  return getSeatColorOverride(seatId) ?? getSeatColorByIndex(getSeatColorIndex(seatId));
 }
 
 /**
@@ -93,6 +130,8 @@ type SeatLike = {
   seatMode?: "player" | "viewer" | "co-dm";
   actorIds?: string[];
   primaryActorId?: string;
+  /** Custom seat color, if the table set one. */
+  color?: string;
 };
 
 /**
@@ -108,7 +147,9 @@ export function buildActorSeatColorMap(
   const list = Array.isArray(seats) ? seats : Object.values(seats);
   for (const seat of list) {
     if (!seat || seat.seatMode === "viewer") continue;
-    const color = getSeatColor(seat.seatId);
+    // Prefer the seat's own custom color — this map is often built straight from a seat
+    // snapshot, before/without the registry being refreshed.
+    const color = isValidHexColor(seat.color) ? seat.color!.trim() : getSeatColor(seat.seatId);
     for (const actorId of seat.actorIds ?? []) {
       if (actorId) out[actorId] = color;
     }

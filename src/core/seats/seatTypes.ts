@@ -9,6 +9,12 @@ export type FdmcSeat = {
   seatMode: "player" | "viewer" | "co-dm";  // co-dm = player who also gets DM editing tools
   actorIds: string[];     // ["vaelith", "faelar"]
   primaryActorId: string;
+  /**
+   * Custom seat color (#rrggbb). Overrides the palette color derived from the seat id,
+   * so a table can pick hues that read as distinct for THEM — the fixed palette wraps at
+   * 8 and can put similar hues next to each other. Unset = the derived palette color.
+   */
+  color?: string;
 };
 
 export type FdmcSeatBinding = {

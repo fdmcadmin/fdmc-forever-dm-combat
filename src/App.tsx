@@ -354,6 +354,21 @@ function PlayerMonsterRoster({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  // Connected Owlbear players — so a seat can adopt a player's own OBR color and the
+  // map identity and the app identity agree. Empty (and harmless) outside OBR.
+  const [obrPlayers, setObrPlayers] = useState<Array<{ id: string; name: string; color: string; role?: string }>>([]);
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    let active = true;
+    const apply = (list: Array<{ id: string; name: string; color: string; role?: string }>) => { if (active) setObrPlayers(list); };
+    let unsub: (() => void) | undefined;
+    OBR.onReady(() => {
+      void OBR.party.getPlayers().then(apply).catch(() => undefined);
+      unsub = OBR.party.onChange(apply);
+    });
+    return () => { active = false; unsub?.(); };
+  }, []);
+
   // ── Table binding ──────────────────────────────────────────────────────────
   const [tableBinding, setTableBinding] = useState<FdmcTableBinding | null>(null);
   const viewerRole = useViewerRole(tableBinding);
@@ -2022,6 +2037,7 @@ export default function App() {
         >
           {openPanel === "actorAssignments" && (
             <SeatAssignmentPanel
+            obrPlayers={obrPlayers}
               actors={dmActors}
               seats={seats}
               seatBindings={seatBindings}
@@ -3167,6 +3183,7 @@ export default function App() {
       >
         {openPanel === "actorAssignments" && (
           <SeatAssignmentPanel
+            obrPlayers={obrPlayers}
             actors={dmActors}
             seats={seats}
             seatBindings={seatBindings}

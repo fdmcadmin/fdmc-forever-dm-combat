@@ -124,6 +124,21 @@ function getPanelFromUrl(): PanelId {
 // ─── DM Panel App ─────────────────────────────────────────────────────────────
 
 function DmPanelApp() {
+  // Connected Owlbear players — so a seat can adopt a player's own OBR color and the
+  // map identity and the app identity agree. Empty (and harmless) outside OBR.
+  const [obrPlayers, setObrPlayers] = useState<Array<{ id: string; name: string; color: string; role?: string }>>([]);
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    let active = true;
+    const apply = (list: Array<{ id: string; name: string; color: string; role?: string }>) => { if (active) setObrPlayers(list); };
+    let unsub: (() => void) | undefined;
+    OBR.onReady(() => {
+      void OBR.party.getPlayers().then(apply).catch(() => undefined);
+      unsub = OBR.party.onChange(apply);
+    });
+    return () => { active = false; unsub?.(); };
+  }, []);
+
   const panelId = useMemo(() => getPanelFromUrl(), []);
   // create= jumps straight into the right creator (set by the main DM toolbar).
   const createParam = useMemo(() => new URLSearchParams(window.location.search).get("create"), []);
@@ -718,6 +733,7 @@ function DmPanelApp() {
         {/* ── Seats ── */}
         {panelId === "seats" && (
           <SeatAssignmentPanel
+              obrPlayers={obrPlayers}
             actors={actors}
             seats={seats}
             seatBindings={seatBindings}
@@ -1071,6 +1087,7 @@ function DmPanelApp() {
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {seatTokenTab === "seats" && (
                 <SeatAssignmentPanel
+              obrPlayers={obrPlayers}
                   actors={actors}
                   seats={seats}
                   seatBindings={seatBindings}
