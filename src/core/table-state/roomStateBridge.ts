@@ -61,6 +61,16 @@ function readRevision(value: unknown): number | undefined {
   return typeof revision === "number" && Number.isFinite(revision) ? revision : undefined;
 }
 
+/** Wall-clock stamp of a state write — tie-breaks two writers who produced the same revision. */
+function readUpdatedAt(value: unknown): number | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const updatedAt = (value as { updatedAt?: unknown }).updatedAt;
+  return typeof updatedAt === "number" && Number.isFinite(updatedAt) ? updatedAt : undefined;
+}
+
 function updateDiagnostics(patch: Partial<SyncDiagnosticsSnapshot>) {
   diagnostics = { ...diagnostics, ...patch };
   diagnosticsListeners.forEach((listener) => listener());
@@ -166,6 +176,7 @@ export function subscribeFdmcRoomStateKey<T>(
   let stopped = false;
   let lastValue = "";
   let lastRevision: number | undefined;
+  let lastUpdatedAt: number | undefined;
 
   const apply = (metadata: RoomMetadata | undefined) => {
     if (!metadata || stopped) {
@@ -178,14 +189,27 @@ export function subscribeFdmcRoomStateKey<T>(
     }
 
     const revision = readRevision(next);
-    // Monotonic revision guard: ignore same-OR-OLDER revisions. The old check only
-    // skipped the EXACT same revision, so a stale write — a behind-copy from another
-    // window, or an in-flight write caught by the 5s poll — with a LOWER revision would
-    // still apply and rubber-band combat back to an earlier state mid-fight. Revisions
-    // only ever increment per commit (fdmcRoomLiveState), so a lower revision is always
-    // stale and must be rejected.
-    if (revision !== undefined && lastRevision !== undefined && revision <= lastRevision) {
-      return;
+    // Monotonic revision guard: a STRICTLY OLDER revision is always stale — a behind-copy
+    // from another window, or an in-flight write caught by the poll — and applying it
+    // would rubber-band combat back to an earlier state mid-fight.
+    //
+    // Equal revisions are NOT stale, they are a COLLISION: two windows that both read
+    // revision N and then wrote produce N+1 each. Rejecting those (the old `<=`) meant
+    // whichever write landed locally first won forever — e.g. a player writing their own
+    // initiative at N+1 would permanently ignore the DM's "Start Combat" at N+1, leaving
+    // that player stuck showing Setup (and with no End My Turn button) for the whole
+    // fight. Same-revision writes are ordered by `updatedAt` instead; identical content
+    // is still filtered by the serialized check below.
+    if (revision !== undefined && lastRevision !== undefined) {
+      if (revision < lastRevision) {
+        return;
+      }
+      if (revision === lastRevision) {
+        const incomingAt = readUpdatedAt(next);
+        if (incomingAt !== undefined && lastUpdatedAt !== undefined && incomingAt < lastUpdatedAt) {
+          return;
+        }
+      }
     }
 
     const serialized = JSON.stringify(next);
@@ -195,6 +219,7 @@ export function subscribeFdmcRoomStateKey<T>(
 
     lastValue = serialized;
     lastRevision = revision;
+    lastUpdatedAt = readUpdatedAt(next) ?? lastUpdatedAt;
     updateDiagnostics({
       revision: revision ?? diagnostics.revision,
       sharedStateSizeBytes: estimateJsonSize(metadata),

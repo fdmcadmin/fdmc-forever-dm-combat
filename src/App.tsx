@@ -969,14 +969,28 @@ export default function App() {
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(MONSTER_POPOUT_HP_CHANNEL, (event) => {
-      const msg = event.data as { type?: string; instanceId?: string; currentHp?: number; maxHp?: number; tempHp?: number } | undefined;
+      // isNameRevealed rides this channel too (the combat window / popout reveals a
+      // creature on its first HP change). It was NOT read here, so the reveal updated the
+      // DM's own roster copy but monsterCandidates stayed hidden — and the roster then
+      // re-broadcast to players still carried the HIDDEN name. That is why revealing a
+      // boss never reached the player view.
+      const msg = event.data as { type?: string; instanceId?: string; currentHp?: number; maxHp?: number; tempHp?: number; isNameRevealed?: boolean } | undefined;
       if (msg?.type !== "fdmc:monster-popout-hp" || !msg.instanceId) return;
       setMonsterCandidates(prev => {
         const next = prev.map(m => {
           const inst = m as MainEncounterMonsterInstance;
           if (inst.instanceId !== msg.instanceId) return m;
-          return { ...inst, currentHp: msg.currentHp ?? inst.currentHp, maxHp: msg.maxHp ?? inst.maxHp, tempHp: msg.tempHp ?? inst.tempHp };
+          return {
+            ...inst,
+            currentHp: msg.currentHp ?? inst.currentHp,
+            maxHp: msg.maxHp ?? inst.maxHp,
+            tempHp: msg.tempHp ?? inst.tempHp,
+            // Reveal is one-way: never un-reveal a creature the table has already seen.
+            isNameRevealed: msg.isNameRevealed ? true : inst.isNameRevealed,
+          };
         }) as MainEncounterMonsterInstance[];
+        // Persist so the reveal survives a reload, then push the player-safe roster.
+        saveMonsterRoster(next);
         broadcastMonsterRoster(next);
         return next;
       });
