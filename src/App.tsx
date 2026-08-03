@@ -124,6 +124,7 @@ import {
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import type { Actor } from "./core/types/actor";
 import { fullHeal } from "./core/types/actor";
+import { wipePartyLocalData, buildClearedActorLiveState } from "./core/seats/wipePartyData";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
@@ -3279,6 +3280,36 @@ export default function App() {
             activeMonsterCount={monsterCandidates.length}
             combatantCount={actors.length}
             persistentEquipmentCount={0}
+            partyCount={Object.keys(actorLibrary).length}
+            onWipeParty={async () => {
+              // Clear every LOCAL layer keyed to party characters.
+              const report = wipePartyLocalData();
+              // …then the SHARED layer: live HP / temp / coins / initiative in room
+              // metadata. Read fresh so a concurrent dm-panel write isn't clobbered.
+              const fresh = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
+              const base = fresh ?? roomLiveState;
+              const cleared = {
+                ...buildClearedActorLiveState(base),
+                revision: base.revision + 1,
+                updatedAt: Date.now(),
+              };
+              await commitRoomState(cleared);
+              // Drop the in-memory copies so the UI reflects the wipe immediately.
+              setActorLibrary({});
+              setActorOverrides({});
+              setSelectedActorId("");
+              setFocusedActorId(null);
+              pushActorsToAllSeats();
+              // Tell the other DM windows (dm-panel, popouts) to reload from storage.
+              if (OBR.isAvailable) {
+                void obrSend(DM_LIBRARY_UPDATED_CHANNEL, { type: "fdmc:dm-library-updated" }, { destination: "LOCAL" }).catch(() => undefined);
+              }
+              addEntry({
+                actorName: "System", actionName: "Party wiped", tabId: "system",
+                message: `Removed ${report.actorIds.length} party character(s) and cleared ${report.cleared.length} stored layer(s) + live actor state. Ready for a clean import.`,
+              });
+              return `Removed ${report.actorIds.length} character(s): ${report.actorIds.join(", ") || "none"}. Cleared ${report.cleared.length} storage layer(s) + live HP/coins. Import your file now — nothing will leak through.`;
+            }}
             onCleanup={async () => {
               // Wipe local state
               setMonsterCandidates([]);
