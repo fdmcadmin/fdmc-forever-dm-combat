@@ -171,6 +171,39 @@ export type ActorActionMetadata = {
    *  action arms a persistent chip that rides weapon attack rolls until cleared or End
    *  Combat. An ability may set both fields to buff attack and damage together. */
   weaponBuffAttack?: string;
+  /**
+   * CONJURED-WEAPON spells: casting this ARMS a reusable attack for the spell's duration.
+   *
+   * Flame Blade, Shadow Blade, finger guns, a Storm cleric holding a spell it may re-cast
+   * free — they all share one shape the app could not express. The CAST and the ATTACK are
+   * different actions with different costs, and the attack repeats for the duration without
+   * spending the resource again:
+   *
+   *   click the spell  → pay `economyCost` (usually bonus) + its resource → arm the chip
+   *   click the chip   → pay `grantsArmedAttack.cost` (usually the Magic action) → roll
+   *   chip persists    → until concentration drops or End Combat clears it
+   *
+   * Authoring it as one card with an attack on it (which is what Flame Blade does today)
+   * conflates the two: the bonus action appears to buy the attack, which is right only on
+   * the turn it is cast and wrong on every turn after.
+   *
+   * The armed attack is NOT a weapon attack. It never inherits `attacksPerAction`, never
+   * benefits from Extra Attack, and can never be the second Light weapon that enables Nick —
+   * it is the specific action the spell grants, not the Attack action.
+   */
+  grantsArmedAttack?: {
+    /** Defaults to the spell's own label. */
+    label?: string;
+    attack: string;
+    damage: string;
+    damageType?: string;
+    crit?: string;
+    range?: string;
+    /** What each USE costs. Usually ["main"] — the Magic action. */
+    cost?: ActionCost[];
+    /** Free-text duration for the chip, e.g. "Concentration, up to 10 min". */
+    duration?: string;
+  };
   /** Fighting style (Archery, Two-Weapon, Great Weapon): a clickable toggle adding a bonus
    *  to matching weapon attacks. target gates which attacks it rides. */
   combatStyleAttack?: string;
