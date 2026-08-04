@@ -91,7 +91,7 @@ function broadcastMonsterEconomy(instanceId: string, eco: { actionUsed: boolean;
 type MonsterActorCardProps = {
   monster: MainEncounterMonsterInstance;
   isDmView: boolean;
-  onHpChange: (patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "tempHp" | "status" | "isNameRevealed">>) => void;
+  onHpChange: (patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "maxHp" | "tempHp" | "status" | "isNameRevealed">>) => void;
   onSendDicePlusRequest?: (request: DiceBridgeRollRequest) => Promise<boolean>;
   diceBridgeLastEvent?: DiceBridgeEvent | null;
   onActionCommit?: (actionName: string) => void;
@@ -1178,6 +1178,42 @@ export function MonsterActorCard({
             −
           </button>
         </div>
+
+        {/* PACING DIAL — rescale the whole bar, DM-only.
+            The alternative is lying: quietly dealing less than the PC rolled, or healing the
+            creature. Both are visible, because the bar stops matching what the table just did.
+            This scales current AND max together, so the bar sits at the same fraction the
+            instant it is applied — nothing moves and nothing rewinds. Only the PACE changes:
+            every hit after it is a bigger share of a smaller bar. */}
+        {isDmView && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
+            <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Pace</span>
+            {[0.75, 0.9, 1.1, 1.25].map(factor => (
+              <button
+                key={factor}
+                type="button"
+                onClick={() => {
+                  const nextMax = Math.max(1, Math.round(displayMaxHp * factor));
+                  const scaled = Math.round(currentHp * factor);
+                  const nextHp = currentHp > 0 ? Math.min(nextMax, Math.max(1, scaled)) : 0;
+                  setDisplayMaxHp(nextMax);
+                  setCurrentHp(nextHp);
+                  onHpChange({ currentHp: nextHp, maxHp: nextMax });
+                  addLog(`${publicName} rescaled to ${Math.round(factor * 100)}% — ${nextHp}/${nextMax} HP (bar unchanged; pace ${factor < 1 ? "faster" : "slower"}).`);
+                }}
+                title={`Rescale this creature to ${Math.round(factor * 100)}% of its current bar. The bar does not move — the fight just ${factor < 1 ? "shortens" : "lengthens"}.`}
+                style={{
+                  fontSize: 9, padding: "1px 6px", borderRadius: 3, cursor: "pointer",
+                  background: "transparent",
+                  border: `1px solid ${factor < 1 ? "#5a1a1a" : "#2a4a6e"}`,
+                  color: factor < 1 ? "#c88" : "#7ba8d0",
+                }}
+              >
+                {factor < 1 ? "" : "+"}{Math.round((factor - 1) * 100)}%
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: "0 12px 12px" }}>

@@ -169,6 +169,37 @@ export type MainEncounterMonsterInstance = MonsterCombatCandidate & {
   templateRef: string;
 };
 
+/**
+ * MID-FIGHT PACING DIAL — rescale a live creature's HP without the players seeing a jump.
+ *
+ * This is NOT the party-size band (`hpForPartySize`), which is Lever 1 and decided in prep.
+ * This is the DM's live correction when a fight is not landing the way it was built to: the
+ * Wight has downed two people and the table needs a win it can feel good about, or the dice
+ * ran cold and an act boss is dying in three rounds like a normal fight.
+ *
+ * The alternative a DM is otherwise stuck with is lying — quietly dealing less damage than
+ * the PC rolled, or "healing" the creature. Both are visible: the bar stops matching what
+ * the table just did. This scales BOTH current and max by the same factor, so the bar sits
+ * at exactly the same fraction the instant it is applied — nothing moves, nothing rewinds.
+ * What changes is the PACE: every hit after it is a larger share of a smaller bar, so the
+ * fight shortens without a single number the players can catch.
+ *
+ * Rounds, and never drops a living creature below 1 HP — a pacing tool must not kill.
+ */
+export function rescaleMonsterHp(
+  instance: MainEncounterMonsterInstance,
+  factor: number,
+): MainEncounterMonsterInstance {
+  if (!Number.isFinite(factor) || factor <= 0 || factor === 1) return instance;
+  const maxHp = Math.max(1, Math.round(instance.maxHp * factor));
+  const scaled = Math.round(instance.currentHp * factor);
+  // A creature that was alive stays alive; a creature already at 0 stays down.
+  const currentHp = instance.currentHp > 0
+    ? Math.min(maxHp, Math.max(1, scaled))
+    : 0;
+  return { ...instance, maxHp, currentHp };
+}
+
 export function isStandardMonsterAction(action: MonsterReaderAction): boolean {
   if (action.kind === "trait" || action.kind === "reaction") {
     return false;

@@ -151,6 +151,23 @@ type ArmedEffect = {
   attackFormula?: string;
   /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
   appliesTo?: "ranged" | "melee" | "weapon" | "two-handed" | "spell" | "any";
+  /**
+   * CONJURED WEAPON (id "conjured:*") — this chip is not a rider, it IS an attack.
+   *
+   * Flame Blade, Shadow Blade, finger guns, a Storm cleric's held spell. Casting armed it;
+   * clicking it rolls the attack, for its own action cost and WITHOUT spending the spell's
+   * resource again. It is the specific action the spell grants — never a weapon attack, so
+   * it takes no Extra Attack and can never be the second Light weapon that enables Nick.
+   */
+  armedAttack?: {
+    attack: string;
+    damage: string;
+    damageType?: string;
+    crit?: string;
+    range?: string;
+    cost?: ActionCost[];
+    duration?: string;
+  };
 };
 
 type ClassOptionContext =
@@ -1621,6 +1638,52 @@ export function ActorCard({
     });
   }
 
+  /**
+   * Attack with a conjured weapon. Spends the ATTACK's own cost only — the spell's resource
+   * was paid when it was cast, and the blade lasts for its duration.
+   *
+   * Routed through the normal committed roll so it gets the same hold/hit/miss/damage flow as
+   * everything else, but with a readied key of its own so it never collides with a weapon
+   * attack and never touches `attacksPerAction` — a conjured weapon takes no Extra Attack.
+   */
+  function primeArmedAttack(effect: ArmedEffect) {
+    const armed = effect.armedAttack;
+    if (!armed) return;
+
+    const costs = armed.cost ?? ["main"];
+    if (costs.length > 0 && hasUsedCostSlot(costs)) {
+      onLog({
+        actorName: actor.name,
+        actionName: effect.label,
+        tabId: "system",
+        message: `${actor.name} has already spent that action this turn — ${effect.label} must wait.`,
+      });
+      return;
+    }
+
+    const readiedKey = `conjured-attack:${effect.id}:${Date.now()}`;
+    onStartCommittedRoll({
+      readiedKey,
+      actionId: effect.id,
+      actionLabel: effect.label,
+      sourceTabId: "spells",
+      costs,
+      outcomeMode: "attack-roll",
+      attackFormula: resolveFormulaVars(armed.attack, actor, deriveActorStats(actor, undefined, status), status),
+      damageFormula: resolveFormulaVars(armed.damage, actor, deriveActorStats(actor, undefined, status), status),
+      critDamageFormula: armed.crit ? resolveFormulaVars(armed.crit, actor, deriveActorStats(actor, undefined, status), status) : undefined,
+      rulesProfile,
+      // No slot: the cast already paid for it.
+      continuesMultiRoll: true,
+    });
+    onLog({
+      actorName: actor.name,
+      actionName: effect.label,
+      tabId: "spells",
+      message: `${actor.name} attacks with ${effect.label} (${armed.attack} / ${armed.damage}${armed.damageType ? ` ${armed.damageType}` : ""}). No slot spent — the blade is already conjured.`,
+    });
+  }
+
   function clearArmedEffect(effectId: string) {
     setArmedEffectsByActorId((current) => {
       const currentEffects = current[actor.id] ?? [];
@@ -2394,6 +2457,18 @@ export function ActorCard({
           {visibleEffects.map((effect) => (
             <span className={`armed-effect-chip ${effect.id === "rage-active" || effect.id === "rage-pending" ? "rage-armed" : ""}`} key={effect.id} title={effect.details}>
               <strong>{effect.source}</strong> · {armedChipLabel(effect)}
+              {/* A conjured weapon chip IS the attack - clicking it primes the roll for its
+                  own action cost, spending no further slot. */}
+              {effect.armedAttack && (
+                <button
+                  type="button"
+                  onClick={() => primeArmedAttack(effect)}
+                  title={`Attack with ${effect.label} - costs no further slot.`}
+                  style={{ marginLeft: 6, fontSize: 10, padding: "1px 7px", borderRadius: 3, cursor: "pointer", background: "#2a3a4e", border: "1px solid #4f9dff66", color: "#7bc8e0" }}
+                >
+                  Attack
+                </button>
+              )}
               {/* Bonds & additives are readied riders — clear them by un-readying the action,
                   not here (the chip is re-derived from the readied state). */}
               {!effect.id.startsWith("bond:") && !effect.id.startsWith("additive:") && (
@@ -2858,6 +2933,36 @@ export function ActorCard({
       });
     }
 
+    // CONJURED WEAPON: casting arms a reusable attack for the duration. The cast pays its own
+    // cost here (bonus action + resource, handled below); each later swing pays only the
+    // attack's own cost and spends nothing. Authoring the attack on the spell card itself
+    // conflated the two, so the bonus action appeared to buy the attack — right on the turn
+    // it was cast and wrong on every turn after.
+    const conjured = action.metadata?.grantsArmedAttack;
+    if (conjured?.attack && conjured?.damage) {
+      upsertArmedEffect({
+        id: `conjured:${action.id}`,
+        label: conjured.label ?? action.label,
+        details: `${conjured.damage}${conjured.damageType ? ` ${conjured.damageType}` : ""} — ${conjured.duration ?? action.metadata?.duration ?? "while it lasts"}. Click to attack; costs no further slot.`,
+        source: action.label,
+        armedAttack: {
+          attack: conjured.attack,
+          damage: conjured.damage,
+          damageType: conjured.damageType,
+          crit: conjured.crit,
+          range: conjured.range,
+          cost: conjured.cost ?? ["main"],
+          duration: conjured.duration ?? action.metadata?.duration,
+        },
+      });
+      onLog({
+        actorName: actor.name,
+        actionName: action.label,
+        tabId: "system",
+        message: `${actor.name} conjures ${conjured.label ?? action.label} — ${conjured.damage}${conjured.damageType ? ` ${conjured.damageType}` : ""} attack available ${conjured.duration ?? "while it lasts"}, no further slot.`,
+      });
+    }
+
     // Activated abilities (additive riders / weapon buffs) never go through a committed
     // roll, so spend their tagged resource HERE, on use — that's what makes the pool
     // (Rage uses, Channel Divinity, …) count down automatically. Gated to non-rolling
@@ -2865,7 +2970,7 @@ export function ActorCard({
     // Free-cast class-feature spells spend here too: a pure-effect free cast (no attack /
     // save / damage roll — Misty Step, Shield…) never reaches onStartCommittedRoll, so its
     // N/Long-Rest pool would never count down. Rolled free-casts still spend via commit.
-    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage) || Boolean(buffAttack);
+    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage) || Boolean(buffAttack) || Boolean(conjured?.attack);
     const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
     // A LEVELLED spell spends a slot whether or not it rolls anything. Most of them don't
     // roll (Shield of Faith, Protection from Evil, Find Steed, Aid…) — those never reach
