@@ -1669,9 +1669,9 @@ export function ActorCard({
       sourceTabId: "spells",
       costs,
       outcomeMode: "attack-roll",
-      attackFormula: resolveFormulaVars(armed.attack, actor, deriveActorStats(actor, undefined, status), status),
-      damageFormula: resolveFormulaVars(armed.damage, actor, deriveActorStats(actor, undefined, status), status),
-      critDamageFormula: armed.crit ? resolveFormulaVars(armed.crit, actor, deriveActorStats(actor, undefined, status), status) : undefined,
+      attackFormula: normalizeRollFormula(resolveFormulaVars(armed.attack, actor, deriveActorStats(actor, undefined, status), status)),
+      damageFormula: normalizeRollFormula(resolveFormulaVars(armed.damage, actor, deriveActorStats(actor, undefined, status), status)),
+      critDamageFormula: armed.crit ? normalizeRollFormula(resolveFormulaVars(armed.crit, actor, deriveActorStats(actor, undefined, status), status)) : undefined,
       rulesProfile,
       // No slot: the cast already paid for it.
       continuesMultiRoll: true,
@@ -2939,14 +2939,19 @@ export function ActorCard({
     // conflated the two, so the bonus action appeared to buy the attack — right on the turn
     // it was cast and wrong on every turn after.
     const conjured = action.metadata?.grantsArmedAttack;
-    if (conjured?.attack && conjured?.damage) {
+    if (conjured?.damage) {
+      // Default to the caster's OWN spell attack bonus rather than a frozen number.
+      // @SPELL resolves through the character card: spellcasting mod + proficiency, with
+      // the class default and any `spell-uses-*` tag honoured. Authoring "1d20+6" here
+      // would silently stop being right the moment the character levels.
+      const conjuredAttack = conjured.attack?.trim() || "1d20@SPELL";
       upsertArmedEffect({
         id: `conjured:${action.id}`,
         label: conjured.label ?? action.label,
         details: `${conjured.damage}${conjured.damageType ? ` ${conjured.damageType}` : ""} — ${conjured.duration ?? action.metadata?.duration ?? "while it lasts"}. Click to attack; costs no further slot.`,
         source: action.label,
         armedAttack: {
-          attack: conjured.attack,
+          attack: conjuredAttack,
           damage: conjured.damage,
           damageType: conjured.damageType,
           crit: conjured.crit,
@@ -2970,7 +2975,7 @@ export function ActorCard({
     // Free-cast class-feature spells spend here too: a pure-effect free cast (no attack /
     // save / damage roll — Misty Step, Shield…) never reaches onStartCommittedRoll, so its
     // N/Long-Rest pool would never count down. Rolled free-casts still spend via commit.
-    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage) || Boolean(buffAttack) || Boolean(conjured?.attack);
+    const isActivatedAbility = action.metadata?.outcomeMode === "additive" || Boolean(buffDamage) || Boolean(buffAttack) || Boolean(conjured?.damage);
     const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
     // A LEVELLED spell spends a slot whether or not it rolls anything. Most of them don't
     // roll (Shield of Faith, Protection from Evil, Find Steed, Aid…) — those never reach

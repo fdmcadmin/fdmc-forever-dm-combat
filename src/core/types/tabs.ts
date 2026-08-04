@@ -194,7 +194,17 @@ export type ActorActionMetadata = {
   grantsArmedAttack?: {
     /** Defaults to the spell's own label. */
     label?: string;
-    attack: string;
+    /**
+     * Attack formula. OMIT IT — it defaults to `1d20+@SPELL`, which the card already knows:
+     * `@SPELL` resolves to the spellcasting modifier plus proficiency, following the actor's
+     * own class and any `spell-uses-*` tag that swaps the stat.
+     *
+     * Hard-coding a number here ("1d20+6") freezes the bonus at the level it was authored,
+     * so it silently stops being right the moment the character levels or the stat changes.
+     * Only set it for a spell that deliberately attacks off something other than the caster's
+     * own spell attack bonus.
+     */
+    attack?: string;
     damage: string;
     damageType?: string;
     crit?: string;
