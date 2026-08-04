@@ -378,13 +378,30 @@ function isTwoHandedAttack(action?: ActorAction | null) {
   return /\b(?:two[-\s]?handed|2h|versatile|heavy|pole\s?arm|greatsword|greataxe|greatclub|maul|glaive|halberd|pike|lance)\b/i.test(text);
 }
 
+/**
+ * Is this action a WEAPON attack — the only thing a fighting style may ride?
+ *
+ * Positive test, not "everything that isn't a spell". Archery is +2 to ranged WEAPON attacks;
+ * it does not touch a ranged spell attack, a bond strike, or an artificer's cannon just
+ * because those happen to be ranged. Same for Great Weapon Master and Two-Weapon Fighting.
+ *
+ * `equipment` counts because a magic weapon is authored on the equipment tab (Stillstep
+ * Blade, Rimecleaver) and is still a weapon in hand.
+ */
+function isWeaponAttackAction(action: ActorAction): boolean {
+  return action.actionKind === "attack" || action.actionKind === "equipment";
+}
+
 // Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
-// Styles/buffs ride WEAPON attacks only (never spells), gated by their target.
+// Styles/buffs ride WEAPON attacks only, gated by their target.
 function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null) {
   if (!action) return false;
   if (appliesTo === "any") return true;
   if (appliesTo === "spell") return action.actionKind === "spell";
-  if (action.actionKind === "spell") return false; // weapon-targeted styles never ride spells
+  // Every weapon-targeted style requires an actual weapon attack. Excluding only spells left
+  // bond strikes, cannons and feature attacks collecting Archery/GWM because they were
+  // "ranged" or "two-handed" — the target says which weapon attacks, never whether it is one.
+  if (!isWeaponAttackAction(action)) return false;
   if (appliesTo === "ranged") return isRangedAttackAction(action);
   if (appliesTo === "melee") return !isRangedAttackAction(action);
   if (appliesTo === "two-handed") return isTwoHandedAttack(action);
