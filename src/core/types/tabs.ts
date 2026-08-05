@@ -195,6 +195,13 @@ export type ActorActionMetadata = {
     /** Defaults to the spell's own label. */
     label?: string;
     /**
+     * ⚠ ALWAYS write the explicit `+` — `1d20+@SPELL`, never `1d20@SPELL`. It is not
+     * cosmetic. It guarantees the term is READ: in `1d20@STR@PROF+1` a var that fails to
+     * resolve can swallow the segment and leave `1d20+1`. It is also what makes stacking
+     * legible — `1d20+@SPELL+@CHA` with Sacred Weapon up, or a weapon's
+     * `1d20+@PROF+@STR+1`. `normalizeRollFormula` already collapses `++`, so the separator
+     * costs nothing and fails safe.
+     *
      * Attack formula. OMIT IT — it defaults to `1d20+@SPELL`, which the card already knows:
      * `@SPELL` resolves to the spellcasting modifier plus proficiency, following the actor's
      * own class and any `spell-uses-*` tag that swaps the stat.

@@ -2961,7 +2961,7 @@ export function ActorCard({
       // @SPELL resolves through the character card: spellcasting mod + proficiency, with
       // the class default and any `spell-uses-*` tag honoured. Authoring "1d20+6" here
       // would silently stop being right the moment the character levels.
-      const conjuredAttack = conjured.attack?.trim() || "1d20@SPELL";
+      const conjuredAttack = conjured.attack?.trim() || "1d20+@SPELL";
       upsertArmedEffect({
         id: `conjured:${action.id}`,
         label: conjured.label ?? action.label,
