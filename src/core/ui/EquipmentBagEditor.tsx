@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
+import { BASE_WEAPONS } from "../constants/baseWeapons";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
@@ -152,6 +153,50 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[]): void {
   if (window.localStorage.getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
   saveEquipmentLibrary(items, "campaign");
   window.localStorage.setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
+}
+
+/** Seed version for the base weapon set — bump to re-seed after editing BASE_WEAPONS. */
+const BASE_WEAPON_SEED_KEY = "fdmc.equipment.baseWeapons.seedVersion";
+const BASE_WEAPON_SEED_VERSION = "2024-phb-v1";
+
+/**
+ * Put the mundane 2024 weapons in the library.
+ *
+ * The library shipped with campaign magic items only, so a basic Longbow or Scimitar could
+ * not be attached — which is exactly why every character's basic weapons were hand-authored
+ * as main-tab attacks instead of generated from a built weapon.
+ *
+ * Seeded into the CAMPAIGN library alongside the module items and marked `isLocked`, so a DM
+ * editing one writes an unlocked override under the same id (see `upsertItem`) rather than
+ * mutating the shared base. Never overwrites an existing id.
+ */
+export function seedBaseWeapons(): void {
+  if (window.localStorage.getItem(BASE_WEAPON_SEED_KEY) === BASE_WEAPON_SEED_VERSION) return;
+
+  const existing = loadEquipmentLibrary("campaign");
+  const byId = new Map(existing.map(i => [i.id, i]));
+
+  for (const w of BASE_WEAPONS) {
+    if (byId.has(w.id)) continue;
+    byId.set(w.id, {
+      id: w.id,
+      name: w.name,
+      type: "weapon",
+      description: w.description,
+      isUsable: true,
+      attack: w.attack,
+      damage: w.damage,
+      crit: w.crit,
+      range: w.range,
+      category: w.category,
+      mastery: w.mastery,
+      tags: w.tags,
+      isLocked: true,
+    });
+  }
+
+  saveEquipmentLibrary(Array.from(byId.values()), "campaign");
+  window.localStorage.setItem(BASE_WEAPON_SEED_KEY, BASE_WEAPON_SEED_VERSION);
 }
 
 function upsertItem(item: EquipmentItem): void {

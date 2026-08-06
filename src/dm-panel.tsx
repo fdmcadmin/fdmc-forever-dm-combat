@@ -65,7 +65,7 @@ import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import type { Actor } from "./core/types/actor";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
-import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "./data/broken-chain/equipmentLibrary";
 import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { LevelUpApprovalPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
@@ -144,7 +144,7 @@ function DmPanelApp() {
   const createParam = useMemo(() => new URLSearchParams(window.location.search).get("create"), []);
 
   // ── Seed campaign equipment library on first DM panel open ────────────────
-  useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY); }, []);
+  useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY); seedBaseWeapons(); }, []);
 
   // ── Token panel: monster roster from localStorage ─────────────────────────
   const [tokenPanelMonsters] = useState(() => loadMonsterRoster());
