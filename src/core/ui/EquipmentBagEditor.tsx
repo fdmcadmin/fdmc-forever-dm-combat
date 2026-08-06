@@ -335,18 +335,18 @@ export function itemToAction(item: EquipmentItem): ActorAction {
   const isWeapon = Boolean(item.attack || item.damage);
   // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
   const isConsumable = Boolean(item.charges) && !isWeapon;
-  // P-UX4 Phase 4: passive items (Ward Caches, Convergence gear) are reference/effect
-  // display only — no roll/use, non-logging — and surface their full effect text on the
-  // actor card. Combine description + mechanics so the player can read the whole effect.
   const isPassive = item.type === "passive";
-  const passiveEffectText = isPassive
-    ? [item.description, item.mechanicsText].filter(Boolean).join(" — ") || item.description
-    : item.description;
 
   return {
     id: `equip-${item.id}`,
     label: item.name,
-    description: passiveEffectText,
+    // WHAT IT DOES, not what it is. `mechanicsText` wins over `description` on every item
+    // type, because `description` is campaign FLAVOUR — authoring reference for building the
+    // item, written for the loot doc. On a player's card it is worse than useless: Shattered
+    // Vigil read "A Ward field instrument recovered from the base at the lake's edge" with
+    // its +1 to spell attack and its 2d8 rider nowhere in sight, and `mechanicsText` rendered
+    // only in the merchant view. Flavour stays on the library item for the DM.
+    description: item.mechanicsText || item.description,
     actionKind: "equipment",
     // Weapons: reference-only on equipment tab (roll lives in main tab)
     // Consumables: logged when used so DM/player knows a charge was spent
@@ -376,6 +376,8 @@ export function itemToAction(item: EquipmentItem): ActorAction {
           : undefined,
         item.range ? `Range: ${item.range}` : undefined,
         item.mastery ? `Mastery: ${item.mastery}` : undefined,
+        // Attunement is a hard limit (three at a time) and was visible nowhere on the card.
+        item.attunementRequired ? "Requires attunement" : undefined,
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
       ].filter(Boolean).join(" · "),
@@ -407,7 +409,9 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
   return {
     id: `atk-${item.id}`,
     label: item.name,
-    description: item.description,
+    // Mechanics, not flavour — see itemToAction. A player swinging this needs the rider,
+    // not the story of where it was found.
+    description: item.mechanicsText || item.description,
     actionKind: "attack",
     logMode: "table-note",
     displayMode: "compact",
