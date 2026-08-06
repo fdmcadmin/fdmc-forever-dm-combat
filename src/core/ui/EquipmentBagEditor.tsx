@@ -711,7 +711,31 @@ type EquipmentBagEditorProps = {
 
 export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: EquipmentBagEditorProps) {
   const [view, setView] = useState<"bag" | "library" | "create">("bag");
+  /**
+   * Library search + type filter. Declared HERE, above the view switch, on purpose: editing an
+   * item swaps to the "create" view and back, and state scoped to the library view would be
+   * lost each time — which is exactly the "find it, edit it, now find it again" problem.
+   */
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [libraryTypeFilter, setLibraryTypeFilter] = useState("");
   const [library, setLibrary] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
+
+  /**
+   * What the picker actually shows. Matches across everything a DM would reach for — name,
+   * type, category, tags, and the weapon mastery — so "light", "finesse", "bow", "Vex" and
+   * "Rimecleaver" all find their item without knowing which field holds the word.
+   */
+  const visibleLibrary = library.filter(item => {
+    if (libraryTypeFilter && item.type !== libraryTypeFilter) return false;
+    const q = librarySearch.trim().toLowerCase();
+    if (!q) return true;
+    const haystack = [
+      item.name, item.type, item.category, item.mastery, item.tier, item.act,
+      ...(item.tags ?? []),
+    ].filter(Boolean).join(" ").toLowerCase();
+    // Every whitespace-separated term must appear, so "light armor" narrows rather than widens.
+    return q.split(/\s+/).every(term => haystack.includes(term));
+  });
   const [editingItem, setEditingItem] = useState<EquipmentItem | undefined>(undefined);
 
   // ── Migration: bake statEffects into pre-snapshot equipment entries; create
@@ -827,9 +851,21 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
     // the actor, so detaching destroyed them. Anything unknown to the library is banked there
     // on the way out; items already in the library are left exactly as they are.
     if (detached) {
-      const known = loadEquipmentLibrary().some(i => i.id === itemId);
-      if (!known) {
-        upsertItem(actionToItem(detached, itemId));
+      const libraryItem = loadEquipmentLibrary().find(i => i.id === itemId);
+      const carried = actionToItem(detached, itemId);
+
+      // THE LIBRARY WINS, but the character's version is never destroyed.
+      //   · unknown to the library  → bank it (an artificer's replicated/infused gear, or
+      //     anything a player built on the fly, existed ONLY on the actor)
+      //   · known and identical     → nothing to do
+      //   · known and DIFFERENT     → the library copy stays canonical; the diverged version
+      //     is written to the DM library, which `upsertItem` does by writing an unlocked
+      //     entry under the same id. A campaign item is never mutated by a character's copy.
+      const diverged = libraryItem && ["attack", "damage", "crit", "range", "ac"].some(
+        k => (libraryItem as Record<string, unknown>)[k] !== (carried as Record<string, unknown>)[k]);
+
+      if (!libraryItem || diverged) {
+        upsertItem(carried);
         refreshLibrary();
       }
     }
@@ -975,12 +1011,50 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
         </div>
       </div>
 
+      {/* FIND, don't scroll. The library is 60+ items and grows every session; hunting for
+          one by eye — and then hunting for it AGAIN after editing it — was the whole cost of
+          attaching anything. The query survives an edit (it lives above this view), so you
+          come back to the same short list you left. */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2 }}>
+        <input
+          type="text"
+          value={librarySearch}
+          onChange={e => setLibrarySearch(e.target.value)}
+          placeholder="Search name, type, category, tag…"
+          style={{ flex: 1, fontSize: 12, padding: "5px 8px", background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 4, color: "#fff" }}
+        />
+        <select
+          value={libraryTypeFilter}
+          onChange={e => setLibraryTypeFilter(e.target.value)}
+          style={{ fontSize: 11, padding: "5px 6px", background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 4, color: "#aaa" }}
+        >
+          <option value="">All types</option>
+          {ITEM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        {(librarySearch || libraryTypeFilter) && (
+          <button type="button" onClick={() => { setLibrarySearch(""); setLibraryTypeFilter(""); }}
+            title="Clear search and filter"
+            style={{ fontSize: 11, padding: "5px 8px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}>
+            ✕
+          </button>
+        )}
+      </div>
+      {(librarySearch || libraryTypeFilter) && (
+        <p style={{ margin: 0, fontSize: 10, color: "#555" }}>
+          {visibleLibrary.length} of {library.length} shown
+        </p>
+      )}
+
       {library.length === 0 ? (
         <p style={{ fontSize: 11, color: "#444", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>
           No items in library. Create one with + New Item.
         </p>
+      ) : visibleLibrary.length === 0 ? (
+        <p style={{ fontSize: 11, color: "#444", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>
+          Nothing matches “{librarySearch}”{libraryTypeFilter ? ` in ${libraryTypeFilter}` : ""}.
+        </p>
       ) : (
-        library.map(item => {
+        visibleLibrary.map(item => {
           const isEquipped = equippedIds.has(item.id);
           return (
             <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: isEquipped ? "#1a2a1a" : "#161622", borderRadius: 8, border: `1px solid ${isEquipped ? "#2a6e2a44" : "#2a2a3e"}` }}>
