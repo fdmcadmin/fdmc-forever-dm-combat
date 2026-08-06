@@ -567,7 +567,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "The armor adjusts to whoever puts it on — the fit is always correct, the weight always right. No tanner made this.",
     "isUsable": false,
-    "ac": "12–16 (adapts to proficiency)",
+    "ac": "13–17 (adapts to proficiency)",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Adaptive Armor",
@@ -576,7 +576,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 2",
     "sourceEncounter": "Last Directive",
     "sourceType": "elite-reward",
-    "mechanicsText": "This armor adjusts to the wearer's highest armor proficiency. Heavy proficiency: AC 16. Medium proficiency: AC 14 + DEX (max 2). Light proficiency: AC 12 + DEX. The wearer reduces cold damage taken by 3 per hit.",
+    "mechanicsText": "This armor adjusts to the wearer's highest armor proficiency (+1 magical armor). Heavy proficiency: AC 17. Medium proficiency: AC 15 + DEX (max 2). Light proficiency: AC 13 + DEX. The wearer reduces cold damage taken by 3 per hit.",
     "dmNote": "Adaptive armor — publication friendly, no class assumption. Cold reduction of 3 per hit is meaningful against Act 2's cold damage pressure and the Full Wendigo's Wrong Cold aura."
   },
   {
@@ -585,7 +585,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "shield",
     "description": "Named for the first thing strength drain reaches. The face of it is unmarked — no emblem, no device. It belonged to someone who didn't want to be found.",
     "isUsable": false,
-    "ac": "+2",
+    "ac": "+3",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Shield",
@@ -594,7 +594,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 2",
     "sourceEncounter": "Last Directive",
     "sourceType": "elite-reward",
-    "mechanicsText": "+2 bonus to AC. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
+    "mechanicsText": "+3 bonus to AC (+1 magical shield). When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
     "dmNote": "Named for the STR drain mechanic running through Act 2 — Corrupted Hunters, Animated Sentinels, Corrupted Claws. Simple bonus, no tracking, fires every time drain triggers. Correct for players who recognize what the north does."
   },
   {

@@ -134,7 +134,8 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // v0.3.0 — Act 2 armor is now +1 magical (loot doc v5): Permafrost Hide 11→12,
 // Hollowbone Halfplate 15→16, Bonemarch Plate 16→17, Wight Iron Plate 17→18,
 // Frosted Sentinel Wrap 14→15, Veilstitched Leathers 12→13.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.3.0-armor-plus1";
+// v0.3.1 — Rimeguard 12-16→13-17 (all three modes) and Marrow Shield +2→+3.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.3.1-armor-plus1";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
