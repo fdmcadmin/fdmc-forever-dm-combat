@@ -135,7 +135,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // Hollowbone Halfplate 15→16, Bonemarch Plate 16→17, Wight Iron Plate 17→18,
 // Frosted Sentinel Wrap 14→15, Veilstitched Leathers 12→13.
 // v0.3.1 — Rimeguard 12-16→13-17 (all three modes) and Marrow Shield +2→+3.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.3.1-armor-plus1";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.3.2-rimeguard-split";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -154,15 +154,33 @@ export function saveEquipmentLibrary(library: EquipmentItem[], owner: "campaign"
   try { window.localStorage.setItem(key, JSON.stringify(library)); } catch { /* ok */ }
 }
 
+/**
+ * Re-seed the bundled campaign items.
+ *
+ * MERGES by id rather than replacing the library wholesale. The campaign library is
+ * shared: `seedBaseWeapons` puts the mundane 2024 weapons in it too. The old wholesale
+ * `saveEquipmentLibrary(items, "campaign")` therefore DELETED every base weapon the
+ * moment CAMPAIGN_EQUIPMENT_SEED_VERSION was bumped — and because seedBaseWeapons is
+ * gated on its own separate version key, it early-returned and never put them back.
+ * (That is exactly what happened on the 0.6.5.4 armour bump.)
+ *
+ * Bundled items win for their own ids, so edits to the shipped module data still land;
+ * anything else already in the library is preserved.
+ */
 export function seedCampaignEquipmentLibrary(items: EquipmentItem[]): void {
   if (window.localStorage.getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
-  saveEquipmentLibrary(items, "campaign");
+  const byId = new Map(loadEquipmentLibrary("campaign").map(i => [i.id, i]));
+  for (const item of items) byId.set(item.id, item);
+  saveEquipmentLibrary(Array.from(byId.values()), "campaign");
   window.localStorage.setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
 }
 
 /** Seed version for the base weapon set — bump to re-seed after editing BASE_WEAPONS. */
 const BASE_WEAPON_SEED_KEY = "fdmc.equipment.baseWeapons.seedVersion";
-const BASE_WEAPON_SEED_VERSION = "2024-phb-v1";
+// v2 is a REPAIR bump, not a content change: the 0.6.5.4 campaign re-seed wiped the base
+// weapons out of the shared campaign library, and this key's own guard meant they were
+// never restored. Bumping re-runs the (id-preserving) weapon seed for anyone affected.
+const BASE_WEAPON_SEED_VERSION = "2024-phb-v2-restore";
 
 /**
  * Put the mundane 2024 weapons in the library.
