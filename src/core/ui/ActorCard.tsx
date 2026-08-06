@@ -233,6 +233,8 @@ type ActorCardSessionSnapshot = {
   /** Chosen cast level per spell, keyed `actorId:actionId`. Survives window switches so a
    *  player who picks L4 in the popout sees L4 on the tracker card. */
   castLevelByActionKey?: Record<string, number>;
+  /** Two-Weapon Fighting toggle, per actor. */
+  twoWeaponByActorId?: Record<string, boolean>;
 };
 
 function readActorCardSessionSnapshot(): ActorCardSessionSnapshot {
@@ -758,6 +760,7 @@ export function ActorCard({
   const [initiativeByActorId, setInitiativeByActorId] = useState<Record<string, InitiativeRollState | null>>(() => readActorCardSessionSnapshot().initiativeByActorId ?? {});
   const [attackUseByActorId, setAttackUseByActorId] = useState<Record<string, AttackUseState | null>>(() => readActorCardSessionSnapshot().attackUseByActorId ?? {});
   const [castLevelByActionKey, setCastLevelByActionKey] = useState<Record<string, number>>(() => readActorCardSessionSnapshot().castLevelByActionKey ?? {});
+  const [twoWeaponByActorId, setTwoWeaponByActorId] = useState<Record<string, boolean>>(() => readActorCardSessionSnapshot().twoWeaponByActorId ?? {});
   const [debuffNote, setDebuffNote] = useState("");
   // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
   const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
@@ -815,6 +818,7 @@ export function ActorCard({
       initiativeByActorId,
       attackUseByActorId,
       castLevelByActionKey,
+      twoWeaponByActorId,
     };
 
     if (suppressNextSessionBroadcastRef.current) {
@@ -834,6 +838,7 @@ export function ActorCard({
     initiativeByActorId,
     attackUseByActorId,
     castLevelByActionKey,
+    twoWeaponByActorId,
     broadcastActorCardSession,
   ]);
 
@@ -847,6 +852,7 @@ export function ActorCard({
     setInitiativeByActorId(snapshot.initiativeByActorId ?? {});
     setAttackUseByActorId(snapshot.attackUseByActorId ?? {});
     setCastLevelByActionKey(snapshot.castLevelByActionKey ?? {});
+    setTwoWeaponByActorId(snapshot.twoWeaponByActorId ?? {});
   }
 
   useEffect(() => {
@@ -1005,9 +1011,9 @@ export function ActorCard({
   const activeActions = useMemo(
     () => (actor.tabs[activeTab] ?? [])
       .filter((action) => !isPinnedReactionAction(action))
-      .map((action) => withUpcastRiders(action)),
+      .map((action) => withTwoWeaponFighting(withUpcastRiders(action))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
-    [actor.tabs, activeTab, castLevelByActionKey]
+    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId]
   );
 
   const readiedLabelMap = useMemo(() => {
@@ -2426,9 +2432,18 @@ export function ActorCard({
     });
   }
 
+  /** Does this actor hold any LIGHT weapon? Only then is two-weapon fighting available. */
+  function hasLightWeapon(): boolean {
+    return Object.values(actor.tabs).flat().some(a =>
+      isWeaponAttackAction(a) && (a.tags ?? []).some(t => t.toLowerCase() === "light"));
+  }
+
   function renderWeaponBuffPanel() {
     const buffs = getWeaponBuffs();
-    if (buffs.length === 0) return null;
+    const showTwf = hasLightWeapon();
+    // Render for the TWF toggle even with no fighting styles — a Fighter dual-wielding
+    // without a style still needs it, and gating on `buffs` alone hid it from them.
+    if (buffs.length === 0 && !showTwf) return null;
     return (
       <section className="armed-effects-panel" aria-label="Fighting styles and weapon buffs">
         <div className="armed-effects-header">
@@ -2436,6 +2451,22 @@ export function ActorCard({
           <span>toggle on while active</span>
         </div>
         <div className="armed-effect-chip-list">
+          {showTwf && (
+            <button
+              type="button"
+              onClick={() => setTwoWeaponByActorId(c => ({ ...c, [actor.id]: !c[actor.id] }))}
+              className={`armed-effect-chip ${twoWeaponArmed ? "rage-armed" : ""}`}
+              style={{ cursor: "pointer", opacity: twoWeaponArmed ? 1 : 0.65 }}
+              title={
+                twoWeaponArmed
+                  ? "Two-Weapon Fighting is ON. Light weapon attacks cost a BONUS action and their damage drops the ability modifier (the fighting style gives it back)."
+                  : "Turn on Two-Weapon Fighting: a Light weapon's attack becomes a bonus action and its damage loses the ability modifier."
+              }
+            >
+              {twoWeaponArmed ? "✓ " : ""}Two-Weapon Fighting{" "}
+              <span style={{ opacity: 0.7 }}>(light: bonus action, no ability mod on damage)</span>
+            </button>
+          )}
           {buffs.map(b => {
             const armed = isWeaponBuffArmed(b.id);
             const bonusText = [b.attack ? `${formatBonusForChip(b.attack)} atk` : "", b.damage ? `${formatBonusForChip(b.damage)} dmg` : ""].filter(Boolean).join(" · ");
@@ -2768,6 +2799,59 @@ export function ActorCard({
    * places. Returns the action untouched when there is nothing to add, so a non-spell, a
    * spell cast at its own level, or one with no rider authored costs nothing.
    */
+  /**
+   * TWO-WEAPON FIGHTING — a toggle on the weapon's own attack, not a separate action.
+   *
+   * The party currently carries `Two-Weapon Fighting — Scimitar` / `— Shortsword` /
+   * `— Dagger` as hand-authored bonus-tab duplicates. Wrong shape: it is the SAME attack,
+   * spent differently. While the toggle is on, a Light weapon's attack:
+   *
+   *   · costs a BONUS action instead of the main action
+   *   · drops `@STR` / `@DEX` from its DAMAGE — the off-hand swing adds no ability modifier
+   *
+   * The Two-Weapon Fighting *fighting style* is what adds the modifier back, so the style is
+   * the exception and dropping it is the default. Attack rolls are untouched: only damage
+   * loses the modifier.
+   *
+   * Only Light weapons qualify, read off the weapon's own tags — which is why weapons want to
+   * be BUILT and attached rather than hand-authored, since a hand-written action carries no
+   * tags to check.
+   */
+  const twoWeaponArmed = Boolean(twoWeaponByActorId[actor.id]);
+
+  function withTwoWeaponFighting(action: ActorAction): ActorAction {
+    if (!twoWeaponArmed) return action;
+    if (!isWeaponAttackAction(action)) return action;
+    const tags = (action.tags ?? []).map(t => t.toLowerCase());
+    if (!tags.includes("light")) return action;
+
+    const damage = action.metadata?.damage;
+    if (!damage) return action;
+
+    // The style gives the modifier back; without it the off-hand adds none.
+    const hasTwfStyle = (actor.tabs.features ?? [])
+      .some(f => /two[-\s]?weapon fighting/i.test(f.label ?? ""));
+
+    const stripped = hasTwfStyle
+      ? damage
+      : damage.replace(/\s*\+\s*@(?:STR|DEX|ATK)\b/gi, "").trim() || damage;
+
+    return {
+      ...action,
+      economyCost: ["bonus"],
+      metadata: {
+        ...action.metadata,
+        damage: stripped,
+        details: [
+          action.metadata?.details,
+          hasTwfStyle
+            ? "Two-Weapon Fighting: off-hand attack; the fighting style keeps your ability modifier on the damage."
+            : "Two-Weapon Fighting: off-hand attack; no ability modifier on the damage.",
+        ].filter(Boolean).join("\n\n"),
+      },
+    };
+  }
+
   function withUpcastRiders(action: ActorAction): ActorAction {
     const metadata = action.metadata;
     const rider = metadata?.upcastDamage?.trim();
