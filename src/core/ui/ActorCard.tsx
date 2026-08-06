@@ -2455,15 +2455,15 @@ export function ActorCard({
             <button
               type="button"
               onClick={() => setTwoWeaponByActorId(c => ({ ...c, [actor.id]: !c[actor.id] }))}
-              className={`armed-effect-chip ${twoWeaponArmed ? "rage-armed" : ""}`}
-              style={{ cursor: "pointer", opacity: twoWeaponArmed ? 1 : 0.65 }}
+              className={`armed-effect-chip ${isTwoWeaponArmed() ? "rage-armed" : ""}`}
+              style={{ cursor: "pointer", opacity: isTwoWeaponArmed() ? 1 : 0.65 }}
               title={
-                twoWeaponArmed
+                isTwoWeaponArmed()
                   ? "Two-Weapon Fighting is ON. Light weapon attacks cost a BONUS action and their damage drops the ability modifier (the fighting style gives it back)."
                   : "Turn on Two-Weapon Fighting: a Light weapon's attack becomes a bonus action and its damage loses the ability modifier."
               }
             >
-              {twoWeaponArmed ? "✓ " : ""}Two-Weapon Fighting{" "}
+              {isTwoWeaponArmed() ? "✓ " : ""}Two-Weapon Fighting{" "}
               <span style={{ opacity: 0.7 }}>(light: bonus action, no ability mod on damage)</span>
             </button>
           )}
@@ -2817,10 +2817,18 @@ export function ActorCard({
    * be BUILT and attached rather than hand-authored, since a hand-written action carries no
    * tags to check.
    */
-  const twoWeaponArmed = Boolean(twoWeaponByActorId[actor.id]);
+  /**
+   * Read the toggle from state INSIDE the function, never from a `const` declared further
+   * down the component. `activeActions` calls this during render, long before this point in
+   * the body — a hoisted `function` is fine there, a `const` is in the temporal dead zone and
+   * throws `Cannot access before initialization`, which blanks the whole card.
+   */
+  function isTwoWeaponArmed(): boolean {
+    return Boolean(twoWeaponByActorId[actor.id]);
+  }
 
   function withTwoWeaponFighting(action: ActorAction): ActorAction {
-    if (!twoWeaponArmed) return action;
+    if (!isTwoWeaponArmed()) return action;
     if (!isWeaponAttackAction(action)) return action;
     const tags = (action.tags ?? []).map(t => t.toLowerCase());
     if (!tags.includes("light")) return action;
