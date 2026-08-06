@@ -130,7 +130,11 @@ export type EquipmentItem = {
 const CAMPAIGN_EQUIPMENT_KEY = "fdmc.dm.equipmentLibrary.campaign.v1";
 const DM_EQUIPMENT_KEY = "fdmc.dm.equipmentLibrary.dm.v1";
 const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1";
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.2.0";
+// Bump to re-seed the campaign equipment library after editing the bundled items.
+// v0.3.0 — Act 2 armor is now +1 magical (loot doc v5): Permafrost Hide 11→12,
+// Hollowbone Halfplate 15→16, Bonemarch Plate 16→17, Wight Iron Plate 17→18,
+// Frosted Sentinel Wrap 14→15, Veilstitched Leathers 12→13.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.3.0-armor-plus1";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -762,8 +766,55 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
     onChange(updates);
   }
 
+  /**
+   * Rebuild an EquipmentItem from the actor's copy, for anything not already in the library.
+   *
+   * Attaching bakes the item onto the actor, so the actor's entry is a complete record — this
+   * reads it back out. Only ever used to RESCUE an item on detach; a library item is never
+   * overwritten from an actor's baked copy, because that copy may carry attach-time edits.
+   */
+  function actionToItem(action: ActorAction, itemId: string): EquipmentItem {
+    const m = action.metadata ?? {};
+    return {
+      id: itemId,
+      name: action.label,
+      type: (m.attack || m.damage) ? "weapon" : "gear",
+      description: action.description ?? "",
+      isUsable: Boolean(action.hasDefinedUse),
+      attack: m.attack,
+      damage: m.damage,
+      crit: m.crit,
+      range: m.range,
+      ac: m.acDisplay,
+      spellFocusAttack: m.spellFocusAttack,
+      spellFocusDamage: m.spellFocusDamage,
+      charges: m.charges,
+      // `metadata` stores these with widened `string` types (it is the generic action shape),
+      // so narrow them back on the way home. Same objects, round-tripped.
+      effect: m.effect as EquipmentEffect | undefined,
+      statEffects: m.statEffects as StatEffect[] | undefined,
+      category: action.category,
+      tags: action.tags,
+    };
+  }
+
   function detachItem(actionId: string) {
     const itemId = actionId.replace(/^equip-/, "");
+    const detached = equippedActions.find(a => a.id === actionId);
+
+    // NEVER lose a player-created item. Detach was written assuming everything came FROM the
+    // library ("stays in library"), which is false for anything a player built on the fly —
+    // an artificer's replicated or infused gear, a DM-improvised item. Those existed only on
+    // the actor, so detaching destroyed them. Anything unknown to the library is banked there
+    // on the way out; items already in the library are left exactly as they are.
+    if (detached) {
+      const known = loadEquipmentLibrary().some(i => i.id === itemId);
+      if (!known) {
+        upsertItem(actionToItem(detached, itemId));
+        refreshLibrary();
+      }
+    }
+
     const newEquipment = equippedActions.filter(a => a.id !== actionId);
     const newMain = mainActions.filter(a => a.id !== `atk-${itemId}`);
     const hadAtkEntry = newMain.length !== mainActions.length;

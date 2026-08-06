@@ -581,7 +581,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-marrow",
-    "name": "Marrow",
+    "name": "Marrow Shield",
     "type": "shield",
     "description": "Named for the first thing strength drain reaches. The face of it is unmarked — no emblem, no device. It belonged to someone who didn't want to be found.",
     "isUsable": false,
@@ -810,7 +810,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "Cured in conditions no tanner would choose. It doesn't warm you — it just stops the cold from taking more.",
     "isUsable": false,
-    "ac": "11 + DEX",
+    "ac": "12 + DEX",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Light Armor",
@@ -819,7 +819,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 3",
     "sourceEncounter": "Lesser Wendigos",
     "sourceType": "boss-loot",
-    "mechanicsText": "AC 11 + DEX modifier. You have resistance to cold damage.",
+    "mechanicsText": "AC 12 + DEX modifier (+1 magical armor). You have resistance to cold damage.",
     "dmNote": "Light slot. Frost majority. Cold resistance is the core Act 2 need before the Full Wendigo. Environmental immunity clause removed to hold Tier 2 without attunement."
   },
   {
@@ -828,7 +828,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "Iron, bone, and cord assembled by someone who knew exactly what they were doing. The bone inlays came from something that didn't die quickly.",
     "isUsable": false,
-    "ac": "15 + DEX (max 2)",
+    "ac": "16 + DEX (max 2)",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Medium Armor",
@@ -837,7 +837,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 3",
     "sourceEncounter": "Lesser Wendigos",
     "sourceType": "boss-loot",
-    "mechanicsText": "AC 15 + DEX modifier (max 2). When a creature within 5 feet hits you with a melee attack, it takes 2 cold damage.",
+    "mechanicsText": "AC 16 + DEX modifier (max 2) (+1 magical armor). When a creature within 5 feet hits you with a melee attack, it takes 2 cold damage.",
     "dmNote": "Medium slot. Frost/Far Realm blend. Retaliatory cold damage rider — fine by the damage-rider rule. Consistent, no activation required."
   },
   {
@@ -846,7 +846,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "Pulled from the Ward northern cache. Whoever wore it last didn't need it anymore. The iron has a grain to it that standard smelting doesn't produce — as if it was forged somewhere colder than any forge.",
     "isUsable": false,
-    "ac": "16",
+    "ac": "17",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Heavy Armor",
@@ -855,8 +855,8 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 3",
     "sourceEncounter": "Lesser Wendigos",
     "sourceType": "boss-loot",
-    "mechanicsText": "AC 16. When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once per long rest.",
-    "dmNote": "Heavy slot. Frost majority. AC 16 correct for splint equivalent at Tier 2. Once-per-long-rest death prevention requires actually dropping to 0 — strong but not dominating. A veteran Paladin or Barbarian reads this correctly."
+    "mechanicsText": "AC 17 (+1 magical armor). When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once per long rest.",
+    "dmNote": "Heavy slot. Frost majority. AC 17 — +1 chain mail, splint-equivalent at Tier 2. Once-per-long-rest death prevention requires actually dropping to 0 — strong but not dominating. A veteran Paladin or Barbarian reads this correctly."
   },
   {
     "id": "tbc-hollow-lantern",
@@ -1017,7 +1017,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "Salvaged from the Ward base at the lake's edge, left by someone who never came back for it. The iron is near-black and, against all sense, faintly warm.",
     "isUsable": false,
-    "ac": "17",
+    "ac": "18",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Heavy Armor",
@@ -1026,7 +1026,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 5",
     "sourceEncounter": "Full Wendigo",
     "sourceType": "boss-loot",
-    "mechanicsText": "AC 17. You have advantage on saving throws against being paralyzed or restrained, and any effect that would reduce your Strength score reduces it by 1 less (minimum 0).",
+    "mechanicsText": "AC 18 (+1 magical armor). You have advantage on saving throws against being paralyzed or restrained, and any effect that would reduce your Strength score reduces it by 1 less (minimum 0).",
     "dmNote": "Heavy slot. Frost majority. Directly answers Act 2's STR drain attrition design. Strong in-context, narrow out of context — holds Tier 2.5 without attunement. Armor attunement is reserved for Tier 3.5+ items."
   },
   {
@@ -1035,7 +1035,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "Salvaged from the Ward lake base. The previous owner left notes in the lining — field observations in a hand that got progressively harder to read. The last entry is a single word. The word is north.",
     "isUsable": false,
-    "ac": "14 + DEX (max 2)",
+    "ac": "15 + DEX (max 2)",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Medium Armor",
@@ -1044,7 +1044,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 5",
     "sourceEncounter": "Full Wendigo",
     "sourceType": "boss-loot",
-    "mechanicsText": "AC 14 + DEX modifier (max 2). You have resistance to cold damage. When you are hit by a melee attack, the attacker takes 1d4 cold damage.",
+    "mechanicsText": "AC 15 + DEX modifier (max 2) (+1 magical armor). You have resistance to cold damage. When you are hit by a melee attack, the attacker takes 1d4 cold damage.",
     "dmNote": "Medium slot. Frost majority. Cold resistance is the Tier 2.5 upgrade — same resistance as Permafrost Hide but now with a retaliation rider. 1d4 retaliation is modest but consistent — every melee hit costs the attacker something."
   },
   {
@@ -1053,7 +1053,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "armor",
     "description": "Stitched from material that isn't quite leather — too uniform, too consistent, no grain variation anywhere. Whatever animal produced it either didn't exist or doesn't anymore. It fits like it was made for whoever is wearing it.",
     "isUsable": false,
-    "ac": "12 + DEX",
+    "ac": "13 + DEX",
     "attunementRequired": false,
     "isLocked": true,
     "category": "Light Armor",
@@ -1062,7 +1062,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "session": "Session 5",
     "sourceEncounter": "Full Wendigo",
     "sourceType": "boss-loot",
-    "mechanicsText": "AC 12 + DEX modifier. You have advantage on Dexterity saving throws. When you take damage that would reduce you below half your hit point maximum for the first time each encounter, you gain 2d6 temporary hit points.",
+    "mechanicsText": "AC 13 + DEX modifier (+1 magical armor). You have advantage on Dexterity saving throws. When you take damage that would reduce you below half your hit point maximum for the first time each encounter, you gain 2d6 temporary hit points.",
     "dmNote": "Light slot. Far Realm majority. DEX save advantage is broad — covers area effects, breath weapons, traps. The half-HP trigger fires at the danger moment and gives the back line a meaningful buffer. Once per encounter keeps it from being a sustained HP engine."
   },
   {
