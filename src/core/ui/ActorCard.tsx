@@ -1015,21 +1015,19 @@ export function ActorCard({
   /**
    * Show what's left in an item's own charge pool.
    *
-   * The item's `details` line is baked at attach time and can't hold a live number, so the
-   * count is stamped on at render. Without it the pool is invisible: a player clicking
-   * Gapstep Boots would get "no charges left" out of nowhere, having never seen it count down.
-   * A function DECLARATION, so it is hoisted above the memo below — see the TDZ note in
-   * useResourceCounterState.
+   * The count is state, not authored data, so it is stamped on at render into `chargeReadout`
+   * — which ActionButton renders as an always-visible chip. Without it the pool is invisible:
+   * a player clicking Gapstep Boots would get "no charges left" out of nowhere, having never
+   * seen it count down. A function DECLARATION, so it is hoisted above the memo below — see
+   * the TDZ note in useResourceCounterState.
    */
   function withItemChargeCount(action: ActorAction): ActorAction {
     const pool = itemChargesFor(action);
     if (!pool) return action;
     const remaining = resourceCounters?.[itemChargeKey(action.id)] ?? pool.max;
-    const readout = `⚡ ${remaining}/${pool.max} charge${pool.max === 1 ? "" : "s"}`;
-    const details = action.metadata?.details;
     return {
       ...action,
-      metadata: { ...action.metadata, details: details ? `${readout} · ${details}` : readout },
+      metadata: { ...action.metadata, chargeReadout: `${remaining}/${pool.max}` },
     };
   }
 

@@ -147,6 +147,9 @@ export type ActorActionMetadata = {
   outcomeMode?: ActionOutcomeMode;
   /** Charge tracking — carried from EquipmentItem for items with limited uses */
   charges?: { max: number; reset: "longRest" | "shortRest" | "manual" };
+  /** Live "remaining/max" for the item pool above, stamped at render by the card (the counter
+   *  is state, not authored data). Shown as an always-visible chip on the action row. */
+  chargeReadout?: string;
   /** Effect descriptor — carried from EquipmentItem for charge-gated effects */
   effect?: { type: string; label?: string; formula?: string; value?: string; condition?: string };
   /**

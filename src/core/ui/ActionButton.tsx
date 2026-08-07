@@ -28,7 +28,7 @@ type ActionButtonProps = {
   castLevelPicker?: ReactNode;
 };
 
-const summaryRowLabels = new Set(["Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost", "Spell Level", "Concentration"]);
+const summaryRowLabels = new Set(["Charges", "Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost", "Spell Level", "Concentration"]);
 
 function formatSwapMessage(willSwapCosts: ActionCost[], actionLabel: string) {
   if (willSwapCosts.length === 0) {
@@ -52,6 +52,8 @@ function metadataRows(action: ActorAction, resolveFormula?: (formula: string) =>
   const r = (value?: string) => (value && resolveFormula ? resolveFormula(value) : value);
 
   return [
+    // First so the count reads before the dice on a charged item.
+    ["Charges", metadata.chargeReadout],
     ["Attack", r(metadata.attack)],
     ["Damage", metadata.damage ? `${r(metadata.damage)}${metadata.damageType ? ` ${metadata.damageType}` : ""}` : metadata.damage],
     ["Crit", r(metadata.crit)],
@@ -132,10 +134,9 @@ export function ActionButton({
         <span className="action-label-row compact-action-title-row">
           <span className="action-label">
             {action.label}
-            {/* ⚡ flags an item that carries a charge pool, so you can see which rows have one
-                without expanding each. Inside the label span because `.action-label` is
-                display:block — as a sibling it would drop to its own line. The COUNT stays in
-                Details and on the Equipment tab's CHARGES strip; this is only the marker. */}
+            {/* ⚡ flags an item that carries a charge pool. Inside the label span because
+                `.action-label` is display:block — as a sibling it would drop to its own line.
+                The live count rides alongside it as the Charges summary chip below. */}
             {action.metadata?.charges && (
               <span className="action-label-charge-flag" title="This item has charges" aria-label="has charges"> ⚡</span>
             )}
