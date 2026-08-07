@@ -492,6 +492,27 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     refreshLibrary();
   }
 
+  /**
+   * Put a whole loot pool on the table in one click.
+   *
+   * Building an offer a piece at a time is the slow path when what you actually want is
+   * "here is the Full Wendigo's drop" or "here is what the innkeeper stocks" — a boss pool
+   * runs eleven items. This loads the group as a unit, merging into an open offer rather
+   * than replacing it so two pools can be combined.
+   *
+   * A stock/merchant group opens as a SHOP (buy what you can afford); anything else opens
+   * as a pick-one table. Both are still switchable on the offer panel.
+   */
+  function tableWholeGroup(items: EquipmentItem[], label: string) {
+    const isStock = /merchant|stock|shop|vendor/i.test(label);
+    const mode: "boss-mid" | "boss-final" | "merchant" = isStock ? "merchant" : "boss-mid";
+    setLootOffer(prev => {
+      if (!prev) return { items: [...items], seatId: "__all__", mode };
+      const have = new Set(prev.items.map(i => i.id));
+      return { ...prev, items: [...prev.items, ...items.filter(i => !have.has(i.id))] };
+    });
+  }
+
   function toggleCart(item: EquipmentItem) {
     setCart(prev => prev.some(i => i.id === item.id) ? prev.filter(i => i.id !== item.id) : [...prev, item]);
   }
@@ -1115,14 +1136,27 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       const expanded = expandedGroups.has(gid) || filterText.trim().length > 0;
       return (
         <div key={gid} style={{ marginBottom: 8 }}>
-          <button type="button" onClick={() => toggleGroup(gid)}
-            style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "7px 10px",
-              background: "#161622", border: "1px solid #2a2a3e", borderLeft: "3px solid #e0b34a", borderRadius: 6, cursor: "pointer", color: "#fff" }}
-            title={expanded ? "Collapse" : "Expand"}>
-            <span style={{ fontSize: 11, color: "#e0b34a", width: 12, flexShrink: 0 }}>{expanded ? "▼" : "▶"}</span>
-            <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎁 {g.label}</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#0d0d14", background: "#e0b34a", borderRadius: 8, padding: "1px 7px", flexShrink: 0 }}>{g.items.length}</span>
-          </button>
+          {/* The header is a ROW, not one big button: "Table all" has to sit beside the
+              expander, and a button inside a button is invalid HTML. */}
+          <div style={{ display: "flex", alignItems: "stretch", gap: 0,
+            background: "#161622", border: "1px solid #2a2a3e", borderLeft: "3px solid #e0b34a", borderRadius: 6, overflow: "hidden" }}>
+            <button type="button" onClick={() => toggleGroup(gid)}
+              style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, textAlign: "left", padding: "7px 10px",
+                background: "transparent", border: "none", cursor: "pointer", color: "#fff" }}
+              title={expanded ? "Collapse" : "Expand"}>
+              <span style={{ fontSize: 11, color: "#e0b34a", width: 12, flexShrink: 0 }}>{expanded ? "▼" : "▶"}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎁 {g.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#0d0d14", background: "#e0b34a", borderRadius: 8, padding: "1px 7px", flexShrink: 0 }}>{g.items.length}</span>
+            </button>
+            {seats.length > 0 && (
+              <button type="button"
+                onClick={() => tableWholeGroup(g.items, g.label)}
+                style={{ fontSize: 11, padding: "0 10px", background: "#7b68ee22", border: "none", borderLeft: "1px solid #2a2a3e", color: "#7b68ee", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
+                title={`Put all ${g.items.length} items from ${g.label} on the loot table at once — the whole pool, not one piece at a time`}>
+                + Table all
+              </button>
+            )}
+          </div>
           {expanded && <div style={{ marginTop: 6, paddingLeft: 6 }}>{g.items.map(renderItem)}</div>}
         </div>
       );

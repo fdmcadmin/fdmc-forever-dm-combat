@@ -98,6 +98,10 @@ type ActorCardProps = {
   onSpendResource?: (resourceActionId: string, amount: number) => void;
   /** Deduct one charge from an ITEM pool by hand — the equipment equivalent of onSpendResource. */
   onSpendItemCharge?: (action: ActorAction) => void;
+  /** Party members this actor can hand an item to. Empty/absent hides the transfer control. */
+  partyMembers?: Array<{ id: string; name: string }>;
+  /** Hand one equipment item to another actor. The DM performs the move; this only asks. */
+  onSendItem?: (action: ActorAction, toActorId: string) => void;
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
@@ -744,6 +748,8 @@ export function ActorCard({
   resourceCounters,
   onSpendResource,
   onSpendItemCharge,
+  partyMembers,
+  onSendItem,
   onConsumeActionResources,
   onSaveCall,
   coins,
@@ -1031,9 +1037,15 @@ export function ActorCard({
     };
   }
 
-  // Item pools for the Resources tab. Gathered from every tab, not from activeActions —
+  // Item pools for the Equipment tab. Gathered from every tab, not from activeActions —
   // the items themselves sit on the equipment and main tabs.
   const itemChargePools = useMemo(() => chargeBearingActions(actor.tabs), [actor.tabs]);
+
+  // Give-to-party-member picker. Only the equipment tab's own rows are handable: a weapon's
+  // main-tab attack row is generated FROM the item, so moving the item takes it along.
+  const sendableItems = actor.tabs.equipment ?? [];
+  const [sendItemId, setSendItemId] = useState("");
+  const [sendToId, setSendToId] = useState("");
 
   const activeActions = useMemo(
     () => (actor.tabs[activeTab] ?? [])
@@ -4415,6 +4427,43 @@ export function ActorCard({
             The rest buttons on that tab still drive them: a short rest refills the
             shortRest items, a long rest everything except manual. Deduct-only, matching
             the resource rows — restoring is what a rest is for. */}
+        {/* Hand an item to another player. The item MOVES — it leaves this sheet and lands
+            on theirs, charges and all — so the DM performs it and pushes both sheets; this
+            only sends the request. Trading at the table shouldn't need the DM to open two
+            character editors. */}
+        {activeTab === "equipment" && onSendItem && (partyMembers?.length ?? 0) > 0 && sendableItems.length > 0 && (
+          <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: "#555", letterSpacing: 0.5 }}>GIVE</span>
+            <select value={sendItemId} onChange={e => setSendItemId(e.target.value)}
+              style={{ flex: "1 1 120px", minWidth: 0, padding: "2px 4px", fontSize: 11, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
+              <option value="">— item —</option>
+              {sendableItems.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+            </select>
+            <span style={{ fontSize: 11, color: "#555" }}>→</span>
+            <select value={sendToId} onChange={e => setSendToId(e.target.value)}
+              style={{ flex: "1 1 100px", minWidth: 0, padding: "2px 4px", fontSize: 11, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
+              <option value="">— who —</option>
+              {partyMembers!.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <button type="button"
+              disabled={!sendItemId || !sendToId}
+              onClick={() => {
+                const item = sendableItems.find(a => a.id === sendItemId);
+                if (!item || !sendToId) return;
+                onSendItem(item, sendToId);
+                setSendItemId("");
+                setSendToId("");
+              }}
+              style={{ fontSize: 10, padding: "2px 9px", borderRadius: 3,
+                background: sendItemId && sendToId ? "#2a6e2a22" : "#1a1a1a",
+                border: "1px solid #2a6e2a55",
+                color: sendItemId && sendToId ? "#4caf50" : "#555",
+                cursor: sendItemId && sendToId ? "pointer" : "default" }}
+              title="Hand this item over — it leaves your sheet and appears on theirs">
+              Send
+            </button>
+          </div>
+        )}
         {activeTab === "equipment" && itemChargePools.length > 0 && (
           <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
             <div style={{ fontSize: 10, color: "#555", letterSpacing: 0.5, paddingBottom: 4 }}>CHARGES</div>

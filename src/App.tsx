@@ -954,6 +954,81 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode, dmActors]);
 
+  // ── DM: player hands an item to another player → move it, push both sheets ──
+  //
+  // The DM owns the actor library, so a peer-to-peer trade still routes through here: the
+  // player's card only ASKS. That also makes the move atomic — the item can never exist on
+  // both sheets or neither, which a two-sided client swap could produce if one push failed.
+  //
+  // The whole ActorAction moves, not a fresh copy built from the library, so a renamed or
+  // DM-tweaked item arrives as the receiver's own, and its charges travel with it.
+  //
+  // ONE implementation, two entry points: a remote player's request arrives on the channel
+  // below, and the DM's own click calls this directly. Routing the DM through a self-
+  // addressed broadcast would depend on the SDK looping LOCAL messages back to the sender's
+  // own handler — and if it doesn't, the DM's clicks silently do nothing.
+  function performItemTransfer(fromActorId: string, toActorId: string, actionId: string, notifySeatId?: string) {
+    if (fromActorId === toActorId) return;
+    const from = dmActors.find(a => a.id === fromActorId);
+    const to = dmActors.find(a => a.id === toActorId);
+    if (!from || !to) return;
+
+    // Authoritative check: the sender must actually be holding it. Without this a stale card
+    // could hand over an item it gave away a moment ago, duplicating it.
+    const moving = (from.tabs.equipment ?? []).find(a => a.id === actionId);
+    if (!moving) return;
+
+    // A weapon's rollable main-tab row is generated from the item and shares its id suffix,
+    // so it travels along instead of being left behind pointing at an item that's gone.
+    const itemKey = actionId.replace(/^equip-/, "");
+    const movesToo = (a: { id: string }) => a.id === `atk-${itemKey}`;
+    const carriedAttack = (from.tabs.main ?? []).filter(movesToo);
+
+    const updatedFrom = { ...from, tabs: { ...from.tabs,
+      equipment: (from.tabs.equipment ?? []).filter(a => a.id !== actionId),
+      main: (from.tabs.main ?? []).filter(a => !movesToo(a)) } };
+    const heldIds = new Set((to.tabs.equipment ?? []).map(a => a.id));
+    const mainIds = new Set((to.tabs.main ?? []).map(a => a.id));
+    const updatedTo = { ...to, tabs: { ...to.tabs,
+      equipment: heldIds.has(moving.id) ? (to.tabs.equipment ?? []) : [...(to.tabs.equipment ?? []), moving],
+      main: [...(to.tabs.main ?? []), ...carriedAttack.filter(a => !mainIds.has(a.id))] } };
+
+    const freshLib = {
+      ...dmActors.reduce((m, a) => ({ ...m, [a.id]: a }), {} as Record<string, typeof from>),
+      [updatedFrom.id]: updatedFrom,
+      [updatedTo.id]: updatedTo,
+    };
+    upsertActorInLibrary(updatedFrom);
+    upsertActorInLibrary(updatedTo);
+    setActorLibrary(lib => ({ ...lib, [updatedFrom.id]: updatedFrom, [updatedTo.id]: updatedTo }));
+    // Push every seat: the giver's sheet changed as much as the receiver's, and the two sit
+    // on different seats. Resolving actor→seat here only re-derives what this already walks.
+    pushActorsToAllSeats({ freshLibrary: freshLib });
+
+    if (OBR.isAvailable) {
+      void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+        type: "fdmc:loot-attached", seatId: notifySeatId, itemName: `${moving.label} → ${to.name}`,
+      }, { destination: "REMOTE" }).catch(() => undefined);
+    }
+
+    addEntry({
+      actorName: from.name,
+      actionName: "Item Given",
+      tabId: "system",
+      message: `${from.name} hands ${moving.label} to ${to.name}.`,
+    });
+  }
+
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as { type?: string; fromActorId?: string; toActorId?: string; actionId?: string; seatId?: string } | undefined;
+      if (msg?.type !== "fdmc:item-transfer" || !msg.fromActorId || !msg.toActorId || !msg.actionId) return;
+      performItemTransfer(msg.fromActorId, msg.toActorId, msg.actionId, msg.seatId);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDmMode, dmActors]);
+
   // ── DM: respond to player roster request on join ─────────────────────────
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
@@ -1153,6 +1228,33 @@ export default function App() {
     void obrSend(PARTY_TRACKER_CHANNEL, { type: "fdmc:party-tracker-request" }, { destination: "REMOTE" }).catch(() => undefined);
     return unsub;
   }, [isDmMode]);
+
+  // ── Item hand-off between players ────────────────────────────────────────
+  //
+  // Recipients come from whichever roster this side already has: the DM holds every actor,
+  // a player has the broadcast party tracker. Self is filtered out — handing an item to
+  // yourself is a no-op the DM handler rejects anyway.
+  function itemTransferTargets(selfActorId: string): Array<{ id: string; name: string }> {
+    const roster = isDmMode
+      ? dmActors.map(a => ({ id: a.id, name: a.name }))
+      : partyRoster.map(c => ({ id: c.id, name: c.name }));
+    return roster.filter(p => p.id !== selfActorId && p.name);
+  }
+
+  // The DM owns the move. Their own click runs it directly; a player's asks over the channel.
+  function requestItemTransfer(fromActorId: string, toActorId: string, action: { id: string; label: string }) {
+    if (isDmMode) {
+      performItemTransfer(fromActorId, toActorId, action.id, claimedSeatId ?? undefined);
+      return;
+    }
+    void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+      type: "fdmc:item-transfer",
+      fromActorId,
+      toActorId,
+      actionId: action.id,
+      seatId: claimedSeatId ?? "",
+    }, { destination: "REMOTE" }).catch(() => undefined);
+  }
 
   // ── Player: monster roster cache — received from DM broadcast ─────────────
   const [playerMonsters, setPlayerMonsters] = useState<PlayerSafeMonster[]>([]);
@@ -3131,6 +3233,8 @@ export default function App() {
         resourceCounters={counters[actorToShow.id]}
         onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
         onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
+        partyMembers={itemTransferTargets(actorToShow.id)}
+        onSendItem={(action, toActorId) => requestItemTransfer(actorToShow.id, toActorId, action)}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
@@ -3489,6 +3593,8 @@ export default function App() {
                 resourceCounters={counters[focusedActorId]}
                 onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
                 onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
+                partyMembers={itemTransferTargets(focusedActorId)}
+                onSendItem={(action, toActorId) => requestItemTransfer(focusedActorId, toActorId, action)}
                 onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}
