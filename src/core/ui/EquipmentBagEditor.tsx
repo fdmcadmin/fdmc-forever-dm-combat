@@ -396,6 +396,9 @@ export function itemToAction(item: EquipmentItem): ActorAction {
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
       charges: item.charges,
+      // Carried so the card can count attunement against what's equipped, without a library
+      // lookup. The details string above is prose — not something a checker can read.
+      attunementRequired: item.attunementRequired,
       effect: item.effect ? {
         type: item.effect.type as string,
         label: item.effect.label,
@@ -638,6 +641,14 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         Has a usable action (shows Use button on actor card)
       </label>
 
+      {/* An artificer's own creations can require attunement just as campaign loot does, so
+          this has to be authorable here — not only a property of shipped items. It feeds the
+          card's attunement count, which is why it is a flag and not just prose. */}
+      <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={Boolean(draft.attunementRequired)} onChange={e => set("attunementRequired", e.target.checked || undefined)} />
+        Requires attunement (counts against the 3 attuned slots while equipped)
+      </label>
+
       {/* Stat effects — passive stat modifications while item is equipped */}
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
@@ -844,6 +855,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
       spellFocusAttack: m.spellFocusAttack,
       spellFocusDamage: m.spellFocusDamage,
       charges: m.charges,
+      attunementRequired: m.attunementRequired,
       // `metadata` stores these with widened `string` types (it is the generic action shape),
       // so narrow them back on the way home. Same objects, round-tripped.
       effect: m.effect as EquipmentEffect | undefined,

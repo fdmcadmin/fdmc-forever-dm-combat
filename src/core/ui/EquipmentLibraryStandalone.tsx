@@ -188,6 +188,13 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
         <input type="checkbox" checked={draft.isUsable} onChange={e => set("isUsable", e.target.checked)} />
         Has usable action (shows Use button)
       </label>
+      {/* Authorable here as well as in the bag editor: an artificer's own creations can
+          require attunement exactly as campaign loot does. Feeds the card's attunement
+          count, which is why it is a flag rather than a line of rules text. */}
+      <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={Boolean(draft.attunementRequired)} onChange={e => set("attunementRequired", e.target.checked || undefined)} />
+        Requires attunement (holds 1 of 3 slots while equipped)
+      </label>
       <div style={{ display: "flex", gap: 8 }}>
         <button type="button" onClick={() => { if (!draft.name.trim()) return; onSave(draft); }} style={{ padding: "5px 16px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
           {initial ? "Save Changes" : "Create Item"}

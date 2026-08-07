@@ -112,6 +112,10 @@ export type ActorActionMetadata = {
    *  AC / spell-focus bonuses stop applying). undefined/true = equipped. Lets a player
    *  unequip an item without removing it from the character. */
   equipped?: boolean;
+  /** Equipment-tab items only: this item must be attuned to work. Carried on the action (not
+   *  looked up in the library) so the card can count attunement without resolving items —
+   *  the same reason statEffects are baked at attach time. Only EQUIPPED items count. */
+  attunementRequired?: boolean;
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
   /**

@@ -102,6 +102,8 @@ type ActorCardProps = {
   partyMembers?: Array<{ id: string; name: string }>;
   /** Hand one equipment item to another actor. The DM performs the move; this only asks. */
   onSendItem?: (action: ActorAction, toActorId: string) => void;
+  /** Equip / unequip one carried item. The DM owns the actor record, so this only asks. */
+  onToggleEquipped?: (action: ActorAction) => void;
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
@@ -750,6 +752,7 @@ export function ActorCard({
   onSpendItemCharge,
   partyMembers,
   onSendItem,
+  onToggleEquipped,
   onConsumeActionResources,
   onSaveCall,
   coins,
@@ -1046,6 +1049,13 @@ export function ActorCard({
   const sendableItems = actor.tabs.equipment ?? [];
   const [sendItemId, setSendItemId] = useState("");
   const [sendToId, setSendToId] = useState("");
+
+  // Attunement is capped at three, and it is EQUIPPED items that hold a slot — an attuned
+  // item sitting in the bag is just cargo. So the count reads `equipped !== false`, the same
+  // test deriveActorStats uses to decide whether an item's bonuses apply.
+  const ATTUNEMENT_LIMIT = 3;
+  const attunedItems = sendableItems.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false);
+  const attunementFull = attunedItems.length >= ATTUNEMENT_LIMIT;
 
   const activeActions = useMemo(
     () => (actor.tabs[activeTab] ?? [])
@@ -4462,6 +4472,50 @@ export function ActorCard({
               title="Hand this item over — it leaves your sheet and appears on theirs">
               Send
             </button>
+          </div>
+        )}
+        {/* Carried gear: equip/unequip and the attunement count.
+            This lives on the PLAYER's card rather than only in the DM's character editor —
+            equipment rows carry no roll, so the tab has the room, and equipping is the
+            player's decision to make mid-session. The DM still owns the record; the toggle
+            asks, exactly like the hand-off above. */}
+        {activeTab === "equipment" && onToggleEquipped && sendableItems.length > 0 && (
+          <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4 }}>
+              <span style={{ fontSize: 10, color: "#555", letterSpacing: 0.5 }}>CARRIED</span>
+              <span style={{ fontSize: 10, color: attunementFull ? "#e07b39" : "#555" }}
+                title="Attunement slots in use. Only EQUIPPED items hold one — an attuned item in the bag does not.">
+                ATTUNED {attunedItems.length}/{ATTUNEMENT_LIMIT}
+              </span>
+            </div>
+            {sendableItems.map(item => {
+              const isEquipped = item.metadata?.equipped !== false;
+              const needsAttune = Boolean(item.metadata?.attunementRequired);
+              // Equipping a fourth attuned item is the one move the cap forbids. Unequipping
+              // is always allowed — that is how you free a slot.
+              const blocked = !isEquipped && needsAttune && attunementFull;
+              return (
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #1a1a2e" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ fontSize: 12, color: isEquipped ? "#aaa" : "#555" }}>{item.label}</span>
+                    {needsAttune && <span style={{ fontSize: 10, color: isEquipped ? "#e07b39" : "#e07b3966", marginLeft: 6 }}>attune</span>}
+                  </div>
+                  <button type="button"
+                    disabled={blocked}
+                    onClick={() => onToggleEquipped(item)}
+                    style={{ fontSize: 10, padding: "2px 9px", borderRadius: 3, flexShrink: 0,
+                      background: isEquipped ? "#2a6e2a22" : "#1a1a1a",
+                      border: `1px solid ${isEquipped ? "#2a6e2a55" : "#333"}`,
+                      color: blocked ? "#555" : isEquipped ? "#4caf50" : "#888",
+                      cursor: blocked ? "default" : "pointer" }}
+                    title={blocked
+                      ? `Already attuned to ${ATTUNEMENT_LIMIT} items — unequip one first.`
+                      : isEquipped ? "Unequip — keeps it in the bag, stops its bonuses" : "Equip — its bonuses start applying"}>
+                    {isEquipped ? "Equipped" : "Equip"}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
         {activeTab === "equipment" && itemChargePools.length > 0 && (

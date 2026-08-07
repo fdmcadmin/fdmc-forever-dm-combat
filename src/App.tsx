@@ -987,10 +987,14 @@ export default function App() {
     const updatedFrom = { ...from, tabs: { ...from.tabs,
       equipment: (from.tabs.equipment ?? []).filter(a => a.id !== actionId),
       main: (from.tabs.main ?? []).filter(a => !movesToo(a)) } };
+    // It lands UNEQUIPPED. Handing someone a breastplate doesn't put it on them, and an item
+    // that arrived already equipped would silently apply its AC and stat effects — and, if it
+    // needs attunement, claim one of the receiver's three slots without them agreeing to it.
+    const received = { ...moving, metadata: { ...moving.metadata, equipped: false } };
     const heldIds = new Set((to.tabs.equipment ?? []).map(a => a.id));
     const mainIds = new Set((to.tabs.main ?? []).map(a => a.id));
     const updatedTo = { ...to, tabs: { ...to.tabs,
-      equipment: heldIds.has(moving.id) ? (to.tabs.equipment ?? []) : [...(to.tabs.equipment ?? []), moving],
+      equipment: heldIds.has(received.id) ? (to.tabs.equipment ?? []) : [...(to.tabs.equipment ?? []), received],
       main: [...(to.tabs.main ?? []), ...carriedAttack.filter(a => !mainIds.has(a.id))] } };
 
     const freshLib = {
@@ -1019,12 +1023,63 @@ export default function App() {
     });
   }
 
+  /**
+   * Equip or unequip a carried item.
+   *
+   * Same authority rule as the hand-off: the actor record is the DM's, so the player's card
+   * asks and this performs it. Enforced HERE too, not only in the card's disabled button —
+   * a stale sheet could otherwise ask to equip a fourth attuned item and get it.
+   */
+  function performEquipToggle(actorId: string, actionId: string) {
+    const actor = dmActors.find(a => a.id === actorId);
+    if (!actor) return;
+    const equipment = actor.tabs.equipment ?? [];
+    const target = equipment.find(a => a.id === actionId);
+    if (!target) return;
+
+    const willEquip = target.metadata?.equipped === false;
+    if (willEquip && target.metadata?.attunementRequired) {
+      const attuned = equipment.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false).length;
+      if (attuned >= 3) {
+        addEntry({
+          actorName: actor.name, actionName: "Attunement Full", tabId: "system",
+          message: `⚠ ${actor.name} is already attuned to 3 items — ${target.label} stays unequipped until one is removed.`,
+        });
+        return;
+      }
+    }
+
+    const updated = { ...actor, tabs: { ...actor.tabs,
+      equipment: equipment.map(a => a.id === actionId
+        ? { ...a, metadata: { ...a.metadata, equipped: willEquip } }
+        : a) } };
+    const freshLib = {
+      ...dmActors.reduce((m, a) => ({ ...m, [a.id]: a }), {} as Record<string, typeof actor>),
+      [updated.id]: updated,
+    };
+    upsertActorInLibrary(updated);
+    setActorLibrary(lib => ({ ...lib, [updated.id]: updated }));
+    pushActorsToAllSeats({ freshLibrary: freshLib });
+
+    addEntry({
+      actorName: actor.name,
+      actionName: willEquip ? "Item Equipped" : "Item Stowed",
+      tabId: "system",
+      message: `${actor.name} ${willEquip ? "equips" : "stows"} ${target.label}.`,
+    });
+  }
+
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
-      const msg = event.data as { type?: string; fromActorId?: string; toActorId?: string; actionId?: string; seatId?: string } | undefined;
-      if (msg?.type !== "fdmc:item-transfer" || !msg.fromActorId || !msg.toActorId || !msg.actionId) return;
-      performItemTransfer(msg.fromActorId, msg.toActorId, msg.actionId, msg.seatId);
+      const msg = event.data as { type?: string; fromActorId?: string; toActorId?: string; actorId?: string; actionId?: string; seatId?: string } | undefined;
+      if (msg?.type === "fdmc:item-transfer" && msg.fromActorId && msg.toActorId && msg.actionId) {
+        performItemTransfer(msg.fromActorId, msg.toActorId, msg.actionId, msg.seatId);
+        return;
+      }
+      if (msg?.type === "fdmc:item-equip" && msg.actorId && msg.actionId) {
+        performEquipToggle(msg.actorId, msg.actionId);
+      }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode, dmActors]);
@@ -1251,6 +1306,20 @@ export default function App() {
       type: "fdmc:item-transfer",
       fromActorId,
       toActorId,
+      actionId: action.id,
+      seatId: claimedSeatId ?? "",
+    }, { destination: "REMOTE" }).catch(() => undefined);
+  }
+
+  // Equip/unequip, same split: the DM runs it, a player asks for it.
+  function requestEquipToggle(actorId: string, action: { id: string }) {
+    if (isDmMode) {
+      performEquipToggle(actorId, action.id);
+      return;
+    }
+    void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+      type: "fdmc:item-equip",
+      actorId,
       actionId: action.id,
       seatId: claimedSeatId ?? "",
     }, { destination: "REMOTE" }).catch(() => undefined);
@@ -3235,6 +3304,7 @@ export default function App() {
         onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
         partyMembers={itemTransferTargets(actorToShow.id)}
         onSendItem={(action, toActorId) => requestItemTransfer(actorToShow.id, toActorId, action)}
+        onToggleEquipped={(action) => requestEquipToggle(actorToShow.id, action)}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
@@ -3595,6 +3665,7 @@ export default function App() {
                 onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
                 partyMembers={itemTransferTargets(focusedActorId)}
                 onSendItem={(action, toActorId) => requestItemTransfer(focusedActorId, toActorId, action)}
+                onToggleEquipped={(action) => requestEquipToggle(focusedActorId, action)}
                 onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}

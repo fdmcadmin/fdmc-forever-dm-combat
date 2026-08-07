@@ -15,6 +15,7 @@ import ReactDOM from "react-dom/client";
 import { ActorCard } from "./core/ui/ActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { broadcastSavePrompt } from "./core/state/savePrompt";
+import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
 import { useActorLiveState } from "./core/state/useActorLiveState";
 import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useCommittedRollState } from "./core/state/useCommittedRollState";
@@ -166,6 +167,14 @@ function ActorPopout() {
           addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} spends ${amt} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` : `⚠ ${actor.name} has nothing left in ${r.label ?? "that pool"}.` });
         }}
         onSpendItemCharge={(action) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
+        // The popout has no actor library of its own, so it can only ask — the DM's
+        // fdmc:item-equip handler performs the change and pushes the sheet back.
+        onToggleEquipped={(action) => {
+          if (!OBR.isAvailable) return;
+          void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
+            { type: "fdmc:item-equip", actorId: actor.id, actionId: action.id },
+            { destination: "REMOTE" }).catch(() => undefined);
+        }}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => {
           broadcastSavePrompt(actor.name, action, save);
