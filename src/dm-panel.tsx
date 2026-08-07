@@ -304,7 +304,8 @@ function DmPanelApp() {
     const actor = actorId ? actorLibrary[actorId] : undefined;
 
     if (actor) {
-      const equipEntry = itemToAction(item);
+      // Delivered loot lands in the bag — see itemToAction. The player equips it.
+      const equipEntry = itemToAction(item, false);
       const newEquipment = [...(actor.tabs.equipment ?? []), equipEntry];
       // Weapons also get a rollable attack action in the main (Actions) tab
       const newMain = [...(actor.tabs.main ?? [])];
@@ -343,7 +344,7 @@ function DmPanelApp() {
       const newEquipment = [...(actor.tabs.equipment ?? [])];
       const newMain = [...(actor.tabs.main ?? [])];
       for (const item of items) {
-        newEquipment.push(itemToAction(item));
+        newEquipment.push(itemToAction(item, false));
         if (item.attack || item.damage) {
           const atkEntry = itemToAttackAction(item);
           if (!newMain.some(a => a.id === atkEntry.id)) newMain.push(atkEntry);

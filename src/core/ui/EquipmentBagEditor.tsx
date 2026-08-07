@@ -339,7 +339,17 @@ function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: stri
 // Key: metadata.statEffects is baked at attach time — actor is self-contained.
 // Library changes do NOT silently alter already-equipped items.
 
-export function itemToAction(item: EquipmentItem): ActorAction {
+/**
+ * @param equipped Whether the item arrives worn. Stamped EXPLICITLY rather than left to the
+ *   `undefined = equipped` default, so an actor's record says what is actually equipped
+ *   instead of implying it. Building a sheet equips (the default); anything arriving during
+ *   play — DM loot, a hand-off from another player — lands in the bag at `false` and the
+ *   player equips it deliberately. That also stops a granted item from silently claiming one
+ *   of the three attunement slots.
+ *
+ *   Reading still treats `undefined` as equipped, so actors saved before this keep working.
+ */
+export function itemToAction(item: EquipmentItem, equipped = true): ActorAction {
   const isWeapon = Boolean(item.attack || item.damage);
   // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
   const isConsumable = Boolean(item.charges) && !isWeapon;
@@ -395,6 +405,7 @@ export function itemToAction(item: EquipmentItem): ActorAction {
       // Spellcasting focus bonuses — read by the spell roll workspace (clickable additive).
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
+      equipped,
       charges: item.charges,
       // Carried so the card can count attunement against what's equipped, without a library
       // lookup. The details string above is prose — not something a checker can read.
@@ -783,8 +794,10 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
       const item = allItems.find(i => i.id === itemId || `equip-${i.id}` === a.id);
       if (!item) return a;
 
-      // Re-derive as fresh snapshot if statEffects are missing or logMode is stale
-      const fresh = itemToAction(item);
+      // Re-derive as fresh snapshot if statEffects are missing or logMode is stale.
+      // Carry the CURRENT equipped state through: this refresh is about stale library data,
+      // and rebuilding at the default would silently re-equip something the player stowed.
+      const fresh = itemToAction(item, a.metadata?.equipped !== false);
       const needsRefresh =
         a.metadata?.statEffects === undefined ||
         a.logMode !== fresh.logMode ||
@@ -923,7 +936,10 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
     refreshLibrary();
     // Update both equipment display entry and attack action if already equipped
     if (equippedIds.has(item.id)) {
-      const newEquipment = equippedActions.map(a => a.id === `equip-${item.id}` ? itemToAction(item) : a);
+      // Editing an item's stats must not change whether it is worn — keep the current state.
+      const newEquipment = equippedActions.map(a => a.id === `equip-${item.id}`
+        ? itemToAction(item, a.metadata?.equipped !== false)
+        : a);
       const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
       if (item.attack || item.damage) {
         updates.main = mainActions.map(a => a.id === `atk-${item.id}` ? itemToAttackAction(item) : a);

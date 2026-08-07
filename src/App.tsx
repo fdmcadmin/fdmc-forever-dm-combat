@@ -922,7 +922,10 @@ export default function App() {
       }
 
       // Build the equipment action and add it
-      const equipAction = itemToAction(item);
+      // Arrives in the bag, not already worn — the same rule as a hand-off from another
+      // player. Granted loot that equipped itself would apply its AC and stat effects
+      // unasked, and an attuned one would claim a slot the player never agreed to spend.
+      const equipAction = itemToAction(item, false);
 
       const updatedActor = {
         ...actor,
