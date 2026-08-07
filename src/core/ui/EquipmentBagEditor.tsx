@@ -752,6 +752,8 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
    */
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryTypeFilter, setLibraryTypeFilter] = useState("");
+  /** Action id being edited in place on this actor. Null = the form is editing the library. */
+  const [editingAttached, setEditingAttached] = useState<string | null>(null);
   const [library, setLibrary] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
 
   /**
@@ -913,15 +915,52 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
     onChange({ equipment: newEquipment, ...(hadAtkEntry ? { main: newMain } : {}) });
   }
 
-  // Equip/unequip without removing: flips metadata.equipped so the item stays in the
-  // bag but its stat effects / AC / spell-focus bonuses stop (or resume) applying.
-  function toggleEquipped(actionId: string) {
-    const newEquipment = equippedActions.map(a =>
-      a.id === actionId
-        ? { ...a, metadata: { ...a.metadata, equipped: a.metadata?.equipped === false } }
-        : a,
-    );
-    onChange({ equipment: newEquipment });
+  /**
+   * Edit the character's OWN copy of an attached item.
+   *
+   * Changing it used to mean detach → hunt it down in the library → edit → re-attach, which
+   * also edited it for every other character holding one. Attaching bakes a complete record
+   * onto the actor (that is what actionToItem reads back), so the copy can simply be edited
+   * where it sits — a +1 someone earned on their blade stays theirs.
+   */
+  function editAttachedItem(action: ActorAction) {
+    setEditingAttached(action.id);
+    setEditingItem(actionToItem(action, action.id.replace(/^equip-/, "")));
+    setView("create");
+  }
+
+  /**
+   * Save an in-place edit: replaces this actor's rows only, never the library.
+   *
+   * Equipped state is preserved — editing a stat is not a decision about whether it is
+   * worn. A weapon's rollable main-tab row is rebuilt too, or its dice would still be the
+   * old ones while the bag showed the new.
+   */
+  function handleSaveAttachedItem(item: EquipmentItem) {
+    const actionId = editingAttached;
+    if (!actionId) return;
+    const current = equippedActions.find(a => a.id === actionId);
+    const stillEquipped = current?.metadata?.equipped !== false;
+    const itemId = actionId.replace(/^equip-/, "");
+    const edited = { ...item, id: itemId };
+
+    const newEquipment = equippedActions.map(a => a.id === actionId ? itemToAction(edited, stillEquipped) : a);
+    const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
+    const atkId = `atk-${itemId}`;
+    const hadAttack = mainActions.some(a => a.id === atkId);
+    if (edited.attack || edited.damage) {
+      updates.main = hadAttack
+        ? mainActions.map(a => a.id === atkId ? itemToAttackAction(edited) : a)
+        : [...mainActions, itemToAttackAction(edited)];
+    } else if (hadAttack) {
+      // Edited down to a non-weapon — drop the attack row rather than leave it rolling.
+      updates.main = mainActions.filter(a => a.id !== atkId);
+    }
+
+    onChange(updates);
+    setEditingAttached(null);
+    setEditingItem(undefined);
+    setView("bag");
   }
 
   function handleCreateItem(item: EquipmentItem) {
@@ -1005,10 +1044,13 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
                   )}
                 </div>
               </div>
-              <button type="button" onClick={() => toggleEquipped(action.id)}
-                style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: `1px solid ${isUnequipped ? "#2a6e2a" : "#4a4a6e"}`, borderRadius: 3, color: isUnequipped ? "#8fd98f" : "#9d8cff", cursor: "pointer" }}
-                title={isUnequipped ? "Equip — re-apply its bonuses" : "Unequip — keep the item but stop its bonuses"}>
-                {isUnequipped ? "Equip" : "Unequip"}
+              {/* Equipping is the PLAYER's, on their own sheet's CARRIED panel — this editor
+                  builds the kit, it doesn't decide what is worn right now. The row still
+                  SHOWS the state above so the DM can see it. */}
+              <button type="button" onClick={() => editAttachedItem(action)}
+                style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #4a4a6e", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}
+                title="Edit this character's copy — changes stay on this sheet and do not touch the library">
+                Edit
               </button>
               <button type="button" onClick={() => detachItem(action.id)}
                 style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #5a3a1a", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}
@@ -1028,8 +1070,10 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
     return (
       <ItemForm
         initial={editingItem}
-        onSave={editingItem ? handleSaveLibraryItem : handleCreateItem}
-        onCancel={() => { setEditingItem(undefined); setView("bag"); }}
+        // Three destinations, not two: this actor's own copy, an existing library item, or
+        // a brand-new one. editingAttached is what distinguishes the first.
+        onSave={editingAttached ? handleSaveAttachedItem : editingItem ? handleSaveLibraryItem : handleCreateItem}
+        onCancel={() => { setEditingAttached(null); setEditingItem(undefined); setView("bag"); }}
       />
     );
   }
