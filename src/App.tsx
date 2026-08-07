@@ -72,7 +72,7 @@ import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { isObrReady, obrSend } from "./core/utils/obrReady";
 import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons } from "./core/ui/EquipmentBagEditor";
-import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "./data/broken-chain/equipmentLibrary";
+import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
@@ -647,7 +647,7 @@ export default function App() {
   // Seed the campaign equipment library here too (not only in the DM panel) so the
   // actor editor's "From Library" has Broken Chain gear to attach even when DM tools
   // were never opened in this browser. Idempotent — guarded by the seed-version key.
-  useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY); seedBaseWeapons(); }, []);
+  useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
   // All runtime hooks that need actor IDs/HP defaults receive the real seeded actors this way.

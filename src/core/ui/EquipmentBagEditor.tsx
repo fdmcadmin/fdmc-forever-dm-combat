@@ -135,7 +135,12 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // Hollowbone Halfplate 15→16, Bonemarch Plate 16→17, Wight Iron Plate 17→18,
 // Frosted Sentinel Wrap 14→15, Veilstitched Leathers 12→13.
 // v0.3.1 — Rimeguard 12-16→13-17 (all three modes) and Marrow Shield +2→+3.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.3.2-rimeguard-split";
+// v0.4.0 — library regenerated from broken_chain_loot.docx (the doc is the source of truth).
+// Renames keep their id (Stillstep Blade→Mace, Lake Ice Blade→Lake-Ice Flail, The Staring
+// Knot→Staring-Knot Wand); Shattered Vigil is now a two-handed great hammer, not a focus. Adds
+// the convergence output pools and a STR variant of every finesse weapon. Seven items the doc
+// dropped are retired via RETIRED_EQUIPMENT_IDS.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.4.0-loot-doc";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -167,9 +172,12 @@ export function saveEquipmentLibrary(library: EquipmentItem[], owner: "campaign"
  * Bundled items win for their own ids, so edits to the shipped module data still land;
  * anything else already in the library is preserved.
  */
-export function seedCampaignEquipmentLibrary(items: EquipmentItem[]): void {
+export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds: string[] = []): void {
   if (window.localStorage.getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
   const byId = new Map(loadEquipmentLibrary("campaign").map(i => [i.id, i]));
+  // Merging alone can only ever add. Items the campaign module dropped have to be named
+  // explicitly or they stay in the library forever.
+  for (const id of retiredIds) byId.delete(id);
   for (const item of items) byId.set(item.id, item);
   saveEquipmentLibrary(Array.from(byId.values()), "campaign");
   window.localStorage.setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
