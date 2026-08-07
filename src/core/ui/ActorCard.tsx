@@ -42,6 +42,7 @@ import { deriveActorStats } from "../state/deriveActorStats";
 import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
+import { itemChargesFor, itemChargeKey } from "../state/itemCharges";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
@@ -1008,12 +1009,33 @@ export function ActorCard({
   // TabPanel — which builds both the summary chips and the roll candidate from the same
   // object, so the damage shown and the damage rolled cannot drift apart. Ids and metadata
   // the rest of the card keys off (spellLevel, resource matching, readied keys) are untouched.
+  /**
+   * Show what's left in an item's own charge pool.
+   *
+   * The item's `details` line is baked at attach time and can't hold a live number, so the
+   * count is stamped on at render. Without it the pool is invisible: a player clicking
+   * Gapstep Boots would get "no charges left" out of nowhere, having never seen it count down.
+   * A function DECLARATION, so it is hoisted above the memo below — see the TDZ note in
+   * useResourceCounterState.
+   */
+  function withItemChargeCount(action: ActorAction): ActorAction {
+    const pool = itemChargesFor(action);
+    if (!pool) return action;
+    const remaining = resourceCounters?.[itemChargeKey(action.id)] ?? pool.max;
+    const readout = `⚡ ${remaining}/${pool.max} charge${pool.max === 1 ? "" : "s"}`;
+    const details = action.metadata?.details;
+    return {
+      ...action,
+      metadata: { ...action.metadata, details: details ? `${readout} · ${details}` : readout },
+    };
+  }
+
   const activeActions = useMemo(
     () => (actor.tabs[activeTab] ?? [])
       .filter((action) => !isPinnedReactionAction(action))
-      .map((action) => withTwoWeaponFighting(withUpcastRiders(action))),
+      .map((action) => withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(action)))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
-    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId]
+    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters]
   );
 
   const readiedLabelMap = useMemo(() => {
@@ -2925,6 +2947,17 @@ export function ActorCard({
    *   3. any action naming a resource in `slotCost` → that named pool
    */
   function chargesLeftForAction(action: ActorAction): { remaining: number; label: string } | null {
+    // 0. The action's own item pool. Checked before the early-out below, because an item's
+    //    charges live on the item — an actor with an empty Resources tab still has them.
+    const itemPool = itemChargesFor(action);
+    if (itemPool) {
+      const key = itemChargeKey(action.id);
+      return {
+        remaining: resourceCounters?.[key] ?? itemPool.max,
+        label: `${action.label} charge${itemPool.max === 1 ? "" : "s"}`,
+      };
+    }
+
     const resources = actor.tabs.resources ?? [];
     if (resources.length === 0) return null;
 
@@ -3102,10 +3135,15 @@ export function ActorCard({
     const hasNamedResourceCost = Boolean(
       resolveNamedResourceCost(action, (actor.tabs.resources ?? []).map(r => r.label))
     );
+    // An item pool spends on use like any other. Most charged items are pure effect — Gapstep
+    // Boots move you, Stabilized Band re-rolls a save — so they never reach a committed roll
+    // and would otherwise never count down. A charged WEAPON rolls its attack and spends on
+    // commit instead; `rollsItsOwn` keeps those two paths from double-spending.
+    const hasItemCharges = Boolean(itemChargesFor(action));
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
       || Boolean(action.metadata?.saveDc?.trim())
-      || ((isSpendingSpell || hasNamedResourceCost) && hasRollableFormula(action.metadata?.damage));
-    if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost) && !rollsItsOwn) {
+      || ((isSpendingSpell || hasNamedResourceCost || hasItemCharges) && hasRollableFormula(action.metadata?.damage));
+    if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost || hasItemCharges) && !rollsItsOwn) {
       onConsumeActionResources?.(action, getCastLevel(action));
     }
 

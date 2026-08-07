@@ -35,29 +35,31 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-frontier-ration-tin-x3",
     "name": "Frontier Ration Tin (×3)",
     "type": "consumable",
-    "description": "Hale slides a battered tin across the table. \"North eats slower men than you. Eat before you're hungry.\"",
+    "description": "",
     "mechanicsText": "Each tin is a day of trail food that resists spoiling and freezing. Eating one during a short rest lets you regain one additional spent Hit Die.",
     "isUsable": true,
     "value": "15gp",
     "sourceEncounter": "MERCHANT STOCK",
+    "charges": {"max":3,"reset":"manual"},
     "isLocked": true
   },
   {
     "id": "tbc-warding-salve",
     "name": "Warding Salve",
     "type": "consumable",
-    "description": "A clay pot of grease that smells of pine tar and something colder. \"Rub it on before the fight, not after.\"",
+    "description": "",
     "mechanicsText": "Action to apply. For the next hour, the first time you would take cold damage, reduce it by 2d6 (one use, then spent).",
     "isUsable": true,
     "value": "25gp",
     "sourceEncounter": "MERCHANT STOCK",
+    "charges": {"max":1,"reset":"manual"},
     "isLocked": true
   },
   {
     "id": "tbc-signal-striker",
     "name": "Signal Striker",
     "type": "gear",
-    "description": "A short iron rod that throws a single bright spark on command. \"If you're separated up there, this finds each other before the dark does.\"",
+    "description": "",
     "mechanicsText": "Action: emit a flare of light visible up to a mile and shed bright light in a 20-foot radius for 1 minute. 3 uses. Refill 10gp.",
     "isUsable": false,
     "value": "40gp",
@@ -68,7 +70,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-ward-issue-climbing-line-50ft",
     "name": "Ward-Issue Climbing Line (50ft)",
     "type": "gear",
-    "description": "A coil of grey cord, thinner than it should be for its strength. \"Standard issue. It'll hold you.\"",
+    "description": "",
     "mechanicsText": "50 feet of rope that holds up to 3,000 lbs. On command the end knots or unknots itself. Advantage on checks made to secure or climb with it.",
     "isUsable": false,
     "value": "30gp",
@@ -296,6 +298,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Can be used as a spellcasting focus. Once per encounter, when a creature succeeds or fails a saving throw against a spell you cast, you can expend 1 charge to force that creature to reroll the save — the new result stands, whether better or worse. 1 charge. Regains 1 on a long rest.",
     "isUsable": false,
     "sourceEncounter": "MIRAGE STALKER",
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -461,7 +464,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-frostward-periapt",
     "name": "Frostward Periapt",
     "type": "passive",
-    "description": "A small pendant of pale bone on a leather thong. \"The cold up here doesn't just freeze you,\" the innkeeper relays. \"It gets in. This keeps some of it out.\"",
+    "description": "",
     "mechanicsText": "While worn: advantage on saving throws against disease and against being poisoned. You ignore the effects of extreme cold (non-magical environmental).",
     "isUsable": false,
     "value": "100gp",
@@ -472,22 +475,24 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-wayfarer-s-token",
     "name": "Wayfarer's Token",
     "type": "consumable",
-    "description": "A flat wooden disc carved with a Ward field-mark. \"One use,\" the innkeeper warns. \"Brennan said don't waste it being clever.\"",
+    "description": "",
     "mechanicsText": "One use, then spent. Choose one when used: (1) instantly know true north and your exact distance from the inn; (2) create a single sturdy anchor point from nothing; (3) summon a calm riding horse that lasts 8 hours.",
     "isUsable": true,
     "value": "100gp",
     "sourceEncounter": "BRENNAN'S INN STOCK",
+    "charges": {"max":1,"reset":"manual"},
     "isLocked": true
   },
   {
     "id": "tbc-north-wind-flask",
     "name": "North Wind Flask",
     "type": "consumable",
-    "description": "A stoppered flask that rattles with trapped wind. \"Open it downwind of yourself,\" the innkeeper says, \"or you'll learn why he told me to say that.\"",
+    "description": "",
     "mechanicsText": "Action: uncork to create a 15-foot cube of gale wind originating from you, lasting until the end of your next turn. Creatures in it must make a DC 13 Strength save or be pushed 10 feet. Ranged attacks against you have disadvantage while inside. 2 charges, recovers 1 on short rest, all on long rest.",
     "isUsable": true,
     "value": "130gp",
     "sourceEncounter": "BRENNAN'S INN STOCK",
+    "charges": {"max":1,"reset":"manual"},
     "isLocked": true
   },
   {
@@ -616,6 +621,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Action: expend 1 charge. Until the end of your next turn, you know the location of any invisible or magically hidden creature within 15 feet of you. 1 charge. Regains 1 on a long rest. Tags: A2 · Frost · Cleanse",
     "isUsable": false,
     "sourceEncounter": "LESSER WENDIGOS",
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -805,8 +811,8 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "bc-reinforced-wrap",
     "name": "Reinforced Wrap",
     "type": "passive",
-    "description": "Once per encounter, reduce the damage of one hit against you by 1d6. Tags: Recipe: Defense + Stability",
-    "mechanicsText": "TIER 2 OUTPUT POOL — A1 + A2",
+    "description": "",
+    "mechanicsText": "Once per encounter, reduce the damage of one hit against you by 1d6. Tags: Recipe: Defense + Stability",
     "isUsable": false,
     "tier": "1.5",
     "isLocked": true
@@ -829,6 +835,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Expend 1 charge (bonus action): until the end of your next turn you can see invisible creatures and see through magical obscurement within 30 feet. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Cleanse + Utility",
     "isUsable": false,
     "tier": "2",
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -859,14 +866,15 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Expend 1 charge (bonus action) to move up to 15 feet. This movement doesn't provoke opportunity attacks and can cross open space as though it were solid ground. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Tactical + Utility",
     "isUsable": false,
     "tier": "2",
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   },
   {
     "id": "bc-splitgrain-gauntlets",
     "name": "Splitgrain Gauntlets",
     "type": "passive",
-    "description": "Once per encounter, when you hit a creature with a weapon attack, that attack deals an additional 1d8 damage of the weapon's type, and you learn whether the target has resistance or immunity to that damage type. Tags: Recipe: Offensive + Utility",
-    "mechanicsText": "TIER 2.5 OUTPUT POOL — A2 + A2",
+    "description": "",
+    "mechanicsText": "Once per encounter, when you hit a creature with a weapon attack, that attack deals an additional 1d8 damage of the weapon's type, and you learn whether the target has resistance or immunity to that damage type. Tags: Recipe: Offensive + Utility",
     "isUsable": false,
     "tier": "2",
     "isLocked": true
@@ -891,6 +899,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "2.5",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -902,6 +911,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "2.5",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -913,6 +923,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "2.5",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -924,17 +935,19 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "2.5",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
     "id": "bc-grasp-of-the-hollow",
     "name": "Grasp of the Hollow",
     "type": "passive",
-    "description": "When you reduce a creature to 0 hit points, you gain temporary hit points equal to your proficiency bonus. Expend 1 charge when you hit a creature: it can't regain hit points until the start of your next turn. Regains its charge on a short or long rest. Tags: Recipe: Offensive + Cleanse",
-    "mechanicsText": "Unattuned outputs (slot-free, narrower)",
+    "description": "",
+    "mechanicsText": "When you reduce a creature to 0 hit points, you gain temporary hit points equal to your proficiency bonus. Expend 1 charge when you hit a creature: it can't regain hit points until the start of your next turn. Regains its charge on a short or long rest. Tags: Recipe: Offensive + Cleanse",
     "isUsable": false,
     "tier": "2.5",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -971,8 +984,8 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "bc-edgeworn-gloves",
     "name": "Edgeworn Gloves",
     "type": "passive",
-    "description": "Once per encounter, one weapon hit ignores resistance to its damage type. Tags: Recipe: Offensive + Tactical",
-    "mechanicsText": "TIER 3 OUTPUT POOL — A3 + any · Attunement always",
+    "description": "",
+    "mechanicsText": "Once per encounter, one weapon hit ignores resistance to its damage type. Tags: Recipe: Offensive + Tactical",
     "isUsable": false,
     "tier": "2.5 alt",
     "isLocked": true
@@ -986,6 +999,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -997,6 +1011,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -1008,6 +1023,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -1019,6 +1035,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -1030,6 +1047,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -1052,6 +1070,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -1063,6 +1082,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":2,"reset":"shortRest"},
     "isLocked": true
   }
 ];

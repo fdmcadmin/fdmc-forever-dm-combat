@@ -7,6 +7,7 @@
  * the same way no matter which card a player is using.
  *
  * Branches (first match wins):
+ *   0. action carrying its own item charges → spends that item's pool (magic item, N charges)
  *   1. freeCast class-feature spell → spends its named N/long-rest resource (label = spell name)
  *   2. levelled spell (spellLevel > 0) → spends the matching spell-slot resource for that level
  *   3. any action with a named slotCost → spends that named resource (Channel Divinity, Rage, …)
@@ -55,13 +56,30 @@ export function consumeActionResourcesOnCommit(params: {
   action: ActorAction;
   consumeSpellSlot: (actorId: string, level: number) => ConsumeResult;
   consumeNamedResource: (actorId: string, label: string) => ConsumeResult;
+  /** Spends the action's own item pool. Absent on callers that predate item charges. */
+  consumeItemCharge?: (actorId: string, action: ActorAction) => ConsumeResult;
   log: (entry: AddCombatLogEntryInput) => void;
   /** This actor's resource labels — enables the `metadata.cost` prose fallback. */
   resourceLabels?: string[];
   /** Level the spell is actually cast at — the player's upcast pick. Absent = as authored. */
   castLevel?: number;
 }): void {
-  const { actorId, actorName, action, consumeSpellSlot, consumeNamedResource, log, resourceLabels = [], castLevel } = params;
+  const { actorId, actorName, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log, resourceLabels = [], castLevel } = params;
+
+  // 0. The action carries an item's own charge pool (Gapstep Boots 2 charges, Edge Alignment
+  //    Ring 1 charge, a potion). Only itemToAction / itemToAttackAction set metadata.charges,
+  //    so this can never collide with a spell or a class feature — and it must run before the
+  //    prose scan in branch 3, which could otherwise match an unrelated Resources row on a
+  //    word in the item's rules text.
+  if (action.metadata?.charges && consumeItemCharge) {
+    const r = consumeItemCharge(actorId, action);
+    if (r.outcome === "spent") {
+      log({ actorName, actionName: action.label, tabId: "equipment", message: `${actorName} expends a charge from ${action.label} (${r.remaining}/${r.max ?? "?"} left).` });
+    } else if (r.outcome === "empty") {
+      log({ actorName, actionName: action.label, tabId: "equipment", message: `⚠ ${actorName} has no charges left on ${action.label} — used without a charge.` });
+    }
+    return;
+  }
 
   // 1. Class-feature spell ("freeCast"): spends its dedicated N/long-rest resource
   //    (label = spell name), NOT a spell slot. Must run before the slot branch below.

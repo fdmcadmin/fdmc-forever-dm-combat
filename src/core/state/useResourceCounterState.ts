@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
 import type { ActorAction } from "../types/tabs";
+import { chargeBearingActions, itemChargeKey } from "./itemCharges";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,22 +64,31 @@ function persist(state: ResourceCounterMap) {
 // ─── Initialize actor resources from actor.tabs.resources ────────────────────
 
 function seedActorResources(
-  actorId: string,
-  resourceActions: ActorAction[],
+  actor: Actor,
   existing: ResourceCounterMap
 ): ResourceCounterMap {
-  const actorCounters = existing[actorId] ?? {};
+  const actorCounters = existing[actor.id] ?? {};
   let changed = false;
 
-  for (const action of resourceActions) {
+  for (const action of actor.tabs.resources ?? []) {
     if (!(action.id in actorCounters)) {
       actorCounters[action.id] = getMaxFromAction(action);
       changed = true;
     }
   }
 
+  // Item pools live on the item, not on a Resources row, and are keyed by item id so an
+  // item's equipment row and attack row share one pool. Seeding them here is what makes a
+  // newly attached magic item start at full charges instead of at zero.
+  for (const { key, charges } of chargeBearingActions(actor.tabs)) {
+    if (!(key in actorCounters)) {
+      actorCounters[key] = charges.max;
+      changed = true;
+    }
+  }
+
   if (!changed) return existing;
-  return { ...existing, [actorId]: actorCounters };
+  return { ...existing, [actor.id]: actorCounters };
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -87,15 +97,25 @@ export function useResourceCounterState(actors: Actor[]) {
   const [counters, setCounters] = useState<ResourceCounterMap>(() => {
     const stored = readStored();
     let state = stored;
-    for (const actor of actors) {
-      const resources = actor.tabs.resources ?? [];
-      state = seedActorResources(actor.id, resources, state);
-    }
+    for (const actor of actors) state = seedActorResources(actor, state);
     return state;
   });
 
   const stateRef = useRef(counters);
   useEffect(() => { stateRef.current = counters; }, [counters]);
+
+  // Attaching an item mid-session adds a pool that wasn't there at mount, so seed on change
+  // too — otherwise a freshly attached item reads 0/N and its first click is gated as empty.
+  // Must sit below stateRef: reading it above the declaration is a TDZ crash, not a warning.
+  useEffect(() => {
+    let next = stateRef.current;
+    for (const actor of actors) next = seedActorResources(actor, next);
+    if (next !== stateRef.current) {
+      persist(next);
+      stateRef.current = next;
+      setCounters(next);
+    }
+  }, [actors]);
 
   // Broadcast listener — keeps other windows in sync
   useEffect(() => {
@@ -165,6 +185,25 @@ export function useResourceCounterState(actors: Actor[]) {
     return { outcome: "spent", label, remaining: current - applied, max };
   }, [actors]);
 
+  // ── Consume one charge from an item's own pool ────────────────────────────
+  // Keyed by item id, so a weapon's "expend 1 charge when you hit" and the same item's
+  // equipment row draw down the one pool.
+
+  const consumeItemCharge = useCallback((actorId: string, action: ActorAction): ConsumeResult => {
+    const max = action.metadata?.charges?.max ?? 0;
+    if (max <= 0) return { outcome: "no-resource" };
+    const key = itemChargeKey(action.id);
+    const label = action.label;
+    const current = stateRef.current[actorId]?.[key] ?? max;
+    if (current <= 0) return { outcome: "empty", label, remaining: 0, max };
+    const next = {
+      ...stateRef.current,
+      [actorId]: { ...(stateRef.current[actorId] ?? {}), [key]: current - 1 },
+    };
+    broadcastAndPersist(next);
+    return { outcome: "spent", label, remaining: current - 1, max };
+  }, []);
+
   // ── Reset resources by reset type ─────────────────────────────────────────
 
   const resetActorResources = useCallback((actorId: string, restType: "short" | "long") => {
@@ -205,6 +244,14 @@ export function useResourceCounterState(actors: Actor[]) {
           (!kind && reset.includes("short"));
         if (resetsOnShort) actorCounters[action.id] = max;
       }
+    }
+
+    // Item pools carry their own reset on the item ("Regains 1 charge on a short rest, all on
+    // a long rest"), so they don't follow the Resources-tab rules above. A long rest fills
+    // anything that isn't manual-only; a short rest fills only the shortRest items.
+    for (const { key, charges } of chargeBearingActions(actor.tabs)) {
+      if (charges.reset === "manual") continue;
+      if (restType === "long" || charges.reset === "shortRest") actorCounters[key] = charges.max;
     }
 
     const next = { ...stateRef.current, [actorId]: actorCounters };
@@ -294,5 +341,6 @@ export function useResourceCounterState(actors: Actor[]) {
     findResourceByLabel,
     consumeSpellSlot,
     consumeNamedResource,
+    consumeItemCharge,
   };
 }
