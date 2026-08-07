@@ -20,6 +20,7 @@ import { king } from "../src/private/king";
 import { ash } from "../src/private/ash";
 import { ignatiusVoid } from "../src/private/ignatius_void";
 import { ripsnarl } from "../src/private/ripsnarl";
+import { wardItems } from "../src/private/wardItems";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,7 +33,11 @@ const exportData = {
   version: "0.6.0",
   actors: Object.fromEntries(actors.map(a => [a.id, a])),
   overrides: {},
-  equipment: [],
+  // The ward cache items. wardItems.ts says it is "generated into the actor export JSON", but
+  // it was imported by nothing at all — not here, not in src — so its six charge-bearing items
+  // reached no library by any route. Exporting them keeps them out of the public bundle
+  // (src/private is gitignored) while making them importable through the DM's Import.
+  equipment: wardItems,
 };
 
 const outputPath = resolve(__dirname, "../fdmc-actor-library-export.json");

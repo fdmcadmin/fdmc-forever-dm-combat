@@ -150,7 +150,7 @@ export type ActorActionMetadata = {
   /** Explicit outcome mode — set this to skip inference and lock the roll behavior */
   outcomeMode?: ActionOutcomeMode;
   /** Charge tracking — carried from EquipmentItem for items with limited uses */
-  charges?: { max: number; reset: "longRest" | "shortRest" | "manual" };
+  charges?: { max: number; reset: "longRest" | "shortRest" | "encounter" | "manual" };
   /** Live "remaining/max" for the item pool above, stamped at render by the card (the counter
    *  is state, not authored data). Shown as an always-visible chip on the action row. */
   chargeReadout?: string;

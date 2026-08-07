@@ -248,14 +248,38 @@ export function useResourceCounterState(actors: Actor[]) {
 
     // Item pools carry their own reset on the item ("Regains 1 charge on a short rest, all on
     // a long rest"), so they don't follow the Resources-tab rules above. A long rest fills
-    // anything that isn't manual-only; a short rest fills only the shortRest items.
+    // anything that isn't manual-only; a short rest fills the shortRest items — and the
+    // encounter ones too, since resting necessarily ends the encounter.
     for (const { key, charges } of chargeBearingActions(actor.tabs)) {
       if (charges.reset === "manual") continue;
-      if (restType === "long" || charges.reset === "shortRest") actorCounters[key] = charges.max;
+      if (restType === "long" || charges.reset === "shortRest" || charges.reset === "encounter") {
+        actorCounters[key] = charges.max;
+      }
     }
 
     const next = { ...stateRef.current, [actorId]: actorCounters };
     broadcastAndPersist(next);
+  }, [actors]);
+
+  // ── Refill every "once per encounter" item pool ───────────────────────────
+  //
+  // Called at End Combat. These are the only pools that come back without a rest, which is
+  // why they need their own trigger: a party that fights twice between short rests would
+  // otherwise carry an empty Quickstep Boots into the second fight forever.
+  const resetEncounterCharges = useCallback(() => {
+    let next = stateRef.current;
+    for (const actor of actors) {
+      const counters = { ...(next[actor.id] ?? {}) };
+      let touched = false;
+      for (const { key, charges } of chargeBearingActions(actor.tabs)) {
+        if (charges.reset !== "encounter") continue;
+        if (counters[key] === charges.max) continue;
+        counters[key] = charges.max;
+        touched = true;
+      }
+      if (touched) next = { ...next, [actor.id]: counters };
+    }
+    if (next !== stateRef.current) broadcastAndPersist(next);
   }, [actors]);
 
   // ── Find resource action by label match (for spell slot linking) ──────────
@@ -342,5 +366,6 @@ export function useResourceCounterState(actors: Actor[]) {
     consumeSpellSlot,
     consumeNamedResource,
     consumeItemCharge,
+    resetEncounterCharges,
   };
 }

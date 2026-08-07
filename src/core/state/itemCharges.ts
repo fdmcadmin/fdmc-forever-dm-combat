@@ -18,7 +18,7 @@
 import type { ActorAction, TabActionMap } from "../types/tabs";
 
 /** Reset behaviour of an item pool. `manual` is only ever restored by hand. */
-export type ItemChargeReset = "longRest" | "shortRest" | "manual";
+export type ItemChargeReset = "longRest" | "shortRest" | "encounter" | "manual";
 
 export type ItemChargeSpec = { max: number; reset: ItemChargeReset };
 

@@ -321,6 +321,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "14 + DEX (max 2)",
     "sourceEncounter": "MIRAGE STALKER",
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -378,6 +379,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mastery": "Sap",
     "sourceEncounter": "ELITE QUEST REWARD",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -394,6 +396,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mastery": "Push",
     "sourceEncounter": "ELITE QUEST REWARD",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -568,6 +571,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@DEX+1",
     "mastery": "Slow",
     "sourceEncounter": "LESSER WENDIGOS",
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -578,6 +582,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Can be used as a spellcasting focus. +1 to spell attack rolls and spell save DC. Once per long rest, when you cast a healing spell, one target of that spell regains an additional 1d8 hit points.",
     "isUsable": false,
     "sourceEncounter": "LESSER WENDIGOS",
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -611,6 +616,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "17",
     "sourceEncounter": "LESSER WENDIGOS",
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -785,6 +791,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, when an effect would move you against your will, you can choose to ignore that movement. Tags: Recipe: Movement + Stability",
     "isUsable": false,
     "tier": "1.5",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -805,6 +812,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Difficult terrain costs you no extra movement. Once per encounter you may take the Disengage action as a bonus action. Tags: Recipe: Movement + Utility",
     "isUsable": false,
     "tier": "1.5",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -815,6 +823,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, reduce the damage of one hit against you by 1d6. Tags: Recipe: Defense + Stability",
     "isUsable": false,
     "tier": "1.5",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -825,6 +834,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, when you would be moved against your will or knocked prone, you can choose to ignore that effect. While you are below half your hit point maximum, you have a +1 bonus to saving throws. Tags: Recipe: Stability + Defense",
     "isUsable": false,
     "tier": "2",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -846,6 +856,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, when a creature you can see hits you with an attack, you can use your reaction to move up to 10 feet without provoking opportunity attacks. If you end that movement more than 5 feet from the attacker, reduce the attack's damage by 1d8. Tags: Recipe: Movement + Defense",
     "isUsable": false,
     "tier": "2",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -856,6 +867,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Difficult terrain costs you no extra movement. You have advantage on saving throws against being knocked prone, and standing from prone costs you no movement. Once per encounter (bonus action) you can Disengage. Tags: Recipe: Movement + Stability",
     "isUsable": false,
     "tier": "2",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -877,6 +889,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, when you hit a creature with a weapon attack, that attack deals an additional 1d8 damage of the weapon's type, and you learn whether the target has resistance or immunity to that damage type. Tags: Recipe: Offensive + Utility",
     "isUsable": false,
     "tier": "2",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -958,6 +971,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, when an effect would move you or knock you prone, ignore it. Advantage on saves against being grappled or restrained. Tags: Recipe: Stability + Movement",
     "isUsable": false,
     "tier": "2.5 alt",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -968,6 +982,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter (reaction): negate one incoming non-damaging effect. You can see normally in magical darkness out to 30 feet. Tags: Recipe: Cleanse + Defense",
     "isUsable": false,
     "tier": "2.5 alt",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -978,6 +993,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Speed increases by 5 feet. Difficult terrain costs no extra movement. Once per encounter, Dash as a bonus action. Tags: Recipe: Movement + Utility",
     "isUsable": false,
     "tier": "2.5 alt",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -988,6 +1004,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per encounter, one weapon hit ignores resistance to its damage type. Tags: Recipe: Offensive + Tactical",
     "isUsable": false,
     "tier": "2.5 alt",
+    "charges": {"max":1,"reset":"encounter"},
     "isLocked": true
   },
   {
@@ -1059,6 +1076,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "tier": "3",
     "attunementRequired": true,
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {

@@ -42,7 +42,12 @@ export type EquipmentEffect = {
 
 export type EquipmentCharges = {
   max: number;
-  reset: "longRest" | "shortRest" | "manual";
+  /**
+   * When the pool refills. "encounter" is its own tier because a great many items read
+   * "once per encounter" — more often than a short rest, and not tied to resting at all.
+   * It refills at End Combat, and on either rest too, since a rest ends any encounter.
+   */
+  reset: "longRest" | "shortRest" | "encounter" | "manual";
 };
 
 export type AbilityStatId = "str" | "dex" | "con" | "int" | "wis" | "cha";

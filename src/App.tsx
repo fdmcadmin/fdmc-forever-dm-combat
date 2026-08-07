@@ -770,6 +770,7 @@ export default function App() {
     consumeSpellSlot,
     consumeNamedResource,
     consumeItemCharge,
+    resetEncounterCharges,
     spendResource,
     resetActorResources,
   } = useResourceCounterState(isDmMode ? dmActors : playerActors);
@@ -1699,6 +1700,10 @@ export default function App() {
     if (OBR.isAvailable) {
       void OBR.broadcast.sendMessage(FDMC_COMBAT_END_CHANNEL, { type: "fdmc:combat-end" }, { destination: "ALL" }).catch(() => undefined);
     }
+    // "Once per encounter" item pools come back here. They are the only pools that refill
+    // without a rest, so without this a party fighting twice between short rests would carry
+    // an empty Quickstep Boots into the second fight.
+    resetEncounterCharges();
     addEntry({ actorName: "System", actionName: "Combat End", tabId: "system", message: "Combat ended. Seats and HP preserved." });
     // OFFER the log after every combat — a living record is only living if each fight can be
     // kept, and most fights never involve a boss. Deliberately an offer, never an automatic
