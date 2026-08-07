@@ -130,7 +130,16 @@ export function ActionButton({
         }}
       >
         <span className="action-label-row compact-action-title-row">
-          <span className="action-label">{action.label}</span>
+          <span className="action-label">
+            {action.label}
+            {/* ⚡ flags an item that carries a charge pool, so you can see which rows have one
+                without expanding each. Inside the label span because `.action-label` is
+                display:block — as a sibling it would drop to its own line. The COUNT stays in
+                Details and on the Equipment tab's CHARGES strip; this is only the marker. */}
+            {action.metadata?.charges && (
+              <span className="action-label-charge-flag" title="This item has charges" aria-label="has charges"> ⚡</span>
+            )}
+          </span>
           {costs.length > 0 && (
             <span className="action-cost-tags">
               {costs.map((cost) => (

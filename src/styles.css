@@ -6517,3 +6517,10 @@ body,
   color: #55596b;
   margin: -4px 0 7px;
 }
+
+/* Charge marker on an item row. The count lives in Details and on the Equipment tab's
+   CHARGES strip; this only says "this one has a pool". */
+.action-label-charge-flag {
+  font-weight: 400;
+  opacity: 0.85;
+}

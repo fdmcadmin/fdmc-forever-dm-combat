@@ -3130,6 +3130,7 @@ export default function App() {
         onResetAllActorStatuses={() => resetActorStatuses(actorToShow)}
         resourceCounters={counters[actorToShow.id]}
         onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
+        onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
@@ -3487,6 +3488,7 @@ export default function App() {
                 onResetAllActorStatuses={() => resetActorStatuses(focusedActor)}
                 resourceCounters={counters[focusedActorId]}
                 onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
+                onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
                 onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}

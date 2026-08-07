@@ -42,7 +42,7 @@ import { deriveActorStats } from "../state/deriveActorStats";
 import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
-import { itemChargesFor, itemChargeKey } from "../state/itemCharges";
+import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
@@ -96,6 +96,8 @@ type ActorCardProps = {
   resourceCounters?: Record<string, number>;
   /** Spend a variable amount from a pool resource (Lay on Hands, Ki, …). */
   onSpendResource?: (resourceActionId: string, amount: number) => void;
+  /** Deduct one charge from an ITEM pool by hand — the equipment equivalent of onSpendResource. */
+  onSpendItemCharge?: (action: ActorAction) => void;
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
@@ -741,6 +743,7 @@ export function ActorCard({
   combatRound,
   resourceCounters,
   onSpendResource,
+  onSpendItemCharge,
   onConsumeActionResources,
   onSaveCall,
   coins,
@@ -1029,6 +1032,10 @@ export function ActorCard({
       metadata: { ...action.metadata, details: details ? `${readout} · ${details}` : readout },
     };
   }
+
+  // Item pools for the Resources tab. Gathered from every tab, not from activeActions —
+  // the items themselves sit on the equipment and main tabs.
+  const itemChargePools = useMemo(() => chargeBearingActions(actor.tabs), [actor.tabs]);
 
   const activeActions = useMemo(
     () => (actor.tabs[activeTab] ?? [])
@@ -4405,6 +4412,43 @@ export function ActorCard({
           />
         </>
       ) : (
+        <>
+        {/* Equipment charges — item pools live with the items, not in the Resources tab.
+            The rest buttons on that tab still drive them: a short rest refills the
+            shortRest items, a long rest everything except manual. Deduct-only, matching
+            the resource rows — restoring is what a rest is for. */}
+        {activeTab === "equipment" && itemChargePools.length > 0 && (
+          <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
+            <div style={{ fontSize: 10, color: "#555", letterSpacing: 0.5, paddingBottom: 4 }}>CHARGES</div>
+            {itemChargePools.map(({ key, action, charges }) => {
+              const remaining = resourceCounters?.[key] ?? charges.max;
+              const restLabel = charges.reset === "shortRest" ? "short rest"
+                : charges.reset === "longRest" ? "long rest" : "manual";
+              return (
+                <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #1a1a2e" }}>
+                  <div>
+                    <span style={{ fontSize: 12, color: remaining === 0 ? "#555" : "#aaa" }}>⚡ {action.label}</span>
+                    <span style={{ fontSize: 10, color: "#444", marginLeft: 6 }}>{restLabel}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {onSpendItemCharge && (
+                      <button type="button"
+                        disabled={remaining <= 0}
+                        onClick={() => onSpendItemCharge(action)}
+                        style={{ fontSize: 10, padding: "2px 7px", background: remaining > 0 ? "#2a2a4e" : "#1a1a1a", border: "1px solid #7b68ee55", borderRadius: 3, color: remaining > 0 ? "#9d8cff" : "#555", cursor: remaining > 0 ? "pointer" : "default" }}
+                        title="Spend one charge by hand — the fallback for a use that happens away from the card">
+                        Spend
+                      </button>
+                    )}
+                    <span style={{ fontSize: 12, color: remaining === 0 ? "#555" : remaining <= charges.max * 0.5 ? "#e07b39" : "#4caf50", fontVariantNumeric: "tabular-nums" }}>
+                      {remaining}/{charges.max}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <TabPanel
           actorName={actor.name}
           activeTab={activeTab}
@@ -4422,6 +4466,7 @@ export function ActorCard({
           onPrimeRoll={handlePrimeRoll}
           onResetCommittedRoll={committedRoll ? handleResetCommittedRoll : undefined}
         />
+        </>
       )}
     </article>
   );
