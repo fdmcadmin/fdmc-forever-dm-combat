@@ -1,27 +1,23 @@
-// Auto-generated from broken_chain_loot_acts1_2_updated.docx — do not edit manually.
+// Auto-generated from broken_chain_loot_acts1_2_app_ready_v3.docx — do not edit manually.
 //
-// THE DOC IS THE SOURCE OF TRUTH, and Acts 1-2 are FINAL as of this pass. From here a change
-// is made item by item on request; there should be no further wholesale regeneration.
+// THE DOC IS THE SOURCE OF TRUTH.
 //
-// SCOPE. This rebuild covers boss drops, merchant stock and convergence INPUTS through the end
-// of Act 2. The convergence OUTPUT pools (Tier 1.5 and up) are carried over from the previous
-// library untouched — they are pending a power-balance pass, so nothing here updates, creates
-// or deletes one. An output is recognised by having a tier and no source encounter.
+// SCOPE. This pass is the CONVERGENCE REWORK plus merchant stock. Boss ARMOR and WEAPONS are
+// LOCKED — they are carried over from the previous library untouched, even though the doc
+// restates them. Change one of those only when Christopher names it.
 //
-// The doc revision puts the item NAME and its SLOT on one line ("Thornback Hatchet Melee
-// One-Handed (handaxe) - +1"), and some items carry two slots at once: Rootknot Staff is a
-// spellcasting focus AND a quarterstaff. Both profiles are kept — the weapon dice come from
-// whichever parenthetical names a real base weapon, and a magical focus records its bonus in
-// spellFocusAttack when the rules text says it applies to spell attacks.
+// CONVERGENCE, rebuilt. Outputs are now Tier 1 and Tier 2 (the old 1.5 / 2 / 2.5 / 3 pools are
+// retired), and neither tier requires attunement. Provenance sets strength: A1+A1 and A1+A2
+// produce Tier 1, A2+A2 produces Tier 2. Inputs carry their act and mechanical tag; outputs
+// carry the recipe pair that makes them. Both live in `convergence`.
+//
+// MERCHANT STOCK now sells Convergence-capable Wondrous Items with gold attached — Aldric's
+// three A1 items (165gp total) and Northgate's two tagged A2 items (185gp), plus the untagged
+// North Wind Flask. The mundane catalog is GONE: the doc replaces it with two ledger lines
+// (Tools/Repairs 15gp, Rations 10gp) and says not to build a separate mundane catalog.
 //
 // IDS SURVIVE RENAMES, because an item attached to a character is referenced by id.
-// RETIRED_EQUIPMENT_IDS are removed from the campaign library on re-seed.
-//
-// FORMULAS keep every term explicit: 1d20+@PROF+@STR+1 / 1d12+@STR+1. @PROF stays symbolic so
-// a martial-proficiency feature can drop it.
-//
-// DESCRIPTION is the doc's flavour; MECHANICSTEXT is what the item does, and is what the
-// player-facing surfaces show.
+// RETIRED_EQUIPMENT_IDS is removed from the campaign library on re-seed.
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
 
 /** Items the loot doc no longer contains. Removed from the campaign library on re-seed. */
@@ -33,59 +29,40 @@ export const RETIRED_EQUIPMENT_IDS: string[] = [
   "tbc-bonded-cord", // Bonded Cord
   "tbc-voidtouched-lens", // Voidtouched Lens
   "tbc-hollow-pack-ward-token", // Hollow Pack Ward Token
+  "tbc-frontier-ration-tin-x3", // Frontier Ration Tin (×3)
+  "tbc-warding-salve", // Warding Salve
+  "tbc-signal-striker", // Signal Striker
+  "tbc-ward-issue-climbing-line-50ft", // Ward-Issue Climbing Line (50ft)
+  "tbc-wayfarer-s-token", // Wayfarer's Token
+  "bc-anchor-thread-ring", // Anchor Thread Ring
+  "bc-step-stabilizer-boots", // Step Stabilizer Boots
+  "bc-deepset-band", // Deepset Band
+  "bc-lensing-ring", // Lensing Ring
+  "bc-driftveil-cloak", // Driftveil Cloak
+  "bc-frostgrip-treads", // Frostgrip Treads
+  "bc-gapstep-boots", // Gapstep Boots
+  "bc-splitgrain-gauntlets", // Splitgrain Gauntlets
+  "bc-ring-of-protection", // Ring of Protection
+  "bc-edge-alignment-ring", // Edge Alignment Ring
+  "bc-stabilized-band", // Stabilized Band
+  "bc-verdant-stride-boots", // Verdant Stride Boots
+  "bc-warden-s-bulwark-cloak", // Warden's Bulwark Cloak
+  "bc-grasp-of-the-hollow", // Grasp of the Hollow
+  "bc-drift-anchor-ring", // Drift Anchor Ring
+  "bc-hollowlight-cloak", // Hollowlight Cloak
+  "bc-quickstep-boots", // Quickstep Boots
+  "bc-edgeworn-gloves", // Edgeworn Gloves
+  "bc-ring-of-the-standing-ward", // Ring of the Standing Ward
+  "bc-ring-of-the-open-edge", // Ring of the Open Edge
+  "bc-mantle-of-the-held-line", // Mantle of the Held Line
+  "bc-veilturn-cloak", // Veilturn Cloak
+  "bc-boots-of-the-long-step", // Boots of the Long Step
+  "bc-rootbound-striders", // Rootbound Striders
+  "bc-gauntlets-of-the-closing-hand", // Gauntlets of the Closing Hand
+  "bc-unbinding-wraps", // Unbinding Wraps
 ];
 
 export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
-  {
-    "id": "tbc-frontier-ration-tin-x3",
-    "name": "Frontier Ration Tin (×3)",
-    "type": "consumable",
-    "description": "Hale slides a battered tin across the table. \"North eats slower men than you. Eat before you're hungry.\"",
-    "mechanicsText": "Each tin is a day of trail food that resists spoiling and freezing. Eating one during a short rest lets you regain one additional spent Hit Die.",
-    "isUsable": true,
-    "value": "15gp",
-    "act": "Act 2",
-    "sourceEncounter": "MERCHANT STOCK",
-    "charges": {"max":3,"reset":"manual"},
-    "isLocked": true
-  },
-  {
-    "id": "tbc-warding-salve",
-    "name": "Warding Salve",
-    "type": "consumable",
-    "description": "A clay pot of grease that smells of pine tar and something colder. \"Rub it on before the fight, not after.\"",
-    "mechanicsText": "Action to apply. For the next hour, the first time you would take cold damage, reduce it by 2d6 (one use, then spent).",
-    "isUsable": true,
-    "value": "25gp",
-    "act": "Act 2",
-    "sourceEncounter": "MERCHANT STOCK",
-    "charges": {"max":1,"reset":"manual"},
-    "isLocked": true
-  },
-  {
-    "id": "tbc-signal-striker",
-    "name": "Signal Striker",
-    "type": "gear",
-    "description": "A short iron rod that throws a single bright spark on command. \"If you're separated up there, this finds each other before the dark does.\"",
-    "mechanicsText": "Action: emit a flare of light visible up to a mile and shed bright light in a 20-foot radius for 1 minute. 3 uses. Refill 10gp.",
-    "isUsable": false,
-    "value": "40gp",
-    "act": "Act 2",
-    "sourceEncounter": "MERCHANT STOCK",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-ward-issue-climbing-line-50ft",
-    "name": "Ward-Issue Climbing Line (50ft)",
-    "type": "gear",
-    "description": "A coil of grey cord, thinner than it should be for its strength. \"Standard issue. It'll hold you.\"",
-    "mechanicsText": "50 feet of rope that holds up to 3,000 lbs. On command the end knots or unknots itself. Advantage on checks made to secure or climb with it.",
-    "isUsable": false,
-    "value": "30gp",
-    "act": "Act 2",
-    "sourceEncounter": "MERCHANT STOCK",
-    "isLocked": true
-  },
   {
     "id": "tbc-thornback-hatchet",
     "name": "Thornback Hatchet",
@@ -216,29 +193,6 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "ac": "11 + DEX",
     "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-pathfinder-s-token",
-    "name": "Pathfinder's Token",
-    "type": "passive",
-    "description": "A carved disc of dense wood worn at the belt. It pulls faintly in the direction of open ground, the way a compass finds north.",
-    "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water. Tags: A1 · Movement",
-    "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-canopy-eye",
-    "name": "Canopy Eye",
-    "type": "passive",
-    "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface.",
-    "mechanicsText": "Once per short or long rest, you can use a Bonus Action to make a Wisdom (Perception) check to locate a concealed creature or object. Tags: A1 · Utility",
-    "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
-    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -373,28 +327,6 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isLocked": true
   },
   {
-    "id": "tbc-displaced-ward-brooch",
-    "name": "Displaced Ward Brooch",
-    "type": "passive",
-    "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here didn't spare the equipment.",
-    "mechanicsText": "When you take force damage, you can use your reaction to reduce that damage by 1d6. Once you use this property, you can't use it again until you finish a long rest. Tags: A1 · Defense",
-    "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-pack-sense-totem",
-    "name": "Pack-Sense Totem",
-    "type": "passive",
-    "description": "A small carved figure that feels heavier than it should. It hums faintly when held by someone in a group — quieter when alone.",
-    "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone. Tags: A1 · Stability",
-    "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
-    "isLocked": true
-  },
-  {
     "id": "tbc-ward-signet",
     "name": "Ward Signet",
     "type": "passive",
@@ -485,67 +417,6 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-frost-brace",
-    "name": "Frost Brace",
-    "type": "passive",
-    "description": "A bracer of pale iron that doesn't warm in the hand. Ward field issue — standard cold protection for operatives running north of the treeline.",
-    "mechanicsText": "While worn, reduce cold damage you take by 2. Tags: A2 · Defense",
-    "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "ELITE QUEST REWARD",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-drift-globe",
-    "name": "Drift Globe",
-    "type": "gear",
-    "description": "A frosted glass orb kept on the innkeeper's shelf. Brennan left it \"for whoever goes back out into that.\" It holds a light that doesn't gutter in wind.",
-    "mechanicsText": "Action: command it to shed bright light (20ft) and dim light (20ft beyond) and to hover, following you at walking pace 5 feet away, or to be thrown/held. The light is steady in any wind or cold.",
-    "isUsable": false,
-    "value": "120gp",
-    "act": "Act 2",
-    "sourceEncounter": "BRENNAN'S INN STOCK",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-frostward-periapt",
-    "name": "Frostward Periapt",
-    "type": "passive",
-    "description": "A small pendant of pale bone on a leather thong. \"The cold up here doesn't just freeze you,\" the innkeeper relays. \"It gets in. This keeps some of it out.\"",
-    "mechanicsText": "While worn: advantage on saving throws against disease and against being poisoned. You ignore the effects of extreme cold (non-magical environmental).",
-    "isUsable": false,
-    "value": "100gp",
-    "act": "Act 2",
-    "sourceEncounter": "BRENNAN'S INN STOCK",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-wayfarer-s-token",
-    "name": "Wayfarer's Token",
-    "type": "consumable",
-    "description": "A flat wooden disc carved with a Ward field-mark. \"One use,\" the innkeeper warns. \"Brennan said don't waste it being clever.\"",
-    "mechanicsText": "One use, then spent. Choose one when used: (1) instantly know true north and your exact distance from the inn; (2) create a single sturdy anchor point from nothing; (3) summon a calm riding horse that lasts 8 hours.",
-    "isUsable": true,
-    "value": "100gp",
-    "act": "Act 2",
-    "sourceEncounter": "BRENNAN'S INN STOCK",
-    "charges": {"max":1,"reset":"manual"},
-    "isLocked": true
-  },
-  {
-    "id": "tbc-north-wind-flask",
-    "name": "North Wind Flask",
-    "type": "consumable",
-    "description": "A stoppered flask that rattles with trapped wind. \"Open it downwind of yourself,\" the innkeeper says, \"or you'll learn why he told me to say that.\"",
-    "mechanicsText": "Action: uncork to create a 15-foot cube of gale wind originating from you, lasting until the end of your next turn. Creatures in it must make a DC 13 Strength save or be pushed 10 feet. Ranged attacks against you have disadvantage while inside. 2 charges, recovers 1 on short rest, all on long rest.",
-    "isUsable": true,
-    "value": "130gp",
-    "act": "Act 2",
-    "sourceEncounter": "BRENNAN'S INN STOCK",
-    "charges": {"max":1,"reset":"manual"},
     "isLocked": true
   },
   {
@@ -673,29 +544,6 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "CONVERGENCE INPUTS · Party picks 1 of 2",
     "isUsable": false,
     "ac": "17",
-    "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
-    "isLocked": true
-  },
-  {
-    "id": "tbc-hollow-lantern",
-    "name": "Hollow Lantern",
-    "type": "passive",
-    "description": "A Ward field lantern recovered from the village cache. Its pale flame doesn't flicker in wind, and for a moment it shows what prefers not to be seen — then gutters back to ordinary light.",
-    "mechanicsText": "The lantern has 1 charge. As a Bonus Action, expend the charge. Until the end of your next turn, you know the space occupied by any Invisible or magically hidden creature within 15 feet of you. This doesn't make the creature visible. The lantern regains its charge when you finish a long rest. Tags: A2 · Cleanse",
-    "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
-    "charges": {"max":1,"reset":"longRest"},
-    "isLocked": true
-  },
-  {
-    "id": "tbc-drifter-s-knot-charm",
-    "name": "Drifter's Knot Charm",
-    "type": "passive",
-    "description": "A knot of frozen cord worn at the belt. It tugs gently toward solid footing, the way a compass finds north.",
-    "mechanicsText": "While worn: you have advantage on saving throws against being knocked prone or moved against your will. Tags: A2 · Ward · Stability",
-    "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
@@ -838,345 +686,389 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isLocked": true
   },
   {
+    "id": "bc-farwatch-glass",
+    "name": "Farwatch Glass",
+    "type": "gear",
+    "description": "A thumb-sized oval of smoke-dark glass with a silver thread trapped inside it. The thread drifts when the glass is idle and snaps toward whatever the glass is remembering when awakened.",
+    "mechanicsText": "Once per long rest, as a Magic action, choose one creature or object you can see within 60 feet. For the next 10 minutes, while that target is within 300 feet of you and on the same plane of existence, the silver thread points in its direction. The glass gives no information about distance or obstacles. Tags: A1 · Utility",
+    "isUsable": false,
+    "value": "55gp",
+    "act": "Act 2",
+    "sourceEncounter": "ALDRIC'S FINAL STOCK",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Utility","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-slipstone",
+    "name": "Slipstone",
+    "type": "gear",
+    "description": "A flat piece of violet-grey stone whose two faces never seem perfectly aligned. Turn it in the hand and one edge appears to arrive a fraction of a heartbeat before the rest.",
+    "mechanicsText": "Once per short or long rest, you can use a Bonus Action to move up to 10 feet without provoking opportunity attacks. This movement ignores difficult terrain, but you cannot pass through creatures, objects, or spaces you could not normally enter. Tags: A1 · Movement",
+    "isUsable": false,
+    "value": "60gp",
+    "act": "Act 2",
+    "sourceEncounter": "ALDRIC'S FINAL STOCK",
+    "charges": {"max":1,"reset":"shortRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Movement","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-rootheart-seed",
+    "name": "Rootheart Seed",
+    "type": "gear",
+    "description": "A black seed the size of a thumbnail, veined with dull green-gold. It is almost weightless until the ground shifts beneath its bearer, when it becomes suddenly and impossibly heavy.",
+    "mechanicsText": "Once per long rest, when an effect would knock you prone or move you against your will, you can use your Reaction to either remain standing or reduce the forced movement by up to 10 feet. Tags: A1 · Stability",
+    "isUsable": false,
+    "value": "50gp",
+    "act": "Act 2",
+    "sourceEncounter": "ALDRIC'S FINAL STOCK",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-pathfinder-s-token",
+    "name": "Pathfinder's Token",
+    "type": "gear",
+    "description": "A carved disc of dense wood worn at the belt. It pulls faintly in the direction of open ground, the way a compass finds north.",
+    "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water. Tags: A1 · Movement",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "DISPLACED OWLBEAR",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Movement","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-canopy-eye",
+    "name": "Canopy Eye",
+    "type": "gear",
+    "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface.",
+    "mechanicsText": "Once per short or long rest, you can use a Bonus Action to make a Wisdom (Perception) check to locate a concealed creature or object. Tags: A1 · Utility",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "DISPLACED OWLBEAR",
+    "charges": {"max":1,"reset":"shortRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Utility","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-displaced-ward-brooch",
+    "name": "Displaced Ward Brooch",
+    "type": "gear",
+    "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here did not spare the equipment.",
+    "mechanicsText": "When you take force damage, you can use your Reaction to reduce that damage by 1d6. Once used, this property cannot be used again until you finish a long rest. Tags: A1 · Defense",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "MIRAGE STALKER",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Defense","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-pack-sense-totem",
+    "name": "Pack-Sense Totem",
+    "type": "gear",
+    "description": "A small carved figure that feels heavier than it should. It hums faintly when held by someone in a group — quieter when alone.",
+    "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone. Tags: A1 · Stability",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "MIRAGE STALKER",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A1"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-frost-brace",
+    "name": "Frost Brace",
+    "type": "gear",
+    "description": "A bracer of pale iron that does not warm in the hand. Ward field issue — standard cold protection for operatives running north of the treeline.",
+    "mechanicsText": "While worn, reduce cold damage you take by 2. Tags: A2 · Defense",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "ELITE QUEST REWARD",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Defense","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-drift-globe",
+    "name": "Drift Globe",
+    "type": "gear",
+    "description": "A frosted glass orb kept on the innkeeper’s shelf. Brennan left it for whoever had to go back into the dark. It hovers at shoulder height and holds a light that does not gutter in wind or cold.",
+    "mechanicsText": "As a Magic action, command the globe to shed bright light in a 20-foot radius and dim light 20 feet farther, or to go dark. It follows its bearer at walking pace. Once per long rest, as a Bonus Action, the globe can flare for 1 minute; while a creature is inside its bright light, you know the occupied space of any Invisible or magically hidden creature there, though the creature remains Invisible or hidden. Tags: A2 · Cleanse",
+    "isUsable": false,
+    "value": "95gp",
+    "act": "Act 2",
+    "sourceEncounter": "NORTHGATE INN STOCK",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Cleanse","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-frostward-periapt",
+    "name": "Frostward Periapt",
+    "type": "gear",
+    "description": "A pendant of pale bone on a leather thong. The surface stays dry even when frost forms on everything around it.",
+    "mechanicsText": "While worn, you have advantage on saving throws against disease and against gaining the Poisoned condition, and you ignore the effects of nonmagical extreme cold. Tags: A2 · Defense",
+    "isUsable": false,
+    "value": "90gp",
+    "act": "Act 2",
+    "sourceEncounter": "NORTHGATE INN STOCK",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Defense","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-north-wind-flask",
+    "name": "North Wind Flask",
+    "type": "gear",
+    "description": "A stoppered blue-glass flask that rattles with trapped wind. Frost forms around the cork whenever the pressure inside rises.",
+    "mechanicsText": "The flask has 2 charges. As a Magic action, expend 1 charge to create a 15-foot cube of gale wind originating from you until the end of your next turn. A creature that enters the cube for the first time on a turn or starts its turn there must succeed on a DC 13 Strength saving throw or be pushed 10 feet directly away from you. Ranged weapon attacks that pass through the gale have disadvantage. The flask regains all expended charges at dawn.",
+    "isUsable": false,
+    "value": "115gp",
+    "act": "Act 2",
+    "sourceEncounter": "NORTHGATE INN STOCK",
+    "charges": {"max":2,"reset":"longRest"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-hollow-lantern",
+    "name": "Hollow Lantern",
+    "type": "gear",
+    "description": "A Ward field lantern recovered from the village cache. Its pale flame does not flicker in wind, and for a moment it shows what prefers not to be found.",
+    "mechanicsText": "As a Bonus Action, expend its charge. Until the end of your next turn, you know the space occupied by any Invisible or magically hidden creature within 15 feet of you. This does not make the creature visible. The lantern regains its charge when you finish a long rest. Tags: A2 · Cleanse",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "LESSER WENDIGOS",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Cleanse","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-drifter-s-knot-charm",
+    "name": "Drifter's Knot Charm",
+    "type": "gear",
+    "description": "A knot of frozen cord worn at the belt. It tugs gently toward solid footing, the way a compass finds north.",
+    "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone or moved against your will. Tags: A2 · Stability",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "LESSER WENDIGOS",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-sentinel-chalk",
+    "name": "Sentinel Chalk",
+    "type": "gear",
+    "description": "A stick of blue-white chalk recovered from the frozen line. A mark drawn with it holds its edge even under snow and rime.",
+    "mechanicsText": "As a Magic action, expend 1 charge to draw a line up to 10 feet long on a solid surface and choose any creatures you can see. Until your next long rest, the first unchosen Tiny or larger creature to cross that line causes it to flash and sound a clear chime audible out to 60 feet, then the mark ends. The chalk regains all expended charges when you finish a long rest. Tags: A2 · Utility",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "FROZEN SENTINELS",
+    "charges": {"max":3,"reset":"longRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Utility","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-gloamstep-shard",
+    "name": "Gloamstep Shard",
+    "type": "gear",
+    "description": "A sliver of dark glass rimed white on one edge and perfectly black on the other. In dim light the shard seems a few inches closer than the hand holding it.",
+    "mechanicsText": "As a Bonus Action while you are in dim light or darkness, teleport up to 10 feet to an unoccupied space you can see that is also in dim light or darkness. Once used, this property cannot be used again until you finish a long rest. Tags: A2 · Movement",
+    "isUsable": false,
+    "act": "Act 2",
+    "sourceEncounter": "PALE DRIFTER + FROZEN CLOAK",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Movement","actLabel":"A2"},
+    "isLocked": true
+  },
+  {
     "id": "tbc-wendigo-heart-ember",
     "name": "Wendigo Heart Ember",
-    "type": "passive",
+    "type": "gear",
     "description": "Whatever organ this was no longer resembles one — black, porous, brittle. It is somehow still warm, and when gripped it answers with a pulse of devouring cold.",
-    "mechanicsText": "Devouring Cold (1/day; recharges at dawn). As a Magic action, target one creature you can see within 30 feet. The target must make a DC 13 Constitution saving throw, taking 3d6 cold damage on a failed save or half as much damage on a successful one. Tags: A2 · Offensive",
+    "mechanicsText": "Devouring Cold (1/day; recharges at dawn). As a Magic action, target one creature you can see within 30 feet. It must make a DC 13 Constitution saving throw, taking 3d6 cold damage on a failed save or half as much on a successful save. Tags: A2 · Offensive",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A2"},
     "isLocked": true
   },
   {
     "id": "tbc-frozen-lake-core",
     "name": "Frozen Lake Core",
-    "type": "passive",
-    "description": "A column of ice drawn from the lake's center by no tool the party carries. It sat waiting at the shore after the fight, as if set there to be found. It hums at a pitch that aches the teeth.",
+    "type": "gear",
+    "description": "A column of ice drawn from the lake’s center by no tool the party carries. It sat waiting at the shore after the fight, as if set there to be found.",
     "mechanicsText": "Frozen Resolve (1/day; recharges at dawn). When you fail a saving throw, roll 1d4 and add it to the saving throw, potentially turning the failure into a success. Tags: A2 · Stability",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A2"},
     "isLocked": true
   },
   {
-    "id": "bc-anchor-thread-ring",
-    "name": "Anchor Thread Ring",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, when an effect would move you against your will, you can choose to ignore that movement. Tags: Recipe: Movement + Stability",
+    "id": "bc-anchor-thread",
+    "name": "Anchor Thread",
+    "type": "gear",
+    "description": "A braided metallic thread that tightens when the bearer loses footing.",
+    "mechanicsText": "Once per long rest, when an effect would move you against your will or knock you prone, you can ignore the forced movement or remain standing. Tags: Recipe: Movement + Stability",
     "isUsable": false,
-    "tier": "1.5",
-    "charges": {"max":1,"reset":"encounter"},
+    "tier": "1",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability"},
     "isLocked": true
   },
   {
     "id": "bc-clarity-hood",
     "name": "Clarity Hood",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "You have advantage on saving throws against being frightened, charmed, or affected by illusions. Tags: Recipe: Cleanse + Utility",
+    "type": "gear",
+    "description": "A light hood whose inner weave sharpens at the edge of false images and invasive emotion.",
+    "mechanicsText": "Once per long rest, when you fail a saving throw against being Charmed or Frightened, or against an illusion spell or effect, reroll the save and use the new result. Tags: Recipe: Defense + Utility",
     "isUsable": false,
-    "tier": "1.5",
+    "tier": "1",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Utility"},
     "isLocked": true
   },
   {
-    "id": "bc-step-stabilizer-boots",
-    "name": "Step Stabilizer Boots",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Difficult terrain costs you no extra movement. Once per encounter you may take the Disengage action as a bonus action. Tags: Recipe: Movement + Utility",
+    "id": "bc-step-stabilizer",
+    "name": "Step Stabilizer",
+    "type": "gear",
+    "description": "A small paired set of heel plates that seem to find the next safe piece of ground first.",
+    "mechanicsText": "Natural difficult terrain costs you no extra movement. Once per short or long rest, you can take the Disengage action as a Bonus Action. Tags: Recipe: Movement + Utility",
     "isUsable": false,
-    "tier": "1.5",
-    "charges": {"max":1,"reset":"encounter"},
+    "tier": "1",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"shortRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility"},
     "isLocked": true
   },
   {
     "id": "bc-reinforced-wrap",
     "name": "Reinforced Wrap",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, reduce the damage of one hit against you by 1d6. Tags: Recipe: Defense + Stability",
+    "type": "gear",
+    "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands.",
+    "mechanicsText": "Once per long rest, when an attack hits you, you can use your Reaction to reduce the damage by 1d10. Tags: Recipe: Defense + Stability",
     "isUsable": false,
-    "tier": "1.5",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-deepset-band",
-    "name": "Deepset Band",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, when you would be moved against your will or knocked prone, you can choose to ignore that effect. While you are below half your hit point maximum, you have a +1 bonus to saving throws. Tags: Recipe: Stability + Defense",
-    "isUsable": false,
-    "tier": "2",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-lensing-ring",
-    "name": "Lensing Ring",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Expend 1 charge (bonus action): until the end of your next turn you can see invisible creatures and see through magical obscurement within 30 feet. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Cleanse + Utility",
-    "isUsable": false,
-    "tier": "2",
-    "charges": {"max":2,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-driftveil-cloak",
-    "name": "Driftveil Cloak",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, when a creature you can see hits you with an attack, you can use your reaction to move up to 10 feet without provoking opportunity attacks. If you end that movement more than 5 feet from the attacker, reduce the attack's damage by 1d8. Tags: Recipe: Movement + Defense",
-    "isUsable": false,
-    "tier": "2",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-frostgrip-treads",
-    "name": "Frostgrip Treads",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Difficult terrain costs you no extra movement. You have advantage on saving throws against being knocked prone, and standing from prone costs you no movement. Once per encounter (bonus action) you can Disengage. Tags: Recipe: Movement + Stability",
-    "isUsable": false,
-    "tier": "2",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-gapstep-boots",
-    "name": "Gapstep Boots",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Expend 1 charge (bonus action) to move up to 15 feet. This movement doesn't provoke opportunity attacks and can cross open space as though it were solid ground. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Tactical + Utility",
-    "isUsable": false,
-    "tier": "2",
-    "charges": {"max":2,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-splitgrain-gauntlets",
-    "name": "Splitgrain Gauntlets",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, when you hit a creature with a weapon attack, that attack deals an additional 1d8 damage of the weapon's type, and you learn whether the target has resistance or immunity to that damage type. Tags: Recipe: Offensive + Utility",
-    "isUsable": false,
-    "tier": "2",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-ring-of-protection",
-    "name": "Ring of Protection",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "+1 bonus to AC and all saving throws. Tags: Recipe: Defense A1 + Defense A2 (Frost Brace + Displaced Ward Brooch)",
-    "isUsable": false,
-    "tier": "2.5",
-    "attunementRequired": true,
-    "isLocked": true
-  },
-  {
-    "id": "bc-edge-alignment-ring",
-    "name": "Edge Alignment Ring",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Your weapon attacks ignore resistance to their damage type. Expend 1 charge when you hit to also ignore immunity to that damage type for that hit. Regains charge on a short or long rest. Tags: Recipe: Offensive + Tactical",
-    "isUsable": false,
-    "tier": "2.5",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-stabilized-band",
-    "name": "Stabilized Band",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "+1 bonus to all saving throws. Expend 1 charge to succeed on one saving throw you would otherwise fail. Regains charge on a short or long rest. Tags: Recipe: Stability + Cleanse",
-    "isUsable": false,
-    "tier": "2.5",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-verdant-stride-boots",
-    "name": "Verdant Stride Boots",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Speed increases by 5 feet. Expend 1 charge to teleport up to 20 feet to a space you can see. Regains charge on a short or long rest. Tags: Recipe: Movement + Tactical",
-    "isUsable": false,
-    "tier": "2.5",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-warden-s-bulwark-cloak",
-    "name": "Warden's Bulwark Cloak",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Resistance to cold and necrotic damage. Expend 1 charge as a reaction to reduce one hit against you to 0 damage. Regains charge on a short or long rest. Tags: Recipe: Defense + Stability",
-    "isUsable": false,
-    "tier": "2.5",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-grasp-of-the-hollow",
-    "name": "Grasp of the Hollow",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "When you reduce a creature to 0 hit points, you gain temporary hit points equal to your proficiency bonus. Expend 1 charge when you hit a creature: it can't regain hit points until the start of your next turn. Regains its charge on a short or long rest. Tags: Recipe: Offensive + Cleanse",
-    "isUsable": false,
-    "tier": "2.5",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-drift-anchor-ring",
-    "name": "Drift Anchor Ring",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, when an effect would move you or knock you prone, ignore it. Advantage on saves against being grappled or restrained. Tags: Recipe: Stability + Movement",
-    "isUsable": false,
-    "tier": "2.5 alt",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-hollowlight-cloak",
-    "name": "Hollowlight Cloak",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter (reaction): negate one incoming non-damaging effect. You can see normally in magical darkness out to 30 feet. Tags: Recipe: Cleanse + Defense",
-    "isUsable": false,
-    "tier": "2.5 alt",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-quickstep-boots",
-    "name": "Quickstep Boots",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Speed increases by 5 feet. Difficult terrain costs no extra movement. Once per encounter, Dash as a bonus action. Tags: Recipe: Movement + Utility",
-    "isUsable": false,
-    "tier": "2.5 alt",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-edgeworn-gloves",
-    "name": "Edgeworn Gloves",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per encounter, one weapon hit ignores resistance to its damage type. Tags: Recipe: Offensive + Tactical",
-    "isUsable": false,
-    "tier": "2.5 alt",
-    "charges": {"max":1,"reset":"encounter"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-ring-of-the-standing-ward",
-    "name": "Ring of the Standing Ward",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "You have a +1 bonus to AC and to saving throws. Expend 1 charge as a reaction to give yourself resistance to all damage from one attack or effect. Regains its charge on a short or long rest. Tags: Recipe: Defense + Stability",
-    "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-ring-of-the-open-edge",
-    "name": "Ring of the Open Edge",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Your weapon and spell attacks ignore resistance to their damage type. Expend 1 charge when you hit to ignore immunity to that damage type for that hit. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Offensive + Tactical",
-    "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":2,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-mantle-of-the-held-line",
-    "name": "Mantle of the Held Line",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "You have a +1 bonus to AC. You have resistance to necrotic, psychic, and force damage. Expend 1 charge as a reaction to reduce one hit against you to 0 damage. Regains its charge on a short or long rest. Tags: Recipe: Defense + Cleanse",
-    "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":1,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-veilturn-cloak",
-    "name": "Veilturn Cloak",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Opportunity attacks made against you have disadvantage. Expend 1 charge as a reaction when a creature you can see targets you with an attack: teleport up to 30 feet to a space you can see. The attack resolves after you arrive and may miss as a result. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Defense + Movement",
-    "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":2,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-boots-of-the-long-step",
-    "name": "Boots of the Long Step",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Your speed increases by 10 feet. Expend 1 charge (bonus action) to teleport up to 30 feet to a space you can see. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Movement + Tactical",
-    "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":2,"reset":"shortRest"},
-    "isLocked": true
-  },
-  {
-    "id": "bc-rootbound-striders",
-    "name": "Rootbound Striders",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Your speed increases by 5 feet. Difficult terrain costs you no extra movement. You cannot be moved against your will unless the effect originates from a creature of Large size or larger. Once per long rest, when you would be reduced to 0 hit points, you instead drop to 1 hit point and your speed becomes 0 until the end of your next turn. Tags: Recipe: Stability + Utility",
-    "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
+    "tier": "1",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
     "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Stability"},
     "isLocked": true
   },
   {
-    "id": "bc-gauntlets-of-the-closing-hand",
-    "name": "Gauntlets of the Closing Hand",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "Once per turn when you hit with a weapon attack, that attack deals an additional 1d8 damage. Expend 1 charge when you hit: the target can't regain hit points until the start of your next turn, and the next attack made against it before then has advantage. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Offensive + Defense",
+    "id": "bc-lensing-glass",
+    "name": "Lensing Glass",
+    "type": "gear",
+    "description": "A clear lens that catches edges the eye normally loses.",
+    "mechanicsText": "As a Bonus Action, expend 1 charge. Until the end of your next turn, you can see Invisible creatures and see through magical visual obscurement within 30 feet. The glass regains all expended charges when you finish a long rest. Tags: Recipe: Cleanse + Utility",
     "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":2,"reset":"shortRest"},
+    "tier": "1",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":2,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility"},
     "isLocked": true
   },
   {
-    "id": "bc-unbinding-wraps",
-    "name": "Unbinding Wraps",
-    "type": "passive",
-    "description": "",
-    "mechanicsText": "You have advantage on saving throws against being blinded, charmed, deafened, frightened, or restrained. Expend 1 charge (bonus action) to end one of those conditions affecting you or a creature you touch. Regains 1 charge on a short rest, all on a long rest. Tags: Recipe: Cleanse + Tactical",
+    "id": "bc-splitgrain-grip",
+    "name": "Splitgrain Grip",
+    "type": "gear",
+    "description": "A narrow weapon wrap whose grain splits in two directions when it meets resistant flesh.",
+    "mechanicsText": "When you hit a creature with a weapon attack, you learn whether it has resistance or immunity to that attack’s damage type. Once per short or long rest, that hit can deal an additional 1d8 damage of the same type. Tags: Recipe: Offensive + Utility",
     "isUsable": false,
-    "tier": "3",
-    "attunementRequired": true,
-    "charges": {"max":2,"reset":"shortRest"},
+    "tier": "1",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"shortRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Utility"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-drift-anchor",
+    "name": "Drift Anchor",
+    "type": "gear",
+    "description": "A compact Ward anchor that grows heavy only when the world tries to move its bearer.",
+    "mechanicsText": "You have advantage on saving throws against being moved against your will or knocked prone. Once per day at dawn recharge, when either effect would happen, you can ignore it entirely. Tags: Recipe: Movement + Stability",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-hollowlight",
+    "name": "Hollowlight",
+    "type": "gear",
+    "description": "A pale light source that does not brighten darkness so much as make it stop lying.",
+    "mechanicsText": "You can see through magical darkness within 30 feet. Once per day, when you fail a saving throw against being Blinded, Charmed, Frightened, or Restrained, you can reroll the save and use the new result. Tags: Recipe: Cleanse + Utility",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-quickstep",
+    "name": "Quickstep",
+    "type": "gear",
+    "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next.",
+    "mechanicsText": "Your speed increases by 5 feet and difficult terrain costs you no extra movement. Once per day, you can take the Dash action as a Bonus Action; your movement does not provoke opportunity attacks until the end of that turn. Tags: Recipe: Movement + Utility",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-edgeworn",
+    "name": "Edgeworn",
+    "type": "gear",
+    "description": "A thin grip plate that reads resistance through the vibration of a successful strike.",
+    "mechanicsText": "When you deal damage to a creature, you learn whether it resisted or was immune to that damage type. Once per day, when you hit with a weapon attack, that hit ignores resistance; immunity is treated as resistance for that hit. Tags: Recipe: Offensive + Utility",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Utility"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-driftveil",
+    "name": "Driftveil",
+    "type": "gear",
+    "description": "A short mantle that pulls sideways at the instant a blow finds its wearer.",
+    "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to move up to 10 feet without provoking opportunity attacks and reduce the triggering attack’s damage by 1d8. Tags: Recipe: Defense + Movement",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Movement"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-clearward-mantle",
+    "name": "Clearward Mantle",
+    "type": "gear",
+    "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body.",
+    "mechanicsText": "You have advantage on saving throws against gaining the Poisoned condition. Once per day, as a Bonus Action, end one of the following conditions on yourself: Blinded, Charmed, Frightened, or Poisoned. Tags: Recipe: Defense + Cleanse",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 2",
+    "sourceEncounter": "MATURITY THROUGH ACT 2",
+    "charges": {"max":1,"reset":"longRest"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Cleanse"},
     "isLocked": true
   }
 ];

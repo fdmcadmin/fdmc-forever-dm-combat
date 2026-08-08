@@ -145,10 +145,11 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // Knot→Staring-Knot Wand); Shattered Vigil is now a two-handed great hammer, not a focus. Adds
 // the convergence output pools and a STR variant of every finesse weapon. Seven items the doc
 // dropped are retired via RETIRED_EQUIPMENT_IDS.
-// v0.5.0 — Acts 1-2 FINAL, rebuilt from broken_chain_loot_acts1_2_updated.docx. Convergence
-// OUTPUT pools carried over untouched (pending power balancing). Focus items now record their
-// spell-attack bonus. From here, item changes are made one at a time on request.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.5.0-final";
+// v0.6.0 — CONVERGENCE REWORK. Outputs rebuilt as Tier 1 / Tier 2 (the old 1.5/2/2.5/3 pools
+// are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
+// with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
+// armor and weapons are LOCKED and unchanged.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.6.0-convergence-rework";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
