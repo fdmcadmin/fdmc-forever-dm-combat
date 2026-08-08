@@ -218,8 +218,14 @@ export function useResourceCounterState(actors: Actor[]) {
       const reset = action.metadata?.cost?.toLowerCase() ?? "";
       const max = getMaxFromAction(action);
       if (restType === "long") {
-        // Long rest resets everything except manual-only counters
-        if (kind !== "counter") actorCounters[action.id] = max;
+        // A long rest restores EVERY pool, counters included.
+        //
+        // `counter` used to be excluded as "manual-only". That was wrong in practice: a
+        // manual counter is the FALLBACK a DM reaches for when a resource isn't pulling
+        // automatically or got tagged wrong — it still represents a real class resource,
+        // so it is still tied to the rest. Excluding it meant the fallback silently became
+        // the one pool that never came back, and the DM had to top it up by hand forever.
+        actorCounters[action.id] = max;
       } else if (restType === "short") {
         // An explicit shortRestRegain wins over everything and is the only way to express
         // PARTIAL recovery — "2 per Long Rest, regain one after a Short Rest" (Channel
@@ -239,8 +245,11 @@ export function useResourceCounterState(actors: Actor[]) {
         }
         // Legacy fallback for resources authored before shortRestRegain existed. Note this
         // only ever restores to FULL — partial recovery is not expressible this way.
+        // `counter` is included here for the same reason as the long-rest branch: it is a
+        // fallback for a mis-tagged resource, not a resource that opts out of resting. If
+        // its cadence says short rest, it comes back on a short rest.
         const resetsOnShort = kind === "pactSlot" || kind === "toggle" ||
-          (kind === "pool" && reset.includes("short")) ||
+          ((kind === "pool" || kind === "counter") && reset.includes("short")) ||
           (!kind && reset.includes("short"));
         if (resetsOnShort) actorCounters[action.id] = max;
       }
@@ -251,7 +260,12 @@ export function useResourceCounterState(actors: Actor[]) {
     // anything that isn't manual-only; a short rest fills the shortRest items — and the
     // encounter ones too, since resting necessarily ends the encounter.
     for (const { key, charges } of chargeBearingActions(actor.tabs)) {
-      if (charges.reset === "manual") continue;
+      // A LONG rest fills every item pool, "manual" included — same reasoning as the
+      // counter pools above: manual is the fallback tag for something that isn't pulling
+      // automatically, not a declaration that the pool opts out of resting. Leaving it out
+      // made the fallback the one pool that never came back.
+      // A SHORT rest still only fills the pools that say short rest (or encounter, since
+      // resting necessarily ends the encounter) — manual is not assumed to be short.
       if (restType === "long" || charges.reset === "shortRest" || charges.reset === "encounter") {
         actorCounters[key] = charges.max;
       }
