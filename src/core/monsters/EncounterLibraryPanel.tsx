@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
-import { parseActPlacement, campaignSortKey } from "../campaign/actTags";
+import { parseActPlacement, campaignSortKey, parseActField } from "../campaign/actTags";
 import {
   loadEncounterLibrary,
   loadUnusedEncounters,
@@ -71,6 +71,34 @@ export function groupMonstersByAct(
       // then by name — so an act reads in play order and ties fall back to alphabetical.
       monsters: [...monsters].sort((x, y) =>
         campaignSortKey(x.encounterId, x.name).localeCompare(campaignSortKey(y.encounterId, y.name))),
+    }));
+}
+
+/**
+ * Encounters grouped under act headings, in campaign order.
+ *
+ * Position comes from the encounter id (`act2-s4-e1-…`) — NOT from `order`, which the
+ * seeder never sets, so the previous `(a.order ?? 99)` sort tied every campaign encounter
+ * at 99 and left them in insertion order. A DM-authored encounter with a free-text
+ * `actTag` still lands in the right act; anything unplaceable collects at the end.
+ */
+export function groupEncountersByAct(
+  encounters: EncounterDefinition[],
+): { label: string; encounters: EncounterDefinition[] }[] {
+  const buckets = new Map<number, EncounterDefinition[]>();
+  for (const e of encounters) {
+    const fromId = parseActPlacement(e.id).act;
+    const act = fromId > 0 ? fromId : parseActField(e.actTag);
+    const key = act > 0 ? act : 9999;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(e);
+  }
+  return [...buckets.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([act, list]) => ({
+      label: act >= 9999 ? "Unsorted / no act" : `Act ${act}`,
+      encounters: [...list].sort((x, y) =>
+        campaignSortKey(x.id, x.name).localeCompare(campaignSortKey(y.id, y.name))),
     }));
 }
 
@@ -959,7 +987,13 @@ export function EncounterLibraryPanel({
                     <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4f9dff", textTransform: "uppercase", letterSpacing: 1 }}>
                       My Monsters · {myMonsters.length}
                     </p>
-                    {myMonsters.map(m => (
+                    {/* Grouped by act in campaign order — same ordering as the picker. */}
+                    {groupMonstersByAct(myMonsters).flatMap(group => [
+                      <p key={`hdr-${group.label}`} style={{ margin: "8px 0 4px", fontSize: 9.5, fontWeight: 700,
+                        letterSpacing: 1, textTransform: "uppercase", color: group.label.startsWith("Act") ? "#4f9dff" : "#667" }}>
+                        {group.label}
+                      </p>,
+                      ...group.monsters.map(m => (
                       <div key={m.templateId} style={{ background: "#111", border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 10px", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                         <div style={{ minWidth: 0 }}>
                           <span style={{ fontSize: 12, color: "#fff", fontWeight: 500 }}>{m.name}</span>
@@ -978,7 +1012,8 @@ export function EncounterLibraryPanel({
                           </button>
                         </div>
                       </div>
-                    ))}
+                      )),
+                    ])}
                   </div>
                 )}
 
@@ -996,7 +1031,19 @@ export function EncounterLibraryPanel({
                 {brokenChainOpen && (
                   unlocked ? (
                     campaign.length > 0 ? (
-                      campaign.sort((a, b) => (a.order ?? 99) - (b.order ?? 99)).map(renderEncounter)
+                      // Grouped under ACT headings in campaign order. The old sort keyed on
+                      // `order ?? 99`, but the seeder never sets `order` — so every campaign
+                      // encounter tied at 99 and fell back to insertion order.
+                      groupEncountersByAct(campaign).map(group => (
+                        <div key={group.label}>
+                          <p style={{ margin: "10px 0 5px", paddingBottom: 3, borderBottom: "1px solid #2a2a3e",
+                            fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase",
+                            color: group.label.startsWith("Act") ? "#e0b34a" : "#667" }}>
+                            {group.label}
+                          </p>
+                          {group.encounters.map(renderEncounter)}
+                        </div>
+                      ))
                     ) : (
                       <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No campaign encounters loaded.</p>
                     )

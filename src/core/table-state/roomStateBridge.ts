@@ -131,7 +131,27 @@ export async function publishFdmcRoomStateKey(key: string, value: unknown): Prom
       return;
     }
 
-    const nextMetadata = { ...(current ?? {}), [key]: value };
+    // GLOBAL REVISION MONOTONICITY.
+    //
+    // Writers compute `revision: localState.revision + 1` from their OWN copy. When that
+    // copy is behind — a DM pressing Next Turn while a player has just written their HP —
+    // the outgoing revision lands at or below what is already in the room, and every OTHER
+    // client's subscription guard correctly rejects it as stale. The DM's own view advances
+    // (it sets local state directly) while the table stays frozen on an earlier turn: the
+    // "combat is stuck for the table" desync.
+    //
+    // Rebasing here, at the single choke point every write already passes through, makes
+    // revisions monotonic across the whole room, which is exactly what the subscription
+    // guard assumes. Per-call-site "read fresh first" fixes only ever covered one writer
+    // (handleStartCombat did this; handleNextTurn and handleEndCombat did not).
+    const outgoingRevision = readRevision(value);
+    const liveRevision = readRevision(current?.[key]);
+    const rebased =
+      outgoingRevision !== undefined && liveRevision !== undefined && outgoingRevision <= liveRevision
+        ? { ...(value as Record<string, unknown>), revision: liveRevision + 1, updatedAt: Date.now() }
+        : value;
+
+    const nextMetadata = { ...(current ?? {}), [key]: rebased };
     const isSharedTableStateWrite = key.includes("sharedTableState");
     if (isSharedTableStateWrite) {
       const budget = getSharedTableBudgetStatus(value);
@@ -153,7 +173,7 @@ export async function publishFdmcRoomStateKey(key: string, value: unknown): Prom
     updateDiagnostics({
       lastWriteAt: new Date().toISOString(),
       sharedStateSizeBytes: estimateJsonSize(nextMetadata),
-      revision: readRevision(value) ?? diagnostics.revision,
+      revision: readRevision(rebased) ?? diagnostics.revision,
       lastError: "",
     });
   } catch (error) {
