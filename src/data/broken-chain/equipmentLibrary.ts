@@ -686,6 +686,28 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isLocked": true
   },
   {
+    "id": "bc-tools-repairs",
+    "name": "Tools / Repairs",
+    "type": "gear",
+    "description": "A tool set, a repair, or replacement field kit. Write in what it actually is.",
+    "mechanicsText": "Basic spending line. Covers one tool set, one repair, or one replacement of field gear — name it when you buy it (leatherworker's tools, smith's kit, re-stitched pack). The app deducts the gold; the note records what the party actually bought.",
+    "isUsable": false,
+    "value": "15gp",
+    "dmNote": "Ledger line, not a catalog. Buy it again for each tool set or repair.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-rations-supplies",
+    "name": "Rations / Survival Supplies",
+    "type": "gear",
+    "description": "A travel leg's food and cold-weather supplies. Write in what it actually is.",
+    "mechanicsText": "Basic spending line. Restocks one travel leg of rations and survival supplies. Usable meat recovered from a hunt can offset one purchase by 5gp instead of generating coin.",
+    "isUsable": false,
+    "value": "10gp",
+    "dmNote": "Ledger line, not a catalog. Buy it again each time the party restocks.",
+    "isLocked": true
+  },
+  {
     "id": "bc-farwatch-glass",
     "name": "Farwatch Glass",
     "type": "gear",
@@ -825,7 +847,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "value": "115gp",
     "act": "Act 2",
     "sourceEncounter": "NORTHGATE INN STOCK",
-    "charges": {"max":2,"reset":"longRest"},
+    "charges": {"max":2,"reset":"manual","note":"Recharges at dawn"},
     "isLocked": true
   },
   {
@@ -888,6 +910,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A2"},
     "isLocked": true
   },
@@ -900,6 +923,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A2"},
     "isLocked": true
   },
@@ -997,7 +1021,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "sourceEncounter": "MATURITY THROUGH ACT 2",
-    "charges": {"max":1,"reset":"longRest"},
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability"},
     "isLocked": true
   },
@@ -1011,7 +1035,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "sourceEncounter": "MATURITY THROUGH ACT 2",
-    "charges": {"max":1,"reset":"longRest"},
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility"},
     "isLocked": true
   },
@@ -1025,7 +1049,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "sourceEncounter": "MATURITY THROUGH ACT 2",
-    "charges": {"max":1,"reset":"longRest"},
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility"},
     "isLocked": true
   },
@@ -1039,7 +1063,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "sourceEncounter": "MATURITY THROUGH ACT 2",
-    "charges": {"max":1,"reset":"longRest"},
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Utility"},
     "isLocked": true
   },
@@ -1053,7 +1077,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "sourceEncounter": "MATURITY THROUGH ACT 2",
-    "charges": {"max":1,"reset":"longRest"},
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Movement"},
     "isLocked": true
   },
@@ -1067,7 +1091,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "sourceEncounter": "MATURITY THROUGH ACT 2",
-    "charges": {"max":1,"reset":"longRest"},
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Cleanse"},
     "isLocked": true
   }

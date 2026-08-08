@@ -48,6 +48,14 @@ export type EquipmentCharges = {
    * It refills at End Combat, and on either rest too, since a rest ends any encounter.
    */
   reset: "longRest" | "shortRest" | "encounter" | "manual";
+  /**
+   * How a MANUAL pool comes back, in words — "Recharges at dawn", "DM fiat".
+   *
+   * A dawn recharge is NOT a rest, so it cannot be automated off short/long: a party can take
+   * two long rests before a dawn, or a dawn with no rest at all. Those pools are `manual` and
+   * carry the cadence here, so the DM sees what to restore and when.
+   */
+  note?: string;
 };
 
 export type AbilityStatId = "str" | "dex" | "con" | "int" | "wis" | "cha";
@@ -149,7 +157,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
 // with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
 // armor and weapons are LOCKED and unchanged.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.6.0-convergence-rework";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.6.1-dawn-and-ledger";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;

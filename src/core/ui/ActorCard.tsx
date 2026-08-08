@@ -4523,8 +4523,12 @@ export function ActorCard({
             <div style={{ fontSize: 10, color: "#555", letterSpacing: 0.5, paddingBottom: 4 }}>CHARGES</div>
             {itemChargePools.map(({ key, action, charges }) => {
               const remaining = resourceCounters?.[key] ?? charges.max;
+              // A manual pool says HOW it comes back — "Recharges at dawn" — because no rest
+              // will do it for you. Bare "manual" tells the DM nothing about when to restore it.
               const restLabel = charges.reset === "shortRest" ? "short rest"
-                : charges.reset === "longRest" ? "long rest" : "manual";
+                : charges.reset === "longRest" ? "long rest"
+                : charges.reset === "encounter" ? "encounter"
+                : charges.note ?? "manual";
               return (
                 <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #1a1a2e" }}>
                   <div>

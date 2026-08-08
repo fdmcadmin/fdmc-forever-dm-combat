@@ -20,7 +20,7 @@ import type { ActorAction, TabActionMap } from "../types/tabs";
 /** Reset behaviour of an item pool. `manual` is only ever restored by hand. */
 export type ItemChargeReset = "longRest" | "shortRest" | "encounter" | "manual";
 
-export type ItemChargeSpec = { max: number; reset: ItemChargeReset };
+export type ItemChargeSpec = { max: number; reset: ItemChargeReset; note?: string };
 
 /** Action-id prefixes minted by itemToAction / itemToAttackAction. */
 const ACTION_ID_PREFIX = /^(?:equip|atk)-/;
