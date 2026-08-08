@@ -112,6 +112,21 @@ function ActorPopout() {
   }
 
   const hp = getActorHp(actor.id);
+  /**
+   * HP writes go through the GM. A seat only ever REQUESTS — the GM applies it to its own
+   * live state and writes, so the GM copy stays authoritative and two seats can never write
+   * at once. Auto-approved (combat state): the GM applies it with no click.
+   * Outside OBR, or when this window IS the GM, write directly.
+   */
+  const commitHp = (nextHp: Parameters<typeof setActorHp>[1]) => {
+    if (isGm || !OBR.isAvailable) { void setActorHp(actor!.id, nextHp); return; }
+    void OBR.broadcast.sendMessage(
+      FDMC_SEAT_BROADCAST_CHANNEL,
+      { type: "fdmc:request-actor-hp", actorId: actor!.id, hp: nextHp },
+      { destination: "REMOTE" },
+    ).catch(() => undefined);
+  };
+
   const actionState = getActionState(actor);
   const concentration = getActorConcentration(actor);
   const committedRoll = getCommittedRoll(actor);
@@ -134,8 +149,8 @@ function ActorPopout() {
         turnResetVersion={0}
         diceBridgeStatus={diceBridgeStatus}
         diceBridgeLastEvent={diceBridgeLastEvent}
-        onHpChange={(nextHp) => void setActorHp(actor.id, nextHp)}
-        onResetHp={() => void setActorHp(actor.id, fullHeal(actor.stats.hp))}
+        onHpChange={(nextHp) => commitHp(nextHp)}
+        onResetHp={() => commitHp(fullHeal(actor.stats.hp))}
         onReadyActionCosts={(costs, readiedKey) => readyActionCosts(actor.id, costs, readiedKey)}
         onUnreadyAction={(readiedKey) => unreadyActionKey(actor.id, readiedKey)}
         onRemovePendingLogEntries={removePendingEntries}

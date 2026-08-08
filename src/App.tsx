@@ -46,7 +46,8 @@ import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
 import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
 import { playerSafeTier } from "./core/ui/ThreatHpBar";
-import { patchCombat } from "./core/table-state/fdmcRoomLiveState";
+import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker } from "./core/table-state/fdmcRoomLiveState";
+import { isActorStateRequest } from "./core/state/actorStateRequests";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
 import { useCombatLog } from "./core/combat-log/useCombatLog";
@@ -446,6 +447,28 @@ export default function App() {
           return next;
         });
       }
+    });
+  }, [isDmMode]);
+
+  // ── DM: apply AUTO-APPROVED seat requests (combat state) ──────────────────
+  // The GM is the single writer to room metadata. A seat asks; the GM applies it to ITS
+  // OWN current state and writes. That keeps the GM's local copy authoritative — it can
+  // never fall behind a player's write, because players no longer write — and it stops
+  // two seats writing at once. Auto-approved means no click: combat must not stall.
+  // Card-fundamental changes (creating equipment, level up) still queue for approval.
+  useEffect(() => {
+    if (!isDmMode || !OBR.isAvailable) return;
+    return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as unknown;
+      if (!isActorStateRequest(msg)) return;
+      // roomLiveStateRef is the GM's live copy, so concurrent requests each build on the
+      // result of the last rather than on a stale render closure.
+      const base = roomLiveStateRef.current;
+      const next =
+        msg.type === "fdmc:request-actor-hp" ? patchActorHp(base, msg.actorId, msg.hp)
+        : msg.type === "fdmc:request-actor-initiative" ? patchActorInitiative(base, msg.actorId, msg.initiative)
+        : patchActorTracker(base, msg.actorId, msg.trackerId, msg.current);
+      void commitRoomState(next);
     });
   }, [isDmMode]);
 
