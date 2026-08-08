@@ -8,6 +8,7 @@
 
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState, MonsterClassification } from "./runtime/mainMonsterRuntime";
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
+import { actTagForId } from "../campaign/actTags";
 import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/encounterRounds";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -273,7 +274,9 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
     seeded.push({
       id: encounterId,
       name: first.encounterLabel ?? encounterId,
-      actTag: encounterId.startsWith("act1") ? "Act 1" : encounterId.startsWith("act2") ? "Act 2" : undefined,
+      // Open-ended act tagging — the old hardcoded act1/act2 ternary left every Act 3+
+      // encounter with NO act tag, so it fell out of act grouping entirely.
+      actTag: actTagForId(encounterId),
       classification: ENCOUNTER_CLASSIFICATION[encounterId],
       entries: encounterTemplates.map(t => ({
         templateId: t.templateId,

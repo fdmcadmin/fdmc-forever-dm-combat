@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { parseActField, parseSessionField } from "../campaign/actTags";
 import OBR from "@owlbear-rodeo/sdk";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
@@ -94,26 +95,77 @@ export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
 
 const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consumable", "gear", "magic", "tool"];
 
-// Loot is grouped by its encounter/merchant tag (item.sourceEncounter). Items with
-// no tag fall into a single "Unsorted" bucket rendered flat (not collapsed).
+// Loot groups by ACT first, then by encounter/merchant inside it, in campaign order —
+// so the library reads like the campaign runs instead of alphabetically. Base weapons
+// get their own bucket at the end (they belong to no act), and untagged items fall into
+// "Unsorted" last.
 const UNGROUPED_KEY = "__ungrouped__";
+const BASE_WEAPON_KEY = "__base_weapons__";
 
-function groupByEncounter(items: EquipmentItem[]): { key: string; label: string; items: EquipmentItem[] }[] {
-  const groups = new Map<string, EquipmentItem[]>();
+/** Mundane 2024 weapons seeded by seedBaseWeapons — no act, no source encounter. */
+function isBaseWeapon(it: EquipmentItem): boolean {
+  return it.type === "weapon" && !it.sourceEncounter?.trim() && !it.act?.trim();
+}
+
+export type EquipmentGroup = {
+  key: string;
+  label: string;
+  items: EquipmentItem[];
+  /** Act heading this group sits under ("Act 2", "2024 Weapon Bases", "Unsorted"). */
+  actLabel: string;
+  /** Sort bucket: act number, 9000 for base weapons, 9999 for unsorted. */
+  actBucket: number;
+};
+
+function groupByEncounter(items: EquipmentItem[]): EquipmentGroup[] {
+  const groups = new Map<string, { items: EquipmentItem[]; act: number; session: number }>();
   for (const it of items) {
-    const key = it.sourceEncounter?.trim() || UNGROUPED_KEY;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(it);
+    const base = isBaseWeapon(it);
+    const key = base ? BASE_WEAPON_KEY : (it.sourceEncounter?.trim() || UNGROUPED_KEY);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        items: [],
+        act: base ? 9000 : parseActField(it.act) || 9999,
+        session: parseSessionField(it.session),
+      });
+    }
+    const g = groups.get(key)!;
+    g.items.push(it);
+    // A group takes the EARLIEST act/session any of its items claims, so one untagged
+    // straggler can't drag a whole boss pool into Unsorted.
+    if (!base) {
+      const a = parseActField(it.act); if (a > 0 && a < g.act) g.act = a;
+      const s = parseSessionField(it.session); if (s > 0 && (g.session === 0 || s < g.session)) g.session = s;
+    }
   }
-  const tagged: { key: string; label: string; items: EquipmentItem[] }[] = [];
-  for (const [key, list] of groups) {
-    if (key === UNGROUPED_KEY) continue;
-    tagged.push({ key, label: key, items: list });
+
+  const out: EquipmentGroup[] = [];
+  for (const [key, g] of groups) {
+    const actLabelText = key === BASE_WEAPON_KEY ? "2024 Weapon Bases"
+      : g.act >= 9999 ? "Unsorted"
+      : `Act ${g.act}`;
+    out.push({
+      key,
+      label: key === BASE_WEAPON_KEY ? "2024 Weapon Bases"
+        : key === UNGROUPED_KEY ? "Unsorted (no encounter)"
+        : key,
+      items: [...g.items].sort((a, b) => a.name.localeCompare(b.name)),
+      actLabel: actLabelText,
+      actBucket: g.act,
+    });
+    // stash session for the sort below
+    (out[out.length - 1] as EquipmentGroup & { _session?: number })._session = g.session;
   }
-  tagged.sort((a, b) => a.label.localeCompare(b.label));
-  const ungrouped = groups.get(UNGROUPED_KEY);
-  if (ungrouped) tagged.push({ key: UNGROUPED_KEY, label: "Unsorted (no encounter)", items: ungrouped });
-  return tagged;
+
+  // Campaign order: act, then session, then encounter name. Base weapons and Unsorted last.
+  out.sort((a, b) => {
+    if (a.actBucket !== b.actBucket) return a.actBucket - b.actBucket;
+    const sa = (a as EquipmentGroup & { _session?: number })._session ?? 0;
+    const sb = (b as EquipmentGroup & { _session?: number })._session ?? 0;
+    if (sa !== sb) return sa - sb;
+    return a.label.localeCompare(b.label);
+  });
+  return out;
 }
 
 function ItemForm({ initial, preset, onSave, onCancel }: {
@@ -1134,15 +1186,29 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   // every group so matches are never hidden behind a collapsed header.
   function renderGroupedList(items: EquipmentItem[], sectionKey: string) {
     const groups = groupByEncounter(items);
+    let lastAct: string | null = null;
     return groups.map(g => {
       const gid = `${sectionKey}:${g.key}`;
+      // ACT HEADING — printed once above the first group of each act, so the library
+      // reads Act 1 → Act 2 → Act 3 → 2024 Weapon Bases → Unsorted.
+      const actHeading = g.actLabel !== lastAct ? (lastAct = g.actLabel) : null;
+      const heading = actHeading && (
+        <div key={`${gid}:act`} style={{
+          margin: "12px 0 6px", paddingBottom: 3, borderBottom: "1px solid #2a2a3e",
+          fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase",
+          color: actHeading === "Unsorted" ? "#667" : "#9d8cff",
+        }}>
+          {actHeading}
+        </div>
+      );
       if (g.key === UNGROUPED_KEY) {
         // Untagged items render directly (no collapse).
-        return <div key={gid}>{g.items.map(renderItem)}</div>;
+        return <div key={gid}>{heading}{g.items.map(renderItem)}</div>;
       }
       const expanded = expandedGroups.has(gid) || filterText.trim().length > 0;
       return (
         <div key={gid} style={{ marginBottom: 8 }}>
+          {heading}
           {/* The header is a ROW, not one big button: "Table all" has to sit beside the
               expander, and a button inside a button is invalid HTML. */}
           <div style={{ display: "flex", alignItems: "stretch", gap: 0,

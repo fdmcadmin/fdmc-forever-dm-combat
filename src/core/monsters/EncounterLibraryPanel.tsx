@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
+import { parseActPlacement, campaignSortKey } from "../campaign/actTags";
 import {
   loadEncounterLibrary,
   loadUnusedEncounters,
@@ -46,6 +47,32 @@ export const MONSTER_BANDS: { band: MonsterBand; label: string; color: string; b
   { band: "elite", label: "Elite", color: "#ffb02e", blurb: "A full action economy — acts on its turn and reacts on others.", shape: "Action · Bonus · Reaction · 3 Traits" },
   { band: "boss", label: "Boss", color: "#c8472e", blurb: "Centerpiece encounter. Multiattack, phases, and signature traits.", shape: "Multiattack · Bonus · Reaction · Recharge/Phase · 3+ Traits" },
 ];
+
+
+// ─── Act grouping for the monster picker ──────────────────────────────────────
+// Monsters carry their campaign position in `encounterId` (act2-s4-e1-…). Group by act
+// in campaign order, alphabetical inside each act; creatures with no encounter (dormant
+// or DM-made) collect under "Unsorted" at the end.
+export function groupMonstersByAct(
+  library: MainMonsterTemplate[],
+): { label: string; monsters: MainMonsterTemplate[] }[] {
+  const buckets = new Map<number, MainMonsterTemplate[]>();
+  for (const t of library) {
+    const { act } = parseActPlacement(t.encounterId);
+    const key = act > 0 ? act : 9999;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(t);
+  }
+  return [...buckets.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([act, monsters]) => ({
+      label: act >= 9999 ? "Unsorted / no encounter" : `Act ${act}`,
+      // Within an act, sort by campaign position first (session/encounter as authored),
+      // then by name — so an act reads in play order and ties fall back to alphabetical.
+      monsters: [...monsters].sort((x, y) =>
+        campaignSortKey(x.encounterId, x.name).localeCompare(campaignSortKey(y.encounterId, y.name))),
+    }));
+}
 
 function blankTrait(name = ""): MonsterReaderAction { return { name, kind: "trait" }; }
 function blankAction(name = "", extra: Partial<MonsterReaderAction> = {}): MonsterReaderAction { return { name, kind: "action", ...extra }; }
@@ -567,8 +594,15 @@ export function EncounterLibraryPanel({
               style={{ flex: 1, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 }}
             >
               <option value="">— Add monster from library —</option>
-              {resolvedLibrary.map(t => (
-                <option key={t.templateId} value={t.templateId}>{t.name}</option>
+              {/* Grouped by ACT in campaign order, alphabetical inside each act, so
+                  picking a creature for an Act 3 fight doesn't mean scrolling one flat
+                  list of every monster in the campaign. */}
+              {groupMonstersByAct(resolvedLibrary).map(group => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.monsters.map(t => (
+                    <option key={t.templateId} value={t.templateId}>{t.name}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             <button type="button" onClick={handleAddEntry} disabled={!addingTemplateId}
