@@ -27,7 +27,9 @@ function cloneTracker(tracker?: DrainTracker): DrainTracker | undefined {
   return { ...tracker };
 }
 
-function createActorStatus(actor: Actor): ActorStatusTrackerState {
+/** Default (undrained) tracker set for an actor. Exported so a seat can compute the value a
+ * RESET would produce and request it, instead of writing its own copy — see actor-popout. */
+export function createActorStatus(actor: Actor): ActorStatusTrackerState {
   return {
     strDrain: resolveTrackerForActor(actor, actor.moduleData?.strDrain),
     lifeDrain: resolveTrackerForActor(actor, actor.moduleData?.lifeDrain),

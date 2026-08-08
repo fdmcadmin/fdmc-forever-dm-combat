@@ -21,7 +21,7 @@ import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useCommittedRollState } from "./core/state/useCommittedRollState";
 import { useActorConcentrationState } from "./core/state/useActorConcentrationState";
 import { useActorNotesState } from "./core/state/useActorNotesState";
-import { useActorStatusState } from "./core/state/useActorStatusState";
+import { useActorStatusState, createActorStatus } from "./core/state/useActorStatusState";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { useCombatLog } from "./core/combat-log/useCombatLog";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
@@ -30,6 +30,7 @@ import { loadActorLibrary, loadActorOverrides, resolveActorFromLibrary } from ".
 import { loadCachedActors } from "./core/seats/playerActorCache";
 import { resolveActor, buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
 import { fullHeal } from "./core/types/actor";
+import type { StatusTrackerId } from "./core/types/status";
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import "./styles.css";
@@ -97,7 +98,9 @@ function ActorPopout() {
   const { getCommittedRoll, startCommittedRoll, setCommittedRollResult, chooseCommittedRollOutcome, chooseCommittedRollDamage, markCommittedRollBridgeSent, clearCommittedRoll } = useCommittedRollState(actorList);
   const { getActorConcentration, setActorConcentration, clearActorConcentration } = useActorConcentrationState(actorList);
   const { getActorNotes, addActorNote, deleteActorNote } = useActorNotesState(actorList);
-  const { getActorStatus, setActorTracker, resetActorTracker, resetActorStatuses } = useActorStatusState(actorList);
+  // resetActorTracker / resetActorStatuses are deliberately NOT taken: they write this seat's
+  // own copy. Every tracker change here goes through commitTracker so the GM stays the writer.
+  const { getActorStatus, setActorTracker } = useActorStatusState(actorList);
   const { addEntry, removePendingEntries } = useCombatLog();
   const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, consumeItemCharge, spendResource } = useResourceCounterState(actorList);
   const { status: diceBridgeStatus, lastEvent: diceBridgeLastEvent, sendRollRequest, sendDicePlusRollRequest, sendMockRollResult } = useOwlbearDiceBridge();
@@ -123,6 +126,28 @@ function ActorPopout() {
     void OBR.broadcast.sendMessage(
       FDMC_SEAT_BROADCAST_CHANNEL,
       { type: "fdmc:request-actor-hp", actorId: actor!.id, hp: nextHp },
+      { destination: "REMOTE" },
+    ).catch(() => undefined);
+  };
+
+  /**
+   * Status trackers, same rule as HP: the GM is the single writer, so a seat REQUESTS and the
+   * GM applies against its own live state. This was the last hole in the 0.7.0.4 write audit —
+   * the popout still called setActorTracker / resetActorTracker / resetActorStatuses directly,
+   * so a drained tracker could read one way on the seat and another on the master card.
+   *
+   * `fdmc:request-actor-tracker` carries the numeric `current` because that is what
+   * patchActorTracker sets, and `current` is the only part of a tracker a player moves.
+   */
+  const commitTracker = (trackerId: StatusTrackerId, current: number) => {
+    if (isGm || !OBR.isAvailable) {
+      const existing = getActorStatus(actor!)[trackerId];
+      if (existing) setActorTracker(actor!.id, trackerId, { ...existing, current });
+      return;
+    }
+    void OBR.broadcast.sendMessage(
+      FDMC_SEAT_BROADCAST_CHANNEL,
+      { type: "fdmc:request-actor-tracker", actorId: actor!.id, trackerId, current },
       { destination: "REMOTE" },
     ).catch(() => undefined);
   };
@@ -194,9 +219,19 @@ function ActorPopout() {
         onSendMockDiceBridgeResult={(nat, total) => void sendMockRollResult({ naturalRoll: nat, total, protocol: "fdm-dice-result", requestId: "" })}
         onAddActorNote={(text, visibility) => addActorNote(actor.id, text, visibility)}
         onDeleteActorNote={(noteId) => deleteActorNote(actor.id, noteId)}
-        onStatusTrackerChange={(trackerId, nextTracker) => setActorTracker(actor.id, trackerId, nextTracker)}
-        onResetStatusTracker={(trackerId) => resetActorTracker(actor, trackerId)}
-        onResetAllActorStatuses={() => resetActorStatuses(actor)}
+        onStatusTrackerChange={(trackerId, nextTracker) => commitTracker(trackerId, nextTracker.current)}
+        onResetStatusTracker={(trackerId) => {
+          const back = createActorStatus(actor)[trackerId];
+          if (back) commitTracker(trackerId, back.current);
+        }}
+        onResetAllActorStatuses={() => {
+          // No "reset every tracker" request type exists, and inventing one would duplicate
+          // what patchActorTracker already does — so reset each tracker to its default.
+          const defaults = createActorStatus(actor);
+          for (const [trackerId, tracker] of Object.entries(defaults)) {
+            if (tracker) commitTracker(trackerId as StatusTrackerId, tracker.current);
+          }
+        }}
         resourceCounters={counters[actor.id]}
         onSpendResource={(rid, amt) => {
           const r = spendResource(actor.id, rid, amt);
