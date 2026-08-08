@@ -127,6 +127,27 @@ function ActorPopout() {
     ).catch(() => undefined);
   };
 
+
+  /**
+   * A rest rewrites the whole card (pools for the rest actually taken, recharges, and HP
+   * on a long rest), so it runs on the GM master copy. A seat REQUESTS; the GM applies.
+   * GM window (or dev, outside OBR) still performs it directly.
+   */
+  const requestRest = (restType: "short" | "long") => {
+    if (isGm || !OBR.isAvailable) {
+      resetActorResources(actor!.id, restType);
+      if (restType === "long") { const m = actor!.stats.hp.max; void setActorHp(actor!.id, { current: m, max: m, temp: 0 }); }
+      addEntry({ actorName: actor!.name, actionName: restType === "long" ? "Long Rest" : "Short Rest", tabId: "system",
+        message: restType === "long" ? `${actor!.name} takes a Long Rest — HP restored to full and resources reset.` : `${actor!.name} takes a Short Rest.` });
+      return;
+    }
+    void OBR.broadcast.sendMessage(
+      FDMC_SEAT_BROADCAST_CHANNEL,
+      { type: "fdmc:request-actor-rest", actorId: actor!.id, restType },
+      { destination: "REMOTE" },
+    ).catch(() => undefined);
+  };
+
   const actionState = getActionState(actor);
   const concentration = getActorConcentration(actor);
   const committedRoll = getCommittedRoll(actor);
@@ -210,8 +231,8 @@ function ActorPopout() {
             roomLiveState.combat.activeActorId ===
               (actor.moduleData as { ownerId?: string } | undefined)?.ownerId)
         }
-        onShortRest={() => { resetActorResources(actor.id, "short"); addEntry({ actorName: actor.name, actionName: "Short Rest", tabId: "system", message: `${actor.name} takes a Short Rest.` }); }}
-        onLongRest={() => { resetActorResources(actor.id, "long"); const m = actor.stats.hp.max; void setActorHp(actor.id, { current: m, max: m, temp: 0 }); addEntry({ actorName: actor.name, actionName: "Long Rest", tabId: "system", message: `${actor.name} takes a Long Rest — HP restored to full and resources reset.` }); }}
+        onShortRest={() => requestRest("short")}
+        onLongRest={() => requestRest("long")}
         onLog={addEntry}
       />
     </div>

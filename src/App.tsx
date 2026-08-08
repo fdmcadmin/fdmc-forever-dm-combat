@@ -461,6 +461,29 @@ export default function App() {
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
       const msg = event.data as unknown;
       if (!isActorStateRequest(msg)) return;
+
+      // A REST runs on the GM's copy so the master card is what refills: resource pools
+      // for the rest ACTUALLY taken (short restores only short-rest pools + any
+      // shortRestRegain partials; long restores everything), recharge abilities, and HP
+      // on a long rest.
+      if (msg.type === "fdmc:request-actor-rest") {
+        const actor = dmActors.find(a => a.id === msg.actorId);
+        resetActorResources(msg.actorId, msg.restType);
+        if (msg.restType === "long" && actor) {
+          const max = actor.stats.hp.max;
+          void commitRoomState(patchActorHp(roomLiveStateRef.current, msg.actorId, { current: max, max, temp: 0 }));
+        }
+        addEntry({
+          actorName: actor?.name ?? "Party character",
+          actionName: msg.restType === "long" ? "Long Rest" : "Short Rest",
+          tabId: "system",
+          message: msg.restType === "long"
+            ? `${actor?.name ?? "Character"} takes a Long Rest — HP restored to full and all resources reset.`
+            : `${actor?.name ?? "Character"} takes a Short Rest — short-rest resources and recharges restored.`,
+        });
+        return;
+      }
+
       // roomLiveStateRef is the GM's live copy, so concurrent requests each build on the
       // result of the last rather than on a stale render closure.
       const base = roomLiveStateRef.current;

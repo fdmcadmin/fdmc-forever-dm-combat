@@ -27,12 +27,21 @@ import type { HitPoints } from "../types/actor";
 export type ActorStateRequest =
   | { type: "fdmc:request-actor-hp"; actorId: string; hp: HitPoints }
   | { type: "fdmc:request-actor-initiative"; actorId: string; initiative: number | null }
-  | { type: "fdmc:request-actor-tracker"; actorId: string; trackerId: string; current: number };
+  | { type: "fdmc:request-actor-tracker"; actorId: string; trackerId: string; current: number }
+  /**
+   * A REST is a passive change, but it rewrites the whole card: resource pools refill for
+   * the rest actually taken (short vs long), recharge abilities come back, and a long rest
+   * restores HP. It therefore has to run on the GM's master copy like anything else —
+   * previously a player's popout reset its OWN counters and wrote HP directly, so the
+   * master card and the seat could disagree about what had been spent.
+   */
+  | { type: "fdmc:request-actor-rest"; actorId: string; restType: "short" | "long" };
 
 const AUTO_APPROVED_TYPES = new Set<ActorStateRequest["type"]>([
   "fdmc:request-actor-hp",
   "fdmc:request-actor-initiative",
   "fdmc:request-actor-tracker",
+  "fdmc:request-actor-rest",
 ]);
 
 /** True for a well-formed auto-approved request from a seat. */
