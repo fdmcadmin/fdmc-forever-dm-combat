@@ -1,27 +1,32 @@
-// Auto-generated from broken_chain_loot.docx — do not edit manually.
+// Auto-generated from broken_chain_loot_acts1_2_updated.docx — do not edit manually.
 //
-// THE DOC IS THE SOURCE OF TRUTH. The previous version of this file came from
-// acts1-2-all-canonical-items.fdmc-items.json and had drifted: Stillstep Blade is now a
-// Stillstep MACE, Lake Ice Blade a Lake-Ice FLAIL, and Shattered Vigil moved from a
-// spellcasting focus to a two-handed great hammer.
+// THE DOC IS THE SOURCE OF TRUTH, and Acts 1-2 are FINAL as of this pass. From here a change
+// is made item by item on request; there should be no further wholesale regeneration.
 //
-// IDS SURVIVE RENAMES. An item already attached to a character is referenced by id, so a
-// renamed item keeps its old id and only its name and stats change. Items the doc dropped are
-// listed in RETIRED_EQUIPMENT_IDS below and deleted on re-seed — a merge alone would leave
-// them behind forever.
+// SCOPE. This rebuild covers boss drops, merchant stock and convergence INPUTS through the end
+// of Act 2. The convergence OUTPUT pools (Tier 1.5 and up) are carried over from the previous
+// library untouched — they are pending a power-balance pass, so nothing here updates, creates
+// or deletes one. An output is recognised by having a tier and no source encounter.
 //
-// FORMULAS derive from the named base weapon plus the item's magic bonus, every term explicit:
-// "Melee Two-Handed (greataxe) · +1" -> attack 1d20+@PROF+@STR+1, damage 1d12+@STR+1. @PROF
-// stays symbolic so a martial-proficiency feature can drop it. Masteries are the official 2024
-// assignment for the base weapon.
+// The doc revision puts the item NAME and its SLOT on one line ("Thornback Hatchet Melee
+// One-Handed (handaxe) - +1"), and some items carry two slots at once: Rootknot Staff is a
+// spellcasting focus AND a quarterstaff. Both profiles are kept — the weapon dice come from
+// whichever parenthetical names a real base weapon, and a magical focus records its bonus in
+// spellFocusAttack when the rules text says it applies to spell attacks.
 //
-// DESCRIPTION is the doc's flavour; MECHANICSTEXT is what the item does. Player-facing surfaces
-// show mechanicsText — see itemToAction / itemToAttackAction.
+// IDS SURVIVE RENAMES, because an item attached to a character is referenced by id.
+// RETIRED_EQUIPMENT_IDS are removed from the campaign library on re-seed.
+//
+// FORMULAS keep every term explicit: 1d20+@PROF+@STR+1 / 1d12+@STR+1. @PROF stays symbolic so
+// a martial-proficiency feature can drop it.
+//
+// DESCRIPTION is the doc's flavour; MECHANICSTEXT is what the item does, and is what the
+// player-facing surfaces show.
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
 
 /** Items the loot doc no longer contains. Removed from the campaign library on re-seed. */
 export const RETIRED_EQUIPMENT_IDS: string[] = [
-  "tbc-warden-s-mark", // Warden's Mark
+"tbc-warden-s-mark", // Warden's Mark
   "tbc-rimestone-pauldron", // Rimestone Pauldron
   "tbc-ward-iron-bracer", // Ward Iron Bracer
   "tbc-coldwell-vial", // Coldwell Vial
@@ -35,10 +40,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-frontier-ration-tin-x3",
     "name": "Frontier Ration Tin (×3)",
     "type": "consumable",
-    "description": "",
+    "description": "Hale slides a battered tin across the table. \"North eats slower men than you. Eat before you're hungry.\"",
     "mechanicsText": "Each tin is a day of trail food that resists spoiling and freezing. Eating one during a short rest lets you regain one additional spent Hit Die.",
     "isUsable": true,
     "value": "15gp",
+    "act": "Act 2",
     "sourceEncounter": "MERCHANT STOCK",
     "charges": {"max":3,"reset":"manual"},
     "isLocked": true
@@ -47,10 +53,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-warding-salve",
     "name": "Warding Salve",
     "type": "consumable",
-    "description": "",
+    "description": "A clay pot of grease that smells of pine tar and something colder. \"Rub it on before the fight, not after.\"",
     "mechanicsText": "Action to apply. For the next hour, the first time you would take cold damage, reduce it by 2d6 (one use, then spent).",
     "isUsable": true,
     "value": "25gp",
+    "act": "Act 2",
     "sourceEncounter": "MERCHANT STOCK",
     "charges": {"max":1,"reset":"manual"},
     "isLocked": true
@@ -59,10 +66,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-signal-striker",
     "name": "Signal Striker",
     "type": "gear",
-    "description": "",
+    "description": "A short iron rod that throws a single bright spark on command. \"If you're separated up there, this finds each other before the dark does.\"",
     "mechanicsText": "Action: emit a flare of light visible up to a mile and shed bright light in a 20-foot radius for 1 minute. 3 uses. Refill 10gp.",
     "isUsable": false,
     "value": "40gp",
+    "act": "Act 2",
     "sourceEncounter": "MERCHANT STOCK",
     "isLocked": true
   },
@@ -70,10 +78,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-ward-issue-climbing-line-50ft",
     "name": "Ward-Issue Climbing Line (50ft)",
     "type": "gear",
-    "description": "",
+    "description": "A coil of grey cord, thinner than it should be for its strength. \"Standard issue. It'll hold you.\"",
     "mechanicsText": "50 feet of rope that holds up to 3,000 lbs. On command the end knots or unknots itself. Advantage on checks made to secure or climb with it.",
     "isUsable": false,
     "value": "30gp",
+    "act": "Act 2",
     "sourceEncounter": "MERCHANT STOCK",
     "isLocked": true
   },
@@ -89,6 +98,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d6+@STR+1",
     "crit": "2d6+@STR+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -104,6 +114,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d12+@STR+1",
     "crit": "2d12+@STR+1",
     "mastery": "Cleave",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -119,6 +130,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d8+@DEX+1",
     "crit": "2d8+@DEX+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -134,6 +146,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d8+@STR+1",
     "crit": "2d8+@STR+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -149,6 +162,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d6+@DEX+1",
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -159,6 +173,12 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A walking staff that doubles as a weapon and a focus. The knot at the top is tied in a pattern no living tradition teaches.",
     "mechanicsText": "Can be used as a spellcasting focus. +1 to spell attack rolls and spell save DC. Can also be wielded as a +1 quarterstaff.",
     "isUsable": false,
+    "attack": "1d20+@PROF+@STR+1",
+    "damage": "1d6+@STR+1",
+    "crit": "2d6+@STR+1",
+    "mastery": "Topple",
+    "spellFocusAttack": "+1",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -170,6 +190,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 14. You have advantage on saving throws against being frightened.",
     "isUsable": false,
     "ac": "14",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -181,6 +202,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 14 + DEX modifier (max 2). You have advantage on Wisdom (Perception) checks.",
     "isUsable": false,
     "ac": "14 + DEX (max 2)",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -189,9 +211,10 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Tracker's Wrap",
     "type": "armor",
     "description": "Stitched tight enough to move in and loose enough to breathe. Someone added strips of dark fabric at the shoulders and forearms — not decoration, camouflage. Made for someone who needed to not be seen.",
-    "mechanicsText": "AC 11 + DEX modifier. You have advantage on Dexterity (Stealth) checks while wearing this armor.",
+    "mechanicsText": "CONVERGENCE INPUTS · Party picks 1 of 2",
     "isUsable": false,
     "ac": "11 + DEX",
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -202,6 +225,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A carved disc of dense wood worn at the belt. It pulls faintly in the direction of open ground, the way a compass finds north.",
     "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water. Tags: A1 · Movement",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
   },
@@ -210,9 +234,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Canopy Eye",
     "type": "passive",
     "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface.",
-    "mechanicsText": "While worn, you have advantage on Wisdom (Perception) and Wisdom (Survival) checks made outdoors. Tags: A1 · Utility",
+    "mechanicsText": "Once per short or long rest, you can use a Bonus Action to make a Wisdom (Perception) check to locate a concealed creature or object. Tags: A1 · Utility",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -221,13 +247,15 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee One-Handed",
     "description": "Taken from a creature that was never quite where it appeared. The head reads as something other than steel.",
-    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical for the purpose of overcoming resistance and immunity to nonmagical damage. When you hit a creature with this weapon, you learn its current hit point total. This information is delivered privately by the DM.",
+    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical for the purpose of overcoming resistance and immunity to nonmagical damage. Once per short or long rest, immediately after you hit a creature with this weapon, you can move up to 10 feet without provoking opportunity attacks.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d6+@STR+1",
     "crit": "2d6+@STR+1",
     "mastery": "Sap",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
+    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -236,13 +264,15 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee Two-Handed",
     "description": "Carved from a tree split at the root by something that wasn't lightning. Frontier folk leave split trees alone.",
-    "mechanicsText": "+1 to attack and damage rolls. On a hit, you can push the target 5 feet in any direction.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per long rest, when you hit a Large or smaller creature with this weapon, you can push it up to 10 feet directly away from you.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "2d6+@STR+1",
     "crit": "4d6+@STR+1",
     "mastery": "Topple",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
+    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -257,6 +287,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d4+@DEX+1",
     "crit": "2d4+@DEX+1",
     "mastery": "Nick",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -272,6 +303,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d4+@STR+1",
     "crit": "2d4+@STR+1",
     "mastery": "Nick",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -287,6 +319,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d6+@DEX+1",
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -295,8 +328,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Staring-Knot Wand",
     "type": "magic",
     "description": "A short length of pale wood, the grain spiralling to a knot at the tip. Sight along it and the tip never sits quite where your hand says it should. The knot has a centre, and the centre has a way of being aimed back at you.",
-    "mechanicsText": "Can be used as a spellcasting focus. Once per encounter, when a creature succeeds or fails a saving throw against a spell you cast, you can expend 1 charge to force that creature to reroll the save — the new result stands, whether better or worse. 1 charge. Regains 1 on a long rest.",
+    "mechanicsText": "Can be used as a spellcasting focus. The wand has 1 charge. When a creature succeeds on a saving throw against a spell you cast, you can expend the charge to force that creature to reroll the save; it must use the new result. The wand regains its charge when you finish a long rest.",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
@@ -309,6 +343,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 11 + DEX modifier. You have advantage on saving throws against being frightened.",
     "isUsable": false,
     "ac": "11 + DEX",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -320,6 +355,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 14 + DEX modifier (max 2). Once per long rest, when you are hit by an attack, you can use your reaction to reduce that attack's damage by 1d6.",
     "isUsable": false,
     "ac": "14 + DEX (max 2)",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
@@ -329,9 +365,10 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Hollowstep Plate",
     "type": "armor",
     "description": "Hammered from fort-armory iron, re-tempered in the field. It walks quieter than iron should — as if the ground isn't sure you're standing on it.",
-    "mechanicsText": "AC 16. You don't have disadvantage on Dexterity (Stealth) checks while wearing this armor.",
+    "mechanicsText": "CONVERGENCE INPUTS · Party picks 1 of 2",
     "isUsable": false,
     "ac": "16",
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -340,8 +377,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Displaced Ward Brooch",
     "type": "passive",
     "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here didn't spare the equipment.",
-    "mechanicsText": "While worn, reduce force damage you take by 2. Tags: A1 · Defense",
+    "mechanicsText": "When you take force damage, you can use your reaction to reduce that damage by 1d6. Once you use this property, you can't use it again until you finish a long rest. Tags: A1 · Defense",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -352,6 +390,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A small carved figure that feels heavier than it should. It hums faintly when held by someone in a group — quieter when alone.",
     "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone. Tags: A1 · Stability",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "MIRAGE STALKER",
     "isLocked": true
   },
@@ -362,6 +401,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "The ring forms in front of the party as Hale brings two Ward objects together — the energy locks into a band of dull frontier iron. He hands it over without ceremony.",
     "mechanicsText": "While wearing this ring, you can't be surprised. Tags: Demo output — not a player-achievable recipe",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "HALE'S COTTAGE",
     "isLocked": true
   },
@@ -371,14 +411,14 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee Versatile",
     "description": "A blade recovered from the Ward field cache at the cemetery edge. The edge holds a cold that the forge didn't give it.",
-    "mechanicsText": "+1 to attack and damage rolls. Versatile: 1d8 one-handed, 1d10 two-handed. Once per short rest, when you hit a creature, deal an additional 1d6 cold damage. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Versatile: 1d8 one-handed, 1d10 two-handed. Once per short or long rest, when you hit a creature, deal an additional 1d6 cold damage. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d8+@STR+1",
     "crit": "2d8+@STR+1",
     "mastery": "Sap",
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
-    "attunementRequired": true,
     "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
@@ -388,12 +428,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Ranged",
     "description": "A ranged weapon recovered from the Ward cache. The grip is wrong — too light, too balanced for something this size.",
-    "mechanicsText": "+1 to attack and damage rolls. While attuned, you gain proficiency with this weapon. Once per short rest, when you hit a creature, deal an additional 2d6 cold damage. This weapon's damage counts as magical.",
+    "mechanicsText": "While attuned, you gain proficiency with this weapon. +1 to attack and damage rolls. Once per short or long rest, when you hit a creature, deal an additional 2d6 cold damage. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d10+@DEX+1",
     "crit": "2d10+@DEX+1",
     "mastery": "Push",
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "attunementRequired": true,
     "charges": {"max":1,"reset":"shortRest"},
@@ -407,6 +448,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Heavy proficiency: AC 17. This is +1 magical armor; the bonus is already included in that value. The wearer reduces cold damage taken by 3 per hit.",
     "isUsable": false,
     "ac": "17",
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "isLocked": true
   },
@@ -418,6 +460,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Medium proficiency: AC 16 + DEX (max 2). This is +1 magical armor; the bonus is already included in that value. The wearer reduces cold damage taken by 3 per hit.",
     "isUsable": false,
     "ac": "16 + DEX (max 2)",
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "isLocked": true
   },
@@ -429,6 +472,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Light proficiency: AC 13 + DEX. This is +1 magical armor; the bonus is already included in that value. The wearer reduces cold damage taken by 3 per hit.",
     "isUsable": false,
     "ac": "13 + DEX",
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "isLocked": true
   },
@@ -439,6 +483,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "Named for the first thing strength drain reaches. The face of it is unmarked — no emblem, no device. It belonged to someone who didn't want to be found.",
     "mechanicsText": "+3 bonus to AC — a shield's base +2 plus a +1 magical bonus. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "isLocked": true
   },
@@ -449,6 +494,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A bracer of pale iron that doesn't warm in the hand. Ward field issue — standard cold protection for operatives running north of the treeline.",
     "mechanicsText": "While worn, reduce cold damage you take by 2. Tags: A2 · Defense",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "isLocked": true
   },
@@ -460,6 +506,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Action: command it to shed bright light (20ft) and dim light (20ft beyond) and to hover, following you at walking pace 5 feet away, or to be thrown/held. The light is steady in any wind or cold.",
     "isUsable": false,
     "value": "120gp",
+    "act": "Act 2",
     "sourceEncounter": "BRENNAN'S INN STOCK",
     "isLocked": true
   },
@@ -467,10 +514,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-frostward-periapt",
     "name": "Frostward Periapt",
     "type": "passive",
-    "description": "",
+    "description": "A small pendant of pale bone on a leather thong. \"The cold up here doesn't just freeze you,\" the innkeeper relays. \"It gets in. This keeps some of it out.\"",
     "mechanicsText": "While worn: advantage on saving throws against disease and against being poisoned. You ignore the effects of extreme cold (non-magical environmental).",
     "isUsable": false,
     "value": "100gp",
+    "act": "Act 2",
     "sourceEncounter": "BRENNAN'S INN STOCK",
     "isLocked": true
   },
@@ -478,10 +526,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-wayfarer-s-token",
     "name": "Wayfarer's Token",
     "type": "consumable",
-    "description": "",
+    "description": "A flat wooden disc carved with a Ward field-mark. \"One use,\" the innkeeper warns. \"Brennan said don't waste it being clever.\"",
     "mechanicsText": "One use, then spent. Choose one when used: (1) instantly know true north and your exact distance from the inn; (2) create a single sturdy anchor point from nothing; (3) summon a calm riding horse that lasts 8 hours.",
     "isUsable": true,
     "value": "100gp",
+    "act": "Act 2",
     "sourceEncounter": "BRENNAN'S INN STOCK",
     "charges": {"max":1,"reset":"manual"},
     "isLocked": true
@@ -490,10 +539,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-north-wind-flask",
     "name": "North Wind Flask",
     "type": "consumable",
-    "description": "",
+    "description": "A stoppered flask that rattles with trapped wind. \"Open it downwind of yourself,\" the innkeeper says, \"or you'll learn why he told me to say that.\"",
     "mechanicsText": "Action: uncork to create a 15-foot cube of gale wind originating from you, lasting until the end of your next turn. Creatures in it must make a DC 13 Strength save or be pushed 10 feet. Ranged attacks against you have disadvantage while inside. 2 charges, recovers 1 on short rest, all on long rest.",
     "isUsable": true,
     "value": "130gp",
+    "act": "Act 2",
     "sourceEncounter": "BRENNAN'S INN STOCK",
     "charges": {"max":1,"reset":"manual"},
     "isLocked": true
@@ -504,12 +554,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee Versatile",
     "description": "Pulled from the frozen lakebed during the clearing of the north road. The head is ice that never melts. Hunters called it cold that remembers.",
-    "mechanicsText": "+1 to attack and damage rolls. On a hit, the target must succeed on a DC 13 Constitution saving throw or its speed is reduced by 10 feet until the end of its next turn. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the target must succeed on a DC 13 Constitution saving throw or its speed is reduced by 10 feet until the end of its next turn. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d6+@STR+1",
     "crit": "2d6+@STR+1",
     "mastery": "Sap",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -519,12 +570,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee Two-Handed",
     "description": "Too much weapon for one hand and built that way on purpose. The blade is dark iron that doesn't warm in the hand no matter how long it's held, and it takes the same bite out of frozen ground as it does out of anything else.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per turn, when you hit a creature with this weapon, the target takes an additional 1d6 cold damage. If the target is below half its hit point maximum, that damage is 2d6 instead. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the target takes an additional 1d6 cold damage. Once per round, when an attack with this weapon reduces a creature to 0 hit points, you can immediately move up to 10 feet without provoking opportunity attacks. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "2d6+@STR+1",
     "crit": "4d6+@STR+1",
     "mastery": "Graze",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -534,12 +586,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Finesse",
     "description": "A blade that makes no sound when drawn. The edge is correct — unnervingly correct, as if it was made for a single specific purpose that nobody named.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per turn, when you hit a creature with this weapon, the target has disadvantage on the first attack roll it makes before the start of your next turn. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the first attack roll that creature makes against you before the start of your next turn has disadvantage. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
     "crit": "2d8+@DEX+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -549,12 +602,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Finesse",
     "description": "A blade that makes no sound when drawn. The edge is correct — unnervingly correct, as if it was made for a single specific purpose that nobody named.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per turn, when you hit a creature with this weapon, the target has disadvantage on the first attack roll it makes before the start of your next turn. This weapon's damage counts as magical. Built to swing off Strength.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the first attack roll that creature makes against you before the start of your next turn has disadvantage. This weapon's damage counts as magical. Built to swing off Strength.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d8+@STR+1",
     "crit": "2d8+@STR+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -564,14 +618,14 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Ranged",
     "description": "Strung with gut from something that ran north and didn't come back. The draw is heavier than it should be at this temperature. It pulls as if it wants to be drawn.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per short rest, when you hit a creature with this weapon, you may deal an additional 1d6 cold damage. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the target takes an additional 1d4 cold damage. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
     "crit": "2d8+@DEX+1",
     "mastery": "Slow",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
-    "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
   {
@@ -581,6 +635,8 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A rough stone of clouded ice set in a Ward field mount. The original inscription has been polished away and something else cut in its place. It does not melt, and it does not warm.",
     "mechanicsText": "Can be used as a spellcasting focus. +1 to spell attack rolls and spell save DC. Once per long rest, when you cast a healing spell, one target of that spell regains an additional 1d8 hit points.",
     "isUsable": false,
+    "spellFocusAttack": "+1",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
@@ -593,6 +649,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 13 + DEX modifier. This is +1 magical armor; the bonus is already included. You have resistance to cold damage.",
     "isUsable": false,
     "ac": "13 + DEX",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -604,6 +661,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 16 + DEX modifier (max 2). This is +1 magical armor; the bonus is already included. When a creature within 5 feet hits you with a melee attack, it takes 2 cold damage.",
     "isUsable": false,
     "ac": "16 + DEX (max 2)",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -612,11 +670,11 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Bonemarch Plate",
     "type": "armor",
     "description": "Pulled from the Ward northern cache. Whoever wore it last didn't need it anymore. The iron has a grain to it that standard smelting doesn't produce — as if it was forged somewhere colder than any forge.",
-    "mechanicsText": "AC 17. This is +1 magical armor; the bonus is already included. When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once per long rest.",
+    "mechanicsText": "CONVERGENCE INPUTS · Party picks 1 of 2",
     "isUsable": false,
     "ac": "17",
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
-    "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
   {
@@ -624,8 +682,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Hollow Lantern",
     "type": "passive",
     "description": "A Ward field lantern recovered from the village cache. Its pale flame doesn't flicker in wind, and for a moment it shows what prefers not to be seen — then gutters back to ordinary light.",
-    "mechanicsText": "Action: expend 1 charge. Until the end of your next turn, you know the location of any invisible or magically hidden creature within 15 feet of you. 1 charge. Regains 1 on a long rest. Tags: A2 · Frost · Cleanse",
+    "mechanicsText": "The lantern has 1 charge. As a Bonus Action, expend the charge. Until the end of your next turn, you know the space occupied by any Invisible or magically hidden creature within 15 feet of you. This doesn't make the creature visible. The lantern regains its charge when you finish a long rest. Tags: A2 · Cleanse",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
@@ -637,6 +696,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "description": "A knot of frozen cord worn at the belt. It tugs gently toward solid footing, the way a compass finds north.",
     "mechanicsText": "While worn: you have advantage on saving throws against being knocked prone or moved against your will. Tags: A2 · Ward · Stability",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "isLocked": true
   },
@@ -646,12 +706,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee One-Handed",
     "description": "The head was cut from ice on the lake's deepest shelf — ice older than the winter, older than whatever went wrong here. It has never once needed re-forming.",
-    "mechanicsText": "+1 to attack and damage rolls. Deals an additional 1d6 + proficiency bonus cold damage on a hit. When you reduce a creature to 0 hit points with this weapon, each creature within 10 feet takes 1d6 cold damage (flat, no proficiency scaling on the burst). This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. When you reduce a creature to 0 hit points with this weapon, each other creature of your choice within 10 feet of the defeated creature takes 1d6 cold damage. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d8+@STR+1",
     "crit": "2d8+@STR+1",
     "mastery": "Sap",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
     "isLocked": true
@@ -662,11 +723,12 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Melee Two-Handed",
     "description": "A Ward field instrument recovered from the base at the lake's edge. Whatever it was designed to do, it has been doing something else for long enough that the original purpose is gone. The carvings shift when you aren't looking directly at them.",
-    "mechanicsText": "+1 to attack and damage rolls. Heavy, Two-Handed. Once per turn, when you hit a creature with this weapon, it takes an additional 1d8 + your proficiency bonus cold damage. Once per short rest, when you hit a creature with this weapon, it must succeed on a DC 14 Strength saving throw or be knocked prone. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Heavy, Two-Handed. Once per round, when you hit a creature with this weapon, it takes an additional 1d8 cold damage. Once per short or long rest, when you hit a creature with this weapon, it must succeed on a DC 14 Strength saving throw or be knocked prone. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "2d6+@STR+1",
     "crit": "4d6+@STR+1",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
     "isLocked": true
@@ -677,12 +739,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Finesse",
     "description": "Pulled from the lakebed after the fight. The blade is wrong — too thin, too light, the metal composition something no northern forge produces. It vibrates at a frequency just below hearing when drawn.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per turn, when you hit a creature with this weapon, you may deal an additional 1d6 + proficiency bonus cold damage. Once per turn, if you hit a creature that has not yet taken a turn in this combat, the target must succeed on a DC 14 Constitution saving throw or be unable to take reactions until the start of its next turn. This weapon's damage counts as magical.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. If you are at or below half your hit point maximum when this additional damage is dealt, you regain 1d4 hit points. This healing doesn't function if the target is a Construct or Undead. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
     "crit": "2d8+@DEX+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
     "isLocked": true
@@ -693,12 +756,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Finesse",
     "description": "Pulled from the lakebed after the fight. The blade is wrong — too thin, too light, the metal composition something no northern forge produces. It vibrates at a frequency just below hearing when drawn.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per turn, when you hit a creature with this weapon, you may deal an additional 1d6 + proficiency bonus cold damage. Once per turn, if you hit a creature that has not yet taken a turn in this combat, the target must succeed on a DC 14 Constitution saving throw or be unable to take reactions until the start of its next turn. This weapon's damage counts as magical. Built to swing off Strength.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. If you are at or below half your hit point maximum when this additional damage is dealt, you regain 1d4 hit points. This healing doesn't function if the target is a Construct or Undead. This weapon's damage counts as magical. Built to swing off Strength.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d8+@STR+1",
     "crit": "2d8+@STR+1",
     "mastery": "Vex",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
     "isLocked": true
@@ -709,12 +773,13 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "type": "weapon",
     "category": "Ranged",
     "description": "Recovered from the Ward's northern cache — standard issue, but the limbs have been re-worked by hands unknown. Arrows fired from it leave a trail that lingers a half-second too long, like the weapon is reluctant to let go of what it touched.",
-    "mechanicsText": "+1 to attack and damage rolls. After rolling damage on a hit with this weapon, you may choose to activate its life steal — roll 1d6 and add your proficiency bonus, you regain that many hit points. You may activate once per hit. This property does not function against constructs or undead.",
+    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. Until the start of your next turn, that creature regains only half as many hit points from any healing, rounding down. This weapon's damage counts as magical.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
     "crit": "2d8+@DEX+1",
     "mastery": "Slow",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
     "isLocked": true
@@ -724,8 +789,14 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Voidtempered Blade",
     "type": "magic",
     "description": "The blade came out of the lake the same moment the Wendigo fell. Nobody threw it in. The metal is wrong — it conducts something that isn't heat, and when a spell passes through it the air around the edge smells of ozone and something older.",
-    "mechanicsText": "Can be wielded as a +1 shortsword AND used as a spellcasting focus simultaneously. While attuned, you gain proficiency with this weapon. +1 to attack rolls, damage rolls, spell attack rolls, and spell save DC. Once per turn, when you hit a creature with this weapon on the same turn you cast a spell, the target takes an additional 1d8 + proficiency bonus cold damage. This weapon's damage counts as magical.",
+    "mechanicsText": "Can be wielded as a +1 shortsword AND used as a spellcasting focus simultaneously. While attuned, you gain proficiency with this weapon. +1 to attack rolls, damage rolls, spell attack rolls, and spell save DC. Once per round, when you hit a creature with this weapon on the same turn you cast a spell, the target takes an additional 1d8 cold damage. This weapon's damage counts as magical.",
     "isUsable": false,
+    "attack": "1d20+@PROF+@DEX+1",
+    "damage": "1d6+@DEX+1",
+    "crit": "2d6+@DEX+1",
+    "mastery": "Vex",
+    "spellFocusAttack": "+1",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
     "isLocked": true
@@ -738,6 +809,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 18. This is +1 magical armor; the bonus is already included. You have advantage on saving throws against being paralyzed or restrained, and any effect that would reduce your Strength score reduces it by 1 less (minimum 0).",
     "isUsable": false,
     "ac": "18",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "isLocked": true
   },
@@ -749,6 +821,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "AC 16 + DEX modifier (max 2). This is +1 magical armor; the bonus is already included. You have resistance to cold damage. When you are hit by a melee attack, the attacker takes 1d4 cold damage.",
     "isUsable": false,
     "ac": "16 + DEX (max 2)",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "isLocked": true
   },
@@ -757,9 +830,10 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Veilstitched Leathers",
     "type": "armor",
     "description": "Stitched from material that isn't quite leather — too uniform, too consistent, no grain variation anywhere. Whatever animal produced it either didn't exist or doesn't anymore. It fits like it was made for whoever is wearing it.",
-    "mechanicsText": "AC 13 + DEX modifier. This is +1 magical armor; the bonus is already included. You have advantage on Dexterity saving throws. When you take damage that would reduce you below half your hit point maximum for the first time each encounter, you gain 2d6 temporary hit points.",
+    "mechanicsText": "CONVERGENCE INPUTS · Party picks 1 of 2",
     "isUsable": false,
     "ac": "13 + DEX",
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "isLocked": true
   },
@@ -768,8 +842,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Wendigo Heart Ember",
     "type": "passive",
     "description": "Whatever organ this was no longer resembles one — black, porous, brittle. It is somehow still warm, and when gripped it answers with a pulse of devouring cold.",
-    "mechanicsText": "Action (1/day, recharges at dawn): one creature within 30 feet takes 3d6 cold damage, DC 13 Constitution save for half. Tags: A2 · Offensive",
+    "mechanicsText": "Devouring Cold (1/day; recharges at dawn). As a Magic action, target one creature you can see within 30 feet. The target must make a DC 13 Constitution saving throw, taking 3d6 cold damage on a failed save or half as much damage on a successful one. Tags: A2 · Offensive",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "isLocked": true
   },
@@ -778,8 +853,9 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Frozen Lake Core",
     "type": "passive",
     "description": "A column of ice drawn from the lake's center by no tool the party carries. It sat waiting at the shore after the fight, as if set there to be found. It hums at a pitch that aches the teeth.",
-    "mechanicsText": "While carried: you have a +1 bonus to all saving throws. Tags: A2 · Stability",
+    "mechanicsText": "Frozen Resolve (1/day; recharges at dawn). When you fail a saving throw, roll 1d4 and add it to the saving throw, potentially turning the failure into a success. Tags: A2 · Stability",
     "isUsable": false,
+    "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "isLocked": true
   },
