@@ -528,6 +528,8 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   const [convergenceApproval, setConvergenceApproval] = useState<ConvergenceRequest | null>(null);
   const [lootMessage, setLootMessage] = useState("");
   const [recentDelivery, setRecentDelivery] = useState<string | null>(null);
+  /** Kept apart from recentDelivery, which is styled as a success and always will be. */
+  const [deliveryProblem, setDeliveryProblem] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<EquipmentImportResult | null>(null);
   const [peekId, setPeekId] = useState<string | null>(null);
   const [filterText, setFilterText] = useState("");
@@ -722,20 +724,37 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     return seats.filter(s => s.seatMode !== "viewer").map(s => s.seatId);
   }
 
-  async function handleSendLootOffer() {
-    if (!lootOffer || lootOffer.items.length === 0 || !OBR.isAvailable) return;
-    // The DM's list IS the running order — first id picks first.
-    const orderedSeats = lootOffer.seatIds
+  /**
+   * The one place a loot pool actually goes out.
+   *
+   * Both entry points land here — the staged builder (where the DM has tuned the guest list,
+   * order and message) and the one-click send off a group header. Keeping it single means the
+   * stock record and the broadcast can never disagree about what was sent, which is the whole
+   * basis of claim-once.
+   */
+  async function sendLootPool(opts: {
+    items: EquipmentItem[];
+    seatIds: string[];
+    mode: "boss-mid" | "boss-final" | "merchant";
+    message: string;
+    takeTurns: boolean;
+  }): Promise<boolean> {
+    if (opts.items.length === 0 || !OBR.isAvailable) return false;
+    // The id list IS the running order — first id picks first.
+    const orderedSeats = opts.seatIds
       .map(id => seats.find(s => s.seatId === id))
       .filter((s): s is FdmcSeat => Boolean(s) && s!.seatMode !== "viewer");
-    if (orderedSeats.length === 0) return;
+    if (orderedSeats.length === 0) return false;
     const offerId = `offer-${Date.now().toString(36)}`;
     // Turn-taking needs someone to pass to; a single recipient just gets the pool.
-    const ordered = orderedSeats.length > 1 && usePickOrder;
+    const ordered = orderedSeats.length > 1 && opts.takeTurns;
     // Boss loot is one pick each. A merchant turn is a shopping trip — buy what you can
     // afford, then hand the counter on.
-    const turnEndsOnPick = lootOffer.mode !== "merchant";
+    const turnEndsOnPick = opts.mode !== "merchant";
     const recipients = orderedSeats.map(s => ({ seatId: s.seatId, label: s.label ?? s.seatId }));
+    const message = opts.message.trim() || (opts.mode === "boss-final"
+      ? "Session reward — choose your item."
+      : opts.mode === "merchant" ? "Merchant stock — spend your gold." : "Boss drop — choose one item.");
 
     // The SENT POOL IS THE STOCK. Record what went out so the GM can retire each item as it
     // is claimed — send a pool of one and exactly one player can take it. Without this the
@@ -743,13 +762,13 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     // every recipient could take the same "one of" item.
     saveOpenLootOffer({
       offerId,
-      remainingItemIds: lootOffer.items.map(i => i.id),
+      remainingItemIds: opts.items.map(i => i.id),
       recipients,
       turnIndex: 0,
       ordered,
       turnEndsOnPick,
-      mode: lootOffer.mode,
-      message: lootMessage.trim() || "",
+      mode: opts.mode,
+      message: opts.message.trim() || "",
       claims: [],
     });
     for (const seat of orderedSeats) {
@@ -757,9 +776,9 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
         type: "fdmc:loot-offer",
         seatId: seat.seatId,
         offerId,
-        items: lootOffer.items,
-        message: lootMessage.trim() || (lootOffer.mode === "boss-final" ? "Session reward — choose your item." : lootOffer.mode === "merchant" ? "Merchant stock — spend your gold." : "Boss drop — choose one item."),
-        mode: lootOffer.mode,
+        items: opts.items,
+        message,
+        mode: opts.mode,
         ordered,
         turnSeatId: ordered ? recipients[0].seatId : undefined,
         turnLabel: ordered ? recipients[0].label : undefined,
@@ -769,10 +788,50 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     const target = ordered
       ? `${recipients.length} players in order (${recipients.map(r => r.label).join(" → ")})`
       : recipients.map(r => r.label).join(", ");
-    setRecentDelivery(`${lootOffer.mode === "boss-final" ? "Session reward" : lootOffer.mode === "merchant" ? "Merchant stock" : "Mid-boss loot"} (${lootOffer.items.length} items) sent to ${target}`);
+    setRecentDelivery(`${opts.mode === "boss-final" ? "Session reward" : opts.mode === "merchant" ? "Merchant stock" : "Mid-boss loot"} (${opts.items.length} items) sent to ${target}`);
+    setOpenOffer(loadOpenLootOffer());
+    setTimeout(() => setRecentDelivery(null), 6000);
+    return true;
+  }
+
+  async function handleSendLootOffer() {
+    if (!lootOffer) return;
+    const sent = await sendLootPool({
+      items: lootOffer.items,
+      seatIds: lootOffer.seatIds,
+      mode: lootOffer.mode,
+      message: lootMessage,
+      takeTurns: usePickOrder,
+    });
+    if (!sent) return;
     setLootOffer(null);
     setLootMessage("");
-    setTimeout(() => setRecentDelivery(null), 6000);
+  }
+
+  /**
+   * Send a whole encounter pool or merchant stock straight to the party — no staging.
+   *
+   * Staging exists for when the DM wants to trim the pool, pick who's in it, or set the
+   * order. When they just want to hand the table what the encounter doc already says it
+   * drops, that round trip is friction: this goes out with the whole group, every player in
+   * seat order, taking turns. Anything finer still goes through "+ Table all".
+   */
+  async function sendWholeGroup(items: EquipmentItem[], label: string) {
+    const sent = await sendLootPool({
+      items,
+      seatIds: defaultRecipientIds(),
+      // Same read of the label the staging path uses, so a one-click send is never a
+      // different KIND of offer than the staged one would have been.
+      mode: /merchant|stock|shop|vendor/i.test(label) ? "merchant" : "boss-mid",
+      message: "",
+      takeTurns: true,
+    });
+    // A one-click send has no builder to show the problem in, so say why nothing happened
+    // rather than leaving the DM to wonder whether the click registered.
+    if (!sent) {
+      setDeliveryProblem(`Nothing sent — ${defaultRecipientIds().length === 0 ? "no player seats are claimed" : "the pool is empty"}.`);
+      setTimeout(() => setDeliveryProblem(null), 6000);
+    }
   }
 
   if (editingItem) {
@@ -1366,14 +1425,22 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
               <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎁 {g.label}</span>
               <span style={{ fontSize: 10, fontWeight: 700, color: "#0d0d14", background: "#e0b34a", borderRadius: 8, padding: "1px 7px", flexShrink: 0 }}>{g.items.length}</span>
             </button>
-            {seats.length > 0 && (
+            {seats.length > 0 && (<>
               <button type="button"
                 onClick={() => tableWholeGroup(g.items, g.label)}
                 style={{ fontSize: 11, padding: "0 10px", background: "#7b68ee22", border: "none", borderLeft: "1px solid #2a2a3e", color: "#7b68ee", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
-                title={`Put all ${g.items.length} items from ${g.label} on the loot table at once — the whole pool, not one piece at a time`}>
+                title={`Stage all ${g.items.length} items from ${g.label} on the loot table — use this when you want to trim the pool, choose who's in it, or set the order before sending`}>
                 + Table all
               </button>
-            )}
+              {/* Straight out, no staging. The encounter doc already says what this drops, so
+                  the common case shouldn't need a builder round trip first. */}
+              <button type="button"
+                onClick={() => void sendWholeGroup(g.items, g.label)}
+                style={{ fontSize: 11, padding: "0 10px", background: "#2a6e2a", border: "none", borderLeft: "1px solid #2a2a3e", color: "#eafff0", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap", fontWeight: 600 }}
+                title={`Send all ${g.items.length} items from ${g.label} to the whole party now — everyone in seat order, taking turns, claim-once. Use "+ Table all" instead if you need to change any of that first.`}>
+                ▶ Send
+              </button>
+            </>)}
           </div>
           {expanded && <div style={{ marginTop: 6, paddingLeft: 6 }}>{g.items.map(renderItem)}</div>}
         </div>
@@ -1441,6 +1508,9 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       )}
       {recentDelivery && (
         <div style={{ padding: "5px 14px", background: "#2a6e2a", fontSize: 11, color: "#fff", flexShrink: 0 }}>✓ {recentDelivery}</div>
+      )}
+      {deliveryProblem && (
+        <div style={{ padding: "5px 14px", background: "#2a2010", borderBottom: "1px solid #6e5a20", fontSize: 11, color: "#e0b85a", flexShrink: 0 }}>⚠ {deliveryProblem}</div>
       )}
       {/* The round, as the DM sees it — open the whole time it runs and after it closes, so
           "who bought what" is answerable without asking the table. The pool alone only says
