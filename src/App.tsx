@@ -73,6 +73,8 @@ import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { isObrReady, obrSend } from "./core/utils/obrReady";
 import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons } from "./core/ui/EquipmentBagEditor";
+import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui/openLootOffer";
+import { FDMC_ACCENTS } from "./core/constants/theme";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
@@ -944,28 +946,70 @@ export default function App() {
       const actor = dmActors.find(a => a.id === msg.actorId);
       if (!actor) return;
 
-      // Find the item from all libraries
+      // Find the item from all libraries — the library is the CATALOGUE (stats/price), never
+      // the stock. A player with nothing to buy passes instead, which spends no item but
+      // still hands the turn on so one AFK seat can't stall the round.
       const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
-      const item = allItems.find(i => i.id === msg.chosenItemId);
-      if (!item) return;
+      const isPass = msg.chosenItemId === LOOT_PASS_ID;
+      const item = isPass ? undefined : allItems.find(i => i.id === msg.chosenItemId);
+      if (!isPass && !item) return;
+      const itemLabel = item?.name ?? "that";
 
-      // Merchant purchase — re-check the buyer can afford it (authoritative), then pay from the
-      // wallet (auto-convert across coins + make change). Price comes from the item's value tag.
-      const costCopper = parsePriceCopper(item.value) || (typeof msg.cost === "number" && msg.cost > 0 ? Math.floor(msg.cost) * 100 : 0);
+      // Price is settled BEFORE the item leaves the pool. Claiming first and then failing the
+      // affordability check would burn the only copy on a purchase that never completed.
+      const costCopper = item
+        ? parsePriceCopper(item.value) || (typeof msg.cost === "number" && msg.cost > 0 ? Math.floor(msg.cost) * 100 : 0)
+        : 0;
+      const balanceCopper = costCopper > 0 ? getActorCopper(actor.id) : 0;
+      if (costCopper > 0 && balanceCopper < costCopper) {
+        void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:purchase-denied",
+          seatId: msg.seatId,
+          itemName: itemLabel,
+          reason: `Not enough coin — ${itemLabel} costs ${formatCopperPrice(costCopper)}, you have ${formatCopperPrice(balanceCopper)}.`,
+        }, { destination: "REMOTE" });
+        return;
+      }
+
+      // STOCK COMES FROM THE SENT POOL, NOT THE LIBRARY. The first claim to arrive wins; a
+      // second claim for the same item is refused. Send a pool of one and exactly one player
+      // can have it.
+      const claim = claimFromOpenOffer(msg.offerId, msg.seatId, msg.chosenItemId);
+      if (claim.outcome === "gone") {
+        void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:purchase-denied",
+          seatId: msg.seatId,
+          itemName: itemLabel,
+          reason: `${itemLabel} is gone — it was already taken.`,
+        }, { destination: "REMOTE" });
+        return;
+      }
+      if (claim.outcome === "not-your-turn") {
+        void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:purchase-denied",
+          seatId: msg.seatId,
+          itemName: itemLabel,
+          reason: `It's ${claim.waitingOn.label}'s pick right now — hold on.`,
+        }, { destination: "REMOTE" });
+        return;
+      }
+      // Item is spent. Tell every recipient what's left and whose turn it is now, so a taken
+      // item drops off their list rather than sitting there as a choice that will be refused.
+      if (claim.outcome === "claimed") broadcastOfferState(claim.offer, claim.done, allItems);
+
+      // Paid for out of the wallet (auto-converts across coins + makes change).
       let walletLeftLabel = "";
       if (costCopper > 0) {
-        const balanceCopper = getActorCopper(actor.id);
-        if (balanceCopper < costCopper) {
-          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
-            type: "fdmc:purchase-denied",
-            seatId: msg.seatId,
-            itemName: item.name,
-            reason: `Not enough coin — ${item.name} costs ${formatCopperPrice(costCopper)}, you have ${formatCopperPrice(balanceCopper)}.`,
-          }, { destination: "REMOTE" });
-          return;
-        }
         void spendActorCopper(actor.id, costCopper);
         walletLeftLabel = formatCopperPrice(balanceCopper - costCopper);
+      }
+
+      // A pass takes nothing — the turn has already moved on, so there's no sheet to update.
+      if (!item) {
+        const shopping = claim.outcome === "claimed" && claim.offer.mode === "merchant";
+        addEntry({ actorName: actor.name, actionName: shopping ? "Done Shopping" : "Passed", tabId: "system",
+          message: shopping ? `${actor.name} finished at the merchant.` : `${actor.name} passed on the loot.` });
+        return;
       }
 
       // Build the equipment action and add it
@@ -1400,6 +1444,12 @@ export default function App() {
   // ── Player: loot delivery toast + offer + level-up request UI ───────────
   const [lootToast, setLootToast] = useState<string | null>(null);
   const [lootOffer, setLootOffer] = useState<import("./core/ui/EquipmentLibraryStandalone").LootOffer | null>(null);
+  // Offers this player has closed themselves. Every pick re-sends the offer with the stock
+  // that's left, and without this a shop you walked away from would pop open again each time
+  // another player bought something.
+  const dismissedOfferIds = useRef<Set<string>>(new Set());
+  /** Offers already announced in the log, so stock updates don't re-announce them. */
+  const lootOfferSeenIds = useRef<Set<string>>(new Set());
   const [showConvergePanel, setShowConvergePanel] = useState(false);
   const [convergenceSubmitting, setConvergenceSubmitting] = useState(false);
   // Convergence item selection — lifted to component scope so the hook is never
@@ -1428,10 +1478,23 @@ export default function App() {
         addEntry({ actorName: "DM", actionName: "Loot Delivered", tabId: "system", message: text });
         setTimeout(() => setLootToast(null), 6000);
       }
-      // Loot offer — player must choose one item
+      // Loot offer — player must choose one item. Re-sent after every pick with the stock
+      // that is LEFT, so a taken item disappears from the list rather than being offered and
+      // then refused.
       if (msg.type === "fdmc:loot-offer" && msg.seatId === claimedSeatId) {
-        setLootOffer(msg as import("./core/ui/EquipmentLibraryStandalone").LootOffer);
-        addEntry({ actorName: "DM", actionName: "Loot Offer", tabId: "system", message: msg.message ?? "Boss drop — choose an item." });
+        const offer = msg as import("./core/ui/EquipmentLibraryStandalone").LootOffer;
+        if (offer.closed) {
+          // Round over — drop the overlay and stop tracking it.
+          setLootOffer(prev => (prev?.offerId === offer.offerId ? null : prev));
+          dismissedOfferIds.current.delete(offer.offerId);
+        } else if (!dismissedOfferIds.current.has(offer.offerId)) {
+          setLootOffer(offer);
+          // Only announce the first send; the stock updates that follow aren't news.
+          if (!lootOfferSeenIds.current.has(offer.offerId)) {
+            lootOfferSeenIds.current.add(offer.offerId);
+            addEntry({ actorName: "DM", actionName: "Loot Offer", tabId: "system", message: msg.message ?? "Boss drop — choose an item." });
+          }
+        }
       }
       // Convergence denied by DM
       if (msg.type === "fdmc:convergence-denied" && (msg as { seatId?: string }).seatId === claimedSeatId) {
@@ -2558,6 +2621,11 @@ export default function App() {
         const mode = (lootOffer as { mode?: string }).mode;
         const isFinal = mode === "boss-final";
         const isMerchant = mode === "merchant";
+        // Ordered round: only the seat holding the turn may take something. Everyone else
+        // watches the pool shrink so they can plan, but their buttons are inert.
+        const ordered = Boolean(lootOffer.ordered);
+        const myTurn = !ordered || lootOffer.turnSeatId === claimedSeatId;
+        const waitingOn = lootOffer.turnLabel ?? "another player";
 
         function chooseItem(item: { id: string; name: string }) {
           void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
@@ -2567,8 +2635,32 @@ export default function App() {
             chosenItemId: item.id,
             actorId: actorToShow!.id,
           } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
+          // One pick per seat in an ordered round — bow out so the stock updates that follow
+          // don't re-open the panel on top of you while the rest of the party picks.
+          if (ordered) dismissedOfferIds.current.add(lootOffer!.offerId);
           addEntry({ actorName: actorToShow!.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow!.name} chose ${item.name}.` });
         }
+
+        /** Take nothing and hand the turn on, so one seat can't stall the whole round. */
+        function passOffer() {
+          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:loot-choice",
+            seatId: claimedSeatId,
+            offerId: lootOffer!.offerId,
+            chosenItemId: LOOT_PASS_ID,
+            actorId: actorToShow!.id,
+          } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
+          dismissedOfferIds.current.add(lootOffer!.offerId);
+          setLootOffer(null);
+        }
+
+        /** Banner shown to seats waiting their turn in an ordered round. */
+        const waitBanner = (
+          <div style={{ padding: "8px 12px", background: "#161622", border: "1px solid #2a2a3e", borderRadius: 8, textAlign: "center" }}>
+            <span style={{ fontSize: 12, color: "#e0a030" }}>⏳ {waitingOn} is picking…</span>
+            <p style={{ margin: "3px 0 0", fontSize: 11, color: "#555" }}>The list updates as items are taken. Your turn is next in line.</p>
+          </div>
+        );
 
         // Merchant (buy-many) — player's wallet (copper) + what they already own, both reactive.
         const myCoins = roomLiveState.actorLiveState[actorToShow!.id]?.coins ?? {};
@@ -2598,9 +2690,15 @@ export default function App() {
               <div style={{ textAlign: "center" }}>
                 <p style={{ margin: "0 0 4px", fontSize: 11, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 2 }}>Session Reward</p>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#fff" }}>🏆 {lootOffer.message}</p>
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555" }}>Choose one item — it will be added to your equipment.</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#555" }}>
+                  {myTurn ? "Choose one item — it will be added to your equipment." : "Waiting for your turn to pick."}
+                </p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+                {!myTurn && waitBanner}
+                {lootOffer.items.length === 0 && (
+                  <p style={{ textAlign: "center", fontSize: 12, color: "#555", fontStyle: "italic" }}>Everything has been claimed.</p>
+                )}
                 {lootOffer.items.map(item => (
                   <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
@@ -2617,66 +2715,119 @@ export default function App() {
                         {item.damage && <span style={{ fontSize: 11, color: "#e07b39" }}>💥 {item.damage}</span>}
                         {item.ac && <span style={{ fontSize: 11, color: "#4caf50" }}>🛡 AC {item.ac}</span>}
                       </div>
-                      <button type="button" onClick={() => chooseItem(item)}
-                        style={{ fontSize: 13, padding: "8px 18px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>
+                      <button type="button" onClick={() => chooseItem(item)} disabled={!myTurn}
+                        title={myTurn ? undefined : `${waitingOn} is picking`}
+                        style={{ fontSize: 13, padding: "8px 18px", background: myTurn ? "#7b68ee" : "#1a1a1a", color: myTurn ? "#fff" : "#555", border: myTurn ? "none" : "1px solid #333", borderRadius: 6, cursor: myTurn ? "pointer" : "default", fontWeight: 600, flexShrink: 0 }}>
                         ✓ Choose
                       </button>
                     </div>
                   </div>
                 ))}
+                {ordered && myTurn && (
+                  <button type="button" onClick={passOffer}
+                    style={{ fontSize: 12, padding: "7px 18px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer", alignSelf: "center" }}>
+                    Pass — take nothing
+                  </button>
+                )}
               </div>
             </div>
           );
         }
 
         if (isMerchant) {
-          // Merchant: full-screen shop — buy as many as you can afford; gold deducts per buy.
+          // Merchant: a shop framed like the rest of the app — a titled panel with a sticky
+          // header (shop name + wallet) and a sticky footer, not free-floating centred text.
+          // Coin uses the equipment accent so it reads as the same family as the equipment
+          // tools rather than an unrelated gold.
+          const COIN = FDMC_ACCENTS.equipment;
           return (
-            <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.95)", zIndex: 200, display: "flex", flexDirection: "column", padding: 24, gap: 16, overflowY: "auto" }}>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ margin: "0 0 4px", fontSize: 11, color: "#e0a030", textTransform: "uppercase", letterSpacing: 2 }}>Merchant</p>
-                <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#fff" }}>🛒 {lootOffer.message}</p>
-                <p style={{ margin: "6px 0 0", fontSize: 14, color: "#e0a030", fontWeight: 700 }}>💰 {formatCoins(myCoins)}</p>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#555" }}>Buy what you can afford — coin is deducted (and change made) as you purchase.</p>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
-                {lootOffer.items.map(item => {
-                  const costCopper = parsePriceCopper(item.value);
-                  const owned = ownedIds.has(item.id);
-                  const unpriced = costCopper <= 0;
-                  const tooPoor = !unpriced && costCopper > myCopper;
-                  return (
-                  <div key={item.id} style={{ padding: "14px 16px", background: "#161622", borderRadius: 10, border: "1px solid #2a2a3e", opacity: owned ? 0.55 : 1 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-                          <strong style={{ fontSize: 14, color: "#fff" }}>{item.name}</strong>
-                          <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 8 }}>{item.category ?? item.type}</span>
-                          {item.attunementRequired && <span style={{ fontSize: 10, color: "#e07b39" }}>Attunement</span>}
-                        </div>
-                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
-                        {item.mechanicsText && <p style={{ margin: "0 0 6px", fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
-                        <span style={{ fontSize: 13, color: unpriced ? "#777" : "#e0a030", fontWeight: 600 }}>💰 {unpriced ? "No price set" : formatCopperPrice(costCopper)}</span>
-                      </div>
-                      <button type="button" disabled={owned || tooPoor || unpriced} onClick={() => buyItem(item)}
-                        title={owned ? "Already in your bag" : unpriced ? "No price set — the DM must price this item" : tooPoor ? "Not enough coin" : `Buy for ${formatCopperPrice(costCopper)}`}
-                        style={{ fontSize: 13, padding: "8px 14px", borderRadius: 6, fontWeight: 600, flexShrink: 0,
-                          background: owned ? "#1a2a1a" : (tooPoor || unpriced) ? "#1a1a1a" : "#4a3a1a",
-                          border: `1px solid ${owned ? "#2a6e2a55" : (tooPoor || unpriced) ? "#333" : "#e0a03055"}`,
-                          color: owned ? "#4caf50" : (tooPoor || unpriced) ? "#555" : "#e0a030",
-                          cursor: owned || tooPoor || unpriced ? "default" : "pointer" }}>
-                        {owned ? "✓ Owned" : unpriced ? "No price" : tooPoor ? "Can't afford" : "Buy"}
-                      </button>
-                    </div>
+            <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.94)", zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 520, maxHeight: "100%", background: "#0d0d14", border: `1px solid ${COIN}44`, borderRadius: 12, overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.6)" }}>
+                {/* Header — panel chrome, matching the app's titled surfaces */}
+                <div style={{ padding: "10px 14px", background: "#161622", borderBottom: "1px solid #2a2a3e", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexShrink: 0 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 9, color: COIN, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Merchant</p>
+                    <p style={{ margin: "1px 0 0", fontSize: 14, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lootOffer.message}</p>
                   </div>
-                  );
-                })}
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <button type="button" onClick={() => setLootOffer(null)}
-                  style={{ fontSize: 12, padding: "6px 20px", background: "transparent", border: "1px solid #444", borderRadius: 6, color: "#888", cursor: "pointer" }}>
-                  Done shopping
-                </button>
+                  <span title="Your coin purse" style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: COIN, background: `${COIN}1a`, border: `1px solid ${COIN}55`, borderRadius: 20, padding: "4px 12px" }}>
+                    {formatCoins(myCoins)}
+                  </span>
+                </div>
+
+                {/* Whose turn at the counter */}
+                {ordered && (
+                  <div style={{ padding: "6px 14px", background: myTurn ? "#16291b" : "#1a1a22", borderBottom: "1px solid #2a2a3e", textAlign: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: myTurn ? "#7be08a" : "#e0a030" }}>
+                      {myTurn ? "You're at the counter — buy what you need, then hand it on." : `⏳ ${waitingOn} is at the counter…`}
+                    </span>
+                  </div>
+                )}
+
+                {/* Stock */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, overflowY: "auto" }}>
+                  <p style={{ margin: 0, fontSize: 10, color: "#555", textAlign: "center" }}>
+                    Stock is what this merchant has — once it's bought, it's gone. Coin is deducted and change made as you buy.
+                  </p>
+                  {lootOffer.items.length === 0 && (
+                    <p style={{ margin: "16px 0", textAlign: "center", fontSize: 12, color: "#555", fontStyle: "italic" }}>Sold out — the shelves are bare.</p>
+                  )}
+                  {lootOffer.items.map(item => {
+                    const costCopper = parsePriceCopper(item.value);
+                    const owned = ownedIds.has(item.id);
+                    const unpriced = costCopper <= 0;
+                    const tooPoor = !unpriced && costCopper > myCopper;
+                    const buyable = !owned && !tooPoor && !unpriced && myTurn;
+                    return (
+                    <div key={item.id} style={{ padding: "10px 12px", background: "#161622", borderRadius: 8, border: `1px solid ${buyable ? `${COIN}33` : "#2a2a3e"}`, opacity: owned ? 0.55 : 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3 }}>
+                            <strong style={{ fontSize: 13, color: "#fff" }}>{item.name}</strong>
+                            <span style={{ fontSize: 9, color: "#8a8aa0", background: "#22222e", padding: "1px 6px", borderRadius: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>{item.category ?? item.type}</span>
+                            {item.tier && <span style={{ fontSize: 9, color: "#7b68ee" }}>{item.tier}</span>}
+                            {item.attunementRequired && <span style={{ fontSize: 9, color: "#e07b39" }}>Attunement</span>}
+                          </div>
+                          {item.description && <p style={{ margin: "0 0 3px", fontSize: 11, color: "#888", lineHeight: 1.45 }}>{item.description}</p>}
+                          {item.mechanicsText && <p style={{ margin: "0 0 4px", fontSize: 11, color: "#aaa", lineHeight: 1.45 }}>{item.mechanicsText}</p>}
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            {item.attack && <span style={{ fontSize: 10, color: "#7b68ee" }}>⚔ {item.attack}</span>}
+                            {item.damage && <span style={{ fontSize: 10, color: "#e07b39" }}>💥 {item.damage}</span>}
+                            {item.ac && <span style={{ fontSize: 10, color: "#4caf50" }}>🛡 AC {item.ac}</span>}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: unpriced ? "#555" : tooPoor ? "#a06a4a" : COIN, whiteSpace: "nowrap" }}>
+                            {unpriced ? "—" : formatCopperPrice(costCopper)}
+                          </span>
+                          <button type="button" disabled={!buyable} onClick={() => buyItem(item)}
+                            title={owned ? "Already in your bag" : unpriced ? "No price set — the DM must price this item" : tooPoor ? "Not enough coin" : !myTurn ? `${waitingOn} is at the counter` : `Buy for ${formatCopperPrice(costCopper)}`}
+                            style={{ fontSize: 11, padding: "5px 14px", borderRadius: 5, fontWeight: 600, whiteSpace: "nowrap",
+                              background: owned ? "#16291b" : buyable ? `${COIN}22` : "transparent",
+                              border: `1px solid ${owned ? "#2f7d3f" : buyable ? `${COIN}77` : "#333"}`,
+                              color: owned ? "#7be08a" : buyable ? COIN : "#555",
+                              cursor: buyable ? "pointer" : "default" }}>
+                            {owned ? "✓ Owned" : unpriced ? "No price" : tooPoor ? "Can't afford" : "Buy"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer */}
+                {/* In an ordered shop "done" is how the counter passes on, so it has to reach
+                    the GM — closing the window locally would strand the queue behind you. */}
+                <div style={{ padding: "8px 12px", background: "#161622", borderTop: "1px solid #2a2a3e", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
+                  <button type="button"
+                    onClick={() => {
+                      if (ordered && myTurn) passOffer();
+                      else { dismissedOfferIds.current.add(lootOffer!.offerId); setLootOffer(null); }
+                    }}
+                    style={{ fontSize: 11, padding: "5px 16px", background: ordered && myTurn ? `${COIN}22` : "transparent", border: `1px solid ${ordered && myTurn ? `${COIN}77` : "#444"}`, borderRadius: 5, color: ordered && myTurn ? COIN : "#888", cursor: "pointer", fontWeight: ordered && myTurn ? 600 : 400 }}>
+                    {ordered && myTurn ? "Done — pass to next player" : "Done shopping"}
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -2687,9 +2838,14 @@ export default function App() {
           <div style={{ margin: "4px 12px 0", background: "#0d0d14", border: "1px solid #7b68ee44", borderRadius: 8, overflow: "hidden" }}>
             <div style={{ padding: "6px 10px", background: "#1a1a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: "#7b68ee" }}>🎁 {lootOffer.message}</span>
-              <span style={{ fontSize: 10, color: "#444" }}>pick one</span>
+              <span style={{ fontSize: 10, color: myTurn ? "#444" : "#e0a030" }}>
+                {myTurn ? "pick one" : `⏳ ${waitingOn} is picking`}
+              </span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {lootOffer.items.length === 0 && (
+                <p style={{ margin: 0, padding: "8px 10px", fontSize: 11, color: "#555", fontStyle: "italic" }}>Everything has been claimed.</p>
+              )}
               {lootOffer.items.map(item => (
                 <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#0d0d14" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -2697,12 +2853,19 @@ export default function App() {
                     <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>{item.category ?? item.type}</span>
                     {item.tier && <span style={{ fontSize: 10, color: "#7b68ee66", marginLeft: 4 }}>{item.tier}</span>}
                   </div>
-                  <button type="button" onClick={() => chooseItem(item)}
-                    style={{ fontSize: 10, padding: "3px 10px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 4, color: "#7b68ee", cursor: "pointer", flexShrink: 0 }}>
+                  <button type="button" onClick={() => chooseItem(item)} disabled={!myTurn}
+                    title={myTurn ? undefined : `${waitingOn} is picking`}
+                    style={{ fontSize: 10, padding: "3px 10px", background: myTurn ? "#7b68ee22" : "transparent", border: `1px solid ${myTurn ? "#7b68ee55" : "#333"}`, borderRadius: 4, color: myTurn ? "#7b68ee" : "#555", cursor: myTurn ? "pointer" : "default", flexShrink: 0 }}>
                     Take
                   </button>
                 </div>
               ))}
+              {ordered && myTurn && (
+                <button type="button" onClick={passOffer}
+                  style={{ fontSize: 10, padding: "5px 10px", background: "transparent", border: "none", borderTop: "1px solid #1a1a2e", color: "#666", cursor: "pointer" }}>
+                  Pass — take nothing
+                </button>
+              )}
             </div>
           </div>
         );

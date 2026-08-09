@@ -14,6 +14,7 @@ import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { COIN_TYPES, COIN_LABEL, COIN_ABBR, type CoinType } from "../currency/currency";
+import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, type OpenLootOffer } from "./openLootOffer";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
 /** DM sends a single item directly (existing flow) */
@@ -25,7 +26,12 @@ export type LootDelivery = {
   message: string;
 };
 
-/** DM sends a list of items — player must pick one */
+/**
+ * DM sends a list of items — player must pick one.
+ *
+ * Re-sent to every recipient after each pick, carrying the items that are STILL available,
+ * so a claimed item drops off everyone's list. See openLootOffer.ts for the stock model.
+ */
 export type LootOffer = {
   type: "fdmc:loot-offer";
   seatId: string;
@@ -34,6 +40,14 @@ export type LootOffer = {
   message: string;
   /** boss-mid = compact strip during combat; boss-final = full-screen; merchant = shows gold cost */
   mode?: "boss-mid" | "boss-final" | "merchant";
+  /** true = players pick one at a time in the DM's order; false/absent = open shop. */
+  ordered?: boolean;
+  /** Ordered offers: the seat whose pick it is. Others see "waiting on…" and can't claim. */
+  turnSeatId?: string;
+  /** Display name for the seat currently picking. */
+  turnLabel?: string;
+  /** The round is over (pool empty or everyone picked) — dismiss the overlay. */
+  closed?: boolean;
 };
 
 /** DM pushes a convergence offer — player picks a combo using items they own */
@@ -485,7 +499,25 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   // Broken Chain section is a click-to-open drawer; the lock prompt lives inside it.
   const [brokenChainOpen, setBrokenChainOpen] = useState(false);
   const [lootTarget, setLootTarget] = useState<{ item: EquipmentItem; seatId: string } | null>(null);
-  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatId: string; mode: "boss-mid" | "boss-final" | "merchant" } | null>(null);
+  // `seatIds` is the guest list AND the running order: boss loot often goes to some seats and
+  // not others, while a merchant usually opens to the whole party starting at seat 1.
+  const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatIds: string[]; mode: "boss-mid" | "boss-final" | "merchant" } | null>(null);
+  const [usePickOrder, setUsePickOrder] = useState(true);
+  // Live view of the round in progress. Claims are handled in the main App window, so the
+  // record changes underneath this one — `storage` fires cross-window, which is exactly the
+  // signal we need. Focus covers the case where this window was hidden while it changed.
+  const [openOffer, setOpenOffer] = useState<OpenLootOffer | null>(() => loadOpenLootOffer());
+  useEffect(() => {
+    const refresh = () => setOpenOffer(loadOpenLootOffer());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    const poll = window.setInterval(refresh, 2000);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+      window.clearInterval(poll);
+    };
+  }, []);
   const [convergenceBuilder, setConvergenceBuilder] = useState<{
     seatId: string;
     combos: Array<{ outputItem: EquipmentItem; inputItems: Array<{ id: string; name: string }>; description: string }>;
@@ -566,7 +598,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     const isStock = /merchant|stock|shop|vendor/i.test(label);
     const mode: "boss-mid" | "boss-final" | "merchant" = isStock ? "merchant" : "boss-mid";
     setLootOffer(prev => {
-      if (!prev) return { items: [...items], seatId: "__all__", mode };
+      if (!prev) return { items: [...items], seatIds: defaultRecipientIds(), mode };
       const have = new Set(prev.items.map(i => i.id));
       return { ...prev, items: [...prev.items, ...items.filter(i => !have.has(i.id))] };
     });
@@ -684,12 +716,41 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     setTimeout(() => setRecentDelivery(null), 6000);
   }
 
+  /** Default guest list: the whole party, in seat order (so a merchant starts at seat 1). */
+  function defaultRecipientIds(): string[] {
+    return seats.filter(s => s.seatMode !== "viewer").map(s => s.seatId);
+  }
+
   async function handleSendLootOffer() {
     if (!lootOffer || lootOffer.items.length === 0 || !OBR.isAvailable) return;
-    const isAll = lootOffer.seatId === "__all__";
-    const targetSeats = isAll ? seats.filter(s => s.seatMode !== "viewer") : seats.filter(s => s.seatId === lootOffer.seatId);
+    // The DM's list IS the running order — first id picks first.
+    const orderedSeats = lootOffer.seatIds
+      .map(id => seats.find(s => s.seatId === id))
+      .filter((s): s is FdmcSeat => Boolean(s) && s!.seatMode !== "viewer");
+    if (orderedSeats.length === 0) return;
     const offerId = `offer-${Date.now().toString(36)}`;
-    for (const seat of targetSeats) {
+    // Turn-taking needs someone to pass to; a single recipient just gets the pool.
+    const ordered = orderedSeats.length > 1 && usePickOrder;
+    // Boss loot is one pick each. A merchant turn is a shopping trip — buy what you can
+    // afford, then hand the counter on.
+    const turnEndsOnPick = lootOffer.mode !== "merchant";
+    const recipients = orderedSeats.map(s => ({ seatId: s.seatId, label: s.label ?? s.seatId }));
+
+    // The SENT POOL IS THE STOCK. Record what went out so the GM can retire each item as it
+    // is claimed — send a pool of one and exactly one player can take it. Without this the
+    // claim handler re-resolves from the library, which is a catalogue with no stock, so
+    // every recipient could take the same "one of" item.
+    saveOpenLootOffer({
+      offerId,
+      remainingItemIds: lootOffer.items.map(i => i.id),
+      recipients,
+      turnIndex: 0,
+      ordered,
+      turnEndsOnPick,
+      mode: lootOffer.mode,
+      message: lootMessage.trim() || "",
+    });
+    for (const seat of orderedSeats) {
       const offer: LootOffer = {
         type: "fdmc:loot-offer",
         seatId: seat.seatId,
@@ -697,10 +758,15 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
         items: lootOffer.items,
         message: lootMessage.trim() || (lootOffer.mode === "boss-final" ? "Session reward — choose your item." : lootOffer.mode === "merchant" ? "Merchant stock — spend your gold." : "Boss drop — choose one item."),
         mode: lootOffer.mode,
+        ordered,
+        turnSeatId: ordered ? recipients[0].seatId : undefined,
+        turnLabel: ordered ? recipients[0].label : undefined,
       };
       await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, offer, { destination: "REMOTE" });
     }
-    const target = isAll ? "all players" : (seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId);
+    const target = ordered
+      ? `${recipients.length} players in order (${recipients.map(r => r.label).join(" → ")})`
+      : recipients.map(r => r.label).join(", ");
     setRecentDelivery(`${lootOffer.mode === "boss-final" ? "Session reward" : lootOffer.mode === "merchant" ? "Merchant stock" : "Mid-boss loot"} (${lootOffer.items.length} items) sent to ${target}`);
     setLootOffer(null);
     setLootMessage("");
@@ -807,7 +873,11 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
 
   // ── Loot offer builder ───────────────────────────────────────────────────────
   if (lootOffer) {
-    const seatLabel = lootOffer.seatId === "__all__" ? "All Players" : (seats.find(s => s.seatId === lootOffer.seatId)?.label ?? lootOffer.seatId);
+    const seatLabel = lootOffer.seatIds.length === 0
+      ? "nobody yet"
+      : lootOffer.seatIds.length === seats.filter(s => s.seatMode !== "viewer").length
+      ? "All Players"
+      : `${lootOffer.seatIds.length} players`;
     return (
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -852,15 +922,88 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No items added yet. Go back and click "+ Loot Table".</p>
           )}
         </div>
-        {/* Seat selector */}
-        <label style={{ fontSize: 12 }}>
-          Send to:
-          <select value={lootOffer.seatId} onChange={e => setLootOffer(o => o ? { ...o, seatId: e.target.value } : null)}
-            style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
-            <option value="__all__">★ All Players</option>
-            {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
-          </select>
-        </label>
+        {/* Who's in it, and in what order — one control, because for a turn-taking round the
+            guest list IS the running order. Boss loot often goes to some seats and not
+            others; a merchant usually opens to the whole party starting at seat 1. */}
+        {(() => {
+          const players = seats.filter(s => s.seatMode !== "viewer");
+          const chosen = lootOffer.seatIds;
+          const setIds = (ids: string[]) => setLootOffer(o => o ? { ...o, seatIds: ids } : null);
+          const toggle = (seatId: string) => setIds(
+            chosen.includes(seatId) ? chosen.filter(id => id !== seatId) : [...chosen, seatId]
+          );
+          const move = (idx: number, dir: -1 | 1) => {
+            const to = idx + dir;
+            if (to < 0 || to >= chosen.length) return;
+            const next = [...chosen];
+            [next[idx], next[to]] = [next[to], next[idx]];
+            setIds(next);
+          };
+          const unchosen = players.filter(s => !chosen.includes(s.seatId));
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 12 }}>Send to {usePickOrder && chosen.length > 1 ? "— in this order" : ""}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button type="button" onClick={() => setIds(defaultRecipientIds())}
+                    style={{ fontSize: 10, padding: "2px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>All</button>
+                  <button type="button" onClick={() => setIds([])}
+                    style={{ fontSize: 10, padding: "2px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>None</button>
+                </div>
+              </div>
+              {/* Chosen seats, in running order */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {chosen.map((seatId, i) => {
+                  const s = players.find(p => p.seatId === seatId);
+                  if (!s) return null;
+                  return (
+                    <div key={seatId} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3a" }}>
+                      {usePickOrder && chosen.length > 1 && (
+                        <span style={{ fontSize: 11, color: "#7b68ee", fontWeight: 600, minWidth: 16 }}>{i + 1}.</span>
+                      )}
+                      <span style={{ fontSize: 12, flex: 1 }}>{s.label}</span>
+                      {usePickOrder && chosen.length > 1 && (<>
+                        <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
+                          style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: i === 0 ? "#333" : "#888", cursor: i === 0 ? "default" : "pointer" }}>▲</button>
+                        <button type="button" onClick={() => move(i, 1)} disabled={i === chosen.length - 1}
+                          style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: i === chosen.length - 1 ? "#333" : "#888", cursor: i === chosen.length - 1 ? "default" : "pointer" }}>▼</button>
+                      </>)}
+                      <button type="button" onClick={() => toggle(seatId)} title="Remove from this offer"
+                        style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
+                    </div>
+                  );
+                })}
+                {chosen.length === 0 && (
+                  <p style={{ margin: 0, fontSize: 11, color: "#a06a4a", fontStyle: "italic" }}>Nobody selected — add at least one seat below.</p>
+                )}
+              </div>
+              {/* Seats left out — click to add to the end of the order */}
+              {unchosen.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {unchosen.map(s => (
+                    <button key={s.seatId} type="button" onClick={() => toggle(s.seatId)}
+                      style={{ fontSize: 11, padding: "3px 9px", background: "transparent", border: "1px dashed #444", borderRadius: 4, color: "#777", cursor: "pointer" }}>
+                      + {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {chosen.length > 1 && (<>
+                <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                  <input type="checkbox" checked={usePickOrder} onChange={e => setUsePickOrder(e.target.checked)} />
+                  Take turns (one seat at a time)
+                </label>
+                <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
+                  {!usePickOrder
+                    ? "Everyone sees the pool at once — first to claim an item gets it."
+                    : lootOffer.mode === "merchant"
+                    ? "Each player shops in turn — buy what you can afford, then hand the counter on. Closes after the last seat."
+                    : "Each player picks in turn. Their choice is spent and the rest of the pool passes to the next. Closes after the last seat."}
+                </p>
+              </>)}
+            </div>
+          );
+        })()}
         <label style={{ fontSize: 12 }}>
           Message (optional)
           <input type="text" value={lootMessage} onChange={e => setLootMessage(e.target.value)}
@@ -1136,10 +1279,10 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
                   onClick={() => {
                     if (lootOffer) {
                       if (!lootOffer.items.find(i => i.id === item.id)) {
-                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatId: "__all__", mode: "boss-mid" });
+                        setLootOffer(o => o ? { ...o, items: [...o.items, item] } : { items: [item], seatIds: defaultRecipientIds(), mode: "boss-mid" });
                       }
                     } else {
-                      setLootOffer({ items: [item], seatId: "__all__", mode: "boss-mid" });
+                      setLootOffer({ items: [item], seatIds: defaultRecipientIds(), mode: "boss-mid" });
                     }
                   }}
                   style={{ fontSize: 11, padding: "2px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}
@@ -1297,6 +1440,40 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       {recentDelivery && (
         <div style={{ padding: "5px 14px", background: "#2a6e2a", fontSize: 11, color: "#fff", flexShrink: 0 }}>✓ {recentDelivery}</div>
       )}
+      {/* Live round — what's left, who's holding it up, and the two overrides the DM needs
+          when a player disconnects mid-round and the queue would otherwise never advance. */}
+      {(() => {
+        if (!openOffer) return null;
+        const picker = currentPicker(openOffer);
+        const finished = openOffer.remainingItemIds.length === 0
+          || (openOffer.ordered && openOffer.turnIndex >= openOffer.recipients.length);
+        if (finished) return null;
+        const catalogue = () => [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
+        const label = openOffer.mode === "merchant" ? "Shop open" : "Loot round open";
+        return (
+          <div style={{ padding: "6px 14px", background: "#1a1a22", borderBottom: "1px solid #2a2a3e", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: "#e0b85a", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{label}</span>
+            <span style={{ fontSize: 11, color: "#aaa" }}>
+              {openOffer.remainingItemIds.length} left
+              {picker ? ` · ${picker.label}'s turn` : openOffer.ordered ? "" : " · open to all"}
+            </span>
+            <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+              {picker && (
+                <button type="button" onClick={() => void skipCurrentPicker(catalogue()).then(o => setOpenOffer(o))}
+                  title={`Move past ${picker.label} — use if they've dropped out`}
+                  style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #6e5a20", borderRadius: 3, color: "#e0b85a", cursor: "pointer" }}>
+                  Skip {picker.label}
+                </button>
+              )}
+              <button type="button" onClick={() => void closeOpenOffer(catalogue()).then(() => setOpenOffer(loadOpenLootOffer()))}
+                title="End the round now — every player's panel closes"
+                style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
+                Close
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
         {/* Pending convergence requests — shown only when not managed by the unified approvals panel */}
