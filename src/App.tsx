@@ -974,7 +974,8 @@ export default function App() {
       // STOCK COMES FROM THE SENT POOL, NOT THE LIBRARY. The first claim to arrive wins; a
       // second claim for the same item is refused. Send a pool of one and exactly one player
       // can have it.
-      const claim = claimFromOpenOffer(msg.offerId, msg.seatId, msg.chosenItemId);
+      const claim = claimFromOpenOffer(msg.offerId, msg.seatId, msg.chosenItemId,
+        { actorName: actor.name, itemName: item?.name, costCopper });
       if (claim.outcome === "gone") {
         void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
           type: "fdmc:purchase-denied",
@@ -995,7 +996,7 @@ export default function App() {
       }
       // Item is spent. Tell every recipient what's left and whose turn it is now, so a taken
       // item drops off their list rather than sitting there as a choice that will be refused.
-      if (claim.outcome === "claimed") broadcastOfferState(claim.offer, claim.done, allItems);
+      void broadcastOfferState(claim.offer, claim.done, allItems);
 
       // Paid for out of the wallet (auto-converts across coins + makes change).
       let walletLeftLabel = "";
@@ -1006,7 +1007,7 @@ export default function App() {
 
       // A pass takes nothing — the turn has already moved on, so there's no sheet to update.
       if (!item) {
-        const shopping = claim.outcome === "claimed" && claim.offer.mode === "merchant";
+        const shopping = claim.offer.mode === "merchant";
         addEntry({ actorName: actor.name, actionName: shopping ? "Done Shopping" : "Passed", tabId: "system",
           message: shopping ? `${actor.name} finished at the merchant.` : `${actor.name} passed on the loot.` });
         return;

@@ -13,7 +13,7 @@ import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, imp
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
-import { COIN_TYPES, COIN_LABEL, COIN_ABBR, type CoinType } from "../currency/currency";
+import { COIN_TYPES, COIN_LABEL, COIN_ABBR, formatCopperPrice, type CoinType } from "../currency/currency";
 import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, type OpenLootOffer } from "./openLootOffer";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
@@ -507,6 +507,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   // record changes underneath this one — `storage` fires cross-window, which is exactly the
   // signal we need. Focus covers the case where this window was hidden while it changed.
   const [openOffer, setOpenOffer] = useState<OpenLootOffer | null>(() => loadOpenLootOffer());
+  const [offerPanelOpen, setOfferPanelOpen] = useState(true);
   useEffect(() => {
     const refresh = () => setOpenOffer(loadOpenLootOffer());
     window.addEventListener("storage", refresh);
@@ -749,6 +750,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       turnEndsOnPick,
       mode: lootOffer.mode,
       message: lootMessage.trim() || "",
+      claims: [],
     });
     for (const seat of orderedSeats) {
       const offer: LootOffer = {
@@ -1440,37 +1442,121 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       {recentDelivery && (
         <div style={{ padding: "5px 14px", background: "#2a6e2a", fontSize: 11, color: "#fff", flexShrink: 0 }}>✓ {recentDelivery}</div>
       )}
-      {/* Live round — what's left, who's holding it up, and the two overrides the DM needs
-          when a player disconnects mid-round and the queue would otherwise never advance. */}
-      {(() => {
-        if (!openOffer) return null;
+      {/* The round, as the DM sees it — open the whole time it runs and after it closes, so
+          "who bought what" is answerable without asking the table. The pool alone only says
+          what's LEFT; the ledger is what turns that into a record.
+          Skip/Close are not niceties: only the current seat's own click advances the queue,
+          so a player who drops out would otherwise hold it open forever. */}
+      {openOffer && (() => {
         const picker = currentPicker(openOffer);
         const finished = openOffer.remainingItemIds.length === 0
           || (openOffer.ordered && openOffer.turnIndex >= openOffer.recipients.length);
-        if (finished) return null;
         const catalogue = () => [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
-        const label = openOffer.mode === "merchant" ? "Shop open" : "Loot round open";
+        const all = catalogue();
+        const nameOf = (id: string) => all.find(i => i.id === id)?.name ?? id;
+        const isShop = openOffer.mode === "merchant";
+        const claims = openOffer.claims ?? [];
+        const accent = finished ? "#555" : isShop ? "#c0a062" : "#7b68ee";
         return (
-          <div style={{ padding: "6px 14px", background: "#1a1a22", borderBottom: "1px solid #2a2a3e", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10, color: "#e0b85a", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>{label}</span>
-            <span style={{ fontSize: 11, color: "#aaa" }}>
-              {openOffer.remainingItemIds.length} left
-              {picker ? ` · ${picker.label}'s turn` : openOffer.ordered ? "" : " · open to all"}
-            </span>
-            <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
-              {picker && (
-                <button type="button" onClick={() => void skipCurrentPicker(catalogue()).then(o => setOpenOffer(o))}
-                  title={`Move past ${picker.label} — use if they've dropped out`}
-                  style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #6e5a20", borderRadius: 3, color: "#e0b85a", cursor: "pointer" }}>
-                  Skip {picker.label}
-                </button>
-              )}
-              <button type="button" onClick={() => void closeOpenOffer(catalogue()).then(() => setOpenOffer(loadOpenLootOffer()))}
-                title="End the round now — every player's panel closes"
-                style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
-                Close
+          <div style={{ borderBottom: "1px solid #2a2a3e", background: "#12121c", flexShrink: 0 }}>
+            <div style={{ padding: "7px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, color: accent, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
+                {finished ? (isShop ? "Shop closed" : "Round closed") : isShop ? "Shop open" : "Loot round"}
+              </span>
+              <span style={{ fontSize: 11, color: "#aaa" }}>
+                {openOffer.remainingItemIds.length} left
+                {finished ? "" : picker ? ` · ${picker.label}'s turn` : openOffer.ordered ? "" : " · open to all"}
+              </span>
+              <button type="button" onClick={() => setOfferPanelOpen(o => !o)}
+                style={{ fontSize: 10, padding: "1px 7px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#777", cursor: "pointer" }}>
+                {offerPanelOpen ? "▾ hide" : "▸ details"}
               </button>
+              <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+                {!finished && picker && (
+                  <button type="button" onClick={() => void skipCurrentPicker(catalogue()).then(o => setOpenOffer(o))}
+                    title={`Move past ${picker.label} — use if they've dropped out`}
+                    style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #6e5a20", borderRadius: 3, color: "#e0b85a", cursor: "pointer" }}>
+                    Skip {picker.label}
+                  </button>
+                )}
+                {!finished && (
+                  <button type="button" onClick={() => void closeOpenOffer(catalogue()).then(() => setOpenOffer(loadOpenLootOffer()))}
+                    title="End the round now — every player's panel closes"
+                    style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
+                    Close
+                  </button>
+                )}
+                {finished && (
+                  <button type="button" onClick={() => { saveOpenLootOffer(null); setOpenOffer(null); }}
+                    title="Clear this record from the panel"
+                    style={{ fontSize: 10, padding: "2px 9px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#777", cursor: "pointer" }}>
+                    Dismiss
+                  </button>
+                )}
+              </div>
             </div>
+
+            {offerPanelOpen && (
+              <div style={{ padding: "0 14px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Running order — who has been, who's up, who's still to come */}
+                {openOffer.ordered && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {openOffer.recipients.map((r, i) => {
+                      const been = i < openOffer.turnIndex;
+                      const now = !finished && i === openOffer.turnIndex;
+                      return (
+                        <span key={r.seatId} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10,
+                          background: now ? `${accent}22` : "transparent",
+                          border: `1px solid ${now ? accent : been ? "#2a3a2a" : "#333"}`,
+                          color: now ? accent : been ? "#4caf50" : "#666" }}>
+                          {been ? "✓ " : now ? "▶ " : `${i + 1}. `}{r.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* What's still on the shelf */}
+                <div>
+                  <p style={{ margin: "0 0 3px", fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Still available</p>
+                  {openOffer.remainingItemIds.length === 0
+                    ? <p style={{ margin: 0, fontSize: 11, color: "#555", fontStyle: "italic" }}>Nothing left.</p>
+                    : (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        {openOffer.remainingItemIds.map(id => (
+                          <span key={id} style={{ fontSize: 11, padding: "2px 8px", background: "#161622", border: "1px solid #2a2a3e", borderRadius: 4, color: "#ccc" }}>
+                            {nameOf(id)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                </div>
+
+                {/* Who got what */}
+                <div>
+                  <p style={{ margin: "0 0 3px", fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
+                    {isShop ? "Purchases" : "Taken"}
+                  </p>
+                  {claims.length === 0
+                    ? <p style={{ margin: 0, fontSize: 11, color: "#555", fontStyle: "italic" }}>Nobody has {isShop ? "bought" : "picked"} yet.</p>
+                    : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        {claims.map((c, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+                            <span style={{ color: "#888", minWidth: 90 }}>{c.actorName}</span>
+                            {c.kind === "passed" && <span style={{ color: "#666", fontStyle: "italic" }}>passed</span>}
+                            {c.kind === "skipped" && <span style={{ color: "#e0b85a", fontStyle: "italic" }}>skipped by DM</span>}
+                            {(c.kind === "took" || c.kind === "bought") && (<>
+                              <span style={{ color: "#ddd" }}>{c.itemName ?? nameOf(c.itemId ?? "")}</span>
+                              {c.costCopper ? <span style={{ color: "#c0a062" }}>{formatCopperPrice(c.costCopper)}</span> : null}
+                            </>)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}

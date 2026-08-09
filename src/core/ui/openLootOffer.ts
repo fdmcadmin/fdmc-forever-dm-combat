@@ -28,6 +28,19 @@ import type { EquipmentItem } from "./EquipmentBagEditor";
 
 export type LootRecipient = { seatId: string; label: string };
 
+/** One line of the round's ledger — what left the pool, who took it, and what it cost. */
+export type LootClaim = {
+  seatId: string;
+  seatLabel: string;
+  actorName: string;
+  /** Absent for a pass or a DM skip. */
+  itemId?: string;
+  itemName?: string;
+  costCopper?: number;
+  kind: "took" | "bought" | "passed" | "skipped";
+  at: number;
+};
+
 export type OpenLootOffer = {
   offerId: string;
   /** Item ids still up for grabs. A pick removes one; empty = the pool is exhausted. */
@@ -46,6 +59,11 @@ export type OpenLootOffer = {
   turnEndsOnPick: boolean;
   mode?: "boss-mid" | "boss-final" | "merchant";
   message: string;
+  /**
+   * Running ledger, oldest first. The DM's panel reads this to answer "who bought what"
+   * while the round is live and after it closes — the pool alone only says what's LEFT.
+   */
+  claims: LootClaim[];
 };
 
 /** A player who doesn't want anything passes, so an AFK seat can't stall the whole round. */
@@ -81,9 +99,7 @@ export type ClaimResult =
   /** Ordered offer and it isn't this seat's turn yet. */
   | { outcome: "not-your-turn"; waitingOn: LootRecipient }
   /** Someone else took it first, it was never in this pool, or the offer is stale. */
-  | { outcome: "gone" }
-  /** No open offer recorded — caller falls back to the old unlimited behaviour. */
-  | { outcome: "untracked" };
+  | { outcome: "gone" };
 
 /**
  * Take one item out of the open pool. Authoritative and GM-side only: the FIRST claim to
@@ -93,9 +109,15 @@ export function claimFromOpenOffer(
   offerId: string | undefined,
   seatId: string | undefined,
   itemId: string,
+  /** Ledger details — what the DM's panel shows for this line. */
+  record?: { actorName?: string; itemName?: string; costCopper?: number },
 ): ClaimResult {
   const offer = loadOpenLootOffer();
-  if (!offer) return { outcome: "untracked" };
+  // No record means no stock. Every sender of an offer writes one first, so the only ways to
+  // get here are a dismissed round or wiped storage — and refusing is the safe side of that
+  // trade: a wrongly-refused claim is fixed by the DM handing the item over, whereas a
+  // wrongly-granted one is a silent duplicate of a single-copy item.
+  if (!offer) return { outcome: "gone" };
   // A claim against a previous offer is stale — don't let it draw from the current pool.
   if (offerId && offer.offerId !== offerId) return { outcome: "gone" };
 
@@ -111,12 +133,24 @@ export function claimFromOpenOffer(
   // A pass always hands the turn on — that's what it's for. A pick only does when the round
   // is one-pick-each (boss loot); at a merchant you keep shopping until you say you're done.
   const advances = offer.ordered && (isPass || offer.turnEndsOnPick);
+  const cost = record?.costCopper ?? 0;
+  const ledgerLine: LootClaim = {
+    seatId: seatId ?? "",
+    seatLabel: offer.recipients.find(r => r.seatId === seatId)?.label ?? seatId ?? "?",
+    actorName: record?.actorName ?? "?",
+    itemId: isPass ? undefined : itemId,
+    itemName: isPass ? undefined : record?.itemName,
+    costCopper: cost > 0 ? cost : undefined,
+    kind: isPass ? "passed" : cost > 0 ? "bought" : "took",
+    at: Date.now(),
+  };
   const next: OpenLootOffer = {
     ...offer,
     remainingItemIds: isPass
       ? offer.remainingItemIds
       : offer.remainingItemIds.filter(id => id !== itemId),
     turnIndex: advances ? offer.turnIndex + 1 : offer.turnIndex,
+    claims: [...(offer.claims ?? []), ledgerLine],
   };
   // Closes when the stock runs out, or when the last seat in the order has had its turn.
   const done = next.remainingItemIds.length === 0
@@ -167,7 +201,15 @@ export async function broadcastOfferState(offer: OpenLootOffer, closed: boolean,
 export async function skipCurrentPicker(catalogue: EquipmentItem[]): Promise<OpenLootOffer | null> {
   const offer = loadOpenLootOffer();
   if (!offer || !offer.ordered) return null;
-  const next = { ...offer, turnIndex: offer.turnIndex + 1 };
+  const skipped = offer.recipients[offer.turnIndex];
+  const next: OpenLootOffer = {
+    ...offer,
+    turnIndex: offer.turnIndex + 1,
+    claims: [...(offer.claims ?? []), {
+      seatId: skipped?.seatId ?? "", seatLabel: skipped?.label ?? "?",
+      actorName: skipped?.label ?? "?", kind: "skipped", at: Date.now(),
+    }],
+  };
   const done = next.turnIndex >= next.recipients.length || next.remainingItemIds.length === 0;
   saveOpenLootOffer(next);
   await broadcastOfferState(next, done, catalogue);
