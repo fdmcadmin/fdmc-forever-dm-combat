@@ -209,13 +209,8 @@ export function deriveActorStats(
         derived[effect.stat] = Math.max(current, effect.value);
         modifiedBy[effect.stat] = item.name;
       }
-      if (effect.type === "setAC") {
-        if (!acOverridden || effect.value > baseAC) {
-          baseAC = effect.value;
-          acOverridden = true;
-          acModifiedBy.push(`${item.name} (base ${effect.value})`);
-        }
-      }
+      // setAC is resolved further down, once DEX is final — a body armour's base and the DEX
+      // its formula allows have to be decided together, by the same piece.
     }
   }
 
@@ -260,20 +255,46 @@ export function deriveActorStats(
     }
   }
 
-  // DEX from armor AC formulas: armor like Studded Leather ("12+@DEX") sets the base
-  // (setAC, above) and adds the wearer's DEX modifier (capped for medium armor). DEX
-  // reflects equipment + drain since it reads the already-derived score. Applied once,
-  // from the first equipped item whose formula references DEX (the body armor).
-  let acDexBonus = 0;
+  // ── Body armour: ONE piece wins, and it decides both halves ──────────────────
+  //
+  // A setAC item is body armour; its `ac` string says how much DEX rides on it ("16 + DEX
+  // (max 2)", or nothing at all for heavy). Those two numbers belong to the same piece, so
+  // they are chosen together, and the winner is the highest EFFECTIVE AC — which is what
+  // makes medium 16+DEX correctly beat a flat 17.
+  //
+  // Previously the base was picked by comparing raw setAC values, and the DEX was taken from
+  // the first worn item whose formula mentioned DEX. With two armours on, that produced an
+  // AC belonging to neither piece: heavy armour's base plus medium armour's DEX. Equipping
+  // is now exclusive per armour, but the derivation has to be right on its own — existing
+  // sheets already carry two worn armours, and nothing re-equips them.
+  //
+  // DEX is read after the drain passes so it reflects the final score.
   const dexModifierForAc = calcModifier(derived.dex);
+  let acDexBonus = 0;
+  let bestEffective = -Infinity;
+  let bestArmor: { name: string; base: number; dex: number } | null = null;
   for (const item of items) {
-    const contrib = armorDexAcBonus(item.ac, dexModifierForAc);
-    if (contrib !== null) {
-      acDexBonus = contrib;
-      acModifiedBy.push(`${item.name} (DEX ${contrib >= 0 ? "+" : ""}${contrib})`);
-      break;
+    const setEffect = (item.statEffects ?? []).find(e => e.type === "setAC");
+    if (!setEffect) continue;
+    const dex = armorDexAcBonus(item.ac, dexModifierForAc) ?? 0;
+    const effective = setEffect.value + dex;
+    if (effective > bestEffective) {
+      bestEffective = effective;
+      bestArmor = { name: item.name, base: setEffect.value, dex };
     }
   }
+  if (bestArmor) {
+    baseAC = bestArmor.base;
+    acOverridden = true;
+    acDexBonus = bestArmor.dex;
+    acModifiedBy.push(
+      bestArmor.dex !== 0
+        ? `${bestArmor.name} (base ${bestArmor.base}, DEX ${bestArmor.dex >= 0 ? "+" : ""}${bestArmor.dex})`
+        : `${bestArmor.name} (base ${bestArmor.base})`,
+    );
+  }
+  // No body armour worn leaves the profile's own AC as the base, unchanged — the sheet's
+  // authored number already includes whatever unarmored defense the character has.
 
   // Shields/rings (addAC) are flat bonuses; armor DEX is added here.
   const finalAC = baseAC + acBonus + acDexBonus;

@@ -37,10 +37,11 @@ import { deriveActorStats } from "./deriveActorStats";
 import type { ActorStatusTrackerState } from "../types/status";
 
 // ─── Proficiency bonus by level ───────────────────────────────────────────────
+// The formula itself is the D&D module's (core/rules/dnd5e.ts); this stays as the name the
+// rest of the sheet code already imports.
 
-export function getProficiencyBonus(level: number): number {
-  return Math.floor((Math.max(1, level) - 1) / 4) + 2;
-}
+import { proficiencyBonus as getProficiencyBonus } from "../rules/dnd5e";
+export { getProficiencyBonus };
 
 // ─── Signed number string ─────────────────────────────────────────────────────
 

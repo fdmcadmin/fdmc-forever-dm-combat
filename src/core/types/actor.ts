@@ -58,10 +58,21 @@ export type AbilityScore = {
   /** Explicit override for the displayed ability modifier. When unset, the card
    *  derives it as floor((score - 10) / 2). */
   modifier?: number;
-  /** Explicit saving-throw modifier for this ability. When unset, the save equals
-   *  the ability modifier (the "no proficiency" default). Set it when the stat block
-   *  lists a save that differs from the raw score — proficient PC saves, or summons
-   *  like the ranger's Beast of the Land whose saves are keyed to the summoner. */
+  /**
+   * Proficient in this saving throw — the save becomes modifier + proficiency bonus, and
+   * follows both the score and the character's level on its own.
+   *
+   * This replaces typing the number in. A typed save has to be re-entered on every level-up
+   * and after every score change, and a stale one is invisible: a save reads as a plain
+   * "+X" with nothing on the sheet to compare it against.
+   */
+  saveProficient?: boolean;
+  /**
+   * Explicit saving-throw modifier — the escape hatch for saves that follow neither rule,
+   * such as a summon whose saves key off its summoner rather than its own scores. Wins over
+   * `saveProficient` when set. Sheets authored before the flag existed carry one of these on
+   * every ability; the editor converts them on open (see `inferSaveProficiency`).
+   */
   save?: number;
 };
 

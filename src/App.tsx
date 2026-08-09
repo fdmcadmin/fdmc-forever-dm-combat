@@ -72,7 +72,7 @@ import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { isObrReady, obrSend } from "./core/utils/obrReady";
-import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
 import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui/openLootOffer";
 import { FDMC_ACCENTS } from "./core/constants/theme";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
@@ -1155,10 +1155,37 @@ export default function App() {
       }
     }
 
+    // Worn slots are exclusive: putting one on takes the oldest one in that slot off.
+    //
+    // Without this, a piece left on by mistake keeps contributing — and since the highest
+    // effective AC wins, the forgotten one can be the piece being counted. Rings allow two;
+    // everything else allows one. Items with no slot are carried, not worn, and displace
+    // nothing, so weapons and utility gear are untouched.
+    const slotOf = (a: typeof target): string | undefined => {
+      if (a.metadata?.slot) return a.metadata.slot;
+      // Fallback for gear attached before slots existed: an item that REPLACES your AC is
+      // body armour whatever else it claims to be.
+      return (a.metadata?.statEffects ?? []).some(e => (e as { type?: string }).type === "setAC")
+        ? "body" : undefined;
+    };
+    const targetSlot = willEquip ? slotOf(target) : undefined;
+    const capacity = targetSlot ? (SLOT_CAPACITY[targetSlot as EquipmentSlot] ?? 1) : 0;
+    // Oldest first, so a third ring displaces the one worn longest rather than a random one.
+    const wornInSlot = targetSlot
+      ? equipment.filter(a => a.id !== actionId && a.metadata?.equipped !== false && slotOf(a) === targetSlot)
+      : [];
+    const toDisplace = new Set(wornInSlot.slice(0, Math.max(0, wornInSlot.length - capacity + 1)).map(a => a.id));
+    const displaced: string[] = [];
+
     const updated = { ...actor, tabs: { ...actor.tabs,
-      equipment: equipment.map(a => a.id === actionId
-        ? { ...a, metadata: { ...a.metadata, equipped: willEquip } }
-        : a) } };
+      equipment: equipment.map(a => {
+        if (a.id === actionId) return { ...a, metadata: { ...a.metadata, equipped: willEquip } };
+        if (toDisplace.has(a.id)) {
+          displaced.push(a.label);
+          return { ...a, metadata: { ...a.metadata, equipped: false } };
+        }
+        return a;
+      }) } };
     const freshLib = {
       ...dmActors.reduce((m, a) => ({ ...m, [a.id]: a }), {} as Record<string, typeof actor>),
       [updated.id]: updated,
@@ -1171,7 +1198,10 @@ export default function App() {
       actorName: actor.name,
       actionName: willEquip ? "Item Equipped" : "Item Stowed",
       tabId: "system",
-      message: `${actor.name} ${willEquip ? "equips" : "stows"} ${target.label}.`,
+      // Say what came off — a silent swap looks like the old armour is still on.
+      message: displaced.length
+        ? `${actor.name} equips ${target.label}, removing ${displaced.join(" and ")}.`
+        : `${actor.name} ${willEquip ? "equips" : "stows"} ${target.label}.`,
     });
   }
 

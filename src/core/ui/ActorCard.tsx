@@ -4144,7 +4144,7 @@ export function ActorCard({
           </div>
         </div>
 
-        <AbilityScoreRow abilityScores={actor.abilityScores} derivedStats={deriveActorStats(actor, undefined, status)} />
+        <AbilityScoreRow abilityScores={actor.abilityScores} derivedStats={deriveActorStats(actor, undefined, status)} level={actor.level} />
         {renderCompactDebuffSummary()}
         {renderAttackUsePanel()}
       </header>

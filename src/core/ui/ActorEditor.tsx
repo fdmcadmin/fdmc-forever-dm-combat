@@ -2,6 +2,7 @@ import { useState } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
+import { abilityModifier, proficiencyBonus, savingThrowModifier, inferSaveProficiency } from "../rules/dnd5e";
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { ResourceTableEditor } from "./ResourceTableEditor";
@@ -163,7 +164,7 @@ type ProfileDraft = {
   hpMax: string;
   hpCurrent: string;
   speed: string;
-  abilities: Record<AbilityId, { score: string; modifier: string; save: string }>;
+  abilities: Record<AbilityId, { score: string; save: string; saveProficient: boolean }>;
   classFeatureLabel: string;
   classFeatureValue: string;
   classFeatureNote: string;
@@ -185,13 +186,26 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
     hpCurrent: String(actor.stats.hp.current),
     speed: typeof actor.stats.speed === "string" ? actor.stats.speed : "30 ft",
     abilities: Object.fromEntries(
-      ABILITY_IDS.map(id => [id, {
-        score: String(actor.abilityScores?.[id]?.score ?? ""),
-        modifier: String(actor.abilityScores?.[id]?.modifier ?? ""),
-        // Read the save back in. Without this the editor rebuilds abilityScores from
-        // score+modifier only, silently wiping every save on the next save-and-close.
-        save: String(actor.abilityScores?.[id]?.save ?? ""),
-      }])
+      ABILITY_IDS.map(id => {
+        const a = actor.abilityScores?.[id];
+        const scoreNum = a?.score;
+        // Sheets authored before the flag carry a typed save on every ability. Read it back
+        // as proficiency where it matches the rule, so opening an actor converts it without
+        // changing a single number. A save matching neither rule keeps its explicit value.
+        let saveProficient = a?.saveProficient ?? false;
+        let explicit = a?.save;
+        if (a?.saveProficient === undefined && typeof a?.save === "number" && typeof scoreNum === "number") {
+          const mod = typeof a.modifier === "number" ? a.modifier : abilityModifier(scoreNum);
+          const read = inferSaveProficiency({ save: a.save, modifier: mod, level: actor.level });
+          saveProficient = read.saveProficient;
+          explicit = read.keepExplicit ? a.save : undefined;
+        }
+        return [id, {
+          score: String(scoreNum ?? ""),
+          save: String(explicit ?? ""),
+          saveProficient,
+        }];
+      })
     ) as ProfileDraft["abilities"],
     classFeatureLabel: actor.classFeatureTracker?.label ?? "",
     classFeatureValue: actor.classFeatureTracker?.value ?? "",
@@ -209,14 +223,19 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
   const abilities: AbilityScores = {};
   for (const id of ABILITY_IDS) {
     const score = Number.parseInt(draft.abilities[id].score, 10);
-    const modifier = Number.parseInt(draft.abilities[id].modifier, 10);
+    // The modifier is DERIVED from the score, never typed. Two independent boxes let a
+    // score of 10 sit next to a modifier of +20 — wrong everywhere it is read, and invisible
+    // until someone rolls, because the stored modifier wins over the derived one.
+    const modifier = Number.isFinite(score) ? abilityModifier(score) : undefined;
     // A save of 0 is meaningful (CHA 10, no proficiency), so test for a finite number
     // rather than truthiness — and a blank field means "no override", not zero.
     const save = Number.parseInt(draft.abilities[id].save, 10);
-    if (Number.isFinite(score) || Number.isFinite(modifier) || Number.isFinite(save)) {
+    const prof = draft.abilities[id].saveProficient;
+    if (Number.isFinite(score) || Number.isFinite(save) || prof) {
       abilities[id] = {
         ...(Number.isFinite(score) ? { score } : {}),
-        ...(Number.isFinite(modifier) ? { modifier } : {}),
+        ...(modifier !== undefined ? { modifier } : {}),
+        ...(prof ? { saveProficient: true } : {}),
         ...(Number.isFinite(save) ? { save } : {}),
       };
     }
@@ -262,7 +281,7 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
     onChange({ ...draft, [key]: value });
   }
 
-  function setAbility(id: AbilityId, field: "score" | "modifier" | "save", value: string) {
+  function setAbility(id: AbilityId, field: "score" | "save" | "saveProficient", value: string | boolean) {
     onChange({ ...draft, abilities: { ...draft.abilities, [id]: { ...draft.abilities[id], [field]: value } } });
   }
 
@@ -343,30 +362,53 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
       </div>
 
       <h4 style={{ margin: "4px 0 0" }}>Ability Scores</h4>
-      {/* Three rows per ability: score, modifier, then the saving throw.
-          The save row is the override — leave it BLANK and the card shows the save as
-          equal to the modifier (correct for a non-proficient save). Fill it in for a
-          proficient save, or for a summon whose saves key off its owner rather than
-          its own scores (Faelar's Primal Bond adds Lyrielle's PB to all six). */}
+      {/* Score is the only number typed here.
+          The modifier is DERIVED — two independent boxes let a score of 10 sit beside a
+          modifier of +20, and the stored modifier wins wherever it is read, so the mistake
+          is invisible until someone rolls.
+          The save is a PROFICIENCY TOGGLE, not a number: proficiency adds the bonus for the
+          character's level, so the save follows the score and the level by itself instead of
+          needing a hand edit on every level-up. */}
       <p style={{ margin: 0, fontSize: 11, color: "#666" }}>
-        Rows: <span style={{ color: "#aaa" }}>score</span> · <span style={{ color: "#aaa" }}>modifier</span> · <span style={{ color: "#d7b36a" }}>save</span>.
-        Leave <span style={{ color: "#d7b36a" }}>save</span> blank when it equals the modifier; fill it in for proficient saves.
+        Type the <span style={{ color: "#aaa" }}>score</span> — the modifier is worked out from it.
+        Tick <span style={{ color: "#d7b36a" }}>SV</span> for a proficient save (adds +{proficiencyBonus(Number.parseInt(draft.level, 10) || 1)} at this level).
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
-        {ABILITY_IDS.map(id => (
+        {ABILITY_IDS.map(id => {
+          const scoreNum = Number.parseInt(draft.abilities[id].score, 10);
+          const mod = Number.isFinite(scoreNum) ? abilityModifier(scoreNum) : null;
+          const lvl = Number.parseInt(draft.level, 10) || 1;
+          const explicit = Number.parseInt(draft.abilities[id].save, 10);
+          const sv = Number.isFinite(explicit)
+            ? explicit
+            : mod === null ? null
+            : savingThrowModifier({ modifier: mod, saveProficient: draft.abilities[id].saveProficient, level: lvl });
+          const fmt = (n: number | null) => n === null ? "—" : n >= 0 ? `+${n}` : `${n}`;
+          return (
           <div key={id} style={{ textAlign: "center" }}>
             <div style={{ fontSize: 11, color: "#888", marginBottom: 2 }}>{ABILITY_LABELS[id]}</div>
             <input type="number" value={draft.abilities[id].score} onChange={e => setAbility(id, "score", e.target.value)}
-              placeholder="—" title="Score"
+              placeholder="—" title="Score — the only number you type"
               style={{ width: "100%", padding: "2px 4px", borderRadius: 3, border: "1px solid #333", background: "#111", color: "#fff", fontSize: 12, textAlign: "center" }} />
-            <input type="number" value={draft.abilities[id].modifier} onChange={e => setAbility(id, "modifier", e.target.value)}
-              placeholder="mod" title="Modifier"
-              style={{ width: "100%", padding: "2px 4px", borderRadius: 3, border: "1px solid #222", background: "#0d0d0d", color: "#aaa", fontSize: 11, textAlign: "center", marginTop: 2 }} />
-            <input type="number" value={draft.abilities[id].save} onChange={e => setAbility(id, "save", e.target.value)}
-              placeholder="sv" title="Saving throw — leave blank when the save equals the modifier. Fill it in for a proficient save, or a summon whose saves key off its owner."
-              style={{ width: "100%", padding: "2px 4px", borderRadius: 3, border: "1px solid #3a2f18", background: "#0d0d0d", color: "#d7b36a", fontSize: 11, textAlign: "center", marginTop: 2 }} />
+            <div title="Modifier — worked out from the score"
+              style={{ width: "100%", padding: "2px 4px", borderRadius: 3, border: "1px solid #222", background: "#0d0d0d", color: "#aaa", fontSize: 11, textAlign: "center", marginTop: 2 }}>
+              {fmt(mod)}
+            </div>
+            <label title={Number.isFinite(explicit)
+                ? `Explicit save override of ${fmt(explicit)} — clear it on the sheet to use proficiency instead.`
+                : "Proficient in this saving throw — adds the proficiency bonus for this level."}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 2,
+                padding: "2px 4px", borderRadius: 3, border: "1px solid #3a2f18", background: "#0d0d0d",
+                color: "#d7b36a", fontSize: 11, cursor: Number.isFinite(explicit) ? "default" : "pointer" }}>
+              <input type="checkbox" disabled={Number.isFinite(explicit)}
+                checked={draft.abilities[id].saveProficient}
+                onChange={e => setAbility(id, "saveProficient", e.target.checked)}
+                style={{ margin: 0 }} />
+              <span>{fmt(sv)}</span>
+            </label>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <h4 style={{ margin: "4px 0 0" }}>Class Feature Tracker</h4>

@@ -1,6 +1,7 @@
 import type { AbilityId, AbilityScore, AbilityScores } from "../types/actor";
 import type { DerivedStats } from "../state/deriveActorStats";
 import { formatDerivedScore, formatModifier as formatDerivedModifier } from "../state/deriveActorStats";
+import { abilityModifier, savingThrowModifier } from "../rules/dnd5e";
 
 const abilityOrder: AbilityId[] = ["str", "dex", "con", "int", "wis", "cha"];
 
@@ -16,16 +17,21 @@ const abilityLabels: Record<AbilityId, string> = {
 function getModifier(score?: AbilityScore) {
   if (!score) return null;
   if (typeof score.modifier === "number") return score.modifier;
-  if (typeof score.score === "number") return Math.floor((score.score - 10) / 2);
+  if (typeof score.score === "number") return abilityModifier(score.score);
   return null;
 }
 
-// The saving-throw modifier: an explicit `save` (proficient PC saves, or a summon's
-// summoner-keyed saves) wins; otherwise the save equals the ability modifier — the
-// "read @dex, (n - 10) / 2" default that's correct for a creature with no proficiency.
-function getSave(score: AbilityScore | undefined, modifier: number | null) {
-  if (typeof score?.save === "number") return score.save;
-  return modifier;
+// The saving-throw modifier: proficiency is a FLAG that adds the proficiency bonus, so the
+// save follows the score and the level on its own. An explicit `save` still wins — that's
+// the escape hatch for a summon whose saves key off its summoner.
+function getSave(score: AbilityScore | undefined, modifier: number | null, level: number) {
+  if (modifier === null) return typeof score?.save === "number" ? score.save : null;
+  return savingThrowModifier({
+    modifier,
+    saveProficient: score?.saveProficient,
+    explicit: score?.save,
+    level,
+  });
 }
 
 function formatModifier(modifier: number | null) {
@@ -42,9 +48,11 @@ type AbilityScoreRowProps = {
   abilityScores?: AbilityScores;
   /** If provided, shows derived (equipment-modified) values instead of base */
   derivedStats?: DerivedStats;
+  /** Character level — proficient saves add the bonus for it. Defaults to 1. */
+  level?: number;
 };
 
-export function AbilityScoreRow({ abilityScores, derivedStats }: AbilityScoreRowProps) {
+export function AbilityScoreRow({ abilityScores, derivedStats, level = 1 }: AbilityScoreRowProps) {
   return (
     <section className="ability-score-row" aria-label="Ability scores">
       {abilityOrder.map((abilityId) => {
@@ -55,7 +63,7 @@ export function AbilityScoreRow({ abilityScores, derivedStats }: AbilityScoreRow
           // Show derived stats from equipment. Saves aren't touched by equipment
           // beyond the score change, so the save tracks the derived modifier unless
           // an explicit `save` override is present (summoner-keyed / proficient).
-          const save = getSave(score, derived.modifier);
+          const save = getSave(score, derived.modifier, level);
           const saveDiffers = save !== null && save !== derived.modifier;
           return (
             <div
@@ -82,7 +90,7 @@ export function AbilityScoreRow({ abilityScores, derivedStats }: AbilityScoreRow
 
         // Fallback: plain base stats
         const modifier = getModifier(score);
-        const save = getSave(score, modifier);
+        const save = getSave(score, modifier, level);
         const saveDiffers = save !== null && save !== modifier;
 
         return (

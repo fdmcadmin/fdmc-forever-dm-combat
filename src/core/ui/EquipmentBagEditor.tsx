@@ -76,10 +76,35 @@ export type StatEffect = {
   condition?: string;
 };
 
+/**
+ * Where a worn item sits. Two items in the same slot can't both be on.
+ *
+ * This is what stops a forgotten piece from quietly contributing: body armour REPLACES your
+ * AC, so a second suit left equipped can end up being the one counted. Weapons have no slot
+ * — they're held, not worn, and the hand they occupy isn't tracked here.
+ *
+ * Capacity is one per slot except rings, which are worn two at a time.
+ */
+export type EquipmentSlot =
+  | "body" | "shield" | "head" | "neck" | "cloak" | "shoulders"
+  | "hands" | "wrist" | "belt" | "feet" | "ring";
+
+export const SLOT_CAPACITY: Record<EquipmentSlot, number> = {
+  body: 1, shield: 1, head: 1, neck: 1, cloak: 1, shoulders: 1,
+  hands: 1, wrist: 1, belt: 1, feet: 1, ring: 2,
+};
+
+export const SLOT_LABEL: Record<EquipmentSlot, string> = {
+  body: "Body armour", shield: "Shield", head: "Head", neck: "Neck", cloak: "Cloak",
+  shoulders: "Shoulders", hands: "Hands", wrist: "Wrist", belt: "Belt", feet: "Feet", ring: "Ring",
+};
+
 export type EquipmentItem = {
   id: string;
   name: string;
   type: "weapon" | "armor" | "shield" | "consumable" | "gear" | "magic" | "tool" | "passive";
+  /** Worn slot. Absent = carried, not worn, and never displaces anything. */
+  slot?: EquipmentSlot;
   description: string;
   isUsable: boolean;
   attack?: string;
@@ -157,7 +182,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
 // with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
 // armor and weapons are LOCKED and unchanged.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.6.1-dawn-and-ledger";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.6.2-worn-slots";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -402,6 +427,9 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Consumables: "triggered" → Use button fires a log entry (no dice on equip tab)
       // Armor/gear: "reference"
       outcomeMode: isConsumable ? "triggered" : "reference",
+      // Carried on the action, like statEffects, so the card can enforce slot exclusivity
+      // without resolving the item back out of the library.
+      slot: item.slot,
       details: [
         item.ac ? `AC ${item.ac}` : undefined,
         item.attack ? `⚔ ${item.attack}` : undefined,

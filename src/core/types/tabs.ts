@@ -116,6 +116,9 @@ export type ActorActionMetadata = {
    *  looked up in the library) so the card can count attunement without resolving items —
    *  the same reason statEffects are baked at attach time. Only EQUIPPED items count. */
   attunementRequired?: boolean;
+  /** Equipment-tab items only: the worn slot, carried so the card can enforce exclusivity
+   *  without a library lookup. Absent = carried, not worn. See EquipmentSlot. */
+  slot?: string;
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
   /**
