@@ -80,11 +80,21 @@ export function loadOpenLootOffer(): OpenLootOffer | null {
   }
 }
 
+/**
+ * Fired in THIS window whenever the record changes. The write is the signal.
+ *
+ * Cross-window updates already arrive as the native `storage` event, which only fires in
+ * OTHER windows — this covers the window that did the writing. Between the two, nothing has
+ * to poll: if nothing was written, nothing changed and nothing needs to re-render.
+ */
+export const OPEN_LOOT_OFFER_CHANGED = "fdmc:open-loot-offer-changed";
+
 export function saveOpenLootOffer(offer: OpenLootOffer | null): void {
   try {
     if (offer) window.localStorage.setItem(OPEN_LOOT_OFFER_KEY, JSON.stringify(offer));
     else window.localStorage.removeItem(OPEN_LOOT_OFFER_KEY);
   } catch { /* storage unavailable — the offer just won't be stock-limited */ }
+  try { window.dispatchEvent(new CustomEvent(OPEN_LOOT_OFFER_CHANGED)); } catch { /* no DOM */ }
 }
 
 /** Whose pick it is, or null for an open shop / a finished round. */
@@ -98,6 +108,8 @@ export type ClaimResult =
   | { outcome: "claimed"; offer: OpenLootOffer; done: boolean }
   /** Ordered offer and it isn't this seat's turn yet. */
   | { outcome: "not-your-turn"; waitingOn: LootRecipient }
+  /** Loot round, and this seat has already had its one pick. */
+  | { outcome: "already-picked"; took?: string }
   /** Someone else took it first, it was never in this pool, or the offer is stale. */
   | { outcome: "gone" };
 
@@ -128,6 +140,19 @@ export function claimFromOpenOffer(
   }
 
   const isPass = itemId === LOOT_PASS_ID;
+
+  // LOOT IS CHOOSE-ONE. Always — that predates turn order and does not depend on it. An
+  // unordered round (one recipient, or turns switched off) has no queue to stop a seat
+  // coming back for more, so the limit lives HERE rather than in whether the player's panel
+  // happens to have closed. A merchant is the exception by design: spend what you want or
+  // can, then hand the counter on.
+  if (offer.turnEndsOnPick && !isPass) {
+    const already = (offer.claims ?? []).find(
+      c => c.seatId === seatId && (c.kind === "took" || c.kind === "bought"),
+    );
+    if (already) return { outcome: "already-picked", took: already.itemName };
+  }
+
   if (!isPass && !offer.remainingItemIds.includes(itemId)) return { outcome: "gone" };
 
   // A pass always hands the turn on — that's what it's for. A pick only does when the round

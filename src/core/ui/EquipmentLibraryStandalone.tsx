@@ -14,7 +14,7 @@ import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { COIN_TYPES, COIN_LABEL, COIN_ABBR, formatCopperPrice, type CoinType } from "../currency/currency";
-import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, type OpenLootOffer } from "./openLootOffer";
+import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, OPEN_LOOT_OFFER_CHANGED, type OpenLootOffer } from "./openLootOffer";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
 /** DM sends a single item directly (existing flow) */
@@ -130,6 +130,12 @@ export type EquipmentGroup = {
   /** Sort bucket: act number, 9000 for base weapons, 9999 for unsorted. */
   actBucket: number;
 };
+
+/** "seat-3" → 3. Unparseable ids sort last rather than jumping the queue. */
+function seatNumber(seatId: string): number {
+  const n = Number.parseInt(/(\d+)/.exec(seatId)?.[1] ?? "", 10);
+  return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
+}
 
 function groupByEncounter(items: EquipmentItem[]): EquipmentGroup[] {
   const groups = new Map<string, { items: EquipmentItem[]; act: number; session: number }>();
@@ -504,19 +510,23 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatIds: string[]; mode: "boss-mid" | "boss-final" | "merchant" } | null>(null);
   const [usePickOrder, setUsePickOrder] = useState(true);
   // Live view of the round in progress. Claims are handled in the main App window, so the
-  // record changes underneath this one — `storage` fires cross-window, which is exactly the
-  // signal we need. Focus covers the case where this window was hidden while it changed.
+  // record changes underneath this one.
+  //
+  // THE WRITE IS THE SIGNAL — nothing polls. `storage` carries the other window's writes,
+  // OPEN_LOOT_OFFER_CHANGED carries this one's. A refresh that finds nothing new returns the
+  // previous object so React skips the render entirely: no write, no work.
   const [openOffer, setOpenOffer] = useState<OpenLootOffer | null>(() => loadOpenLootOffer());
   const [offerPanelOpen, setOfferPanelOpen] = useState(true);
   useEffect(() => {
-    const refresh = () => setOpenOffer(loadOpenLootOffer());
+    const refresh = () => setOpenOffer(prev => {
+      const next = loadOpenLootOffer();
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
     window.addEventListener("storage", refresh);
-    window.addEventListener("focus", refresh);
-    const poll = window.setInterval(refresh, 2000);
+    window.addEventListener(OPEN_LOOT_OFFER_CHANGED, refresh);
     return () => {
       window.removeEventListener("storage", refresh);
-      window.removeEventListener("focus", refresh);
-      window.clearInterval(poll);
+      window.removeEventListener(OPEN_LOOT_OFFER_CHANGED, refresh);
     };
   }, []);
   const [convergenceBuilder, setConvergenceBuilder] = useState<{
@@ -719,9 +729,19 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     setTimeout(() => setRecentDelivery(null), 6000);
   }
 
-  /** Default guest list: the whole party, in seat order (so a merchant starts at seat 1). */
+  /**
+   * Default guest list: everyone in play, ordered by SEAT NUMBER.
+   *
+   * The app knows its own seat numbers ("seat-1", "seat-2", …), so the order is read from
+   * them rather than from whatever sequence the seat record happens to be stored in — a seat
+   * removed and re-added would otherwise land at the end of the queue instead of its place.
+   * A seat with no actor isn't in play, so the round starts at the first seat that is.
+   */
   function defaultRecipientIds(): string[] {
-    return seats.filter(s => s.seatMode !== "viewer").map(s => s.seatId);
+    return seats
+      .filter(s => s.seatMode !== "viewer" && s.actorIds.length > 0)
+      .sort((a, b) => seatNumber(a.seatId) - seatNumber(b.seatId))
+      .map(s => s.seatId);
   }
 
   /**

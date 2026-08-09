@@ -985,6 +985,17 @@ export default function App() {
         }, { destination: "REMOTE" });
         return;
       }
+      if (claim.outcome === "already-picked") {
+        void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:purchase-denied",
+          seatId: msg.seatId,
+          itemName: itemLabel,
+          reason: claim.took
+            ? `You already took ${claim.took} from this drop — loot is one pick each.`
+            : "You've already had your pick from this drop.",
+        }, { destination: "REMOTE" });
+        return;
+      }
       if (claim.outcome === "not-your-turn") {
         void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
           type: "fdmc:purchase-denied",
@@ -1451,6 +1462,10 @@ export default function App() {
   const dismissedOfferIds = useRef<Set<string>>(new Set());
   /** Offers already announced in the log, so stock updates don't re-announce them. */
   const lootOfferSeenIds = useRef<Set<string>>(new Set());
+  // Which of this seat's actors is buying/receiving. Offers are addressed to SEATS, but one
+  // player can run two characters with separate purses and bags — and the offer panel covers
+  // the card switcher, so the choice has to be reachable from inside the panel.
+  const [buyerActorId, setBuyerActorId] = useState<string>("");
   const [showConvergePanel, setShowConvergePanel] = useState(false);
   const [convergenceSubmitting, setConvergenceSubmitting] = useState(false);
   // Convergence item selection — lifted to component scope so the hook is never
@@ -2627,6 +2642,35 @@ export default function App() {
         const ordered = Boolean(lootOffer.ordered);
         const myTurn = !ordered || lootOffer.turnSeatId === claimedSeatId;
         const waitingOn = lootOffer.turnLabel ?? "another player";
+        // The seat is the recipient; this is which of its characters actually gets the item
+        // and pays for it. Defaults to the card on screen when the seat runs only one.
+        const buyer = playerActors.find(a => a.id === buyerActorId) ?? actorToShow!;
+
+        /**
+         * Which character is acting, for a seat that runs more than one.
+         *
+         * Two characters on one seat have separate purses and separate bags, so "buy from
+         * both separately" needs a target — and since the offer panel covers the card
+         * switcher, it has to be pickable here. A single-character seat never sees this.
+         */
+        const buyerPicker = playerActors.length > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, flexWrap: "wrap", padding: "6px 12px", background: "#12121c", borderBottom: "1px solid #2a2a3e" }}>
+            <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Acting as</span>
+            {playerActors.map(a => {
+              const active = a.id === buyer.id;
+              return (
+                <button key={a.id} type="button" onClick={() => setBuyerActorId(a.id)}
+                  title={`${a.name} pays and receives`}
+                  style={{ fontSize: 11, padding: "3px 10px", borderRadius: 12, cursor: "pointer", fontWeight: active ? 700 : 400,
+                    background: active ? "#7b68ee22" : "transparent",
+                    border: `1px solid ${active ? "#7b68ee" : "#333"}`,
+                    color: active ? "#7b68ee" : "#777" }}>
+                  {a.name}
+                </button>
+              );
+            })}
+          </div>
+        );
 
         function chooseItem(item: { id: string; name: string }) {
           void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
@@ -2634,12 +2678,12 @@ export default function App() {
             seatId: claimedSeatId,
             offerId: lootOffer!.offerId,
             chosenItemId: item.id,
-            actorId: actorToShow!.id,
+            actorId: buyer.id,
           } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
           // One pick per seat in an ordered round — bow out so the stock updates that follow
           // don't re-open the panel on top of you while the rest of the party picks.
           if (ordered) dismissedOfferIds.current.add(lootOffer!.offerId);
-          addEntry({ actorName: actorToShow!.name, actionName: "Loot Chosen", tabId: "system", message: `${actorToShow!.name} chose ${item.name}.` });
+          addEntry({ actorName: buyer.name, actionName: "Loot Chosen", tabId: "system", message: `${buyer.name} chose ${item.name}.` });
         }
 
         /** Take nothing and hand the turn on, so one seat can't stall the whole round. */
@@ -2649,7 +2693,7 @@ export default function App() {
             seatId: claimedSeatId,
             offerId: lootOffer!.offerId,
             chosenItemId: LOOT_PASS_ID,
-            actorId: actorToShow!.id,
+            actorId: buyer.id,
           } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
           dismissedOfferIds.current.add(lootOffer!.offerId);
           setLootOffer(null);
@@ -2664,9 +2708,9 @@ export default function App() {
         );
 
         // Merchant (buy-many) — player's wallet (copper) + what they already own, both reactive.
-        const myCoins = roomLiveState.actorLiveState[actorToShow!.id]?.coins ?? {};
+        const myCoins = roomLiveState.actorLiveState[buyer.id]?.coins ?? {};
         const myCopper = coinsToCopper(myCoins);
-        const ownedIds = new Set((actorToShow!.tabs.equipment ?? []).map(e => e.id.replace(/^equip-/, "")));
+        const ownedIds = new Set((buyer.tabs.equipment ?? []).map(e => e.id.replace(/^equip-/, "")));
         function buyItem(item: import("./core/ui/EquipmentBagEditor").EquipmentItem) {
           const costCopper = parsePriceCopper(item.value);
           if (costCopper > myCopper) {
@@ -2679,7 +2723,7 @@ export default function App() {
             seatId: claimedSeatId,
             offerId: lootOffer!.offerId,
             chosenItemId: item.id,
-            actorId: actorToShow!.id,
+            actorId: buyer.id,
             cost: parseGoldCost(item.value),
           } as import("./core/ui/EquipmentLibraryStandalone").LootChoice, { destination: "REMOTE" });
         }
@@ -2695,6 +2739,9 @@ export default function App() {
                   {myTurn ? "Choose one item — it will be added to your equipment." : "Waiting for your turn to pick."}
                 </p>
               </div>
+              {playerActors.length > 1 && (
+                <div style={{ maxWidth: 480, margin: "0 auto", width: "100%", borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a3e" }}>{buyerPicker}</div>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
                 {!myTurn && waitBanner}
                 {lootOffer.items.length === 0 && (
@@ -2754,6 +2801,8 @@ export default function App() {
                     {formatCoins(myCoins)}
                   </span>
                 </div>
+
+                {buyerPicker}
 
                 {/* Whose turn at the counter */}
                 {ordered && (
