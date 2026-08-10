@@ -232,14 +232,26 @@ export function isMonsterLegendaryAction(a: MonsterReaderAction): boolean {
  * block gives — `kind: "spell"` is not set on templates, so the Frost-Weaver's Whiteout
  * (4th-level Sleet Storm) and Raise the Frozen (3rd-level Animate Dead) both read as
  * `kind: "action"`. The slot is what marks them.
- *
- * A RECHARGE ability is never one of these, whatever else it carries. Recharge is a
- * monster-only economy — the die is the cost, so the ability is at most a single action and
- * must not swallow the whole turn the way a cast does.
  */
 export function isMonsterSpellAction(a: MonsterReaderAction): boolean {
-  if (a.recharge) return false;
   return a.spellSlotLevel !== undefined || a.kind === "spell";
+}
+
+/**
+ * Actions that cost the creature's WHOLE turn of attacks rather than one swing.
+ *
+ * Two kinds qualify, for the same reason — each one IS the creature's Action:
+ *  · a spell action — casting is the action;
+ *  · a RECHARGE action — "recharge" is not a separate economy, it is a limit on how often a
+ *    normal action may be used. A dragon's Breath Weapon uses its Action for the turn and it
+ *    cannot also multiattack. Unless a creature's action package explicitly says the recharge
+ *    ability may be substituted for one of its attacks, it is either/or, never both.
+ *
+ * (An earlier pass had recharge costing a single swing. That was wrong: it let the Wight lead
+ * with Hungering Leap and still take both its normal attacks.)
+ */
+export function isMonsterFullAction(a: MonsterReaderAction): boolean {
+  return isMonsterSpellAction(a) || Boolean(a.recharge);
 }
 
 export function isStandardMonsterAction(action: MonsterReaderAction): boolean {
@@ -289,10 +301,10 @@ export function deriveMonsterActionCounter(
   // a swing. Traits and reactions were already out via isStandardMonsterAction.
   const eligible = actions.filter(a =>
     isStandardMonsterAction(a) && !isMonsterBonusAction(a) && !isMonsterLegendaryAction(a));
-  // A SPELL ACTION IS A FULL ACTION: casting ends the turn's attacks rather than costing one
-  // swing out of two. Slot-spending is what identifies it, not `kind`.
-  const spendable = eligible.filter(a => !isMonsterSpellAction(a)).map(a => a.name).filter(Boolean);
-  const fullActionNames = eligible.filter(isMonsterSpellAction).map(a => a.name).filter(Boolean);
+  // Spells and recharge abilities each ARE the creature's action, so they end the turn's
+  // attacks rather than costing one swing out of two. See isMonsterFullAction.
+  const spendable = eligible.filter(a => !isMonsterFullAction(a)).map(a => a.name).filter(Boolean);
+  const fullActionNames = eligible.filter(isMonsterFullAction).map(a => a.name).filter(Boolean);
 
   // Name what the budget buys. Past a few options the list stops being readable on a card,
   // so it degrades to the count alone rather than wrapping to three lines.
