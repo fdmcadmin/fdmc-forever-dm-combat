@@ -1067,6 +1067,15 @@ export function ActorCard({
   // Give-to-party-member picker. Only the equipment tab's own rows are handable: a weapon's
   // main-tab attack row is generated FROM the item, so moving the item takes it along.
   const sendableItems = actor.tabs.equipment ?? [];
+  /**
+   * Only UNEQUIPPED items can be given away.
+   *
+   * An equipped item is contributing to the sheet — its `statEffects` are inside the derived
+   * AC and stats. Handing one over mid-wear would leave this card claiming armour it no
+   * longer has. Taking it off first is the same move in the real world, and it makes the
+   * transfer a plain move of an inert object.
+   */
+  const giveableItems = sendableItems.filter(a => a.metadata?.equipped === false);
   const [sendItemId, setSendItemId] = useState("");
   const [sendToId, setSendToId] = useState("");
 
@@ -4499,8 +4508,8 @@ export function ActorCard({
             <span style={{ fontSize: 10, color: "#555", letterSpacing: 0.5 }}>GIVE</span>
             <select value={sendItemId} onChange={e => setSendItemId(e.target.value)}
               style={{ flex: "1 1 120px", minWidth: 0, padding: "2px 4px", fontSize: 11, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
-              <option value="">— item —</option>
-              {sendableItems.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+              <option value="">{giveableItems.length ? "— item —" : "— take it off first —"}</option>
+              {giveableItems.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
             </select>
             <span style={{ fontSize: 11, color: "#555" }}>→</span>
             <select value={sendToId} onChange={e => setSendToId(e.target.value)}
@@ -4511,7 +4520,7 @@ export function ActorCard({
             <button type="button"
               disabled={!sendItemId || !sendToId}
               onClick={() => {
-                const item = sendableItems.find(a => a.id === sendItemId);
+                const item = giveableItems.find(a => a.id === sendItemId);
                 if (!item || !sendToId) return;
                 onSendItem(item, sendToId);
                 setSendItemId("");

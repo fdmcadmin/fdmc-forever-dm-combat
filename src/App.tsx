@@ -1096,6 +1096,19 @@ export default function App() {
     const moving = (from.tabs.equipment ?? []).find(a => a.id === actionId);
     if (!moving) return;
 
+    // An EQUIPPED item cannot be handed over — its statEffects are inside the sender's
+    // derived AC and stats, so giving it away while worn leaves that card claiming armour it
+    // no longer has. The picker already hides equipped items, but the rule lives here too:
+    // the card is one entry point and the DM's own click is another, and a rule enforced
+    // only in the UI is a rule that holds until someone finds the other door.
+    if (moving.metadata?.equipped !== false) {
+      addEntry({
+        actorName: from.name, actionName: "Hand-off Blocked", tabId: "system",
+        message: `⚠ ${from.name} must unequip ${moving.label} before handing it over — its bonuses are still on the sheet.`,
+      });
+      return;
+    }
+
     // A weapon's rollable main-tab row is generated from the item and shares its id suffix,
     // so it travels along instead of being left behind pointing at an item that's gone.
     const itemKey = actionId.replace(/^equip-/, "");

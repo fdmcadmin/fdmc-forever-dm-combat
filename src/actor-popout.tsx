@@ -16,6 +16,7 @@ import { ActorCard } from "./core/ui/ActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
+import { FDMC_CHANNELS } from "./core/constants/channels";
 import { useActorLiveState } from "./core/state/useActorLiveState";
 import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useCommittedRollState } from "./core/state/useCommittedRollState";
@@ -74,6 +75,27 @@ function ActorPopout() {
   const actorList = useMemo(() => baseActor ? [baseActor] : [], [baseActor]);
 
   const { roomLiveState, setActorHp, getActorHp, setActorCoins } = useActorLiveState(actorList);
+
+  /**
+   * The rest of the party, so an item can be handed to another player from this window.
+   *
+   * The popout is its own window with no actor library, so it learns the roster the same
+   * way the inline card does: subscribe, and ASK on mount for the late-joiner case. Without
+   * this the card had no `partyMembers`, and the send picker simply never rendered — the
+   * transfer plumbing on both sides was complete, with no way to trigger it.
+   */
+  const [partyRoster, setPartyRoster] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    const unsub = OBR.broadcast.onMessage(FDMC_CHANNELS.partyTracker, (event) => {
+      const msg = event.data as { type?: string; party?: Array<{ id: string; name: string }> } | undefined;
+      if (msg?.type === "fdmc:party-tracker" && Array.isArray(msg.party)) {
+        setPartyRoster(msg.party.map(c => ({ id: c.id, name: c.name })).filter(c => c.id && c.name));
+      }
+    });
+    void OBR.broadcast.sendMessage(FDMC_CHANNELS.partyTracker, { type: "fdmc:party-tracker-request" }, { destination: "REMOTE" }).catch(() => undefined);
+    return unsub;
+  }, []);
 
   // The wallet is DM-granted: only the GM may edit coins. Players still SEE their wallet
   // (read-only); the merchant still spends from it. Outside OBR (dev) default to editable.
@@ -244,6 +266,17 @@ function ActorPopout() {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
             { type: "fdmc:item-equip", actorId: actor.id, actionId: action.id },
+            { destination: "REMOTE" }).catch(() => undefined);
+        }}
+        // Hand an item to another player. Same authority rule as equipping: this window
+        // only ASKS, and the DM performs the move so the item can never exist on two
+        // sheets or neither. This is how a crafted or converged item reaches whoever
+        // actually needs it.
+        partyMembers={partyRoster.filter(p => p.id !== actor.id)}
+        onSendItem={(action, toActorId) => {
+          if (!OBR.isAvailable) return;
+          void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
+            { type: "fdmc:item-transfer", fromActorId: actor.id, toActorId, actionId: action.id },
             { destination: "REMOTE" }).catch(() => undefined);
         }}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel })}
