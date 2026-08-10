@@ -1069,7 +1069,37 @@ export function ActorCard({
 
   // Give-to-party-member picker. Only the equipment tab's own rows are handable: a weapon's
   // main-tab attack row is generated FROM the item, so moving the item takes it along.
-  const sendableItems = actor.tabs.equipment ?? [];
+  const allCarried = actor.tabs.equipment ?? [];
+
+  /**
+   * The CARRIED panel is a combat control, so it lists combat gear only.
+   *
+   * This card is what a player drives during a fight, and equipping is now turn-bound and
+   * once-each-way — decisions worth a list you can scan. Rope, rations, a tool kit and the
+   * two ledger lines are inventory: they never change a number on the sheet, so putting them
+   * in the same list only makes the armour harder to find.
+   *
+   * An item counts as combat gear when it can change something mid-fight: it is worn or
+   * wielded (weapon / armour / shield), it carries a pool, it moves a stat or AC, it has a
+   * to-hit or dice, it feeds spells through a focus, or it occupies an attunement slot. The
+   * full inventory still lives on the equipment tab itself — nothing is hidden from the
+   * player, it just isn't in the equip control.
+   */
+  const isCombatGear = (a: ActorAction): boolean => {
+    const m = a.metadata;
+    if (!m) return false;
+    if (m.charges || m.attunementRequired) return true;
+    if (m.attack || m.damage || m.acDisplay) return true;
+    if (m.spellFocusAttack || m.spellFocusDamage) return true;
+    if ((m.statEffects?.length ?? 0) > 0) return true;
+    return /^(weapon|armor|shield)$/i.test(a.category ?? "");
+  };
+  const carriedCombatGear = allCarried.filter(isCombatGear);
+
+  // GIVING is deliberately NOT filtered — handing someone a rope, a tool kit or a ration tin
+  // is a normal thing to do out of combat, and trade is already locked while a fight runs.
+  // Only the equip control narrows to combat gear.
+  const sendableItems = allCarried;
   /**
    * Only UNEQUIPPED items can be given away.
    *
@@ -4549,7 +4579,7 @@ export function ActorCard({
             equipment rows carry no roll, so the tab has the room, and equipping is the
             player's decision to make mid-session. The DM still owns the record; the toggle
             asks, exactly like the hand-off above. */}
-        {activeTab === "equipment" && onToggleEquipped && sendableItems.length > 0 && (
+        {activeTab === "equipment" && onToggleEquipped && carriedCombatGear.length > 0 && (
           <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4 }}>
               <span style={{ fontSize: 10, color: "#555", letterSpacing: 0.5 }}>CARRIED</span>
@@ -4558,7 +4588,7 @@ export function ActorCard({
                 ATTUNED {attunedItems.length}/{ATTUNEMENT_LIMIT}
               </span>
             </div>
-            {sendableItems.map(item => {
+            {carriedCombatGear.map(item => {
               const isEquipped = item.metadata?.equipped !== false;
               const needsAttune = Boolean(item.metadata?.attunementRequired);
               // Equipping a fourth attuned item is the one move the cap forbids. Unequipping
