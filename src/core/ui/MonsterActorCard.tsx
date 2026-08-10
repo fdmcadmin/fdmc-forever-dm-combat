@@ -1413,6 +1413,40 @@ export function MonsterActorCard({
           )}
         </div>
 
+        {/* 3c. Legendary — up here, directly under the economy row, NOT down among the action
+                lists. It is spent on other creatures' turns, so it is reached constantly and
+                out of order; burying it below Actions/Bonus/Reactions meant scrolling past
+                everything the creature can't currently do to find the one thing it can.
+                Collapsed by default and opened with a click, like the player card's additive
+                menu: the header carries the pool, the options only appear when wanted.
+
+                Separate from Reactions on purpose — different economies that happen to share
+                "fires when it isn't my turn". */}
+        {legendary.length > 0 && (
+          <>
+            <SectionLabel text={legendaryPerRound ? `Legendary (${legendaryLeft}/${legendaryPerRound})` : "Legendary"}
+              count={legendary.length} accent={SECTION_ACCENT.legendary}
+              collapsible open={legendaryOpen} onToggle={() => setLegendaryOpen(o => !o)} />
+            {legendaryOpen && legendary.map(a => {
+              const cost = a.legendaryCost ?? 1;
+              const unaffordable = legendaryPerRound > 0 && cost > legendaryLeft;
+              return (
+                <ActionCard key={a.name} action={a}
+                  isUsed={unaffordable || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
+                  slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
+                  isDischarged={dischargedActionIds.has(slugify(a.name))}
+                  committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
+                  attackCounter={undefined} stepsUsed={0}
+                  onUse={(action) => { setLegendaryUsed(u => u + cost); handleUseAction(action); }}
+                  onRollResult={handleRollResult}
+                  onCommit={handleCommit} onClearRoll={handleClearRoll}
+                  onStepUsed={() => undefined} onStepReset={() => undefined}
+                />
+              );
+            })}
+          </>
+        )}
+
         {/* 4. Actions — true action-cost only */}
         {mainActions.length > 0 && (
           <>
@@ -1500,34 +1534,6 @@ export function MonsterActorCard({
                 onStepUsed={() => undefined} onStepReset={() => undefined}
               />
             ))}
-          </>
-        )}
-
-        {/* 6b. Legendary — its own pool, spent on OTHER creatures' turns. Separate from
-                Reactions on purpose: they are different economies that happen to share
-                "fires when it isn't my turn". */}
-        {legendary.length > 0 && (
-          <>
-            <SectionLabel text={legendaryPerRound ? `Legendary (${legendaryLeft}/${legendaryPerRound})` : "Legendary"}
-              count={legendary.length} accent={SECTION_ACCENT.legendary}
-              collapsible open={legendaryOpen} onToggle={() => setLegendaryOpen(o => !o)} />
-            {legendaryOpen && legendary.map(a => {
-              const cost = a.legendaryCost ?? 1;
-              const unaffordable = legendaryPerRound > 0 && cost > legendaryLeft;
-              return (
-                <ActionCard key={a.name} action={a}
-                  isUsed={unaffordable || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
-                  slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
-                  isDischarged={dischargedActionIds.has(slugify(a.name))}
-                  committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
-                  attackCounter={undefined} stepsUsed={0}
-                  onUse={(action) => { setLegendaryUsed(u => u + cost); handleUseAction(action); }}
-                  onRollResult={handleRollResult}
-                  onCommit={handleCommit} onClearRoll={handleClearRoll}
-                  onStepUsed={() => undefined} onStepReset={() => undefined}
-                />
-              );
-            })}
           </>
         )}
 

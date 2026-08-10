@@ -1044,6 +1044,26 @@ export function ActorCard({
   // the items themselves sit on the equipment and main tabs.
   const itemChargePools = useMemo(() => chargeBearingActions(actor.tabs), [actor.tabs]);
 
+  /**
+   * Spell-slot pools for the at-a-glance pill row, lowest level first.
+   *
+   * Sourced from the Resources tab and `resourceCounters` — the very things a cast spends —
+   * so the pills cannot drift from the sheet. Pact slots count: they are slots the player
+   * spends and wants to see. Anything without a positive max is not a pool and is skipped.
+   */
+  const slotPills = useMemo(() => {
+    return (actor.tabs.resources ?? [])
+      .filter(r => r.metadata?.resourceKind === "spellSlot" || r.metadata?.resourceKind === "pactSlot")
+      .map(r => {
+        const parsedMax = Number.parseInt(r.metadata?.additive ?? "", 10);
+        const max = Number.isFinite(parsedMax) && parsedMax > 0 ? parsedMax : 0;
+        const level = Number.parseInt((r.label.match(/\b[Ll]\s?(\d)\b/) ?? r.label.match(/(\d)/) ?? [])[1] ?? "", 10);
+        return { level: Number.isFinite(level) ? level : 0, max, label: r.label, remaining: Math.min(resourceCounters?.[r.id] ?? max, max) };
+      })
+      .filter(p => p.max > 0)
+      .sort((a, b) => a.level - b.level);
+  }, [actor.tabs.resources, resourceCounters]);
+
   // Give-to-party-member picker. Only the equipment tab's own rows are handable: a weapon's
   // main-tab attack row is generated FROM the item, so moving the item takes it along.
   const sendableItems = actor.tabs.equipment ?? [];
@@ -4249,6 +4269,39 @@ export function ActorCard({
           onResetTurn={isPlayerMode ? onResetTurn : resetTurn}
           onClearConcentration={onClearConcentration}
         />
+
+        {/* Spell slots at a glance.
+            Read straight off the RESOURCE POOL, not off a count of casts — the same
+            `resourceCounters` the cast path spends and the level picker offers. So a cast
+            ticks the pool and the pill follows automatically; there is no second tally that
+            could disagree with the sheet, and a rest refills the pills because it refills
+            the pools. A spent pip goes hollow rather than vanishing, so the size of the
+            pool stays readable at zero. */}
+        {slotPills.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 2px" }}>
+            {slotPills.map(({ level, remaining, max, label }) => (
+              <span key={level}
+                title={`${label} — ${remaining} of ${max} left`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  padding: "1px 7px", borderRadius: 10, fontSize: 10,
+                  background: remaining > 0 ? "rgba(123,104,238,0.14)" : "transparent",
+                  border: `1px solid ${remaining > 0 ? "rgba(123,104,238,0.4)" : "#2a2a3e"}`,
+                  color: remaining > 0 ? "#9d8cff" : "#555",
+                }}>
+                <strong style={{ fontWeight: 700 }}>L{level}</strong>
+                {/* Pips while the pool is small enough to read; a count once it isn't. */}
+                {max <= 6 ? (
+                  <span style={{ letterSpacing: 1 }}>
+                    {"●".repeat(remaining)}{"○".repeat(Math.max(0, max - remaining))}
+                  </span>
+                ) : (
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{remaining}/{max}</span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <TabBar
