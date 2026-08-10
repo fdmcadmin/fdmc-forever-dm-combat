@@ -398,7 +398,17 @@ function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: stri
  *   Reading still treats `undefined` as equipped, so actors saved before this keep working.
  */
 export function itemToAction(item: EquipmentItem, equipped = true): ActorAction {
-  const isWeapon = Boolean(item.attack || item.damage);
+  // A TO-HIT is what makes something a weapon — not the presence of dice.
+  //
+  // This used to read `attack || damage`, which meant giving a magic item its damage dice
+  // reclassified it as a weapon: no Use button, and `reference` mode so no roll either. Magic
+  // items in this campaign do not roll to hit — checked across the library, every convergence
+  // item resolves by a save or by nothing at all, and the only "magic" items with a to-hit
+  // (Voidtempered Blade, Rootknot Staff) are literally a +1 shortsword and a +1 quarterstaff.
+  const isWeapon = Boolean(item.attack);
+  // Dice that resolve without a to-hit: a save rider, a burst, a heal. These are the ones that
+  // need a committable roll ON the equipment row, since they have no main-tab attack to roll from.
+  const hasEffectDice = Boolean(item.damage) && !isWeapon;
   // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
   const isConsumable = Boolean(item.charges) && !isWeapon;
   const isPassive = item.type === "passive";
@@ -438,7 +448,15 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Weapons: "reference" → TabPanel.hasAttachedDice returns false → no Roll button
       // Consumables: "triggered" → Use button fires a log entry (no dice on equip tab)
       // Armor/gear: "reference"
-      outcomeMode: isConsumable ? "triggered" : "reference",
+      // Weapons stay "reference" here — TabPanel.hasAttachedDice returns false, so the
+      // equipment row shows no Roll button and the weapon rolls from its main-tab attack.
+      // Effect dice get "damage-only": a straight roll with no hit/miss step, which is what
+      // a save rider or a burst needs — the save is adjudicated at the table, the dice are
+      // rolled and committed here.
+      outcomeMode: isWeapon ? "reference"
+        : hasEffectDice ? "damage-only"
+        : isConsumable ? "triggered"
+        : "reference",
       // Carried on the action, like statEffects, so the card can enforce slot exclusivity
       // without resolving the item back out of the library.
       slot: item.slot,
