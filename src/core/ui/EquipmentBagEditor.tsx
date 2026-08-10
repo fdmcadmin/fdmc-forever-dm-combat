@@ -419,7 +419,13 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
     // Armor/gear: silent reference
     logMode: isConsumable ? "table-note" : "silent",
     displayMode: "compact",
-    hasDefinedUse: isConsumable,  // Use button only for consumables; weapons roll from main
+    // A CHARGE POOL IS A DEFINED USE. Gating the Use button on `isConsumable` alone meant
+    // every charged magic item — the whole convergence output set, each "1/day, recharges at
+    // dawn" — carried a pool with nothing able to spend it. All 30 charged items in the
+    // campaign library also carry `isUsable: false`, so the flag could not rescue them
+    // either; deriving it from the pool fixes them all at once and stays true for any item
+    // authored later. Weapons without charges still roll from the main tab, not from here.
+    hasDefinedUse: isConsumable || Boolean(item.charges),
     economyCost: undefined,        // equipment bag never costs action economy slots
     category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
     tags: item.tags,
