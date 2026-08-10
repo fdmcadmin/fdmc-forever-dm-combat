@@ -84,6 +84,12 @@ export type StatEffect = {
  * — they're held, not worn, and the hand they occupy isn't tracked here.
  *
  * Capacity is one per slot except rings, which are worn two at a time.
+ *
+ * ONLY `body` and `shield` are in use — they come from the item's own `type`, which is the
+ * one thing the library actually states. The rest are vocabulary for gear that declares a
+ * slot later; nothing is tagged with them. An earlier pass inferred them from item names
+ * and got it wrong (a "weapon wrap" is not a hand slot), so a slot is never guessed from
+ * prose — an item wears a slot because its data says so, or it is simply carried.
  */
 export type EquipmentSlot =
   | "body" | "shield" | "head" | "neck" | "cloak" | "shoulders"
