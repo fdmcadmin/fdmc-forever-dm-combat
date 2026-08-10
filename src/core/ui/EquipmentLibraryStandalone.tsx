@@ -9,11 +9,12 @@
 import { useState, useEffect } from "react";
 import { parseActField, parseSessionField } from "../campaign/actTags";
 import OBR from "@owlbear-rodeo/sdk";
-import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { COIN_TYPES, COIN_LABEL, COIN_ABBR, formatCopperPrice, type CoinType } from "../currency/currency";
+import { WEAPON_MASTERY_NAMES } from "../constants/weaponMastery";
 import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, OPEN_LOOT_OFFER_CHANGED, type OpenLootOffer } from "./openLootOffer";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
@@ -254,6 +255,253 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           Act Tag
           <input type="text" value={draft.act ?? ""} onChange={e => set("act", e.target.value || undefined)}
             placeholder="e.g. Act 1" style={input} />
+        </label>
+      </div>
+      {/* ── What it DOES ──────────────────────────────────────────────────────
+          MECHANICS is the block the card actually shows a player: itemToAction uses
+          `mechanicsText || description`, so an item with mechanics never displays its
+          flavour. It was unreachable here, which meant a DM could read it on the card
+          and had no way to change it. */}
+      <label style={{ fontSize: 12 }}>
+        Mechanics <span style={{ color: "#7b68ee" }}>— what the card shows the player</span>
+        <textarea value={draft.mechanicsText ?? ""} onChange={e => set("mechanicsText", e.target.value || undefined)}
+          rows={2} placeholder="While worn, reduce force damage you take by 2."
+          style={{ ...input, resize: "vertical" as const }} />
+      </label>
+      <label style={{ fontSize: 12 }}>
+        DM Note <span style={{ color: "#666" }}>— never shown to players</span>
+        <textarea value={draft.dmNote ?? ""} onChange={e => set("dmNote", e.target.value || undefined)}
+          rows={2} placeholder="Pairs with Frost Brace (Defense A2)..."
+          style={{ ...input, resize: "vertical" as const }} />
+      </label>
+
+      {/* ── Charges ───────────────────────────────────────────────────────────
+          A "1/day, recharges at dawn" item has no rest that restores it — dawn is not a
+          rest — so the pool is `manual` and the note records the cadence. The player
+          adjusts it by hand on the card when the DM says dawn came. */}
+      <fieldset style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
+        <legend style={{ fontSize: 11, color: "#e0b34a", padding: "0 4px" }}>Charges</legend>
+        <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1.4fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>Uses
+            <input type="number" min={0} value={draft.charges?.max ?? ""} placeholder="0"
+              onChange={e => {
+                const max = Number.parseInt(e.target.value, 10);
+                set("charges", Number.isFinite(max) && max > 0
+                  ? { max, reset: draft.charges?.reset ?? "longRest", note: draft.charges?.note }
+                  : undefined);
+              }} style={input} />
+          </label>
+          <label style={{ fontSize: 12 }}>Comes back on
+            <select value={draft.charges?.reset ?? "longRest"} disabled={!draft.charges}
+              onChange={e => draft.charges && set("charges", { ...draft.charges, reset: e.target.value as NonNullable<EquipmentItem["charges"]>["reset"] })}
+              style={{ ...input, marginTop: 2, opacity: draft.charges ? 1 : 0.4 }}>
+              <option value="longRest">Long rest</option>
+              <option value="shortRest">Short rest</option>
+              <option value="encounter">Each encounter</option>
+              <option value="manual">Manual — no rest restores it</option>
+            </select>
+          </label>
+          <label style={{ fontSize: 12 }}>Cadence note
+            <input type="text" value={draft.charges?.note ?? ""} disabled={!draft.charges}
+              onChange={e => draft.charges && set("charges", { ...draft.charges, note: e.target.value || undefined })}
+              placeholder="Recharges at dawn" style={{ ...input, opacity: draft.charges ? 1 : 0.4 }} />
+          </label>
+        </div>
+        {draft.charges?.reset === "manual" && (
+          <p style={{ margin: "6px 0 0", fontSize: 11, color: "#888" }}>
+            Manual pools are adjusted by hand on the card. Say when it comes back in the note —
+            &quot;dawn&quot; is not a rest, so nothing restores it automatically.
+          </p>
+        )}
+      </fieldset>
+
+      {/* ── Worn slot + tier ──────────────────────────────────────────────────
+          Two items in the same slot cannot both be worn; the newer displaces the older.
+          Weapons are held rather than worn, so they take no slot. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <label style={{ fontSize: 12 }}>Worn slot
+          <select value={draft.slot ?? ""} onChange={e => set("slot", (e.target.value || undefined) as EquipmentItem["slot"])}
+            style={{ ...input, marginTop: 2 }}>
+            <option value="">Carried — no slot</option>
+            {(Object.keys(SLOT_LABEL) as (keyof typeof SLOT_LABEL)[]).map(sl => (
+              <option key={sl} value={sl}>{SLOT_LABEL[sl]}{SLOT_CAPACITY[sl] > 1 ? ` (${SLOT_CAPACITY[sl]})` : ""}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ fontSize: 12 }}>Tier
+          <input type="text" value={draft.tier ?? ""} onChange={e => set("tier", e.target.value || undefined)}
+            placeholder="Tier 1" style={input} />
+        </label>
+      </div>
+
+      {/* The chips shown on the card (A1 · Far Realm · Defense). */}
+      <label style={{ fontSize: 12 }}>Tags
+        <input type="text" value={(draft.tags ?? []).join(", ")}
+          onChange={e => {
+            const list = e.target.value.split(",").map(t => t.trim()).filter(Boolean);
+            set("tags", list.length ? list : undefined);
+          }}
+          placeholder="A1, Far Realm, Defense" style={input} />
+      </label>
+
+      {/* ── Passive effects ───────────────────────────────────────────────────
+          What the item does to the SHEET while worn, as data rather than prose. This is
+          what actually moves AC and HP — rules text alone changes nothing. */}
+      <fieldset style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
+        <legend style={{ fontSize: 11, color: "#4caf50", padding: "0 4px" }}>While worn / equipped</legend>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {(draft.statEffects ?? []).map((eff, i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 70px 26px", gap: 6, alignItems: "end" }}>
+              <label style={{ fontSize: 11 }}>Effect
+                <select value={eff.type} onChange={e => {
+                  const next = [...(draft.statEffects ?? [])];
+                  next[i] = { ...eff, type: e.target.value as typeof eff.type };
+                  set("statEffects", next);
+                }} style={{ ...input, marginTop: 2 }}>
+                  <option value="setAC">Set AC to</option>
+                  <option value="addAC">Add to AC</option>
+                  <option value="addHP">Add max HP</option>
+                  <option value="addStat">Add to ability</option>
+                  <option value="setStat">Set ability to</option>
+                </select>
+              </label>
+              <label style={{ fontSize: 11 }}>Ability
+                <select value={eff.stat ?? ""} disabled={eff.type !== "addStat" && eff.type !== "setStat"}
+                  onChange={e => {
+                    const next = [...(draft.statEffects ?? [])];
+                    next[i] = { ...eff, stat: (e.target.value || undefined) as typeof eff.stat };
+                    set("statEffects", next);
+                  }}
+                  style={{ ...input, marginTop: 2, opacity: eff.type === "addStat" || eff.type === "setStat" ? 1 : 0.35 }}>
+                  <option value="">—</option>
+                  {["str", "dex", "con", "int", "wis", "cha"].map(a => <option key={a} value={a}>{a.toUpperCase()}</option>)}
+                </select>
+              </label>
+              <label style={{ fontSize: 11 }}>Value
+                <input type="number" value={eff.value} onChange={e => {
+                  const next = [...(draft.statEffects ?? [])];
+                  next[i] = { ...eff, value: Number.parseInt(e.target.value, 10) || 0 };
+                  set("statEffects", next);
+                }} style={input} />
+              </label>
+              <button type="button" title="Remove this effect"
+                onClick={() => { const next = (draft.statEffects ?? []).filter((_, j) => j !== i); set("statEffects", next.length ? next : undefined); }}
+                style={{ padding: "4px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 4, color: "#ff9999", cursor: "pointer", fontSize: 11 }}>✕</button>
+            </div>
+          ))}
+          <button type="button"
+            onClick={() => set("statEffects", [...(draft.statEffects ?? []), { type: "addAC", value: 1 }])}
+            style={{ alignSelf: "flex-start", fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #2f7d3f", borderRadius: 4, color: "#7be08a", cursor: "pointer" }}>
+            + Add effect
+          </button>
+        </div>
+      </fieldset>
+
+      {/* ── Classification + what a charge DOES ───────────────────────────────
+          `category` is the subkind the library groups by ("Melee One-Handed", "Heavy
+          Armor"); `sourceType` marks where it came from, which drives the act-grouped
+          library sections; `mastery` is the 2024 weapon-mastery property. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <label style={{ fontSize: 12 }}>Category
+          <input type="text" value={draft.category ?? ""} onChange={e => set("category", e.target.value || undefined)}
+            placeholder="Melee One-Handed" style={input} />
+        </label>
+        <label style={{ fontSize: 12 }}>Source type
+          <select value={draft.sourceType ?? ""} onChange={e => set("sourceType", (e.target.value || undefined) as EquipmentItem["sourceType"])}
+            style={{ ...input, marginTop: 2 }}>
+            <option value="">—</option>
+            <option value="encounter">Encounter</option>
+            <option value="boss">Boss</option>
+            <option value="merchant">Merchant</option>
+          </select>
+        </label>
+        {/* Mastery is a closed set in the 2024 rules, so it picks rather than types —
+            a mistyped property would silently match nothing. */}
+        <label style={{ fontSize: 12 }}>Mastery
+          <select value={draft.mastery ?? ""} onChange={e => set("mastery", (e.target.value || undefined) as EquipmentItem["mastery"])}
+            style={{ ...input, marginTop: 2 }}>
+            <option value="">—</option>
+            {WEAPON_MASTERY_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </label>
+      </div>
+
+      {/* What spending a charge actually DOES. Without this an item can carry uses that
+          resolve to nothing but a log line. */}
+      {draft.charges && (
+        <fieldset style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
+          <legend style={{ fontSize: 11, color: "#e0b34a", padding: "0 4px" }}>When a charge is spent</legend>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr", gap: 8 }}>
+            <label style={{ fontSize: 12 }}>Does
+              <select value={draft.effect?.type ?? ""}
+                onChange={e => set("effect", e.target.value
+                  ? { ...(draft.effect ?? {}), type: e.target.value as NonNullable<EquipmentItem["effect"]>["type"] }
+                  : undefined)}
+                style={{ ...input, marginTop: 2 }}>
+                <option value="">Nothing automatic</option>
+                <option value="armedEffect">Arm a bonus on the next roll</option>
+                <option value="tempHP">Grant temporary HP</option>
+                <option value="spellSlotSub">Substitute a spell slot</option>
+                <option value="nullifyDamage">Nullify damage of a type</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 12 }}>Formula
+              <input type="text" value={draft.effect?.formula ?? ""} disabled={!draft.effect}
+                onChange={e => draft.effect && set("effect", { ...draft.effect, formula: e.target.value || undefined })}
+                placeholder="+1d6+1 radiant" style={{ ...input, opacity: draft.effect ? 1 : 0.4 }} />
+            </label>
+            <label style={{ fontSize: 12 }}>Value / condition
+              <input type="text" value={draft.effect?.value ?? ""} disabled={!draft.effect}
+                onChange={e => draft.effect && set("effect", { ...draft.effect, value: e.target.value || undefined })}
+                placeholder="5, L1, cold..." style={{ ...input, opacity: draft.effect ? 1 : 0.4 }} />
+            </label>
+          </div>
+        </fieldset>
+      )}
+      {/* Whether this item feeds a convergence or is one of its outputs. */}
+      <fieldset style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
+        <legend style={{ fontSize: 11, color: "#4caf50", padding: "0 4px" }}>Convergence</legend>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 0.6fr 1.4fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>Role
+            <select value={draft.convergence?.role ?? ""}
+              onChange={e => set("convergence", e.target.value
+                ? { role: e.target.value as "input" | "output", enabled: draft.convergence?.enabled ?? true,
+                    mechanicalTag: draft.convergence?.mechanicalTag, actLabel: draft.convergence?.actLabel,
+                    flavorTag: draft.convergence?.flavorTag }
+                : undefined)}
+              style={{ ...input, marginTop: 2 }}>
+              <option value="">Not part of one</option>
+              <option value="input">Input — can be sacrificed</option>
+              <option value="output">Output — can be made</option>
+            </select>
+          </label>
+          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, paddingTop: 18 }}>
+            <input type="checkbox" checked={draft.convergence?.enabled ?? false} disabled={!draft.convergence}
+              onChange={e => draft.convergence && set("convergence", { ...draft.convergence, enabled: e.target.checked })} />
+            Enabled
+          </label>
+          <label style={{ fontSize: 12 }}>Mechanical tag
+            <input type="text" value={draft.convergence?.mechanicalTag ?? ""} disabled={!draft.convergence}
+              onChange={e => draft.convergence && set("convergence", { ...draft.convergence, mechanicalTag: e.target.value || undefined })}
+              placeholder="Defense + Stability" style={{ ...input, opacity: draft.convergence ? 1 : 0.4 }} />
+          </label>
+        </div>
+      </fieldset>
+
+      {/* Bonuses this item gives to SPELLS cast through it, as opposed to its own attack.
+          An item can be both a weapon and a focus. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <label style={{ fontSize: 12 }}>Focus: spell attack
+          <input type="text" value={draft.spellFocusAttack ?? ""} onChange={e => set("spellFocusAttack", e.target.value || undefined)}
+            placeholder="+1" style={input} />
+        </label>
+        <label style={{ fontSize: 12 }}>Focus: spell damage
+          <input type="text" value={draft.spellFocusDamage ?? ""} onChange={e => set("spellFocusDamage", e.target.value || undefined)}
+            placeholder="+1" style={input} />
+        </label>
+        <label style={{ fontSize: 12 }}>Session
+          <input type="text" value={draft.session ?? ""} onChange={e => set("session", e.target.value || undefined)}
+            placeholder="Session 4" style={input} />
         </label>
       </div>
       <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
