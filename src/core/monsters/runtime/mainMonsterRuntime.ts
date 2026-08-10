@@ -215,12 +215,30 @@ export function isMonsterBonusAction(a: MonsterReaderAction): boolean {
 }
 
 /**
+ * Legendary actions and legendary reactions run on OTHER creatures' turns, out of their own
+ * pool — they are not part of this creature's action budget and must never cost it a swing.
+ *
+ * Like bonus actions, templates mark them in the NAME: "Mark Prey (Legendary Action,
+ * 1/round)" reads as `kind: "action"`, so nothing but the name distinguishes it.
+ */
+export function isMonsterLegendaryAction(a: MonsterReaderAction): boolean {
+  const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
+  if (ec === "legendary") return true;
+  return /\(\s*legendary/i.test(a.name ?? "");
+}
+
+/**
  * A spell is anything that spends a slot. That is the only unambiguous signal a monster stat
  * block gives — `kind: "spell"` is not set on templates, so the Frost-Weaver's Whiteout
  * (4th-level Sleet Storm) and Raise the Frozen (3rd-level Animate Dead) both read as
  * `kind: "action"`. The slot is what marks them.
+ *
+ * A RECHARGE ability is never one of these, whatever else it carries. Recharge is a
+ * monster-only economy — the die is the cost, so the ability is at most a single action and
+ * must not swallow the whole turn the way a cast does.
  */
 export function isMonsterSpellAction(a: MonsterReaderAction): boolean {
+  if (a.recharge) return false;
   return a.spellSlotLevel !== undefined || a.kind === "spell";
 }
 
@@ -266,9 +284,11 @@ export function deriveMonsterActionCounter(
     : undefined;
   if (!total) return undefined;
 
-  // A bonus action is not part of the attack budget at all — spending one must not cost a
-  // swing. Traits and reactions were already out via isStandardMonsterAction.
-  const eligible = actions.filter(a => isStandardMonsterAction(a) && !isMonsterBonusAction(a));
+  // Bonus and legendary actions are not part of the attack budget at all — they run on their
+  // own economy (and legendary ones on someone else's turn), so spending either must not cost
+  // a swing. Traits and reactions were already out via isStandardMonsterAction.
+  const eligible = actions.filter(a =>
+    isStandardMonsterAction(a) && !isMonsterBonusAction(a) && !isMonsterLegendaryAction(a));
   // A SPELL ACTION IS A FULL ACTION: casting ends the turn's attacks rather than costing one
   // swing out of two. Slot-spending is what identifies it, not `kind`.
   const spendable = eligible.filter(a => !isMonsterSpellAction(a)).map(a => a.name).filter(Boolean);
