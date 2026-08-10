@@ -46,7 +46,7 @@ import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
 import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
 import { playerSafeTier } from "./core/ui/ThreatHpBar";
-import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker } from "./core/table-state/fdmcRoomLiveState";
+import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState } from "./core/table-state/fdmcRoomLiveState";
 import { isActorStateRequest } from "./core/state/actorStateRequests";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -128,6 +128,7 @@ import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import type { Actor } from "./core/types/actor";
 import { fullHeal } from "./core/types/actor";
 import { wipePartyLocalData, buildClearedActorLiveState } from "./core/seats/wipePartyData";
+import { takeSnapshot, mirrorWallets } from "./core/state/autoBackup";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
@@ -715,6 +716,17 @@ export default function App() {
     commitRoomState,
     refreshFromRoom,
   } = useActorLiveState(bundledActors);
+
+  // Keep a local copy of every purse.
+  //
+  // Coin lives ONLY in room metadata — actors, gear and spells are all in localStorage, so a
+  // lost room hands back a party whose ids match and whose actions work, with every wallet at
+  // zero and nothing local to restore from. The mirror writes only when a wallet actually
+  // changes, and never overwrites a good copy with an empty one.
+  useEffect(() => {
+    if (!isDmMode) return;
+    mirrorWallets(walletsFromRoomState(roomLiveState));
+  }, [isDmMode, roomLiveState]);
 
   // ── DM seat system ────────────────────────────────────────────────────────
   const {
@@ -3786,6 +3798,10 @@ export default function App() {
             persistentEquipmentCount={0}
             partyCount={Object.keys(actorLibrary).length}
             onWipeParty={async () => {
+              // BACK UP FIRST. The wipe clears the local party layers AND the room-metadata
+              // wallets, and coin has no other home — so without this, a wipe is the one
+              // action that can destroy gold outright with nothing to restore from.
+              takeSnapshot(APP_VERSION, walletsFromRoomState(roomLiveState), "before-wipe");
               // Clear every LOCAL layer keyed to party characters.
               const report = wipePartyLocalData();
               // …then the SHARED layer: live HP / temp / coins / initiative in room

@@ -241,6 +241,21 @@ export function getActorCoins(state: FdmcRoomLiveState, actorId: string): Coins 
   return a.coins ? normalizeCoins(a.coins) : coinsFromGold(a.gold);
 }
 
+/**
+ * Every purse in the room, for backups and the local mirror.
+ *
+ * Only actors actually holding coin are included — an empty wallet is indistinguishable from
+ * "no record", and writing zeros would let a fresh room overwrite a good mirror with nothing.
+ */
+export function walletsFromRoomState(state: FdmcRoomLiveState): Record<string, Coins> {
+  const out: Record<string, Coins> = {};
+  for (const id of Object.keys(state.actorLiveState)) {
+    const coins = getActorCoins(state, id);
+    if (Object.values(coins).some(v => (v ?? 0) > 0)) out[id] = coins;
+  }
+  return out;
+}
+
 function writeCoins(state: FdmcRoomLiveState, actorId: string, coins: Coins): FdmcRoomLiveState {
   const current = state.actorLiveState[actorId] ?? EMPTY_LIVE;
   const next = normalizeCoins(coins);

@@ -55,6 +55,7 @@ import {
   grantActorCoin,
   patchActorCoins,
   getActorCoins,
+  walletsFromRoomState,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
 import { setCoin, type CoinType, type Coins } from "./core/currency/currency";
@@ -88,7 +89,7 @@ const PANEL_TITLES: Record<PanelId, string> = {
   monsters: "Monsters & Encounters",
   equipment: "Equipment Library",
   tokens: "Token Assignment",
-  maintenance: "Room Maintenance",
+  maintenance: "Settings & Data",
   library: "Library",
   seatTokens: "Seats & Tokens",
   approvals: "DM Approvals",
@@ -471,13 +472,9 @@ function DmPanelApp() {
    * left behind — a wipe and reimport brought back the sheets and gear and quietly zeroed
    * everyone's gold.
    */
+  /** Every purse, for the backup file. Shared helper — see walletsFromRoomState. */
   function currentWallets(): Record<string, Coins> {
-    const out: Record<string, Coins> = {};
-    for (const id of Object.keys(roomLiveState.actorLiveState)) {
-      const coins = getActorCoins(roomLiveState, id);
-      if (Object.values(coins).some(v => (v ?? 0) > 0)) out[id] = coins;
-    }
-    return out;
+    return walletsFromRoomState(roomLiveState);
   }
 
   function handleExport() {

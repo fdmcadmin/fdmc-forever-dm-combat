@@ -147,3 +147,45 @@ export function deleteSnapshot(id: string): void {
 export function snapshotBytes(): number {
   try { return (window.localStorage.getItem(SNAPSHOT_KEY) ?? "").length; } catch { return 0; }
 }
+
+// ─── Wallet mirror ────────────────────────────────────────────────────────────
+
+/**
+ * A local copy of every purse, kept because coin has NO other local home.
+ *
+ * Actors, gear and spells live in localStorage; coin lives only in room metadata. That is
+ * why a lost room can hand back a party whose ids match and whose actions all work, with
+ * every wallet at zero — there was nothing local to restore from. Christopher hit exactly
+ * this. The snapshot ring covers it only if a snapshot happened to be taken first; this
+ * mirror is always current.
+ *
+ * It is a RECOVERY copy, never a source of truth: the GM still writes room state, and the
+ * mirror is only read back on an explicit restore.
+ */
+const WALLET_MIRROR_KEY = "fdmc.backup.wallets.v1";
+
+export type WalletMirror = { savedAt: string; wallets: Record<string, Coins> };
+
+/** Cheap enough to call on every room-state change — it only writes when something moved. */
+export function mirrorWallets(wallets: Record<string, Coins>): void {
+  try {
+    const held = Object.fromEntries(
+      Object.entries(wallets).filter(([, c]) => Object.values(c).some(v => (v ?? 0) > 0)),
+    );
+    if (Object.keys(held).length === 0) return;   // never overwrite a good mirror with nothing
+    const prev = window.localStorage.getItem(WALLET_MIRROR_KEY);
+    const next: WalletMirror = { savedAt: new Date().toISOString(), wallets: held };
+    if (prev) {
+      const parsed = JSON.parse(prev) as WalletMirror;
+      if (JSON.stringify(parsed.wallets) === JSON.stringify(held)) return;
+    }
+    window.localStorage.setItem(WALLET_MIRROR_KEY, JSON.stringify(next));
+  } catch { /* quota or bad JSON — the ring is still the backstop */ }
+}
+
+export function loadWalletMirror(): WalletMirror | null {
+  try {
+    const raw = window.localStorage.getItem(WALLET_MIRROR_KEY);
+    return raw ? JSON.parse(raw) as WalletMirror : null;
+  } catch { return null; }
+}

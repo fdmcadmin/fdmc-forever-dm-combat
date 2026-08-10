@@ -21,9 +21,15 @@ import type { MonsterArchetype, MonsterClassification, MainMonsterTemplate } fro
 export const ABILITY_ORDER = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
 export type AbilityLabel = (typeof ABILITY_ORDER)[number];
 
-export function abilityModifier(score: number): number {
-  return Math.floor((score - 10) / 2);
-}
+/**
+ * Re-exported from the ruleset module, not reimplemented.
+ *
+ * The monster creator is its own lane, but it is the SAME design as the PC creator and must
+ * do the same arithmetic — two private copies of "score over 10, halved" is how the two
+ * lanes quietly drift apart. Swapping the ruleset has to move both at once.
+ */
+import { abilityModifier } from "../../rules/dnd5e";
+export { abilityModifier };
 
 export function formatAbilityEntry(label: string, score: number): { label: string; value: string } {
   const mod = abilityModifier(score);

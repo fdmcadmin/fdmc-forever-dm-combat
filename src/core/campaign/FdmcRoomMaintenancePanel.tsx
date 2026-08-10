@@ -1,4 +1,5 @@
 import { BackupPanel } from "../ui/BackupPanel";
+import { loadGmSettings, saveGmSettings, RULESET_OPTIONS, type GmSettings, type RulesetId } from "../state/gmSettings";
 import type { Coins } from "../currency/currency";
 import type { ImportResult } from "../seats/actorLibraryExport";
 import { useMemo, useState } from "react";
@@ -89,6 +90,9 @@ export function FdmcRoomMaintenancePanel({
   const [purgeArmed, setPurgeArmed] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState("");
   const [busyAction, setBusyAction] = useState<"scan" | "snapshot" | "seatPurge" | "purge" | "reinitialize" | null>(null);
+  // Data and Purge are separate tabs on purpose — see the render.
+  const [tab, setTab] = useState<"data" | "purge">("data");
+  const [settings, setSettings] = useState<GmSettings>(() => loadGmSettings());
 
   const purgeConfirmed = purgeConfirmText === "RESET FDMC";
   const sortedEntries = useMemo(() => scanResult?.entries ?? [], [scanResult]);
@@ -166,12 +170,44 @@ export function FdmcRoomMaintenancePanel({
   }
 
   return (
-    <section className="controlled-intake-card fdmc-room-maintenance-card" aria-label="FDMC room maintenance" style={{ borderTop: "3px solid #6fe0e0" }}>
-      <p className="eyebrow" style={{ color: "#6fe0e0" }}>🛠 Fix it</p>
-      <h3 style={{ color: "#6fe0e0" }}>FDMC Room Maintenance</h3>
-      <p className="subtle">
-        This tool only scans and resets FDMC-owned room metadata keys. It does not delete tokens, maps, token metadata,
-        bundled libraries, actor source templates, or other extensions&apos; metadata.
+    <section className="controlled-intake-card fdmc-room-maintenance-card" aria-label="GM data" style={{ borderTop: "3px solid #6fe0e0" }}>
+      <p className="eyebrow" style={{ color: "#6fe0e0" }}>GM Data</p>
+      <h3 style={{ color: "#6fe0e0" }}>Settings &amp; Data</h3>
+      {/* Two tabs, deliberately separated: things you keep, and things you destroy.
+          They had been sitting in one list, which put "back up the party" one button away
+          from "purge the room" — the purge half is also on its way out, and mixing them
+          made that impossible to signal. */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 10, borderBottom: "1px solid #2a2a3e" }}>
+        {([["data", "Data & Backup"], ["purge", "Reset & Purge"]] as const).map(([id, label]) => (
+          <button key={id} type="button" onClick={() => setTab(id)}
+            style={{ fontSize: 12, padding: "5px 12px", background: "transparent", border: "none",
+              borderBottom: `2px solid ${tab === id ? (id === "purge" ? "#e0b85a" : "#6fe0e0") : "transparent"}`,
+              color: tab === id ? (id === "purge" ? "#e0b85a" : "#6fe0e0") : "#666",
+              cursor: "pointer", fontWeight: tab === id ? 600 : 400 }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "data" && (<>
+      <div className="fdmc-maintenance-section" style={{ paddingBottom: 10 }}>
+        <div>
+          <h4>Ruleset</h4>
+          <p className="subtle">
+            Which module supplies the maths — ability modifiers, proficiency bonus, feats, the weapon tables.
+            One option today; the engine itself is rules-agnostic, so a second is an addition rather than a rewrite.
+          </p>
+        </div>
+        <select value={settings.ruleset}
+          onChange={e => { const next = { ...settings, ruleset: e.target.value as RulesetId }; setSettings(next); saveGmSettings(next); }}
+          style={{ padding: "5px 8px", borderRadius: 4, border: "1px solid #333", background: "#111", color: "#fff", fontSize: 12 }}>
+          {RULESET_OPTIONS.map(o => (
+            <option key={o.id} value={o.id} disabled={!o.available}>{o.label}{o.available ? "" : " — not ready"}</option>
+          ))}
+        </select>
+      </div>
+      <p className="subtle" style={{ margin: "0 0 10px", fontSize: 11 }}>
+        {RULESET_OPTIONS.find(o => o.id === settings.ruleset)?.blurb}
       </p>
 
       <div className="fdmc-maintenance-section scan-section">
@@ -226,6 +262,25 @@ export function FdmcRoomMaintenancePanel({
         </div>
       )}
 
+      {backup && (
+        <BackupPanel
+          version={backup.version}
+          getWallets={backup.getWallets}
+          onRestored={backup.onRestored}
+          extraActions={backup.extraActions}
+        />
+      )}
+      </>)}
+
+      {tab === "purge" && (<>
+        <div style={{ padding: "8px 10px", marginBottom: 10, background: "#2a2010", border: "1px solid #6e5a20", borderRadius: 6 }}>
+          <p style={{ margin: 0, fontSize: 11, color: "#e0b85a", fontWeight: 600 }}>⚠ These are going away.</p>
+          <p style={{ margin: "3px 0 0", fontSize: 11, color: "#888", lineHeight: 1.5 }}>
+            Recovery tools from when room state had to be repaired by hand. They destroy data and
+            cannot be undone from here. Take a backup on the Data tab first — every one of these
+            can cost a session, and the party wipe can cost the gold outright.
+          </p>
+        </div>
       <div className="fdmc-maintenance-section seat-purge-section">
         <div>
           <h4>2b. Purge All Seat Metadata</h4>
@@ -322,14 +377,7 @@ export function FdmcRoomMaintenancePanel({
         </div>
       )}
 
-      {backup && (
-        <BackupPanel
-          version={backup.version}
-          getWallets={backup.getWallets}
-          onRestored={backup.onRestored}
-          extraActions={backup.extraActions}
-        />
-      )}
+      </>)}
     </section>
   );
 }
