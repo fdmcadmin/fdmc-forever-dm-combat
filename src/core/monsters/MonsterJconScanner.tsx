@@ -41,7 +41,13 @@ export type MonsterActionCounter = {
   total: number;
   remaining: number;
   sourceActionName?: string;
+  /** Actions that spend ONE from the budget — the claws and bolts. */
   actionNames?: string[];
+  /**
+   * Actions that spend the WHOLE budget. A spell action is a full action: casting one ends
+   * the turn's attacks rather than costing a single swing out of two.
+   */
+  fullActionNames?: string[];
 };
 
 export type MonsterReaderPreview = {
@@ -2393,7 +2399,11 @@ export function MonsterJconScanner({ onCombatCandidatesChange, onAddMonsterToCom
                   <div className="monster-reader-action-counter">
                     <strong>Action Counter</strong>
                     <span>{selectedCandidate.preview.actionCounter.label} ready</span>
-                    <span>{selectedCandidate.preview.actionCounter.sourceActionName ?? "Multiattack"}</span>
+                    {/* Spells are listed apart because casting one ends the turn's attacks
+                        rather than costing a single swing. */}
+                    {(selectedCandidate.preview.actionCounter.fullActionNames?.length ?? 0) > 0 && (
+                      <span>Full action: {selectedCandidate.preview.actionCounter.fullActionNames!.join(", ")}</span>
+                    )}
                   </div>
                 )}
 

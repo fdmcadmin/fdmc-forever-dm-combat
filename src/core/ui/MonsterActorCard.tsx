@@ -39,7 +39,7 @@ import {
 } from "../integrations/useOwlbearDiceBridge";
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
-import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
+import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction } from "../monsters/runtime/mainMonsterRuntime";
 import { CLASSIFICATION_LABEL } from "../encounter-band/encounterRounds";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
@@ -177,25 +177,10 @@ function doubleDice(formula: string): string {
  *   3. economyCost === "bonus" → bonusActions
  *   4. everything else      → mainActions (true action-cost)
  */
-/**
- * Bonus-action detection reads the NAME as well as `economyCost`.
- *
- * Monster stat blocks mark the cost in the action's own name — "Rimestep (Bonus Action,
- * 1st slot)" — because that is how a printed block reads. The old check looked only at
- * `economyCost`, which monster data does not set, so EVERY monster bonus action was
- * silently filed as a main action and spent the whole action budget when used.
- */
-function isBonusAction(a: MonsterReaderAction): boolean {
-  const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
-  if (ec === "bonus") return true;
-  return /\(\s*bonus action/i.test(a.name ?? "");
-}
-
-/** A spell is anything that spends a slot. That is the only unambiguous signal a monster
- *  stat block gives — `kind: "spell"` is not set on templates. */
-function isSpellAction(a: MonsterReaderAction): boolean {
-  return a.spellSlotLevel !== undefined || a.kind === "spell";
-}
+// Both predicates live in mainMonsterRuntime so the card and the action-budget counter can
+// never disagree about what counts as a bonus action or a spell.
+const isBonusAction = isMonsterBonusAction;
+const isSpellAction = isMonsterSpellAction;
 
 function classifyActions(all: MonsterReaderAction[]) {
   const mainActions:  MonsterReaderAction[] = [];
@@ -925,10 +910,14 @@ export function MonsterActorCard({
     // Final commit
     const result = committedRoll.damageResult ?? committedRoll.result;
     setUsedActionIds(prev => new Set([...prev, committedRoll.actionId]));
-    // Hit during multiattack — auto-advance step so next sub-attack is available
-    if (committedRoll.actionId !== "multiattack"
-        && actionCounter && economy.stepsUsed < actionCounter.total) {
-      setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionCounter.total) }));
+    // Spend the action budget. One attack costs one step; a SPELL ACTION costs the whole
+    // turn's actions, so casting ends the attacks rather than leaving a swing on the table.
+    if (actionCounter && economy.stepsUsed < actionCounter.total) {
+      const spendsEverything = (actionCounter.fullActionNames ?? []).includes(committedRoll.actionName);
+      setEconomy(e => ({
+        ...e,
+        stepsUsed: spendsEverything ? actionCounter.total : Math.min(e.stepsUsed + 1, actionCounter.total),
+      }));
     }
     addLog(`${publicName} ${committedRoll.actionName}: ${result || "used"}.`);
     onActionCommit?.(committedRoll.actionName);

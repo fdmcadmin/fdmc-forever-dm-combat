@@ -200,6 +200,30 @@ export function rescaleMonsterHp(
   return { ...instance, maxHp, currentHp };
 }
 
+/**
+ * Bonus-action detection reads the NAME as well as `economyCost`.
+ *
+ * Monster stat blocks mark the cost in the action's own name — "Rimestep (Bonus Action,
+ * 1st slot)" — because that is how a printed block reads. A check that looks only at
+ * `economyCost`, which monster templates do not set, files EVERY monster bonus action as a
+ * main action and spends the whole action budget when it is used.
+ */
+export function isMonsterBonusAction(a: MonsterReaderAction): boolean {
+  const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
+  if (ec === "bonus") return true;
+  return /\(\s*bonus action/i.test(a.name ?? "");
+}
+
+/**
+ * A spell is anything that spends a slot. That is the only unambiguous signal a monster stat
+ * block gives — `kind: "spell"` is not set on templates, so the Frost-Weaver's Whiteout
+ * (4th-level Sleet Storm) and Raise the Frozen (3rd-level Animate Dead) both read as
+ * `kind: "action"`. The slot is what marks them.
+ */
+export function isMonsterSpellAction(a: MonsterReaderAction): boolean {
+  return a.spellSlotLevel !== undefined || a.kind === "spell";
+}
+
 export function isStandardMonsterAction(action: MonsterReaderAction): boolean {
   if (action.kind === "trait" || action.kind === "reaction") {
     return false;
@@ -213,58 +237,57 @@ export function isStandardMonsterAction(action: MonsterReaderAction): boolean {
   return action.kind === "action" || action.kind === "attack" || action.kind === "spell";
 }
 
-function monsterActionMentionedInText(actionName: string, sourceText: string): boolean {
-  const normalizedAction = actionName.trim().toLowerCase();
-  const normalizedSource = sourceText.trim().toLowerCase();
-
-  return Boolean(normalizedAction) && normalizedSource.includes(normalizedAction);
-}
-
 /**
- * Multiattack is driven by the creature's data, not by what its action is called.
+ * The creature's action budget for a turn, and what it may spend it on.
  *
- * `attacksPerTurn` on the creature wins when set. Otherwise any action declaring
- * `attackCount > 1` supplies the counter, whatever its name — "Multiattack", "Raking
- * Multiattack" and "Hunger Multiattack" all count. The earlier rule required the name to
- * equal "multiattack" exactly, so every creature with a flavored multiattack name silently
- * lost its counter.
+ * MULTIATTACK DOES NOT EXIST HERE. It was removed from the model entirely (13 rows deleted)
+ * and replaced by `stats.attacksPerTurn` on the creature — built like a PC's Extra Attack.
+ * What remained in this function was scaffolding for the deleted concept: it hunted for an
+ * action declaring `attackCount > 1` (no creature declares one), scraped that action's text
+ * for the names it mentioned, and fell back to labelling the counter with the literal string
+ * "Multiattack". Live, every creature read "Multiattack x2" — named after a thing the design
+ * had already deleted — with an empty list of what it could actually do.
+ *
+ * The model is Christopher's: *"claw is action and bolt is action and action count is 2 so
+ * using either until that count is out."* The budget is a NUMBER on the creature; the actions
+ * are just actions. Nothing needs to be named, and no text needs parsing — the DM spends the
+ * count on whichever action they want.
+ *
+ * Eligibility is `isStandardMonsterAction`: traits and reactions never spend the budget, and
+ * neither does anything carrying a non-action economy cost (a bonus-action teleport is not
+ * one of your attacks).
  */
 export function deriveMonsterActionCounter(
   actions: MonsterReaderAction[],
   attacksPerTurn?: number,
 ): MonsterCombatCandidate["actionCounter"] {
-  const explicitTotal = typeof attacksPerTurn === "number" && attacksPerTurn > 1
+  const total = typeof attacksPerTurn === "number" && attacksPerTurn > 1
     ? Math.floor(attacksPerTurn)
     : undefined;
-  const multiattackAction = actions.find((action) => (action.attackCount ?? 0) > 1);
-  const total = explicitTotal ?? multiattackAction?.attackCount;
+  if (!total) return undefined;
 
-  if (!total || total < 2) {
-    return undefined;
-  }
+  // A bonus action is not part of the attack budget at all — spending one must not cost a
+  // swing. Traits and reactions were already out via isStandardMonsterAction.
+  const eligible = actions.filter(a => isStandardMonsterAction(a) && !isMonsterBonusAction(a));
+  // A SPELL ACTION IS A FULL ACTION: casting ends the turn's attacks rather than costing one
+  // swing out of two. Slot-spending is what identifies it, not `kind`.
+  const spendable = eligible.filter(a => !isMonsterSpellAction(a)).map(a => a.name).filter(Boolean);
+  const fullActionNames = eligible.filter(isMonsterSpellAction).map(a => a.name).filter(Boolean);
 
-  // With attacksPerTurn set and no multiattack-ish action, fall back to naming the counter
-  // after the creature's own attacks rather than a non-existent "Multiattack" action.
-  const sourceName = multiattackAction?.name ?? "Multiattack";
-  const multiattackText = `${sourceName} ${multiattackAction?.text ?? ""}`;
-  const referencedStandardActions = actions
-    .filter((action) => action.name !== sourceName && isStandardMonsterAction(action))
-    .filter((action) => monsterActionMentionedInText(action.name, multiattackText))
-    .map((action) => action.name);
-  // "Two Rime Claw attacks, or casts two Rime Bolts" is a CHOICE, not a combo — joining
-  // those with "+" reads as one of each. The ", or" wording marks the choice; a bare "or"
-  // is not enough ("one Dagger attack (melee or thrown)" is still a combo).
-  const joiner = /,\s*or\b/i.test(multiattackAction?.text ?? "") ? " or " : " + ";
-  const label = referencedStandardActions.length > 0
-    ? `${sourceName}: ${referencedStandardActions.join(joiner)}`
-    : `${sourceName} x${total}`;
+  // Name what the budget buys. Past a few options the list stops being readable on a card,
+  // so it degrades to the count alone rather than wrapping to three lines.
+  const label = spendable.length > 0 && spendable.length <= 3
+    ? `${total} actions: ${spendable.join(" or ")}`
+    : `${total} actions`;
 
   return {
     label,
     total,
     remaining: total,
-    sourceActionName: sourceName,
-    actionNames: referencedStandardActions,
+    // No source action any more — the budget belongs to the creature, not to a named action.
+    sourceActionName: undefined,
+    actionNames: spendable,
+    fullActionNames,
   };
 }
 
