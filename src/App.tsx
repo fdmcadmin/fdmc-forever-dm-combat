@@ -3782,7 +3782,7 @@ export default function App() {
           startCommittedRoll(actorToShow.id, input);
           const action = Object.values(actorToShow.tabs).flat().find(a => a.id === input.actionId);
           // Ray 2+ of a multi-roll cast: the slot was already spent on ray 1.
-          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
+          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actorToShow.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actorToShow.id, outcome)}
@@ -4148,7 +4148,7 @@ export default function App() {
                   startCommittedRoll(focusedActorId, input);
                   const action = Object.values(focusedActor.tabs).flat().find(a => a.id === input.actionId);
                   // Ray 2+ of a multi-roll cast: the slot was already spent on ray 1.
-          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
+          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
                 }}
                 onSetCommittedRollResult={(result) => setCommittedRollResult(focusedActorId, result)}
                 onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(focusedActorId, outcome)}

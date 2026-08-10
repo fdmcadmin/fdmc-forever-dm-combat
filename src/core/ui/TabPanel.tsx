@@ -370,6 +370,17 @@ export function TabPanel({
                       onClick={() => {
                         // Checks (no cost, direct roll): select for roll workspace
                         if (costs.length === 0 && directRollAvailable) {
+                          // AN ITEM CHARGE IS SPENT BY THE CLICK. This branch is the one an
+                          // equipment row actually takes — no economyCost means `costs` is
+                          // empty, and a charged item has dice — so it selected the roll and
+                          // returned before `onUseAction` ever ran. That is why a charged item
+                          // rolled its dice for free. Spend first, then select.
+                          // Only on the click that actually SELECTS. The Roll button sits
+                          // inside this row, so its click bubbles back here — without the
+                          // guard the roll took a second charge and one use cost two.
+                          if (action.metadata?.charges && selectedRollKey !== readiedKey) {
+                            onUseAction({ action, tabId: activeTab, costs });
+                          }
                           setSelectedRollKey(readiedKey);
                           return;
                         }

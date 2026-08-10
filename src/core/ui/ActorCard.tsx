@@ -3116,7 +3116,17 @@ export function ActorCard({
     if (!isActiveTurn) {
       const isReactionOnly = costs.length > 0 && costs.every(c => c === "reaction");
       const isPinnedReaction = action.pinReaction === true;
-      if (!isReactionOnly && !isPinnedReaction) {
+      /**
+       * Spending an item charge is a FREE action and its own economy, so it is not turn-gated.
+       * Half the charged library only makes sense off-turn — Driftveil and Reinforced Wrap
+       * both trigger on being hit. An equipment row carries no economyCost, so `costs` is
+       * empty and `isReactionOnly` is false; without this the gate ate the whole use.
+       *
+       * The exception is an item whose use is an ATTACK: it carries a to-hit (0.7.1.21's rule
+       * that a to-hit is what makes a weapon), which is a real action on a real turn.
+       */
+      const isFreeChargeSpend = Boolean(itemChargesFor(action)) && !hasRollableFormula(action.metadata?.attack);
+      if (!isReactionOnly && !isPinnedReaction && !isFreeChargeSpend) {
         onLog({
           actorName: actor.name,
           actionName: "Off Turn",
@@ -3229,9 +3239,17 @@ export function ActorCard({
     // and would otherwise never count down. A charged WEAPON rolls its attack and spends on
     // commit instead; `rollsItsOwn` keeps those two paths from double-spending.
     const hasItemCharges = Boolean(itemChargesFor(action));
+    /**
+     * AN ITEM CHARGE IS SPENT BY THE CLICK, not by resolving dice. "Expend 1 charge to reduce
+     * the damage by 1d8" spends on the expend; the die is the effect, not the cost. So item
+     * pools are NOT part of `rollsItsOwn`.
+     *
+     * The commit path must not ALSO spend, or one use costs two charges — see the
+     * `onStartCommittedRoll` wiring, which deliberately omits `consumeItemCharge`.
+     */
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
       || Boolean(action.metadata?.saveDc?.trim())
-      || ((isSpendingSpell || hasNamedResourceCost || hasItemCharges) && hasRollableFormula(action.metadata?.damage));
+      || ((isSpendingSpell || hasNamedResourceCost) && hasRollableFormula(action.metadata?.damage));
     if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost || hasItemCharges) && !rollsItsOwn) {
       onConsumeActionResources?.(action, getCastLevel(action));
     }

@@ -229,7 +229,7 @@ function ActorPopout() {
           startCommittedRoll(actor.id, input);
           const action = Object.values(actor.tabs).flat().find(a => a.id === input.actionId);
           // Ray 2+ of a multi-roll cast: the slot was already spent on ray 1.
-          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
+          if (action && !input.continuesMultiRoll) consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel: input.castLevel });
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actor.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actor.id, outcome)}
