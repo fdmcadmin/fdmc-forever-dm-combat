@@ -168,6 +168,41 @@ const DM_BTN: Record<"create" | "use" | "session" | "cleanup" | "fix" | "danger"
   claim:   { fontSize: 11, padding: "3px 11px", background: "#7b68ee", border: "none", borderRadius: 5, color: "#fff", cursor: "pointer", fontWeight: 600 },
 };
 
+/**
+ * Every mutating handler ActorCard requires, wired to nothing.
+ *
+ * This is what makes the "view as" preview read-only, and it is deliberately a single
+ * object rather than two dozen inline lambdas: the guarantee is "this card cannot write",
+ * and that is only checkable at a glance if the no-ops live in one place. Adding a new
+ * required handler to ActorCard will fail the build here until it is listed, which is the
+ * point — a new write path must be consciously silenced, not silently inherited.
+ */
+const READ_ONLY_CARD_HANDLERS = {
+  onHpChange: () => undefined,
+  onResetHp: () => undefined,
+  onReadyActionCosts: () => undefined,
+  onUnreadyAction: () => undefined,
+  onRemovePendingLogEntries: () => undefined,
+  onResetTurn: () => undefined,
+  onSetConcentration: () => undefined,
+  onClearConcentration: () => undefined,
+  onStartCommittedRoll: () => undefined,
+  onSetCommittedRollResult: () => undefined,
+  onChooseCommittedRollOutcome: () => undefined,
+  onChooseCommittedRollDamage: () => undefined,
+  onClearCommittedRoll: () => undefined,
+  onMarkCommittedRollBridgeSent: () => undefined,
+  // Signature returns a promise — a preview never sends, so it resolves "not sent".
+  onSendDiceBridgeRequest: async () => false,
+  onSendDicePlusRequest: async () => false,
+  onSendMockDiceBridgeResult: () => undefined,
+  onAddActorNote: () => null,
+  onDeleteActorNote: () => undefined,
+  onStatusTrackerChange: () => undefined,
+  onResetStatusTracker: () => undefined,
+  onResetAllActorStatuses: () => undefined,
+  onLog: () => undefined,
+} as const;
 // Group label that sits in front of a button cluster.
 const dmGroupLabel = (color: string): React.CSSProperties => ({
   fontSize: 9, color, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, flexShrink: 0,
@@ -2062,6 +2097,16 @@ export default function App() {
 
   // ── Open DM tool as OBR popover window ───────────────────────────────────
   // All known DM popover IDs — used for close-all
+  /**
+   * Seat whose card the DM is PREVIEWING — read-only, so "what does this look like to them?"
+   * has an answer without asking a player to describe their screen.
+   *
+   * Deliberately not an impersonation: no write handler is passed to the previewed card, so
+   * nothing here can act as that player. Acting-as would mean the GM client issuing
+   * player-side requests to itself, and the write-authority model assumes those come from a
+   * different machine.
+   */
+  const [previewSeatId, setPreviewSeatId] = useState<string>("");
   const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens", "fdm-dm-approvals"] as const;
 
   const closeAllDmPanels = useCallback(async () => {
@@ -2421,6 +2466,16 @@ export default function App() {
             <span style={dmGroupLabel("#5f8fd9")}>Manage</span>
             <button type="button" style={DM_USE_SHADES[0]} onClick={() => void openDmPanel("seatTokens")}>Seats &amp; Tokens</button>
             <button type="button" style={DM_USE_SHADES[1]} onClick={() => void openDmPanel("library")}>Library</button>
+            {/* See a seat exactly as its player does. Read-only. */}
+            <select value={previewSeatId} onChange={e => setPreviewSeatId(e.target.value)}
+              title="Preview a player's card as they see it — read only"
+              style={{ fontSize: 11, padding: "3px 8px", borderRadius: 5, border: "1px solid #2f5d9e", background: "#15233c", color: "#7db1ff", cursor: "pointer" }}>
+              <option value="">👁 View as…</option>
+              {Object.values(roomLiveState.seats)
+                .filter(seat => seat.seatMode !== "viewer" && (seat.actorIds?.length ?? 0) > 0)
+                .sort((a, b) => a.seatId.localeCompare(b.seatId))
+                .map(seat => <option key={seat.seatId} value={seat.seatId}>{seat.label}</option>)}
+            </select>
             <span style={{ flex: 1, minWidth: 8 }} />
             <button type="button" style={DM_BTN.fix} title="Something looks broken? Open Room Maintenance."
               onClick={() => void openDmPanel("maintenance")}>🛠 Fix something</button>
@@ -2753,6 +2808,60 @@ export default function App() {
           </button>
         </div>
       )}
+
+      {/* ── View as a seat — a read-only preview of a player's card ─────────────── */}
+      {isDmMode && previewSeatId && (() => {
+        const seat = roomLiveState.seats[previewSeatId];
+        const seatActorIds = seat?.actorIds ?? [];
+        const shown = dmActors.find(a => a.id === (seat?.primaryActorId || seatActorIds[0]));
+        if (!seat || !shown) return null;
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.94)", zIndex: 240, display: "flex", flexDirection: "column", alignItems: "center", padding: "12px" }}>
+            <div style={{ width: "100%", maxWidth: 560, display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#15233c", border: "1px solid #2f5d9e", borderRadius: "8px 8px 0 0", flexShrink: 0 }}>
+              <span style={{ fontSize: 10, color: "#7db1ff", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>Viewing as</span>
+              <strong style={{ fontSize: 13, color: "#fff" }}>{seat.label}</strong>
+              <span style={{ fontSize: 11, color: "#8a8aa0" }}>{shown.name}</span>
+              {seatActorIds.length > 1 && (
+                <span style={{ fontSize: 10, color: "#666" }}>+{seatActorIds.length - 1} more on this seat</span>
+              )}
+              <span style={{ marginLeft: "auto", fontSize: 10, color: "#a06a4a" }}>read only</span>
+              <button type="button" onClick={() => setPreviewSeatId("")}
+                style={{ fontSize: 11, padding: "3px 12px", background: "transparent", border: "1px solid #444", borderRadius: 5, color: "#888", cursor: "pointer" }}>
+                Close
+              </button>
+            </div>
+            {/* No write handler is passed, so nothing in here can change the sheet. */}
+            <div style={{ width: "100%", maxWidth: 560, flex: 1, minHeight: 0, overflowY: "auto", background: "#0d0d14", border: "1px solid #2f5d9e", borderTop: "none", borderRadius: "0 0 8px 8px" }}>
+              <ActorCard
+                actor={shown}
+                seatColor={seatColorById[shown.id]}
+                hp={getActorHp(shown.id)}
+                actionState={getActionState(shown)}
+                concentration={getActorConcentration(shown)}
+                committedRoll={getCommittedRoll(shown)}
+                actorNotes={getActorNotes(shown)}
+                status={getActorStatus(shown)}
+                rulesProfile={DEFAULT_COMBAT_RULES_PROFILE}
+                turnResetVersion={turnResetVersion}
+                diceBridgeStatus={diceBridgeStatus}
+                diceBridgeLastEvent={diceBridgeLastEvent}
+                isPlayerMode
+                combatActive={roomLiveState.combat.phase === "combat"}
+                isActiveTurn={
+                  roomLiveState.combat.phase !== "combat" ||
+                  roomLiveState.combat.activeActorId === shown.id ||
+                  (shown.kind === "companion" &&
+                    roomLiveState.combat.activeActorId ===
+                      (shown.moduleData as { ownerId?: string } | undefined)?.ownerId)
+                }
+                combatRound={roomLiveState.combat.round}
+                coins={roomLiveState.actorLiveState[shown.id]?.coins ?? {}}
+                {...READ_ONLY_CARD_HANDLERS}
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Player loot offer — two views: mid-combat (compact strip) or final (full-screen) ── */}
       {isPlayerMode && lootOffer && actorToShow && (() => {
