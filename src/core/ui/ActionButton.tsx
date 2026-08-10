@@ -99,7 +99,20 @@ export function ActionButton({
   const summaryRows = rows.filter(([label]) => summaryRowLabels.has(label));
   const detailRows = rows.filter(([label]) => !summaryRowLabels.has(label));
   const isCompact = compact || action.displayMode === "compact" || costs.length === 0;
-  const details = action.metadata?.details ?? action.description;
+  /**
+   * The composed stat line ("AC 16 · Requires attunement"), and the rules text, as TWO
+   * things — the stat line used to hide the rules text entirely.
+   *
+   * `metadata.details ?? description` failed twice over. An item with no combat stats gets
+   * `details: ""` from joining an empty list, and `??` does not fall through on an empty
+   * string, so the Displaced Ward Brooch showed its tags and nothing else. And an item that
+   * DOES have stats shadowed its rules text with them, so "reduce force damage you take by
+   * 2" was never on the card at all. The two are different information and both belong.
+   */
+  const statLine = action.metadata?.details?.trim() || undefined;
+  const rulesText = action.description?.trim() || undefined;
+  const details = statLine;
+  const showRulesText = rulesText && rulesText !== statLine;
   const referenceOnly = action.logMode === "silent" && costs.length === 0;
   // BUILD 0.5.3.1.3: action-card click may prime the roll workspace immediately,
   // but table players still need the visible Roll button to send the selected roll to Dice+.
@@ -231,6 +244,7 @@ export function ActionButton({
           <details className="action-details-drawer">
             <summary>Details</summary>
             {details && <p>{details}</p>}
+            {showRulesText && <p className="action-details-rules">{rulesText}</p>}
             {detailRows.length > 0 && (
               <dl>
                 {detailRows.map(([label, value]) => (

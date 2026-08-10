@@ -2468,6 +2468,15 @@ body,
   padding-bottom: 7px;
 }
 
+/* The item's rules text, under the stat line. Brighter than the stat row because it is
+   what the player actually needs to read — "reduce force damage you take by 2" is the
+   item; "AC 16 · 3 lb" is bookkeeping. */
+.action-details-rules {
+  margin: 4px 9px 0;
+  color: #e6e9f0;
+  line-height: 1.45;
+}
+
 .action-details-drawer p,
 .action-details-drawer dl {
   margin: 0;
