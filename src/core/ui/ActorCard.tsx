@@ -90,6 +90,8 @@ type ActorCardProps = {
   isPlayerMode?: boolean;
   /** False during combat when it is not this actor's turn — gates main/bonus actions */
   isActiveTurn?: boolean;
+  /** Combat is running. Trade is hard-locked while it is; gear swaps are turn-gated. */
+  combatActive?: boolean;
   /** Current combat round — when set + isActiveTurn, shows F09 initiative pill */
   combatRound?: number;
   /** Resource counters — remaining count per resource action ID */
@@ -746,6 +748,7 @@ export function ActorCard({
   canShowDevTestRoll = false,
   isPlayerMode = false,
   isActiveTurn = true,
+  combatActive = false,
   combatRound,
   resourceCounters,
   onSpendResource,
@@ -4503,7 +4506,7 @@ export function ActorCard({
             on theirs, charges and all — so the DM performs it and pushes both sheets; this
             only sends the request. Trading at the table shouldn't need the DM to open two
             character editors. */}
-        {activeTab === "equipment" && onSendItem && (partyMembers?.length ?? 0) > 0 && sendableItems.length > 0 && (
+        {activeTab === "equipment" && onSendItem && !combatActive && (partyMembers?.length ?? 0) > 0 && sendableItems.length > 0 && (
           <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 10, color: "#555", letterSpacing: 0.5 }}>GIVE</span>
             <select value={sendItemId} onChange={e => setSendItemId(e.target.value)}
@@ -4536,6 +4539,11 @@ export function ActorCard({
             </button>
           </div>
         )}
+        {activeTab === "equipment" && combatActive && onSendItem && (
+          <div style={{ padding: "6px 12px", borderBottom: "1px solid #2a2a3e", fontSize: 10, color: "#a06a4a" }}>
+            No trading during combat — gear stays where it is until the fight ends.
+          </div>
+        )}
         {/* Carried gear: equip/unequip and the attunement count.
             This lives on the PLAYER's card rather than only in the DM's character editor —
             equipment rows carry no roll, so the tab has the room, and equipping is the
@@ -4555,7 +4563,11 @@ export function ActorCard({
               const needsAttune = Boolean(item.metadata?.attunementRequired);
               // Equipping a fourth attuned item is the one move the cap forbids. Unequipping
               // is always allowed — that is how you free a slot.
-              const blocked = !isEquipped && needsAttune && attunementFull;
+              const attuneBlocked = !isEquipped && needsAttune && attunementFull;
+              // Free action, but only on your own turn — and once each way per turn, which
+              // the DM enforces since it performs every change and sees them all.
+              const turnBlocked = combatActive && !isActiveTurn;
+              const blocked = attuneBlocked || turnBlocked;
               return (
                 <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #1a1a2e" }}>
                   <div style={{ minWidth: 0 }}>
@@ -4570,9 +4582,11 @@ export function ActorCard({
                       border: `1px solid ${isEquipped ? "#2a6e2a55" : "#333"}`,
                       color: blocked ? "#555" : isEquipped ? "#4caf50" : "#888",
                       cursor: blocked ? "default" : "pointer" }}
-                    title={blocked
+                    title={turnBlocked
+                      ? "Gear can only be changed on your own turn."
+                      : attuneBlocked
                       ? `Already attuned to ${ATTUNEMENT_LIMIT} items — unequip one first.`
-                      : isEquipped ? "Unequip — keeps it in the bag, stops its bonuses" : "Equip — its bonuses start applying"}>
+                      : isEquipped ? "Unequip — free, once per turn, keeps it in the bag" : "Equip — free, once per turn"}>
                     {isEquipped ? "Equipped" : "Equip"}
                   </button>
                 </div>

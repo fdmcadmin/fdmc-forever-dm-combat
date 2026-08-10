@@ -1096,6 +1096,16 @@ export default function App() {
     const moving = (from.tabs.equipment ?? []).find(a => a.id === actionId);
     if (!moving) return;
 
+    // TRADE IS HARD LOCKED IN COMBAT. Not "costs an action" — not available at all. Handing
+    // gear around mid-fight is the move that turns one good item into everyone's item.
+    if (roomLiveState.combat.phase === "combat") {
+      addEntry({
+        actorName: from.name, actionName: "Trade Locked", tabId: "system",
+        message: `⚠ No trading in combat — ${moving.label} stays with ${from.name} until the fight ends.`,
+      });
+      return;
+    }
+
     // An EQUIPPED item cannot be handed over — its statEffects are inside the sender's
     // derived AC and stats, so giving it away while worn leaves that card claiming armour it
     // no longer has. The picker already hides equipped items, but the rule lives here too:
@@ -1161,6 +1171,37 @@ export default function App() {
    * asks and this performs it. Enforced HERE too, not only in the card's disabled button —
    * a stale sheet could otherwise ask to equip a fourth attuned item and get it.
    */
+  /**
+   * Gear handling in combat, per Christopher:
+   *   · trade is HARD LOCKED — no hand-offs once initiative is rolled;
+   *   · equip/unequip costs NO action, but only on your own turn;
+   *   · once each per turn — you may take one thing off and put one thing on.
+   *
+   * Out of combat none of this applies: swap freely.
+   */
+  const inCombat = roomLiveState.combat.phase === "combat";
+
+  /** A companion acts on its owner's turn, so it is "on turn" when the owner is. */
+  function isActorOnTurn(actorId: string): boolean {
+    const active = roomLiveState.combat.activeActorId;
+    if (!active) return false;
+    if (active === actorId) return true;
+    const a = dmActors.find(x => x.id === actorId);
+    return a?.kind === "companion"
+      && (a.moduleData as { ownerId?: string } | undefined)?.ownerId === active;
+  }
+
+  /**
+   * One unequip and one equip per actor per turn.
+   *
+   * Keyed by round + whose turn it is, so it clears itself when the turn moves rather than
+   * needing a reset broadcast. DM-side only: the GM performs every gear change, so this is
+   * the one place that sees them all.
+   */
+  const gearTurnLedger = useRef<Record<string, { key: string; equipped: number; unequipped: number }>>({});
+  function gearTurnKey(): string {
+    return `${roomLiveState.combat.round}:${roomLiveState.combat.activeActorId ?? ""}`;
+  }
   function performEquipToggle(actorId: string, actionId: string) {
     const actor = dmActors.find(a => a.id === actorId);
     if (!actor) return;
@@ -1169,6 +1210,32 @@ export default function App() {
     if (!target) return;
 
     const willEquip = target.metadata?.equipped === false;
+
+    // In combat: only on your own turn, and only once each way.
+    if (inCombat) {
+      if (!isActorOnTurn(actorId)) {
+        addEntry({
+          actorName: actor.name, actionName: "Gear Locked", tabId: "system",
+          message: `⚠ ${actor.name} can only change gear on their own turn.`,
+        });
+        return;
+      }
+      const key = gearTurnKey();
+      const prev = gearTurnLedger.current[actorId];
+      const used = prev && prev.key === key ? prev : { key, equipped: 0, unequipped: 0 };
+      const spent = willEquip ? used.equipped : used.unequipped;
+      if (spent >= 1) {
+        addEntry({
+          actorName: actor.name, actionName: "Gear Locked", tabId: "system",
+          message: `⚠ ${actor.name} has already ${willEquip ? "equipped" : "unequipped"} something this turn.`,
+        });
+        return;
+      }
+      gearTurnLedger.current[actorId] = willEquip
+        ? { ...used, equipped: used.equipped + 1 }
+        : { ...used, unequipped: used.unequipped + 1 };
+    }
+
     if (willEquip && target.metadata?.attunementRequired) {
       const attuned = equipment.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false).length;
       if (attuned >= 3) {
@@ -3627,6 +3694,7 @@ export default function App() {
         partyMembers={itemTransferTargets(actorToShow.id)}
         onSendItem={(action, toActorId) => requestItemTransfer(actorToShow.id, toActorId, action)}
         onToggleEquipped={(action) => requestEquipToggle(actorToShow.id, action)}
+        combatActive={roomLiveState.combat.phase === "combat"}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
@@ -3992,6 +4060,7 @@ export default function App() {
                 partyMembers={itemTransferTargets(focusedActorId)}
                 onSendItem={(action, toActorId) => requestItemTransfer(focusedActorId, toActorId, action)}
                 onToggleEquipped={(action) => requestEquipToggle(focusedActorId, action)}
+                combatActive={roomLiveState.combat.phase === "combat"}
                 onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}
