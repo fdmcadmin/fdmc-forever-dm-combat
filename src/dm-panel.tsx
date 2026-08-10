@@ -20,6 +20,9 @@ import OBR from "@owlbear-rodeo/sdk";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
 import { FDMC_ACCENTS } from "./core/constants/theme";
+import appManifest from "../public/manifest.json";
+
+const APP_VERSION = appManifest.version;
 
 const DM_LIBRARY_UPDATED_CHANNEL = FDMC_CHANNELS.dmLibraryUpdated;
 
@@ -54,7 +57,7 @@ import {
   getActorCoins,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
-import { setCoin, type CoinType } from "./core/currency/currency";
+import { setCoin, type CoinType, type Coins } from "./core/currency/currency";
 import {
   FDMC_ROOM_LIVE_STATE_KEY,
   FDMC_TABLE_BINDING_KEY,
@@ -461,8 +464,24 @@ function DmPanelApp() {
     broadcastLibraryUpdate();
   }
 
+  /**
+   * Every actor's purse, for the backup file.
+   *
+   * Coin is room metadata rather than localStorage, so it is the one thing the old export
+   * left behind — a wipe and reimport brought back the sheets and gear and quietly zeroed
+   * everyone's gold.
+   */
+  function currentWallets(): Record<string, Coins> {
+    const out: Record<string, Coins> = {};
+    for (const id of Object.keys(roomLiveState.actorLiveState)) {
+      const coins = getActorCoins(roomLiveState, id);
+      if (Object.values(coins).some(v => (v ?? 0) > 0)) out[id] = coins;
+    }
+    return out;
+  }
+
   function handleExport() {
-    exportActorLibrary("0.6.0");
+    exportActorLibrary(APP_VERSION, currentWallets());
   }
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -473,6 +492,14 @@ function DmPanelApp() {
       if (result.ok) {
         setActorLibrary(loadActorLibrary());
         broadcastLibraryUpdate();
+        // Purses go back through the normal room-state commit — the GM is still the only
+        // writer, the import just supplies the values.
+        const wallets = result.wallets ?? {};
+        if (Object.keys(wallets).length) {
+          let next = roomLiveState;
+          for (const [actorId, coins] of Object.entries(wallets)) next = patchActorCoins(next, actorId, coins);
+          void commitRoomState(next);
+        }
       }
     });
     // Reset file input so same file can be re-picked
@@ -897,6 +924,29 @@ function DmPanelApp() {
         {panelId === "maintenance" && (
           <div style={{ overflowY: "auto", flex: 1, paddingBottom: 32 }}>
             <FdmcRoomMaintenancePanel
+              backup={{
+                version: APP_VERSION,
+                getWallets: currentWallets,
+                // A restore only writes local storage; the purses come back as data and are
+                // published here, so the GM remains the single writer of room state.
+                onRestored: (result) => {
+                  setActorLibrary(loadActorLibrary());
+                  broadcastLibraryUpdate();
+                  const wallets = result.wallets ?? {};
+                  if (Object.keys(wallets).length) {
+                    let next = roomLiveState;
+                    for (const [actorId, coins] of Object.entries(wallets)) next = patchActorCoins(next, actorId, coins);
+                    void commitRoomState(next);
+                  }
+                },
+                extraActions: (
+                  <button type="button" onClick={handleExport}
+                    style={{ fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #7db1ff55", borderRadius: 4, color: "#7db1ff", cursor: "pointer" }}
+                    title="Download the full library — actors, overrides, equipment and wallets — as a file">
+                    Export Library File
+                  </button>
+                ),
+              }}
               onScan={async () => {
                 // Read all room metadata and find FDMC-owned keys
                 const obr = OBR as unknown as { room?: { getMetadata?: () => Promise<Record<string, unknown>> } };

@@ -1,3 +1,6 @@
+import { BackupPanel } from "../ui/BackupPanel";
+import type { Coins } from "../currency/currency";
+import type { ImportResult } from "../seats/actorLibraryExport";
 import { useMemo, useState } from "react";
 import type { FdmcTableBinding } from "../table-state/sharedTableState";
 
@@ -53,6 +56,13 @@ type FdmcRoomMaintenancePanelProps = {
   onReinitialize: () => Promise<FdmcRoomMaintenanceReinitializeResult>;
   onActorSnapshot: () => Promise<FdmcRoomMaintenanceActorSnapshotResult>;
   onPurgeSeatMetadata: () => Promise<void>;
+  /** Backup section. Omitted where the host has no room state to read wallets from. */
+  backup?: {
+    version: string;
+    getWallets: () => Record<string, Coins>;
+    onRestored: (result: ImportResult) => void;
+    extraActions?: React.ReactNode;
+  };
 };
 
 function formatBytes(bytes: number): string {
@@ -69,6 +79,7 @@ export function FdmcRoomMaintenancePanel({
   onReinitialize,
   onActorSnapshot,
   onPurgeSeatMetadata,
+  backup,
 }: FdmcRoomMaintenancePanelProps) {
   const [scanResult, setScanResult] = useState<FdmcRoomMaintenanceScanResult | undefined>(undefined);
   const [purgeResult, setPurgeResult] = useState<FdmcRoomMaintenancePurgeResult | undefined>(undefined);
@@ -309,6 +320,15 @@ export function FdmcRoomMaintenancePanel({
             ))}
           </div>
         </div>
+      )}
+
+      {backup && (
+        <BackupPanel
+          version={backup.version}
+          getWallets={backup.getWallets}
+          onRestored={backup.onRestored}
+          extraActions={backup.extraActions}
+        />
       )}
     </section>
   );
