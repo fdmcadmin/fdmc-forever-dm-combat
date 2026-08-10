@@ -222,8 +222,14 @@ export function isMonsterBonusAction(a: MonsterReaderAction): boolean {
  * 1/round)" reads as `kind: "action"`, so nothing but the name distinguishes it.
  */
 export function isMonsterLegendaryAction(a: MonsterReaderAction): boolean {
+  // `legendaryCost` is the STRUCTURED signal and comes first — it is what the Monster Creator
+  // writes, and a creator-authored dragon has no reason to also put "(Legendary Action)" in
+  // the name. Reading only the name filed every one of its legendary options as a normal
+  // attack, handing the dragon three extra swings a turn.
+  if (typeof a.legendaryCost === "number" && a.legendaryCost > 0) return true;
   const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
   if (ec === "legendary") return true;
+  // Name fallback for hand-authored blocks, which mark the cost in prose.
   return /\(\s*legendary/i.test(a.name ?? "");
 }
 
