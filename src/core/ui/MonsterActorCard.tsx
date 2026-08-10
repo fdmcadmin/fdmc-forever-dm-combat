@@ -39,7 +39,7 @@ import {
 } from "../integrations/useOwlbearDiceBridge";
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
-import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction } from "../monsters/runtime/mainMonsterRuntime";
+import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction, isMonsterLegendaryAction } from "../monsters/runtime/mainMonsterRuntime";
 import { CLASSIFICATION_LABEL } from "../encounter-band/encounterRounds";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
@@ -187,19 +187,24 @@ function classifyActions(all: MonsterReaderAction[]) {
   const bonusActions: MonsterReaderAction[] = [];
   const spells:       MonsterReaderAction[] = [];
   const reactions:    MonsterReaderAction[] = [];
+  const legendary:    MonsterReaderAction[] = [];
   const traits:       MonsterReaderAction[] = [];
 
   for (const a of all) {
     // Reaction/trait win first — a slot-costed REACTION (Frost Ward) is still a reaction.
     if (a.kind === "reaction") { reactions.push(a);    continue; }
     if (a.kind === "trait")    { traits.push(a);       continue; }
+    // A LEGENDARY action is its own economy, not a main action that happens to be tagged.
+    // Without this bucket a creator-authored dragon's Detect / Tail Swipe / Pounce fell
+    // through to mainActions and read as ordinary attacks on the card.
+    if (isMonsterLegendaryAction(a)) { legendary.push(a); continue; }
     // Bonus beats spell: a bonus-action cantrip belongs under Bonus Actions, where its
     // economy actually lives. Its slot pill still shows on the row.
     if (isBonusAction(a))      { bonusActions.push(a); continue; }
     if (isSpellAction(a))      { spells.push(a);       continue; }
     mainActions.push(a);
   }
-  return { mainActions, bonusActions, spells, reactions, traits };
+  return { mainActions, bonusActions, spells, reactions, legendary, traits };
 }
 
 // ─── Stat box ─────────────────────────────────────────────────────────────────
@@ -654,6 +659,15 @@ export function MonsterActorCard({
   // worth ~130px, collapsing these is worth roughly twice that on a full stat block.
   const [bonusOpen, setBonusOpen] = useState(false);
   const [reactionsOpen, setReactionsOpen] = useState(false);
+  const [legendaryOpen, setLegendaryOpen] = useState(false);
+  /**
+   * Legendary points spent this round.
+   *
+   * Kept apart from the action economy on purpose: legendary is its own pool, refreshing at
+   * the START of the creature's turn — which is exactly when the existing per-instance
+   * turn-reset broadcast fires, so no new signal is needed.
+   */
+  const [legendaryUsed, setLegendaryUsed] = useState(0);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [spellsOpen, setSpellsOpen] = useState(false);
 
@@ -672,6 +686,8 @@ export function MonsterActorCard({
         setEconomy({ actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 });
         setUsedActionIds(new Set());
         setCommittedRoll(null);
+        // Legendary points come back at the start of the creature's own turn.
+        setLegendaryUsed(0);
       }
     });
   }, [monster.instanceId]);
@@ -752,6 +768,9 @@ export function MonsterActorCard({
   // Spell slots spent this fight, per level. Unlike the action budget these do NOT reset on
   // turn advance — a monster's slots persist until it would long rest, i.e. the whole fight.
   const [slotsUsedByLevel, setSlotsUsedByLevel] = useState<Record<number, number>>({});
+  const legendaryPerRound = monster.legendaryPerRound ?? 0;
+  const legendaryLeft = Math.max(0, legendaryPerRound - legendaryUsed);
+
   const spellSlots = monster.spellSlots ?? [];
   const slotRemaining = (level: number) => {
     const pool = spellSlots.find(s => s.level === level);
@@ -764,7 +783,7 @@ export function MonsterActorCard({
     [monster.actions, monster.reactions, monster.traits],
   );
 
-  const { mainActions, bonusActions, spells, reactions, traits } = useMemo(
+  const { mainActions, bonusActions, spells, reactions, legendary, traits } = useMemo(
     () => classifyActions(allActions),
     [allActions],
   );
@@ -1481,6 +1500,34 @@ export function MonsterActorCard({
                 onStepUsed={() => undefined} onStepReset={() => undefined}
               />
             ))}
+          </>
+        )}
+
+        {/* 6b. Legendary — its own pool, spent on OTHER creatures' turns. Separate from
+                Reactions on purpose: they are different economies that happen to share
+                "fires when it isn't my turn". */}
+        {legendary.length > 0 && (
+          <>
+            <SectionLabel text={legendaryPerRound ? `Legendary (${legendaryLeft}/${legendaryPerRound})` : "Legendary"}
+              count={legendary.length} accent={SECTION_ACCENT.legendary}
+              collapsible open={legendaryOpen} onToggle={() => setLegendaryOpen(o => !o)} />
+            {legendaryOpen && legendary.map(a => {
+              const cost = a.legendaryCost ?? 1;
+              const unaffordable = legendaryPerRound > 0 && cost > legendaryLeft;
+              return (
+                <ActionCard key={a.name} action={a}
+                  isUsed={unaffordable || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
+                  slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
+                  isDischarged={dischargedActionIds.has(slugify(a.name))}
+                  committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
+                  attackCounter={undefined} stepsUsed={0}
+                  onUse={(action) => { setLegendaryUsed(u => u + cost); handleUseAction(action); }}
+                  onRollResult={handleRollResult}
+                  onCommit={handleCommit} onClearRoll={handleClearRoll}
+                  onStepUsed={() => undefined} onStepReset={() => undefined}
+                />
+              );
+            })}
           </>
         )}
 

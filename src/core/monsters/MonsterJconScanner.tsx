@@ -121,6 +121,9 @@ export type MonsterCombatCandidate = {
   attacksPerTurn?: number;
   /** Spell slots per level, carried from the template so the card can track them. */
   spellSlots?: { level: number; max: number }[];
+  /** Legendary actions per round. Options tagged `legendaryCost` spend from this pool,
+   *  which refreshes at the start of the creature's own turn. */
+  legendaryPerRound?: number;
   /** Threat tier, carried from the template. Drives the heavy HP bar for mid-boss+ in the
    *  roster and the players' tracker. */
   classification?: MonsterClassification;

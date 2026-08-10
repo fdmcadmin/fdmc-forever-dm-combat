@@ -464,6 +464,7 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     archetype: template.stats.archetype,
     skills: template.stats.skills,
     spellSlots: template.stats.spellSlots,
+    legendaryPerRound: template.stats.legendaryPerRound,
     actionCounter: deriveMonsterActionCounter(template.actions, template.stats.attacksPerTurn),
     usedActionNames: [],
   };
