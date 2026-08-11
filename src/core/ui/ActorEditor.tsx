@@ -664,6 +664,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           <EquipmentBagEditor
             equippedActions={tabsDraft.equipment ?? []}
             mainActions={tabsDraft.main ?? []}
+            // proposeMode IS the player-facing flow (the level-up request panel), so it is
+            // the same question: is a player sitting here, or the DM?
+            playerMode={proposeMode}
             onChange={(updates) => {
               setTabsDraft(d => ({ ...d, ...updates }));
             }}

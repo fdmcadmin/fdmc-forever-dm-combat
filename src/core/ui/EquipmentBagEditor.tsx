@@ -868,6 +868,58 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         <input type="checkbox" checked={draft.isUsable} onChange={e => set("isUsable", e.target.checked)} />
         Has a usable action (shows Use button on actor card)
       </label>
+      {/* What the item DOES. This is the block the card shows the player — itemToAction
+          renders `mechanicsText || description`, so an item with mechanics never displays
+          its flavour. An artificer writing their own wand needs to say what it does. */}
+      <label style={{ fontSize: 12 }}>
+        Mechanics <span style={{ color: "#7b68ee" }}>— what the card shows</span>
+        <textarea value={draft.mechanicsText ?? ""} onChange={e => set("mechanicsText", e.target.value || undefined)}
+          rows={2} placeholder="While worn, reduce force damage you take by 2."
+          style={{ ...inputStyle, resize: "vertical" as const }} />
+      </label>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <label style={{ fontSize: 12 }}>Worn slot
+          <select value={draft.slot ?? ""} onChange={e => set("slot", (e.target.value || undefined) as EquipmentItem["slot"])}
+            style={{ ...inputStyle, marginTop: 2 }}>
+            <option value="">Carried — no slot</option>
+            {(Object.keys(SLOT_LABEL) as (keyof typeof SLOT_LABEL)[]).map(sl => (
+              <option key={sl} value={sl}>{SLOT_LABEL[sl]}{SLOT_CAPACITY[sl] > 1 ? ` (${SLOT_CAPACITY[sl]})` : ""}</option>
+            ))}
+          </select>
+        </label>
+        {/* Uses, for a thing they are building — a wand with three charges. How it comes
+            back is a rest cadence; "manual" means nothing restores it but a hand on the
+            card, which is what a dawn recharge needs. */}
+        <label style={{ fontSize: 12 }}>Uses
+          <input type="number" min={0} value={draft.charges?.max ?? ""} placeholder="0"
+            onChange={e => {
+              const max = Number.parseInt(e.target.value, 10);
+              set("charges", Number.isFinite(max) && max > 0
+                ? { max, reset: draft.charges?.reset ?? "longRest", note: draft.charges?.note }
+                : undefined);
+            }} style={inputStyle} />
+        </label>
+      </div>
+      {draft.charges && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>Comes back on
+            <select value={draft.charges.reset}
+              onChange={e => draft.charges && set("charges", { ...draft.charges, reset: e.target.value as NonNullable<EquipmentItem["charges"]>["reset"] })}
+              style={{ ...inputStyle, marginTop: 2 }}>
+              <option value="longRest">Long rest</option>
+              <option value="shortRest">Short rest</option>
+              <option value="encounter">Each encounter</option>
+              <option value="manual">Manual — no rest restores it</option>
+            </select>
+          </label>
+          <label style={{ fontSize: 12 }}>Cadence note
+            <input type="text" value={draft.charges.note ?? ""}
+              onChange={e => draft.charges && set("charges", { ...draft.charges, note: e.target.value || undefined })}
+              placeholder="Recharges at dawn" style={inputStyle} />
+          </label>
+        </div>
+      )}
 
       {/* An artificer's own creations can require attunement just as campaign loot does, so
           this has to be authorable here — not only a property of shipped items. It feeds the
@@ -959,9 +1011,17 @@ type EquipmentBagEditorProps = {
    * Always includes `equipment`. Includes `main` when a weapon is attached/detached.
    */
   onChange: (updates: { equipment?: ActorAction[]; main?: ActorAction[] }) => void;
+  /**
+   * The person at this editor is a PLAYER, not the DM.
+   *
+   * A player may author the things they made — an artificer's own armour or wand — and may
+   * not touch campaign loot. Every campaign item carries `isLocked`, which is what tells the
+   * two apart. They can still SEE a locked item in full; they just cannot rewrite it.
+   */
+  playerMode?: boolean;
 };
 
-export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: EquipmentBagEditorProps) {
+export function EquipmentBagEditor({ equippedActions, mainActions, onChange, playerMode = false }: EquipmentBagEditorProps) {
   const [view, setView] = useState<"bag" | "library" | "create">("bag");
   /**
    * Library search + type filter. Declared HERE, above the view switch, on purpose: editing an
@@ -973,6 +1033,16 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
   /** Action id being edited in place on this actor. Null = the form is editing the library. */
   const [editingAttached, setEditingAttached] = useState<string | null>(null);
   const [library, setLibrary] = useState<EquipmentItem[]>(() => loadEquipmentLibrary());
+  /**
+   * Whether the person here may rewrite this item.
+   *
+   * A player owns what they MADE — an artificer's armour, a wand they built. Campaign loot
+   * and convergence items are not theirs to rewrite, and every campaign item carries
+   * `isLocked`, so that flag is the whole test. The DM is unaffected.
+   *
+   * They can still see a locked item in full; the difference is authoring, not visibility.
+   */
+  const canEditItem = (item: { isLocked?: boolean } | undefined) => !playerMode || !item?.isLocked;
 
   /**
    * What the picker actually shows. Matches across everything a DM would reach for — name,
@@ -1265,11 +1335,18 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
               {/* Equipping is the PLAYER's, on their own sheet's CARRIED panel — this editor
                   builds the kit, it doesn't decide what is worn right now. The row still
                   SHOWS the state above so the DM can see it. */}
-              <button type="button" onClick={() => editAttachedItem(action)}
-                style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #4a4a6e", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}
-                title="Edit this character's copy — changes stay on this sheet and do not touch the library">
-                Edit
-              </button>
+              {canEditItem(actionToItem(action, action.id.replace(/^equip-/, ""))) ? (
+                <button type="button" onClick={() => editAttachedItem(action)}
+                  style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #4a4a6e", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}
+                  title="Edit this character's copy — changes stay on this sheet and do not touch the library">
+                  Edit
+                </button>
+              ) : (
+                <span style={{ fontSize: 10, padding: "3px 8px", border: "1px solid #333", borderRadius: 3, color: "#666" }}
+                  title="Campaign item — yours to carry and use, not to rewrite. Ask the DM for a change.">
+                  🔒 campaign
+                </span>
+              )}
               <button type="button" onClick={() => detachItem(action.id)}
                 style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #5a3a1a", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}
                 title="Detach from actor — removes the item (stays in library)">
@@ -1384,10 +1461,12 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange }: E
                     Detach
                   </button>
                 )}
-                <button type="button" onClick={() => { setEditingItem(item); setView("create"); }}
-                  style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
-                  Edit
-                </button>
+                {canEditItem(item) && (
+                  <button type="button" onClick={() => { setEditingItem(item); setView("create"); }}
+                    style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+                    Edit
+                  </button>
+                )}
                 <button type="button" onClick={() => removeFromLibrary(item.id)}
                   style={{ fontSize: 11, padding: "3px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
                   ✕
