@@ -1181,4 +1181,879 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     visibility: { defaultState: "hp-bar", hiddenName: "The Thing at the Center of the Lake", revealedName: "Wendigo Wight" },
   },
+  // ─── ACT 3 · The Veiled Wood ────────────────────────────────────────────────
+  // Transcribed from Broken_Chain_Act3_Encounters_Clean_v3_11.docx (2026-08-11).
+  //
+  // Encounter ids are act3-eN, taken from the document's own FIGHT numbering. The doc gives
+  // no session split, so none is invented: parseActPlacement reads session 0 and orders on the
+  // encounter number, which is exactly the fight order.
+  //
+  // The doc writes Multiattack; the model deleted it. Every one became stats.attacksPerTurn,
+  // summing all four wordings the document uses ("makes two X attacks", "one Horn and one
+  // Hooves", "one Bite and two Claw", "two Claw attacks, or casts a spell" -> the spell branch
+  // adds nothing, because a spell is a FULL action here).
+  //
+  // GATES ARE MID-BOSSES (Christopher). The doc bands them Elite / Gate / Act Boss; the app has
+  // no Gate, and a gate sits above elite and below the act boss.
+  //
+  // LAIR ACTIONS are carried in notes, not as actions. A lair is a SUMMON at initiative 20 and
+  // the summon mechanism is unbuilt — filing them as ordinary actions would read as things the
+  // creature can do on its own turn, which is precisely what they are not.
+  {
+    templateId: "broken-chain:act3:snarlroot:v1",
+    name: "Snarlroot",
+    encounterId: "act3-e1-the-first-court",
+    encounterLabel: "Act 3 E1 - The First Court",
+    stats: {
+      kind: "fey", ac: 17, maxHp: 59, speed: "30 ft., climb 20 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "bruiser",
+      skills: [{ label: "Athletics", modifier: 7 }],
+    },
+    abilities: [
+      { label: "STR", value: "18 (+4)", save: 7 },
+      { label: "DEX", value: "14 (+2)" },
+      { label: "CON", value: "16 (+3)", save: 6 },
+      { label: "INT", value: "12 (+1)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    traits: [
+      { name: "Root-Road", kind: "trait", text: "As a bonus action, choose two spaces of natural ground within 20 feet. Until the start of the next turn, a visible root seam joins them. Snarlroot can treat the seam as normal ground even across roots, brush, or a low obstacle, and it can move along the seam without provoking opportunity attacks." },
+      { name: "Deep-Footed", kind: "trait", text: "While touching natural ground, Snarlroot has advantage on saves against being knocked prone or moved against its will." },
+    ],
+    actions: [
+      { name: "Rootclub", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (1d12 + 4) bludgeoning." },
+      { name: "Turn the Root (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "Choose one creature on natural ground within 20 ft. It makes a DC 15 Strength save. On a failure, roots carry it up to 15 ft. along the ground to an unoccupied space and it cannot take reactions until the start of its next turn. On a success, it can be moved up to 5 ft. only." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A squat Fey of rope-hair, bark knots, and stone-dark hands. The roots do not obstruct it; they lean toward its feet as if waiting to be told where the path is.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Snarlroot", revealedName: "Snarlroot" },
+  },
+  {
+    templateId: "broken-chain:act3:hollow-warden:v1",
+    name: "Hollow Warden",
+    encounterId: "act3-e1-the-first-court",
+    encounterLabel: "Act 3 E1 - The First Court",
+    stats: {
+      kind: "fey", ac: 16, maxHp: 76, speed: "40 ft.",
+      attacksPerTurn: 2,
+      size: "Large", classification: "elite", archetype: "guardian",
+      skills: [{ label: "Perception", modifier: 5 }],
+    },
+    abilities: [
+      { label: "STR", value: "16 (+3)", save: 6 },
+      { label: "DEX", value: "14 (+2)" },
+      { label: "CON", value: "18 (+4)", save: 7 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "12 (+1)" },
+    ],
+    traits: [
+      { name: "Name the Threshold", kind: "trait", text: "Bonus Action: choose a 15-ft. line of natural ground within 15 ft. Until the start of the Warden’s next turn, the line is visibly braced by roots and bent branches. The Warden can use Bar the Way when a hostile creature crosses that line." },
+      { name: "Bark-Ribbed", kind: "trait", text: "The first time each round the Warden takes bludgeoning, piercing, or slashing damage, reduce it by 3." },
+    ],
+    actions: [
+      { name: "Branch Spear", kind: "attack", roll: "1d20 + 6", damage: "1d10 + 3", text: "Melee Weapon Attack: +6 to hit, reach 10 ft.; Hit: 8 (1d10 + 3) piercing." },
+    ],
+    reactions: [
+      { name: "Bar the Way", kind: "reaction", save: "STR DC 15", text: "When a hostile creature crosses the named threshold, move up to 10 ft. without provoking. If the Warden ends within reach, the creature makes a DC 15 Strength save. On a failure, its speed becomes 0 for the rest of the turn. On a success, its remaining speed is reduced by 10 ft." },
+    ],
+    resources: [],
+    notes: [
+      "A tall, antlered sentinel whose hide carries moss and pale shelf-fungus. It does not guard another creature; it guards a threshold, and the Wood agrees that the threshold matters.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Hollow Warden", revealedName: "Hollow Warden" },
+  },
+  {
+    templateId: "broken-chain:act3:larkskein:v1",
+    name: "Larkskein",
+    encounterId: "act3-e1-the-first-court",
+    encounterLabel: "Act 3 E1 - The First Court",
+    stats: {
+      kind: "fey", ac: 14, maxHp: 36, speed: "30 ft., fly 30 ft.",
+      size: "Small", classification: "elite", archetype: "mystic",
+      skills: [{ label: "Stealth", modifier: 7 }, { label: "Perception", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "18 (+4)", save: 7 },
+      { label: "CON", value: "12 (+1)" },
+      { label: "INT", value: "14 (+2)" },
+      { label: "WIS", value: "20 (+5)", save: 8 },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    traits: [
+      { name: "Leafway", kind: "trait", text: "When initiative is rolled, choose two living plants or natural growths within 30 ft. Until the end of Larkskein’s first turn, it can spend 5 ft. of movement to move from adjacent to one to adjacent to the other. This is movement through the Wood, not teleportation, and deals no damage." },
+      { name: "Pollen Map", kind: "trait", text: "When Larkskein hits a creature, that creature leaves a faint visible trail until the start of Larkskein’s next turn; it cannot benefit from being hidden from Larkskein during that time." },
+    ],
+    actions: [
+      { name: "Glass-Thorn", kind: "attack", roll: "1d20 + 8", damage: "2d10 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 16 (2d10 + 5) piercing." },
+      { name: "Summer Fold (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Choose a 15-ft.-radius area within 60 ft. Until the start of Larkskein’s next turn, creatures treat every 10 ft. moved inside the area as 5 ft. when moving toward the center and 15 ft. when moving away. No creature loses an action or is forcibly moved." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A three-foot moth-winged Fey whose dust looks like pollen until it hangs in the air long enough to become a map. Distance around it is measured by leaves rather than feet.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Larkskein", revealedName: "Larkskein" },
+  },
+  {
+    templateId: "broken-chain:act3:quillshrike:v1",
+    name: "Quillshrike",
+    encounterId: "act3-e2-the-cut-below",
+    encounterLabel: "Act 3 E2 - The Cut Below",
+    stats: {
+      kind: "fiend", ac: 17, maxHp: 39, speed: "40 ft., climb 20 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "skirmisher",
+      skills: [{ label: "Acrobatics", modifier: 8 }, { label: "Stealth", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "14 (+2)" },
+      { label: "DEX", value: "20 (+5)", save: 8 },
+      { label: "CON", value: "12 (+1)" },
+      { label: "INT", value: "12 (+1)" },
+      { label: "WIS", value: "10 (+0)" },
+      { label: "CHA", value: "14 (+2)" },
+    ],
+    traits: [
+      { name: "First Nails", kind: "trait", text: "When initiative is rolled, place two visible nail marks in spaces within 20 ft. Quillshrike may then move up to half speed toward one of them. No attack or save occurs." },
+      { name: "Snap to the Nail", kind: "trait", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
+    ],
+    actions: [
+      { name: "Quillblade", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
+      { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A narrow Fiend plated in black quills like forged nails. Wherever it stops, one of those nails ends up driven into bark, stone, or soil, leaving a straight line where the forest had none.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Quillshrike", revealedName: "Quillshrike" },
+  },
+  {
+    templateId: "broken-chain:act3:marrowstalk:v1",
+    name: "Marrowstalk",
+    encounterId: "act3-e2-the-cut-below",
+    encounterLabel: "Act 3 E2 - The Cut Below",
+    stats: {
+      kind: "fiend", ac: 15, maxHp: 68, speed: "30 ft.",
+      attacksPerTurn: 2,
+      size: "Large", classification: "elite", archetype: "bruiser",
+      skills: [{ label: "Athletics", modifier: 7 }],
+    },
+    abilities: [
+      { label: "STR", value: "18 (+4)", save: 7 },
+      { label: "DEX", value: "16 (+3)" },
+      { label: "CON", value: "18 (+4)", save: 7 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "10 (+0)" },
+      { label: "CHA", value: "12 (+1)" },
+    ],
+    traits: [
+      { name: "Breakroot", kind: "trait", text: "The first 10 ft. of natural difficult terrain Marrowstalk enters on a turn costs no extra movement. The spaces it crosses become scarred until the start of its next turn; natural difficult terrain in those spaces is suppressed, and a hostile creature entering a scarred space spends 5 extra ft. of movement." },
+      { name: "Marrow Grip", kind: "trait", text: "A creature hit by Marrow Hook has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack." },
+    ],
+    actions: [
+      { name: "Marrow Hook", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing." },
+      { name: "Body Break (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A heavy Fiend whose limbs look assembled around the idea of a hook. It does not pass through undergrowth; it crushes a corridor through it and leaves that corridor wrong behind it.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Marrowstalk", revealedName: "Marrowstalk" },
+  },
+  {
+    templateId: "broken-chain:act3:shardbound:v1",
+    name: "Shardbound",
+    encounterId: "act3-e2-the-cut-below",
+    encounterLabel: "Act 3 E2 - The Cut Below",
+    stats: {
+      kind: "fiend", ac: 17, maxHp: 46, speed: "30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "tactician",
+      skills: [{ label: "Arcana", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "16 (+3)", save: 6 },
+      { label: "CON", value: "14 (+2)" },
+      { label: "INT", value: "20 (+5)", save: 8 },
+      { label: "WIS", value: "12 (+1)" },
+      { label: "CHA", value: "12 (+1)" },
+    ],
+    traits: [
+      { name: "Survey Stake", kind: "trait", text: "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover." },
+      { name: "Refracted Origin", kind: "trait", text: "When making a ranged spell attack, Shardbound can have the attack originate from itself or from one of its stakes it can see. Range is measured from the chosen origin. This can bend a sight line but does not increase damage." },
+    ],
+    actions: [
+      { name: "Shard Bolt", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
+      { name: "Survey Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
+    ],
+    reactions: [
+      { name: "Break the Survey", kind: "reaction", text: "When Shardbound is targeted by an attack, it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once per round." },
+    ],
+    resources: [],
+    notes: [
+      "A faceted Fiend that plants crystal into living soil as if staking a survey line. The crystal does not grow with the Wood. It replaces what was there.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Shardbound", revealedName: "Shardbound" },
+  },
+  {
+    templateId: "broken-chain:act3:veilwood-crone:v1",
+    name: "Veilwood Crone",
+    encounterId: "act3-e3-gate-i-crone-and-mare",
+    encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
+    stats: {
+      kind: "fey", ac: 16, maxHp: 119, speed: "30 ft., swim 30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "mid-boss", archetype: "mystic",
+      // "7th-level spellcaster; spell save DC 17, +9 to hit. Slots 4 / 3 / 3 / 1."
+      // The only Spellcasting line in the act, and it sits in TRAITS rather than ACTIONS.
+      // Her Multiattack reads "two Claw attacks, OR casts a spell" — which is the model's own
+      // rule already: a spell is a FULL action and never adds to the attack budget.
+      spellSlots: [{ level: 1, max: 4 }, { level: 2, max: 3 }, { level: 3, max: 3 }, { level: 4, max: 1 }],
+      skills: [{ label: "Nature", modifier: 7 }, { label: "Perception", modifier: 9 }],
+    },
+    abilities: [
+      { label: "STR", value: "18 (+4)" },
+      { label: "DEX", value: "18 (+4)" },
+      { label: "CON", value: "18 (+4)", save: 7 },
+      { label: "INT", value: "18 (+4)" },
+      { label: "WIS", value: "22 (+6)", save: 9 },
+      { label: "CHA", value: "14 (+2)" },
+    ],
+    traits: [
+      { name: "Spellcasting", kind: "trait", roll: "1d20 + 9", text: "7th-level spellcaster; spell save DC 17, +9 to hit. Slots 4 / 3 / 3 / 1. Core control list: Entangle, Web, Hold Person. A spell replaces Multiattack." },
+    ],
+    actions: [
+      { name: "Claw", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage." },
+      { name: "Venomous Eruption (1/Day)", kind: "action", save: "WIS DC 17", text: "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned." },
+      { name: "Blighted Vitality (Recharge 4–6)", kind: "action", save: "CON DC 17", recharge: "4-6", text: "Choose up to two creatures within 60 ft. Each makes a DC 17 Constitution save. On a failure, healing received is halved until the end of the Crone’s second turn after the effect begins. Reapplying the effect does not extend or stack the duration." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "The Crone is not an invader. Black flowers open for her because this is still Feywild soil. Her cruelty is native: poisonous hospitality, thorn-shadow, and the night-side of living things.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Veilwood Crone", revealedName: "Veilwood Crone" },
+  },
+  {
+    templateId: "broken-chain:act3:darkmare:v1",
+    name: "Darkmare",
+    encounterId: "act3-e3-gate-i-crone-and-mare",
+    encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
+    stats: {
+      kind: "fiend", ac: 12, maxHp: 97, speed: "50 ft.",
+      attacksPerTurn: 2,
+      size: "Large", classification: "mid-boss", archetype: "bruiser",
+      skills: [{ label: "Perception", modifier: 5 }],
+    },
+    abilities: [
+      { label: "STR", value: "20 (+5)", save: 8 },
+      { label: "DEX", value: "14 (+2)" },
+      { label: "CON", value: "14 (+2)", save: 7 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "16 (+3)" },
+      { label: "CHA", value: "17 (+3)" },
+    ],
+    traits: [
+      { name: "Darkmane (Constant)", kind: "trait", text: "Darkmare creates one-way magical obscurement around itself. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally." },
+      { name: "Umbral Passage", kind: "trait", text: "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold." },
+      { name: "Shadow Shroud (1/Day)", kind: "trait", text: "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not." },
+    ],
+    actions: [
+      { name: "Horn", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage." },
+      { name: "Hooves", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A war-mount shaped from a noble silhouette and then invaded from the inside. Its hooves do not ask the Wood for a road; they burn one.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Darkmare", revealedName: "Darkmare" },
+  },
+  {
+    templateId: "broken-chain:act3:hollowbloom:v1",
+    name: "Hollowbloom",
+    encounterId: "act3-e4-the-hollow-feast",
+    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    stats: {
+      kind: "fey", ac: 15, maxHp: 75, speed: "30 ft., climb 20 ft.",
+      size: "Small", classification: "elite", archetype: "tactician",
+      skills: [{ label: "Nature", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "16 (+3)" },
+      { label: "CON", value: "18 (+4)" },
+      { label: "INT", value: "20 (+5)", save: 8 },
+      { label: "WIS", value: "16 (+3)", save: 6 },
+      { label: "CHA", value: "12 (+1)" },
+    ],
+    traits: [
+      { name: "Offered Shelter", kind: "trait", save: "DEX DC 16", text: "When initiative is rolled, create two 5-ft. flower circles on natural ground within 40 ft. A creature in a circle has half cover. At the start of Hollowbloom’s turn, each occupied circle closes; the occupant makes a DC 16 Dexterity save or is restrained until the end of its turn. The circle then withers." },
+      { name: "Set the Table", kind: "trait", text: "Bonus Action: create one new Offered Shelter circle within 30 ft. Maximum two circles at a time." },
+    ],
+    actions: [
+      { name: "Bark Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) piercing." },
+      { name: "Close the Bloom (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "Choose one visible 10-ft. area of flowers or natural growth within 60 ft. Creatures there make a DC 16 Dexterity save; 18 (4d8) slashing on failure, half on success, and a creature that fails cannot take reactions until the end of its turn." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A small figure of hollow bark and flower-pale fingers. It offers shelter the way a trap offers shelter: truthfully, until the moment the offer closes.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Hollowbloom", revealedName: "Hollowbloom" },
+  },
+  {
+    templateId: "broken-chain:act3:velvet-host:v1",
+    name: "Velvet Host",
+    encounterId: "act3-e4-the-hollow-feast",
+    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    stats: {
+      kind: "fey", ac: 16, maxHp: 75, speed: "30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "commander",
+      skills: [{ label: "Deception", modifier: 8 }, { label: "Insight", modifier: 5 }],
+    },
+    abilities: [
+      { label: "STR", value: "14 (+2)" },
+      { label: "DEX", value: "14 (+2)" },
+      { label: "CON", value: "18 (+4)", save: 7 },
+      { label: "INT", value: "16 (+3)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "20 (+5)", save: 8 },
+    ],
+    traits: [
+      { name: "Declare the Courtesy", kind: "trait", text: "At the start of each turn choose Welcome or Leave-Taking, visibly changing the mask. Welcome: hostile creatures spend 5 extra ft. of movement to move closer while within 15 ft. Leave-Taking: hostile creatures spend 5 extra ft. of movement to move farther away while within 15 ft. This does not stack with difficult terrain." },
+      { name: "Perfect Host", kind: "trait", text: "Velvet Host has advantage on saves against being charmed or frightened." },
+    ],
+    actions: [
+      { name: "Velvet Rebuke", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 12 (2d6 + 5) psychic." },
+      { name: "Wrong Invitation (Recharge 5–6)", kind: "action", save: "CHA DC 16", recharge: "5-6", text: "Choose one creature within 60 ft. It makes a DC 16 Charisma save. On a failure, choose one: it is moved up to 15 ft. toward a space of natural cover it can see, or up to 15 ft. away from such a space. This movement does not provoke. On a success, move it up to 5 ft. only." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A tall arrangement of velvet leaves, ribbon-thin limbs, and a porcelain collar with no face above it. When it turns toward someone, nearby branches bow first. The Wood has learned the rules of its manners.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Velvet Host", revealedName: "Velvet Host" },
+  },
+  {
+    templateId: "broken-chain:act3:mothwake:v1",
+    name: "Mothwake",
+    encounterId: "act3-e4-the-hollow-feast",
+    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    stats: {
+      kind: "fey", ac: 14, maxHp: 44, speed: "30 ft., fly 30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "mystic",
+      skills: [{ label: "Stealth", modifier: 7 }, { label: "Perception", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "18 (+4)", save: 7 },
+      { label: "CON", value: "12 (+1)" },
+      { label: "INT", value: "14 (+2)" },
+      { label: "WIS", value: "20 (+5)", save: 8 },
+      { label: "CHA", value: "16 (+3)" },
+    ],
+    traits: [
+      { name: "Hush After Failure", kind: "trait", text: "Once per round when a creature within 30 ft. fails a saving throw, Mothwake may move up to 10 ft. without provoking opportunity attacks." },
+      { name: "Moonless Swarm", kind: "trait", text: "Mothwake can move through the spaces of other creatures, but cannot end there." },
+    ],
+    actions: [
+      { name: "Hushwing", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 12 (2d6 + 5) psychic." },
+      { name: "Black Petal Fall (Recharge 5–6)", kind: "action", save: "WIS DC 16", recharge: "5-6", text: "20-ft.-radius sphere within 90 ft.; creatures inside make a DC 16 Wisdom save. Failure: 18 (4d8) psychic and the creature cannot gain advantage on attack rolls until the end of its next turn. Success: half damage." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A mantle of black moths repeatedly almost forms a person. The wings settle only when it is listening to a heartbeat.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Mothwake", revealedName: "Mothwake" },
+  },
+  {
+    templateId: "broken-chain:act3:moss-crowned-charger:v1",
+    name: "Moss-Crowned Charger",
+    encounterId: "act3-e5-the-scar-line",
+    encounterLabel: "Act 3 E5 - The Scar Line",
+    stats: {
+      kind: "fey", ac: 14, maxHp: 105, speed: "40 ft.",
+      attacksPerTurn: 2,
+      size: "Large", classification: "elite", archetype: "guardian",
+      skills: [{ label: "Athletics", modifier: 7 }, { label: "Perception", modifier: 6 }],
+    },
+    abilities: [
+      { label: "STR", value: "18 (+4)", save: 7 },
+      { label: "DEX", value: "10 (+0)" },
+      { label: "CON", value: "20 (+5)", save: 8 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "12 (+1)" },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    traits: [
+      { name: "Boughway", kind: "trait", text: "When the Charger moves at least 15 ft. through natural vegetation, the path it crossed becomes easy ground until the start of its next turn: difficult terrain from plants is suppressed there for every creature." },
+      { name: "Rooted Turn", kind: "trait", text: "Bonus Action: speed becomes 0 until the start of the next turn; AC increases by 2 and it has advantage on saves against forced movement. It cannot use this after moving more than 10 ft. this turn." },
+    ],
+    actions: [
+      { name: "Tusk", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing." },
+      { name: "Canopy Rush (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", text: "Move up to 30 ft. in a line through natural vegetation. One creature in the path makes a DC 16 Strength save. Failure: 18 (4d8) bludgeoning and pushed up to 15 ft.; success: half damage and no push." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A broad boar-like Fey with fern fronds along its spine and an antlered crown grown from mossy bone. The Wood parts for its charge and closes behind it.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Moss-Crowned Charger", revealedName: "Moss-Crowned Charger" },
+  },
+  {
+    templateId: "broken-chain:act3:rift-slick:v1",
+    name: "Rift-Slick",
+    encounterId: "act3-e5-the-scar-line",
+    encounterLabel: "Act 3 E5 - The Scar Line",
+    stats: {
+      kind: "fiend", ac: 12, maxHp: 59, speed: "40 ft., climb 30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "skirmisher",
+      skills: [{ label: "Acrobatics", modifier: 8 }, { label: "Stealth", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "14 (+2)" },
+      { label: "DEX", value: "20 (+5)", save: 8 },
+      { label: "CON", value: "14 (+2)" },
+      { label: "INT", value: "16 (+3)", save: 6 },
+      { label: "WIS", value: "12 (+1)" },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    traits: [
+      { name: "Through the Wound", kind: "trait", text: "Rift-Slick can move through a space as narrow as 3 inches without squeezing. When it passes through natural cover, roots, or a tree-space, it leaves a 5-ft. scar at the exit until the start of its next turn." },
+      { name: "Scar Slip", kind: "trait", text: "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation." },
+    ],
+    actions: [
+      { name: "Slick Claw", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
+      { name: "Warping Cut (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A gray Fiend whose body can become too thin for its skeleton and then remember bones afterward. Wherever it squeezes through the Wood, sap hisses from the wound.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Rift-Slick", revealedName: "Rift-Slick" },
+  },
+  {
+    templateId: "broken-chain:act3:nail-saint:v1",
+    name: "Nail Saint",
+    encounterId: "act3-e5-the-scar-line",
+    encounterLabel: "Act 3 E5 - The Scar Line",
+    stats: {
+      kind: "fiend", ac: 16, maxHp: 56, speed: "30 ft.",
+      size: "Medium", classification: "elite", archetype: "tactician",
+      skills: [{ label: "Arcana", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "16 (+3)", save: 6 },
+      { label: "CON", value: "14 (+2)" },
+      { label: "INT", value: "20 (+5)", save: 8 },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "14 (+2)" },
+    ],
+    traits: [
+      { name: "Drive Nail", kind: "trait", text: "Bonus Action: place one nail in an adjacent solid surface. Maximum two. A nail is an object (AC 13, 8 HP). A straight line up to 20 ft. long between Nail Saint and a nail is a claimed line until the start of the next turn." },
+      { name: "Claimed Line", kind: "trait", text: "The first hostile creature each round that crosses a claimed line must spend 10 extra ft. of movement or stop immediately before crossing, its choice. Forced movement ignores this rule." },
+    ],
+    actions: [
+      { name: "Boundary Spike", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force." },
+      { name: "Hammer the Border (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", text: "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A thin Fiend wrapped in strips of material that look stitched to nothing. It carries iron nails too long for carpentry and drives them into living wood like survey posts.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Nail Saint", revealedName: "Nail Saint" },
+  },
+  {
+    templateId: "broken-chain:act3:walking-court:v1",
+    name: "Walking Court",
+    encounterId: "act3-e7-the-last-court",
+    encounterLabel: "Act 3 E7 - The Last Court",
+    stats: {
+      kind: "fey", ac: 17, maxHp: 100, speed: "25 ft.",
+      attacksPerTurn: 2,
+      size: "Huge", classification: "elite", archetype: "guardian",
+      skills: [{ label: "Perception", modifier: 6 }],
+    },
+    abilities: [
+      { label: "STR", value: "20 (+5)", save: 8 },
+      { label: "DEX", value: "10 (+0)" },
+      { label: "CON", value: "22 (+6)", save: 9 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "12 (+1)" },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    traits: [
+      { name: "Root or Roam", kind: "trait", text: "At the start of each turn choose Rooted or Roaming. Rooted: speed 0, AC +2, and reach increases by 5 ft. Roaming: speed 25 ft. and it can move through natural difficult terrain without extra cost." },
+      { name: "The Court Moves", kind: "trait", text: "When Walking Court changes from Rooted to Roaming, one 15-ft. patch of natural difficult terrain within 30 ft. becomes normal terrain until the start of its next turn. When it changes from Roaming to Rooted, that patch becomes difficult terrain again." },
+    ],
+    actions: [
+      { name: "Bough", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 15 ft.; Hit: 14 (2d8 + 5) bludgeoning." },
+      { name: "Court Falls Closed (Recharge 5–6)", kind: "action", save: "STR DC 17", recharge: "5-6", text: "Choose a 15-ft.-radius natural area within 60 ft. Creatures there make a DC 17 Strength save. Failure: 18 (4d8) bludgeoning and moved up to 10 ft. toward the center; success: half damage, no move." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A tree-sized court pavilion that walks on root-columns. Birds nest in it. Lantern fruit hangs beneath its boughs. When it stops, the clearing behaves as if that was always the center.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Walking Court", revealedName: "Walking Court" },
+  },
+  {
+    templateId: "broken-chain:act3:hushrunner:v1",
+    name: "Hushrunner",
+    encounterId: "act3-e7-the-last-court",
+    encounterLabel: "Act 3 E7 - The Last Court",
+    stats: {
+      kind: "fey", ac: 18, maxHp: 52, speed: "40 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "skirmisher",
+      skills: [{ label: "Stealth", modifier: 8 }, { label: "Deception", modifier: 7 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "20 (+5)", save: 8 },
+      { label: "CON", value: "14 (+2)" },
+      { label: "INT", value: "12 (+1)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "14 (+2)", save: 7 },
+    ],
+    traits: [
+      { name: "Seen Somewhere Else", kind: "trait", text: "Once per turn, after Hushrunner moves behind total cover provided by a natural feature, it may continue that same movement from behind another natural feature within 20 ft. that it can see. The distance between the two features counts against its speed; this is not teleportation." },
+      { name: "False Familiarity", kind: "trait", text: "The first opportunity attack made against Hushrunner each round has disadvantage." },
+    ],
+    actions: [
+      { name: "Pale Knife", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) psychic or slashing." },
+      { name: "Call the Wrong Name (Recharge 5–6)", kind: "action", save: "CHA DC 16", recharge: "5-6", text: "One creature within 60 ft. makes a DC 16 Charisma save. On a failure, it cannot make opportunity attacks and treats one direction chosen by Hushrunner as difficult terrain until the end of its next turn. No movement is forced." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A long-legged Fey wrapped in a mantle of living leaves. Its face is a shifting knot of bark-grain and leaf-veins that never settles into the same expression twice. It never disappears; the path simply puts a different tree between it and the eye.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Hushrunner", revealedName: "Hushrunner" },
+  },
+  {
+    templateId: "broken-chain:act3:brandwing:v1",
+    name: "Brandwing",
+    encounterId: "act3-e7-the-last-court",
+    encounterLabel: "Act 3 E7 - The Last Court",
+    stats: {
+      kind: "fiend", ac: 15, maxHp: 46, speed: "30 ft., fly 30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "mystic",
+      skills: [{ label: "Perception", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "18 (+4)", save: 7 },
+      { label: "CON", value: "12 (+1)" },
+      { label: "INT", value: "14 (+2)" },
+      { label: "WIS", value: "20 (+5)", save: 8 },
+      { label: "CHA", value: "16 (+3)" },
+    ],
+    traits: [
+      { name: "Burn Script", kind: "trait", text: "Bonus Action: mark one solid surface within 30 ft. with a burning sigil until the start of the next turn. Natural vegetation around the sigil blackens but does not ignite." },
+      { name: "Written Origin", kind: "trait", text: "Brandwing can originate one ranged spell attack or line effect from itself or from its Burn Script sigil. Range is still measured from the chosen origin." },
+    ],
+    actions: [
+      { name: "Brand Ray", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 14 (2d8 + 5) fire plus 3 (1d6) force once per turn." },
+      { name: "Scald the Name (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "30-ft. line from Brandwing or its sigil, DC 16 Dexterity save; 22 (5d8) fire/force on failure, half on success. On a failure, the target cannot benefit from half cover until the end of its next turn." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A narrow Fiend with wing-like sheets of ember script. It writes on bark by touching it and leaves the letters burning after its hand is gone.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Brandwing", revealedName: "Brandwing" },
+  },
+  {
+    templateId: "broken-chain:act3:siege-saint:v1",
+    name: "Siege Saint",
+    encounterId: "act3-e8-the-occupied-acre",
+    encounterLabel: "Act 3 E8 - The Occupied Acre",
+    stats: {
+      kind: "fiend", ac: 15, maxHp: 104, speed: "35 ft.",
+      attacksPerTurn: 2,
+      size: "Huge", classification: "elite", archetype: "guardian",
+      skills: [{ label: "Athletics", modifier: 7 }],
+    },
+    abilities: [
+      { label: "STR", value: "18 (+4)", save: 7 },
+      { label: "DEX", value: "12 (+1)" },
+      { label: "CON", value: "20 (+5)", save: 8 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "10 (+0)" },
+      { label: "CHA", value: "16 (+3)" },
+    ],
+    traits: [
+      { name: "First Claim", kind: "trait", text: "When initiative is rolled, place two claim posts in unoccupied spaces within 30 ft. A creature standing adjacent to a post has half cover until it makes an attack or forces a saving throw. A post is an object (AC 13, 10 HP)." },
+      { name: "Impossible Stance", kind: "trait", text: "Advantage on saves against being knocked prone or moved against its will." },
+    ],
+    actions: [
+      { name: "Chain Lash", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 15 ft.; Hit: 11 (2d6 + 4) bludgeoning plus 4 (1d8) psychic once per turn." },
+      { name: "Straighten the Wood (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Choose a 30-ft.-long, 10-ft.-wide strip of natural ground within 60 ft. Until the start of the next turn, natural difficult terrain and natural cover lower than full cover are suppressed in that strip." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A huge Fiend built like a siege engine wearing a saint’s silhouette. Iron pegs hang from chains along its body. It does not take territory by standing in it; it hammers the territory into a different shape.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Siege Saint", revealedName: "Siege Saint" },
+  },
+  {
+    templateId: "broken-chain:act3:ashstep:v1",
+    name: "Ashstep",
+    encounterId: "act3-e8-the-occupied-acre",
+    encounterLabel: "Act 3 E8 - The Occupied Acre",
+    stats: {
+      kind: "fiend", ac: 15, maxHp: 36, speed: "40 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "skirmisher",
+      skills: [{ label: "Acrobatics", modifier: 8 }, { label: "Stealth", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "12 (+1)" },
+      { label: "DEX", value: "20 (+5)", save: 8 },
+      { label: "CON", value: "10 (+0)" },
+      { label: "INT", value: "16 (+3)" },
+      { label: "WIS", value: "12 (+1)" },
+      { label: "CHA", value: "13 (+1)" },
+    ],
+    traits: [
+      { name: "Spent Stain", kind: "trait", text: "When a creature within 60 ft. expends a spell slot or a limited-use class or item resource, that creature’s space becomes stained until the start of Ashstep’s next turn. A space can hold only one stain." },
+      { name: "Ashstep", kind: "trait", text: "Bonus Action: move up to 30 ft. toward a stained space without provoking opportunity attacks. It must use normal terrain and cannot pass through creatures or solid objects." },
+    ],
+    actions: [
+      { name: "Rend", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) slashing plus 4 (1d8) psychic once per turn." },
+      { name: "Follow the Spend (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Move up to speed toward a stained space, then make one Rend attack with advantage. The stain is removed whether the attack hits or misses." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A black-limbed Fiend that notices the stain left behind when mortal power is spent. It never takes the resource. It simply knows exactly where the expenditure happened.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Ashstep", revealedName: "Ashstep" },
+  },
+  {
+    templateId: "broken-chain:act3:rift-scribe:v1",
+    name: "Rift Scribe",
+    encounterId: "act3-e8-the-occupied-acre",
+    encounterLabel: "Act 3 E8 - The Occupied Acre",
+    stats: {
+      kind: "fiend", ac: 16, maxHp: 50, speed: "30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", archetype: "tactician",
+      skills: [{ label: "Arcana", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "10 (+0)" },
+      { label: "DEX", value: "18 (+4)", save: 7 },
+      { label: "CON", value: "12 (+1)" },
+      { label: "INT", value: "20 (+5)", save: 8 },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "14 (+2)" },
+    ],
+    traits: [
+      { name: "Boundary Script", kind: "trait", save: "INT DC 16", text: "Bonus Action: draw one visible 20-ft. line on ground or between two solid surfaces within 40 ft. Until the start of the next turn, the first hostile creature to cross it must make a DC 16 Intelligence save. Failure: its remaining movement is halved for that turn. Success: no effect." },
+      { name: "Write from the Edge", kind: "trait", text: "Rift Scribe ignores half cover when the attack line crosses its own Boundary Script." },
+    ],
+    actions: [
+      { name: "Rift Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 14 (2d8 + 5) psychic." },
+      { name: "Erase the Curve (Recharge 5–6)", kind: "action", save: "INT DC 16", recharge: "5-6", text: "Choose a 30-ft. path within 60 ft. Creatures on the path make a DC 16 Intelligence save; 18 (4d8) psychic on failure, half on success. Until the end of the next round, the path is a straight claimed scar and natural difficult terrain there is suppressed." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A thin Fiend whose fingers leave ruler-straight symbols hanging in the air. The Wood keeps trying to grow around the writing and failing.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Rift Scribe", revealedName: "Rift Scribe" },
+  },
+  {
+    templateId: "broken-chain:act3:veil-torn-wyrmling:v1",
+    name: "Veil-Torn Wyrmling",
+    encounterId: "act3-e9-gate-iii-veil-torn-dragon",
+    encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    stats: {
+      kind: "dragon", ac: 17, maxHp: 39, speed: "30 ft., glide 30 ft.",
+      size: "Small", classification: "mid-boss", archetype: "skirmisher",
+      skills: [{ label: "Perception", modifier: 5 }],
+    },
+    abilities: [
+      { label: "STR", value: "14 (+2)" },
+      { label: "DEX", value: "18 (+4)", save: 7 },
+      { label: "CON", value: "14 (+2)" },
+      { label: "INT", value: "14 (+2)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "16 (+3)", save: 6 },
+    ],
+    traits: [
+      { name: "Broken Gleam", kind: "trait", text: "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground." },
+      { name: "Moon-Slick Scales", kind: "trait", text: "The first opportunity attack made against the wyrmling each round has disadvantage." },
+    ],
+    actions: [
+      { name: "Bite", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant." },
+      { name: "Moonshard Breath (Recharge 5–6)", kind: "action", save: "DEX DC 14", recharge: "5-6", text: "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early. Both wyrmlings use the same standalone block.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Veil-Torn Wyrmling", revealedName: "Veil-Torn Wyrmling" },
+  },
+  {
+    templateId: "broken-chain:act3:veil-torn-dragon:v1",
+    name: "Veil-Torn Dragon",
+    encounterId: "act3-e9-gate-iii-veil-torn-dragon",
+    encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    stats: {
+      kind: "dragon", ac: 18, maxHp: 195, speed: "40 ft.; Broken Lift only",
+      attacksPerTurn: 3,
+      size: "Huge", classification: "mid-boss", archetype: "commander",
+      legendaryPerRound: 1,
+      skills: [{ label: "Perception", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "20 (+5)" },
+      { label: "DEX", value: "18 (+4)" },
+      { label: "CON", value: "20 (+5)", save: 9 },
+      { label: "INT", value: "18 (+4)" },
+      { label: "WIS", value: "18 (+4)", save: 8 },
+      { label: "CHA", value: "20 (+5)", save: 9 },
+    ],
+    traits: [
+      { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the dragon fails a saving throw, it can choose to succeed instead." },
+      { name: "Broken Lift (Recharge 5–6)", kind: "trait", recharge: "5-6", text: "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed." },
+      { name: "Moonmark (2/Day)", kind: "trait", save: "DEX DC 17", text: "Action: choose a point within 60 ft.; a 15-ft. radius fills with pale motes until the start of the dragon’s next turn. Creatures of the dragon’s choice in the area make a DC 17 Dexterity save. On a failure, they cannot benefit from invisibility and the first attack against them before the effect ends has advantage. No damage." },
+    ],
+    actions: [
+      { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10 + 5", text: "Melee Weapon Attack: +9 to hit, reach 10 ft.; Hit: 16 (2d10 + 5) piercing plus 7 (2d6) radiant." },
+      { name: "Claw", kind: "attack", roll: "1d20 + 9", damage: "2d6 + 5", text: "Melee Weapon Attack: +9 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) slashing." },
+      { name: "Fractured Dream Breath (Recharge 5–6)", kind: "action", save: "CON DC 17", recharge: "5-6", text: "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends." },
+      { name: "Moonfall Breath (Recharge 5–6)", kind: "action", save: "DEX DC 17", recharge: "5-6", text: "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge." },
+      { name: "Tail Sweep", kind: "action", roll: "1d20 + 9", damage: "1d8 + 5", legendaryCost: 1, text: "Once per round at the end of another creature’s turn, make one Tail attack: +9 to hit, reach 15 ft.; Hit: 9 (1d8 + 5) bludgeoning, and the dragon may move 5 ft. without provoking from the target hit." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A real Fey-touched dragon caught at the point where native belonging has become control. Its wings still know how to fly. The Wood has started deciding when they open.",
+      "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Ground Remembers Wrong. Choose up to three 10-ft. squares of natural ground within 90 ft. Creatures there make a DC 17 Strength save or slide up to 10 ft. to a safe space chosen by the lair. Branches Close. A 15-ft.-radius sphere within 90 ft. becomes heavily obscured by overlapping leaves and wrong-angle branches until the next initiative count 20. Borrowed Sky. Choose one creature within 90 ft. The lair moves it up to 20 ft. horizontally and 10 ft. vertically, placing it safely on a surface. An unwilling creature can resist with a DC 17 Strength save.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Veil-Torn Dragon", revealedName: "Veil-Torn Dragon" },
+  },
+  {
+    templateId: "broken-chain:act3:thought-harrower:v1",
+    name: "Thought Harrower",
+    encounterId: "act3-e10-the-center",
+    encounterLabel: "Act 3 E10 - The Center",
+    stats: {
+      kind: "aberration", ac: 17, maxHp: 173, speed: "30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "act-boss", archetype: "tactician",
+      legendaryPerRound: 1,
+      skills: [{ label: "Arcana", modifier: 10 }, { label: "Perception", modifier: 8 }],
+    },
+    abilities: [
+      { label: "STR", value: "14 (+2)" },
+      { label: "DEX", value: "12 (+1)" },
+      { label: "CON", value: "16 (+3)" },
+      { label: "INT", value: "22 (+6)", save: 10 },
+      { label: "WIS", value: "18 (+4)", save: 8 },
+      { label: "CHA", value: "18 (+4)" },
+    ],
+    traits: [
+      { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the Harrower fails a saving throw, it can choose to succeed instead." },
+      { name: "Residual Hunger", kind: "trait", text: "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed." },
+      { name: "Fracture Seed", kind: "trait", text: "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated." },
+      { name: "Wrong Origin", kind: "trait", text: "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage." },
+    ],
+    actions: [
+      { name: "Rift Lance", kind: "attack", roll: "1d20 + 10", damage: "2d8 + 6", text: "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (2d8 + 6) psychic." },
+      { name: "Unmake Distance (Recharge 5–6)", kind: "action", save: "INT DC 18", recharge: "5-6", text: "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice." },
+      { name: "Mind Hook", kind: "action", save: "WIS DC 18", legendaryCost: 1, text: "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (2d6) psychic and moved 10 ft. toward the origin; success: no effect." },
+    ],
+    reactions: [
+      { name: "Fold Thought", kind: "reaction", text: "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round." },
+    ],
+    resources: [],
+    notes: [
+      "The thing doing the thinking at the center has too many correct angles. It does not cast darkness or shadow; it makes two places become adjacent because it has forgotten that they were not.",
+      "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Adjacent Elsewhere. Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn. Memory of Falling. Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage. Wrong Angle. Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Thought Harrower", revealedName: "Thought Harrower" },
+  },
+  {
+    templateId: "broken-chain:act3:grief-colossus:v1",
+    name: "Grief Colossus",
+    encounterId: "act3-e10-the-center",
+    encounterLabel: "Act 3 E10 - The Center",
+    stats: {
+      kind: "aberration", ac: 18, maxHp: 230, speed: "35 ft.",
+      attacksPerTurn: 2,
+      size: "Huge", classification: "act-boss", archetype: "guardian",
+      skills: [{ label: "Athletics", modifier: 10 }],
+    },
+    abilities: [
+      { label: "STR", value: "22 (+6)", save: 10 },
+      { label: "DEX", value: "10 (+0)" },
+      { label: "CON", value: "22 (+6)", save: 10 },
+      { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    traits: [
+      { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the Colossus fails a saving throw, it can choose to succeed instead." },
+      { name: "Impossible Mass", kind: "trait", text: "Advantage on saves against being knocked prone or moved against its will." },
+      { name: "Anchor the Wrong", kind: "trait", text: "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn." },
+    ],
+    actions: [
+      { name: "Fist", kind: "attack", roll: "1d20 + 10", damage: "2d10 + 6", text: "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning." },
+      { name: "Collapse Space (Recharge 5–6)", kind: "action", save: "STR DC 18", recharge: "5-6", text: "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone." },
+    ],
+    reactions: [
+      { name: "Body Between", kind: "reaction", text: "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round." },
+    ],
+    resources: [],
+    notes: [
+      "The weight behind the thought. Its limbs do not bend in the same number of places twice, but when it decides a space is occupied, the battlefield has to argue with several tons of certainty.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Grief Colossus", revealedName: "Grief Colossus" },
+  },
 ];
