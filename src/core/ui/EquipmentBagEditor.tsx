@@ -238,7 +238,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
 // with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
 // armor and weapons are LOCKED and unchanged.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.7.1-ember-rename";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.7.2-clear-unlock-shadows";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -278,6 +278,27 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds:
   for (const id of retiredIds) byId.delete(id);
   for (const item of items) byId.set(item.id, item);
   saveEquipmentLibrary(Array.from(byId.values()), "campaign");
+
+  /**
+   * CLEAR STALE UNLOCK SHADOWS.
+   *
+   * `handleUnlockItem` copies a campaign item into the DM store so the DM can edit it, and
+   * `loadEquipmentLibrary()` resolves with the DM copy WINNING by id. That copy is a snapshot
+   * frozen at the moment of unlocking, and nothing ever refreshed it — so once an item had been
+   * unlocked, every later re-seed rewrote the campaign side while the panel kept reading the old
+   * DM copy. Rimecleaver stayed a one-handed thrown weapon through three rebuilds that each
+   * verified "correct" against the campaign store, because the campaign store was never what
+   * was being displayed.
+   *
+   * A re-seed means the module data is newer than any unlock taken before it, so a shadow of a
+   * seeded id is dropped. DM items that are NOT shadowing a campaign id — genuinely custom
+   * gear — are untouched.
+   */
+  const seededIds = new Set(items.map(i => i.id));
+  const dm = loadEquipmentLibrary("dm");
+  const keep = dm.filter(i => !seededIds.has(i.id));
+  if (keep.length !== dm.length) saveEquipmentLibrary(keep, "dm");
+
   window.localStorage.setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
 }
 
