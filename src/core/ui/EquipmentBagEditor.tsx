@@ -766,7 +766,12 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
       </div>
 
       {/* Weapon fields */}
-      {isWeapon && (
+      {/* ADAPTIVE sits at the top and REPLACES the weapon/armour fields — see the library
+          form for the reasoning. Both editors carry it, because a field in only one of them
+          is a field the DM cannot reach from half the app. */}
+      <ChassisFields draft={draft} set={set} />
+
+      {isWeapon && !draft.chassis && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {/* Attack roll — dice picker (1d20 + dice + @vars) since this weapon makes an attack roll */}
           <FormulaInput label="Attack" value={draft.attack ?? ""} onChange={v => set("attack", v || undefined)} placeholder="1d20+@STR+@PROF" />
@@ -830,7 +835,7 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
       )}
 
       {/* Armor fields */}
-      {isArmor && (
+      {isArmor && !draft.chassis && (
         <label style={{ fontSize: 12 }}>
           AC Value / Formula
           <input type="text" value={draft.ac ?? ""} onChange={e => set("ac", e.target.value || undefined)} placeholder="14, 12 + DEX mod..." style={inputStyle} />
@@ -872,7 +877,6 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         Requires attunement (counts against the 3 attuned slots while equipped)
       </label>
 
-      <ChassisFields draft={draft} set={set} />
 
       {/* Stat effects — passive stat modifications while item is equipped */}
       <div>

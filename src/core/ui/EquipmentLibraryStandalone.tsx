@@ -255,15 +255,26 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           </select>
         </label>
       </div>
-      {isWeapon && (
+
+      {/* ADAPTIVE sits at the top and REPLACES the weapon/armour fields.
+          A chassis is not a variation on a fixed item — it IS the item, and its numbers come
+          from whichever form the wielder picks. Showing both at once read as though you were
+          filling in a specific weapon and then adding options to it, which is backwards. */}
+      <ChassisFields draft={draft} set={set} />
+
+      {isWeapon && !draft.chassis && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <label style={{ fontSize: 12 }}>Attack <input type="text" value={draft.attack ?? ""} onChange={e => set("attack", e.target.value || undefined)} placeholder="1d20+5" style={input} /></label>
           <label style={{ fontSize: 12 }}>Damage <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)} placeholder="1d8+3" style={input} /></label>
           <label style={{ fontSize: 12 }}>Crit <input type="text" value={draft.crit ?? ""} onChange={e => set("crit", e.target.value || undefined)} placeholder="2d8+3" style={input} /></label>
           <label style={{ fontSize: 12, gridColumn: "span 3" }}>Range <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value || undefined)} placeholder="5 ft, 150/600 ft..." style={input} /></label>
+          {/* The save the TARGET rolls. A magic item does not roll to hit; set this and the
+              card announces the save and waits before damage is applied. */}
+          <label style={{ fontSize: 12, gridColumn: "span 3" }}>Save DC <span style={{ color: "#666" }}>— target rolls this before damage lands</span>
+            <input type="text" value={draft.saveDc ?? ""} onChange={e => set("saveDc", e.target.value || undefined)} placeholder="CON DC 13" style={input} /></label>
         </div>
       )}
-      {isArmor && <label style={{ fontSize: 12 }}>AC <input type="text" value={draft.ac ?? ""} onChange={e => set("ac", e.target.value || undefined)} placeholder="14" style={input} /></label>}
+      {isArmor && !draft.chassis && <label style={{ fontSize: 12 }}>AC <input type="text" value={draft.ac ?? ""} onChange={e => set("ac", e.target.value || undefined)} placeholder="14" style={input} /></label>}
       <label style={{ fontSize: 12 }}>Description <textarea value={draft.description} onChange={e => set("description", e.target.value)} rows={2} style={{ ...input, resize: "vertical" as const }} /></label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>Value <input type="text" value={draft.value ?? ""} onChange={e => set("value", e.target.value || undefined)} placeholder="25 gp" style={input} /></label>
@@ -541,7 +552,6 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
         Requires attunement (holds 1 of 3 slots while equipped)
       </label>
 
-      <ChassisFields draft={draft} set={set} />
       <div style={{ display: "flex", gap: 8 }}>
         <button type="button" onClick={() => { if (!draft.name.trim()) return; onSave(draft); }} style={{ padding: "5px 16px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
           {initial ? "Save Changes" : "Create Item"}
