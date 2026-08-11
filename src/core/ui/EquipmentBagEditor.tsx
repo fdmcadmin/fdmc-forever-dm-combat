@@ -15,6 +15,7 @@ import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
+import { composeChassisAttack, findForm, isVersatileForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
@@ -126,6 +127,21 @@ export type EquipmentItem = {
   value?: string;
   weight?: string;
   tags?: string[];
+  /**
+   * ADAPTIVE ITEM. Present = this is a chassis: one entry that becomes a specific weapon when
+   * a form is chosen, instead of authoring the same Gift once per greatweapon. The spec is a
+   * FILTER over BASE_WEAPONS; `formId` (the chosen form) is written on the ACTOR's copy so the
+   * library entry stays generic and two characters can hold the same Gift in different shapes.
+   */
+  chassis?: ChassisSpec;
+  /** Chassis items: the item makes the wielder proficient, so @PROF applies untrained. */
+  grantsProficiency?: boolean;
+  /** Chassis items: add Proficiency Bonus to the damage roll (the Feywild Gifts do). */
+  pbToDamage?: boolean;
+  /** Chassis items: magic bonus added to attack AND damage (+2 on the Feywild Gifts). */
+  chassisBonus?: number;
+  /** How a versatile form is currently held. Free to change; see the grip switch on the card. */
+  grip?: WeaponGrip;
   /** Charge tracking for items with limited uses */
   charges?: EquipmentCharges;
   /** What happens when a charge is spent */
@@ -397,7 +413,38 @@ function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: stri
  *
  *   Reading still treats `undefined` as equipped, so actors saved before this keep working.
  */
+/**
+ * Fill a chassis item's dice in from its chosen form.
+ *
+ * Returns the item untouched when it is not a chassis, or when no form has been picked yet —
+ * an unformed chassis is a real state (the DM built it, nobody has shaped it), and it should
+ * render as an item with no attack rather than throw or invent one.
+ *
+ * Everything downstream — itemToAction, itemToAttackAction, the card, the roll — then treats it
+ * as an ordinary weapon, because by this point it IS one.
+ */
+export function resolveChassisItem(item: EquipmentItem): EquipmentItem {
+  const form = findForm(item.chassis?.formId);
+  if (!form) return item;
+
+  // The bonus is AUTHORED, never inferred. Reading it out of the name ("+2") or the gold field
+  // is the kind of guess that mis-tagged the armour slots — the builder asks for it.
+  const grip: WeaponGrip = item.grip ?? "1h";
+  const dice = composeChassisAttack(form, grip, item.chassisBonus ?? 0, item.pbToDamage);
+
+  return {
+    ...item,
+    ...dice,
+    category: form.category,
+    // The form's mastery carries, but HAVING the mastery is still required to use it — a Gift
+    // grants proficiency, not mastery freedom.
+    mastery: item.mastery ?? form.mastery,
+    range: item.range ?? form.range,
+  };
+}
+
 export function itemToAction(item: EquipmentItem, equipped = true): ActorAction {
+  item = resolveChassisItem(item);
   // A TO-HIT is what makes something a weapon — not the presence of dice.
   //
   // This used to read `attack || damage`, which meant giving a magic item its damage dice
@@ -485,6 +532,12 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Carried so the card can count attunement against what's equipped, without a library
       // lookup. The details string above is prose — not something a checker can read.
       attunementRequired: item.attunementRequired,
+      // Chassis state rides the action so the card can offer the grip switch and re-derive the
+      // dice without resolving the item back out of the library — same rule as statEffects.
+      chassis: item.chassis,
+      grip: item.grip,
+      chassisBonus: item.chassisBonus,
+      pbToDamage: item.pbToDamage,
       effect: item.effect ? {
         type: item.effect.type as string,
         label: item.effect.label,
@@ -503,6 +556,7 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
 // id prefix "atk-" distinguishes it from the equipment display entry "equip-".
 
 export function itemToAttackAction(item: EquipmentItem): ActorAction {
+  item = resolveChassisItem(item);
   return {
     id: `atk-${item.id}`,
     label: item.name,

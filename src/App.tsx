@@ -60,6 +60,7 @@ import { useActorNotesState } from "./core/state/useActorNotesState";
 import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
 import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
+import { offHandBlocker } from "./core/constants/chassis";
 import { initiativeRollFormula, getActorInitiativeModifier } from "./core/state/initiative";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
@@ -1332,10 +1333,66 @@ export default function App() {
     });
   }
 
+  /**
+   * Change a versatile chassis item's grip.
+   *
+   * Free and NOT turn-bound, unlike equip/unequip: a hand slides onto or off the hilt with no
+   * action, and may do so between attacks in an Extra Attack sequence. The only hard rule is
+   * that two-handing needs the off hand empty, which is enforced here as well as on the button
+   * — a shield cannot be worked around mid-turn, since doffing one costs an action.
+   */
+  function performGripChange(actorId: string, actionId: string, grip: "1h" | "2h") {
+    const actor = dmActors.find(a => a.id === actorId);
+    if (!actor) return;
+    const equipment = actor.tabs.equipment ?? [];
+    const target = equipment.find(a => a.id === actionId);
+    if (!target) return;
+
+    if (grip === "2h") {
+      const blocker = offHandBlocker(equipment);
+      if (blocker) {
+        addEntry({
+          actorName: actor.name, actionName: "Grip", tabId: "system",
+          message: `⚠ ${actor.name} cannot two-hand ${target.label} — the off hand is holding ${blocker}.`,
+        });
+        return;
+      }
+    }
+
+    const updated = { ...actor, tabs: { ...actor.tabs,
+      equipment: equipment.map(a => a.id === actionId
+        ? { ...a, metadata: { ...a.metadata, grip } }
+        : a) } };
+    const freshLib = {
+      ...dmActors.reduce((m, a) => ({ ...m, [a.id]: a }), {} as Record<string, typeof actor>),
+      [updated.id]: updated,
+    };
+    upsertActorInLibrary(updated);
+    setActorLibrary(lib => ({ ...lib, [updated.id]: updated }));
+    pushActorsToAllSeats({ freshLibrary: freshLib });
+
+    addEntry({
+      actorName: actor.name, actionName: "Grip", tabId: "system",
+      message: `${actor.name} takes ${target.label} in ${grip === "2h" ? "two hands" : "one hand"}.`,
+    });
+  }
+
+  /** The DM performs it; a seat asks. Same split as equip. */
+  function requestGripChange(actorId: string, action: { id: string }, grip: "1h" | "2h") {
+    if (isDmMode) { performGripChange(actorId, action.id, grip); return; }
+    void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+      type: "fdmc:item-grip", actorId, actionId: action.id, grip, seatId: claimedSeatId ?? "",
+    }, { destination: "REMOTE" }).catch(() => undefined);
+  }
+
   useEffect(() => {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
-      const msg = event.data as { type?: string; fromActorId?: string; toActorId?: string; actorId?: string; actionId?: string; seatId?: string } | undefined;
+      const msg = event.data as { type?: string; fromActorId?: string; toActorId?: string; actorId?: string; actionId?: string; seatId?: string; grip?: "1h" | "2h" } | undefined;
+      if (msg?.type === "fdmc:item-grip" && msg.actorId && msg.actionId && msg.grip) {
+        performGripChange(msg.actorId, msg.actionId, msg.grip);
+        return;
+      }
       if (msg?.type === "fdmc:item-transfer" && msg.fromActorId && msg.toActorId && msg.actionId) {
         performItemTransfer(msg.fromActorId, msg.toActorId, msg.actionId, msg.seatId);
         return;
@@ -3803,6 +3860,7 @@ export default function App() {
         partyMembers={itemTransferTargets(actorToShow.id)}
         onSendItem={(action, toActorId) => requestItemTransfer(actorToShow.id, toActorId, action)}
         onToggleEquipped={(action) => requestEquipToggle(actorToShow.id, action)}
+        onSetGrip={(action, grip) => requestGripChange(actorToShow.id, action, grip)}
         combatActive={roomLiveState.combat.phase === "combat"}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
@@ -4169,6 +4227,7 @@ export default function App() {
                 partyMembers={itemTransferTargets(focusedActorId)}
                 onSendItem={(action, toActorId) => requestItemTransfer(focusedActorId, toActorId, action)}
                 onToggleEquipped={(action) => requestEquipToggle(focusedActorId, action)}
+                onSetGrip={(action, grip) => requestGripChange(focusedActorId, action, grip)}
                 combatActive={roomLiveState.combat.phase === "combat"}
                 onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []).map(r => r.label), castLevel })}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}

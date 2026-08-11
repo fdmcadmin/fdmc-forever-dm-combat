@@ -152,6 +152,13 @@ export type ActorActionMetadata = {
   castingTimeType?: CastingTimeType;
   /** Explicit outcome mode — set this to skip inference and lock the roll behavior */
   outcomeMode?: ActionOutcomeMode;
+  /** Adaptive/chassis state, carried from EquipmentItem so the card can offer the grip switch
+   *  and re-derive dice without a library lookup. `chassis.formId` is the chosen weapon form. */
+  chassis?: { categories?: string[]; ability?: string; requireTags?: string[]; anyOfTags?: string[]; formId?: string };
+  /** How a versatile chassis form is held right now. Changing it is free — see the grip switch. */
+  grip?: "1h" | "2h";
+  chassisBonus?: number;
+  pbToDamage?: boolean;
   /** Charge tracking — carried from EquipmentItem for items with limited uses */
   charges?: { max: number; reset: "longRest" | "shortRest" | "encounter" | "manual"; note?: string };
   /** Live "remaining/max" for the item pool above, stamped at render by the card (the counter

@@ -43,6 +43,7 @@ import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
+import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
@@ -106,6 +107,8 @@ type ActorCardProps = {
   onSendItem?: (action: ActorAction, toActorId: string) => void;
   /** Equip / unequip one carried item. The DM owns the actor record, so this only asks. */
   onToggleEquipped?: (action: ActorAction) => void;
+  /** Change a versatile chassis item's grip. Free and not turn-bound — see the grip switch. */
+  onSetGrip?: (action: ActorAction, grip: "1h" | "2h") => void;
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
@@ -756,6 +759,7 @@ export function ActorCard({
   partyMembers,
   onSendItem,
   onToggleEquipped,
+  onSetGrip,
   onConsumeActionResources,
   onSaveCall,
   coins,
@@ -1095,6 +1099,12 @@ export function ActorCard({
     return /^(weapon|armor|shield)$/i.test(a.category ?? "");
   };
   const carriedCombatGear = allCarried.filter(isCombatGear);
+
+  /** A grip switch only makes sense on a chassis whose CHOSEN form is versatile. */
+  const isVersatileGrip = (a: ActorAction): boolean => {
+    const form = findForm(a.metadata?.chassis?.formId);
+    return Boolean(form && isVersatileForm(form));
+  };
 
   // GIVING is deliberately NOT filtered — handing someone a rope, a tool kit or a ration tin
   // is a normal thing to do out of combat, and trade is already locked while a fight runs.
@@ -4622,6 +4632,37 @@ export function ActorCard({
                     <span style={{ fontSize: 12, color: isEquipped ? "#aaa" : "#555" }}>{item.label}</span>
                     {needsAttune && <span style={{ fontSize: 10, color: isEquipped ? "#e07b39" : "#e07b3966", marginLeft: 6 }}>attune</span>}
                   </div>
+                  {/* GRIP SWITCH — versatile forms only.
+                      Changing grip costs NO action and is not turn-bound, unlike equipping:
+                      a hand slides onto or off the hilt freely, and may do so BETWEEN attacks
+                      in an Extra Attack sequence, so one swing can roll the 1H die and the
+                      next the 2H die. That is why this sits beside the equip button on the
+                      combat panel rather than in the character editor.
+
+                      Two-handing needs the OFF HAND EMPTY. A shield blocks it and cannot be
+                      worked around mid-turn, because doffing one costs an action. */}
+                  {isVersatileGrip(item) && (
+                    <span style={{ display: "inline-flex", marginRight: 6, borderRadius: 3, overflow: "hidden", border: "1px solid #333" }}>
+                      {(["1h", "2h"] as const).map(g => {
+                        const active = (item.metadata?.grip ?? "1h") === g;
+                        const blockedBy = g === "2h" ? offHandBlocker(sendableItems) : null;
+                        return (
+                          <button key={g} type="button"
+                            disabled={Boolean(blockedBy) || !onSetGrip}
+                            onClick={() => onSetGrip?.(item, g)}
+                            style={{ fontSize: 9, padding: "2px 6px", border: "none", cursor: blockedBy ? "default" : "pointer",
+                              background: active ? "#2a2a4e" : "transparent",
+                              color: blockedBy ? "#444" : active ? "#9d8cff" : "#777" }}
+                            title={blockedBy
+                              ? `Off hand is holding ${blockedBy} — doffing it costs an action, so you cannot two-hand this turn.`
+                              : g === "2h" ? "Two-handed — the larger damage die. Free to switch, even between attacks."
+                                : "One-handed — leaves the off hand free."}>
+                            {g === "1h" ? "1H" : "2H"}
+                          </button>
+                        );
+                      })}
+                    </span>
+                  )}
                   <button type="button"
                     disabled={blocked}
                     onClick={() => onToggleEquipped(item)}

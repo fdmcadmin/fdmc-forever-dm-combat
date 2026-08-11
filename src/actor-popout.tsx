@@ -263,6 +263,14 @@ function ActorPopout() {
         // The popout has no actor library of its own, so it can only ask — the DM's
         // fdmc:item-equip handler performs the change and pushes the sheet back.
         combatActive={roomLiveState.combat.phase === "combat"}
+        // Grip is free and not turn-bound, but it still rewrites the card, so the GM performs
+        // it like every other gear change. This window only asks.
+        onSetGrip={(action, grip) => {
+          if (!OBR.isAvailable) return;
+          void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
+            { type: "fdmc:item-grip", actorId: actor.id, actionId: action.id, grip },
+            { destination: "REMOTE" }).catch(() => undefined);
+        }}
         onToggleEquipped={(action) => {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
