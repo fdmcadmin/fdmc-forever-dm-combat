@@ -145,6 +145,15 @@ export type EquipmentItem = {
   attack?: string;
   damage?: string;
   crit?: string;
+  /**
+   * The save this item forces before its damage lands — "CON DC 13".
+   *
+   * A magic item in this campaign does not roll to hit; the ones that hurt make the TARGET
+   * roll. Setting this puts the action in `dc-check` mode, so using it announces the save and
+   * the table knows to roll before the dice are applied, instead of damage appearing out of
+   * nowhere. Absent = the dice just roll.
+   */
+  saveDc?: string;
   range?: string;
   ac?: string;
   /** Spellcasting focus (P-UX4 follow-up): bonuses this item adds to the SPELLS cast
@@ -511,6 +520,8 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
   // Dice that resolve without a to-hit: a save rider, a burst, a heal. These are the ones that
   // need a committable roll ON the equipment row, since they have no main-tab attack to roll from.
   const hasEffectDice = Boolean(item.damage) && !isWeapon;
+  // A save the TARGET rolls, not a to-hit. This is how a magic item threatens damage.
+  const hasSave = Boolean(item.saveDc) && !isWeapon;
   // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
   const isConsumable = Boolean(item.charges) && !isWeapon;
   const isPassive = item.type === "passive";
@@ -547,6 +558,8 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       damage: item.damage,
       crit: item.crit,
       range: item.range,
+      // Drives dc-check mode and shows the Save row on the action.
+      saveDc: item.saveDc,
       // Weapons: "reference" → TabPanel.hasAttachedDice returns false → no Roll button
       // Consumables: "triggered" → Use button fires a log entry (no dice on equip tab)
       // Armor/gear: "reference"
@@ -555,7 +568,11 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Effect dice get "damage-only": a straight roll with no hit/miss step, which is what
       // a save rider or a burst needs — the save is adjudicated at the table, the dice are
       // rolled and committed here.
+      // A save comes FIRST: dc-check announces it and waits on Applies / No Effect, so the
+      // table rolls the save before the damage is applied rather than seeing damage appear
+      // and being asked to un-apply it. Without a save, effect dice just roll.
       outcomeMode: isWeapon ? "reference"
+        : hasSave ? "dc-check"
         : hasEffectDice ? "damage-only"
         : isConsumable ? "triggered"
         : "reference",
@@ -758,6 +775,14 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
             <label style={{ fontSize: 12 }}>Crit <input type="text" value={draft.crit ?? ""} onChange={e => set("crit", e.target.value || undefined)} placeholder="2d8+3" style={inputStyle} /></label>
             <label style={{ fontSize: 12 }}>Range <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value || undefined)} placeholder="5 ft, 150/600 ft..." style={inputStyle} /></label>
           </div>
+          {/* The save the TARGET rolls. A magic item does not roll to hit — set this and the
+              card announces the save and waits, so the damage is applied after it is rolled
+              rather than before. Leave blank and the dice simply roll. */}
+          <label style={{ fontSize: 12 }}>
+            Save DC <span style={{ color: "#666" }}>— target rolls this before damage lands</span>
+            <input type="text" value={draft.saveDc ?? ""} onChange={e => set("saveDc", e.target.value || undefined)}
+              placeholder="CON DC 13" style={inputStyle} />
+          </label>
 
           {/* Hand count + Weapon Mastery.
               Mastery is deliberately a FREE CHOICE, never derived from the weapon name:
