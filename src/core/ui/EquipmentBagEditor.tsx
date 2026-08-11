@@ -238,7 +238,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
 // with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
 // armor and weapons are LOCKED and unchanged.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.6.2-worn-slots";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.7.0-cleaned-doc";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -694,8 +694,10 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
   const isArmor = draft.type === "armor" || draft.type === "shield";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, background: "#1a1a2e", borderRadius: 8 }}>
-      <h4 style={{ margin: 0 }}>{initial ? "Edit Item" : "New Item"}</h4>
+    // Scrolls, same as the library panel's form — the chassis block pushed the Save button
+    // past the bottom of the character editor, so an item could be filled in but not finished.
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, background: "#1a1a2e", borderRadius: 8, maxHeight: "calc(100vh - 60px)", overflowY: "auto" }}>
+      <h4 style={{ margin: 0, position: "sticky", top: 0, background: "#1a1a2e", paddingBottom: 6, zIndex: 1 }}>{initial ? "Edit Item" : "New Item"}</h4>
 
       {/* Pending / Drafts — parked in-progress items (new-item mode only) */}
       {!initial && equipDrafts.length > 0 && (

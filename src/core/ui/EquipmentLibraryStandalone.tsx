@@ -216,8 +216,11 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
   const isArmor = draft.type === "armor" || draft.type === "shield";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, background: "#1a1a2e", borderRadius: 8, margin: 14 }}>
-      <h4 style={{ margin: 0 }}>{initial ? "Edit Item" : "New Item"}</h4>
+    // The form SCROLLS. It grew past the panel height once the chassis block landed, and with
+    // no overflow the Create/Save buttons at the bottom were unreachable — the item could be
+    // filled in but never finished. Viewport-relative so it adapts to the OBR popover.
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 14, background: "#1a1a2e", borderRadius: 8, margin: 14, maxHeight: "calc(100vh - 60px)", overflowY: "auto" }}>
+      <h4 style={{ margin: 0, position: "sticky", top: 0, background: "#1a1a2e", paddingBottom: 6, zIndex: 1 }}>{initial ? "Edit Item" : "New Item"}</h4>
       {!initial && draft.sourceEncounter && (
         <div style={{ fontSize: 11, color: "#e0b34a", background: "#2a230d", border: "1px solid #5a4a1a", borderRadius: 6, padding: "6px 10px" }}>
           🎁 Adding to loot pool: <strong>{draft.sourceEncounter}</strong> — this item will appear under that encounter.
