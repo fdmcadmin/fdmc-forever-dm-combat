@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
+import { checkEncounter, lethalityVerdict, attritionFactor } from "./encounterChecker";
 import {
   estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
   CLASSIFICATION_LABEL,
@@ -314,6 +315,36 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                           ⚠ no readable damage on these creatures, so MER and pressure are not meaningful yet.
                         </div>
                       )}
+                      {/* ── Lethality: what the fight COSTS ────────────────────────────
+                          The rows above are both clocks. A classification is not a clock —
+                          it is a price in characters, so this reads the party's per-PC
+                          thresholds and says who is on the floor when it ends. */}
+                      {(() => {
+                        const check = monsterDamage.dpr > 0 ? checkEncounter({
+                          partyLevel,
+                          monsterSustain: est.effectiveHp,
+                          monsterDpr: monsterDamage.dpr,
+                          bodies: roundsMonsters.length,
+                        }) : null;
+                        if (!check) return null;
+                        const v = lethalityVerdict(check, est.classification);
+                        return (
+                          <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6, marginTop: 4, paddingTop: 4, borderTop: "1px solid #1a1a28" }}>
+                            <div>
+                              <span style={{ color: "#ff8f6b" }}>LETHALITY</span>{" "}
+                              <strong style={{ color: v.ok ? "#4caf50" : "#e07b39" }}>{check.lethalityRead}</strong>
+                              <span style={{ color: "#555" }}>
+                                {" "}· {CLASSIFICATION_LABEL[est.classification]} should cost {v.expected}
+                              </span>
+                            </div>
+                            <div style={{ color: "#555" }}>
+                              {check.damageTaken.toFixed(0)} damage absorbed
+                              {check.bodies > 1 && ` (${roundsMonsters.length} bodies → ×${attritionFactor(check.bodies).toFixed(2)} attrition)`}
+                              {" · "}{v.note}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })()}
