@@ -117,10 +117,25 @@ const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consu
 // "Unsorted" last.
 const UNGROUPED_KEY = "__ungrouped__";
 const BASE_WEAPON_KEY = "__base_weapons__";
+const CONVERGENCE_KEY = "__convergence_outputs__";
 
 /** Mundane 2024 weapons seeded by seedBaseWeapons — no act, no source encounter. */
 function isBaseWeapon(it: EquipmentItem): boolean {
   return it.type === "weapon" && !it.sourceEncounter?.trim() && !it.act?.trim();
+}
+
+/**
+ * A COMPLETED convergence item — the crafted output, not the input that dropped.
+ *
+ * Outputs are made, not found, so they have no source encounter and were falling into
+ * "Unsorted", where twelve of them flooded the list alongside genuinely untagged gear. They
+ * get their own collapsed section, the same treatment the 2024 weapon bases already have.
+ *
+ * INPUTS are deliberately NOT pulled out: they drop from bosses, so they belong in the boss
+ * pool they came from, next to the weapons and armour from the same fight.
+ */
+function isConvergenceOutput(it: EquipmentItem): boolean {
+  return it.convergence?.role === "output";
 }
 
 export type EquipmentGroup = {
@@ -143,11 +158,13 @@ function groupByEncounter(items: EquipmentItem[]): EquipmentGroup[] {
   const groups = new Map<string, { items: EquipmentItem[]; act: number; session: number }>();
   for (const it of items) {
     const base = isBaseWeapon(it);
-    const key = base ? BASE_WEAPON_KEY : (it.sourceEncounter?.trim() || UNGROUPED_KEY);
+    const conv = !base && isConvergenceOutput(it);
+    const key = base ? BASE_WEAPON_KEY : conv ? CONVERGENCE_KEY : (it.sourceEncounter?.trim() || UNGROUPED_KEY);
     if (!groups.has(key)) {
       groups.set(key, {
         items: [],
-        act: base ? 9000 : parseActField(it.act) || 9999,
+        // 8900 puts completed convergence after the acts but before the weapon bases.
+        act: base ? 9000 : conv ? 8900 : parseActField(it.act) || 9999,
         session: parseSessionField(it.session),
       });
     }
@@ -155,7 +172,9 @@ function groupByEncounter(items: EquipmentItem[]): EquipmentGroup[] {
     g.items.push(it);
     // A group takes the EARLIEST act/session any of its items claims, so one untagged
     // straggler can't drag a whole boss pool into Unsorted.
-    if (!base) {
+    // Convergence outputs keep their own bucket — narrowing would pull them back into the act
+    // their inputs came from, which is where they were flooding the list in the first place.
+    if (!base && !conv) {
       const a = parseActField(it.act); if (a > 0 && a < g.act) g.act = a;
       const s = parseSessionField(it.session); if (s > 0 && (g.session === 0 || s < g.session)) g.session = s;
     }
@@ -164,11 +183,13 @@ function groupByEncounter(items: EquipmentItem[]): EquipmentGroup[] {
   const out: EquipmentGroup[] = [];
   for (const [key, g] of groups) {
     const actLabelText = key === BASE_WEAPON_KEY ? "2024 Weapon Bases"
+      : key === CONVERGENCE_KEY ? "Convergence — Completed"
       : g.act >= 9999 ? "Unsorted"
       : `Act ${g.act}`;
     out.push({
       key,
       label: key === BASE_WEAPON_KEY ? "2024 Weapon Bases"
+        : key === CONVERGENCE_KEY ? "Convergence — Completed Items"
         : key === UNGROUPED_KEY ? "Unsorted (no encounter)"
         : key,
       items: [...g.items].sort((a, b) => a.name.localeCompare(b.name)),
