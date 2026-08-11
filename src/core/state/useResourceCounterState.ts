@@ -204,6 +204,30 @@ export function useResourceCounterState(actors: Actor[]) {
     return { outcome: "spent", label, remaining: current - 1, max };
   }, []);
 
+  /**
+   * Give a charge back — the recharge gate for a pool no rest will refill.
+   *
+   * An item that says "recharges at dawn" has no rest that restores it: a party can take two
+   * long rests before a dawn, or see a dawn without resting at all. So the pool needs a hand
+   * on it, and the DM is the one who says the condition happened. Without this a dawn item
+   * could be spent exactly once and was then dead for the campaign.
+   *
+   * Clamped to the pool max, so it can restore but never inflate.
+   */
+  const restoreItemCharge = useCallback((actorId: string, action: ActorAction, amount = 1): ConsumeResult => {
+    const max = action.metadata?.charges?.max ?? 0;
+    if (max <= 0) return { outcome: "no-resource" };
+    const key = itemChargeKey(action.id);
+    const current = stateRef.current[actorId]?.[key] ?? max;
+    const next = Math.min(max, current + amount);
+    if (next === current) return { outcome: "spent", label: action.label, remaining: current, max };
+    broadcastAndPersist({
+      ...stateRef.current,
+      [actorId]: { ...(stateRef.current[actorId] ?? {}), [key]: next },
+    });
+    return { outcome: "spent", label: action.label, remaining: next, max };
+  }, []);
+
   // ── Reset resources by reset type ─────────────────────────────────────────
 
   const resetActorResources = useCallback((actorId: string, restType: "short" | "long") => {
@@ -380,6 +404,7 @@ export function useResourceCounterState(actors: Actor[]) {
     consumeSpellSlot,
     consumeNamedResource,
     consumeItemCharge,
+    restoreItemCharge,
     resetEncounterCharges,
   };
 }

@@ -101,6 +101,8 @@ type ActorCardProps = {
   onSpendResource?: (resourceActionId: string, amount: number) => void;
   /** Deduct one charge from an ITEM pool by hand — the equipment equivalent of onSpendResource. */
   onSpendItemCharge?: (action: ActorAction) => void;
+  /** Give a charge back. The recharge gate for pools no rest refills — see restoreItemCharge. */
+  onRestoreItemCharge?: (action: ActorAction) => void;
   /** Party members this actor can hand an item to. Empty/absent hides the transfer control. */
   partyMembers?: Array<{ id: string; name: string }>;
   /** Hand one equipment item to another actor. The DM performs the move; this only asks. */
@@ -756,6 +758,7 @@ export function ActorCard({
   resourceCounters,
   onSpendResource,
   onSpendItemCharge,
+  onRestoreItemCharge,
   partyMembers,
   onSendItem,
   onToggleEquipped,
@@ -4701,6 +4704,19 @@ export function ActorCard({
                     <span style={{ fontSize: 10, color: "#444", marginLeft: 6 }}>{restLabel}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {/* The recharge gate. A pool whose cadence no rest satisfies — "recharges
+                        at dawn" — can only come back by hand, and the DM is the one who says
+                        the condition happened. Without this a dawn item was spent once and
+                        then dead for the campaign. */}
+                    {onRestoreItemCharge && (
+                      <button type="button"
+                        disabled={remaining >= charges.max}
+                        onClick={() => onRestoreItemCharge(action)}
+                        style={{ fontSize: 10, padding: "2px 7px", background: remaining < charges.max ? "#16291b" : "#1a1a1a", border: "1px solid #2f7d3f55", borderRadius: 3, color: remaining < charges.max ? "#7be08a" : "#555", cursor: remaining < charges.max ? "pointer" : "default" }}
+                        title={remaining >= charges.max ? "Already full" : `Give one back — ${restLabel}`}>
+                        +1
+                      </button>
+                    )}
                     {onSpendItemCharge && (
                       <button type="button"
                         disabled={remaining <= 0}

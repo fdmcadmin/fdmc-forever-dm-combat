@@ -124,7 +124,7 @@ function ActorPopout() {
   // own copy. Every tracker change here goes through commitTracker so the GM stays the writer.
   const { getActorStatus, setActorTracker } = useActorStatusState(actorList);
   const { addEntry, removePendingEntries } = useCombatLog();
-  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, consumeItemCharge, spendResource } = useResourceCounterState(actorList);
+  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, consumeItemCharge, restoreItemCharge, spendResource } = useResourceCounterState(actorList);
   const { status: diceBridgeStatus, lastEvent: diceBridgeLastEvent, sendRollRequest, sendDicePlusRollRequest, sendMockRollResult } = useOwlbearDiceBridge();
 
   if (!actor) {
@@ -260,6 +260,7 @@ function ActorPopout() {
           addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} spends ${amt} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` : `⚠ ${actor.name} has nothing left in ${r.label ?? "that pool"}.` });
         }}
         onSpendItemCharge={(action) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
+        onRestoreItemCharge={(action) => { const r = restoreItemCharge(actor.id, action); addEntry({ actorName: actor.name, actionName: action.label, tabId: "equipment", message: `${actor.name} regains a charge on ${action.label} (${r.remaining}/${r.max ?? "?"}).` }); }}
         // The popout has no actor library of its own, so it can only ask — the DM's
         // fdmc:item-equip handler performs the change and pushes the sheet back.
         combatActive={roomLiveState.combat.phase === "combat"}

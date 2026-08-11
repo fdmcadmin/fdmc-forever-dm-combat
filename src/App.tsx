@@ -866,6 +866,7 @@ export default function App() {
     consumeSpellSlot,
     consumeNamedResource,
     consumeItemCharge,
+    restoreItemCharge,
     resetEncounterCharges,
     spendResource,
     resetActorResources,
@@ -3857,6 +3858,7 @@ export default function App() {
         resourceCounters={counters[actorToShow.id]}
         onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
         onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
+        onRestoreItemCharge={(a) => { const r = restoreItemCharge(actorToShow.id, a); addEntry({ actorName: actorToShow.name, actionName: a.label, tabId: "equipment", message: `${actorToShow.name} regains a charge on ${a.label} (${r.remaining}/${r.max ?? "?"}).` }); }}
         partyMembers={itemTransferTargets(actorToShow.id)}
         onSendItem={(action, toActorId) => requestItemTransfer(actorToShow.id, toActorId, action)}
         onToggleEquipped={(action) => requestEquipToggle(actorToShow.id, action)}
@@ -4224,6 +4226,7 @@ export default function App() {
                 resourceCounters={counters[focusedActorId]}
                 onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
                 onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
+                onRestoreItemCharge={(a) => { const r = restoreItemCharge(focusedActorId, a); addEntry({ actorName: focusedActor.name, actionName: a.label, tabId: "equipment", message: `${focusedActor.name} regains a charge on ${a.label} (${r.remaining}/${r.max ?? "?"}).` }); }}
                 partyMembers={itemTransferTargets(focusedActorId)}
                 onSendItem={(action, toActorId) => requestItemTransfer(focusedActorId, toActorId, action)}
                 onToggleEquipped={(action) => requestEquipToggle(focusedActorId, action)}
