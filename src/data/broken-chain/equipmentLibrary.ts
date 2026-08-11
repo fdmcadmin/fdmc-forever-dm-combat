@@ -98,7 +98,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-farwatch-glass",
     "name": "Farwatch Glass",
-    "type": "gear",
+    "type": "magic",
     "description": "A thumb-sized oval of smoke-dark glass with a silver thread trapped inside it. The thread drifts when the glass is idle and snaps toward whatever the glass is remembering when awakened. Tags: A1 · Utility",
     "mechanicsText": "Once per long rest, as a Magic action, choose one creature or object you can see within 60 feet. For the next 10 minutes, while that target is within 300 feet of you and on the same plane of existence, the silver thread points in its direction. The glass gives no information about distance or obstacles.",
     "isUsable": false,
@@ -112,7 +112,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-slipstone",
     "name": "Slipstone",
-    "type": "gear",
+    "type": "magic",
     "description": "A flat piece of violet-grey stone whose two faces never seem perfectly aligned. Turn it in the hand and one edge appears to arrive a fraction of a heartbeat before the rest. Tags: A1 · Movement",
     "mechanicsText": "Once per short or long rest, you can use a Bonus Action to move up to 10 feet without provoking opportunity attacks. This movement ignores difficult terrain, but you cannot pass through creatures, objects, or spaces you could not normally enter.",
     "isUsable": false,
@@ -126,7 +126,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-rootheart-seed",
     "name": "Rootheart Seed",
-    "type": "gear",
+    "type": "magic",
     "description": "A black seed the size of a thumbnail, veined with dull green-gold. It is almost weightless until the ground shifts beneath its bearer, when it becomes suddenly and impossibly heavy. Tags: A1 · Stability",
     "mechanicsText": "Once per long rest, when an effect would knock you prone or move you against your will, you can use your Reaction to either remain standing or reduce the forced movement by up to 10 feet.",
     "isUsable": false,
@@ -256,7 +256,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-pathfinder-s-token",
     "name": "Pathfinder's Token",
-    "type": "gear",
+    "type": "magic",
     "description": "A carved disc of dense wood worn at the belt. It pulls faintly in the direction of open ground, the way a compass finds north. Tags: A1 · Movement",
     "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water.",
     "isUsable": false,
@@ -268,7 +268,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-canopy-eye",
     "name": "Canopy Eye",
-    "type": "gear",
+    "type": "magic",
     "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface. Tags: A1 · Utility",
     "mechanicsText": "Once per short or long rest, you can use a Bonus Action to make a Wisdom (Perception) check to locate a concealed creature or object.",
     "isUsable": false,
@@ -396,7 +396,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-displaced-ward-brooch",
     "name": "Displaced Ward Brooch",
-    "type": "gear",
+    "type": "magic",
     "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here did not spare the equipment. Tags: A1 · Defense",
     "mechanicsText": "When you take force damage, you can use your Reaction to reduce that damage by 1d6. Once used, this property cannot be used again until you finish a long rest.",
     "isUsable": false,
@@ -408,7 +408,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-pack-sense-totem",
     "name": "Pack-Sense Totem",
-    "type": "gear",
+    "type": "magic",
     "description": "A small carved figure that feels heavier than it should. It hums faintly when held by someone in a group — quieter when alone. Tags: A1 · Stability",
     "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone.",
     "isUsable": false,
@@ -513,7 +513,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-frost-brace",
     "name": "Frost Brace",
-    "type": "gear",
+    "type": "magic",
     "description": "A bracer of pale iron that does not warm in the hand. Ward field issue — standard cold protection for operatives running north of the treeline. Tags: A2 · Defense",
     "mechanicsText": "While worn, reduce cold damage you take by 2.",
     "isUsable": false,
@@ -525,7 +525,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-drift-globe",
     "name": "Drift Globe",
-    "type": "gear",
+    "type": "magic",
     "description": "A frosted glass orb kept on the innkeeper’s shelf. Brennan left it for whoever had to go back into the dark. It hovers at shoulder height and holds a light that does not gutter in wind or cold. Tags: A2 · Cleanse",
     "mechanicsText": "As a Magic action, command the globe to shed bright light in a 20-foot radius and dim light 20 feet farther, or to go dark. It follows its bearer at walking pace. Once per long rest, as a Bonus Action, the globe can flare for 1 minute; while a creature is inside its bright light, you know the occupied space of any Invisible or magically hidden creature there, though the creature remains Invisible or hidden.",
     "isUsable": false,
@@ -539,7 +539,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-frostward-periapt",
     "name": "Frostward Periapt",
-    "type": "gear",
+    "type": "magic",
     "description": "A pendant of pale bone on a leather thong. The surface stays dry even when frost forms on everything around it. Tags: A2 · Defense",
     "mechanicsText": "While worn, you have advantage on saving throws against disease and against gaining the Poisoned condition, and you ignore the effects of nonmagical extreme cold.",
     "isUsable": false,
@@ -679,7 +679,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-hollow-lantern",
     "name": "Hollow Lantern",
-    "type": "gear",
+    "type": "magic",
     "description": "A Ward field lantern recovered from the village cache. Its pale flame does not flicker in wind, and for a moment it shows what prefers not to be found. Tags: A2 · Cleanse",
     "mechanicsText": "As a Bonus Action, expend its charge. Until the end of your next turn, you know the space occupied by any Invisible or magically hidden creature within 15 feet of you. This does not make the creature visible. The lantern regains its charge when you finish a long rest.",
     "isUsable": false,
@@ -692,7 +692,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-drifter-s-knot-charm",
     "name": "Drifter's Knot Charm",
-    "type": "gear",
+    "type": "magic",
     "description": "A knot of frozen cord worn at the belt. It tugs gently toward solid footing, the way a compass finds north. Tags: A2 · Stability",
     "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone or moved against your will.",
     "isUsable": false,
@@ -704,7 +704,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-sentinel-chalk",
     "name": "Sentinel Chalk",
-    "type": "gear",
+    "type": "magic",
     "description": "A stick of blue-white chalk recovered from the frozen line. A mark drawn with it holds its edge even under snow and rime. Tags: A2 · Utility",
     "mechanicsText": "As a Magic action, expend 1 charge to draw a line up to 10 feet long on a solid surface and choose any creatures you can see. Until your next long rest, the first unchosen Tiny or larger creature to cross that line causes it to flash and sound a clear chime audible out to 60 feet, then the mark ends. The chalk regains all expended charges when you finish a long rest.",
     "isUsable": false,
@@ -717,7 +717,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-gloamstep-shard",
     "name": "Gloamstep Shard",
-    "type": "gear",
+    "type": "magic",
     "description": "A sliver of dark glass rimed white on one edge and perfectly black on the other. In dim light the shard seems a few inches closer than the hand holding it. Tags: A2 · Movement",
     "mechanicsText": "As a Bonus Action while you are in dim light or darkness, teleport up to 10 feet to an unoccupied space you can see that is also in dim light or darkness. Once used, this property cannot be used again until you finish a long rest.",
     "isUsable": false,
@@ -850,7 +850,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-wendigo-heart-ember",
     "name": "Wendigo Ember Heart",
-    "type": "gear",
+    "type": "magic",
     "description": "Whatever organ this once was no longer resembles one — a black, porous remnant, brittle as burned stone. It is somehow still warm, and when gripped it answers with a pulse of devouring cold. Tags: A2 · Offensive",
     "mechanicsText": "Devouring Cold (1/day; recharges at dawn). As a Magic action, target one creature you can see within 30 feet. It must make a DC 13 Constitution saving throw, taking 3d6 cold damage on a failed save or half as much on a successful save.",
     "isUsable": false,
@@ -863,7 +863,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-frozen-lake-core",
     "name": "Frozen Lake Core",
-    "type": "gear",
+    "type": "magic",
     "description": "A column of ice drawn from the lake’s center by no tool the party carries. It sat waiting at the shore after the fight, as if set there to be found. Tags: A2 · Stability",
     "mechanicsText": "Frozen Resolve (1/day; recharges at dawn). When you fail a saving throw, roll 1d4 and add it to the saving throw, potentially turning the failure into a success.",
     "isUsable": false,
@@ -876,7 +876,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-anchor-thread",
     "name": "Anchor Thread",
-    "type": "gear",
+    "type": "magic",
     "description": "A braided metallic thread that tightens when the bearer loses footing. Tags: Recipe: Movement + Stability",
     "mechanicsText": "Once per long rest, when an effect would move you against your will or knock you prone, you can ignore the forced movement or remain standing.",
     "isUsable": false,
@@ -889,7 +889,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-clarity-hood",
     "name": "Clarity Hood",
-    "type": "gear",
+    "type": "magic",
     "description": "A light hood whose inner weave sharpens at the edge of false images and invasive emotion. Tags: Recipe: Defense + Utility",
     "mechanicsText": "Once per long rest, when you fail a saving throw against being Charmed or Frightened, or against an illusion spell or effect, reroll the save and use the new result.",
     "isUsable": false,
@@ -902,7 +902,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-step-stabilizer",
     "name": "Step Stabilizer",
-    "type": "gear",
+    "type": "magic",
     "description": "A small paired set of heel plates that seem to find the next safe piece of ground first. Tags: Recipe: Movement + Utility",
     "mechanicsText": "Natural difficult terrain costs you no extra movement. Once per short or long rest, you can take the Disengage action as a Bonus Action.",
     "isUsable": false,
@@ -915,7 +915,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-reinforced-wrap",
     "name": "Reinforced Wrap",
-    "type": "gear",
+    "type": "magic",
     "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands. Tags: Recipe: Defense + Stability",
     "mechanicsText": "Once per long rest, when an attack hits you, you can use your Reaction to reduce the damage by 1d10.",
     "isUsable": false,
@@ -928,7 +928,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-lensing-glass",
     "name": "Lensing Glass",
-    "type": "gear",
+    "type": "magic",
     "description": "A clear lens that catches edges the eye normally loses. Tags: Recipe: Cleanse + Utility",
     "mechanicsText": "As a Bonus Action, expend 1 charge. Until the end of your next turn, you can see Invisible creatures and see through magical visual obscurement within 30 feet. The glass regains all expended charges when you finish a long rest.",
     "isUsable": false,
@@ -941,7 +941,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-splitgrain-grip",
     "name": "Splitgrain Grip",
-    "type": "gear",
+    "type": "magic",
     "description": "A narrow weapon wrap whose grain splits in two directions when it meets resistant flesh. Tags: Recipe: Offensive + Utility",
     "mechanicsText": "When you hit a creature with a weapon attack, you learn whether it has resistance or immunity to that attack’s damage type. Once per short or long rest, that hit can deal an additional 1d8 damage of the same type.",
     "isUsable": false,
@@ -954,7 +954,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-drift-anchor",
     "name": "Drift Anchor",
-    "type": "gear",
+    "type": "magic",
     "description": "A compact Ward anchor that grows heavy only when the world tries to move its bearer. Tags: Recipe: Movement + Stability",
     "mechanicsText": "You have advantage on saving throws against being moved against your will or knocked prone. Once per day at dawn recharge, when either effect would happen, you can ignore it entirely.",
     "isUsable": false,
@@ -967,7 +967,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-hollowlight",
     "name": "Hollowlight",
-    "type": "gear",
+    "type": "magic",
     "description": "A pale light source that does not brighten darkness so much as make it stop lying. Tags: Recipe: Cleanse + Utility",
     "mechanicsText": "You can see through magical darkness within 30 feet. Once per day, when you fail a saving throw against being Blinded, Charmed, Frightened, or Restrained, you can reroll the save and use the new result.",
     "isUsable": false,
@@ -980,7 +980,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-quickstep",
     "name": "Quickstep",
-    "type": "gear",
+    "type": "magic",
     "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next. Tags: Recipe: Movement + Utility",
     "mechanicsText": "Your speed increases by 5 feet and difficult terrain costs you no extra movement. Once per day, you can take the Dash action as a Bonus Action; your movement does not provoke opportunity attacks until the end of that turn.",
     "isUsable": false,
@@ -993,7 +993,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-edgeworn",
     "name": "Edgeworn",
-    "type": "gear",
+    "type": "magic",
     "description": "A thin grip plate that reads resistance through the vibration of a successful strike. Tags: Recipe: Offensive + Utility",
     "mechanicsText": "When you deal damage to a creature, you learn whether it resisted or was immune to that damage type. Once per day, when you hit with a weapon attack, that hit ignores resistance; immunity is treated as resistance for that hit.",
     "isUsable": false,
@@ -1006,7 +1006,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-driftveil",
     "name": "Driftveil",
-    "type": "gear",
+    "type": "magic",
     "description": "A short mantle that pulls sideways at the instant a blow finds its wearer. Tags: Recipe: Defense + Movement",
     "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to move up to 10 feet without provoking opportunity attacks and reduce the triggering attack’s damage by 1d8.",
     "isUsable": false,
@@ -1019,7 +1019,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-clearward-mantle",
     "name": "Clearward Mantle",
-    "type": "gear",
+    "type": "magic",
     "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body. Tags: Recipe: Defense + Cleanse",
     "mechanicsText": "You have advantage on saving throws against gaining the Poisoned condition. Once per day, as a Bonus Action, end one of the following conditions on yourself: Blinded, Charmed, Frightened, or Poisoned.",
     "isUsable": false,
