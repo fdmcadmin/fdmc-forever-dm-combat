@@ -159,6 +159,9 @@ export type ActorActionMetadata = {
   grip?: "1h" | "2h";
   chassisBonus?: number;
   pbToDamage?: boolean;
+  /** Player-toggled conditional extras carried from the item — see ItemRider. The app tracks
+   *  the cadence and rolls the dice; the table rules on whether the trigger happened. */
+  riders?: Array<{ id: string; label: string; formula?: string; damageType?: string; cadence: string; condition?: string }>;
   /** Charge tracking — carried from EquipmentItem for items with limited uses */
   charges?: { max: number; reset: "longRest" | "shortRest" | "encounter" | "manual"; note?: string };
   /** Live "remaining/max" for the item pool above, stamped at render by the card (the counter

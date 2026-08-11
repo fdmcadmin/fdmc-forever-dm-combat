@@ -15,7 +15,7 @@
 import { BASE_WEAPONS } from "../constants/baseWeapons";
 import { matchingForms, type ChassisSpec } from "../constants/chassis";
 import { WEAPON_CATEGORIES } from "../constants/weaponMastery";
-import type { EquipmentItem } from "./EquipmentBagEditor";
+import type { EquipmentItem, ItemRider } from "./EquipmentBagEditor";
 
 /** Every tag the base weapon table actually uses — derived, so it cannot drift from the data. */
 const ALL_TAGS = Array.from(new Set(BASE_WEAPONS.flatMap(w => w.tags))).sort();
@@ -146,6 +146,61 @@ export function ChassisFields({ draft, set }: Props) {
               onChange={e => set("pbToDamage", e.target.checked || undefined)} />
             Adds Proficiency Bonus to damage
           </label>
+
+          {/* RIDERS — the conditional extras, deliberately player-toggled. */}
+          <div style={{ borderTop: "1px solid #2a2a3e", paddingTop: 7 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: "#aaa" }}>Riders</span>
+              <button type="button"
+                onClick={() => set("riders", [...(draft.riders ?? []), {
+                  id: `rider-${Date.now().toString(36)}`, label: "", cadence: "perTurn" as const,
+                }])}
+                style={{ fontSize: 10, padding: "2px 8px", background: "#2a2a4e", border: "1px solid #7b68ee55", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}>
+                + Rider
+              </button>
+            </div>
+            <div style={{ fontSize: 10, color: "#666", marginBottom: 6 }}>
+              A rider is a TOGGLE the player flips when it applies. The app tracks the cadence and
+              rolls the dice; the table rules on the trigger — automating "while below half HP"
+              or "a creature you already hit this turn" would take the call away from the player.
+              Leave the formula blank for a rider that rolls nothing.
+            </div>
+            {(draft.riders ?? []).map((r, i) => {
+              const patchRider = (next: Partial<ItemRider>) =>
+                set("riders", (draft.riders ?? []).map((x, j) => (j === i ? { ...x, ...next } : x)));
+              return (
+                <div key={r.id} style={{ background: "#111", border: "1px solid #2a2a3e", borderRadius: 4, padding: 7, marginBottom: 5, display: "flex", flexDirection: "column", gap: 5 }}>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <input type="text" value={r.label} placeholder="Rider name"
+                      onChange={e => patchRider({ label: e.target.value })}
+                      style={{ flex: 2, padding: "3px 6px", fontSize: 11, background: "#0d0d14", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+                    <input type="text" value={r.formula ?? ""} placeholder="2d6 (optional)"
+                      onChange={e => patchRider({ formula: e.target.value || undefined })}
+                      style={{ flex: 1, padding: "3px 6px", fontSize: 11, background: "#0d0d14", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+                    <button type="button" onClick={() => set("riders", (draft.riders ?? []).filter((_, j) => j !== i))}
+                      style={{ fontSize: 11, padding: "0 8px", background: "transparent", border: "1px solid #5a3a1a", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>✕</button>
+                  </div>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <select value={r.cadence} onChange={e => patchRider({ cadence: e.target.value as ItemRider["cadence"] })}
+                      style={{ flex: 1, padding: "3px 6px", fontSize: 11, background: "#0d0d14", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
+                      <option value="perTurn">Once per turn</option>
+                      <option value="perRound">Once per round</option>
+                      <option value="perEncounter">Once per encounter</option>
+                      <option value="shortRest">Short rest</option>
+                      <option value="longRest">Long rest</option>
+                      <option value="atWill">At will</option>
+                    </select>
+                    <input type="text" value={r.damageType ?? ""} placeholder="damage type (blank = weapon's)"
+                      onChange={e => patchRider({ damageType: e.target.value || undefined })}
+                      style={{ flex: 1, padding: "3px 6px", fontSize: 11, background: "#0d0d14", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+                  </div>
+                  <input type="text" value={r.condition ?? ""} placeholder="Trigger the player judges — e.g. while at or below half HP"
+                    onChange={e => patchRider({ condition: e.target.value || undefined })}
+                    style={{ padding: "3px 6px", fontSize: 11, background: "#0d0d14", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+                </div>
+              );
+            })}
+          </div>
 
           <div style={{ fontSize: 10, color: "#666", borderTop: "1px solid #2a2a3e", paddingTop: 7 }}>
             The form's weapon MASTERY carries through, but it is not granted — the character

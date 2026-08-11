@@ -60,6 +60,33 @@ export type EquipmentCharges = {
   note?: string;
 };
 
+/**
+ * A RIDER — an item's conditional extra, deliberately player-driven.
+ *
+ * Every Feywild Gift is "once on each of your turns when you hit, IF <something the table
+ * judges>". Automating that condition would decide for the player: whether they are below half
+ * HP, whether this is the same creature they hit earlier, whether the hit was an opportunity
+ * attack. So a rider is a TOGGLE the player flips when it applies — the app tracks the cadence
+ * and rolls the dice, the table rules on the trigger.
+ *
+ * `formula` is optional because not every rider rolls: "that creature cannot make opportunity
+ * attacks until the start of your next turn" is a rider with no dice at all.
+ */
+export type RiderCadence = "perTurn" | "perRound" | "perEncounter" | "shortRest" | "longRest" | "atWill";
+
+export type ItemRider = {
+  id: string;
+  label: string;
+  /** Dice the rider adds, if any — "2d6", "1d8". Blank for a pure condition. */
+  formula?: string;
+  /** "the weapon's type" is normal; a fixed type (force, cold) when the rider overrides it. */
+  damageType?: string;
+  /** How often it can be used. Nearly all of these are once per turn. */
+  cadence: RiderCadence;
+  /** The trigger, in words — what the player is judging when they flip it. */
+  condition?: string;
+};
+
 export type AbilityStatId = "str" | "dex" | "con" | "int" | "wis" | "cha";
 
 export type StatEffectType =
@@ -141,6 +168,12 @@ export type EquipmentItem = {
   pbToDamage?: boolean;
   /** Chassis items: magic bonus added to attack AND damage (+2 on the Feywild Gifts). */
   chassisBonus?: number;
+  /**
+   * Conditional extras the player toggles. An ARRAY because an item can carry more than one —
+   * the focus Gifts have their spell bonus AND an effect, and nothing says a future item won't
+   * have two riders.
+   */
+  riders?: ItemRider[];
   /** How a versatile form is currently held. Free to change; see the grip switch on the card. */
   grip?: WeaponGrip;
   /** Charge tracking for items with limited uses */
@@ -539,6 +572,7 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       grip: item.grip,
       chassisBonus: item.chassisBonus,
       pbToDamage: item.pbToDamage,
+      riders: item.riders,
       effect: item.effect ? {
         type: item.effect.type as string,
         label: item.effect.label,
