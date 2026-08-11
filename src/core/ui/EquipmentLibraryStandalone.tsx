@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { parseActField, parseSessionField } from "../campaign/actTags";
 import OBR from "@owlbear-rodeo/sdk";
+import { ChassisFields } from "./ChassisFields";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
@@ -515,6 +516,8 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
         <input type="checkbox" checked={Boolean(draft.attunementRequired)} onChange={e => set("attunementRequired", e.target.checked || undefined)} />
         Requires attunement (holds 1 of 3 slots while equipped)
       </label>
+
+      <ChassisFields draft={draft} set={set} />
       <div style={{ display: "flex", gap: 8 }}>
         <button type="button" onClick={() => { if (!draft.name.trim()) return; onSave(draft); }} style={{ padding: "5px 16px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
           {initial ? "Save Changes" : "Create Item"}

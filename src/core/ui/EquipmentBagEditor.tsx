@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
+import { ChassisFields } from "./ChassisFields";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
 import { composeChassisAttack, findForm, isVersatileForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
@@ -788,6 +789,8 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         <input type="checkbox" checked={Boolean(draft.attunementRequired)} onChange={e => set("attunementRequired", e.target.checked || undefined)} />
         Requires attunement (counts against the 3 attuned slots while equipped)
       </label>
+
+      <ChassisFields draft={draft} set={set} />
 
       {/* Stat effects — passive stat modifications while item is equipped */}
       <div>
