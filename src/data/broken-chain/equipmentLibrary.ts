@@ -69,7 +69,7 @@ export const RETIRED_EQUIPMENT_IDS: string[] = [
   "tbc-phantom-cord-dagger-str", // Phantom Cord Dagger (STR)
   "tbc-splitfrost-blade-str", // Splitfrost Blade (STR)
   "tbc-hollow-fang-str", // Hollow Fang (STR)
-  "tbc-wendigo-heart-ember", // Wendigo Heart Ember
+  "bc-wendigo-ember-heart", // Wendigo Ember Heart
 ];
 
 export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
@@ -848,7 +848,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isLocked": true
   },
   {
-    "id": "bc-wendigo-ember-heart",
+    "id": "tbc-wendigo-heart-ember",
     "name": "Wendigo Ember Heart",
     "type": "gear",
     "description": "Whatever organ this once was no longer resembles one — a black, porous remnant, brittle as burned stone. It is somehow still warm, and when gripped it answers with a pulse of devouring cold. Tags: A2 · Offensive",

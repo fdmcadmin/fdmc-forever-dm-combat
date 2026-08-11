@@ -238,7 +238,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
 // with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
 // armor and weapons are LOCKED and unchanged.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.7.0-cleaned-doc";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.7.1-ember-rename";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
