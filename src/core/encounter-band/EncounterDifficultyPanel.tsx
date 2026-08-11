@@ -250,13 +250,18 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     close to collapse", which is the half the old model could not see —
                     two fights can share a kill clock and be completely different fights. */}
                 {(() => {
+                  // `roundsMonsters` is one row per TEMPLATE carrying a count, not one row per
+                  // body. A "Wyrmling ×2" entry has to contribute its damage twice and count
+                  // as two bodies, or both the DPR and the attrition term read the wrong fight.
                   const monsterDamage = estimateMonsterDamage(
                     roundsMonsters.flatMap(m => {
                       const t = monsterLibrary.find(x => x.templateId === m.id);
-                      return (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
+                      const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
+                      return Array.from({ length: Math.max(1, m.count) }, () => actions).flat();
                     }),
                     { partyLevel },
                   );
+                  const bodyCount = roundsMonsters.reduce((n, m) => n + Math.max(1, m.count), 0);
                   const audit = auditEncounter({
                     monsterSustain: est.effectiveHp,
                     monsterDamage: monsterDamage.dpr,
@@ -324,7 +329,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                           partyLevel,
                           monsterSustain: est.effectiveHp,
                           monsterDpr: monsterDamage.dpr,
-                          bodies: roundsMonsters.length,
+                          bodies: bodyCount,
                         }) : null;
                         if (!check) return null;
                         const v = lethalityVerdict(check, est.classification);
@@ -339,7 +344,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                             </div>
                             <div style={{ color: "#555" }}>
                               {check.damageTaken.toFixed(0)} damage absorbed
-                              {check.bodies > 1 && ` (${roundsMonsters.length} bodies → ×${attritionFactor(check.bodies).toFixed(2)} attrition)`}
+                              {check.bodies > 1 && ` (${check.bodies} bodies → ×${attritionFactor(check.bodies).toFixed(2)} attrition)`}
                               {" · "}{v.note}
                             </div>
                           </div>
