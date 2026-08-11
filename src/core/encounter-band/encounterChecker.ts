@@ -65,6 +65,102 @@ export function effectiveSustain(opts: {
   return opts.rawHp * (1 + acContribution + traits);
 }
 
+// ─── Pricing a defence off the Sustain Trait Reference ────────────────────────
+//
+// The reference lists anchor points, not a formula, and a real stat block rarely lands on one
+// exactly. These helpers read BETWEEN the reference's own anchors so that a defence which is
+// clearly on the list gets priced instead of dropped. Every family the reference covers —
+// damage reduction, resistance and immunity, to-hit reduction, and a temporary AC bonus — has
+// a helper here, so "no entry for that" is never a reason to score a creature as if it had no
+// defence at all.
+//
+// Interpolation stays inside the listed range; below the lowest anchor the helpers extrapolate
+// along the same slope, which is flagged in each doc comment because it is the weakest claim
+// the model makes.
+
+const lerp = (x: number, x0: number, y0: number, x1: number, y1: number) =>
+  y0 + ((x - x0) * (y1 - y0)) / (x1 - x0);
+
+/**
+ * Flat damage prevented per round — "Bark-Ribbed reduces it by 3", "Body Between reduces 12".
+ * Anchors: 8/round -> 0.1419, 12/round -> 0.2323. Below 8 this extrapolates along that slope.
+ */
+export function damageReductionContribution(perRound: number): number {
+  return Math.max(0, lerp(perRound, 8, 0.1418712644969924, 12, 0.2323134514052565));
+}
+
+/**
+ * Resistance to some share of the damage aimed at the creature. Anchors are the reference's
+ * own 25 / 50 / 75% entries; 100% (immunity to that share) extends the top segment.
+ */
+export function resistanceContribution(sharePercent: number): number {
+  const pts: [number, number][] = [
+    [0, 0], [25, 0.1440096727974145], [50, 0.34183418117197717], [75, 0.5858292424284814],
+  ];
+  const s = Math.max(0, Math.min(100, sharePercent));
+  for (let i = 1; i < pts.length; i++) {
+    if (s <= pts[i][0]) return lerp(s, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+  }
+  return lerp(s, pts[2][0], pts[2][1], pts[3][0], pts[3][1]);
+}
+
+/** Vulnerability is the same axis with the sign flipped — the reference lists it separately. */
+export function vulnerabilityContribution(sharePercent: number): number {
+  const pts: [number, number][] = [
+    [0, 0], [25, -0.2], [50, -0.3333333333333333], [75, -0.42857142857142855], [100, -0.5],
+  ];
+  const s = Math.max(0, Math.min(100, sharePercent));
+  for (let i = 1; i < pts.length; i++) {
+    if (s <= pts[i][0]) return lerp(s, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+  }
+  return -0.5;
+}
+
+/**
+ * Making the party miss more often. The reference prices four shapes of this; `share` narrows
+ * an entry when it only applies to some of the attacks made (opportunity attacks only, say).
+ */
+export const TO_HIT_REDUCTION = {
+  firstAttackEachRound: 0.047749343564075675,
+  allAttacksOneRound: 0.1294156939022204,
+  halfCoverVsRanged: 0.049548456103407856,
+  concealmentUntilFirstHit: 0.11325953581508919,
+} as const;
+
+export function toHitReductionContribution(
+  kind: keyof typeof TO_HIT_REDUCTION,
+  share = 1,
+): number {
+  return TO_HIT_REDUCTION[kind] * Math.max(0, Math.min(1, share));
+}
+
+/**
+ * A temporary AC bonus above the creature's printed AC — distinct from AC_DELTA_CONTRIBUTION,
+ * which prices the AC it stands at. Anchors: shield-like +5 for 1 round -> 0.1417, for 2
+ * rounds -> 0.2042. Scaled linearly in AC points, so +2 for a round is two fifths of the +5.
+ */
+export function acBonusContribution(points: number, rounds = 1): number {
+  const one = 0.14153696550922712;
+  const two = 0.20415184169656952;
+  const perRound = rounds <= 1 ? one : lerp(Math.min(rounds, 2), 1, one, 2, two);
+  return perRound * (points / 5);
+}
+
+/**
+ * A LAIR. It acts on its own initiative every round and its options are control, not damage:
+ * sliding characters out of position, obscuring a sphere, moving someone off a line. None of
+ * that shortens the fight — it costs the party turns, which is the reference's "Opposing
+ * damage uptime" entry (−10% -> 0.1083, −20% -> 0.2342).
+ *
+ * Applied to the WHOLE encounter rather than per creature, which is the one place this
+ * deliberately departs from the sheet's "apply per creature" note: a lair disrupts everything
+ * the party is shooting at, not just its owner.
+ */
+export const LAIR_UPTIME_TAX = {
+  light: 0.10834841514716653,
+  heavy: 0.23422706888237932,
+} as const;
+
 /**
  * ATTRITION — the share of its printed DPR a roster actually delivers.
  *
@@ -79,6 +175,32 @@ export function effectiveSustain(opts: {
 export function attritionFactor(bodies: number): number {
   const n = Math.max(1, bodies);
   return (n + 1) / (2 * n);
+}
+
+/**
+ * Total effective sustain for a whole roster, including encounter-wide effects.
+ *
+ * `count` matters: "Veil-Torn Wyrmling ×2" is two bodies, and dropping the count both
+ * understates the sustain and — through attrition — misreads how lethal the fight is.
+ */
+export function encounterSustain(opts: {
+  partyLevel: number;
+  creatures: { rawHp: number; ac: number; count?: number; traitContributions?: number[] }[];
+  /** Encounter-wide contributions, e.g. LAIR_UPTIME_TAX.light for a lair. */
+  encounterContributions?: number[];
+}): { sustain: number; bodies: number } {
+  let sustain = 0;
+  let bodies = 0;
+  for (const c of opts.creatures) {
+    const n = Math.max(1, c.count ?? 1);
+    bodies += n;
+    sustain += n * effectiveSustain({
+      rawHp: c.rawHp, ac: c.ac, partyLevel: opts.partyLevel,
+      traitContributions: c.traitContributions,
+    });
+  }
+  const wide = (opts.encounterContributions ?? []).reduce((a, b) => a + b, 0);
+  return { sustain: sustain * (1 + wide), bodies };
 }
 
 export type EncounterCheck = {
