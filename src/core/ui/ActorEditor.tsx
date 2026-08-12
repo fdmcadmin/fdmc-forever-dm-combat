@@ -5,6 +5,7 @@ import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
 import { abilityModifier, proficiencyBonus, savingThrowModifier, inferSaveProficiency } from "../rules/dnd5e";
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
+import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
 import { tabAccent } from "./tabVisuals";
@@ -321,6 +322,21 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
           <input type="text" value={draft.className} onChange={e => set("className", e.target.value)}
             placeholder="Fighter  — or —  Fighter / Rogue"
             style={inputStyle} />
+          {/* WEAPON MASTERY IS DRIVEN BY THIS FIELD, and every character in the library had it
+              blank — their class lived only in the subtitle prose, which is not something to
+              read data out of. Showing the resulting count here makes the connection visible:
+              type "Paladin" and it says 2, so a blank field is obviously a blank field rather
+              than silently meaning "no masteries". */}
+          <span style={{ fontSize: 10, color: draft.className.trim() ? "#7b68ee" : "#6a5a2a", marginTop: 3, display: "block" }}>
+            {draft.className.trim()
+              ? (() => {
+                  const n = masteryCountForClass(draft.className, Number(draft.level) || 1);
+                  return n > 0
+                    ? `⚔ ${n} weapon master${n === 1 ? "y" : "ies"} at level ${draft.level}`
+                    : "Non-martial — no weapon masteries unless a feat grants one";
+                })()
+              : "⚠ Blank — weapon mastery needs a class here. Recognised: " + MASTERY_CLASSES.join(", ")}
+          </span>
         </label>
         {/* Multiclass level split — only shown when className contains "/" */}
         {draft.className.includes("/") && (

@@ -30,6 +30,10 @@ import type { DiceBridgeEvent, DiceBridgeRollRequest, DiceBridgeStatus } from ".
 import { AbilityScoreRow } from "./AbilityScoreRow";
 import { WalletPanel } from "./WalletPanel";
 import { PartyPurseRow } from "./PartyPurseRow";
+import {
+  MASTERY_PROPERTIES, MASTERY_BLURB, masteryCount, normalizeMasteryChoices,
+  type MasteryProperty,
+} from "../rules/weaponMastery";
 import { coinsToCopper, type Coins } from "../currency/currency";
 import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
@@ -1118,6 +1122,39 @@ export function ActorCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withConvergenceMark reads convergenceById, itself a mount-stable memo
     [actor.tabs, convergenceById],
   );
+
+  /**
+   * How many mastery properties this character may have active.
+   *
+   * Class and level give the base; a feat adds to it. A feat grants a mastery by carrying
+   * `masteryGrant` in its metadata — an explicit field, never inferred from a feat's NAME,
+   * because "Weapon Master" is a title and titles are not data.
+   */
+  const masteryLimit = useMemo(() => {
+    const featGrants = [...(actor.tabs.feats ?? []), ...(actor.tabs.features ?? [])]
+      .reduce((n, a) => n + (Number(a.metadata?.masteryGrant) || 0), 0);
+    return masteryCount({ className: actor.className, level: actor.level, featGrants });
+  }, [actor.className, actor.level, actor.tabs.feats, actor.tabs.features]);
+
+  /**
+   * The properties chosen right now. A local preference like the pinned pools: the rules
+   * re-choose it every Long Rest, so it is the most volatile thing on the sheet and does not
+   * belong in the actor's authored data.
+   */
+  const masteryKey = `fdmc.card.masteries.${actor.id}`;
+  const [masteryChoices, setMasteryChoices] = useState<MasteryProperty[]>(() => {
+    try {
+      return normalizeMasteryChoices(JSON.parse(window.localStorage.getItem(masteryKey) ?? "[]"), 8);
+    } catch { return []; }
+  });
+  function toggleMastery(p: MasteryProperty) {
+    setMasteryChoices(prev => {
+      const next = prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p];
+      const capped = normalizeMasteryChoices(next, masteryLimit);
+      try { window.localStorage.setItem(masteryKey, JSON.stringify(capped)); } catch { /* private mode */ }
+      return capped;
+    });
+  }
 
   /**
    * Pools the PLAYER has pinned to the at-a-glance strip, by resource id.
@@ -4624,6 +4661,50 @@ export function ActorCard({
               )}
             </div>
           )}
+
+          {/* WEAPON MASTERY — a choice with a cadence, not a feature.
+              The 2024 rules let a martial re-pick which mastery properties are active when
+              they finish a Long Rest, which is why this sits directly under the rest buttons
+              rather than in Features: it is the thing you do WHEN you rest. Authoring it as
+              static "Weapon Mastery - Vex (Handaxe)" rows froze a decision the rules expect to
+              be revisited, and added a row per weapon nobody could change at the table.
+              The count comes from class and level; a feat can add one. At zero the whole block
+              stays out of the way — a Wizard should see nothing here. */}
+          {masteryLimit > 0 && (
+            <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                <span style={{ fontSize: 10, color: "#8a8aa0", letterSpacing: 1, textTransform: "uppercase" }}>
+                  Weapon Mastery
+                </span>
+                <span style={{ fontSize: 10, color: masteryChoices.length === masteryLimit ? "#4caf50" : "#666" }}>
+                  {masteryChoices.length}/{masteryLimit} chosen
+                </span>
+                <span style={{ fontSize: 9, color: "#444", marginLeft: "auto" }}>re-choose on a Long Rest</span>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {MASTERY_PROPERTIES.map(p => {
+                  const on = masteryChoices.includes(p);
+                  // Full at the limit: the remaining options go quiet rather than vanishing,
+                  // so the player can still read what they did not take.
+                  const full = !on && masteryChoices.length >= masteryLimit;
+                  return (
+                    <button key={p} type="button" disabled={full}
+                      onClick={() => toggleMastery(p)}
+                      title={`${p} — ${MASTERY_BLURB[p]}${full ? "\n\nAlready at your limit; drop one first." : ""}`}
+                      style={{
+                        fontSize: 11, padding: "2px 9px", borderRadius: 10, cursor: full ? "default" : "pointer",
+                        background: on ? "rgba(123,104,238,0.18)" : "transparent",
+                        border: `1px solid ${on ? "#7b68ee" : "#2a2a3e"}`,
+                        color: on ? "#9d8cff" : full ? "#3a3a4e" : "#777",
+                      }}>
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Resource counter display */}
           {activeActions.length > 0 && resourceCounters && (
             <div style={{ padding: "8px 12px" }}>

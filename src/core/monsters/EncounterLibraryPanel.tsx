@@ -101,8 +101,14 @@ export function groupEncountersByAct(
     .sort((a, b) => a[0] - b[0])
     .map(([act, list]) => ({
       label: act >= 9999 ? "Unsorted / no act" : `Act ${act}`,
-      encounters: [...list].sort((x, y) =>
-        campaignSortKey(x.id, x.name).localeCompare(campaignSortKey(y.id, y.name))),
+      // An explicit `order` wins; everything unnumbered keeps its id order BEHIND the numbered
+      // ones. So numbering one encounter slots it where you said without reshuffling the rest.
+      encounters: [...list].sort((x, y) => {
+        const ox = x.order ?? 0;
+        const oy = y.order ?? 0;
+        if (ox !== oy) return (ox || 9999) - (oy || 9999);
+        return campaignSortKey(x.id, x.name).localeCompare(campaignSortKey(y.id, y.name));
+      }),
     }));
 }
 
@@ -593,6 +599,25 @@ export function EncounterLibraryPanel({
             >
               <option value="0">Unsorted</option>
               {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>Act {n}</option>)}
+            </select>
+            {/* WHERE IT SITS INSIDE THE ACT.
+                Order was a field nothing ever wrote, so encounters inside an act fell back to
+                the id ("act3-e7-…") — fine for seeded content, useless for anything built or
+                inserted later, and there was no way to slot a new fight between two existing
+                ones. An explicit number wins; everything unnumbered keeps its id order behind
+                the numbered ones, so setting one encounter's position does not scramble the
+                rest. */}
+            <select
+              value={String(editDraft.order ?? 0)}
+              onChange={e => {
+                const n = Number(e.target.value);
+                setEditDraft({ ...editDraft, order: n > 0 ? n : undefined });
+              }}
+              title="Position within its act. Auto = keep the order its id implies."
+              style={{ fontSize: 11, padding: "2px 5px", borderRadius: 3, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#aaa" }}
+            >
+              <option value="0">Auto</option>
+              {Array.from({ length: 20 }, (_, i) => i + 1).map(n => <option key={n} value={n}>#{n}</option>)}
             </select>
           </div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>

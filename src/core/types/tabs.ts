@@ -197,6 +197,13 @@ export type ActorActionMetadata = {
    */
   usableSpellLevels?: number[];
   /**
+   * Feats/features only: how many extra WEAPON MASTERY properties this grants.
+   *
+   * The Weapon Master feat gives a non-martial one mastery. An explicit number, never inferred
+   * from the feat's name — "Weapon Master" is a title, and titles are not data.
+   */
+  masteryGrant?: number;
+  /**
    * Highest slot level this spell may be cast at. Absent = up to 9th.
    *
    * For the few things that genuinely stop scaling — Divine Smite caps at a 5th-level slot,
