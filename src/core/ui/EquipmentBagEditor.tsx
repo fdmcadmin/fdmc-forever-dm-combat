@@ -252,7 +252,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // that catalogue at ten. Tactical and Continuity join the tag vocabulary. Tier 3 weapons and
 // Tier 3 convergence are deliberately NOT seeded — the doc leaves that tier unbuilt and
 // Christopher is authoring part of it himself.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-3-v0.7.3-act3-inputs-tier2-complete";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-3-v0.7.3-v12-revisions";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
