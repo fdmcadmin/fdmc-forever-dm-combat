@@ -2965,7 +2965,13 @@ export function ActorCard({
       return [];
     }
 
-    const levels = Array.from({ length: 9 - base + 1 }, (_, i) => base + i);
+    // A CAP, for the handful of things that stop scaling. Divine Smite tops out at a 5th-level
+    // slot; spending a 6th buys nothing, so offering it is offering a mistake. This is one
+    // number, not a per-level list — the difference between "where does it stop" and "which
+    // levels are legal", and only the first is ever really true.
+    const cap = action.metadata?.maxSpellLevel;
+    const top = Number.isFinite(cap) && (cap as number) >= base ? Math.min(cap as number, 9) : 9;
+    const levels = Array.from({ length: top - base + 1 }, (_, i) => base + i);
 
     return levels.map(level => {
       const res = slotResourceForLevel(level);

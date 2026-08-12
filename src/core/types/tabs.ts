@@ -190,7 +190,19 @@ export type ActorActionMetadata = {
   /** F02 — level the spell is currently set to cast at */
   selectedCastLevel?: number | null;
   /** F02 — levels this spell can be cast at (empty = any level) */
+  /**
+   * LEGACY — no longer written or read. Every spell is castable from its own level upward;
+   * where a spell stops is `maxSpellLevel`, one number instead of a list. Kept on the type
+   * only so actors saved before that change still parse.
+   */
   usableSpellLevels?: number[];
+  /**
+   * Highest slot level this spell may be cast at. Absent = up to 9th.
+   *
+   * For the few things that genuinely stop scaling — Divine Smite caps at a 5th-level slot,
+   * so a 6th adds nothing and offering it only invites a wasted slot.
+   */
+  maxSpellLevel?: number;
   /** F02 — casting time type */
   castingTimeType?: CastingTimeType;
   /** Explicit outcome mode — set this to skip inference and lock the roll behavior */

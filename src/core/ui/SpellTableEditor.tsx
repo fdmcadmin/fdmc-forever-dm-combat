@@ -19,6 +19,8 @@ type SpellRow = {
   id: string;
   name: string;
   level: SpellActionLevel;              // base / minimum slot level (0 = cantrip)
+  /** Highest slot this can be cast at, as a string for the select. "" = no cap. */
+  maxSpellLevel: string;
   upcastNote: string;                   // e.g. "+1d6 per level above 3rd"
   /** What ONE extra slot level adds to damage/healing (Fireball = "1d6"). "" = nothing. */
   upcastDamage: string;
@@ -103,6 +105,7 @@ function rowToAction(row: SpellRow): ActorAction {
       cost: row.economyCost === "main" ? "Action" : row.economyCost === "bonus" ? "Bonus Action" : "Reaction",
       slotCost: slotLabel,
       spellLevel: row.level,
+      ...(Number(row.maxSpellLevel) > row.level ? { maxSpellLevel: Number(row.maxSpellLevel) } : {}),
       ...(row.upcastDamage.trim() ? { upcastDamage: row.upcastDamage.trim() } : {}),
       ...(Number(row.attackRolls) > 1 ? { attackRolls: Number(row.attackRolls) } : {}),
       ...(Number(row.attackRollsPerLevel) > 0 ? { attackRollsPerLevel: Number(row.attackRollsPerLevel) } : {}),
@@ -135,6 +138,7 @@ function actionToRow(action: ActorAction): SpellRow {
     id: action.id,
     name: action.label,
     level: baseLevel,
+    maxSpellLevel: action.metadata?.maxSpellLevel ? String(action.metadata.maxSpellLevel) : "",
     upcastNote: recoveredUpcast,
     slotCost: action.metadata?.slotCost ?? (baseLevel === 0 ? "Cantrip" : `L${baseLevel}`),
     consumesSlot: baseLevel > 0,
@@ -164,6 +168,7 @@ function makeBlankRow(): SpellRow {
     id: `spell-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     name: "",
     level: 1,
+    maxSpellLevel: "",
     upcastNote: "",
     upcastDamage: "",
     attackRolls: "",
@@ -315,9 +320,26 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                       of a slot it should have been able to use. The only level a spell needs
                       to record is the one it STARTS at, set by the Level field above. */}
                   <p style={{ margin: "0 0 6px", fontSize: 11, color: "#666" }}>
-                    Castable at <strong style={{ color: "#7b68ee" }}>L{row.level}</strong> and every
-                    slot above it. A bigger slot is always spendable, whether or not it adds anything.
+                    Castable at <strong style={{ color: "#7b68ee" }}>L{row.level}</strong>
+                    {Number(row.maxSpellLevel) > row.level
+                      ? <> through <strong style={{ color: "#7b68ee" }}>L{row.maxSpellLevel}</strong>.</>
+                      : <> and every slot above it.</>}
+                    {" "}A bigger slot is always spendable, whether or not it adds anything.
                   </p>
+                  {/* The one exception to base→9. Divine Smite tops out at a 5th-level slot:
+                      a 6th buys nothing, so offering it only invites a wasted slot. One number
+                      — "where does it stop" — not the old list of which levels were legal. */}
+                  <label style={{ fontSize: 11, display: "block", marginBottom: 4 }}>
+                    Stops scaling at (blank = no cap)
+                    <select value={row.maxSpellLevel}
+                      onChange={e => setRow(idx, { maxSpellLevel: e.target.value })}
+                      style={{ ...inputStyle, marginTop: 2 }}>
+                      <option value="">No cap — up to L9</option>
+                      {SPELL_LEVELS.filter(l => l.value > row.level).map(l => (
+                        <option key={l.value} value={String(l.value)}>Caps at L{l.value}</option>
+                      ))}
+                    </select>
+                  </label>
                   <label style={{ fontSize: 11, marginTop: 6, display: "block" }}>
                     Upcast note
                     <input type="text" value={row.upcastNote} onChange={e => setRow(idx, { upcastNote: e.target.value })}
