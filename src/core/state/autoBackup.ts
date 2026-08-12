@@ -28,7 +28,7 @@ const SETTINGS_KEY = "fdmc.backup.settings.v1";
 /** Keep enough to step back past a bad import, few enough to stay inside the storage quota. */
 const MAX_SNAPSHOTS = 5;
 
-export type BackupTrigger = "manual" | "session-start" | "interval" | "before-restore" | "before-wipe";
+export type BackupTrigger = "manual" | "session-start" | "session-end" | "interval" | "before-restore" | "before-wipe";
 
 export type BackupSnapshot = {
   id: string;
@@ -82,6 +82,41 @@ export function loadSnapshots(): BackupSnapshot[] {
  * Take a snapshot. Returns null when there is nothing worth keeping — an empty library
  * would otherwise push a real backup out of the ring.
  */
+/**
+ * Is the party actually different from the newest snapshot?
+ *
+ * The ring is five deep, so a backup that changes nothing is not free — it evicts a real one.
+ * Opening the tools twice in a session used to burn two slots on identical copies, and the
+ * snapshot you actually wanted could be pushed off the end by the noise.
+ *
+ * `exportedAt` is stamped at build time and moves on every call, so it is excluded — comparing
+ * it would make every payload "different" and defeat the whole check.
+ */
+function payloadDiffers(a: unknown, b: unknown): boolean {
+  const strip = (p: unknown) => {
+    if (!p || typeof p !== "object") return JSON.stringify(p);
+    const { exportedAt: _drop, ...rest } = p as Record<string, unknown>;
+    return JSON.stringify(rest);
+  };
+  return strip(a) !== strip(b);
+}
+
+/**
+ * Snapshot only if something moved. Returns null when the party is byte-identical to the
+ * newest snapshot — the caller can treat that as "nothing to do", not as a failure.
+ */
+export function takeSnapshotIfChanged(
+  version: string,
+  wallets: Record<string, Coins>,
+  trigger: BackupTrigger = "manual",
+): BackupSnapshot | null {
+  const payload = buildExportPayload(version, wallets);
+  if (Object.keys(payload.actors ?? {}).length === 0) return null;
+  const newest = loadSnapshots()[0];
+  if (newest && !payloadDiffers(payload, newest.payload)) return null;
+  return takeSnapshot(version, wallets, trigger);
+}
+
 export function takeSnapshot(
   version: string,
   wallets: Record<string, Coins>,

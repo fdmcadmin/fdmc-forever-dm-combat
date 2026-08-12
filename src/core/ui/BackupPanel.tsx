@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  loadBackupSettings, saveBackupSettings, loadSnapshots, takeSnapshot, restoreSnapshot,
+  loadBackupSettings, saveBackupSettings, loadSnapshots, takeSnapshot, takeSnapshotIfChanged, restoreSnapshot,
   downloadSnapshot, deleteSnapshot, snapshotBytes,
   type BackupSettings, type BackupSnapshot,
 } from "../state/autoBackup";
@@ -27,6 +27,8 @@ type Props = {
 };
 
 const CYAN = "#6fe0e0";
+/** Kept in step with MAX_SNAPSHOTS in autoBackup — the panel states the depth it actually has. */
+const MAX_SNAPSHOTS_LABEL = 5;
 
 const btn = (accent: string): React.CSSProperties => ({
   fontSize: 11, padding: "3px 10px", background: "transparent",
@@ -58,23 +60,33 @@ export function BackupPanel({ version, getWallets, onRestored, extraActions }: P
       + (snap.walletCount ? ` and ${snap.walletCount} purse${snap.walletCount === 1 ? "" : "s"}.` : ", no wallets held any coin."));
   }
 
-  // One snapshot when the tools open for the day. This is the case that actually bites —
-  // a wipe-and-reimport going wrong mid-session — and it costs one write.
-  const didSessionBackup = useRef(false);
-  useEffect(() => {
-    if (settings.mode === "off" || didSessionBackup.current) return;
-    didSessionBackup.current = true;
-    const last = loadSnapshots()[0];
-    const staleEnough = !last || Date.now() - new Date(last.takenAt).getTime() > 60 * 60 * 1000;
-    if (staleEnough) { takeSnapshot(version, getWallets(), "session-start"); refresh(); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.mode]);
+  /**
+   * Back up when the tools CLOSE, not when they open — and only if something changed.
+   *
+   * Opening captured the state you arrived with, which is the state already sitting in the
+   * ring; the work done during the session was only ever caught by the next open, an hour or
+   * a week later. Closing captures what you just did.
+   *
+   * The change check is what makes an unmount trigger safe. This panel unmounts on every tab
+   * switch, so an unconditional snapshot would churn five identical copies in a minute and
+   * push the one that mattered off the end of the ring.
+   *
+   * The refs read current values at unmount time — the cleanup closure captures whatever was
+   * bound when the effect ran, and a snapshot taken from a stale party is worse than none.
+   */
+  const closeRef = useRef({ mode: settings.mode, version, getWallets });
+  closeRef.current = { mode: settings.mode, version, getWallets };
+  useEffect(() => () => {
+    const { mode, version: v, getWallets: wallets } = closeRef.current;
+    if (mode === "off") return;
+    takeSnapshotIfChanged(v, wallets(), "session-end");
+  }, []);
 
   // Interval backups only run while this panel is mounted — a closed panel does no work.
   useEffect(() => {
     if (settings.mode !== "interval") return;
     const ms = Math.max(5, settings.intervalMinutes) * 60 * 1000;
-    const timer = window.setInterval(() => { takeSnapshot(version, getWallets(), "interval"); refresh(); }, ms);
+    const timer = window.setInterval(() => { takeSnapshotIfChanged(version, getWallets(), "interval"); refresh(); }, ms);
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.mode, settings.intervalMinutes]);
@@ -91,8 +103,15 @@ export function BackupPanel({ version, getWallets, onRestored, extraActions }: P
     <div className="fdmc-maintenance-section" style={{ borderTop: `1px solid ${CYAN}33`, paddingTop: 10 }}>
       <h4 style={{ margin: "0 0 4px" }}>5. Backups</h4>
       <p style={{ margin: "0 0 8px", fontSize: 11, color: "#888", lineHeight: 1.5 }}>
-        Kept in this browser under a key the party wipe never clears, so a wipe-and-reimport is
-        undoable. It does <strong>not</strong> survive clearing browser data — save a file for that.
+        Kept in <strong>this browser</strong> (localStorage <code>fdmc.backup.snapshots.v1</code>)
+        under a key the party wipe never clears, so a wipe-and-reimport is undoable. It does{" "}
+        <strong>not</strong> survive clearing browser data, and it does not follow you to another
+        browser or machine — save a file for that. Newest {MAX_SNAPSHOTS_LABEL} are kept; the
+        oldest drops off.
+      </p>
+      <p style={{ margin: "0 0 8px", fontSize: 11, color: "#666", lineHeight: 1.5 }}>
+        <strong>Each session</strong> takes one when you close these tools, and only if something
+        actually changed — so re-opening without touching anything won't spend a slot.
       </p>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
