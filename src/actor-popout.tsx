@@ -18,6 +18,9 @@ import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { useActorLiveState } from "./core/state/useActorLiveState";
+import { PartyWalletPanel } from "./core/ui/PartyWalletPanel";
+import { getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
+import { coinsToCopper } from "./core/currency/currency";
 import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useCommittedRollState } from "./core/state/useCommittedRollState";
 import { useActorConcentrationState } from "./core/state/useActorConcentrationState";
@@ -74,7 +77,7 @@ function ActorPopout() {
   // Need actor in an array for the hooks
   const actorList = useMemo(() => baseActor ? [baseActor] : [], [baseActor]);
 
-  const { roomLiveState, setActorHp, getActorHp, setActorCoins } = useActorLiveState(actorList);
+  const { roomLiveState, setActorHp, getActorHp, setActorCoins, commitRoomState } = useActorLiveState(actorList);
 
   /**
    * The rest of the party, so an item can be handed to another player from this window.
@@ -204,6 +207,31 @@ function ActorPopout() {
   return (
     <div style={{ height: "100vh", overflow: "auto" }}>
       <SavePromptBanner />
+      {/* The party purse, above the card because it is the party's and not this character's.
+          This is the window a player actually has open, so it is the one place it has to be:
+          on the App side it sits over the INLINE card, which only appears when the OBR popover
+          fails — i.e. almost never. */}
+      <PartyWalletPanel
+        coins={getPartyCoins(roomLiveState)}
+        canEdit={isGm}
+        onEdit={(c) => void commitRoomState(patchPartyCoins(roomLiveState, c))}
+        actorName={actor.name}
+        actorCopper={coinsToCopper(roomLiveState.actorLiveState[actor.id]?.coins ?? {})}
+        onTransfer={(copper) => {
+          // The GM is the single writer, so a GM-held card moves coin itself; a player's card
+          // asks, and the same balance guard runs on the GM's copy.
+          if (isGm || !OBR.isAvailable) {
+            const moved = transferPartyToActor(roomLiveState, actor.id, copper);
+            if (moved) void commitRoomState(moved);
+            return;
+          }
+          void OBR.broadcast.sendMessage(
+            FDMC_SEAT_BROADCAST_CHANNEL,
+            { type: "fdmc:request-party-transfer", actorId: actor.id, copper },
+            { destination: "REMOTE" },
+          ).catch(() => undefined);
+        }}
+      />
       <ActorCard
         actor={actor}
         seatColor={POPOUT_SEAT_COLOR}

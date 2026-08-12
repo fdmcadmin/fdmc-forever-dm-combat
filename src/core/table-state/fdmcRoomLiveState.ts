@@ -310,6 +310,15 @@ export function patchActorGold(state: FdmcRoomLiveState, actorId: string, gold: 
 // Same four coins and the same auto-convert as a personal wallet, so a party purse can pay a
 // gp price out of silver exactly like a character can. The only difference is who owns it.
 
+/**
+ * Sentinel seat id meaning "the party purse, not a character".
+ *
+ * The DM's Send Gold dialog already picks a seat, and campaign gold is the most common thing
+ * it will ever send — so the purse is an entry in that same list rather than a second control
+ * somewhere else. A seat id is a room-assigned string, never this.
+ */
+export const PARTY_WALLET_SEAT_ID = "__party-purse__";
+
 export function getPartyCoins(state: FdmcRoomLiveState): Coins {
   return normalizeCoins(state.partyWallet);
 }

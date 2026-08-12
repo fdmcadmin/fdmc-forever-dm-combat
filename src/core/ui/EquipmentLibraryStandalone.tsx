@@ -15,6 +15,7 @@ import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { COIN_TYPES, COIN_LABEL, COIN_ABBR, formatCopperPrice, type CoinType } from "../currency/currency";
+import { PARTY_WALLET_SEAT_ID } from "../table-state/fdmcRoomLiveState";
 import { WEAPON_MASTERY_NAMES } from "../constants/weaponMastery";
 import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, OPEN_LOOT_OFFER_CHANGED, type OpenLootOffer } from "./openLootOffer";
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
@@ -1159,9 +1160,12 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
           Grant coin to a player. It lands on the seat's primary character's wallet and shows on their sheet. Coin types they have none of stay hidden until granted.
         </p>
         <label style={{ fontSize: 12 }}>
-          Player seat:
+          Send to:
           <select value={goldPanel.seatId} onChange={e => setGoldPanel(g => g ? { ...g, seatId: e.target.value } : g)}
             style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+            {/* Campaign gold is party money and is the most common thing this dialog will
+                ever send, so the purse is first — not buried behind the character list. */}
+            <option value={PARTY_WALLET_SEAT_ID}>👛 Party purse (shared)</option>
             {seats.filter(s => s.seatMode !== "viewer").map(s => <option key={s.seatId} value={s.seatId}>{s.label}</option>)}
           </select>
         </label>

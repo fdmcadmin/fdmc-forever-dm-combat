@@ -56,6 +56,10 @@ import {
   patchActorCoins,
   getActorCoins,
   walletsFromRoomState,
+  PARTY_WALLET_SEAT_ID,
+  getPartyCoins,
+  patchPartyCoins,
+  grantPartyCoin,
   type FdmcRoomLiveState,
 } from "./core/table-state/fdmcRoomLiveState";
 import { setCoin, type CoinType, type Coins } from "./core/currency/currency";
@@ -372,6 +376,14 @@ function DmPanelApp() {
 
   // Grant currency to a seat's primary actor. mode "add" = adjust the coin; "set" = absolute. coin defaults to gp.
   function handleSendGold(seatId: string, amount: number, mode: "add" | "set", coin: CoinType = "gp") {
+    // The party purse is an entry in the same picker, so it lands here first — campaign gold
+    // belongs to the group, not to whichever character happened to be selected.
+    if (seatId === PARTY_WALLET_SEAT_ID) {
+      void commitRoomState(mode === "add"
+        ? grantPartyCoin(roomLiveState, coin, amount)
+        : patchPartyCoins(roomLiveState, setCoin(getPartyCoins(roomLiveState), coin, amount)));
+      return;
+    }
     const seat = seats[seatId];
     const actorId = seat?.primaryActorId;
     if (!actorId) return;
