@@ -306,6 +306,8 @@ export function EncounterLibraryPanel({
   const [encounters, setEncounters] = useState<EncounterDefinition[]>([]);
   const [unusedEncounters, setUnusedEncounters] = useState<EncounterDefinition[]>(() => loadUnusedEncounters());
   const [editingId, setEditingId] = useState<string | null>(null);
+  /** Acts folded shut in the campaign list, by label. Session state — nothing persisted. */
+  const [collapsedActs, setCollapsedActs] = useState<Set<string>>(() => new Set());
   // Monster template editor — overlays the encounter edit view
   const [editingMonsterTemplateId, setEditingMonsterTemplateId] = useState<string | null>(null);
   // Local overrides for templates edited this session (before parent re-renders)
@@ -1058,16 +1060,38 @@ export function EncounterLibraryPanel({
                       // Grouped under ACT headings in campaign order. The old sort keyed on
                       // `order ?? 99`, but the seeder never sets `order` — so every campaign
                       // encounter tied at 99 and fell back to insertion order.
-                      groupEncountersByAct(campaign).map(group => (
-                        <div key={group.label}>
-                          <p style={{ margin: "10px 0 5px", paddingBottom: 3, borderBottom: "1px solid #2a2a3e",
-                            fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase",
-                            color: group.label.startsWith("Act") ? "#e0b34a" : "#667" }}>
-                            {group.label}
-                          </p>
-                          {group.encounters.map(renderEncounter)}
-                        </div>
-                      ))
+                      groupEncountersByAct(campaign).map(group => {
+                        // Acts collapse. Three acts of authored encounters is a long scroll to
+                        // reach the one act being played, and the header was already the
+                        // natural place to fold it. Collapsed state is per act and remembered
+                        // for the session, so opening Act 3 does not re-open Acts 1 and 2.
+                        const collapsed = collapsedActs.has(group.label);
+                        return (
+                          <div key={group.label}>
+                            <button
+                              type="button"
+                              onClick={() => setCollapsedActs(prev => {
+                                const next = new Set(prev);
+                                if (next.has(group.label)) next.delete(group.label); else next.add(group.label);
+                                return next;
+                              })}
+                              title={collapsed ? `Show ${group.label}` : `Hide ${group.label}`}
+                              style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left",
+                                margin: "10px 0 5px", padding: "0 0 3px", borderBottom: "1px solid #2a2a3e",
+                                background: "transparent", border: "none", borderBottomStyle: "solid", cursor: "pointer",
+                                fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase",
+                                color: group.label.startsWith("Act") ? "#e0b34a" : "#667" }}
+                            >
+                              <span style={{ fontSize: 9, width: 8 }}>{collapsed ? "▶" : "▼"}</span>
+                              {group.label}
+                              <span style={{ marginLeft: "auto", color: "#555", fontWeight: 400, letterSpacing: 0 }}>
+                                {group.encounters.length}
+                              </span>
+                            </button>
+                            {!collapsed && group.encounters.map(renderEncounter)}
+                          </div>
+                        );
+                      })
                     ) : (
                       <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No campaign encounters loaded.</p>
                     )
