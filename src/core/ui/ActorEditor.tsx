@@ -513,6 +513,36 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
     };
   }
 
+  /**
+   * Move (or copy) an action between tabs.
+   *
+   * Relocating one used to mean deleting it and retyping the whole thing — every formula,
+   * cost, resource link and rider re-entered by hand, any one of which can be mistyped. This
+   * moves the OBJECT, so nothing is re-derived and nothing can be lost in transit.
+   *
+   * Both tabs are written in ONE setState. Two calls would each read the same stale draft and
+   * the second would clobber the first, so the action would land in the target and never leave
+   * the source — a duplicate, silently.
+   *
+   * A COPY takes a new id. Two entries sharing an id collide in every keyed lookup the card
+   * does: readied keys, charge pools, resolved-roll tracking.
+   */
+  function handleMoveActionToTab(action: ActorAction, target: TabId, mode: "move" | "copy") {
+    setTabsDraft(d => {
+      const landing = mode === "copy"
+        ? { ...action, id: `${action.id}-copy-${Date.now().toString(36)}`, label: `${action.label} (Copy)` }
+        : action;
+      const next = { ...d, [target]: [...(d[target] ?? []), landing] };
+      if (mode === "move") {
+        for (const [tab, list] of Object.entries(d) as Array<[TabId, ActorAction[]]>) {
+          if (tab === target || !list?.some(a => a.id === action.id)) continue;
+          next[tab] = list.filter(a => a.id !== action.id);
+        }
+      }
+      return next;
+    });
+  }
+
   // Per-step item count, used for tab count badges + guided gating.
   function stepCount(tab: EditorTab): number {
     switch (tab) {
@@ -640,10 +670,10 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "features" && (
-          <ActorEditorActionTab tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          <ActorEditorActionTab tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "bonds" && (
-          <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "spells" && (
           <SpellTableEditor
@@ -658,7 +688,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "feats" && (
-          <ActorEditorActionTab tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          <ActorEditorActionTab tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "equipment" && (
           <EquipmentBagEditor
@@ -673,7 +703,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "notes" && (
-          <ActorEditorActionTab tabId="notes" actions={tabsDraft.notes ?? []} onChange={handleTabActions("notes")} />
+          <ActorEditorActionTab tabId="notes" actions={tabsDraft.notes ?? []} onChange={handleTabActions("notes")} onMoveToTab={handleMoveActionToTab} />
         )}
       </div>
 

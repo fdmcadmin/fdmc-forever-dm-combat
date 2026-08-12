@@ -407,11 +407,35 @@ type ActorEditorActionTabProps = {
   actions: ActorAction[];
   onChange: (actions: ActorAction[]) => void;
   resourceLabels?: string[];
+  /**
+   * Move or copy an action to ANOTHER tab.
+   *
+   * This component only owns its own list, so it cannot write a second tab by itself — the
+   * editor above it does. Without this, relocating an action meant deleting it and typing the
+   * whole thing again somewhere else, which is both tedious and lossy: every formula, cost,
+   * resource link and rider has to be re-entered by hand and any one of them can be fat-
+   * fingered. That is a real problem right now, with `features` being retired into `feats`.
+   */
+  onMoveToTab?: (action: ActorAction, target: TabId, mode: "move" | "copy") => void;
 };
 
-export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels }: ActorEditorActionTabProps) {
+/** Tabs an action can be sent to. Spells have their own table editor, so they are not here. */
+const MOVE_TARGETS: Array<{ id: TabId; label: string }> = [
+  { id: "main", label: "Actions" },
+  { id: "bonus", label: "Bonus" },
+  { id: "bond", label: "Bonds" },
+  { id: "features", label: "Class Actions" },
+  { id: "feats", label: "Feats" },
+  { id: "checks", label: "Checks" },
+  { id: "resources", label: "Resources" },
+  { id: "outOfCombat", label: "Out of Combat" },
+];
+
+export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels, onMoveToTab }: ActorEditorActionTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
+  // Shift held when the Move dropdown was opened -> copy instead of move.
+  const [moveAsCopy, setMoveAsCopy] = useState(false);
 
   const editingAction = editingId ? actions.find(a => a.id === editingId) : undefined;
 
@@ -473,6 +497,29 @@ export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels 
                 {action.metadata?.attack && <span style={{ fontSize: 11, color: "#7b68ee", marginLeft: 6 }}>⚔ {action.metadata.attack}</span>}
                 {action.metadata?.damage && <span style={{ fontSize: 11, color: "#e07b39", marginLeft: 6 }}>💥 {action.metadata.damage}</span>}
               </div>
+              {/* Send it somewhere else instead of deleting and retyping it. Hold Shift to
+                  COPY rather than move — the same gesture as everywhere else, so a duplicate
+                  into another tab does not need its own control. */}
+              {onMoveToTab && (
+                <select
+                  value=""
+                  title="Move this action to another tab (hold Shift when choosing to copy instead)"
+                  onChange={e => {
+                    const target = e.target.value as TabId;
+                    if (!target) return;
+                    onMoveToTab(action, target, moveAsCopy ? "copy" : "move");
+                    e.currentTarget.value = "";
+                  }}
+                  onMouseDown={e => setMoveAsCopy(e.shiftKey)}
+                  onKeyDown={e => setMoveAsCopy(e.shiftKey)}
+                  style={{ fontSize: 11, padding: "2px 4px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}
+                >
+                  <option value="">Move →</option>
+                  {MOVE_TARGETS.filter(t => t.id !== tabId).map(t => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
+                  ))}
+                </select>
+              )}
               <button type="button" onClick={() => setEditingId(action.id)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>Edit</button>
               <button type="button" onClick={() => handleDuplicate(action)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>Dupe</button>
               <button type="button" onClick={() => handleArchive(action.id)} style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>Remove</button>
