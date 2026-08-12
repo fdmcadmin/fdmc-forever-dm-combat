@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   loadBackupSettings, saveBackupSettings, loadSnapshots, takeSnapshot, takeSnapshotIfChanged, restoreSnapshot,
-  downloadSnapshot, deleteSnapshot, snapshotBytes,
+  downloadSnapshot, deleteSnapshot, snapshotBytes, MAX_SNAPSHOTS,
   type BackupSettings, type BackupSnapshot,
 } from "../state/autoBackup";
 import type { Coins } from "../currency/currency";
@@ -27,8 +27,6 @@ type Props = {
 };
 
 const CYAN = "#6fe0e0";
-/** Kept in step with MAX_SNAPSHOTS in autoBackup — the panel states the depth it actually has. */
-const MAX_SNAPSHOTS_LABEL = 5;
 
 const btn = (accent: string): React.CSSProperties => ({
   fontSize: 11, padding: "3px 10px", background: "transparent",
@@ -106,7 +104,7 @@ export function BackupPanel({ version, getWallets, onRestored, extraActions }: P
         Kept in <strong>this browser</strong> (localStorage <code>fdmc.backup.snapshots.v1</code>)
         under a key the party wipe never clears, so a wipe-and-reimport is undoable. It does{" "}
         <strong>not</strong> survive clearing browser data, and it does not follow you to another
-        browser or machine — save a file for that. Newest {MAX_SNAPSHOTS_LABEL} are kept; the
+        browser or machine — save a file for that. Newest {MAX_SNAPSHOTS} are kept; the
         oldest drops off.
       </p>
       <p style={{ margin: "0 0 8px", fontSize: 11, color: "#666", lineHeight: 1.5 }}>

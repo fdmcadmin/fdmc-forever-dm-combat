@@ -25,8 +25,16 @@ import type { Coins } from "../currency/currency";
 const SNAPSHOT_KEY = "fdmc.backup.snapshots.v1";
 const SETTINGS_KEY = "fdmc.backup.settings.v1";
 
-/** Keep enough to step back past a bad import, few enough to stay inside the storage quota. */
-const MAX_SNAPSHOTS = 5;
+/**
+ * Three: enough to step back past a bad import, small enough that the whole ring stays a
+ * modest package. Each snapshot is a full export payload — every actor, every tab, every
+ * wallet — so depth costs real bytes against the storage quota, and a fourth copy of a party
+ * buys very little over the third.
+ *
+ * Exported so the panel can state the depth it actually has instead of carrying its own copy
+ * of the number and drifting from it.
+ */
+export const MAX_SNAPSHOTS = 3;
 
 export type BackupTrigger = "manual" | "session-start" | "session-end" | "interval" | "before-restore" | "before-wipe";
 

@@ -440,14 +440,33 @@ const orderedTabs: TabId[] = [
   "spells",
   "bond",
   "checks",
-  "features",  // "Class Actions"
-  "feats",
+  "features",  // "Class Actions" — also carries FEATS, see tabContents
   "status",
   "equipment",
   "resources",
   // "outOfCombat" dropped (P-SHEET) — Short/Long Rest live on buttons, not a tab
   "notes",
 ];
+
+/**
+ * What a tab actually shows.
+ *
+ * FEATS ARE REFERENCE, AND REFERENCE BELONGS WITH REFERENCE (Christopher). A feat that does
+ * something mechanical — Tough's HP, Defense's AC, an initiative bonus — already reaches the
+ * card through `deriveActorStats`, which reads the feats and features tabs together. So the
+ * feats tab was never carrying the mechanics; it was carrying the text explaining them, which
+ * is the same job the features tab does for class features. Two tabs of read-only text is one
+ * tab too many, and the one nobody opened was the one the feats were hidden behind.
+ *
+ * They stay a separate tab in the EDITOR, where authoring them separately is useful. This is
+ * only about the card, which is a play surface: the data does not move, so nothing is
+ * stranded, and an actor authored either way reads the same.
+ */
+function tabContents(actor: Actor, tabId: TabId): ActorAction[] {
+  const own = actor.tabs[tabId] ?? [];
+  if (tabId !== "features") return own;
+  return [...own, ...(actor.tabs.feats ?? [])];
+}
 
 function hasStatusTrackers(status: ActorStatusTrackerState) {
   return Boolean(status.strDrain || status.lifeDrain);
@@ -463,7 +482,8 @@ function getVisibleTabs(actor: Actor, status: ActorStatusTrackerState): TabId[] 
       return hasStatusTrackers(status);
     }
 
-    return (actor.tabs[tabId]?.length ?? 0) > 0;
+    // Via tabContents, so a character whose only entries are feats still gets the tab.
+    return tabContents(actor, tabId).length > 0;
   });
 }
 
@@ -1178,7 +1198,7 @@ export function ActorCard({
   const attunementFull = attunedItems.length >= ATTUNEMENT_LIMIT;
 
   const activeActions = useMemo(
-    () => (actor.tabs[activeTab] ?? [])
+    () => tabContents(actor, activeTab)
       .filter((action) => !isPinnedReactionAction(action))
       .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(action))))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
