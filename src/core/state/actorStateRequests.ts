@@ -35,13 +35,27 @@ export type ActorStateRequest =
    * previously a player's popout reset its OWN counters and wrote HP directly, so the
    * master card and the seat could disagree about what had been spent.
    */
-  | { type: "fdmc:request-actor-rest"; actorId: string; restType: "short" | "long" };
+  | { type: "fdmc:request-actor-rest"; actorId: string; restType: "short" | "long" }
+  /**
+   * Move coin between the PARTY purse and this character, in copper. Positive takes from the
+   * purse, negative contributes to it.
+   *
+   * Auto-approved, because the party purse is the party's — asking the DM for permission to
+   * spend the group's own money is the ceremony this is meant to remove. What it is NOT is a
+   * free write: the GM still applies it against the balance at the moment of applying, so two
+   * seats reaching for the same last 50 gp resolve in order and the second one is refused.
+   *
+   * `actorId` is who reached in. That is the audit trail — a shared pot that changes without
+   * a name attached is the thing that starts arguments at the table.
+   */
+  | { type: "fdmc:request-party-transfer"; actorId: string; copper: number };
 
 const AUTO_APPROVED_TYPES = new Set<ActorStateRequest["type"]>([
   "fdmc:request-actor-hp",
   "fdmc:request-actor-initiative",
   "fdmc:request-actor-tracker",
   "fdmc:request-actor-rest",
+  "fdmc:request-party-transfer",
 ]);
 
 /** True for a well-formed auto-approved request from a seat. */

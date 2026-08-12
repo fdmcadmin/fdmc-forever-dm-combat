@@ -1,6 +1,6 @@
 import type { HitPoints } from "../types/actor";
 import type { MonsterVisibilityMode } from "../types/monsterTypes";
-import { type Coins, type CoinType, normalizeCoins, coinsFromGold, addCoin, coinsToCopper } from "../currency/currency";
+import { type Coins, type CoinType, normalizeCoins, coinsFromGold, addCoin, coinsToCopper, copperToCoins } from "../currency/currency";
 
 // ─── Seat types ───────────────────────────────────────────────────────────────
 
@@ -81,6 +81,19 @@ export type FdmcRoomLiveState = {
     round: number;
   };
   recentEvents: FdmcRecentEvents;
+  /**
+   * THE PARTY WALLET — one shared pot, alongside (not instead of) each character's own.
+   *
+   * Campaign gold is party money: the loot doc is explicit that it "is shared party currency
+   * and does not scale with party size". It had no home, so it was being split into personal
+   * wallets, which makes a shared purse into an accounting exercise at the table.
+   *
+   * It lives in room live state for the same reason personal coins do — every seat can SEE it
+   * without asking, and only the GM writes. That is what makes "spendable by any of them"
+   * safe: two players cannot both spend the last 50 gp, because their spends are requests
+   * applied one at a time by the single writer, against the balance at the moment of applying.
+   */
+  partyWallet?: Coins;
 };
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
@@ -98,6 +111,7 @@ export function createEmptyRoomLiveState(tableId = "unbound-table", gmController
     monsterLiveState: {},
     combat: { phase: "setup", activeActorId: null, round: 1 },
     recentEvents: { slots: [], nextSlot: 1 },
+    partyWallet: {},
   };
 }
 
@@ -212,6 +226,9 @@ export function normalizeFdmcRoomLiveState(val: unknown): FdmcRoomLiveState | un
       slots: Array.isArray(rawEvents.slots) ? rawEvents.slots.filter((s): s is FdmcRecentEventSlot => Boolean(s && typeof s === "object")) : [],
       nextSlot: Math.max(1, Math.min(7, safeNumber(rawEvents.nextSlot, 1))),
     },
+    // Absent in any room written before the party wallet existed — an empty purse, not a
+    // reason to reject the state.
+    partyWallet: normalizeCoins(s.partyWallet),
   };
 }
 
@@ -286,6 +303,66 @@ export function patchActorGold(state: FdmcRoomLiveState, actorId: string, gold: 
   const coins = getActorCoins(state, actorId);
   coins.gp = Math.max(0, Math.floor(gold));
   return writeCoins(state, actorId, coins);
+}
+
+// ─── The party wallet ─────────────────────────────────────────────────────────
+//
+// Same four coins and the same auto-convert as a personal wallet, so a party purse can pay a
+// gp price out of silver exactly like a character can. The only difference is who owns it.
+
+export function getPartyCoins(state: FdmcRoomLiveState): Coins {
+  return normalizeCoins(state.partyWallet);
+}
+
+export function getPartyCopper(state: FdmcRoomLiveState): number {
+  return coinsToCopper(getPartyCoins(state));
+}
+
+/** Replace the whole party purse — the DM's direct edit. */
+export function patchPartyCoins(state: FdmcRoomLiveState, coins: Coins): FdmcRoomLiveState {
+  return stamp({ ...state, partyWallet: normalizeCoins(coins) });
+}
+
+/** Add (or subtract, if negative) one coin type — campaign gold awards and refunds. */
+export function grantPartyCoin(state: FdmcRoomLiveState, type: CoinType, amount: number): FdmcRoomLiveState {
+  return patchPartyCoins(state, addCoin(getPartyCoins(state), type, amount));
+}
+
+/**
+ * Spend from the party purse, auto-converting and making change.
+ *
+ * Returns `null` when the purse cannot cover it, rather than silently clamping to zero —
+ * a shared pot that quietly empties itself is worse than a refused purchase, because nobody
+ * at the table can tell which spend was the one that overdrew it.
+ *
+ * The affordability test happens HERE, at apply time, not when the player asks. Two seats can
+ * both see 50 gp and both request a 40 gp buy; the GM applies them one at a time and the
+ * second one legitimately fails.
+ */
+export function spendPartyCopper(state: FdmcRoomLiveState, copper: number): FdmcRoomLiveState | null {
+  const price = Math.max(0, Math.floor(copper));
+  const balance = getPartyCopper(state);
+  if (balance < price) return null;
+  return patchPartyCoins(state, copperToCoins(balance - price));
+}
+
+/**
+ * Move coin between the party purse and a character, in copper.
+ *
+ * Positive `copper` takes FROM the party purse and gives to the character; negative does the
+ * reverse (a character contributing to the pot). Either direction refuses rather than
+ * overdraws. This is how a share-out happens without the DM doing arithmetic on two wallets.
+ */
+export function transferPartyToActor(
+  state: FdmcRoomLiveState, actorId: string, copper: number,
+): FdmcRoomLiveState | null {
+  const amount = Math.floor(copper);
+  if (amount === 0) return state;
+  const party = getPartyCopper(state);
+  const actor = getActorCopper(state, actorId);
+  if (amount > 0 ? party < amount : actor < -amount) return null;
+  const afterParty = patchPartyCoins(state, copperToCoins(party - amount));
+  return writeCoins(afterParty, actorId, copperToCoins(actor + amount));
 }
 
 export function patchActorInitiative(state: FdmcRoomLiveState, actorId: string, initiative: number | null): FdmcRoomLiveState {

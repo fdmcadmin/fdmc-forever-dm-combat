@@ -46,7 +46,11 @@ import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
 import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
 import { playerSafeTier } from "./core/ui/ThreatHpBar";
-import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState } from "./core/table-state/fdmcRoomLiveState";
+// getActorCopper is deliberately NOT imported here — useActorLiveState already exposes one
+// bound to the live room copy, and two functions of the same name with different arities is
+// how you get a silent shadowing bug.
+import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState, getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
+import { PartyWalletPanel } from "./core/ui/PartyWalletPanel";
 import { isActorStateRequest } from "./core/state/actorStateRequests";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -519,6 +523,36 @@ export default function App() {
           message: msg.restType === "long"
             ? `${actor?.name ?? "Character"} takes a Long Rest — HP restored to full and all resources reset.`
             : `${actor?.name ?? "Character"} takes a Short Rest — short-rest resources and recharges restored.`,
+        });
+        return;
+      }
+
+      // Party purse. Applied against the balance AT THIS MOMENT, which is the whole reason a
+      // shared pot can be spendable by anyone: two seats can both see 50 gp and both ask for
+      // 40, and the second one is refused here rather than overdrawing the party.
+      if (msg.type === "fdmc:request-party-transfer") {
+        const actor = dmActors.find(a => a.id === msg.actorId);
+        const moved = transferPartyToActor(roomLiveStateRef.current, msg.actorId, msg.copper);
+        const took = msg.copper > 0;
+        if (!moved) {
+          addEntry({
+            actorName: actor?.name ?? "Party character",
+            actionName: "Party Purse",
+            tabId: "system",
+            message: took
+              ? `${actor?.name ?? "Character"} tried to take ${formatCopperPrice(msg.copper)} from the party purse — not enough left.`
+              : `${actor?.name ?? "Character"} tried to put in ${formatCopperPrice(-msg.copper)} — they do not have it.`,
+          });
+          return;
+        }
+        void commitRoomState(moved);
+        addEntry({
+          actorName: actor?.name ?? "Party character",
+          actionName: "Party Purse",
+          tabId: "system",
+          message: took
+            ? `${actor?.name ?? "Character"} took ${formatCopperPrice(msg.copper)} from the party purse.`
+            : `${actor?.name ?? "Character"} put ${formatCopperPrice(-msg.copper)} into the party purse.`,
         });
         return;
       }
@@ -3798,6 +3832,32 @@ export default function App() {
             addEntry({
               actorName: "System", actionName: "Initiative Swap", tabId: "system",
               message: `Initiative swapped: ${allCombatants.find(c => c.id === idA)?.name} ↔ ${allCombatants.find(c => c.id === idB)?.name}`,
+            });
+          }}
+        />
+      )}
+
+      {/* ── The party purse. Above the card because it belongs to everyone, not to the
+             character being shown — and because "who has the group's money" should never be
+             a thing anyone has to go looking for. The GM edits it; a seat takes from it or
+             puts into it as the character they are holding. ── */}
+      {focusedActorId && (
+        <PartyWalletPanel
+          coins={getPartyCoins(roomLiveState)}
+          canEdit={isDmMode}
+          onEdit={(c) => void commitRoomState(patchPartyCoins(roomLiveStateRef.current, c))}
+          actorName={actorToShow.name}
+          actorCopper={getActorCopper(actorToShow.id)}
+          onTransfer={(copper) => {
+            // The GM is already the single writer, so they apply their own move directly;
+            // a seat asks, and the same guard runs on the GM's copy.
+            if (isDmMode) {
+              const moved = transferPartyToActor(roomLiveStateRef.current, actorToShow.id, copper);
+              if (moved) void commitRoomState(moved);
+              return;
+            }
+            void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+              type: "fdmc:request-party-transfer", actorId: actorToShow.id, copper,
             });
           }}
         />
