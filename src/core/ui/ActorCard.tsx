@@ -43,6 +43,7 @@ import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
+import { loadEquipmentLibrary } from "./EquipmentBagEditor";
 import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
 import { withAlpha } from "../seats/seatColors";
@@ -1050,9 +1051,43 @@ export function ActorCard({
     };
   }
 
+  /**
+   * The ◈ Convergence mark, stamped at render — the same trick as `withItemChargeCount`.
+   *
+   * `metadata.convergence` is baked when an item is attached, but every item attached BEFORE
+   * that field existed is carrying none, and a sheet only heals when a DM happens to open its
+   * equipment editor. A player looking at their own card would never see the mark on anything
+   * they already own, which defeats the point: they cannot bring an input to the forge if
+   * nothing tells them they are holding one.
+   *
+   * So the library is the fallback, resolved once per card. Display only — nothing is written,
+   * and baked metadata always wins. This is the same resolve-by-id the player-side forge panel
+   * already does, so it needs nothing the player does not already have.
+   */
+  const convergenceById = useMemo(() => {
+    const map = new Map<string, { role?: string; mechanicalTag?: string }>();
+    for (const item of loadEquipmentLibrary()) {
+      if (item.convergence) {
+        map.set(item.id, { role: item.convergence.role, mechanicalTag: item.convergence.mechanicalTag });
+      }
+    }
+    return map;
+  }, []);
+
+  function withConvergenceMark(action: ActorAction): ActorAction {
+    if (action.metadata?.convergence) return action;
+    const mark = convergenceById.get(action.id.replace(/^equip-/, "").replace(/^atk-/, ""));
+    if (!mark) return action;
+    return { ...action, metadata: { ...action.metadata, convergence: mark } };
+  }
+
   // Item pools for the Equipment tab. Gathered from every tab, not from activeActions —
   // the items themselves sit on the equipment and main tabs.
-  const itemChargePools = useMemo(() => chargeBearingActions(actor.tabs), [actor.tabs]);
+  const itemChargePools = useMemo(
+    () => chargeBearingActions(actor.tabs).map(p => ({ ...p, action: withConvergenceMark(p.action) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- withConvergenceMark reads convergenceById, itself a mount-stable memo
+    [actor.tabs, convergenceById],
+  );
 
   /**
    * Spell-slot pools for the at-a-glance pill row, lowest level first.
@@ -1135,9 +1170,9 @@ export function ActorCard({
   const activeActions = useMemo(
     () => (actor.tabs[activeTab] ?? [])
       .filter((action) => !isPinnedReactionAction(action))
-      .map((action) => withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(action)))),
+      .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(action))))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
-    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters]
+    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters, convergenceById]
   );
 
   const readiedLabelMap = useMemo(() => {
@@ -4701,6 +4736,12 @@ export function ActorCard({
                 <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #1a1a2e" }}>
                   <div>
                     <span style={{ fontSize: 12, color: remaining === 0 ? "#555" : "#aaa" }}>⚡ {action.label}</span>
+                    {action.metadata?.convergence && (
+                      <span style={{ fontSize: 11, color: "#4caf50", marginLeft: 5 }}
+                        title={`Convergence ${action.metadata.convergence.role ?? "item"}${action.metadata.convergence.mechanicalTag ? ` · ${action.metadata.convergence.mechanicalTag}` : ""}`}>
+                        ◈
+                      </span>
+                    )}
                     <span style={{ fontSize: 10, color: "#444", marginLeft: 6 }}>{restLabel}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

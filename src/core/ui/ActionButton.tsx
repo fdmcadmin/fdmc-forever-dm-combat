@@ -153,6 +153,17 @@ export function ActionButton({
             {action.metadata?.charges && (
               <span className="action-label-charge-flag" title="This item has charges" aria-label="has charges"> ⚡</span>
             )}
+            {/* ◈ marks a Convergence item — the same mark the library and the forge picker
+                use. A player cannot author one, but the forge is player-initiated, so an
+                unmarked input is an item they never know to bring to it. Same span as ⚡
+                above, for the same display:block reason. */}
+            {action.metadata?.convergence && (
+              <span
+                className="action-label-convergence-flag"
+                title={`Convergence ${action.metadata.convergence.role ?? "item"}${action.metadata.convergence.mechanicalTag ? ` · ${action.metadata.convergence.mechanicalTag}` : ""}`}
+                aria-label="convergence item"
+              > ◈</span>
+            )}
           </span>
           {costs.length > 0 && (
             <span className="action-cost-tags">
