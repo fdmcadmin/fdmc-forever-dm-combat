@@ -590,6 +590,9 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
         item.mastery ? `Mastery: ${item.mastery}` : undefined,
         // Attunement is a hard limit (three at a time) and was visible nowhere on the card.
         item.attunementRequired ? "Requires attunement" : undefined,
+        // ◈ is the Convergence mark used in the library and the forge picker; it belongs on
+        // the player's own item too, or they cannot tell an input from ordinary kit.
+        item.convergence ? `◈ Convergence${item.convergence.mechanicalTag ? ` · ${item.convergence.mechanicalTag}` : ""}` : undefined,
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
       ].filter(Boolean).join(" · "),
@@ -604,6 +607,12 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Carried so the card can count attunement against what's equipped, without a library
       // lookup. The details string above is prose — not something a checker can read.
       attunementRequired: item.attunementRequired,
+      // Convergence identity travels WITH the item. Players cannot author these, but they
+      // must be able to see they are holding one — the forge panel is player-initiated, so
+      // an unmarked input is an item the player never knows to bring.
+      convergence: item.convergence
+        ? { role: item.convergence.role, mechanicalTag: item.convergence.mechanicalTag }
+        : undefined,
       // Chassis state rides the action so the card can offer the grip switch and re-derive the
       // dice without resolving the item back out of the library — same rule as statEffects.
       chassis: item.chassis,
@@ -1091,7 +1100,11 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       const needsRefresh =
         a.metadata?.statEffects === undefined ||
         a.logMode !== fresh.logMode ||
-        a.hasDefinedUse !== fresh.hasDefinedUse;
+        a.hasDefinedUse !== fresh.hasDefinedUse ||
+        // Convergence identity used to stop at the library, so anything attached before this
+        // is carrying none. Without it the ◈ cannot render and the player has no way to know
+        // the item is a forge input — re-snapshot it from the library on the way in.
+        (Boolean(item.convergence) && a.metadata?.convergence === undefined);
 
       if (needsRefresh) equipChanged = true;
 
@@ -1159,6 +1172,11 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       spellFocusDamage: m.spellFocusDamage,
       charges: m.charges,
       attunementRequired: m.attunementRequired,
+      // Round-tripped so editing a sheet's copy does not quietly strip the item's Convergence
+      // identity — the one thing about it a player is not allowed to author.
+      convergence: (m.convergence?.role === "input" || m.convergence?.role === "output")
+        ? { role: m.convergence.role, enabled: true, mechanicalTag: m.convergence.mechanicalTag }
+        : undefined,
       // `metadata` stores these with widened `string` types (it is the generic action shape),
       // so narrow them back on the way home. Same objects, round-tripped.
       effect: m.effect as EquipmentEffect | undefined,
@@ -1323,6 +1341,14 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
                   {isUnequipped && <span style={{ fontSize: 10, color: "#c9a227", background: "#2a2410", padding: "1px 6px", borderRadius: 10 }}>○ Unequipped</span>}
                   {action.category && <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 10 }}>{action.category}</span>}
                   {action.hasDefinedUse && <span style={{ fontSize: 10, color: "#7b68ee" }}>● Usable</span>}
+                  {/* Same ◈ the library and the forge picker use. A player may not author a
+                      convergence item, but they have to be able to see they are holding one. */}
+                  {action.metadata?.convergence && (
+                    <span style={{ fontSize: 10, color: "#4caf50" }}
+                      title={`Convergence ${action.metadata.convergence.role ?? "item"}${action.metadata.convergence.mechanicalTag ? ` · ${action.metadata.convergence.mechanicalTag}` : ""}`}>
+                      ◈{action.metadata.convergence.mechanicalTag ? ` ${action.metadata.convergence.mechanicalTag}` : ""}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                   {action.metadata?.attack && <span style={{ fontSize: 11, color: "#7b68ee" }}>⚔ {action.metadata.attack}</span>}

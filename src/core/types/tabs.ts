@@ -119,6 +119,18 @@ export type ActorActionMetadata = {
   /** Equipment-tab items only: the worn slot, carried so the card can enforce exclusivity
    *  without a library lookup. Absent = carried, not worn. See EquipmentSlot. */
   slot?: string;
+  /**
+   * Equipment-tab items only: this item is part of the Convergence system.
+   *
+   * A player cannot CREATE a convergence item, but they have to be able to see that they are
+   * holding one — otherwise the forge panel offers up inputs the player had no way to know
+   * they owned. Authority and knowledge are different things: the lock is on authoring, not
+   * on being told what the item is.
+   *
+   * Carried on the action rather than resolved from the library for the same reason as
+   * `attunementRequired` and `slot` — the card must not need a library lookup to render.
+   */
+  convergence?: { role?: string; mechanicalTag?: string };
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
   /**
