@@ -247,7 +247,12 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // are retired), inputs re-tagged, merchant stock now sells Convergence-capable Wondrous Items
 // with gold. The mundane catalog is retired — the doc replaces it with two ledger lines. Boss
 // armor and weapons are LOCKED and unchanged.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-2-v0.7.2-clear-unlock-shadows";
+// v0.7.3 — ACT 3 CONVERGENCE, from loot doc v12 (Acts 1-3). Adds the eight Act 3 inputs, which
+// drop from Gate I and Gate III rather than a merchant, and the four Tier 2 outputs that finish
+// that catalogue at ten. Tactical and Continuity join the tag vocabulary. Tier 3 weapons and
+// Tier 3 convergence are deliberately NOT seeded — the doc leaves that tier unbuilt and
+// Christopher is authoring part of it himself.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-3-v0.7.3-act3-inputs-tier2-complete";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;

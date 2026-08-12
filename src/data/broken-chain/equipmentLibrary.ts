@@ -1031,5 +1031,188 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Cleanse"},
     "isLocked": true
+  },
+
+  // ─── ACT 3 CONVERGENCE INPUTS ────────────────────────────────────────────────
+  //
+  // From loot doc v12 (Acts 1–3). Act 3 adds TACTICAL and CONTINUITY to the tag vocabulary;
+  // the authored pool is eight inputs — Tactical x2, Continuity x2, Offensive x2, Cleanse x1,
+  // Defense x1 — and that is exactly what is here.
+  //
+  // There is no merchant in Act 3, so these arrive through the two DROPPING GATES, and which
+  // ones drop depends on party size:
+  //   Gate I  — Crosspath Token + Rootbound Thread always; +Bloodbriar Seed at 5; +Mirrorbark
+  //             Scale at 6.
+  //   Gate III— Branchcall Marker + Held-Echo Knot always; +Veilwash Leaf at 5; +Thornwake
+  //             Splinter at 6.
+  // `sourceEncounter` uses the gate's encounter label verbatim so the loot pool matches the
+  // encounter the party actually fought. Gate II (The Mirrors) drops no inputs.
+  {
+    "id": "tbc-crosspath-token",
+    "name": "Crosspath Token",
+    "type": "magic",
+    "description": "A forked token of blackwood split by a pale living vein. When danger is about to move first, the vein leans toward the opening as though the forest has already seen the crossing. Tags: A3 · Tactical",
+    "mechanicsText": "Once per day, after Initiative is rolled but before the first turn begins, choose one hostile creature you can see that has a higher Initiative than you. During the first round, you take your turn immediately before that creature. You do not also act at your original Initiative that round. Starting with round 2, you return to your original Initiative.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Tactical","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-rootbound-thread",
+    "name": "Rootbound Thread",
+    "type": "magic",
+    "description": "A green-gold root fiber braided around a darker inner strand. It tightens without cutting when concentration begins to slip, holding the bearer to the thing they chose to keep. Tags: A3 · Continuity",
+    "mechanicsText": "Once per day, when you fail a Constitution saving throw to maintain Concentration, you can succeed instead.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Continuity","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-bloodbriar-seed",
+    "name": "Bloodbriar Seed",
+    "type": "magic",
+    "damage": "2d8",
+    "description": "A red-black seed with two hooked veins that never point the same direction. One flare follows the bearer's strike; the second waits for another hand to answer it. Tags: A3 · Offensive",
+    "mechanicsText": "Once per day, when you damage a creature, you can awaken the seed until the start of your next turn. The first time another creature damages that target before then, the target takes an additional 2d8 damage of one damage type dealt by that triggering effect.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-mirrorbark-scale",
+    "name": "Mirrorbark Scale",
+    "type": "magic",
+    "description": "A thumb-sized plate of polished bark whose grain catches reflections a fraction too early. At the instant of impact, the false reflection seems to pull the real blow after it. Tags: A3 · Defense",
+    "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to force the attacker to reroll the attack roll and use the new roll.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Defense","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-branchcall-marker",
+    "name": "Branchcall Marker",
+    "type": "magic",
+    "description": "A leaf-thin disc of living wood etched with branching paths. Its edges flex toward nearby motion, and two of the carved routes brighten together when the battlefield opens. Tags: A3 · Tactical",
+    "mechanicsText": "Once per day, when a creature you can see within 30 feet ends its turn, you can use your Reaction. You and one willing creature you can see within 30 feet can each move up to 10 feet without provoking opportunity attacks.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Tactical","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-held-echo-knot",
+    "name": "Held-Echo Knot",
+    "type": "magic",
+    "description": "A knot of silver bark-fiber that remembers tension after it is released. When an action is cut short, the knot tightens around the spent effort as though refusing to let the commitment disappear with it. Tags: A3 · Continuity",
+    "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The Reaction otherwise resolves normally.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Continuity","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-veilwash-leaf",
+    "name": "Veilwash Leaf",
+    "type": "magic",
+    "description": "A translucent leaf whose veins carry warm yellow in one direction and icy blue in the other. Pressed to living skin, hostile residue beads away from it like rain refusing to cling. Tags: A3 · Cleanse",
+    "mechanicsText": "Once per day, as a Magic action, touch a creature and end one of the following conditions on it: Blinded, Deafened, Paralyzed, or Poisoned.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Cleanse","actLabel":"A3"},
+    "isLocked": true
+  },
+  {
+    "id": "tbc-thornwake-splinter",
+    "name": "Thornwake Splinter",
+    "type": "magic",
+    "damage": "2d8",
+    "description": "A dark thorn tipped with a point of amber-red light. Once awakened by a strike, its glow catches in the wound and keeps the damage from quietly knitting itself closed. Tags: A3 · Offensive",
+    "mechanicsText": "Once per day, when you deal damage to a creature, you can cause the splinter to flare. The creature takes an additional 2d8 damage of one type dealt by the triggering effect, and it cannot regain hit points until the start of your next turn.",
+    "isUsable": false,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A3"},
+    "isLocked": true
+  },
+
+  // ─── CONVERGENCE TIER 2 — the four that complete the catalogue ────────────────
+  //
+  // v12 declares Tier 2 complete at ten outputs; six were already here. These four are the
+  // ones the earlier edition reserved for "the two new normal tags introduced in Act 3" —
+  // Tactical and Continuity first appear as COMPLETED tags at this tier, made by pairing an
+  // Act 3 component with an earlier-provenance one (A2 + A3 -> Tier 2).
+  //
+  // Tier 3 is deliberately absent: v12 leaves it unbuilt, and Christopher is authoring some
+  // of those himself. Do not fill it in from the recipe table.
+  {
+    "id": "bc-turnstep-relay",
+    "name": "Turnstep Relay",
+    "type": "magic",
+    "description": "A narrow pair of hinged plates whose inner marks click toward the next threat a heartbeat before it moves. Tags: Recipe: Movement + Tactical · Completed: Tactical",
+    "mechanicsText": "Once per day, when a hostile creature you can see within 30 feet starts its turn, you can use your Reaction to move up to half your Speed without provoking opportunity attacks. This movement occurs before that creature takes any action or movement.",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 3",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Tactical"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-opening-thorn",
+    "name": "Opening Thorn",
+    "type": "magic",
+    "description": "A hooked thorn that opens into a bright seam when a strike creates the exact moment another combatant can exploit. Tags: Recipe: Offensive + Tactical · Completed: Tactical",
+    "mechanicsText": "Once per day, when you deal damage to a creature, you can expose an opening until the start of your next turn. The next attack roll made by another creature against that target has advantage. If that attack hits, the attacker can immediately move up to 10 feet without provoking opportunity attacks from the target.",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 3",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Tactical"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-heldroot-knot",
+    "name": "Heldroot Knot",
+    "type": "magic",
+    "description": "A loop of braided root and fine silver thread that closes around spent magic before an interruption can carry it away. Tags: Recipe: Utility + Continuity · Completed: Continuity",
+    "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The creature's Reaction otherwise resolves normally.",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 3",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Utility + Continuity"},
+    "isLocked": true
+  },
+  {
+    "id": "bc-rootfast-loop",
+    "name": "Rootfast Loop",
+    "type": "magic",
+    "description": "A seamless ring of living root that refuses to open under strain, even when every fiber in it should have separated. Tags: Recipe: Stability + Continuity · Completed: Continuity",
+    "mechanicsText": "Once per day, when you fail a Constitution saving throw to maintain Concentration, you can succeed instead.",
+    "isUsable": false,
+    "tier": "2",
+    "act": "Act 3",
+    "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Stability + Continuity"},
+    "isLocked": true
   }
 ];
