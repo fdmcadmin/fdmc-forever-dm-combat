@@ -29,7 +29,8 @@ import { formatMovementSpeed } from "../utils/movement";
 import type { DiceBridgeEvent, DiceBridgeRollRequest, DiceBridgeStatus } from "../integrations/useOwlbearDiceBridge";
 import { AbilityScoreRow } from "./AbilityScoreRow";
 import { WalletPanel } from "./WalletPanel";
-import type { Coins } from "../currency/currency";
+import { PartyPurseRow } from "./PartyPurseRow";
+import { coinsToCopper, type Coins } from "../currency/currency";
 import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
 import { BondSummary } from "./BondSummary";
@@ -123,6 +124,12 @@ type ActorCardProps = {
   coins?: Coins;
   /** When provided, the wallet is player-editable and commits via this callback. */
   onUpdateCoins?: (coins: Coins) => void;
+  /** The shared party purse. Omit to hide the row entirely. */
+  partyCoins?: Coins;
+  /** GM only — set the purse directly. Absent for a player's card. */
+  onEditPartyCoins?: (coins: Coins) => void;
+  /** Positive takes FROM the purse for this character, negative contributes. Copper. */
+  onPartyTransfer?: (copper: number) => void;
   onShortRest?: () => void;
   onLongRest?: () => void;
   onLog: (input: AddCombatLogEntryInput) => void;
@@ -768,6 +775,9 @@ export function ActorCard({
   onSaveCall,
   coins,
   onUpdateCoins,
+  partyCoins,
+  onEditPartyCoins,
+  onPartyTransfer,
   onShortRest,
   onLongRest,
   onLog,
@@ -4269,6 +4279,22 @@ export function ActorCard({
             <div className="speed-subrow" title="Character wallet — DM grants coin; merchant purchases spend it. Coins you have none of stay hidden.">
               <WalletPanel coins={coins ?? {}} editable={Boolean(onUpdateCoins)} onChange={(c) => onUpdateCoins?.(c)} />
             </div>
+            {/* The party purse sits with the character's own wallet because it is money, and
+                money belongs next to money. It used to be a banner above the whole card, which
+                pushed the character's HP down the sheet to show a number nobody reads every
+                second. Rendered only when the host wires it up. */}
+            {partyCoins && (
+              <div className="speed-subrow">
+                <PartyPurseRow
+                  coins={partyCoins}
+                  canEdit={Boolean(onEditPartyCoins)}
+                  onEdit={onEditPartyCoins}
+                  actorName={actor.name}
+                  actorCopper={coinsToCopper(coins ?? {})}
+                  onTransfer={onPartyTransfer}
+                />
+              </div>
+            )}
           </div>
         </div>
 

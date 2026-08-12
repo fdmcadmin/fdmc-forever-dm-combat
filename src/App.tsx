@@ -50,7 +50,6 @@ import { playerSafeTier } from "./core/ui/ThreatHpBar";
 // bound to the live room copy, and two functions of the same name with different arities is
 // how you get a silent shadowing bug.
 import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState, getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
-import { PartyWalletPanel } from "./core/ui/PartyWalletPanel";
 import { isActorStateRequest } from "./core/state/actorStateRequests";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -3837,36 +3836,25 @@ export default function App() {
         />
       )}
 
-      {/* ── The party purse. Above the card because it belongs to everyone, not to the
-             character being shown — and because "who has the group's money" should never be
-             a thing anyone has to go looking for. The GM edits it; a seat takes from it or
-             puts into it as the character they are holding. ── */}
-      {focusedActorId && (
-        <PartyWalletPanel
-          coins={getPartyCoins(roomLiveState)}
-          canEdit={isDmMode}
-          onEdit={(c) => void commitRoomState(patchPartyCoins(roomLiveStateRef.current, c))}
-          actorName={actorToShow.name}
-          actorCopper={getActorCopper(actorToShow.id)}
-          onTransfer={(copper) => {
-            // The GM is already the single writer, so they apply their own move directly;
-            // a seat asks, and the same guard runs on the GM's copy.
-            if (isDmMode) {
-              const moved = transferPartyToActor(roomLiveStateRef.current, actorToShow.id, copper);
-              if (moved) void commitRoomState(moved);
-              return;
-            }
-            void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
-              type: "fdmc:request-party-transfer", actorId: actorToShow.id, copper,
-            });
-          }}
-        />
-      )}
-
       {/* ── Inline actor card — hidden by default, only shown when OBR popover fails ── */}
       {focusedActorId && (
       <ActorCard
         actor={actorToShow}
+        // The party purse renders inside the card, on a line under the character's wallet.
+        partyCoins={getPartyCoins(roomLiveState)}
+        onEditPartyCoins={isDmMode ? ((c) => void commitRoomState(patchPartyCoins(roomLiveStateRef.current, c))) : undefined}
+        onPartyTransfer={(copper) => {
+          // The GM is already the single writer, so they apply their own move directly;
+          // a seat asks, and the same guard runs on the GM's copy.
+          if (isDmMode) {
+            const moved = transferPartyToActor(roomLiveStateRef.current, actorToShow.id, copper);
+            if (moved) void commitRoomState(moved);
+            return;
+          }
+          void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:request-party-transfer", actorId: actorToShow.id, copper,
+          });
+        }}
         seatColor={seatColorById[actorToShow.id]}
         hp={hp}
         actionState={actionState}
