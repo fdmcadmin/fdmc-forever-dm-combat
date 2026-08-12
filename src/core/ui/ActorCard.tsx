@@ -1120,6 +1120,45 @@ export function ActorCard({
   );
 
   /**
+   * Pools the PLAYER has pinned to the at-a-glance strip, by resource id.
+   *
+   * A view preference, not character data: it needs no GM write, survives a reload, and two
+   * people looking at the same card may reasonably want different things pinned. Keyed by
+   * actor so pinning on one character says nothing about another.
+   */
+  const pinnedPoolsKey = `fdmc.card.pinnedPools.${actor.id}`;
+  const [pinnedPools, setPinnedPools] = useState<Set<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem(pinnedPoolsKey);
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch { return new Set(); }
+  });
+  function togglePinnedPool(resourceId: string) {
+    setPinnedPools(prev => {
+      const next = new Set(prev);
+      if (next.has(resourceId)) next.delete(resourceId); else next.add(resourceId);
+      try { window.localStorage.setItem(pinnedPoolsKey, JSON.stringify([...next])); } catch { /* private mode */ }
+      return next;
+    });
+  }
+
+  /**
+   * The name a pill wears: the ability, without its qualifier.
+   *
+   *   "Hunter's Mark - Favored Enemy" → "Hunter's Mark"
+   *   "Hit Dice (d10)"               → "Hit Dice"
+   *   "Sorcery Points"               → "Sorcery Points"
+   *
+   * Deliberately NOT clever about length — chopping to a fixed number of characters produced
+   * "Stonecunni" and turned both Cold Fire Magic pools into "Cold". The pill truncates with an
+   * ellipsis in CSS instead, and its tooltip always carries the full label.
+   */
+  function shortPoolName(label: string): string {
+    const name = label.split(/\s+[-–—]\s+/)[0].replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    return name || label;
+  }
+
+  /**
    * Spell-slot pools for the at-a-glance pill row, lowest level first.
    *
    * Sourced from the Resources tab and `resourceCounters` — the very things a cast spends —
@@ -1128,16 +1167,32 @@ export function ActorCard({
    */
   const slotPills = useMemo(() => {
     return (actor.tabs.resources ?? [])
-      .filter(r => r.metadata?.resourceKind === "spellSlot" || r.metadata?.resourceKind === "pactSlot")
+      .filter(r => {
+        const kind = r.metadata?.resourceKind;
+        // Slots are here by default because every caster wants them. Anything ELSE is here
+        // because the player pinned it — sorcery points, pack points, ki. They read exactly
+        // like slots and were simply never eligible.
+        return kind === "spellSlot" || kind === "pactSlot" || pinnedPools.has(r.id);
+      })
       .map(r => {
         const parsedMax = Number.parseInt(r.metadata?.additive ?? "", 10);
         const max = Number.isFinite(parsedMax) && parsedMax > 0 ? parsedMax : 0;
+        const kind = r.metadata?.resourceKind;
+        const isSlot = kind === "spellSlot" || kind === "pactSlot";
+        // A slot's pill is "L3"; a points pool has no level to read, so it wears its own name.
         const level = Number.parseInt((r.label.match(/\b[Ll]\s?(\d)\b/) ?? r.label.match(/(\d)/) ?? [])[1] ?? "", 10);
-        return { level: Number.isFinite(level) ? level : 0, max, label: r.label, remaining: Math.min(resourceCounters?.[r.id] ?? max, max) };
+        return {
+          id: r.id,
+          // Non-slots sort after every slot rather than colliding at level 0.
+          level: isSlot && Number.isFinite(level) ? level : 99,
+          badge: isSlot && Number.isFinite(level) ? `L${level}` : shortPoolName(r.label),
+          max, label: r.label,
+          remaining: Math.min(resourceCounters?.[r.id] ?? max, max),
+        };
       })
       .filter(p => p.max > 0)
       .sort((a, b) => a.level - b.level);
-  }, [actor.tabs.resources, resourceCounters]);
+  }, [actor.tabs.resources, resourceCounters, pinnedPools]);
 
   // Give-to-party-member picker. Only the equipment tab's own rows are handable: a weapon's
   // main-tab attack row is generated FROM the item, so moving the item takes it along.
@@ -4443,8 +4498,8 @@ export function ActorCard({
             pool stays readable at zero. */}
         {slotPills.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 2px" }}>
-            {slotPills.map(({ level, remaining, max, label }) => (
-              <span key={level}
+            {slotPills.map(({ id, badge, remaining, max, label }) => (
+              <span key={id}
                 title={`${label} — ${remaining} of ${max} left`}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
@@ -4453,7 +4508,7 @@ export function ActorCard({
                   border: `1px solid ${remaining > 0 ? "rgba(123,104,238,0.4)" : "#2a2a3e"}`,
                   color: remaining > 0 ? "#9d8cff" : "#555",
                 }}>
-                <strong style={{ fontWeight: 700 }}>L{level}</strong>
+                <strong style={{ fontWeight: 700, maxWidth: 92, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{badge}</strong>
                 {/* Pips while the pool is small enough to read; a count once it isn't. */}
                 {max <= 6 ? (
                   <span style={{ letterSpacing: 1 }}>
@@ -4579,7 +4634,23 @@ export function ActorCard({
                 const hasCounter = max > 0;
                 return (
                   <div key={action.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid #1a1a2e" }}>
-                    <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      {/* Pin to the at-a-glance strip. OPT-IN, and the PLAYER's call: which
+                          pools they want under their nose is a matter of how they play the
+                          character, not something worth authoring for them. Sorcery points and
+                          pack points are the reason — they read exactly like slots, but the
+                          strip only ever knew about spell and pact slots.
+                          Kept as a local preference rather than actor data: it is a view
+                          setting, so it needs no GM write and two players sharing a card can
+                          disagree about it without either being wrong. */}
+                      {hasCounter && (
+                        <button type="button"
+                          onClick={() => togglePinnedPool(action.id)}
+                          title={pinnedPools.has(action.id) ? "Remove from the at-a-glance row" : "Show this pool at the top of the card"}
+                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: "0 4px 0 0", fontSize: 11, lineHeight: 1, color: pinnedPools.has(action.id) ? "#9d8cff" : "#3a3a4e" }}>
+                          ●
+                        </button>
+                      )}
                       <span style={{ fontSize: 12, color: remaining === 0 ? "#555" : "#aaa" }}>{action.label}</span>
                       {action.metadata?.cost && (
                         <span style={{ fontSize: 10, color: "#444", marginLeft: 6 }}>{action.metadata.cost}</span>
