@@ -37,13 +37,28 @@ export type ActionDisplayMode = "card" | "compact";
 /**
  * Explicit outcome mode — overrides TabPanel's inference when set.
  *
- * attack-roll    : 1d20 attack → hold result → Hit / Miss / Crit
- * dc-check       : spell/ability targets make a save → Applies / No Effect
- * ability-check  : player rolls a skill/ability check → Pass / Fail
- * damage-only    : straight dice roll, no hit/miss resolution (healing, damage riders)
- * healing        : same as damage-only but logged as healing
- * triggered      : effect triggers, may roll formula, no hit/miss prompt
- * reference      : display text only, no roll button rendered ever
+ * Two questions decide the mode: DOES IT ROLL, and WHOSE ROLL IS IT?
+ *
+ *   attack-roll    : rolls 1d20 to hit → hold result → Hit / Miss / Crit
+ *   dc-check       : the TARGET rolls against a DC → Applies / No Effect
+ *   ability-check  : the PLAYER rolls a skill/ability check → Pass / Fail
+ *   damage-only    : straight dice, no hit/miss step (a burst, a save rider's damage)
+ *   healing        : same as damage-only, logged as healing
+ *
+ *   triggered      : rolls its OWN dice, standalone, with no hit/miss step. Fires and resolves
+ *                    by itself. Second Wind is triggered — press it, roll 1d10+level, done.
+ *
+ *   additive       : rolls NOTHING by itself; it ARMS a rider that attaches to a LATER roll.
+ *                    Hunter's Mark is additive — using it adds 1d6 to your next weapon hits.
+ *                    The distinction from `triggered` is whose roll the dice land on: its own,
+ *                    or somebody else's.
+ *
+ *   utility        : CLICKABLE, but rolls nothing and never will — no dice, no check. The
+ *                    click is the whole action: it logs that the thing happened and spends its
+ *                    economy. Relentless Endurance, Heavenly Wings, a stance you turn on.
+ *
+ *   passive        : NOT clickable. Display text only, and never renders a button. If it has an
+ *                    action cost it is not passive — it is `utility`.
  */
 export type ActionOutcomeMode =
   | "attack-roll"
@@ -53,7 +68,23 @@ export type ActionOutcomeMode =
   | "healing"
   | "triggered"
   | "additive"
-  | "reference";
+  | "utility"
+  | "passive";
+
+/**
+ * LEGACY. "reference" meant two things at once — no dice AND (sometimes) not clickable — which
+ * is why a bond tagged reference still spent the bond slot. It is split into `passive` and
+ * `utility` and normalised away on read; nothing should author it any more.
+ */
+export type LegacyOutcomeMode = ActionOutcomeMode | "reference";
+
+/**
+ * "reference" -> passive. Anything that carried an action cost was never really passive, but
+ * the old tag could not say so; those are the ones to re-author as `utility`.
+ */
+export function normalizeOutcomeMode(mode: LegacyOutcomeMode | undefined): ActionOutcomeMode | undefined {
+  return mode === "reference" ? "passive" : mode;
+}
 
 // F05 — resource kind determines rest reset behavior
 export type ResourceKind = "spellSlot" | "pactSlot" | "freeCast" | "pool" | "toggle" | "counter";

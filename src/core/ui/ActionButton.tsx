@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { actionCostLabels } from "../types/actionEconomy";
 import type { ActionCost } from "../types/actionEconomy";
+import { normalizeOutcomeMode } from "../types/tabs";
 import type { ActorAction } from "../types/tabs";
 
 type ActionButtonProps = {
@@ -113,7 +114,17 @@ export function ActionButton({
   const rulesText = action.description?.trim() || undefined;
   const details = statLine;
   const showRulesText = rulesText && rulesText !== statLine;
-  const referenceOnly = action.logMode === "silent" && costs.length === 0;
+  /**
+   * PASSIVE means not clickable, full stop — it no longer depends on logMode and cost lining
+   * up. That coupling is what let a bond tagged "reference" still spend the bond slot: the old
+   * tag only suppressed DICE, while inertness was inferred from `silent && no cost`, so an
+   * entry that was silent about neither stayed live.
+   *
+   * `utility` is deliberately NOT here. It is clickable — the click IS the action — it just
+   * never rolls.
+   */
+  const mode = normalizeOutcomeMode(action.metadata?.outcomeMode);
+  const referenceOnly = mode === "passive" || (action.logMode === "silent" && costs.length === 0);
   // BUILD 0.5.3.1.3: action-card click may prime the roll workspace immediately,
   // but table players still need the visible Roll button to send the selected roll to Dice+.
   // Keep the button available for the selected/committed action; hide only when another

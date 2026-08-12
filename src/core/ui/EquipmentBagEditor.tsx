@@ -576,11 +576,11 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // A save comes FIRST: dc-check announces it and waits on Applies / No Effect, so the
       // table rolls the save before the damage is applied rather than seeing damage appear
       // and being asked to un-apply it. Without a save, effect dice just roll.
-      outcomeMode: isWeapon ? "reference"
+      outcomeMode: isWeapon ? "passive"
         : hasSave ? "dc-check"
         : hasEffectDice ? "damage-only"
         : isConsumable ? "triggered"
-        : "reference",
+        : "passive",
       // Carried on the action, like statEffects, so the card can enforce slot exclusivity
       // without resolving the item back out of the library.
       slot: item.slot,

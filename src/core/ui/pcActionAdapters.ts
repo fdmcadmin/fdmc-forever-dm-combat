@@ -14,12 +14,12 @@ function rollModeToOutcomeMode(rollMode: PcRollMode): ActionOutcomeMode | undefi
     case "healing": return "healing";
     case "triggered": return "triggered";
     case "additive": return "additive";
-    case "reference": return "reference";
-    // Passive is display-only like Reference — persist it as a concrete outcome so it
-    // round-trips instead of reverting to the bond "triggered" inference (tabs.ts has no
-    // dedicated "passive" outcome mode; reference carries the same "no roll / no rider").
-    case "passive": return "reference";
-    default: return undefined; // utility — left to inference
+    case "reference": return "passive";   // legacy tag, normalised on the way in
+    case "passive": return "passive";
+    // utility is a REAL mode now, not an absence: clickable, logs, never rolls. Leaving it to
+    // inference is what made it indistinguishable from a plain triggered action.
+    case "utility": return "utility";
+    default: return undefined;
   }
 }
 

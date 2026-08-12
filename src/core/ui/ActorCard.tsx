@@ -2415,7 +2415,7 @@ export function ActorCard({
       if (!entry) return;
       const outcome = entry.action.metadata?.outcomeMode;
       // Reference / passive bonds are display-only and must NOT arm a rider.
-      const isBond = entry.sourceTabId === "bond" && outcome !== "reference";
+      const isBond = entry.sourceTabId === "bond" && outcome !== "passive";
       const isAdditive = outcome === "additive";
       if (!isBond && !isAdditive) return;
       if (effects.some(e => e.id.endsWith(`:${entry.action.id}`))) return;
@@ -2450,7 +2450,7 @@ export function ActorCard({
       if (!entry) return;
       const outcome = entry.action.metadata?.outcomeMode;
       // Reference / passive bonds are display-only and must NOT arm a rider.
-      const isBond = entry.sourceTabId === "bond" && outcome !== "reference";
+      const isBond = entry.sourceTabId === "bond" && outcome !== "passive";
       const isAdditive = outcome === "additive";
       if (!isBond && !isAdditive) return;
 
@@ -3006,7 +3006,12 @@ export function ActorCard({
     if (!damage) return action;
 
     // The style gives the modifier back; without it the off-hand adds none.
-    const hasTwfStyle = (actor.tabs.features ?? [])
+    //
+    // Scans BOTH tabs. `features` is being retired into `feats`, and this label match was the
+    // single thing still reading it — pinned to one tab, moving a fighting style across would
+    // have silently stripped the modifier from every off-hand attack, with nothing to show
+    // why. Reading both means the entry works wherever it currently lives.
+    const hasTwfStyle = [...(actor.tabs.features ?? []), ...(actor.tabs.feats ?? [])]
       .some(f => /two[-\s]?weapon fighting/i.test(f.label ?? ""));
 
     const stripped = hasTwfStyle

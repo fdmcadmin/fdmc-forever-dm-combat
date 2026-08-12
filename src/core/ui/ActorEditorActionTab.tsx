@@ -67,13 +67,13 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     explicitOutcome === "healing" ? "healing" :
     explicitOutcome === "triggered" ? "triggered" :
     explicitOutcome === "additive" ? "additive" :
-    explicitOutcome === "reference" ? "reference" :
+    explicitOutcome === "passive" ? "passive" :
     action.actionKind === "check" ? "check" :
     hasAttack ? "attack" :
     hasSave ? "save" :
     hasDamage ? "damageOnly" :
     action.actionKind === "bond" ? "triggered" :
-    action.logMode === "silent" ? "reference" :
+    action.logMode === "silent" ? "passive" :
     "utility";
 
   return {
@@ -140,7 +140,7 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
   function handleSave() {
     const errs: string[] = [];
     if (!draft.name?.trim()) errs.push("Name is required.");
-    if (draft.rollMode !== "reference" && draft.rollMode !== "utility" && draft.rollMode !== "passive" && draft.rollMode !== "triggered") {
+    if (draft.rollMode !== "utility" && draft.rollMode !== "passive" && draft.rollMode !== "triggered") {
       const hasFormula = draft.attackBonus || draft.saveDc || draft.damage || draft.healing;
       if (!hasFormula) errs.push("This outcome mode requires at least one formula. Add a formula or switch to Reference Only.");
     }

@@ -4,6 +4,7 @@ import { ActionButton } from "./ActionButton";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
 import { isUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { CommittedRollOutcomeMode, CommittedRollState } from "../types/committedRoll";
+import { normalizeOutcomeMode } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
 import type { ReadiedRollCandidate } from "./CommittedRollPanel";
 
@@ -162,8 +163,10 @@ function inferOutcomeMode(action: ActorAction): CommittedRollOutcomeMode {
     if (explicit === "triggered")     return "triggered";
     // additive = a rider; readying it arms it (ActorCard). Standalone Roll = straight roll.
     if (explicit === "additive")      return "triggered";
-    // reference = no roll, handled by hasAttachedDice returning false
-    if (explicit === "reference")     return "triggered";
+    // Non-rolling modes never reach a roll workspace — hasAttachedDice already returns false.
+    if (explicit === "utility")       return "triggered";
+    if (explicit === "passive")       return "triggered";
+    if (explicit === "reference")     return "triggered";   // legacy
   }
 
   // ── Inference fallback ─────────────────────────────────────────────────
@@ -234,8 +237,10 @@ function createCandidate(action: ActorAction, activeTab: TabId, costs: ActionCos
 }
 
 function hasAttachedDice(action: ActorAction) {
-  // Reference-only actions never have dice even if metadata has text
-  if (action.metadata?.outcomeMode === "reference") return false;
+  // NEITHER passive NOR utility ever rolls, whatever the metadata says. utility is clickable
+  // — the click IS the action — but it has no dice and never will.
+  const mode = normalizeOutcomeMode(action.metadata?.outcomeMode);
+  if (mode === "passive" || mode === "utility") return false;
 
   const metadata = action.metadata;
   return Boolean(
@@ -250,8 +255,9 @@ function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, cost
   if (costs.length > 0 || action.logMode === "silent") {
     return false;
   }
-  // Reference-only actions never get a Roll button
-  if (action.metadata?.outcomeMode === "reference") {
+  // No Roll button for the two non-rolling modes.
+  const om = normalizeOutcomeMode(action.metadata?.outcomeMode);
+  if (om === "passive" || om === "utility") {
     return false;
   }
   return hasAttachedDice(action);
