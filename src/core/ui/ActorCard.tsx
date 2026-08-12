@@ -2943,9 +2943,12 @@ export function ActorCard({
   /**
    * Levels this spell may be cast at, up to 9.
    *
-   * An authored `usableSpellLevels` is respected as-is — that is the author saying "this
-   * spell is only worth these levels". With nothing authored the spell opens up from its own
-   * level to 9, so no slot is ever locked out.
+   * EVERY SPELL UPCASTS (Christopher). A spell needs to record the level it starts at and
+   * nothing else: the castable range is base→9, always. The old `usableSpellLevels` list
+   * asked the author to re-state that range per spell, which is 39 lists saying the same
+   * thing and one more place for a spell to be quietly locked out of a slot it should have
+   * been able to use. Whether upcasting DOES anything is a separate question, answered by the
+   * upcast rider — and a spell with no rider still legitimately burns the bigger slot.
    *
    * `remaining: null` means the actor tracks no pool for that level, which is allowed (the
    * cast simply isn't slot-backed) — the same rule the spend path and the gate already use.
@@ -2962,11 +2965,7 @@ export function ActorCard({
       return [];
     }
 
-    const authored = (action.metadata?.usableSpellLevels ?? [])
-      .filter(level => Number.isFinite(level) && level >= base && level <= 9);
-    const levels = authored.length > 0
-      ? Array.from(new Set(authored)).sort((a, b) => a - b)
-      : Array.from({ length: 9 - base + 1 }, (_, i) => base + i);
+    const levels = Array.from({ length: 9 - base + 1 }, (_, i) => base + i);
 
     return levels.map(level => {
       const res = slotResourceForLevel(level);

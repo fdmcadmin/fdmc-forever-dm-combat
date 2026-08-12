@@ -19,7 +19,6 @@ type SpellRow = {
   id: string;
   name: string;
   level: SpellActionLevel;              // base / minimum slot level (0 = cantrip)
-  usableSpellLevels: SpellActionLevel[]; // which slot levels this can be cast at
   upcastNote: string;                   // e.g. "+1d6 per level above 3rd"
   /** What ONE extra slot level adds to damage/healing (Fireball = "1d6"). "" = nothing. */
   upcastDamage: string;
@@ -64,10 +63,9 @@ const SPELL_LEVELS: { value: SpellActionLevel; label: string }[] = [
 function formatSlotLabel(row: SpellRow): string {
   if (row.level === 0) return "Cantrip";
   if (row.slotCost.trim()) return row.slotCost.trim();
-  const levels = row.usableSpellLevels.filter(l => l > 0).sort((a, b) => a - b);
-  if (levels.length === 0) return `L${row.level}`;
-  if (levels.length === 1) return `L${levels[0]}`;
-  return `L${levels[0]}–L${levels[levels.length - 1]}`;
+  // Base level only. "Castable at L3 and above" is the rule for every spell, so spelling out
+  // a range per spell told the reader nothing they did not already know.
+  return `L${row.level}`;
 }
 
 function rowToAction(row: SpellRow): ActorAction {
@@ -81,9 +79,6 @@ function rowToAction(row: SpellRow): ActorAction {
     row.details,
     isClassFeature ? `Class feature — ${cfUses}/Long Rest` : "",
     row.upcastNote ? `Upcast: ${row.upcastNote}` : "",
-    row.usableSpellLevels.length > 1
-      ? `Available at: ${row.usableSpellLevels.map(l => l === 0 ? "Cantrip" : `L${l}`).join(", ")}`
-      : "",
   ].filter(Boolean).join(" · ");
 
   return {
@@ -96,7 +91,8 @@ function rowToAction(row: SpellRow): ActorAction {
     displayMode: "card",
     category: row.category || (row.level === 0 ? "Cantrips" : `Level ${row.level} Spells`),
     concentration: row.concentration,
-    tags: row.usableSpellLevels.map(l => `spell-level:${l}`),
+    // One tag, for the level the spell STARTS at. The castable range is base→9 by rule.
+    tags: [`spell-level:${row.level}`],
     metadata: {
       attack: row.attack || undefined,
       damage: row.damage || undefined,
@@ -107,9 +103,6 @@ function rowToAction(row: SpellRow): ActorAction {
       cost: row.economyCost === "main" ? "Action" : row.economyCost === "bonus" ? "Bonus Action" : "Reaction",
       slotCost: slotLabel,
       spellLevel: row.level,
-      // Also written to metadata (not just tags) so upcast ray scaling can find the spell's
-      // base level from the action alone.
-      usableSpellLevels: row.usableSpellLevels,
       ...(row.upcastDamage.trim() ? { upcastDamage: row.upcastDamage.trim() } : {}),
       ...(Number(row.attackRolls) > 1 ? { attackRolls: Number(row.attackRolls) } : {}),
       ...(Number(row.attackRollsPerLevel) > 0 ? { attackRollsPerLevel: Number(row.attackRollsPerLevel) } : {}),
@@ -137,17 +130,11 @@ function actionToRow(action: ActorAction): SpellRow {
     .replace(/Class feature\s*—\s*[^·]*(?:·\s*)?/gi, "")
     .replace(/\s*·\s*$/, "")
     .trim();
-  // Recover usable levels from tags
-  const usable = (action.tags ?? [])
-    .filter(t => t.startsWith("spell-level:"))
-    .map(t => Number(t.replace("spell-level:", "")) as SpellActionLevel)
-    .sort((a, b) => a - b);
 
   return {
     id: action.id,
     name: action.label,
     level: baseLevel,
-    usableSpellLevels: usable.length > 0 ? usable : [baseLevel],
     upcastNote: recoveredUpcast,
     slotCost: action.metadata?.slotCost ?? (baseLevel === 0 ? "Cantrip" : `L${baseLevel}`),
     consumesSlot: baseLevel > 0,
@@ -177,7 +164,6 @@ function makeBlankRow(): SpellRow {
     id: `spell-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     name: "",
     level: 1,
-    usableSpellLevels: [1],
     upcastNote: "",
     upcastDamage: "",
     attackRolls: "",
@@ -281,7 +267,6 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                   consumesSlot: lvl > 0,
                   slotCost: "",
                   // Seed usable levels from base to 9 for non-cantrips
-                  usableSpellLevels: lvl === 0 ? [0] : [lvl],
                 });
               }}
               style={{ ...inputStyle, padding: "3px 2px" }}>
@@ -324,34 +309,15 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
               {/* Slot levels — only for non-cantrips */}
               {row.level > 0 && (
                 <div>
-                  <p style={{ margin: "0 0 4px", fontSize: 11, color: "#7b68ee" }}>
-                    Available at slot levels — check all levels this spell can be cast at:
+                  {/* The per-spell "available at" checkbox grid is gone. EVERY SPELL UPCASTS,
+                      so the castable range is base→9 and re-stating it on each spell was 39
+                      lists all saying the same thing — plus one more way to lock a spell out
+                      of a slot it should have been able to use. The only level a spell needs
+                      to record is the one it STARTS at, set by the Level field above. */}
+                  <p style={{ margin: "0 0 6px", fontSize: 11, color: "#666" }}>
+                    Castable at <strong style={{ color: "#7b68ee" }}>L{row.level}</strong> and every
+                    slot above it. A bigger slot is always spendable, whether or not it adds anything.
                   </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {SPELL_LEVELS.filter(l => l.value > 0).map(l => {
-                      const checked = row.usableSpellLevels.includes(l.value);
-                      const isBase = l.value === row.level;
-                      return (
-                        <label key={l.value} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: l.value >= row.level ? "pointer" : "default", opacity: l.value < row.level ? 0.3 : 1 }}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={isBase} // base level always checked
-                            onChange={e => {
-                              const next = e.target.checked
-                                ? [...row.usableSpellLevels, l.value].sort((a, b) => a - b) as SpellActionLevel[]
-                                : row.usableSpellLevels.filter(x => x !== l.value) as SpellActionLevel[];
-                              setRow(idx, { usableSpellLevels: next.length ? next : [row.level], slotCost: "" });
-                            }}
-                            style={{ accentColor: "#7b68ee" }}
-                          />
-                          <span style={{ color: isBase ? "#7b68ee" : checked ? "#fff" : "#666" }}>
-                            {l.label}{isBase ? " ★" : ""}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
                   <label style={{ fontSize: 11, marginTop: 6, display: "block" }}>
                     Upcast note
                     <input type="text" value={row.upcastNote} onChange={e => setRow(idx, { upcastNote: e.target.value })}
@@ -362,14 +328,14 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                   {/* The machine version of the note above: authored once, multiplied by how
                       far the cast is above base. This is what actually gets rolled. */}
                   <label style={{ fontSize: 11, marginTop: 6, display: "block" }}>
-                    Upcast rider — added per level above L{Math.min(...row.usableSpellLevels, row.level)}
+                    Upcast rider — added per level above L{row.level}
                     <input type="text" value={row.upcastDamage}
                       onChange={e => setRow(idx, { upcastDamage: e.target.value })}
                       placeholder="1d6, 2d8, 1d8+2… (blank = no automatic scaling)"
                       style={{ ...inputStyle, marginTop: 2 }} />
                     {row.upcastDamage.trim() && (
                       <span style={{ fontSize: 10, color: "#9be9a8", display: "block", marginTop: 2 }}>
-                        ⚡ Rolled automatically: {row.damage || "base"} at L{Math.min(...row.usableSpellLevels, row.level)},
+                        ⚡ Rolled automatically: {row.damage || "base"} at L{row.level},
                         {" "}+{row.upcastDamage.trim()} for each level above.
                         {Number(row.attackRollsPerLevel) > 0 && (
                           <span style={{ color: "#e0a85a" }}> ⚠ This spell also gains a roll per level — using both double-counts the upcast.</span>
@@ -421,13 +387,13 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                   <input type="number" min={0} value={row.attackRollsPerLevel}
                     onChange={e => setRow(idx, { attackRollsPerLevel: e.target.value })}
                     placeholder="1" style={{ ...inputStyle, maxWidth: 70, textAlign: "center" }} />
-                  <span style={{ color: "#666", fontSize: 10 }}>per slot level above L{Math.min(...row.usableSpellLevels, row.level)}</span>
+                  <span style={{ color: "#666", fontSize: 10 }}>per slot level above L{row.level}</span>
                 </div>
                 {Number(row.attackRolls) > 1 && (
                   <span style={{ fontSize: 10, color: "#9be9a8" }}>
-                    ⚡ {Number(row.attackRolls)} rolls at L{Math.min(...row.usableSpellLevels, row.level)}
+                    ⚡ {Number(row.attackRolls)} rolls at L{row.level}
                     {Number(row.attackRollsPerLevel) > 0
-                      ? `, ${Number(row.attackRolls) + Number(row.attackRollsPerLevel)} at L${Math.min(...row.usableSpellLevels, row.level) + 1}…`
+                      ? `, ${Number(row.attackRolls) + Number(row.attackRollsPerLevel)} at L${row.level + 1}…`
                       : ""}
                     . Each is its own to-hit and damage; the cast still spends one slot.
                   </span>

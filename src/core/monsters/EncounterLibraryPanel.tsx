@@ -87,8 +87,12 @@ export function groupEncountersByAct(
 ): { label: string; encounters: EncounterDefinition[] }[] {
   const buckets = new Map<number, EncounterDefinition[]>();
   for (const e of encounters) {
-    const fromId = parseActPlacement(e.id).act;
-    const act = fromId > 0 ? fromId : parseActField(e.actTag);
+    // An EXPLICIT actTag wins over the id. The id is a good default — seeded content encodes
+    // its own position — but it is immutable once an encounter exists, so deriving from it
+    // alone meant a DM could never move an encounter into an act, or correct one that was
+    // filed wrong. Falling back to the id keeps every seeded encounter exactly where it was.
+    const tagged = parseActField(e.actTag);
+    const act = tagged > 0 ? tagged : parseActPlacement(e.id).act;
     const key = act > 0 ? act : 9999;
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key)!.push(e);
@@ -563,12 +567,32 @@ export function EncounterLibraryPanel({
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
         <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <input
-            type="text"
-            value={editDraft.name}
-            onChange={e => setEditDraft({ ...editDraft, name: e.target.value })}
-            style={{ fontWeight: "bold", background: "transparent", border: "none", borderBottom: "1px solid #555", color: "inherit", fontSize: 14, width: 200 }}
-          />
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              value={editDraft.name}
+              onChange={e => setEditDraft({ ...editDraft, name: e.target.value })}
+              style={{ fontWeight: "bold", background: "transparent", border: "none", borderBottom: "1px solid #555", color: "inherit", fontSize: 14, width: 200 }}
+            />
+            {/* WHICH ACT THIS BELONGS TO.
+                Act membership was only ever DERIVED from the encounter id ("act2-s4-e1-…"),
+                which works for seeded campaign content and not at all for anything the DM
+                builds: a created encounter gets an id like "custom-1a2b3c" and lands in
+                Unsorted forever with no way to move it. The grouping already falls back to
+                this field — it just had nothing writing it. */}
+            <select
+              value={String(parseActField(editDraft.actTag) || parseActPlacement(editDraft.id).act || 0)}
+              onChange={e => {
+                const n = Number(e.target.value);
+                setEditDraft({ ...editDraft, actTag: n > 0 ? `Act ${n}` : undefined });
+              }}
+              title="Which act this encounter belongs to, for grouping in the library"
+              style={{ fontSize: 11, padding: "2px 5px", borderRadius: 3, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#aaa" }}
+            >
+              <option value="0">Unsorted</option>
+              {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>Act {n}</option>)}
+            </select>
+          </div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {/* Save into the campaign library only when it's unlocked. */}
             {unlocked && (
