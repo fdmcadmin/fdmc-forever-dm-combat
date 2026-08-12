@@ -34,6 +34,7 @@ import {
   MASTERY_PROPERTIES, MASTERY_BLURB, masteryCount, normalizeMasteryChoices,
   type MasteryProperty,
 } from "../rules/weaponMastery";
+import { characterLevel, classLevels } from "../rules/multiclass";
 import { coinsToCopper, type Coins } from "../currency/currency";
 import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
@@ -1133,8 +1134,15 @@ export function ActorCard({
   const masteryLimit = useMemo(() => {
     const featGrants = [...(actor.tabs.feats ?? []), ...(actor.tabs.features ?? [])]
       .reduce((n, a) => n + (Number(a.metadata?.masteryGrant) || 0), 0);
-    return masteryCount({ className: actor.className, level: actor.level, featGrants });
-  }, [actor.className, actor.level, actor.tabs.feats, actor.tabs.features]);
+    return masteryCount({
+      className: actor.className,
+      level: characterLevel(actor),
+      // Per-class levels when multiclassed: a Fighter 4 / Wizard 6 gets four levels of
+      // Fighter, so three masteries — not the five that total level would hand them.
+      classLevels: classLevels(actor),
+      featGrants,
+    });
+  }, [actor.className, actor.level, actor.classes, actor.tabs.feats, actor.tabs.features]);
 
   /**
    * The properties chosen right now. A local preference like the pinned pools: the rules

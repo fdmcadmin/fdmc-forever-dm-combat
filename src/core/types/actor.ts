@@ -144,6 +144,25 @@ export type Actor = {
   race?: string;
   className?: string;
   subclassName?: string;  // e.g. "Battle Master", "Hunter", "Oath of Devotion"
+  /**
+   * MULTICLASS, as a real structure: Paladin 5 / Sorcerer 1 is level 6.
+   *
+   * `className` alone could say "Paladin / Sorcerer" but not who had which levels, so every
+   * per-class rule had to read total character level and over-count — a Fighter 4 / Wizard 6
+   * was drawing 10th-level Fighter weapon masteries. Levels belong to CLASSES; the character's
+   * level is their sum, which is the direction the maths actually runs.
+   *
+   * Absent for a single-class character: `className` + `level` already say everything, and
+   * requiring the array would mean migrating every existing sheet to say the same thing twice.
+   *
+   * `hitDie` is what makes a mixed hit-dice pool expressible — a Paladin 5 / Sorcerer 1 has
+   * 5d10 and 1d6, not 6 of anything.
+   */
+  classes?: { name: string; level: number; hitDie?: string }[];
+  /**
+   * Character level. With `classes` present this is the SUM of their levels — use
+   * `characterLevel(actor)` rather than reading it raw, so the two can never disagree.
+   */
   level: number;
   /** Extra Attack — how many weapon/unarmed attacks a single Attack action grants.
    *  2 for martials at L5, 3 for a Fighter at L11. Spells are never affected: casting

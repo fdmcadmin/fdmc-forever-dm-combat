@@ -6,6 +6,7 @@ import { abilityModifier, proficiencyBonus, savingThrowModifier, inferSaveProfic
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
+import { parseClassLevels, hitDicePools } from "../rules/multiclass";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
 import { tabAccent } from "./tabVisuals";
@@ -179,7 +180,8 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
     subtitle: actor.subtitle,
     race: actor.race ?? "",
     className: actor.className ?? "",
-    multiclassLevels: "",  // not stored separately yet — DM enters manually when building
+    // Rebuilt from the stored class rows, so re-opening a multiclass sheet shows its split.
+    multiclassLevels: (actor.classes ?? []).map(c => String(c.level)).join(" / "),
     level: String(actor.level),
     attacksPerAction: String(actor.attacksPerAction ?? 1),
     ac: String(actor.stats.ac),
@@ -242,6 +244,9 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
     }
   }
 
+  // "Paladin / Sorcerer" + "5 / 1" → real class rows. Empty for a single class.
+  const multiclassRows = parseClassLevels(draft.className, draft.multiclassLevels);
+
   return {
     kind: draft.kind,
     name: draft.name.trim() || "Unnamed Actor",
@@ -249,7 +254,15 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
     race: draft.race.trim() || undefined,
     // For multiclass: store "Fighter / Rogue" in className so the card shows it correctly
     className: draft.className.trim() || undefined,
-    level: Number.isFinite(level) ? level : 1,
+    // …and the SPLIT as real data. "Paladin / Sorcerer" + "5 / 1" becomes class rows, which is
+    // what every per-class rule actually needs — weapon mastery counts four levels of Fighter,
+    // not the character's ten. A single-class character grows no array: className and level
+    // already say it, and duplicating that is how the two end up disagreeing.
+    classes: multiclassRows.length > 0 ? multiclassRows : undefined,
+    // With a split present the character's level IS the sum, so the two can never drift.
+    level: multiclassRows.length > 0
+      ? multiclassRows.reduce((n, c) => n + c.level, 0)
+      : (Number.isFinite(level) ? level : 1),
     attacksPerAction: Number.isFinite(attacksPerAction) && attacksPerAction > 1 ? attacksPerAction : undefined,
     stats: {
       ac: Number.isFinite(ac) ? ac : 10,
@@ -360,6 +373,23 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
               }}
               placeholder="3 / 2"
               style={{ ...inputStyle, marginTop: 4, maxWidth: 120 }} />
+            {/* What the split actually buys. Character level is the SUM, not something typed
+                separately — and the hit dice stop pretending to be six of one size when a
+                Paladin 5 / Sorcerer 1 has 5d10 and 1d6. */}
+            {(() => {
+              const rows = parseClassLevels(draft.className, draft.multiclassLevels);
+              if (rows.length === 0) {
+                return <span style={{ fontSize: 10, color: "#6a5a2a", display: "block", marginTop: 4 }}>
+                  ⚠ Enter one level per class, e.g. "5 / 1" — until then this reads as single-class.
+                </span>;
+              }
+              const total = rows.reduce((n, c) => n + c.level, 0);
+              const dice = hitDicePools({ classes: rows, className: draft.className, level: total });
+              return <span style={{ fontSize: 10, color: "#7b68ee", display: "block", marginTop: 4 }}>
+                {rows.map(c => `${c.name} ${c.level}`).join(" / ")} — character level {total}
+                {dice.length > 0 && <> · hit dice {dice.map(d => `${d.count}${d.die}`).join(" + ")}</>}
+              </span>;
+            })()}
           </label>
         )}
         <label style={labelStyle}>Level <input type="number" min={1} max={20} value={draft.level} onChange={e => set("level", e.target.value)} style={inputStyle} /></label>

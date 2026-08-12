@@ -59,16 +59,25 @@ function countForSingleClass(className: string, level: number): number {
 /**
  * Base mastery count from class and level, before any feat.
  *
- * Multiclass is written as "Paladin / Sorcerer" in one field, so each class is looked up and
- * the BEST entitlement wins — masteries do not stack across classes, you simply have whichever
- * of your classes is most generous. It reads against total character level, which slightly
- * over-counts a Fighter 4 / Wizard 6 (10th-level Fighter masteries rather than 4th). Fixing
- * that properly needs per-class levels, which the sheet does not carry yet.
+ * `classLevels` is the honest input: a Fighter 4 / Wizard 6 gets FOUR levels of Fighter, so
+ * three masteries, not the five that reading total character level would hand them. Pass it
+ * whenever the character is multiclassed.
+ *
+ * Without it, "Paladin / Sorcerer" in one string still resolves — each name is looked up at
+ * total level and the BEST entitlement wins, since masteries do not stack across classes. That
+ * over-counts, which is exactly why the array exists.
  *
  * An unrecognised class returns 0 rather than guessing. A Sorcerer with a mastery should be a
  * visible authoring decision — a feat — never something the app inferred from a name.
  */
-export function masteryCountForClass(className: string | undefined, level: number): number {
+export function masteryCountForClass(
+  className: string | undefined,
+  level: number,
+  classLevels?: readonly { name: string; level: number }[],
+): number {
+  if (classLevels && classLevels.length > 0) {
+    return classLevels.reduce((best, c) => Math.max(best, countForSingleClass(c.name, c.level)), 0);
+  }
   const raw = (className ?? "").trim();
   if (!raw) return 0;
   return raw.split("/").reduce((best, part) => Math.max(best, countForSingleClass(part, level)), 0);
@@ -84,8 +93,11 @@ export function masteryCount(opts: {
   className?: string;
   level: number;
   featGrants?: number;
+  /** Per-class levels when multiclassed — the accurate input. */
+  classLevels?: readonly { name: string; level: number }[];
 }): number {
-  return masteryCountForClass(opts.className, opts.level) + Math.max(0, opts.featGrants ?? 0);
+  return masteryCountForClass(opts.className, opts.level, opts.classLevels)
+    + Math.max(0, opts.featGrants ?? 0);
 }
 
 /** Keep only real mastery names, deduped, and never more than the character is owed. */
