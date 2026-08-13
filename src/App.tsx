@@ -1562,6 +1562,17 @@ export default function App() {
       if (msg?.type === "fdmc:item-equip" && msg.actorId && msg.actionId) {
         performEquipToggle(msg.actorId, msg.actionId);
       }
+      /**
+       * A popout asking for its character.
+       *
+       * A push only lands on a window that was listening at the time, so a client whose cache
+       * was never written has nothing but the shipped snapshot — a complete, plausible sheet
+       * that no DM action can change. Answering with a full push turns that dead end into a
+       * round trip, and costs nothing when the card was already current.
+       */
+      if (msg?.type === "fdmc:actor-refresh-request") {
+        pushActorsToAllSeats();
+      }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDmMode, dmActors]);

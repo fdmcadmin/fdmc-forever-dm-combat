@@ -62,15 +62,82 @@ function resolvePopoutActor(actorId: string) {
   const fromCache = cached.find(a => a.id === actorId);
   if (fromCache) return fromCache;
 
-  // Bundled source fallback
+  /**
+   * BUNDLED FALLBACK — a shipped snapshot, and never the live character.
+   *
+   * This is the last resort for a client that has neither the DM library nor a cached push.
+   * It renders, which is why the failure was invisible: a player whose cache was never
+   * written saw a complete, plausible sheet that no DM action could ever change. Equipping
+   * did nothing, closing and reopening changed nothing, because the window was reading a
+   * static file rather than anything the table shares.
+   *
+   * It is still better than a blank card, so it stays — but the caller is told, so the window
+   * can say so and ask for a real push instead of quietly lying.
+   */
   const bundledLib = buildActorLibraryFromBundled(brokenChainActors);
-  return bundledLib[actorId];
+  const bundled = bundledLib[actorId];
+  return bundled ? { ...bundled, __fromBundled: true } as typeof bundled & { __fromBundled?: boolean } : undefined;
 }
 
 // ─── Popout App ───────────────────────────────────────────────────────────────
 
 function ActorPopout() {
-  const baseActor = useMemo(() => resolvePopoutActor(POPOUT_ACTOR_ID), []);
+  /**
+   * THE SHEET HAS TO REFRESH IN PLACE.
+   *
+   * This was resolved once, on mount, and never again — so every DM-side change to the
+   * character arrived somewhere this window was not looking. Equipping worked, and the only
+   * way to SEE that it had worked was to close the popout and open it again, which is not a
+   * workflow, it is a symptom.
+   *
+   * The DM pushes a seat's actors as an actor-data broadcast, the same message the seat system
+   * caches. Listening for it here means the card updates the moment the DM applies anything —
+   * gear, loot, a forged item — instead of drifting until someone reopens the window.
+   *
+   * Re-reading the cache on mount as well covers the other order: a push that landed while
+   * this window was closed is already in the cache and should not need a second one.
+   */
+  const [actorVersion, setActorVersion] = useState(0);
+  const baseActor = useMemo(
+    () => resolvePopoutActor(POPOUT_ACTOR_ID),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- actorVersion is the refresh signal
+    [actorVersion],
+  );
+
+  /** True when the only copy available is the shipped snapshot — see resolvePopoutActor. */
+  const isStaleBundled = Boolean((baseActor as { __fromBundled?: boolean } | undefined)?.__fromBundled);
+
+  useEffect(() => {
+    if (!OBR.isAvailable) return;
+    const unsub = OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
+      const msg = event.data as { type?: string; actors?: Array<{ id?: string }> } | undefined;
+      // The push carries a seat's whole roster; refresh when THIS character is in it. The seat
+      // system has already written the cache by the time this fires, so re-resolving reads the
+      // new copy. A push for someone else is ignored — no needless re-render mid-turn.
+      if (msg?.type === "fdmc:actor-data" && Array.isArray(msg.actors)
+        && msg.actors.some(a => a?.id === POPOUT_ACTOR_ID)) {
+        // Defer one tick so the cache write in useSeatSystem lands first, whichever order the
+        // two listeners happen to run in.
+        setTimeout(() => setActorVersion(v => v + 1), 0);
+      }
+    });
+
+    /**
+     * ASK, rather than wait to be told.
+     *
+     * A push only reaches a window that was listening when it happened, and a client whose
+     * cache was never written has nothing to fall back on but the shipped snapshot. Asking on
+     * open turns that from a permanent dead end into a round trip: the DM answers by pushing
+     * every seat, the listener above catches it, and the card re-resolves against real data.
+     */
+    void OBR.broadcast.sendMessage(
+      FDMC_SEAT_BROADCAST_CHANNEL,
+      { type: "fdmc:actor-refresh-request", actorId: POPOUT_ACTOR_ID },
+      { destination: "ALL" },
+    ).catch(() => undefined);
+
+    return unsub;
+  }, []);
 
   // Need actor in an array for the hooks
   const actorList = useMemo(() => baseActor ? [baseActor] : [], [baseActor]);
@@ -205,6 +272,15 @@ function ActorPopout() {
   return (
     <div style={{ height: "100vh", overflow: "auto" }}>
       <SavePromptBanner />
+      {/* Say it, rather than showing a sheet that cannot change. A bundled fallback renders
+          perfectly, which is exactly what made this invisible: equipping did nothing and
+          reopening changed nothing, with no clue that the window was reading a shipped file. */}
+      {isStaleBundled && (
+        <div style={{ background: "#2a1a0d", border: "1px solid #8a5a2a", borderRadius: 6, padding: "7px 10px", margin: "6px 8px 0", fontSize: 11, color: "#e0a060" }}>
+          ⚠ Showing the bundled copy of this character — this window has not received a push from the DM,
+          so nothing done here will stick. Asking for one now; if it does not arrive, the DM should push this seat.
+        </div>
+      )}
       <ActorCard
         actor={actor}
         // The purse renders as a line under the character's own wallet, inside the card.
