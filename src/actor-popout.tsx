@@ -29,7 +29,7 @@ import { useCombatLog } from "./core/combat-log/useCombatLog";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
 import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
 import { loadActorLibrary, loadActorOverrides, resolveActorFromLibrary } from "./core/seats/dmActorLibrary";
-import { loadCachedActors } from "./core/seats/playerActorCache";
+import { loadCachedActors, cacheActors } from "./core/seats/playerActorCache";
 import { resolveActor, buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
 import { fullHeal } from "./core/types/actor";
 import type { StatusTrackerId } from "./core/types/status";
@@ -116,8 +116,20 @@ function ActorPopout() {
       // new copy. A push for someone else is ignored — no needless re-render mid-turn.
       if (msg?.type === "fdmc:actor-data" && Array.isArray(msg.actors)
         && msg.actors.some(a => a?.id === POPOUT_ACTOR_ID)) {
-        // Defer one tick so the cache write in useSeatSystem lands first, whichever order the
-        // two listeners happen to run in.
+        /**
+         * WRITE THE CACHE HERE TOO, rather than trusting another window to have done it.
+         *
+         * Only useSeatSystem called cacheActors, and it only does so for a push addressed to
+         * the seat IT claimed. Checked against the live client: after three applied gear
+         * changes there was still no fdmc.player.actorCache.v1 at all — so the popout kept
+         * falling through to the bundled snapshot and no DM action could ever appear in it.
+         *
+         * This window does not know its seat id, and should not have to: it knows which
+         * CHARACTER it is showing, and a push carrying that character is the data it needs.
+         * Caching on that basis makes the popout self-sufficient, and writing the same key
+         * means the main window and this one stay one shared truth rather than two.
+         */
+        cacheActors(msg.actors as Parameters<typeof cacheActors>[0]);
         setTimeout(() => setActorVersion(v => v + 1), 0);
       }
     });
