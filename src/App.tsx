@@ -1132,8 +1132,11 @@ export default function App() {
        * (wallets live in room state, a different store), item stored, nothing visible on any
        * surface — which is why this read as "it voided" rather than as a delivery failure.
        *
-       * Every character in the live library has such an override, and one item — Lyrielle's
-       * Canopy Bow — was already masked this way before any purchase was involved.
+       * Every character in the live library carries such an override, so every purchase hit
+       * this. The shadowing itself is CORRECT and load-bearing: removing an item writes the
+       * override without the item while the base keeps its stale copy, and the override is
+       * what makes the removal stick. The bug was never the masking — it was writing a new
+       * item to the layer that loses.
        *
        * `updatedActor` is the RESOLVED actor plus the new item, so its equipment is the array
        * the player should see. Writing it into the override makes the winning layer agree with
