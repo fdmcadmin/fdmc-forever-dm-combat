@@ -288,13 +288,17 @@ function ActorPopout() {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
             { type: "fdmc:item-grip", actorId: actor.id, actionId: action.id, grip },
-            { destination: "REMOTE" }).catch(() => undefined);
+            // ALL, not REMOTE: REMOTE excludes this client, so a DM with the card open on
+            // their own machine never reached their own main window and the control died.
+            { destination: "ALL" }).catch(() => undefined);
         }}
         onToggleEquipped={(action) => {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
             { type: "fdmc:item-equip", actorId: actor.id, actionId: action.id },
-            { destination: "REMOTE" }).catch(() => undefined);
+            // ALL, not REMOTE — see the grip note above. The DM handler is gated on isDmMode,
+            // so a player client receiving its own message simply ignores it.
+            { destination: "ALL" }).catch(() => undefined);
         }}
         // Hand an item to another player. Same authority rule as equipping: this window
         // only ASKS, and the DM performs the move so the item can never exist on two
@@ -305,7 +309,7 @@ function ActorPopout() {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
             { type: "fdmc:item-transfer", fromActorId: actor.id, toActorId, actionId: action.id },
-            { destination: "REMOTE" }).catch(() => undefined);
+            { destination: "ALL" }).catch(() => undefined);
         }}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actor.tabs.resources ?? []).map(r => r.label), castLevel })}
         onSaveCall={(action, save) => {

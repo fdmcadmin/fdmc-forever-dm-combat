@@ -1383,11 +1383,26 @@ export default function App() {
       return;
     }
     const equipment = actor.tabs.equipment ?? [];
-    const target = equipment.find(a => a.id === actionId);
+    /**
+     * MATCH ON THE ITEM, NOT JUST THE ACTION ID.
+     *
+     * A seat holds a snapshot pushed from the DM, so the two sides can legitimately carry
+     * different ACTION ids for the same item: attaching from the library builds
+     * `equip-<itemId>`, while an item authored by hand on the sheet keeps whatever id it was
+     * given. Anything re-attached since the last push differs again. An exact id comparison
+     * therefore missed, and — because the miss was silent — the button simply did nothing.
+     *
+     * The underlying item id is the stable thing. Try the exact action id first, then the item
+     * both sides ultimately name, so a card one push out of date still works instead of going
+     * dead.
+     */
+    const itemIdOf = (id: string) => id.replace(/^equip-/, "").replace(/^atk-/, "");
+    const target = equipment.find(a => a.id === actionId)
+      ?? equipment.find(a => itemIdOf(a.id) === itemIdOf(actionId));
     if (!target) {
       addEntry({
         actorName: actor.name, actionName: "Gear Change Failed", tabId: "system",
-        message: `⚠ ${actor.name} tried to equip/unequip "${actionId}", which is not on your copy of their sheet (${equipment.length} carried). Their card is showing an older push — re-push that seat.`,
+        message: `⚠ ${actor.name} tried to equip/unequip "${actionId}", which matches nothing on your copy of their sheet (${equipment.length} carried: ${equipment.map(a => a.id).slice(0, 6).join(", ")}${equipment.length > 6 ? "…" : ""}). Re-push that seat.`,
       });
       return;
     }
