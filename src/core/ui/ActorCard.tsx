@@ -3435,9 +3435,20 @@ export function ActorCard({
      * The commit path must not ALSO spend, or one use costs two charges — see the
      * `onStartCommittedRoll` wiring, which deliberately omits `consumeItemCharge`.
      */
+    // A FLAT RIDER IS NOT A ROLL. `hasRollableFormula` accepts a bare signed number, so a
+    // Rage authored as damage "+2" read as "this action rolls its own damage" — and since
+    // rolling was assumed to be where the pool gets spent, the consume below was skipped. But
+    // an additive rider is logMode "silent": it never commits a roll, so nothing ever spent
+    // it. Rage came up, the pool never moved, and putting the +2 anywhere else was the only
+    // thing that appeared to help.
+    //
+    // Only DICE mean the action resolves its own damage. This is deliberately checked here
+    // rather than in hasRollableFormula, which is shared with the roll workspace where a flat
+    // modifier IS a legitimate thing to roll with.
+    const damageRollsDice = /\d+d\d+/i.test(action.metadata?.damage ?? "");
     const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
       || Boolean(action.metadata?.saveDc?.trim())
-      || ((isSpendingSpell || hasNamedResourceCost) && hasRollableFormula(action.metadata?.damage));
+      || ((isSpendingSpell || hasNamedResourceCost) && damageRollsDice);
     if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost || hasItemCharges) && !rollsItsOwn) {
       onConsumeActionResources?.(action, getCastLevel(action));
     }
