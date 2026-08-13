@@ -49,6 +49,7 @@ import { initiativeRollFormula } from "../state/initiative";
 import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
+import { useEquippedState, applyEquippedOverlay } from "../state/useEquippedState";
 import { loadEquipmentLibrary } from "./EquipmentBagEditor";
 import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
@@ -808,6 +809,8 @@ export function ActorCard({
   onLog,
 }: ActorCardProps) {
   const [activeTab, setActiveTab] = useState<TabId>("main");
+  // Shared worn-state, synced like readied actions rather than pushed like a document.
+  const { equippedByActorId, setEquipped } = useEquippedState();
   const [debuffsOpen, setDebuffsOpen] = useState(false);
   const [absCheckOpen, setAbsCheckOpen] = useState(false);
   const [resolvedReadiedKeysByActorId, setResolvedReadiedKeysByActorId] = useState<Record<string, string[]>>(() => readActorCardSessionSnapshot().resolvedReadiedKeysByActorId ?? {});
@@ -1254,7 +1257,14 @@ export function ActorCard({
 
   // Give-to-party-member picker. Only the equipment tab's own rows are handable: a weapon's
   // main-tab attack row is generated FROM the item, so moving the item takes it along.
-  const allCarried = actor.tabs.equipment ?? [];
+  /**
+   * Worn state, overlaid from the shared equipped map.
+   *
+   * The actor document is the authored default; this is what the table currently agrees on.
+   * Syncing it the same way readied actions sync is what makes a toggle appear on every card
+   * at once instead of waiting for a push — see useEquippedState.
+   */
+  const allCarried = applyEquippedOverlay(actor.tabs.equipment ?? [], equippedByActorId[actor.id]);
 
   /**
    * EVERY carried item can be equipped or unequipped.
@@ -5041,7 +5051,14 @@ export function ActorCard({
                   )}
                   <button type="button"
                     disabled={blocked}
-                    onClick={() => onToggleEquipped(item)}
+                    onClick={() => {
+                      // Flip it HERE first, on the shared map, so every card showing this
+                      // character turns over at once — the same immediacy readying an action
+                      // already has. The GM still performs the durable write; this is what
+                      // stops the table waiting on a push to find out.
+                      setEquipped(actor.id, item.id, !isEquipped);
+                      onToggleEquipped(item);
+                    }}
                     style={{ fontSize: 10, padding: "2px 9px", borderRadius: 3, flexShrink: 0,
                       background: isEquipped ? "#2a6e2a22" : "#1a1a1a",
                       border: `1px solid ${isEquipped ? "#2a6e2a55" : "#333"}`,
