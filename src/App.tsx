@@ -1121,7 +1121,36 @@ export default function App() {
       const freshLib = { ...dmActors.reduce((m, a) => ({ ...m, [a.id]: a }), {} as Record<string, typeof actor>), [updatedActor.id]: updatedActor };
       upsertActorInLibrary(updatedActor);
       setActorLibrary(lib => ({ ...lib, [updatedActor.id]: updatedActor }));
-      pushActorsToSeat(msg.seatId ?? "", { freshLibrary: freshLib });
+
+      /**
+       * THE PUSH IS WHAT THE PLAYER ACTUALLY SEES.
+       *
+       * Everything above lands on the DM's copy. The coin does not need this — wallets live in
+       * room live state, which every seat reads directly — but the ITEM only reaches the
+       * player's sheet when their seat is pushed. So a purchase with no resolvable seat took
+       * the money, updated the DM's library, told the player "attached", and left their card
+       * unchanged: the exact shape of "the money worked but the item never arrived".
+       *
+       * A seat that cannot be pushed is now said out loud, on both sides. The item is NOT lost
+       * — it is on the DM's copy of the character and appears the moment that seat is pushed
+       * again — but nobody should have to guess that.
+       */
+      const seatId = msg.seatId ?? "";
+      const seatIsPushable = Boolean(seatId) && Boolean(roomLiveStateRef.current.seats[seatId]);
+      if (seatIsPushable) {
+        pushActorsToSeat(seatId, { freshLibrary: freshLib });
+      } else {
+        addEntry({
+          actorName: actor.name, actionName: "Loot Delivery", tabId: "system",
+          message: `⚠ ${item.name} was added to ${actor.name} on your copy, but ${seatId ? `seat "${seatId}" is not in this room` : "the request carried no seat"} — so their card was not refreshed. Re-push that seat from Seats & Tokens.`,
+        });
+        void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:purchase-denied",
+          seatId,
+          itemName: item.name,
+          reason: `${item.name} was recorded, but your sheet could not be refreshed — ask the DM to re-push your seat.`,
+        }, { destination: "REMOTE" });
+      }
 
       // Notify player their item was attached
       void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
