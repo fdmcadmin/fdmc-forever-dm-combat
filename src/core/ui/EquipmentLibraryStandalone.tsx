@@ -102,8 +102,21 @@ export function isLootChoice(msg: unknown): msg is LootChoice {
 export function isConvergenceOffer(msg: unknown): msg is ConvergenceOffer {
   return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:convergence-offer");
 }
+/**
+ * A convergence request must carry its submitted items, not just its type.
+ *
+ * The approval panel maps over `submittedItemIds` directly, so a message that names the type
+ * but lacks the array throws DURING RENDER — which shows as a blank screen with no way out,
+ * because the control that closes it is inside the component that failed to render. Checking
+ * the shape here means a malformed message is ignored where it arrives instead of taking the
+ * window down when someone clicks Review.
+ */
 export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
-  return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:convergence-request");
+  if (!msg || typeof msg !== "object") return false;
+  const m = msg as { type?: unknown; submittedItemIds?: unknown; seatId?: unknown };
+  return m.type === "fdmc:convergence-request"
+    && Array.isArray(m.submittedItemIds)
+    && typeof m.seatId === "string";
 }
 
 // itemToAction is imported from EquipmentBagEditor (canonical source with weapon auto-detect)
@@ -579,11 +592,17 @@ export function ConvergenceApprovalPanel({
   const allItems = [...campaignLib, ...dmLib];
   const seat = seats.find(s => s.seatId === req.seatId);
 
-  // Submitted items — try library first, fall back to names from the request
-  const submittedItems = req.submittedItemIds.map(id => allItems.find(i => i.id === id)).filter(Boolean) as EquipmentItem[];
+  // Submitted items — try library first, fall back to names from the request.
+  // Both arrays are defended: this panel REPLACES the whole window, so anything it throws
+  // while rendering leaves a blank screen whose only exit — the Back button — is inside the
+  // component that just failed. A request missing its items should show an empty review, not
+  // trap the DM in a dead panel.
+  const submittedIds = Array.isArray(req.submittedItemIds) ? req.submittedItemIds : [];
+  const requestNames = Array.isArray(req.submittedItemNames) ? req.submittedItemNames : [];
+  const submittedItems = submittedIds.map(id => allItems.find(i => i.id === id)).filter(Boolean) as EquipmentItem[];
   const submittedNames = submittedItems.length > 0
     ? submittedItems.map(i => i.name)
-    : req.submittedItemNames;
+    : requestNames;
 
   // DM picks the output item — default to first DM library item, or first campaign item
   const pickableItems = dmLib.length > 0 ? [...dmLib, ...campaignLib] : campaignLib;
@@ -667,7 +686,7 @@ export function ConvergenceApprovalPanel({
                 {submittedNames.map((name, i) => (
                   <p key={i} style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>✕ {name}</p>
                 ))}
-                {submittedNames.length === 0 && req.submittedItemIds.map(id => (
+                {submittedNames.length === 0 && submittedIds.map(id => (
                   <p key={id} style={{ margin: "4px 0 0", fontSize: 11, color: "#555" }}>ID: {id}</p>
                 ))}
               </div>
@@ -1004,7 +1023,7 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     };
     await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
     setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
-    setRecentDelivery(`Convergence approved — ${outputItem.name} sent to ${seat?.label ?? req.seatId}. Remove ${req.submittedItemNames.join(" + ")} from their bag.`);
+    setRecentDelivery(`Convergence approved — ${outputItem.name} sent to ${seat?.label ?? req.seatId}. Remove ${(req.submittedItemNames ?? []).join(" + ") || "the submitted items"} from their bag.`);
     setTimeout(() => setRecentDelivery(null), 10000);
   }
 
