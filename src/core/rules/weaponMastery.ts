@@ -47,7 +47,9 @@ const MASTERY_TABLE: Record<string, { level: number; count: number }[]> = {
 export const MASTERY_CLASSES = Object.keys(MASTERY_TABLE);
 
 function countForSingleClass(className: string, level: number): number {
-  const rows = MASTERY_TABLE[className.trim().toLowerCase()];
+  // "Paladin 5" is how a person writes a class, so strip a trailing level rather than failing
+  // to find a class by that name and silently reporting zero masteries.
+  const rows = MASTERY_TABLE[className.trim().toLowerCase().replace(/\s+\d+$/, "")];
   if (!rows) return 0;
   let count = 0;
   for (const row of rows) {
