@@ -984,9 +984,22 @@ export function ActorCard({
   const initiativeState = initiativeByActorId[actor.id] ?? null;
   const attackUseState = attackUseByActorId[actor.id] ?? null;
 
+  /**
+   * Reset to Main when the CHARACTER changes — and only then.
+   *
+   * `visibleTabs` was in the dependency list, and it is rebuilt on every render, so its
+   * identity changed every time and this fired constantly. Any update to the actor threw the
+   * player back to Main: unequip an item and the equipment list vanishes under you mid-click,
+   * which reads exactly like the button having failed. It had not — the toggle applied, the
+   * push came back, the card re-rendered, and the tab was reset out from under it.
+   *
+   * The effect below already handles the only other case that matters — an active tab that
+   * has stopped being visible — so nothing is lost by narrowing this to the actor's identity.
+   */
   useEffect(() => {
-    setActiveTab(visibleTabs.includes("main") ? "main" : visibleTabs[0] ?? "notes");
-  }, [actor.id, visibleTabs]);
+    setActiveTab(getVisibleTabs(actor, status).includes("main") ? "main" : "notes");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- switching CHARACTER resets the tab, re-rendering one does not
+  }, [actor.id]);
 
   useEffect(() => {
     setSessionCountersByActorId((current) => {
