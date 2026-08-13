@@ -2562,10 +2562,27 @@ export default function App() {
               title="Preview a player's card as they see it — read only"
               style={{ fontSize: 11, padding: "3px 8px", borderRadius: 5, border: "1px solid #2f5d9e", background: "#15233c", color: "#7db1ff", cursor: "pointer" }}>
               <option value="">👁 View as…</option>
-              {Object.values(roomLiveState.seats)
-                .filter(seat => seat.seatMode !== "viewer" && (seat.actorIds?.length ?? 0) > 0)
-                .sort((a, b) => a.seatId.localeCompare(b.seatId))
-                .map(seat => <option key={seat.seatId} value={seat.seatId}>{seat.label}</option>)}
+              {/* Every non-viewer seat is LISTED, including ones with nobody bound yet. The
+                  filter used to drop those, so a seat you knew existed just was not in the
+                  list and there was nothing to explain why. A seat with no character is
+                  disabled and says so — that is a seat waiting to be bound, not a missing
+                  feature. */}
+              {(() => {
+                const seats = Object.values(roomLiveState.seats)
+                  .filter(seat => seat.seatMode !== "viewer")
+                  .sort((a, b) => a.seatId.localeCompare(b.seatId));
+                if (seats.length === 0) {
+                  return <option value="" disabled>— no player seats yet —</option>;
+                }
+                return seats.map(seat => {
+                  const bound = (seat.actorIds?.length ?? 0) > 0;
+                  return (
+                    <option key={seat.seatId} value={seat.seatId} disabled={!bound}>
+                      {seat.label}{bound ? "" : " — no character bound"}
+                    </option>
+                  );
+                });
+              })()}
             </select>
             <span style={{ flex: 1, minWidth: 8 }} />
             <button type="button" style={DM_BTN.fix} title="Something looks broken? Open Room Maintenance."
@@ -2905,7 +2922,28 @@ export default function App() {
         const seat = roomLiveState.seats[previewSeatId];
         const seatActorIds = seat?.actorIds ?? [];
         const shown = dmActors.find(a => a.id === (seat?.primaryActorId || seatActorIds[0]));
-        if (!seat || !shown) return null;
+        // NEVER FAIL SILENTLY. This returned null when the seat or its character could not be
+        // resolved, so picking a seat opened nothing at all and the preview simply looked
+        // gone. Say which of the two is missing instead — a seat that vanished from the room
+        // and a seat whose character is not in the library are different problems.
+        if (!seat || !shown) {
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.94)", zIndex: 240, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+              <div style={{ maxWidth: 420, background: "#15233c", border: "1px solid #2f5d9e", borderRadius: 8, padding: "14px 16px", color: "#cfe3ff" }}>
+                <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 13 }}>Cannot preview that seat</p>
+                <p style={{ margin: "0 0 10px", fontSize: 12, color: "#8fb6e8", lineHeight: 1.5 }}>
+                  {!seat
+                    ? `Seat "${previewSeatId}" is no longer in this room — it was probably renamed or cleared.`
+                    : `${seat.label} has no character the library can resolve. Bind one in Seats & Tokens, then try again.`}
+                </p>
+                <button type="button" onClick={() => setPreviewSeatId("")}
+                  style={{ fontSize: 11, padding: "4px 12px", background: "transparent", border: "1px solid #444", borderRadius: 5, color: "#aaa", cursor: "pointer" }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          );
+        }
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(6,8,14,0.94)", zIndex: 240, display: "flex", flexDirection: "column", alignItems: "center", padding: "12px" }}>
             <div style={{ width: "100%", maxWidth: 560, display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#15233c", border: "1px solid #2f5d9e", borderRadius: "8px 8px 0 0", flexShrink: 0 }}>
