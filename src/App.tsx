@@ -1361,11 +1361,36 @@ export default function App() {
     return `${roomLiveState.combat.round}:${roomLiveState.combat.activeActorId ?? ""}`;
   }
   function performEquipToggle(actorId: string, actionId: string) {
+    /**
+     * NEITHER OF THESE MAY FAIL QUIETLY.
+     *
+     * Every RULE rejection below announces itself — Gear Locked, Attunement Full — so a player
+     * who is refused knows why. These two lookups did not, so a request that missed either one
+     * ended the same way as a click on nothing: the button pressed, no message anywhere, and
+     * the item unchanged. Indistinguishable from a dead control, which is exactly how it was
+     * reported.
+     *
+     * They are also the two lookups most likely to miss, because both compare ids across a
+     * copy boundary: the seat holds a snapshot pushed from the DM, and an item re-attached
+     * since that push has a different action id on each side.
+     */
     const actor = dmActors.find(a => a.id === actorId);
-    if (!actor) return;
+    if (!actor) {
+      addEntry({
+        actorName: "System", actionName: "Gear Change Failed", tabId: "system",
+        message: `⚠ A seat asked to equip/unequip on character "${actorId}", which is not in the library. Their card is out of date — push that seat again.`,
+      });
+      return;
+    }
     const equipment = actor.tabs.equipment ?? [];
     const target = equipment.find(a => a.id === actionId);
-    if (!target) return;
+    if (!target) {
+      addEntry({
+        actorName: actor.name, actionName: "Gear Change Failed", tabId: "system",
+        message: `⚠ ${actor.name} tried to equip/unequip "${actionId}", which is not on your copy of their sheet (${equipment.length} carried). Their card is showing an older push — re-push that seat.`,
+      });
+      return;
+    }
 
     const willEquip = target.metadata?.equipped === false;
 
