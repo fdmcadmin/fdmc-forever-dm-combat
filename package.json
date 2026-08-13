@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "scan:encoding": "node scripts/scan-encoding.mjs",
-    "prebuild": "node scripts/scan-encoding.mjs",
+    "prebuild": "node scripts/sync-manifest-version.mjs && node scripts/scan-encoding.mjs",
     "build": "tsc -b && vite build",
     "postbuild": "node scripts/stage-dist.mjs",
     "generate-export": "npx tsx scripts/generateActorExport.ts",
