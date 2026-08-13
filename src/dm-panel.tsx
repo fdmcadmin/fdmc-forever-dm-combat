@@ -76,6 +76,7 @@ import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
 import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
+import { loadConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";
 import { LevelUpApprovalPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
 import { buildActorSeatColorMap, withAlpha } from "./core/seats/seatColors";
@@ -244,6 +245,16 @@ function DmPanelApp() {
     });
   }, []);
 
+  // Anything that arrived while this panel was closed is waiting in the inbox the main window
+  // keeps. Listening alone only ever catches what is broadcast while this window is alive.
+  useEffect(() => {
+    setPendingConvergenceRequests(prev => {
+      const seen = new Set(prev.map(r => `${r.offerId}::${r.seatId}`));
+      const waiting = loadConvergenceInbox().filter(r => !seen.has(`${r.offerId}::${r.seatId}`));
+      return waiting.length ? [...prev, ...(waiting as ConvergenceRequest[])] : prev;
+    });
+  }, []);
+
   function handleLevelUpApprove(request: LevelUpRequest, finalActor: Actor) {
     const base = actorLibrary[request.actorId] ?? finalActor;
     const override: Partial<Actor> = {};
@@ -401,6 +412,8 @@ function DmPanelApp() {
     if (!outputItem) return;
     await handleDeliverLoot(req.seatId, outputItem, `Convergence complete — ${outputItem.name} has been forged. Remove your submitted items from your equipment bag.`);
     setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    // Drop it from the durable inbox too, or it returns the next time a window opens.
+    removeFromConvergenceInbox(req);
     setConvergenceApprovalReq(null);
   }
 
@@ -414,6 +427,8 @@ function DmPanelApp() {
       }, { destination: "REMOTE" });
     }
     setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    // Drop it from the durable inbox too, or it returns the next time a window opens.
+    removeFromConvergenceInbox(req);
     setConvergenceApprovalReq(null);
   }
 

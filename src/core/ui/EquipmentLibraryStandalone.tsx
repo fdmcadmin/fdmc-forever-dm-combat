@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react";
 import { parseActField, parseSessionField } from "../campaign/actTags";
+import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/convergenceInbox";
 import OBR from "@owlbear-rodeo/sdk";
 import { ChassisFields } from "./ChassisFields";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
@@ -995,6 +996,16 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   // separate, the dedupe below is by offerId + seatId, and a request seen twice is still one
   // request. Better a duplicate listener than a window that never hears anything.
   useEffect(() => {
+    // READ THE INBOX FIRST. The main window records every request durably, so anything that
+    // arrived while this popover was closed is waiting here. Listening alone can only ever
+    // catch what is broadcast while this window happens to be alive, which is why a request
+    // submitted before the Library was opened used to be lost outright.
+    setPendingConvergenceRequests(prev => {
+      const seen = new Set(prev.map(r => `${r.offerId}::${r.seatId}`));
+      const fromInbox = loadConvergenceInbox().filter(r => !seen.has(`${r.offerId}::${r.seatId}`));
+      return fromInbox.length ? [...prev, ...(fromInbox as ConvergenceRequest[])] : prev;
+    });
+
     if (!OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
       const msg = event.data;
@@ -1023,6 +1034,8 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     };
     await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
     setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    // Drop it from the durable inbox too, or it returns the next time a window opens.
+    removeFromConvergenceInbox(req);
     setRecentDelivery(`Convergence approved — ${outputItem.name} sent to ${seat?.label ?? req.seatId}. Remove ${(req.submittedItemNames ?? []).join(" + ") || "the submitted items"} from their bag.`);
     setTimeout(() => setRecentDelivery(null), 10000);
   }
@@ -1599,6 +1612,8 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
           reason: "DM declined the convergence request.",
         }, { destination: "REMOTE" });
         setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
+    // Drop it from the durable inbox too, or it returns the next time a window opens.
+    removeFromConvergenceInbox(req);
         setConvergenceApproval(null);
       }}
       onBack={() => setConvergenceApproval(null)}

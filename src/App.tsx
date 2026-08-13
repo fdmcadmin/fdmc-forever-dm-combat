@@ -51,6 +51,8 @@ import { playerSafeTier } from "./core/ui/ThreatHpBar";
 // how you get a silent shadowing bug.
 import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState, getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
 import { isActorStateRequest } from "./core/state/actorStateRequests";
+import { addToConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";
+import { isConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
 import { useCombatLog } from "./core/combat-log/useCombatLog";
@@ -502,6 +504,32 @@ export default function App() {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
       const msg = event.data as unknown;
+
+      /**
+       * CONVERGENCE REQUESTS ARE CAUGHT HERE, IN THE MAIN WINDOW — before the actor-state
+       * guard below, which returns early for anything it does not recognise.
+       *
+       * They used to be heard only by the DM panel and the Library popover. A broadcast is
+       * ephemeral, so a player submitting while neither window happened to be open sent their
+       * items into nothing, and opening the Library afterwards showed an empty list because
+       * there was nothing left to hear. This window is always open, so it is the only place
+       * that can promise to catch one.
+       *
+       * Recorded to the shared inbox rather than to component state, so it outlives this
+       * window and any DM surface can read it whenever it opens.
+       */
+      if (isConvergenceRequest(msg)) {
+        addToConvergenceInbox(msg);
+        const seatLabel = roomLiveStateRef.current.seats[msg.seatId]?.label ?? msg.seatId;
+        addEntry({
+          actorName: msg.actorName ?? seatLabel,
+          actionName: "Convergence Request",
+          tabId: "system",
+          message: `◈ ${msg.actorName ?? seatLabel} submitted ${msg.submittedItemIds.length} item(s) to the forge — open Library to review.`,
+        });
+        return;
+      }
+
       if (!isActorStateRequest(msg)) return;
 
       // A REST runs on the GM's copy so the master card is what refills: resource pools
