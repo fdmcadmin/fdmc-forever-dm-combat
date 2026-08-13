@@ -1123,6 +1123,34 @@ export default function App() {
       setActorLibrary(lib => ({ ...lib, [updatedActor.id]: updatedActor }));
 
       /**
+       * WRITE THE LAYER THAT WINS, OR THE ITEM IS INVISIBLE.
+       *
+       * A resolved actor is base + override, and tab merging replaces a tab WHOLESALE rather
+       * than appending (`{ ...baseTabs, ...overrideTabs }`, dmActorLibrary.ts). So an override
+       * carrying tabs.equipment shadows the base array entirely. Writing a purchase to the
+       * base alone therefore succeeded and then vanished on the next resolve: coin spent
+       * (wallets live in room state, a different store), item stored, nothing visible on any
+       * surface — which is why this read as "it voided" rather than as a delivery failure.
+       *
+       * Every character in the live library has such an override, and one item — Lyrielle's
+       * Canopy Bow — was already masked this way before any purchase was involved.
+       *
+       * `updatedActor` is the RESOLVED actor plus the new item, so its equipment is the array
+       * the player should see. Writing it into the override makes the winning layer agree with
+       * the base rather than contradict it. Only touched when an override already exists:
+       * creating one here would bake resolved state into a layer that did not want it.
+       */
+      const existingOverride = actorOverrides[updatedActor.id];
+      if (existingOverride?.tabs?.equipment) {
+        const nextOverride: typeof existingOverride = {
+          ...existingOverride,
+          tabs: { ...existingOverride.tabs, equipment: updatedActor.tabs.equipment },
+        };
+        saveActorOverride(updatedActor.id, nextOverride);
+        setActorOverrides(prev => ({ ...prev, [updatedActor.id]: nextOverride }));
+      }
+
+      /**
        * THE PUSH IS WHAT THE PLAYER ACTUALLY SEES.
        *
        * Everything above lands on the DM's copy. The coin does not need this — wallets live in
