@@ -406,11 +406,46 @@ function DmPanelApp() {
     }
   }
 
+  /**
+   * Approve a fusion: grant the output, THEN consume the inputs.
+   *
+   * The order is the safety property. Granting first means a failure anywhere after it leaves
+   * the player holding their inputs and, at worst, an extra item — recoverable by hand.
+   * Consuming first would mean a failure destroys the inputs and produces nothing, which is
+   * unrecoverable: the items are gone from the sheet and the request is resolved.
+   *
+   * Until now this only granted, and told the player to remove their own items. That left the
+   * inputs sitting in the bag to be forged a second time, and made every approval a two-step
+   * job the DM had to remember to finish.
+   *
+   * Removal is skipped rather than guessed at when the actor cannot be resolved: an approval
+   * that grants the output and leaves the inputs is a mess, but a removal aimed at the wrong
+   * sheet is a loss.
+   */
   async function handleConvergenceApprove(req: ConvergenceRequest, outputItemId: string) {
     const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
     const outputItem = allItems.find(i => i.id === outputItemId);
     if (!outputItem) return;
-    await handleDeliverLoot(req.seatId, outputItem, `Convergence complete — ${outputItem.name} has been forged. Remove your submitted items from your equipment bag.`);
+
+    // 1 — GRANT. If this throws, nothing has been taken.
+    await handleDeliverLoot(req.seatId, outputItem, `Convergence complete — ${outputItem.name} has been forged.`);
+
+    // 2 — CONSUME. Only now, and only on a sheet we can actually identify.
+    const actor = req.actorId ? resolveActorFromLibrary(req.actorId, actorLibrary, actorOverrides, roomLiveState) : undefined;
+    const inputIds = new Set(Array.isArray(req.submittedItemIds) ? req.submittedItemIds : []);
+    if (actor && inputIds.size > 0) {
+      // An attached item's id is `equip-<itemId>`; match both so a hand-added copy is caught.
+      const kept = (actor.tabs.equipment ?? []).filter(a => {
+        const raw = a.id.replace(/^equip-/, "");
+        return !inputIds.has(raw) && !inputIds.has(a.id);
+      });
+      const consumed = (actor.tabs.equipment ?? []).length - kept.length;
+      if (consumed > 0) {
+        upsertActorInLibrary({ ...actor, tabs: { ...actor.tabs, equipment: kept } });
+        pushActorsToSeat(req.seatId);
+      }
+    }
+
     setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
     // Drop it from the durable inbox too, or it returns the next time a window opens.
     removeFromConvergenceInbox(req);
