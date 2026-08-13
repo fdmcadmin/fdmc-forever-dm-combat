@@ -97,12 +97,24 @@ function ActorPopout() {
    * Re-reading the cache on mount as well covers the other order: a push that landed while
    * this window was closed is already in the cache and should not need a second one.
    */
-  const [actorVersion, setActorVersion] = useState(0);
-  const baseActor = useMemo(
-    () => resolvePopoutActor(POPOUT_ACTOR_ID),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- actorVersion is the refresh signal
-    [actorVersion],
-  );
+  /**
+   * THE PUSHED ACTOR WINS, and is used DIRECTLY.
+   *
+   * Re-resolving from storage after a push looked equivalent and is not: resolvePopoutActor
+   * reads the DM library first, the player cache second and the bundled snapshot last, so the
+   * answer depends on which store this particular window happens to have. Two windows on the
+   * same character then legitimately disagreed, and reopening either one flipped the result —
+   * which is exactly what was seen, the state changing according to which window was reopened
+   * last rather than according to what anyone had done.
+   *
+   * A push already carries the whole actor. Holding it in state and rendering it removes the
+   * question entirely: there is no ordering to lose, no store to pick between, and the last
+   * thing the GM sent is the thing on screen. Storage is still written, so a cold open has
+   * something to start from — but it is the fallback, not the source of truth.
+   */
+  const [pushedActor, setPushedActor] = useState<ReturnType<typeof resolvePopoutActor>>(undefined);
+  const initialActor = useMemo(() => resolvePopoutActor(POPOUT_ACTOR_ID), []);
+  const baseActor = pushedActor ?? initialActor;
 
   /** True when the only copy available is the shipped snapshot — see resolvePopoutActor. */
   const isStaleBundled = Boolean((baseActor as { __fromBundled?: boolean } | undefined)?.__fromBundled);
@@ -129,8 +141,12 @@ function ActorPopout() {
          * Caching on that basis makes the popout self-sufficient, and writing the same key
          * means the main window and this one stay one shared truth rather than two.
          */
-        cacheActors(msg.actors as Parameters<typeof cacheActors>[0]);
-        setTimeout(() => setActorVersion(v => v + 1), 0);
+        const actors = msg.actors as Parameters<typeof cacheActors>[0];
+        // Cache so a cold open has somewhere to start…
+        cacheActors(actors);
+        // …but RENDER the pushed copy, not a re-read. See the note on pushedActor above.
+        const mine = actors.find(a => a.id === POPOUT_ACTOR_ID);
+        if (mine) setPushedActor(mine);
       }
     });
 

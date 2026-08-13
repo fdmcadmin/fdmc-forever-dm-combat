@@ -1385,7 +1385,23 @@ export default function App() {
      * copy boundary: the seat holds a snapshot pushed from the DM, and an item re-attached
      * since that push has a different action id on each side.
      */
-    const actor = dmActors.find(a => a.id === actorId);
+    /**
+     * READ THE CHARACTER FRESH, NOT FROM THE RENDER CLOSURE.
+     *
+     * `dmActors` is a memo captured when this handler was created. Each toggle then wrote the
+     * WHOLE equipment array back, so two changes close together both started from the same
+     * snapshot and the second overwrote the first. Three operations in fifteen seconds — stow
+     * Handaxe, stow Hunting Trap, equip Pathfinder's Token — left only the last one applied,
+     * while all three logged as if they had worked. That is why the DM's own card disagreed
+     * with its own log, and why it looked like a display problem rather than a lost write.
+     *
+     * Resolving from storage at APPLY time is the same discipline `roomLiveStateRef.current`
+     * already uses for concurrent room-state requests: every change builds on the result of
+     * the last one rather than on whatever the last render happened to see.
+     */
+    const actor: Actor | undefined =
+      resolveActor(actorId, loadActorLibrary(), loadActorOverrides(), roomLiveStateRef.current)
+      ?? dmActors.find(a => a.id === actorId);
     if (!actor) {
       addEntry({
         actorName: "System", actionName: "Gear Change Failed", tabId: "system",
