@@ -958,9 +958,25 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     setTimeout(() => setRecentDelivery(null), 4000);
   }
 
-  // Listen for convergence requests from players (only when not managed externally by dm-panel)
+  /**
+   * The requests this window should show: whatever dm-panel has collected, or its own.
+   *
+   * dm-panel passes its state array, which is `[]` before anything arrives — so every test of
+   * `externalConvergenceRequests !== undefined` was permanently true, and both the listener
+   * below and the display further down switched themselves off for good.
+   */
+  const convergenceRequestsToShow = (externalConvergenceRequests?.length ?? 0) > 0
+    ? externalConvergenceRequests!
+    : pendingConvergenceRequests;
+
+  // Listen for convergence requests from players.
+  //
+  // This ALSO used to bail whenever dm-panel supplied the prop, which — given that prop starts
+  // as [] — meant it never listened at all. Listening regardless is safe: the two states are
+  // separate, the dedupe below is by offerId + seatId, and a request seen twice is still one
+  // request. Better a duplicate listener than a window that never hears anything.
   useEffect(() => {
-    if (!OBR.isAvailable || externalConvergenceRequests !== undefined) return;
+    if (!OBR.isAvailable) return;
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
       const msg = event.data;
       if (isConvergenceRequest(msg)) {
@@ -1941,13 +1957,23 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       })()}
 
       <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
-        {/* Pending convergence requests — shown only when not managed by the unified approvals panel */}
-        {pendingConvergenceRequests.length > 0 && !externalConvergenceRequests && (
+        {/* PENDING CONVERGENCE REQUESTS.
+            This used to render only when `externalConvergenceRequests` was absent, on the
+            reasoning that dm-panel's unified approvals view owns them otherwise. But dm-panel
+            passes its state array, which starts as [] — not undefined — so the guard was
+            permanently true: the internal listener above switched off (same test), the display
+            switched off here, and a submitted request existed ONLY in dm-panel's Approvals
+            view. A DM working in the Library window saw nothing arrive and the player waited on
+            "Awaiting DM Approval" forever.
+            Showing whichever list is populated puts the request in front of whoever is looking,
+            in the window they are already in. The approvals view still has its own copy; both
+            read the same request, and approving in either resolves it. */}
+        {convergenceRequestsToShow.length > 0 && (
           <div style={{ marginBottom: 14 }}>
             <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>
-              ◈ Convergence Requests ({pendingConvergenceRequests.length})
+              ◈ Convergence Requests ({convergenceRequestsToShow.length})
             </p>
-            {pendingConvergenceRequests.map(req => {
+            {convergenceRequestsToShow.map(req => {
               const seat = seats.find(s => s.seatId === req.seatId);
               const allItems = [...campaignLib, ...dmLib];
               const outputItem = allItems.find(i => i.id === req.outputItemId);
