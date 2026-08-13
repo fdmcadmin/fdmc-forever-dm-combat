@@ -605,8 +605,56 @@ export function ConvergenceApprovalPanel({
     ? submittedItems.map(i => i.name)
     : requestNames;
 
-  // DM picks the output item — default to first DM library item, or first campaign item
-  const pickableItems = dmLib.length > 0 ? [...dmLib, ...campaignLib] : campaignLib;
+  /**
+   * WHAT A FUSION CAN PRODUCE.
+   *
+   * This offered the entire library — every weapon, every set of armour, every mundane token —
+   * which is not a choice so much as a search. A convergence produces a CONVERGENCE OUTPUT and
+   * nothing else, so that is the list.
+   *
+   * The loot doc gives two more rules worth honouring, because both are things the DM would
+   * otherwise have to hold in their head while scrolling:
+   *
+   *   RECIPE — fusion needs a curated two-tag pair, and the tags come from the submitted
+   *   inputs. An output whose recipe is exactly those two tags is the intended result.
+   *
+   *   MATURITY — provenance caps the tier. A1+A1 and A1+A2 make Tier 1; A1+A3, A2+A2 and
+   *   A2+A3 make Tier 2; only A3+A3 reaches Tier 3. An output above that cap cannot hold.
+   *
+   * Neither is enforced as a hard block — a DM overriding their own system is allowed, and
+   * Hale's demonstration item is proof the rules have exceptions. They ORDER the list and
+   * label it, so the right answer is at the top and a deliberate departure is still possible.
+   */
+  const inputTags = submittedItems
+    .map(i => i.convergence?.mechanicalTag?.trim())
+    .filter((t): t is string => Boolean(t));
+  const inputActs = submittedItems
+    .map(i => Number(i.convergence?.actLabel?.replace(/\D/g, "")) || 0)
+    .filter(n => n > 0);
+  // A1+A1 / A1+A2 -> 1 · A1+A3 / A2+A2 / A2+A3 -> 2 · A3+A3 -> 3
+  const maxTier = inputActs.length < 2 ? 3
+    : (() => {
+        const sorted = [...inputActs].sort((a, b) => a - b);
+        const [lo, hi] = [sorted[0], sorted[sorted.length - 1]];
+        if (lo === 3 && hi === 3) return 3;
+        if (lo + hi >= 4) return 2;      // 1+3, 2+2, 2+3
+        return 1;                         // 1+1, 1+2
+      })();
+
+  const recipeMatches = (item: EquipmentItem) => {
+    const recipe = item.convergence?.mechanicalTag?.toLowerCase() ?? "";
+    if (!recipe || inputTags.length < 2) return false;
+    return inputTags.every(t => recipe.includes(t.toLowerCase()));
+  };
+
+  const outputs = allItems.filter(i => i.convergence?.role === "output");
+  const pickableItems = [...outputs].sort((a, b) => {
+    // Recipe match first, then within the tier the inputs can actually support, then by tier.
+    const score = (i: EquipmentItem) =>
+      (recipeMatches(i) ? 0 : 10) + (Number(i.tier) <= maxTier ? 0 : 5);
+    const d = score(a) - score(b);
+    return d !== 0 ? d : (Number(a.tier) || 0) - (Number(b.tier) || 0);
+  });
   const [selectedOutputId, setSelectedOutputId] = useState<string>(pickableItems[0]?.id ?? "");
   const selectedOutput = allItems.find(i => i.id === selectedOutputId);
 
@@ -707,17 +755,46 @@ export function ConvergenceApprovalPanel({
           <p style={{ margin: "0 0 8px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>
             Select Output Item (DM Chooses)
           </p>
+          {/* Grouped by what the submitted inputs actually justify, so the intended result is
+              the first thing in the list rather than something to go hunting for. Nothing is
+              hidden — a DM overruling their own recipe table is allowed, it just has to be a
+              decision rather than an accident. */}
           <select value={selectedOutputId} onChange={e => setSelectedOutputId(e.target.value)}
             style={{ display: "block", width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #2a6e2a66", background: "#0d1a0d", color: "#fff", fontSize: 13, marginBottom: 10, cursor: "pointer" }}>
-            {dmLib.length > 0 && (
-              <optgroup label="── My Library (custom items)">
-                {dmLib.map(i => <option key={i.id} value={i.id}>{i.name}{i.tier ? ` [${i.tier}]` : ""}</option>)}
-              </optgroup>
-            )}
-            <optgroup label="── Campaign Library">
-              {campaignLib.map(i => <option key={i.id} value={i.id}>{i.name}{i.tier ? ` [${i.tier}]` : ""}</option>)}
-            </optgroup>
+            {(() => {
+              const label = (i: EquipmentItem) =>
+                `${i.name}${i.tier ? ` · Tier ${i.tier}` : ""}${i.convergence?.mechanicalTag ? ` — ${i.convergence.mechanicalTag}` : ""}`;
+              const matching = pickableItems.filter(i => recipeMatches(i));
+              const inTier = pickableItems.filter(i => !recipeMatches(i) && Number(i.tier) <= maxTier);
+              const above = pickableItems.filter(i => !recipeMatches(i) && Number(i.tier) > maxTier);
+              return (
+                <>
+                  {matching.length > 0 && (
+                    <optgroup label={`── Matches this recipe (${inputTags.join(" + ")})`}>
+                      {matching.map(i => <option key={i.id} value={i.id}>◈ {label(i)}</option>)}
+                    </optgroup>
+                  )}
+                  {inTier.length > 0 && (
+                    <optgroup label={`── Other outputs these inputs can hold (up to Tier ${maxTier})`}>
+                      {inTier.map(i => <option key={i.id} value={i.id}>{label(i)}</option>)}
+                    </optgroup>
+                  )}
+                  {above.length > 0 && (
+                    <optgroup label={`── Above what this provenance supports (Tier ${maxTier} max)`}>
+                      {above.map(i => <option key={i.id} value={i.id}>⚠ {label(i)}</option>)}
+                    </optgroup>
+                  )}
+                </>
+              );
+            })()}
           </select>
+          {/* What the maturity rule concluded, in words, so the grouping is not a mystery. */}
+          {inputActs.length >= 2 && (
+            <p style={{ margin: "0 0 8px", fontSize: 10, color: "#666" }}>
+              Provenance {inputActs.map(a => `A${a}`).join(" + ")} → Tier {maxTier} maximum
+              {inputTags.length >= 2 ? ` · recipe ${inputTags.join(" + ")}` : ""}
+            </p>
+          )}
           {selectedOutput && <ItemCard item={selectedOutput} role="output" />}
           {!selectedOutput && selectedOutputId && (
             <div style={{ background: "#1a1a0d", border: "1px solid #5a4a0a", borderRadius: 8, padding: "10px 14px" }}>
@@ -725,7 +802,10 @@ export function ConvergenceApprovalPanel({
             </div>
           )}
           {pickableItems.length === 0 && (
-            <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No items in library. Add items to My Library before approving.</p>
+            <p style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>
+              No Convergence outputs in the library. Only items tagged as a Convergence output can be forged —
+              add one, or re-seed the campaign library.
+            </p>
           )}
         </div>
 

@@ -51,7 +51,7 @@ import { playerSafeTier } from "./core/ui/ThreatHpBar";
 // how you get a silent shadowing bug.
 import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState, getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
 import { isActorStateRequest } from "./core/state/actorStateRequests";
-import { addToConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";
+import { addToConvergenceInbox, loadConvergenceInbox } from "./core/state/convergenceInbox";
 import { isConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -519,7 +519,7 @@ export default function App() {
        * window and any DM surface can read it whenever it opens.
        */
       if (isConvergenceRequest(msg)) {
-        addToConvergenceInbox(msg);
+        setConvergencePending(addToConvergenceInbox(msg).length);
         const seatLabel = roomLiveStateRef.current.seats[msg.seatId]?.label ?? msg.seatId;
         addEntry({
           actorName: msg.actorName ?? seatLabel,
@@ -2286,6 +2286,22 @@ export default function App() {
    * different machine.
    */
   const [previewSeatId, setPreviewSeatId] = useState<string>("");
+  /**
+   * How many forge requests are waiting, for the badge on the Library button.
+   *
+   * Sourced from the durable inbox rather than from a message that just arrived, so it is
+   * still right after a reload and still right if the request came in before this window was
+   * looking. Re-read on a timer AND whenever a request lands, because the other windows
+   * resolve requests without telling this one.
+   */
+  const [convergencePending, setConvergencePending] = useState(0);
+  useEffect(() => {
+    if (!isDmMode) return;
+    const refresh = () => setConvergencePending(loadConvergenceInbox().length);
+    refresh();
+    const t = window.setInterval(refresh, 4000);
+    return () => window.clearInterval(t);
+  }, [isDmMode]);
   const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens", "fdm-dm-approvals"] as const;
 
   const closeAllDmPanels = useCallback(async () => {
@@ -2644,7 +2660,21 @@ export default function App() {
             <span style={{ width: 10 }} />
             <span style={dmGroupLabel("#5f8fd9")}>Manage</span>
             <button type="button" style={DM_USE_SHADES[0]} onClick={() => void openDmPanel("seatTokens")}>Seats &amp; Tokens</button>
-            <button type="button" style={DM_USE_SHADES[1]} onClick={() => void openDmPanel("library")}>Library</button>
+            {/* The Library button carries the pending-forge count. A log line scrolls away and
+                is easy to miss; the thing you have to click to act on it should be the thing
+                that tells you there is something to act on. Read from the durable inbox, so it
+                is still there after a reload — and it clears itself when the request is
+                resolved, because that is when the inbox entry goes. */}
+            <button type="button" style={DM_USE_SHADES[1]} onClick={() => void openDmPanel("library")}>
+              Library
+              {convergencePending > 0 && (
+                <span
+                  title={`${convergencePending} convergence request${convergencePending === 1 ? "" : "s"} waiting`}
+                  style={{ marginLeft: 6, padding: "0 6px", borderRadius: 8, background: "#2a6e2a", color: "#dfffdf", fontSize: 10, fontWeight: 700 }}>
+                  ◈ {convergencePending}
+                </span>
+              )}
+            </button>
             {/* See a seat exactly as its player does. Read-only. */}
             <select value={previewSeatId} onChange={e => setPreviewSeatId(e.target.value)}
               title="Preview a player's card as they see it — read only"
