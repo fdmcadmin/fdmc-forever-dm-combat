@@ -1244,29 +1244,24 @@ export function ActorCard({
   const allCarried = actor.tabs.equipment ?? [];
 
   /**
-   * The CARRIED panel is a combat control, so it lists combat gear only.
+   * EVERY carried item can be equipped or unequipped.
    *
-   * This card is what a player drives during a fight, and equipping is now turn-bound and
-   * once-each-way — decisions worth a list you can scan. Rope, rations, a tool kit and the
-   * two ledger lines are inventory: they never change a number on the sheet, so putting them
-   * in the same list only makes the armour harder to find.
+   * This used to list "combat gear only" — anything with a pool, a stat effect, dice, a focus
+   * bonus or an attunement slot — on the reasoning that the card is a combat control and rope
+   * should not crowd out the armour.
    *
-   * An item counts as combat gear when it can change something mid-fight: it is worn or
-   * wielded (weapon / armour / shield), it carries a pool, it moves a stat or AC, it has a
-   * to-hit or dice, it feeds spells through a focus, or it occupies an attunement slot. The
-   * full inventory still lives on the equipment tab itself — nothing is hidden from the
-   * player, it just isn't in the equip control.
+   * That reasoning quietly stranded items. Unequipping is the ONLY way an item becomes
+   * giveable (an equipped item's statEffects are inside the derived AC, so it cannot be handed
+   * over mid-wear), and the toggle was the only way to unequip. So anything the filter
+   * excluded could never be taken off, and therefore could never be traded — no error, no
+   * explanation, just an item with no controls on it. Convergence wondrous items landed
+   * exactly there, which is the opposite of the point: they are the things the party is meant
+   * to pass around.
+   *
+   * And the tidiness it bought was not worth it anyway (Christopher): a player mid-fight who
+   * finds they have the wrong thing equipped should simply be able to change it.
    */
-  const isCombatGear = (a: ActorAction): boolean => {
-    const m = a.metadata;
-    if (!m) return false;
-    if (m.charges || m.attunementRequired) return true;
-    if (m.attack || m.damage || m.acDisplay) return true;
-    if (m.spellFocusAttack || m.spellFocusDamage) return true;
-    if ((m.statEffects?.length ?? 0) > 0) return true;
-    return /^(weapon|armor|shield)$/i.test(a.category ?? "");
-  };
-  const carriedCombatGear = allCarried.filter(isCombatGear);
+  const carriedCombatGear = allCarried;
 
   /** A grip switch only makes sense on a chassis whose CHOSEN form is versatile. */
   const isVersatileGrip = (a: ActorAction): boolean => {
