@@ -125,12 +125,37 @@ export function resolveActorsForSeat(
 
 /**
  * Add or update an actor in the library.
- * Used by the actor editor in P3.
+ *
+ * WRITES BOTH LAYERS, because only one of them is visible.
+ *
+ * A character is resolved as base + override, and tab merging replaces a tab WHOLESALE rather
+ * than appending (`{ ...baseTabs, ...overrideTabs }` — see applyLevelUpApproval below). So an
+ * override carrying `tabs.equipment` shadows the base array completely. Writing only the base
+ * therefore SUCCEEDS AND THEN DISAPPEARS on the next resolve.
+ *
+ * That is what happened to bought loot, to a convergence output, and to anything else granted
+ * by code rather than typed in the editor: the editor saves the override and sticks, while
+ * every automated write went to the layer that loses. The DM's own copy showed nothing either,
+ * so it read as the item having simply voided.
+ *
+ * Every caller passes a COMPLETE, already-resolved actor — the whole intended state, not a
+ * patch — so mirroring its tabs into an existing override is exactly right: it makes the
+ * winning layer agree with the base instead of contradicting it. A deliberate removal still
+ * sticks, because the actor being written is the one that no longer has the item.
+ *
+ * An override is only UPDATED, never created. A character with no override has nothing
+ * shadowing its base, and inventing one here would bake resolved state into a layer that never
+ * asked for it.
  */
 export function upsertActorInLibrary(actor: Actor): void {
   const library = loadActorLibrary();
   library[actor.id] = actor;
   saveActorLibrary(library);
+
+  const override = loadActorOverrides()[actor.id];
+  if (override?.tabs) {
+    saveActorOverride(actor.id, { ...override, tabs: { ...override.tabs, ...actor.tabs } });
+  }
 }
 
 /**
