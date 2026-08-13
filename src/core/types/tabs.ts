@@ -204,6 +204,23 @@ export type ActorActionMetadata = {
    */
   masteryGrant?: number;
   /**
+   * CANTRIP SCALING — the damage this cantrip deals at character levels 5, 11 and 17.
+   *
+   * A cantrip has no slot to upcast, so `upcastDamage` cannot describe it: it steps on
+   * CHARACTER level, at three fixed points, and it REPLACES the base rather than adding to
+   * it — Fire Bolt is 2d10 at 5th, not 1d10 + 1d10. Each tier is a whole damage expression
+   * for that reason, and a blank tier simply means "no change yet".
+   */
+  cantripTiers?: { l5?: string; l11?: string; l17?: string };
+  /**
+   * A ONCE-PER-TURN rider this action arms rather than resolves.
+   *
+   * Two shapes, one mechanism: `extraAttack` arms "+1 attack available" (Hew, Distant Strike)
+   * and `damage` arms a damage rider (the Tier 3 weapons). Both are claimed by clicking, both
+   * are spent once, and both come back at the start of the character's turn.
+   */
+  turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string };
+  /**
    * Highest slot level this spell may be cast at. Absent = up to 9th.
    *
    * For the few things that genuinely stop scaling — Divine Smite caps at a 5th-level slot,

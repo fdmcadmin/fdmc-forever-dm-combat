@@ -21,6 +21,8 @@ type SpellRow = {
   level: SpellActionLevel;              // base / minimum slot level (0 = cantrip)
   /** Highest slot this can be cast at, as a string for the select. "" = no cap. */
   maxSpellLevel: string;
+  /** Cantrip damage at character levels 5 / 11 / 17. Each replaces the base. */
+  cantripTiers?: { l5?: string; l11?: string; l17?: string };
   upcastNote: string;                   // e.g. "+1d6 per level above 3rd"
   /** What ONE extra slot level adds to damage/healing (Fireball = "1d6"). "" = nothing. */
   upcastDamage: string;
@@ -106,6 +108,7 @@ function rowToAction(row: SpellRow): ActorAction {
       slotCost: slotLabel,
       spellLevel: row.level,
       ...(Number(row.maxSpellLevel) > row.level ? { maxSpellLevel: Number(row.maxSpellLevel) } : {}),
+      ...(row.level === 0 && row.cantripTiers && Object.values(row.cantripTiers).some(v => v && v.trim()) ? { cantripTiers: row.cantripTiers } : {}),
       ...(row.upcastDamage.trim() ? { upcastDamage: row.upcastDamage.trim() } : {}),
       ...(Number(row.attackRolls) > 1 ? { attackRolls: Number(row.attackRolls) } : {}),
       ...(Number(row.attackRollsPerLevel) > 0 ? { attackRollsPerLevel: Number(row.attackRollsPerLevel) } : {}),
@@ -139,6 +142,7 @@ function actionToRow(action: ActorAction): SpellRow {
     name: action.label,
     level: baseLevel,
     maxSpellLevel: action.metadata?.maxSpellLevel ? String(action.metadata.maxSpellLevel) : "",
+    cantripTiers: action.metadata?.cantripTiers,
     upcastNote: recoveredUpcast,
     slotCost: action.metadata?.slotCost ?? (baseLevel === 0 ? "Cantrip" : `L${baseLevel}`),
     consumesSlot: baseLevel > 0,
@@ -310,6 +314,35 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
           {/* Expanded detail row */}
           {expandedId === row.id && (
             <div style={{ padding: "8px 10px", background: "#0d0d1a", borderTop: "1px solid #2a2a3e", display: "flex", flexDirection: "column", gap: 8 }}>
+
+              {/* CANTRIPS scale on CHARACTER level, not a slot — so they get these three
+                  boxes where a levelled spell gets its upcast rider. Each box is the whole
+                  damage at that tier, because a cantrip REPLACES its dice rather than adding
+                  to them: Fire Bolt is 2d10 at 5th, not 1d10 + 1d10. Leave a tier blank when
+                  nothing changes there. */}
+              {row.level === 0 && (
+                <div>
+                  <p style={{ margin: "0 0 5px", fontSize: 11, color: "#7b68ee" }}>
+                    Damage by character level — each box replaces the base, not added to it
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {([["l5", "At 5th"], ["l11", "At 11th"], ["l17", "At 17th"]] as const).map(([key, label]) => (
+                      <label key={key} style={{ fontSize: 11, color: "#999" }}>
+                        {label}
+                        <input type="text" value={row.cantripTiers?.[key] ?? ""}
+                          onChange={e => setRow(idx, {
+                            cantripTiers: { ...(row.cantripTiers ?? {}), [key]: e.target.value },
+                          })}
+                          placeholder={key === "l5" ? "2d10" : key === "l11" ? "3d10" : "4d10"}
+                          style={{ ...inputStyle, marginTop: 2, width: 90 }} />
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 10, color: "#666", display: "block", marginTop: 4 }}>
+                    Base {row.damage || "—"} until 5th. The highest tier the character has reached wins.
+                  </span>
+                </div>
+              )}
 
               {/* Slot levels — only for non-cantrips */}
               {row.level > 0 && (

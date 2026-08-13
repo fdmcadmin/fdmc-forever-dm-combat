@@ -62,6 +62,8 @@ export type PcActionDraft = {
   /** Activated weapon buff — using/casting the action arms a persistent damage chip that
    *  rides weapon attacks until it ends (Rage, Hunter's Mark, Channel Divinity damage). */
   weaponBuffDamage?: string;
+  /** Once-per-turn rider: arms a chip the player claims, refreshed at the start of their turn. */
+  turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string };
 };
 
 export type PcActorAction = PcActionDraft & {

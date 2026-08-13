@@ -1300,7 +1300,7 @@ export function ActorCard({
   const activeActions = useMemo(
     () => tabContents(actor, activeTab)
       .filter((action) => !isPinnedReactionAction(action))
-      .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(action))))),
+      .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(withCantripTier(action)))))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
     [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters, convergenceById]
   );
@@ -1993,6 +1993,52 @@ export function ActorCard({
       actionName: effect.label,
       tabId: "spells",
       message: `${actor.name} attacks with ${effect.label} (${armed.attack} / ${armed.damage}${armed.damageType ? ` ${armed.damageType}` : ""}). No slot spent — the blade is already conjured.`,
+    });
+  }
+
+  /**
+   * ONCE-PER-TURN RIDERS — armed, claimed by clicking, refreshed at the start of your turn.
+   *
+   * One mechanism, two payloads. `extraAttack` arms "+1 attack available" (Hew off a crit,
+   * Distant Strike); `damage` arms a damage rider (the Tier 3 weapons). Both are the same
+   * question — "have you used it this turn?" — so they are the same state.
+   *
+   * It ARMS rather than rolls, deliberately. Hew was authored as its own action with greataxe
+   * dice baked in, which is wrong the moment the character swings anything else; a chip the
+   * player claims lets the attack come from whatever weapon is actually in hand.
+   *
+   * The reset is keyed to the character's own turn STARTING, not to a round ticking over: a
+   * crit scored on someone else's turn (an opportunity attack) is still yours to spend when
+   * your turn comes round.
+   */
+  const turnSignature = isActiveTurn ? `r${combatRound ?? 0}` : "off";
+  const [riderTurn, setRiderTurn] = useState<string>(turnSignature);
+  const [ridersUsed, setRidersUsed] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    // Only a transition INTO this character's turn clears the board.
+    if (isActiveTurn && turnSignature !== riderTurn) {
+      setRiderTurn(turnSignature);
+      setRidersUsed(new Set());
+    }
+  }, [isActiveTurn, turnSignature, riderTurn]);
+
+  /** Every once-per-turn rider this character carries, across every tab. */
+  const turnRiders = useMemo(() => {
+    return Object.values(actor.tabs).flat()
+      .filter((a): a is ActorAction => Boolean(a?.metadata?.turnRider))
+      .map(a => ({ action: a, rider: a.metadata!.turnRider! }));
+  }, [actor.tabs]);
+
+  function claimTurnRider(actionId: string, label: string, rider: { kind: "extraAttack" | "damage"; damage?: string; label?: string }) {
+    if (ridersUsed.has(actionId)) return;
+    setRidersUsed(prev => new Set(prev).add(actionId));
+    onLog({
+      actorName: actor.name,
+      actionName: label,
+      tabId: "main",
+      message: rider.kind === "extraAttack"
+        ? `${actor.name} uses ${label} — one extra attack this turn, with the weapon already in hand.`
+        : `${actor.name} uses ${label} — ${rider.damage ?? "its rider"} added to this hit.`,
     });
   }
 
@@ -3157,6 +3203,30 @@ export function ActorCard({
         ].filter(Boolean).join("\n\n"),
       },
     };
+  }
+
+  /**
+   * A cantrip's damage at this character's level.
+   *
+   * Cantrips step on CHARACTER level at 5 / 11 / 17, and each tier REPLACES the base rather
+   * than adding to it — Fire Bolt is 2d10 at 5th, not 1d10 + 1d10. So this swaps the damage
+   * outright instead of composing a rider the way upcasting does, and the highest tier the
+   * character has reached wins. A blank tier means the author had nothing to change there,
+   * so it falls through to whatever the last filled tier said.
+   */
+  function withCantripTier(action: ActorAction): ActorAction {
+    const metadata = action.metadata;
+    const tiers = metadata?.cantripTiers;
+    if (!metadata || !tiers || action.actionKind !== "spell" || (metadata.spellLevel ?? 0) !== 0) {
+      return action;
+    }
+    const level = characterLevel(actor);
+    const reached = [
+      { at: 5, dmg: tiers.l5 }, { at: 11, dmg: tiers.l11 }, { at: 17, dmg: tiers.l17 },
+    ].filter(t => level >= t.at && t.dmg?.trim());
+    const top = reached[reached.length - 1];
+    if (!top?.dmg) return action;
+    return { ...action, metadata: { ...metadata, damage: top.dmg.trim() } };
   }
 
   function withUpcastRiders(action: ActorAction): ActorAction {
@@ -4552,6 +4622,39 @@ export function ActorCard({
             could disagree with the sheet, and a rest refills the pills because it refills
             the pools. A spent pip goes hollow rather than vanishing, so the size of the
             pool stays readable at zero. */}
+        {/* Once-per-turn riders. Beside the pools because they are the same kind of thing —
+            something you have or have spent — and they must be readable from any tab, since
+            the attack they modify is on Main and the feat that grants them is not. */}
+        {turnRiders.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 0" }}>
+            {turnRiders.map(({ action, rider }) => {
+              const spent = ridersUsed.has(action.id);
+              const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage ?? "rider");
+              return (
+                <button key={action.id} type="button" disabled={spent}
+                  onClick={() => claimTurnRider(action.id, rider.label ?? action.label, rider)}
+                  title={spent
+                    ? `${action.label} — already used this turn. Comes back when your turn starts.`
+                    : `${action.label} — ${rider.kind === "extraAttack"
+                        ? "claim one extra attack, made with the weapon already in hand"
+                        : `claim ${rider.damage ?? "the rider"} on this hit`}. Once per turn.`}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "1px 8px", borderRadius: 10, fontSize: 10,
+                    cursor: spent ? "default" : "pointer",
+                    background: spent ? "transparent" : "rgba(224,123,57,0.16)",
+                    border: `1px solid ${spent ? "#2a2a3e" : "rgba(224,123,57,0.5)"}`,
+                    color: spent ? "#555" : "#e07b39",
+                  }}>
+                  <strong style={{ fontWeight: 700 }}>{spent ? "○" : "◆"}</strong>
+                  {rider.label ?? action.label}
+                  <span style={{ opacity: 0.75 }}>{what}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {slotPills.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 2px" }}>
             {slotPills.map(({ id, badge, remaining, max, label }) => (

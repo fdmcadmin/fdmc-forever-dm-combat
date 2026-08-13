@@ -100,6 +100,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     combatStyleDamage: action.metadata?.combatStyleDamage,
     combatStyleTarget: action.metadata?.combatStyleTarget,
     weaponBuffDamage: action.metadata?.weaponBuffDamage,
+    turnRider: action.metadata?.turnRider,
   };
 }
 
@@ -346,6 +347,47 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
             {resourceLabels.map(label => <option key={label} value={label}>{label}</option>)}
           </select>
         </label>
+      )}
+
+      {/* ONCE-PER-TURN RIDER. Arms a chip the player claims; refreshed when their turn starts.
+          Two payloads, one mechanism: an extra attack (Hew off a crit, Distant Strike) or a
+          damage rider (the Tier 3 weapons). Arming rather than rolling is the point — Hew was
+          authored as its own action with greataxe dice baked in, so it was wrong the moment
+          the character swung anything else. A claimed chip uses whatever is in hand. */}
+      {draft.tab !== "spell" && (
+        <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+          <label style={{ fontSize: 12, display: "block" }}>
+            Once-per-turn rider <span style={{ color: "#555", fontSize: 10 }}>— arms a chip on the card; comes back at the start of their turn</span>
+            <select
+              value={draft.turnRider?.kind ?? ""}
+              onChange={e => set("turnRider", e.target.value
+                ? { kind: e.target.value as "extraAttack" | "damage", damage: draft.turnRider?.damage, label: draft.turnRider?.label }
+                : undefined)}
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+              <option value="">— none —</option>
+              <option value="extraAttack">Extra attack — one more attack, with the weapon in hand</option>
+              <option value="damage">Damage rider — added to one hit</option>
+            </select>
+          </label>
+          {draft.turnRider?.kind === "damage" && (
+            <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
+              Rider damage
+              <input type="text" value={draft.turnRider.damage ?? ""}
+                onChange={e => set("turnRider", { ...draft.turnRider!, damage: e.target.value || undefined })}
+                placeholder="1d6 or +2"
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+          )}
+          {draft.turnRider && (
+            <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
+              Chip label <span style={{ color: "#555", fontSize: 10 }}>— optional; defaults to the action's name</span>
+              <input type="text" value={draft.turnRider.label ?? ""}
+                onChange={e => set("turnRider", { ...draft.turnRider!, label: e.target.value || undefined })}
+                placeholder="Hew"
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+          )}
+        </div>
       )}
 
       {/* Activated weapon buff — using/casting this action (a Bonus Action, feature, etc.)
