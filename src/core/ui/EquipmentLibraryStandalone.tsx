@@ -1679,21 +1679,41 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       campaignLib={campaignLib}
       dmLib={dmLib}
       seats={seats}
+      /**
+       * PREFER THE HOST'S HANDLER — it is the one that can actually change the sheet.
+       *
+       * `onExternalConvergenceApprove` was accepted as a prop, destructured, and then never
+       * called. So approving from the Library ran the local handler below, which broadcasts a
+       * loot-delivery and touches nothing else: the output was never written to the character
+       * and the submitted inputs were never consumed. The request cleared, the DM was told it
+       * had worked, and the player's bag was exactly as before.
+       *
+       * dm-panel's handler owns the actor library, grants the output and then removes the
+       * inputs in that order. The local one stays as the fallback for the standalone window,
+       * where there is no host to defer to.
+       */
       onApprove={async (req, outputItemId) => {
-        await handleApproveConvergence(req, outputItemId);
+        if (onExternalConvergenceApprove) await onExternalConvergenceApprove(req, outputItemId);
+        else await handleApproveConvergence(req, outputItemId);
+        removeFromConvergenceInbox(req);
+        setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
         setConvergenceApproval(null);
       }}
+      // Deny defers to the host for the same reason approve does — and either way the request
+      // is cleared from both the local list and the durable inbox.
       onDeny={async (req) => {
-        if (!OBR.isAvailable) return;
-        await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
-          type: "fdmc:convergence-denied",
-          seatId: req.seatId,
-          offerId: req.offerId,
-          reason: "DM declined the convergence request.",
-        }, { destination: "REMOTE" });
+        if (onExternalConvergenceDeny) {
+          await onExternalConvergenceDeny(req);
+        } else if (OBR.isAvailable) {
+          await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+            type: "fdmc:convergence-denied",
+            seatId: req.seatId,
+            offerId: req.offerId,
+            reason: "DM declined the convergence request.",
+          }, { destination: "ALL" });
+        }
         setPendingConvergenceRequests(prev => prev.filter(r => !(r.offerId === req.offerId && r.seatId === req.seatId)));
-    // Drop it from the durable inbox too, or it returns the next time a window opens.
-    removeFromConvergenceInbox(req);
+        removeFromConvergenceInbox(req);
         setConvergenceApproval(null);
       }}
       onBack={() => setConvergenceApproval(null)}
