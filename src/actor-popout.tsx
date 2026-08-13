@@ -363,7 +363,7 @@ function ActorPopout() {
         onSetGrip={(action, grip) => {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
-            { type: "fdmc:item-grip", actorId: actor.id, actionId: action.id, grip },
+            { type: "fdmc:request-actor-grip", actorId: actor.id, actionId: action.id, grip },
             // ALL, not REMOTE: REMOTE excludes this client, so a DM with the card open on
             // their own machine never reached their own main window and the control died.
             { destination: "ALL" }).catch(() => undefined);
@@ -371,7 +371,9 @@ function ActorPopout() {
         onToggleEquipped={(action) => {
           if (!OBR.isAvailable) return;
           void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL,
-            { type: "fdmc:item-equip", actorId: actor.id, actionId: action.id },
+            // The AUTO-APPLIED tier, the same one HP and trackers use: the GM applies it on arrival
+            // with no card open and nothing to approve. A seat runs the card it was lent.
+            { type: "fdmc:request-actor-equip", actorId: actor.id, actionId: action.id },
             // ALL, not REMOTE — see the grip note above. The DM handler is gated on isDmMode,
             // so a player client receiving its own message simply ignores it.
             { destination: "ALL" }).catch(() => undefined);

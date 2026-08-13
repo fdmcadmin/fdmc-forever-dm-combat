@@ -554,6 +554,17 @@ export default function App() {
         return;
       }
 
+      // GEAR. Same tier as HP: applied the moment it arrives, with no card open anywhere and
+      // nothing for the GM to click. A seat runs the card it was lent.
+      if (msg.type === "fdmc:request-actor-equip") {
+        performEquipToggle(msg.actorId, msg.actionId);
+        return;
+      }
+      if (msg.type === "fdmc:request-actor-grip") {
+        performGripChange(msg.actorId, msg.actionId, msg.grip);
+        return;
+      }
+
       // Party purse. Applied against the balance AT THIS MOMENT, which is the whole reason a
       // shared pot can be spendable by anyone: two seats can both see 50 gp and both ask for
       // 40, and the second one is refused here rather than overdrawing the party.
@@ -1543,7 +1554,7 @@ export default function App() {
   function requestGripChange(actorId: string, action: { id: string }, grip: "1h" | "2h") {
     if (isDmMode) { performGripChange(actorId, action.id, grip); return; }
     void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
-      type: "fdmc:item-grip", actorId, actionId: action.id, grip, seatId: claimedSeatId ?? "",
+      type: "fdmc:request-actor-grip", actorId, actionId: action.id, grip,
     }, { destination: "REMOTE" }).catch(() => undefined);
   }
 
@@ -1811,7 +1822,7 @@ export default function App() {
       return;
     }
     void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
-      type: "fdmc:item-equip",
+      type: "fdmc:request-actor-equip",
       actorId,
       actionId: action.id,
       seatId: claimedSeatId ?? "",

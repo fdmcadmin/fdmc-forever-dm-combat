@@ -48,7 +48,22 @@ export type ActorStateRequest =
    * `actorId` is who reached in. That is the audit trail — a shared pot that changes without
    * a name attached is the thing that starts arguments at the table.
    */
-  | { type: "fdmc:request-party-transfer"; actorId: string; copper: number };
+  | { type: "fdmc:request-party-transfer"; actorId: string; copper: number }
+  /**
+   * EQUIP / UNEQUIP, and the grip a versatile weapon is held in.
+   *
+   * A seat is LENT a card and is expected to run it. Managing what that character is wearing
+   * is not a change to the base model — it takes no action, spends nothing, and reverses in a
+   * click — so it belongs in the auto tier beside HP and trackers, not behind an approval.
+   * Levelling up and adding spells rewrite what the character IS; those still queue.
+   *
+   * This lived on its own message with its own listener, which meant a seat's gear change
+   * depended on a code path nobody else used. Putting it here makes it work exactly the way
+   * HP already does: the GM applies it the instant it arrives, with no card open and nothing
+   * to click.
+   */
+  | { type: "fdmc:request-actor-equip"; actorId: string; actionId: string }
+  | { type: "fdmc:request-actor-grip"; actorId: string; actionId: string; grip: "1h" | "2h" };
 
 const AUTO_APPROVED_TYPES = new Set<ActorStateRequest["type"]>([
   "fdmc:request-actor-hp",
@@ -56,6 +71,8 @@ const AUTO_APPROVED_TYPES = new Set<ActorStateRequest["type"]>([
   "fdmc:request-actor-tracker",
   "fdmc:request-actor-rest",
   "fdmc:request-party-transfer",
+  "fdmc:request-actor-equip",
+  "fdmc:request-actor-grip",
 ]);
 
 /** True for a well-formed auto-approved request from a seat. */
