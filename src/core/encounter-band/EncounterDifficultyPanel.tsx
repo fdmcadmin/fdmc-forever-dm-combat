@@ -22,11 +22,12 @@ import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime
 import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
 import {
   resolveEncounter, lethalityVerdict, partyBaselineFor, DPR_FLAT_FROM_ROUND,
-  LETHAL_ENEMY_REMAINING, type EncounterBody,
+  LETHAL_ENEMY_REMAINING, effectiveSustain, type EncounterBody,
 } from "./encounterChecker";
+import { EXPECTED_MONSTER_AC } from "./dprBaseline";
 import {
   estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
-  CLASSIFICATION_LABEL, defensiveMultiplier,
+  CLASSIFICATION_LABEL,
   type PartyLane, type PartyResources, type RoundsMonster,
 } from "./encounterRounds";
 
@@ -124,10 +125,35 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     const rows = roundsMonsters.map(m => {
       const t = monsterLibrary.find(x => x.templateId === m.id);
       const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
-      const mult = m.defenses?.length ? defensiveMultiplier(m.defenses) : (m.kitMultiplier || 1);
+      /**
+       * SUSTAIN COMES FROM THE WORKBOOK NOW (0.7.8.2).
+       *
+       * This used to be `maxHp × defensiveMultiplier(defenses)` — the legacy multiplicative
+       * model — while `effectiveSustain`, `SUSTAIN_TRAITS` and the AC-delta table sat in the
+       * tree with ZERO callers. Christopher, on the lethal round: *"this is where a sustain
+       * feature is visible"* — and it could not be, because the priced traits never reached
+       * the number.
+       *
+       * A defence authored as `ehpMultiplier: 1.40` is the workbook's `contribution: 0.40` —
+       * its reference lists both columns for every trait and they differ by exactly 1.0, so
+       * existing authored creatures convert without being re-authored.
+       *
+       * Two real changes come with it, both deliberate:
+       *  · Contributions SUM instead of multiplying. The workbook is explicit that these are
+       *    shares of effective sustain and that stacking every defence overstates a creature.
+       *    A 1.30 × 1.14 × 1.26 creature was reading 1.87; it now reads 1.70.
+       *  · AC enters here, per level, from `EXPECTED_MONSTER_AC` — see the note on `acAlready`.
+       */
+      const contributions = (m.defenses ?? []).map(d => (d.ehpMultiplier || 1) - 1);
+      if (!m.defenses?.length && m.kitMultiplier) contributions.push(m.kitMultiplier - 1);
       return {
         name: m.name,
-        sustain: m.maxHp * mult,
+        sustain: effectiveSustain({
+          rawHp: m.maxHp,
+          ac: m.ac ?? EXPECTED_MONSTER_AC[partyLevel] ?? 0,
+          partyLevel,
+          traitContributions: contributions,
+        }),
         dpr: estimateMonsterDamage(actions, { partyLevel }).dpr,
         count: Math.max(1, m.count),
       };
@@ -143,7 +169,17 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const resolution = useMemo(() => {
     const base = partyBaselineFor(partyLevel);
     if (!base || monsterDamage.dpr <= 0) return null;
-    const k = base.dpr > 0 ? est.landedDpr / base.dpr : 1;
+    /**
+     * ⚠ AC IS DIVIDED BACK OUT HERE. It is now priced on the MONSTER, inside
+     * `effectiveSustain` above, which is the workbook's own convention. `est.landedDpr`
+     * carries `acFactor` because the pacing model prices armour on the party's damage
+     * instead — using it unmodified would charge for armour twice, once on each side.
+     *
+     * Everything else in `landedDpr` still applies: party size, bond lane, resource state
+     * and damage uptime. Only the AC term comes out.
+     */
+    const acFree = est.acFactor > 0 ? est.landedDpr / est.acFactor : est.landedDpr;
+    const k = base.dpr > 0 ? acFree / base.dpr : 1;
     return resolveEncounter({
       partyLevel,
       bodies,
