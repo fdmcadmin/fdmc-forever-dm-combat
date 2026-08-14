@@ -245,7 +245,25 @@ export type EncounterRound = {
   cumulativeMonsterDamage: number;
   pcsDown: number;
   pcsAlive: number;
+  /** Share of the roster's total sustain still standing, 0–1. */
+  enemySustainRemaining: number;
+  /** Share of the roster's bodies still standing, 0–1. */
+  enemyBodiesRemaining: number;
 };
+
+/**
+ * LETHAL THRESHOLD (Christopher, 2026-08-14): *"half number of members up vs over 35% of the
+ * remaining bodies or hp remaining."*
+ *
+ * A fight is lethal at the round where the party is down to HALF its members while the enemy
+ * still holds more than 35% of the fight — by bodies OR by sustain, whichever is still up.
+ *
+ * This is a better mark than "the first character drops". One PC going down in round 4 of a
+ * fight that ends in round 5 is a cost; two of four down while a third of the roster is still
+ * standing is a fight the party is LOSING. The second condition is what separates them —
+ * without it, a hard-won victory and a rout score the same.
+ */
+export const LETHAL_ENEMY_REMAINING = 0.35;
 
 /**
  * The round the party's damage stops falling and holds — `r4plus`, the repeatable floor.
@@ -271,9 +289,12 @@ export type EncounterResolution = {
   /** True if the party ran out before the roster did. */
   partyWiped: boolean;
   /**
-   * The round the fight turns LETHAL — when the first character hits the floor.
-   * `null` if nobody goes down, which is the answer for most fights and is not a failure.
+   * The round the fight turns LETHAL: half the party down while the enemy still holds more
+   * than `LETHAL_ENEMY_REMAINING` of its bodies or its sustain. `null` if that never happens,
+   * which is the answer for most fights and is not a failure.
    */
+  lethalRound: number | null;
+  /** The round the FIRST character hits the floor. A cost, not necessarily a losing fight. */
   firstDownRound: number | null;
   /** The round the last character falls. `null` unless the party wipes. */
   wipeRound: number | null;
@@ -378,6 +399,7 @@ export function resolveEncounter(opts: {
       if (cumulativeMonster >= cum + t) { down++; cum += t; } else break;
     }
 
+    const sustainLeft = pool.reduce((s, b) => s + Math.max(0, b.remaining), 0);
     rounds.push({
       round: r,
       partyDamage,
@@ -389,6 +411,8 @@ export function resolveEncounter(opts: {
       cumulativeMonsterDamage: cumulativeMonster,
       pcsDown: down,
       pcsAlive: thresholds.length - down,
+      enemySustainRemaining: totalSustain > 0 ? sustainLeft / totalSustain : 0,
+      enemyBodiesRemaining: pool.length > 0 ? alive / pool.length : 0,
     });
 
     if (down >= thresholds.length) break;   // the party is gone; the fight is over
@@ -411,6 +435,13 @@ export function resolveEncounter(opts: {
   const partyWiped = pcsDowned >= thresholds.length;
 
   const firstDownRound = rounds.find(x => x.pcsDown >= 1)?.round ?? null;
+  // Half the party down AND the enemy still holding more than 35% by bodies or by sustain.
+  const halfDown = thresholds.length / 2;
+  const lethalRound = rounds.find(x =>
+    x.pcsDown >= halfDown
+    && (x.enemyBodiesRemaining > LETHAL_ENEMY_REMAINING
+      || x.enemySustainRemaining > LETHAL_ENEMY_REMAINING),
+  )?.round ?? null;
   const wipeRound = partyWiped
     ? (rounds.find(x => x.pcsDown >= thresholds.length)?.round ?? null)
     : null;
@@ -427,6 +458,7 @@ export function resolveEncounter(opts: {
       ? "PARTY WIPE"
       : [pcsDowned > 0 ? `${pcsDowned} down` : "none down", hurt].filter(Boolean).join(", "),
     partyWiped,
+    lethalRound,
     firstDownRound,
     wipeRound,
     reachesFlatDpr: roundsToKill >= DPR_FLAT_FROM_ROUND,
@@ -554,8 +586,13 @@ export const EXPECTED_LETHALITY: Record<string, { downed: number; note: string }
   "final-boss": { downed: 3, note: "Three down. The fight is meant to nearly end them." },
 };
 
-/** Does the fight cost what its tag says it should? */
-export function lethalityVerdict(check: EncounterCheck, classification: string): {
+/**
+ * Does the fight cost what its tag says it should?
+ *
+ * Takes only `pcsDowned` so it reads either an `EncounterCheck` or an `EncounterResolution` —
+ * the price is the price however the fight was resolved.
+ */
+export function lethalityVerdict(check: { pcsDowned: number }, classification: string): {
   ok: boolean; expected: number; actual: number; note: string;
 } {
   const want = EXPECTED_LETHALITY[classification] ?? EXPECTED_LETHALITY.normal;

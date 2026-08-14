@@ -1,21 +1,32 @@
 /**
- * EncounterDifficultyPanel — P9.5 party-size / level band check (DM tool).
+ * EncounterDifficultyPanel — what a fight COSTS, for a given party (DM tool).
  *
- * Self-contained. Pick an encounter, choose a party size (4 / 5 / 6) and a pseudo
- * level, and get a difficulty rating + an add/remove recommendation to land the
- * fight in the "Standard" band (fair, not overpowered). Reads only the encounter
- * definitions + monster template library passed in as props; mutates nothing and
- * touches no P0-P9 state. The model lives in `encounterRounds.ts` + `encounterConstruction.ts`.
+ * Pick an encounter, a party size (3 / 4 / 5) and the party's ACTUAL level, and get the
+ * fight's price in characters: who is on the floor when it ends, the round it turns lethal,
+ * and whether it outlasts the party's nova. Reads only the encounter definitions + monster
+ * template library passed in as props; mutates nothing.
+ *
+ * ⚠ It reports, it does not ADVISE. There is no add/remove recommendation — the docstring
+ * promised one for a while after the machinery was deleted with `encounterDifficulty.ts`.
+ * `buildTargetFor` in `encounterConstruction.ts` holds the numbers a recommendation would
+ * need (target sustain and target damage per ladder position), and nothing renders them.
+ *
+ * The model: `dprBaseline.ts` (the transcribed workbook) → `encounterChecker.ts`
+ * (`effectiveSustain`, `resolveEncounter`) with `encounterRounds.ts` supplying the party-size,
+ * lane, resource and AC adjustments that scale the workbook's curve.
  */
 
 import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
-import { checkEncounter, lethalityVerdict, attritionFactor } from "./encounterChecker";
+import {
+  resolveEncounter, lethalityVerdict, partyBaselineFor, DPR_FLAT_FROM_ROUND,
+  LETHAL_ENEMY_REMAINING, type EncounterBody,
+} from "./encounterChecker";
 import {
   estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
-  CLASSIFICATION_LABEL,
+  CLASSIFICATION_LABEL, defensiveMultiplier,
   type PartyLane, type PartyResources, type RoundsMonster,
 } from "./encounterRounds";
 
@@ -88,10 +99,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     ),
     [roundsMonsters, monsterLibrary, partyLevel],
   );
-  const bodyCount = useMemo(
-    () => roundsMonsters.reduce((n, m) => n + Math.max(1, m.count), 0),
-    [roundsMonsters],
-  );
+  // (bodyCount removed 0.7.8.1 — the resolver expands counts into real bodies and reports
+  // its own total, so a separate tally was one more thing that could disagree.)
 
   /**
    * THE READING (Christopher, 2026-08-14): *"this should not read as a round length it should
@@ -104,22 +113,50 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
    * against the old v12 DPR curve that was deleted in 0.7.7.2; judging the workbook's numbers
    * against v12's targets would have manufactured "Slog" verdicts out of a curve change.
    */
-  const check = useMemo(
-    () => (monsterDamage.dpr > 0
-      ? checkEncounter({
-          partyLevel,
-          monsterSustain: est.effectiveHp,
-          monsterDpr: monsterDamage.dpr,
-          bodies: bodyCount,
-          // The panel's own dials — size, lane, rest, monster AC, uptime — must reach the
-          // headline, or it sits frozen while the rows beneath it move. At the defaults this
-          // is exactly the workbook's baseline DPR.
-          partyDpr: est.landedDpr,
-        })
-      : null),
-    [partyLevel, est.effectiveHp, est.landedDpr, monsterDamage.dpr, bodyCount],
-  );
-  const lethal = check ? lethalityVerdict(check, est.classification) : null;
+  /**
+   * The encounter as INDIVIDUAL BODIES, so the resolver can kill them on their own schedule.
+   *
+   * Weakest first: a party that is paying attention clears the cheap bodies to cut incoming
+   * damage, and the resolver applies the party's damage down the list in order. Passing the
+   * boss first would model a table that ignores the adds all fight.
+   */
+  const bodies = useMemo<EncounterBody[]>(() => {
+    const rows = roundsMonsters.map(m => {
+      const t = monsterLibrary.find(x => x.templateId === m.id);
+      const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
+      const mult = m.defenses?.length ? defensiveMultiplier(m.defenses) : (m.kitMultiplier || 1);
+      return {
+        name: m.name,
+        sustain: m.maxHp * mult,
+        dpr: estimateMonsterDamage(actions, { partyLevel }).dpr,
+        count: Math.max(1, m.count),
+      };
+    });
+    return rows.sort((a, b) => a.sustain - b.sustain);
+  }, [roundsMonsters, monsterLibrary, partyLevel]);
+
+  /**
+   * Round-by-round resolution. The panel's dials do not change the workbook's curve — they
+   * SCALE it, so party size, lane, rest, monster AC and uptime all still apply and the shape
+   * of the decay (nova → floor) is preserved.
+   */
+  const resolution = useMemo(() => {
+    const base = partyBaselineFor(partyLevel);
+    if (!base || monsterDamage.dpr <= 0) return null;
+    const k = base.dpr > 0 ? est.landedDpr / base.dpr : 1;
+    return resolveEncounter({
+      partyLevel,
+      bodies,
+      roundCurve: {
+        r1: base.rounds.r1 * k, r2: base.rounds.r2 * k,
+        r3: base.rounds.r3 * k, r4plus: base.rounds.r4plus * k,
+      },
+    });
+  }, [partyLevel, bodies, est.landedDpr, monsterDamage.dpr]);
+
+  const lethal = resolution
+    ? lethalityVerdict({ pcsDowned: resolution.pcsDowned }, est.classification)
+    : null;
 
   // Colour and wording come from the PRICE, not the clock: on the mark, under it, or over it.
   const priceRead: { label: string; color: string } = !lethal
@@ -264,7 +301,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
               <div style={{ background: "#0d0d14", border: `1px solid ${vColor}`, borderRadius: 6, padding: "8px 10px", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 18, fontWeight: 700, color: vColor, lineHeight: 1.15 }}>
-                    {check ? check.lethalityRead : "no damage read"}
+                    {resolution ? resolution.lethalityRead : "no damage read"}
                   </span>
                   {/* What this tier is SUPPOSED to cost — set by the fight's strongest creature. */}
                   <span
@@ -296,14 +333,48 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                       ROUND_BAND — those targets were calibrated against the deleted v12 curve. */}
                   <div>
                     <span style={{ color: "#9a9ab0" }}>LEN</span>{" "}
-                    <strong style={{ color: "#aaa" }}>{est.rounds.toFixed(1)} rounds</strong>
-                    {check && (
+                    <strong style={{ color: "#aaa" }}>
+                      {(resolution?.roundsToKill ?? est.rounds).toFixed(1)} rounds
+                    </strong>
+                    {resolution && (
                       <span style={{ color: "#555" }}>
-                        {" · "}{check.damageTaken.toFixed(0)} damage absorbed
-                        {check.bodies > 1 && ` (${check.bodies} bodies → ×${attritionFactor(check.bodies).toFixed(2)} attrition)`}
+                        {" · "}{resolution.damageTaken.toFixed(0)} damage absorbed across{" "}
+                        {resolution.bodies} bod{resolution.bodies === 1 ? "y" : "ies"}
                       </span>
                     )}
                   </div>
+                  {/* LETHAL AT — the round the fight actually turns, and the round the party
+                      runs out of nova. "Win by round" is not a target; these two are the real
+                      extremes (Christopher, 2026-08-14). */}
+                  {resolution && (
+                    <div>
+                      <span
+                        style={{ color: "#ff8f6b" }}
+                        title={`Lethal = half the party down while the enemy still holds more than ${Math.round(LETHAL_ENEMY_REMAINING * 100)}% of its bodies or its sustain. One character dropping late in a fight the party wins is a cost, not a losing fight.`}
+                      >LETHAL</span>{" "}
+                      {resolution.lethalRound !== null ? (
+                        <strong style={{ color: "#ff4444" }}>R{resolution.lethalRound}</strong>
+                      ) : (
+                        <span style={{ color: "#4caf50" }}>never turns</span>
+                      )}
+                      {resolution.firstDownRound !== null && (
+                        <span style={{ color: "#777" }}>
+                          {" · first down R"}{resolution.firstDownRound}
+                        </span>
+                      )}
+                      {resolution.wipeRound !== null && (
+                        <strong style={{ color: "#ff4444" }}>
+                          {" · wipe R"}{resolution.wipeRound}
+                        </strong>
+                      )}
+                      <span style={{ color: "#555" }}>
+                        {" · "}
+                        {resolution.reachesFlatDpr
+                          ? `runs past R${DPR_FLAT_FROM_ROUND} — party is on its flat DPR floor`
+                          : `ends before R${DPR_FLAT_FROM_ROUND}, still inside the nova`}
+                      </span>
+                    </div>
+                  )}
                   <div style={{ color: "#666" }}>
                     {partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest
                   </div>
