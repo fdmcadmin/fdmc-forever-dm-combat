@@ -22,7 +22,7 @@
  */
 
 import {
-  PARTY_BASELINE, EXPECTED_MONSTER_AC, AC_DELTA_CONTRIBUTION,
+  PARTY_BASELINE, EXPECTED_MONSTER_AC, AC_DELTA_CONTRIBUTION, partyDamageInRound, type RoundCurve,
   type PartyBaseline,
 } from "./dprBaseline";
 
@@ -201,6 +201,236 @@ export function encounterSustain(opts: {
   }
   const wide = (opts.encounterContributions ?? []).reduce((a, b) => a + b, 0);
   return { sustain: sustain * (1 + wide), bodies };
+}
+
+// ─── Resolving a built encounter, body by body ────────────────────────────────
+
+/**
+ * A single creature TYPE in a built encounter. `count` is how many of it are on the table.
+ *
+ * This is what lets the checker read an encounter someone assembled themselves out of 1..X
+ * creatures, rather than a single lumped sustain total: bodies die at different times, and a
+ * dead body stops dealing damage.
+ */
+export type EncounterBody = {
+  name?: string;
+  /** Effective sustain for ONE of these, from `effectiveSustain`. */
+  sustain: number;
+  /** Printed damage per round for ONE of these. */
+  dpr: number;
+  count?: number;
+};
+
+/**
+ * Share of a body's round that still resolves when the party kills it partway through.
+ *
+ * The workbook's default. A creature removed mid-round already acted, or acted in part — 0
+ * would let the party erase a turn by landing the killing blow, and 1 would charge them for a
+ * corpse's full turn.
+ */
+export const KILLED_BODY_DPR_RETAINED = 0.5;
+
+/** How the fight actually played out, round by round. */
+export type EncounterRound = {
+  round: number;
+  /** Party damage available this round, off the decay curve. */
+  partyDamage: number;
+  cumulativePartyDamage: number;
+  bodiesAlive: number;
+  /** Bodies killed during THIS round. */
+  bodiesRemoved: number;
+  /** Bodies that still acted, counting a killed body at `KILLED_BODY_DPR_RETAINED`. */
+  effectiveBodiesActing: number;
+  monsterDamage: number;
+  cumulativeMonsterDamage: number;
+  pcsDown: number;
+  pcsAlive: number;
+};
+
+/**
+ * The round the party's damage stops falling and holds — `r4plus`, the repeatable floor.
+ *
+ * Worth surfacing on its own: a fight that ends by round 3 was fought on the way down from the
+ * nova and never tested the party's staying power. One that runs past this is being fought at
+ * the floor, where every extra round costs the same and the party has nothing left to spend to
+ * shorten it. It is the point a fight stops being a burst check and becomes an endurance one.
+ */
+export const DPR_FLAT_FROM_ROUND = 4;
+
+export type EncounterResolution = {
+  rounds: EncounterRound[];
+  /** Rounds to clear every body — fractional, from where the last one fell. */
+  roundsToKill: number;
+  totalSustain: number;
+  bodies: number;
+  /** Damage the party absorbed over the whole fight. */
+  damageTaken: number;
+  pcsDowned: number;
+  nextPcPressure: number;
+  lethalityRead: string;
+  /** True if the party ran out before the roster did. */
+  partyWiped: boolean;
+  /**
+   * The round the fight turns LETHAL — when the first character hits the floor.
+   * `null` if nobody goes down, which is the answer for most fights and is not a failure.
+   */
+  firstDownRound: number | null;
+  /** The round the last character falls. `null` unless the party wipes. */
+  wipeRound: number | null;
+  /**
+   * True once the fight runs to `DPR_FLAT_FROM_ROUND` — the party is on its repeatable floor
+   * with nothing left to shorten the fight with.
+   */
+  reachesFlatDpr: boolean;
+};
+
+/**
+ * RESOLVE A BUILT ENCOUNTER ROUND BY ROUND — the workbook's Encounter Checker round table.
+ *
+ * This supersedes the closed-form `attritionFactor` approximation for any caller that knows
+ * the individual bodies. Two things it gets right that a single averaged term cannot:
+ *
+ * 1. **Party damage decays** (nova → floor), so a 2-round fight is fought at much higher
+ *    output than a 7-round one. Averaging flattens exactly the difference that decides
+ *    whether a fight is survivable.
+ * 2. **Bodies die on their own schedule.** Focus fire removes the first body early and its
+ *    damage stops; the averaged (n+1)/2n term assumes an even spread of deaths across the
+ *    fight, which is only true when every body has identical sustain.
+ *
+ * Party damage is applied to bodies in order, so the roster should be passed weakest-first if
+ * the party would sensibly focus that way. Damage carries over between bodies within a round —
+ * overkill is not wasted, matching the workbook.
+ *
+ * ⚠ `sustain` per body must ALREADY carry AC, traits, pass fraction and uptime (that is what
+ * `effectiveSustain` produces). Do not apply those again here.
+ */
+export function resolveEncounter(opts: {
+  partyLevel: number;
+  bodies: EncounterBody[];
+  /** Overrides the baseline round curve — e.g. scaled for party size or resource state. */
+  roundCurve?: RoundCurve;
+  /** Safety stop. A fight that has not ended by here is not a fight. */
+  maxRounds?: number;
+}): EncounterResolution | null {
+  const base = partyBaselineFor(opts.partyLevel);
+  if (!base) return null;
+
+  const curve = opts.roundCurve ?? base.rounds;
+  const maxRounds = Math.max(1, opts.maxRounds ?? 30);
+
+  // Expand counts into individual bodies — the whole point is that they die separately.
+  const pool: { sustain: number; dpr: number; remaining: number }[] = [];
+  for (const b of opts.bodies) {
+    for (let i = 0; i < Math.max(1, b.count ?? 1); i++) {
+      pool.push({ sustain: b.sustain, dpr: b.dpr, remaining: b.sustain });
+    }
+  }
+  if (pool.length === 0) return null;
+
+  const totalSustain = pool.reduce((s, b) => s + b.sustain, 0);
+  const scale = base.sustain / base.baseEhp;
+  const thresholds = base.thresholds.map(t => t * scale);
+
+  const rounds: EncounterRound[] = [];
+  let cumulativeParty = 0;
+  let cumulativeMonster = 0;
+  let roundsToKill = 0;
+  let alive = pool.length;
+
+  for (let r = 1; r <= maxRounds && alive > 0; r++) {
+    const partyDamage = partyDamageInRound(curve, r);
+
+    // Apply the party's damage down the line, carrying overkill to the next body.
+    let budget = partyDamage;
+    let removedThisRound = 0;
+    let retainedFromKills = 0;
+    for (const body of pool) {
+      if (body.remaining <= 0 || budget <= 0) continue;
+      if (budget >= body.remaining) {
+        budget -= body.remaining;
+        body.remaining = 0;
+        removedThisRound++;
+        retainedFromKills += KILLED_BODY_DPR_RETAINED;
+        // Where in the round this one fell — used for a fractional final round.
+        if (alive - removedThisRound === 0) {
+          roundsToKill = r - 1 + (partyDamage > 0 ? (partyDamage - budget) / partyDamage : 1);
+        }
+      } else {
+        body.remaining -= budget;
+        budget = 0;
+      }
+    }
+    alive -= removedThisRound;
+    cumulativeParty += partyDamage - budget;
+
+    // A body killed this round still contributes its retained share.
+    const survivorDpr = pool.reduce((s, b) => s + (b.remaining > 0 ? b.dpr : 0), 0);
+    const killedDpr = pool.reduce((s, b) => s + (b.remaining <= 0 ? b.dpr : 0), 0);
+    // Only bodies killed THIS round retain anything; ones already dead contribute nothing.
+    const monsterDamage = survivorDpr + (removedThisRound > 0
+      ? (killedDpr / Math.max(1, pool.length - alive)) * removedThisRound * KILLED_BODY_DPR_RETAINED
+      : 0);
+    cumulativeMonster += monsterDamage;
+
+    let down = 0;
+    let cum = 0;
+    for (const t of thresholds) {
+      if (cumulativeMonster >= cum + t) { down++; cum += t; } else break;
+    }
+
+    rounds.push({
+      round: r,
+      partyDamage,
+      cumulativePartyDamage: cumulativeParty,
+      bodiesAlive: alive,
+      bodiesRemoved: removedThisRound,
+      effectiveBodiesActing: alive + retainedFromKills,
+      monsterDamage,
+      cumulativeMonsterDamage: cumulativeMonster,
+      pcsDown: down,
+      pcsAlive: thresholds.length - down,
+    });
+
+    if (down >= thresholds.length) break;   // the party is gone; the fight is over
+  }
+
+  if (roundsToKill === 0) roundsToKill = rounds.length;
+
+  let pcsDowned = 0;
+  let cum = 0;
+  let nextPcPressure = 0;
+  for (const t of thresholds) {
+    if (cumulativeMonster >= cum + t) { pcsDowned++; cum += t; continue; }
+    nextPcPressure = Math.max(0, (cumulativeMonster - cum) / t);
+    break;
+  }
+
+  const hurt = nextPcPressure >= 0.66 ? "1 badly hurt"
+    : nextPcPressure >= 0.33 ? "1 at mid HP"
+    : nextPcPressure > 0 ? "1 scratched" : "";
+  const partyWiped = pcsDowned >= thresholds.length;
+
+  const firstDownRound = rounds.find(x => x.pcsDown >= 1)?.round ?? null;
+  const wipeRound = partyWiped
+    ? (rounds.find(x => x.pcsDown >= thresholds.length)?.round ?? null)
+    : null;
+
+  return {
+    rounds,
+    roundsToKill,
+    totalSustain,
+    bodies: pool.length,
+    damageTaken: cumulativeMonster,
+    pcsDowned,
+    nextPcPressure,
+    lethalityRead: partyWiped
+      ? "PARTY WIPE"
+      : [pcsDowned > 0 ? `${pcsDowned} down` : "none down", hurt].filter(Boolean).join(", "),
+    partyWiped,
+    firstDownRound,
+    wipeRound,
+    reachesFlatDpr: roundsToKill >= DPR_FLAT_FROM_ROUND,
+  };
 }
 
 export type EncounterCheck = {
