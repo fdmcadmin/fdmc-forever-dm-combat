@@ -16,7 +16,7 @@ import { checkEncounter, lethalityVerdict, attritionFactor } from "./encounterCh
 import {
   estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
   CLASSIFICATION_LABEL,
-  type PartyLane, type PartyResources, type RoundsMonster, type RoundsEstimate,
+  type PartyLane, type PartyResources, type RoundsMonster,
 } from "./encounterRounds";
 
 // 3 / 4 / 5 — the campaign is authored against a FOUR-player baseline (Christopher,
@@ -25,13 +25,8 @@ const PARTY_SIZES = [3, 4, 5] as const;
 const LANES: PartyLane[] = ["easy", "standard", "hard", "punishing"];
 const RESOURCES: PartyResources[] = ["fresh", "shortRest", "depleted"];
 
-const VERDICT_COLOR: Record<RoundsEstimate["verdict"], string> = {
-  Throwaway: "#ff4444",
-  Short: "#e07b39",
-  "On target": "#4caf50",
-  Long: "#e07b39",
-  Slog: "#ff4444",
-};
+// The old round-band verdict colours (Throwaway/Short/On target/Long/Slog) are gone with the
+// verdict itself — the panel is judged on PRICE now, and its colours come from `priceRead`.
 
 // HP now scales off the SAME party size that drives partyDpr below. It used to come from a
 // per-creature `entry.hpVariant`, so the defensive and offensive sides of the estimate could
@@ -79,7 +74,60 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     [roundsMonsters, partySize, partyLevel, lane, resources],
   );
 
-  const vColor = VERDICT_COLOR[est.verdict];
+  // The roster's per-round output. `roundsMonsters` is one row per TEMPLATE carrying a count,
+  // not one row per body — a "Wyrmling ×2" entry has to contribute its damage twice and count
+  // as two bodies, or both the DPR and the attrition term read the wrong fight.
+  const monsterDamage = useMemo(
+    () => estimateMonsterDamage(
+      roundsMonsters.flatMap(m => {
+        const t = monsterLibrary.find(x => x.templateId === m.id);
+        const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
+        return Array.from({ length: Math.max(1, m.count) }, () => actions).flat();
+      }),
+      { partyLevel },
+    ),
+    [roundsMonsters, monsterLibrary, partyLevel],
+  );
+  const bodyCount = useMemo(
+    () => roundsMonsters.reduce((n, m) => n + Math.max(1, m.count), 0),
+    [roundsMonsters],
+  );
+
+  /**
+   * THE READING (Christopher, 2026-08-14): *"this should not read as a round length it should
+   * read as a lethality."*
+   *
+   * A classification is a PRICE IN CHARACTERS, not a clock. Two fights can share a kill clock
+   * and be completely different fights, so the headline is who is on the floor when it ends.
+   * Round length is still computed and still shown — it is just a supporting fact now, and it
+   * is no longer judged against a band. That matters because the band targets were calibrated
+   * against the old v12 DPR curve that was deleted in 0.7.7.2; judging the workbook's numbers
+   * against v12's targets would have manufactured "Slog" verdicts out of a curve change.
+   */
+  const check = useMemo(
+    () => (monsterDamage.dpr > 0
+      ? checkEncounter({
+          partyLevel,
+          monsterSustain: est.effectiveHp,
+          monsterDpr: monsterDamage.dpr,
+          bodies: bodyCount,
+          // The panel's own dials — size, lane, rest, monster AC, uptime — must reach the
+          // headline, or it sits frozen while the rows beneath it move. At the defaults this
+          // is exactly the workbook's baseline DPR.
+          partyDpr: est.landedDpr,
+        })
+      : null),
+    [partyLevel, est.effectiveHp, est.landedDpr, monsterDamage.dpr, bodyCount],
+  );
+  const lethal = check ? lethalityVerdict(check, est.classification) : null;
+
+  // Colour and wording come from the PRICE, not the clock: on the mark, under it, or over it.
+  const priceRead: { label: string; color: string } = !lethal
+    ? { label: "NO READ", color: "#8a6a2a" }
+    : lethal.ok ? { label: "ON PRICE", color: "#4caf50" }
+    : lethal.actual > lethal.expected ? { label: "TOO DEADLY", color: "#ff4444" }
+    : { label: "TOO CHEAP", color: "#e07b39" };
+  const vColor = priceRead.color;
 
   return (
     <section style={{ marginBottom: 12, background: "#11131a", border: "1px solid #2a2a3e", borderLeft: "3px solid #4f9dff", borderRadius: 6 }}>
@@ -211,22 +259,25 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                 </div>
               </div>
 
-              {/* ROUNDS TO KILL — the falsifiable number: predict here, count at the table */}
+              {/* LETHALITY — what the fight COSTS, in characters. The falsifiable number:
+                  predict here, count who went down at the table. */}
               <div style={{ background: "#0d0d14", border: `1px solid ${vColor}`, borderRadius: 6, padding: "8px 10px", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 22, fontWeight: 700, color: vColor, lineHeight: 1 }}>
-                    {est.rounds.toFixed(1)}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: vColor, lineHeight: 1.15 }}>
+                    {check ? check.lethalityRead : "no damage read"}
                   </span>
-                  <span style={{ fontSize: 12, color: "#aaa" }}>rounds to kill</span>
-                  {/* The band this fight is judged against — set by its strongest creature. */}
+                  {/* What this tier is SUPPOSED to cost — set by the fight's strongest creature. */}
                   <span
                     style={{ fontSize: 10, color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 10, padding: "2px 7px" }}
-                    title={`${CLASSIFICATION_LABEL[est.classification]} target: ${est.band.min}–${est.band.max} rounds. The band is the wiggle room — anywhere inside it is On target.`}
+                    title={lethal
+                      ? `${CLASSIFICATION_LABEL[est.classification]}: ${lethal.note} One character either side of the mark is inside authoring tolerance — the workbook is a distribution over 150k runs, not a promise about one table's dice.`
+                      : "Add readable damage to these creatures to get a lethality read."}
                   >
-                    {CLASSIFICATION_LABEL[est.classification]} · target {est.band.min}–{est.band.max}
+                    {CLASSIFICATION_LABEL[est.classification]}
+                    {lethal && ` · should cost ${lethal.expected}`}
                   </span>
                   <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${vColor}22`, border: `1px solid ${vColor}`, color: vColor }}>
-                    {est.verdict}
+                    {priceRead.label}
                   </span>
                 </div>
                 {/* The two sides shown separately — defence (their HP) over offence (your
@@ -241,27 +292,32 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     <strong style={{ color: "#aaa" }}>{est.landedDpr.toFixed(1)} DPR</strong>
                     <span style={{ color: "#555" }}> · already target-resolved vs the L{partyLevel} AC/save profile</span>
                   </div>
+                  {/* Length is INFORMATION, not a verdict. It is deliberately not judged against
+                      ROUND_BAND — those targets were calibrated against the deleted v12 curve. */}
+                  <div>
+                    <span style={{ color: "#9a9ab0" }}>LEN</span>{" "}
+                    <strong style={{ color: "#aaa" }}>{est.rounds.toFixed(1)} rounds</strong>
+                    {check && (
+                      <span style={{ color: "#555" }}>
+                        {" · "}{check.damageTaken.toFixed(0)} damage absorbed
+                        {check.bodies > 1 && ` (${check.bodies} bodies → ×${attritionFactor(check.bodies).toFixed(2)} attrition)`}
+                      </span>
+                    )}
+                  </div>
                   <div style={{ color: "#666" }}>
                     {partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest
                   </div>
                 </div>
+                {lethal && !lethal.ok && (
+                  <div style={{ fontSize: 9, color: "#8a8aa0", marginTop: 4 }}>
+                    {lethal.note}
+                  </div>
+                )}
                 {/* ── The escalation ladder: PCER against MER ────────────────────────
                     The rounds figure above only answers "how long". This answers "how
                     close to collapse", which is the half the old model could not see —
                     two fights can share a kill clock and be completely different fights. */}
                 {(() => {
-                  // `roundsMonsters` is one row per TEMPLATE carrying a count, not one row per
-                  // body. A "Wyrmling ×2" entry has to contribute its damage twice and count
-                  // as two bodies, or both the DPR and the attrition term read the wrong fight.
-                  const monsterDamage = estimateMonsterDamage(
-                    roundsMonsters.flatMap(m => {
-                      const t = monsterLibrary.find(x => x.templateId === m.id);
-                      const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
-                      return Array.from({ length: Math.max(1, m.count) }, () => actions).flat();
-                    }),
-                    { partyLevel },
-                  );
-                  const bodyCount = roundsMonsters.reduce((n, m) => n + Math.max(1, m.count), 0);
                   const audit = auditEncounter({
                     monsterSustain: est.effectiveHp,
                     monsterDamage: monsterDamage.dpr,
@@ -320,36 +376,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                           ⚠ no readable damage on these creatures, so MER and pressure are not meaningful yet.
                         </div>
                       )}
-                      {/* ── Lethality: what the fight COSTS ────────────────────────────
-                          The rows above are both clocks. A classification is not a clock —
-                          it is a price in characters, so this reads the party's per-PC
-                          thresholds and says who is on the floor when it ends. */}
-                      {(() => {
-                        const check = monsterDamage.dpr > 0 ? checkEncounter({
-                          partyLevel,
-                          monsterSustain: est.effectiveHp,
-                          monsterDpr: monsterDamage.dpr,
-                          bodies: bodyCount,
-                        }) : null;
-                        if (!check) return null;
-                        const v = lethalityVerdict(check, est.classification);
-                        return (
-                          <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6, marginTop: 4, paddingTop: 4, borderTop: "1px solid #1a1a28" }}>
-                            <div>
-                              <span style={{ color: "#ff8f6b" }}>LETHALITY</span>{" "}
-                              <strong style={{ color: v.ok ? "#4caf50" : "#e07b39" }}>{check.lethalityRead}</strong>
-                              <span style={{ color: "#555" }}>
-                                {" "}· {CLASSIFICATION_LABEL[est.classification]} should cost {v.expected}
-                              </span>
-                            </div>
-                            <div style={{ color: "#555" }}>
-                              {check.damageTaken.toFixed(0)} damage absorbed
-                              {check.bodies > 1 && ` (${check.bodies} bodies → ×${attritionFactor(check.bodies).toFixed(2)} attrition)`}
-                              {" · "}{v.note}
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      {/* Lethality is the HEADLINE now (see the box above), not a footnote
+                          here — a classification is a price in characters, not a clock. */}
                     </div>
                   );
                 })()}

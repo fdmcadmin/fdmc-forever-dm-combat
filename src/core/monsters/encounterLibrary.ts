@@ -38,7 +38,9 @@ export type EncounterDefinition = {
   notes?: string;
   dmNotes?: string;
   /**
-   * TARGET tier for this FIGHT — which `ROUND_BAND` it should land in.
+   * TARGET tier for this FIGHT — what it should COST, per `EXPECTED_LETHALITY` in
+   * `encounter-band/encounterChecker.ts` (0.7.7.3: a tier is a price in characters, not a
+   * clock; the difficulty panel is judged on lethality, not on round length).
    *
    * This is deliberately a property of the encounter, NOT of its creatures. The Frozen
    * Hollow is an elite fight made of a Zombie, a Ghoul and a Hollow Mourner: nothing in

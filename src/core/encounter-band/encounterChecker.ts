@@ -243,12 +243,29 @@ export function checkEncounter(opts: {
   monsterDpr: number;
   /** Number of separate bodies. Drives attrition; defaults to a single body. */
   bodies?: number;
+  /**
+   * The party's ACTUAL output for this fight, when the caller knows more than the baseline.
+   * Defaults to the workbook figure for the level, which is a 4-player, standard-lane,
+   * long-rested party fighting a creature at the level's expected AC.
+   *
+   * The difficulty panel passes its `landedDpr`, which is that same number with party size,
+   * bond lane, resource state, monster AC and damage uptime applied. At the defaults those
+   * all resolve to 1.0, so this is EXACTLY `base.dpr` and the workbook reading is unchanged —
+   * it only diverges once the DM moves a dial, which is the point. Without it the headline sat
+   * frozen while the rows under it moved.
+   *
+   * ⚠ AC IS PRICED ONCE, ON THE PARTY'S DAMAGE. The workbook's own `effectiveSustain` prices
+   * it on the MONSTER instead. Both are valid; doing both double-counts armour. The panel
+   * feeds this function an AC-free sustain (`effectiveHp`) precisely so the AC lives here.
+   */
+  partyDpr?: number;
 }): EncounterCheck | null {
   const base = partyBaselineFor(opts.partyLevel);
   if (!base) return null;
 
   const bodies = Math.max(1, opts.bodies ?? 1);
-  const roundsToKill = opts.monsterSustain / base.dpr;
+  const dpr = opts.partyDpr && opts.partyDpr > 0 ? opts.partyDpr : base.dpr;
+  const roundsToKill = opts.monsterSustain / dpr;
   const mer = base.sustain / opts.monsterDpr;
   const raceMargin = mer - roundsToKill;
 
@@ -277,7 +294,7 @@ export function checkEncounter(opts: {
 
   return {
     partyLevel: opts.partyLevel,
-    partyDpr: base.dpr,
+    partyDpr: dpr,
     partySustain: base.sustain,
     monsterSustain: opts.monsterSustain,
     monsterDpr: opts.monsterDpr,

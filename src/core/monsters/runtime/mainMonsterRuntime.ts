@@ -112,11 +112,16 @@ export type MainMonsterTemplate = {
     /** Party damage uptime against this creature (tempo tax). 1.0 = attacks freely. */
     damageUptime?: number;
     /**
-     * How big a threat this creature is — drives the expected fight length (see
-     * `ROUND_BAND` in `encounter-band/encounterRounds.ts`). Separate from `kind`,
-     * which is only what the thing IS (creature vs NPC) and drives the card.
+     * How big a threat this creature is — drives what the fight should COST in
+     * characters (see `EXPECTED_LETHALITY` in `encounter-band/encounterChecker.ts`).
+     * Separate from `kind`, which is only what the thing IS (creature vs NPC) and
+     * drives the card.
      *
-     * The encounter's band comes from the HIGHEST classification it fields, so a
+     * ⚠ A TIER IS A PRICE, NOT A CLOCK (Christopher, 2026-08-14). A mid-boss might last
+     * three rounds and down one person; an act boss four rounds and down two. Round
+     * length is still computed and shown, but nothing is judged by it.
+     *
+     * The encounter's tier comes from the HIGHEST classification it fields, so a
      * mid-boss with chaff is judged as a mid-boss fight. Unset = "normal".
      */
     classification?: MonsterClassification;
