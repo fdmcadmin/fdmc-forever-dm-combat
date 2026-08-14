@@ -12,9 +12,13 @@
  *
  *   rounds = Σ(rawHP × kitMultiplier × count) ÷ (dpr4P × size/4 × lane × rest × REALIZATION)
  *
- * SOURCE OF TRUTH (2026-07-21): `Broken_Chain_v12_Full_DPR_and_Encounter_Rerun.xlsx`
- * (100,000 Monte Carlo trials per lane; hit/save-adjusted). It supersedes the older
- * `broken_chain_encounter_dpr_design.xlsx` completely.
+ * SOURCE OF TRUTH (2026-08-14): party DPR comes from **`dprBaseline.PARTY_BASELINE`** — the
+ * checker workbook, 150,000+ runs. This module no longer carries a DPR table of its own; the
+ * v12 curve it used to hold was ~30% high at L3 and disagreed with the lethality checker on
+ * every level. Round pacing and lethality now read the same numbers by construction.
+ *
+ * The ROUND BANDS below are still the v12 rerun's, and they were calibrated against the v12
+ * DPR — see the warning on `ROUND_BAND`.
  *
  * BASELINE IS A **4-PLAYER** PARTY. The supported spread is 3 / 4 / 5, so the `low` /
  * `standard` / `high` HP variants mean 3P / 4P / 5P and an encounter's authored HP is its
@@ -32,90 +36,48 @@
 
 // Type-only: erased at compile, so this module stays dependency-free for the test harness.
 import type { MonsterClassification } from "../monsters/runtime/mainMonsterRuntime";
+// The ONE party-DPR curve. Pure data with no imports of its own, so the harness stays clean.
+import { PARTY_BASELINE } from "./dprBaseline";
 
 /**
- * **4-player** BALANCE CENTER expected DPR by ACTUAL PARTY LEVEL.
+ * **4-player** expected DPR by ACTUAL PARTY LEVEL — now read straight from `dprBaseline`.
  *
- * SOURCE OF TRUTH (2026-07-21): `Broken_Chain_v12_Full_DPR_and_Encounter_Rerun.xlsx` →
- * **Size Summary**, the *Balance Center* column at party size 4. This supersedes the old
- * 5-player `broken_chain_encounter_dpr_design.xlsx` bands entirely.
+ * ⚠ SINGLE SOURCE OF TRUTH (Christopher, 2026-08-14). This module used to carry its OWN DPR
+ * table, transcribed from `Broken_Chain_v12_Full_DPR_and_Encounter_Rerun.xlsx`. When the
+ * checker workbook was transcribed into `dprBaseline.ts` the app ended up holding **two**
+ * party-DPR curves that disagreed by ~30% at L3 (55.33 vs 38.79) and ~7% at L9 — the pacing
+ * panel reading one, the lethality checker the other. His call: *"the dpr that matched the
+ * workbook model we just input would be the right one — why would we add in the entire
+ * workbook and say nah we don't need it."*
  *
- * ⚠ THE BASELINE PARTY IS **4**, NOT 5 (Christopher, 2026-07-21). D&D's own XP budget is
- * per-character against a 4-character norm; the campaign had been authored against a 4/5/6
- * spread, which is one player too generous. The supported spread is now **3 / 4 / 5**, so
- * `low` / `standard` / `high` mean 3P / 4P / 5P and the AUTHORED (standard) HP of every
- * encounter is its 4-player value.
+ * So the v12 numbers are GONE, not commented out. There is one curve. If it is wrong, it is
+ * wrong in the workbook, and it gets fixed by re-transcribing `dprBaseline.ts`.
  *
- * That reconciles exactly against the workbook's authored bands — Frozen Sentinels
- * 129 / **172** / 215, Drifter+Cloak 166 / **221** / 276, Lesser Wendigos 180 / **240** / 300
- * — each 0.75× / 1.0× / 1.25× around the 4P figure.
+ * The checker baseline is the STRICTLY BETTER model: it layers generic +1 armour coverage,
+ * Tier 3 weapon power at the level the party actually receives it, and a mixed generic
+ * Convergence spread onto the same population. The old curve had none of those, which is
+ * most of why it read high.
  *
- * ⚠ BALANCE CENTER, not the current party. The workbook keeps them deliberately separate:
- * Balance Center is the generic authoring baseline across all legal shells; "Current Party"
- * (5P, 109.15 @L5) is this specific tank-heavy table, which sits at the ~10th percentile —
- * "lower-output, survival-forward". Authoring against the live party silently re-tunes the
- * whole campaign to one roster.
+ * WHAT SURVIVED THE SWAP, and why it still holds:
+ * - **The 4-player baseline.** Both models publish at 4P, so `low`/`standard`/`high` still
+ *   mean 3P/4P/5P and an encounter's authored HP is still its 4-player total.
+ * - **`REALIZATION = 1.0`.** The checker's DPR is hit/save-adjusted, same as v12, so a
+ *   dice-EV discount on top would still double-count.
+ * - **`acFactor` as a substitution.** Both models resolve against the SAME target AC per
+ *   level — `BASELINE_TARGET_AC` here and `EXPECTED_MONSTER_AC` in `dprBaseline` agree on
+ *   every level they share (3–9: 14/15/16/16/16/17/17). That agreement is what makes the
+ *   re-resolution valid against the new curve without re-deriving it.
+ *
+ * ⚠ ONE TERM IS NOW UNVERIFIED: `PARTY_ATTACK_SHARE = 0.82` was back-solved from a pair of
+ * v12 figures that no longer exist here. It is a property of the roster mix rather than of
+ * either workbook, so it is kept — but it can no longer be re-checked against its own source.
+ * See the note on that constant.
  *
  * ⚠ NO "+1 PSEUDO LEVEL" — feed this the party's ACTUAL level; the stage mapping
- * (L5 Realized, L6 Metamorphosis, L9/L12 Tempered) is already baked in.
- *
- * MIDPOINT, never peak: legal burst is a resource ceiling, not a balancing value — sizing to
- * it makes a low-rolling party grind a fight built for far more than their real output.
+ * (Realized L3–5, Metamorphosis L6–8, Tempered L9–12) is already baked in.
  */
-const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> = [
-  // `broken_chain_monster_builder_final.xlsx` → DPR Progression, Balanced Center, 4 players.
-  // Every level 3-12 is a measured checkpoint; nothing here is extrapolated.
-  //
-  // REPLACES the v12 "Size Summary" line (92.0/101.0/110.4/122.2/153.1/185.3). Those were the
-  // MIDPOINT OF THE MIN AND MAX party; the balanced center is the MEDIAN Representative
-  // roster (README §2), a different statistic and materially lower — the app was reading ~30%
-  // high at L5 and ~66% high at L3, so every round projection came out short.
-  //
-  // Bonds are inside every line. Milestones step only at 3 / 6 / 9 (Realized → Metamorphosis
-  // → Tempered); L5 carries no bond-stage change, which is why L4→L5 jumps on class scaling
-  // alone.
-  [3, 55.326198999647474],
-  [4, 61.508746605488156],
-  [5, 84.84412478359376],
-  [6, 93.0275296940514],
-  [7, 99.67880132295765],
-  [8, 105.32106696944203],
-  [9, 122.63781622094879],
-  [10, 124.93782204032968],
-  [11, 132.31131608847656],
-  [12, 141.35406796347655],
-];
-
-/**
- * Measured party DPR at 3P and 5P — for VALIDATION only.
- *
- * **Everything is authored at four players.** 4P is the publishing baseline every CR is built
- * around (README §1); a fight is never built around a five-player party. The other two columns
- * exist so a built encounter can be checked against the tables that will actually run it —
- * "author at 4P, validate 3P/5P with HP bands".
- *
- * ⚠ DO NOT read these three columns as a scaling curve. They are medians of three DIFFERENT
- * roster populations (36 / 192 / 816 legal scenarios), not one party with a member added or
- * removed — per-player DPR at L5 comes out 20.10 / 21.21 / 20.59, which is not even monotonic.
- * The ratios between them (0.711×, 1.213×) are an artefact of comparing separate samples, not
- * a measurement of what a player is worth.
- *
- * `partyDpr` therefore scales `size/4` = 0.75 / 1.00 / 1.25, matching the HP band. That is the
- * campaign's stated party-size lever and it applies to the whole model; these columns are only
- * ever a sanity check that a built encounter is survivable at the other two table sizes.
- */
-export const MEASURED_DPR_BY_SIZE: ReadonlyArray<readonly [level: number, p3: number, p4: number, p5: number]> = [
-  [3, 38.50192181484375, 55.326198999647474, 68.42592204155778],
-  [4, 43.08726575234376, 61.508746605488156, 76.40621331594727],
-  [5, 60.309482572680835, 84.84412478359376, 102.92559929977443],
-  [6, 64.58007797139516, 93.0275296940514, 114.34205158661106],
-  [7, 70.1160813568118, 99.67880132295765, 123.36641491835779],
-  [8, 75.01458474222848, 105.32106696944203, 131.35016854557293],
-  [9, 86.5929474419797, 122.63781622094879, 151.97582660864634],
-  [10, 88.27317173876719, 124.93782204032968, 155.5936813184245],
-  [11, 94.31408658251719, 132.31131608847656, 164.1939843751604],
-  [12, 100.17739725960053, 141.35406796347655, 173.8682408014625],
-];
+const MIDPOINT_DPR_4P: ReadonlyArray<readonly [level: number, dpr: number]> =
+  PARTY_BASELINE.map(b => [b.level, b.dpr] as const);
 
 /**
  * Dice-EV → real-table discount. **Now 1.0 — deliberately inert.**
@@ -229,6 +191,15 @@ export const LANE_LABEL: Record<PartyLane, string> = {
  * Data, not code — on purpose. These are the targets every encounter is judged against, so
  * they must be correctable from real fights rather than buried in a threshold chain (the
  * mistake `BOSS_MULT` made).
+ *
+ * ⚠ THESE BANDS ARE STILL v12 AND THE DPR UNDER THEM IS NOT (2026-08-14). Party DPR now comes
+ * from the checker workbook, which is materially lower — so the same authored HP produces a
+ * LONGER predicted fight than it did yesterday. That is the model getting more honest, not the
+ * encounters getting worse, but it means a fight can now read "Long" purely because the curve
+ * moved. Two ways to reconcile, and it is Christopher's call which:
+ *   (a) leave the bands and re-tune encounter HP down to hit them, or
+ *   (b) re-derive the bands from the checker workbook, if it publishes pacing targets.
+ * Until then, read a band miss as "check this fight", not as "this fight is broken".
  */
 export const ROUND_BAND: Record<MonsterClassification, { min: number; max: number }> = {
   normal: { min: 2, max: 3 },
@@ -338,6 +309,12 @@ const PARTY_ATTACK_BONUS: ReadonlyArray<readonly [level: number, bonus: number]>
  * 1.00 (Fighter); a caster-heavy table sits well below 0.82 and a martial one approaches 1.0.
  * It is the right number for authoring against the publishing center, which is what this model
  * is for.
+ *
+ * ⚠ NO LONGER RE-DERIVABLE (2026-08-14). The pair it was back-solved from lived in the v12
+ * workbook, which is no longer in this file. Kept because it describes the ROSTER MIX rather
+ * than either workbook, and the roster population did not change — the checker layers gear
+ * onto the same shells. If the checker workbook ever publishes its own AC-re-resolved pair,
+ * re-solve this from that and delete this warning.
  */
 export const PARTY_ATTACK_SHARE = 0.82;
 
