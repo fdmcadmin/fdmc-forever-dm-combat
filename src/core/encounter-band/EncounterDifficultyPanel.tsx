@@ -86,20 +86,29 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     [roundsMonsters, partySize, partyLevel, lane, resources],
   );
 
-  // The roster's per-round output. `roundsMonsters` is one row per TEMPLATE carrying a count,
-  // not one row per body — a "Wyrmling ×2" entry has to contribute its damage twice and count
-  // as two bodies, or both the DPR and the attrition term read the wrong fight.
-  const monsterDamage = useMemo(
-    () => estimateMonsterDamage(
-      roundsMonsters.flatMap(m => {
-        const t = monsterLibrary.find(x => x.templateId === m.id);
-        const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
-        return Array.from({ length: Math.max(1, m.count) }, () => actions).flat();
-      }),
-      { partyLevel },
-    ),
-    [roundsMonsters, monsterLibrary, partyLevel],
-  );
+  /**
+   * The roster's per-round output.
+   *
+   * Estimated PER TEMPLATE and then multiplied by its count, rather than by flattening every
+   * body's actions into one list. Flattening cannot carry `attacksPerTurn`, which is a property
+   * of the creature — one shared option across a mixed roster would give the boss's multiattack
+   * to the chaff, or the chaff's single attack to the boss.
+   */
+  const monsterDamage = useMemo(() => {
+    let dpr = 0;
+    const unread: string[] = [];
+    for (const m of roundsMonsters) {
+      const t = monsterLibrary.find(x => x.templateId === m.id);
+      const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
+      const est = estimateMonsterDamage(actions, {
+        partyLevel,
+        attacksPerTurn: t?.stats.attacksPerTurn,
+      });
+      dpr += est.dpr * Math.max(1, m.count);
+      for (const u of est.unread) unread.push(`${m.name}: ${u}`);
+    }
+    return { dpr, unread };
+  }, [roundsMonsters, monsterLibrary, partyLevel]);
   // (bodyCount removed 0.7.8.1 — the resolver expands counts into real bodies and reports
   // its own total, so a separate tally was one more thing that could disagree.)
 
@@ -154,7 +163,15 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
           partyLevel,
           traitContributions: contributions,
         }),
-        dpr: estimateMonsterDamage(actions, { partyLevel }).dpr,
+        // ⚠ MULTIATTACK. `estimateMonsterDamage` has always supported `attacksPerTurn` and the
+        // stat blocks have always carried it — nothing passed it, so every multiattack creature
+        // was read at SINGLE-attack damage. The Lesser Wendigo (attacksPerTurn 2) scored 6.05
+        // where it should score ~12.1, which halves the damage side of every fight it is in.
+        // A per-action `attackCount` still wins over this, per the function's own precedence.
+        dpr: estimateMonsterDamage(actions, {
+          partyLevel,
+          attacksPerTurn: t?.stats.attacksPerTurn,
+        }).dpr,
         count: Math.max(1, m.count),
       };
     });
