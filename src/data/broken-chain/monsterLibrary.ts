@@ -796,9 +796,46 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Husk on Death", kind: "trait", text: "At 0 HP it collapses into a drained, withered husk — the same shape the villagers described from the silent town. Narrative only." },
     ],
     actions: [
-      { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 3 + 1d6", text: "+6 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing plus 3 (1d6) cold." },
-      { name: "Rend", kind: "action", recharge: "4-6", save: "STR DC 13", text: "If both Claws hit the same creature this turn: +3d6 slashing, DC 13 STR save or knocked prone." },
-      { name: "Grab (replaces one Claw)", kind: "action", save: "STR DC 13", text: "DC 13 STR save or grappled. A grappled creature takes 2d8 automatic damage at the start of each of the Wendigo's turns until it escapes." },
+      // Retyped to the Act 2 4P Baseline stat block (2026-08-14). The app had drifted on all
+      // four lines: Claw was +6 (doc +5), Rend was recharge 4-6 / +3d6 / DC 13 (doc 5-6 /
+      // +2d6 / DC 12), and Grab carried 2d8 (doc 2d6) with NO damage field at all, so its
+      // automatic damage was reaching nothing.
+      { name: "Claw", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3 + 1d6", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing plus 3 (1d6) cold." },
+      /**
+       * MIGHTY LEAP is a BONUS-ACTION Claw, not a passive trait: "If the Wendigo moves at
+       * least 20 feet in a straight line toward a creature, it can make one Claw attack
+       * against that creature as a bonus action."
+       *
+       * It sat only in `traits` with no damage, so a whole extra attack was invisible to the
+       * model. A bonus action is outside the action budget, so this ADDS to the turn rather
+       * than competing with the Raking Multiattack — which is exactly what makes the Lesser
+       * Wendigo an opener rather than a grinder.
+       */
+      // ⚠ GATED: all three riders below are CONDITIONAL and the model has no way to price a
+      // condition, only to include or exclude it. Counting them as always-on took the Lesser
+      // Wendigo from 12.1 to 15.3 DPR and moved the fight AWAY from observed play — see the
+      // note on Grab. They are listed so they are visible, and excluded so they do not inflate.
+      // Mighty Leap needs a 20+ ft straight-line approach, which is a first-round condition,
+      // not a per-turn one.
+      { name: "Mighty Leap Claw (Bonus Action)", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3 + 1d6", gated: true, text: "Bonus action after moving 20+ ft. in a straight line toward a creature: one Claw. On a hit, DC 13 STR save or prone." },
+      // Rend needs BOTH Claws to hit the same creature AND the recharge to be up — roughly a
+      // 10% turn, not a 33% one.
+      { name: "Rend", kind: "action", recharge: "5-6", damage: "2d6", save: "STR DC 12", gated: true, text: "Recharge 5-6. If both Claws hit the same creature this turn: +2d6 slashing, DC 12 STR save or knocked prone." },
+      /**
+       * GRAB REPLACES ONE CLAW and then ticks: "Grappled creature takes 2d6 automatic damage
+       * at the start of each of the Wendigo's turns until escape."
+       *
+       * ⚠ GATED, and this one is the calibration case. The damage below is the RECURRING TICK,
+       * and the model has no concept of ongoing damage — only include or exclude. Priced as a
+       * steady-state 2d6 per turn it assumes the grapple lands on the first attempt and is
+       * never escaped, which is not a fight, it is a worst case.
+       *
+       * OBSERVED PLAY (Christopher, 4 players, 2 bodies at 90 HP each): the fight ran FOUR
+       * ROUNDS with NOBODY DOWN. Counting Grab, Mighty Leap and Rend as always-on put the
+       * model at "2 down" — further from the table than leaving them out. So they are listed
+       * and excluded until the model can carry a probability rather than a boolean.
+       */
+      { name: "Grab (replaces one Claw)", kind: "action", damage: "2d6", save: "STR DC 13", gated: true, text: "Replaces one Claw. DC 13 STR save or grappled. A grappled creature takes 2d6 automatic damage at the start of each of the Wendigo's turns until it escapes." },
     ],
     reactions: [],
     resources: [],
