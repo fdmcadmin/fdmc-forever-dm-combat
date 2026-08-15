@@ -1079,7 +1079,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     actions: [
       { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", spellSlotLevel: 4, save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
       { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +7 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it." },
-      { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
+      { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", damage: "4d6", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
       { name: "Rimestep (Bonus Action)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
     ],
@@ -1283,7 +1283,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     actions: [
       { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", save: "STR DC 15", text: "+7 to hit, reach 5 ft. Hit: 15 (2d10 + 4) cold. DC 15 STR save or grappled." },
       { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 8", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
-      { name: "Hungering Leap", kind: "action", recharge: "5-6", save: "STR DC 16", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
+      { name: "Hungering Leap", kind: "action", recharge: "5-6", save: "STR DC 16", damage: "2d6", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
       { name: "Mark Prey (Legendary Action, 1/round)", kind: "action", text: "The Wendigo marks one creature it can see. Until the end of that creature's next turn, the Wendigo has advantage on attacks against it and ignores any bonus to its AC from shields. This is its ONLY legendary action — one per round." },
     ],
     reactions: [],
@@ -1449,7 +1449,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Quillblade", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
-      { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
+      { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
     reactions: [
     ],
@@ -1484,7 +1484,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Marrow Hook", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing." },
-      { name: "Body Break (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
+      { name: "Body Break (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", damage: "4d8", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
     ],
     reactions: [
     ],
@@ -1519,7 +1519,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Shard Bolt", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
-      { name: "Survey Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
+      { name: "Survey Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
     ],
     reactions: [
       { name: "Break the Survey", kind: "reaction", text: "When Shardbound is targeted by an attack, it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once per round." },
@@ -1559,7 +1559,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Claw", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage." },
-      { name: "Venomous Eruption (1/Day)", kind: "action", save: "WIS DC 17", text: "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned." },
+      { name: "Venomous Eruption (1/Day)", kind: "action", save: "WIS DC 17", damage: "6d8", text: "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned." },
       { name: "Blighted Vitality (Recharge 4–6)", kind: "action", save: "CON DC 17", recharge: "4-6", text: "Choose up to two creatures within 60 ft. Each makes a DC 17 Constitution save. On a failure, healing received is halved until the end of the Crone’s second turn after the effect begins. Reapplying the effect does not extend or stack the duration." },
     ],
     reactions: [
@@ -1630,7 +1630,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Bark Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) piercing." },
-      { name: "Close the Bloom (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "Choose one visible 10-ft. area of flowers or natural growth within 60 ft. Creatures there make a DC 16 Dexterity save; 18 (4d8) slashing on failure, half on success, and a creature that fails cannot take reactions until the end of its turn." },
+      { name: "Close the Bloom (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible 10-ft. area of flowers or natural growth within 60 ft. Creatures there make a DC 16 Dexterity save; 18 (4d8) slashing on failure, half on success, and a creature that fails cannot take reactions until the end of its turn." },
     ],
     reactions: [
     ],
@@ -1700,7 +1700,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Hushwing", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 12 (2d6 + 5) psychic." },
-      { name: "Black Petal Fall (Recharge 5–6)", kind: "action", save: "WIS DC 16", recharge: "5-6", text: "20-ft.-radius sphere within 90 ft.; creatures inside make a DC 16 Wisdom save. Failure: 18 (4d8) psychic and the creature cannot gain advantage on attack rolls until the end of its next turn. Success: half damage." },
+      { name: "Black Petal Fall (Recharge 5–6)", kind: "action", save: "WIS DC 16", recharge: "5-6", damage: "4d8", text: "20-ft.-radius sphere within 90 ft.; creatures inside make a DC 16 Wisdom save. Failure: 18 (4d8) psychic and the creature cannot gain advantage on attack rolls until the end of its next turn. Success: half damage." },
     ],
     reactions: [
     ],
@@ -1735,7 +1735,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Tusk", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing." },
-      { name: "Canopy Rush (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", text: "Move up to 30 ft. in a line through natural vegetation. One creature in the path makes a DC 16 Strength save. Failure: 18 (4d8) bludgeoning and pushed up to 15 ft.; success: half damage and no push." },
+      { name: "Canopy Rush (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Move up to 30 ft. in a line through natural vegetation. One creature in the path makes a DC 16 Strength save. Failure: 18 (4d8) bludgeoning and pushed up to 15 ft.; success: half damage and no push." },
     ],
     reactions: [
     ],
@@ -1770,7 +1770,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Slick Claw", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
-      { name: "Warping Cut (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round." },
+      { name: "Warping Cut (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round." },
     ],
     reactions: [
     ],
@@ -1804,7 +1804,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Boundary Spike", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force." },
-      { name: "Hammer the Border (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", text: "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success." },
+      { name: "Hammer the Border (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success." },
     ],
     reactions: [
     ],
@@ -1839,7 +1839,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Bough", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 15 ft.; Hit: 14 (2d8 + 5) bludgeoning." },
-      { name: "Court Falls Closed (Recharge 5–6)", kind: "action", save: "STR DC 17", recharge: "5-6", text: "Choose a 15-ft.-radius natural area within 60 ft. Creatures there make a DC 17 Strength save. Failure: 18 (4d8) bludgeoning and moved up to 10 ft. toward the center; success: half damage, no move." },
+      { name: "Court Falls Closed (Recharge 5–6)", kind: "action", save: "STR DC 17", recharge: "5-6", damage: "4d8", text: "Choose a 15-ft.-radius natural area within 60 ft. Creatures there make a DC 17 Strength save. Failure: 18 (4d8) bludgeoning and moved up to 10 ft. toward the center; success: half damage, no move." },
     ],
     reactions: [
     ],
@@ -1909,7 +1909,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Brand Ray", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 14 (2d8 + 5) fire plus 3 (1d6) force once per turn." },
-      { name: "Scald the Name (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", text: "30-ft. line from Brandwing or its sigil, DC 16 Dexterity save; 22 (5d8) fire/force on failure, half on success. On a failure, the target cannot benefit from half cover until the end of its next turn." },
+      { name: "Scald the Name (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "30-ft. line from Brandwing or its sigil, DC 16 Dexterity save; 22 (5d8) fire/force on failure, half on success. On a failure, the target cannot benefit from half cover until the end of its next turn." },
     ],
     reactions: [
     ],
@@ -2014,7 +2014,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Rift Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 14 (2d8 + 5) psychic." },
-      { name: "Erase the Curve (Recharge 5–6)", kind: "action", save: "INT DC 16", recharge: "5-6", text: "Choose a 30-ft. path within 60 ft. Creatures on the path make a DC 16 Intelligence save; 18 (4d8) psychic on failure, half on success. Until the end of the next round, the path is a straight claimed scar and natural difficult terrain there is suppressed." },
+      { name: "Erase the Curve (Recharge 5–6)", kind: "action", save: "INT DC 16", recharge: "5-6", damage: "4d8", text: "Choose a 30-ft. path within 60 ft. Creatures on the path make a DC 16 Intelligence save; 18 (4d8) psychic on failure, half on success. Until the end of the next round, the path is a straight claimed scar and natural difficult terrain there is suppressed." },
     ],
     reactions: [
     ],
@@ -2048,7 +2048,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Bite", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant." },
-      { name: "Moonshard Breath (Recharge 5–6)", kind: "action", save: "DEX DC 14", recharge: "5-6", text: "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success." },
+      { name: "Moonshard Breath (Recharge 5–6)", kind: "action", save: "DEX DC 14", recharge: "5-6", damage: "4d6", text: "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success." },
     ],
     reactions: [
     ],
@@ -2087,7 +2087,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10 + 5", text: "Melee Weapon Attack: +9 to hit, reach 10 ft.; Hit: 16 (2d10 + 5) piercing plus 7 (2d6) radiant." },
       { name: "Claw", kind: "attack", roll: "1d20 + 9", damage: "2d6 + 5", text: "Melee Weapon Attack: +9 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) slashing." },
       { name: "Fractured Dream Breath (Recharge 5–6)", kind: "action", save: "CON DC 17", recharge: "5-6", text: "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends." },
-      { name: "Moonfall Breath (Recharge 5–6)", kind: "action", save: "DEX DC 17", recharge: "5-6", text: "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge." },
+      { name: "Moonfall Breath (Recharge 5–6)", kind: "action", save: "DEX DC 17", recharge: "5-6", damage: "8d8", text: "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge." },
       { name: "Tail Sweep", kind: "action", roll: "1d20 + 9", damage: "1d8 + 5", legendaryCost: 1, text: "Once per round at the end of another creature’s turn, make one Tail attack: +9 to hit, reach 15 ft.; Hit: 9 (1d8 + 5) bludgeoning, and the dragon may move 5 ft. without provoking from the target hit." },
     ],
     reactions: [
@@ -2127,8 +2127,8 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Rift Lance", kind: "attack", roll: "1d20 + 10", damage: "2d8 + 6", text: "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (2d8 + 6) psychic." },
-      { name: "Unmake Distance (Recharge 5–6)", kind: "action", save: "INT DC 18", recharge: "5-6", text: "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice." },
-      { name: "Mind Hook", kind: "action", save: "WIS DC 18", legendaryCost: 1, text: "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (2d6) psychic and moved 10 ft. toward the origin; success: no effect." },
+      { name: "Unmake Distance (Recharge 5–6)", kind: "action", save: "INT DC 18", recharge: "5-6", damage: "6d8", text: "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice." },
+      { name: "Mind Hook", kind: "action", save: "WIS DC 18", legendaryCost: 1, damage: "2d6", text: "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (2d6) psychic and moved 10 ft. toward the origin; success: no effect." },
     ],
     reactions: [
       { name: "Fold Thought", kind: "reaction", text: "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round." },
@@ -2166,7 +2166,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Fist", kind: "attack", roll: "1d20 + 10", damage: "2d10 + 6", text: "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning." },
-      { name: "Collapse Space (Recharge 5–6)", kind: "action", save: "STR DC 18", recharge: "5-6", text: "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone." },
+      { name: "Collapse Space (Recharge 5–6)", kind: "action", save: "STR DC 18", recharge: "5-6", damage: "5d8", text: "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone." },
     ],
     reactions: [
       { name: "Body Between", kind: "reaction", text: "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round." },
