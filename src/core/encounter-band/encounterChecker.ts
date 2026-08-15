@@ -53,11 +53,24 @@ export function effectiveSustain(opts: {
   if (expected !== undefined) {
     const delta = Math.round(opts.ac - expected);
     if (delta !== 0) {
-      // Beyond ±3 the sheet says to combine the listed bands, so walk out in steps.
-      const step = delta > 0 ? 1 : -1;
-      for (let d = step; Math.abs(d) <= Math.abs(delta); d += step) {
-        const band = AC_DELTA_CONTRIBUTION[Math.abs(d) > 3 ? 3 * step : d];
-        acContribution += band ?? 0;
+      /**
+       * ⚠ THE BANDS ARE CUMULATIVE VALUES, NOT INCREMENTS. "AC −3 vs expected → −0.1229" is
+       * the WHOLE answer for being three under; it is not −3's share on top of −2's.
+       *
+       * This used to walk out one point at a time ADDING every band it passed, so a −4 scored
+       * −0.0434 + −0.0806 + −0.1229 + −0.1229 = −0.3698 instead of −0.1663. Low-AC creatures
+       * were gutted: the Darkmare (AC 12 against an expected 16) was cut to 0.63× its own
+       * printed HP, and Gate I read 180 effective against the encounter sheet's 278.2.
+       *
+       * "Deltas beyond ±3 combine the listed bands" means exactly that — take the ±3 band as
+       * many times as it fits, then add the band for what is left over. −4 is (−3) + (−1).
+       */
+      const sign = delta > 0 ? 1 : -1;
+      let left = Math.abs(delta);
+      while (left > 0) {
+        const chunk = Math.min(3, left);
+        acContribution += AC_DELTA_CONTRIBUTION[chunk * sign] ?? 0;
+        left -= chunk;
       }
     }
   }
