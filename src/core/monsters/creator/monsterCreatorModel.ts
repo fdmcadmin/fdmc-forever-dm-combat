@@ -60,22 +60,38 @@ export type ArchetypeInfo = {
   label: string;
   primary: AbilityLabel;
   /**
-   * Stat priority order for redistribution: the chassis's six scores, sorted high→low,
-   * are dealt to these slots in order. CON always rides second — the source model's
-   * "secondary keeps Constitution relevant" rule — except for the Guardian, where CON
-   * IS the primary. Orders are a tunable design choice, recorded here as data.
+   * The SPINE — a starting arrangement, not a locked array.
+   *
+   * The chassis's six scores, sorted high→low, are dealt to these slots. What the archetype is
+   * really saying is **which ability should be the highest**; everything after that is a
+   * starting point the DM shifts, which is why this only ever runs from the "♻ Reshape" button
+   * and never silently.
+   *
+   * ⚠ CON IS NOT UNIVERSALLY SECOND, and it used to be (Christopher, 2026-08-14): *"if con was
+   * always 2nd then every creature would always carry a hefty hp so you could never build a
+   * squishy spell caster."* That was exactly the old behaviour — CON rode second for all six,
+   * so every caster came out beefy and the archetype quietly decided HP as well as shape.
+   *
+   * Corrected against the **Elemental Mirror ABS table**, which is the authored reference for
+   * what these six archetypes produce. The three physical archetypes keep CON high; the three
+   * mental ones put their body stat (DEX) or INT ahead of it, so CON lands third and a squishy
+   * caster is buildable. Verified: dealt each archetype's own score pool, all six spines
+   * reproduce the card's ABS row exactly.
    */
   priority: AbilityLabel[];
   blurb: string;
 };
 
+// Spines read off the Elemental Mirror ABS table (Act 3 encounter truth). Guardian CON→STR→DEX,
+// Bruiser STR→CON→DEX, Skirmisher DEX→CON→STR, Tactician INT→DEX→CON, Mystic WIS→DEX→CON,
+// Commander CHA→INT→CON.
 export const ARCHETYPES: ArchetypeInfo[] = [
-  { id: "bruiser", label: "Bruiser / Brute", primary: "STR", priority: ["STR", "CON", "DEX", "WIS", "CHA", "INT"], blurb: "Heavy melee, shove, grab, knockdown. Survives by body mass." },
-  { id: "skirmisher", label: "Skirmisher / Hunter", primary: "DEX", priority: ["DEX", "CON", "WIS", "STR", "CHA", "INT"], blurb: "Mobile attacks, flank, hit-and-move. Avoidance over armor." },
-  { id: "guardian", label: "Guardian / Endurance", primary: "CON", priority: ["CON", "STR", "DEX", "WIS", "CHA", "INT"], blurb: "Holds space, intercepts, punishes movement. The wall." },
-  { id: "tactician", label: "Tactician / Caster", primary: "INT", priority: ["INT", "CON", "DEX", "WIS", "CHA", "STR"], blurb: "Saves, zones, control, limited high-impact spells." },
-  { id: "mystic", label: "Mystic / Predator", primary: "WIS", priority: ["WIS", "CON", "DEX", "CHA", "STR", "INT"], blurb: "Ambush, tracking, fear, nature/divine effects." },
-  { id: "commander", label: "Commander / Presence", primary: "CHA", priority: ["CHA", "CON", "WIS", "DEX", "STR", "INT"], blurb: "Commands, auras, ally movement, tactical support." },
+  { id: "bruiser", label: "Bruiser / Brute", primary: "STR", priority: ["STR", "CON", "DEX", "INT", "CHA", "WIS"], blurb: "Heavy melee, shove, grab, knockdown. Survives by body mass." },
+  { id: "skirmisher", label: "Skirmisher / Hunter", primary: "DEX", priority: ["DEX", "CON", "STR", "INT", "CHA", "WIS"], blurb: "Mobile attacks, flank, hit-and-move. Avoidance over armor." },
+  { id: "guardian", label: "Guardian / Endurance", primary: "CON", priority: ["CON", "STR", "DEX", "INT", "CHA", "WIS"], blurb: "Holds space, intercepts, punishes movement. The wall." },
+  { id: "tactician", label: "Tactician / Caster", primary: "INT", priority: ["INT", "DEX", "CON", "WIS", "CHA", "STR"], blurb: "Saves, zones, control, limited high-impact spells." },
+  { id: "mystic", label: "Mystic / Predator", primary: "WIS", priority: ["WIS", "DEX", "CON", "INT", "CHA", "STR"], blurb: "Ambush, tracking, fear, nature/divine effects." },
+  { id: "commander", label: "Commander / Presence", primary: "CHA", priority: ["CHA", "INT", "CON", "DEX", "WIS", "STR"], blurb: "Commands, auras, ally movement, tactical support." },
 ];
 
 export function archetypeInfo(id: MonsterArchetype): ArchetypeInfo {
