@@ -34,6 +34,16 @@ export type MonsterReaderAction = {
   /** Legendary-action cost (1 or 2). Set = this is a legendary action spending from the
    *  creature's `stats.legendaryPerRound` pool (Monster Gate A6). */
   legendaryCost?: number;
+  /**
+   * The action cannot be used under this encounter's default conditions, so the damage model
+   * must not count it (Christopher, 2026-08-14: *"a recharge is always available action unless
+   * the creature can't use it — the pale stalker is a example"*).
+   *
+   * The Pale Stalker's Cold Breath is "locked while both Pack Hunters are alive", so in its
+   * own authored fight it starts unavailable. This is AUTHORED, never inferred from the text —
+   * a condition stated in prose is not a condition the app can read.
+   */
+  gated?: boolean;
 };
 
 export type MonsterActionCounter = {

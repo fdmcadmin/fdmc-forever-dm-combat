@@ -306,6 +306,8 @@ export type DprEstimateAction = {
   /** The discriminator for a spell action — see `isMonsterSpellAction`. NOT `kind`. */
   spellSlotLevel?: number;
   economyCost?: string;
+  /** Authored: the creature cannot use this under the encounter's conditions. Never inferred. */
+  gated?: boolean;
 };
 
 export type MonsterDamageEstimate = {
@@ -354,6 +356,8 @@ export function estimateMonsterDamage(
     fullAction: boolean;
     /** Bonus / legendary — runs on its own economy, so it adds instead of competing. */
     outOfBudget: boolean;
+    /** Authored as unusable in this encounter — counted as zero, and said out loud. */
+    gated: boolean;
   };
   const priced: Priced[] = [];
 
@@ -387,7 +391,8 @@ export function estimateMonsterDamage(
     priced.push({ name: a.name ?? "unnamed", per, note, recharge: a.recharge,
       limited: own > 1,
       fullAction: isMonsterFullAction(ra),
-      outOfBudget: isMonsterBonusAction(ra) || isMonsterLegendaryAction(ra) });
+      outOfBudget: isMonsterBonusAction(ra) || isMonsterLegendaryAction(ra),
+      gated: Boolean(a.gated) });
   }
 
   if (priced.length === 0) return { dpr: 0, breakdown, unread };
@@ -449,18 +454,44 @@ export function estimateMonsterDamage(
     }
   }
 
+  /**
+   * A RECHARGE ACTION IS TAKEN WHEN IT IS UP — it is not compared against the routine
+   * (Christopher, 2026-08-14): *"a recharge is always available action unless the creature
+   * can't use it."*
+   *
+   * An earlier pass clamped this to `max(0, alt − routine)`, i.e. the creature only used its
+   * recharge when it out-damaged a full multiattack. That is wrong twice over. It made the
+   * Stalker's Phantom Charge score a flat 0 and print "weaker than the routine", when the
+   * Charge is simply what the Stalker does on the turns it has it — the push-and-prone rider
+   * is the reason it exists, and a boss trading damage for control is a real turn, not a
+   * mistake to be optimised away. And it silently made recharge abilities incapable of ever
+   * LOWERING a creature's DPR, which is exactly what a control-flavoured one should do.
+   *
+   * So the recharge simply replaces the routine on its share of turns, up or down:
+   *     expected = p·alt + (1−p)·routine
+   *
+   * Turns are then claimed in damage order, so two recharge abilities cannot both spend the
+   * same turn. `gated` is the *"unless the creature can't use it"* case — the Pale Stalker's
+   * Cold Breath is "locked while both Pack Hunters are alive", so it is not available at the
+   * start of its own authored fight.
+   */
   let dpr = routine;
-  for (const alt of alternatives) {
-    // A spell has no recharge and is available every turn; a recharge ability is up on p.
-    const p = rechargeAvailability(alt.recharge);
-    // It IS the Action, so it replaces the whole routine — and a creature only does that
-    // when it is better. Either/or, never both.
-    const gain = p * Math.max(0, alt.per - routine);
-    dpr += gain;
-    breakdown.push({ name: alt.name, dpr: gain,
-      note: alt.per > routine
-        ? `${alt.note} — full action, replaces the routine on ${(p * 100).toFixed(0)}% of turns`
-        : `${alt.note} — full action, but weaker than the routine (${routine.toFixed(1)}), so it never raises DPR` });
+  let turnsLeft = 1;
+  for (const alt of [...alternatives].sort((a, b) => b.per - a.per)) {
+    if (alt.gated) {
+      breakdown.push({ name: alt.name, dpr: 0,
+        note: `${alt.note} — GATED: not available under this encounter's conditions, so it is not counted` });
+      continue;
+    }
+    const p = Math.min(turnsLeft, rechargeAvailability(alt.recharge));
+    turnsLeft -= p;
+    // Replaces the routine on those turns — which can LOWER total damage, and should.
+    const delta = p * (alt.per - routine);
+    dpr += delta;
+    breakdown.push({ name: alt.name, dpr: delta,
+      note: `${alt.note} — full action, taken on ${(p * 100).toFixed(0)}% of turns`
+        + (alt.per < routine
+          ? ` (trades ${(routine - alt.per).toFixed(1)} damage for its rider)` : "") });
   }
   // Bonus and legendary actions are not competing for the Action, so they simply add.
   for (const extra of additive) {
