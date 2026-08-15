@@ -23,6 +23,12 @@
  */
 
 import { midpointDprForLevel } from "./encounterRounds";
+// The action-budget predicates established at 0.7.1.10–0.7.1.12. Imported, never reimplemented:
+// the DPR estimate and the combat card must not be able to disagree about what a creature's
+// turn contains. (mainMonsterRuntime takes only a TYPE from encounter-band, so no cycle.)
+import {
+  isMonsterFullAction, isMonsterBonusAction, isMonsterLegendaryAction,
+} from "../monsters/runtime/mainMonsterRuntime";
 import type { MonsterClassification } from "../monsters/runtime/mainMonsterRuntime";
 
 // ─── Party sustain — S_P50,4 ──────────────────────────────────────────────────
@@ -297,6 +303,9 @@ export type DprEstimateAction = {
   attackCount?: number;
   recharge?: string;
   legendaryCost?: number;
+  /** The discriminator for a spell action — see `isMonsterSpellAction`. NOT `kind`. */
+  spellSlotLevel?: number;
+  economyCost?: string;
 };
 
 export type MonsterDamageEstimate = {
@@ -339,7 +348,13 @@ export function estimateMonsterDamage(
   const unread: string[] = [];
 
   /** One damaging entry, already resolved to expected damage for a single use. */
-  type Priced = { name: string; per: number; note: string; recharge?: string; limited: boolean };
+  type Priced = {
+    name: string; per: number; note: string; recharge?: string; limited: boolean;
+    /** Spell or recharge — IS the creature's Action, so it replaces the whole routine. */
+    fullAction: boolean;
+    /** Bonus / legendary — runs on its own economy, so it adds instead of competing. */
+    outOfBudget: boolean;
+  };
   const priced: Priced[] = [];
 
   for (const a of actions ?? []) {
@@ -367,39 +382,51 @@ export function estimateMonsterDamage(
     // An entry carrying its own attackCount states its full routine on its own.
     const own = a.attackCount ?? 0;
     if (own > 1) { per *= own; note += ` × ${own}`; }
+    // The SAME predicates the combat card spends the budget with — never a parallel rule set.
+    const ra = a as unknown as Parameters<typeof isMonsterFullAction>[0];
     priced.push({ name: a.name ?? "unnamed", per, note, recharge: a.recharge,
-      limited: own > 1 });
+      limited: own > 1,
+      fullAction: isMonsterFullAction(ra),
+      outOfBudget: isMonsterBonusAction(ra) || isMonsterLegendaryAction(ra) });
   }
 
   if (priced.length === 0) return { dpr: 0, breakdown, unread };
 
   /**
-   * A CREATURE TAKES ONE ACTION PER TURN (Christopher, 2026-08-14): *"it can make a phantom
-   * charge … or it can make 1 multiattack turn."*
+   * THE ACTION BUDGET — the model established at 0.7.1.10–0.7.1.12, not a new one.
    *
-   * The old code SUMMED every damaging entry, which charged the party for a creature doing
-   * its whole stat block every round. The Mirage Stalker read 48.1 DPR — Phantom Rake plus
-   * Hollow Stamp plus Phantom Charge, each doubled — for a creature that cannot exceed ~16.
+   * Christopher, 2026-08-14: *"action economy was already established when we were going over
+   * the frost weaver and the wendigo wight."* It was, and this function was ignoring it: it
+   * SUMMED every damaging entry, charging the party for a creature performing its whole stat
+   * block every round. The Mirage Stalker read 48.1 DPR for a creature that cannot exceed ~16.
    *
-   * So the estimate is now built around what a turn can actually contain:
+   * So the budget is read through the SAME predicates the combat card uses, rather than a
+   * parallel set of rules that could drift from them:
    *
-   *  · THE ROUTINE — the standard multiattack. `attacksPerTurn` is the SIZE OF THE ROUTINE,
-   *    not a multiplier on every line. A block listing one Claw with attacksPerTurn 2 makes
-   *    two Claws; a block listing three named attacks with attacksPerTurn 2 makes the best
-   *    TWO of them, not all three doubled. Getting this backwards is what produced both the
-   *    under-read (Lesser Wendigo, 6.05 for two Claws) and the over-read (Stalker, 48.1).
+   *  · THE ROUTINE — `attacksPerTurn` is the SIZE OF THE BUDGET, not a multiplier on every
+   *    line ("claw is action and bolt is action and action count is 2 so using either until
+   *    that count is out"). One Claw with attacksPerTurn 2 makes two Claws; three named
+   *    attacks with attacksPerTurn 2 makes the best TWO, not all three doubled. Getting this
+   *    backwards caused both the under-read (Lesser Wendigo 6.05) and the over-read (48.1).
    *
-   *  · AN ALTERNATIVE — anything on a recharge REPLACES the routine on the turns it is up,
-   *    and only when it is actually better. Expected = p·max(alt, routine) + (1−p)·routine.
-   *    Adding it on top was the second half of the over-read.
+   *  · `isMonsterFullAction` — a SPELL or a RECHARGE action IS the creature's Action, so it
+   *    replaces the entire routine rather than adding to it or costing one swing. Either/or,
+   *    never both. ⚠ The spell discriminator is `spellSlotLevel`, NOT `kind` — no template
+   *    sets `kind: "spell"`, and the Frost-Weaver is the test case for exactly that.
    *
-   * Still deliberately NOT modelled, because the data has nowhere to say it: per-day limits
-   * (a 2/day ability is priced as if always available), abilities that only trigger off
-   * another ability, and legendary/lair actions, which genuinely DO add to a turn.
+   *  · `isMonsterBonusAction` / `isMonsterLegendaryAction` — OUTSIDE the budget entirely, so
+   *    they ADD. A legendary action runs on someone else's turn from its own pool.
+   *
+   * Still not modelled, because the data has nowhere to say it: per-day limits (a 2/day
+   * ability is priced as always available) and abilities gated on another ability firing.
    */
   const routineSize = Math.max(1, options.attacksPerTurn ?? 1);
-  const alternatives = priced.filter(x => x.recharge);
-  const routinePool = priced.filter(x => !x.recharge);
+  // Out of the budget → they add on top of whatever the turn's action was.
+  const additive = priced.filter(x => x.outOfBudget);
+  // Each IS the Action → an alternative to the whole routine.
+  const alternatives = priced.filter(x => !x.outOfBudget && x.fullAction);
+  // Ordinary attacks → spend one swing each out of `routineSize`.
+  const routinePool = priced.filter(x => !x.outOfBudget && !x.fullAction);
 
   let routine = 0;
   if (routinePool.length > 0) {
@@ -424,14 +451,23 @@ export function estimateMonsterDamage(
 
   let dpr = routine;
   for (const alt of alternatives) {
+    // A spell has no recharge and is available every turn; a recharge ability is up on p.
     const p = rechargeAvailability(alt.recharge);
-    // It replaces the routine, and only when it beats it.
+    // It IS the Action, so it replaces the whole routine — and a creature only does that
+    // when it is better. Either/or, never both.
     const gain = p * Math.max(0, alt.per - routine);
     dpr += gain;
     breakdown.push({ name: alt.name, dpr: gain,
       note: alt.per > routine
-        ? `${alt.note}, replaces the routine on ${(p * 100).toFixed(0)}% of turns`
-        : `${alt.note} — weaker than the routine (${routine.toFixed(1)}), so it never raises DPR` });
+        ? `${alt.note} — full action, replaces the routine on ${(p * 100).toFixed(0)}% of turns`
+        : `${alt.note} — full action, but weaker than the routine (${routine.toFixed(1)}), so it never raises DPR` });
+  }
+  // Bonus and legendary actions are not competing for the Action, so they simply add.
+  for (const extra of additive) {
+    const p = rechargeAvailability(extra.recharge);
+    dpr += extra.per * p;
+    breakdown.push({ name: extra.name, dpr: extra.per * p,
+      note: `${extra.note} — outside the action budget, so it adds${p < 1 ? ` × ${(p * 100).toFixed(0)}% uptime` : ""}` });
   }
 
   breakdown.sort((x, y) => y.dpr - x.dpr);
