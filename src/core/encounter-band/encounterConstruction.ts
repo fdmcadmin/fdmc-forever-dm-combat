@@ -308,6 +308,11 @@ export type DprEstimateAction = {
   economyCost?: string;
   /** Authored: the creature cannot use this under the encounter's conditions. Never inferred. */
   gated?: boolean;
+  /**
+   * The printed rules text. Read ONLY to warn that an ability looks like it deals damage while
+   * its `damage` field is empty — never to price one. See the omission check below.
+   */
+  text?: string;
 };
 
 export type MonsterDamageEstimate = {
