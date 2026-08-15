@@ -800,7 +800,19 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // four lines: Claw was +6 (doc +5), Rend was recharge 4-6 / +3d6 / DC 13 (doc 5-6 /
       // +2d6 / DC 12), and Grab carried 2d8 (doc 2d6) with NO damage field at all, so its
       // automatic damage was reaching nothing.
-      { name: "Claw", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3 + 1d6", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing plus 3 (1d6) cold." },
+      /**
+       * DEX, not STR, and CR 4, not 5 (Christopher, 2026-08-14): *"lessers arent suppose to be
+       * off the str for the claw they are suppose to be off dex, this is a skirmisher"* and
+       * *"Lessers arent CR correct they are suppose to be a 4 not a 5."*
+       *
+       * The two corrections explain each other. The authored +5 / 1d8+3 is STR (+3) at PB +2 —
+       * internally consistent all along, so the CR 5 LABEL was the error, not the maths. Fixed
+       * to the Skirmisher's own ability: DEX 18 (+4) at PB +2 gives +6 to hit and 1d8+4.
+       *
+       * ⚠ A +1/+1 increase on a creature the table has already fought. Small, and it is the
+       * correct value rather than a retune.
+       */
+      { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4 + 1d6", text: "+6 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 4) slashing plus 3 (1d6) cold." },
       /**
        * MIGHTY LEAP is a BONUS-ACTION Claw, not a passive trait: "If the Wendigo moves at
        * least 20 feet in a straight line toward a creature, it can make one Claw attack
@@ -817,7 +829,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // note on Grab. They are listed so they are visible, and excluded so they do not inflate.
       // Mighty Leap needs a 20+ ft straight-line approach, which is a first-round condition,
       // not a per-turn one.
-      { name: "Mighty Leap Claw (Bonus Action)", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3 + 1d6", gated: true, text: "Bonus action after moving 20+ ft. in a straight line toward a creature: one Claw. On a hit, DC 13 STR save or prone." },
+      { name: "Mighty Leap Claw (Bonus Action)", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4 + 1d6", gated: true, text: "Bonus action after moving 20+ ft. in a straight line toward a creature: one Claw. On a hit, DC 13 STR save or prone." },
       // Rend needs BOTH Claws to hit the same creature AND the recharge to be up — roughly a
       // 10% turn, not a 33% one.
       { name: "Rend", kind: "action", recharge: "5-6", damage: "2d6", save: "STR DC 12", gated: true, text: "Recharge 5-6. If both Claws hit the same creature this turn: +2d6 slashing, DC 12 STR save or knocked prone." },
@@ -874,12 +886,26 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       ],
     },
     abilities: [
-      formatAbility("STR", 11, 0),
-      formatAbility("DEX", 15, 2),
-      formatAbility("CON", 12, 1),
-      formatAbility("INT", 16, 3),
+      /**
+       * ABS corrected 2026-08-14 — INT had been shifted down and the app had drifted further
+       * still (it carried CHA 16 / CON 12, matching neither the doc nor itself).
+       *
+       * THE STAT BLOCK PROVES ITS OWN INT: "Rimebound Spellcasting (INT, DC 14, +6)". At PB +2
+       * both numbers require an INT modifier of +4 — the spell attack (+4 +2 = +6) and the save
+       * DC (8 +2 +4 = 14). So INT is 18, not 16, and the two points came off INT onto CON.
+       * Christopher: "it probably got shifted from the int when it shouldnt."
+       *
+       * Putting them back preserves the pool total (78), leaves DEX at 14 so AC 15 is untouched,
+       * and removes the duplicate 16s. It also makes the line an exact TACTICIAN spine deal
+       * (INT→DEX→CON→WIS→CHA→STR of {18,14,14,12,10,10}), which the old line was not — the
+       * archetype and the numbers now agree instead of merely sharing a label.
+       */
+      formatAbility("STR", 10, 0),
+      formatAbility("DEX", 14, 2),
+      formatAbility("CON", 14, 2),
+      formatAbility("INT", 18, 4),
       formatAbility("WIS", 12, 1),
-      formatAbility("CHA", 16, 3),
+      formatAbility("CHA", 10, 0),
     ],
     traits: [
       { name: "Warding Line", kind: "trait", text: "While at least two Frozen Sentinels are alive, each has advantage on saves against effects that would move it or knock it prone." },
