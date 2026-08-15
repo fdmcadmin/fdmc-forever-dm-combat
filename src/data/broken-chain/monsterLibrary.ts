@@ -48,7 +48,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "beast", ac: 13, maxHp: 18, speed: "50 ft",
+      kind: "beast", ac: 13, maxHp: 11, speed: "50 ft", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Pack Tactics is offensive (advantage to hit), not durability. Plain HP bar." },
       ],
@@ -84,7 +84,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "beast", ac: 14, maxHp: 33, speed: "50 ft",
+      kind: "beast", ac: 14, maxHp: 26, speed: "50 ft", classification: "strong",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Leads the pack but takes damage normally. Plain HP bar." },
       ],
@@ -120,7 +120,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "monstrosity", ac: 13, maxHp: 59, attacksPerTurn: 2, speed: "40 ft",
+      kind: "monstrosity", ac: 13, maxHp: 59, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Big HP pool, no resistances or revival. Plain HP bar." },
       ],
@@ -138,13 +138,54 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Thornhide", kind: "trait", text: "Briar and broken bark are matted into the owlbear's pelt. A creature that hits it with a melee attack while within 5 feet takes 2 (1d4) piercing damage." },
     ],
     actions: [
-      { name: "Beak", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 5", text: "+7 to hit, reach 5 ft., one creature. Hit: 10 (1d10 + 5) piercing." },
-      { name: "Raking Claws", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 5", text: "+7 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing." },
+      // Rending Multiattack = one Beak + one Claw (Archetype Pass v4).
+      { name: "Beak", kind: "attack", roll: "1d20 + 6", damage: "1d10 + 4", text: "+6 to hit, reach 5 ft., one creature. Hit: 9 (1d10 + 4) piercing." },
+      { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 4", text: "+6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) slashing." },
+      // Full Action — replaces Rending Multiattack. The pin, not the damage, is the point.
+      { name: "Crushing Pin", kind: "action", save: "STR DC 13", damage: "2d6", recharge: "5-6", text: "Recharge 5-6. Full Action — replaces Rending Multiattack. DC 13 STR save or grappled + pinned, taking 2d6 bludgeoning at the start of each Owlbear turn until escape (DC 13)." },
     ],
     reactions: [],
     resources: [],
     notes: ["Wardenwood forest apex predator. Challenge 3.", "Skills: Perception +5.", "Senses: Darkvision 60 ft., Passive Perception 15."],
     visibility: { defaultState: "hp-bar", hiddenName: "Shape in the Trees", revealedName: "Mosshide Owlbear" },
+  },
+  // ── Act 1 · Wardenwood — Mosshide Cub ────────────────────────────────────────
+  // Added 2026-08-14 from Archetype Pass v4. "Two cubs share the den and both are combatants
+  // at every supported party size" — they are the encounter's moral weight, not its threat.
+  {
+    templateId: "broken-chain:act1:mosshide-cub:v1",
+    name: "Mosshide Cub",
+    encounterId: "act1-mosshide-owlbear",
+    encounterLabel: act1MosshideLabel,
+    stats: {
+      kind: "monstrosity", ac: 12, maxHp: 5, speed: "30 ft", classification: "normal",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "A 5-HP juvenile body that flees rather than dies. Plain HP bar." },
+      ],
+    },
+    abilities: [
+      formatAbility("STR", 12, 1),
+      formatAbility("DEX", 12, 1),
+      formatAbility("CON", 11, 0),
+      formatAbility("INT", 3, -4),
+      formatAbility("WIS", 10, 0),
+      formatAbility("CHA", 6, -2),
+    ],
+    traits: [
+      { name: "Stay by the Mother", kind: "trait", text: "Both cubs enter the encounter at every party size. They do not open the fight and stay close to the Owlbear rather than choosing targets tactically." },
+      { name: "Bolt", kind: "trait", text: "A cub flees the instant it drops to 45% of its own HP, crashing into the brush rather than dying. It provokes nothing and does not return." },
+      { name: "Follows the Mother", kind: "trait", text: "If Mosshide is driven off rather than killed, any surviving cub follows her out — the fight simply ends." },
+    ],
+    actions: [
+      { name: "Claw", kind: "attack", roll: "1d20 + 3", damage: "1d4 + 1", text: "+3 to hit, reach 5 ft., one target. Hit: 3 (1d4 + 1) slashing. The only attack it knows, and it barely knows it." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: [
+      "Chassis: Mastiff (SRD fallback juvenile body). Archetype: chassis-leaning minion.",
+      "A moral weight, not a threat. Killing a fleeing cub is allowed and is meant to cost something at the table — the whole encounter is built so the party can choose not to.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "The Things in the Den", revealedName: "Mosshide Cub" },
   },
   // ── Act 1 · Wardenwood — Greenwood Raider Band ───────────────────────────────
   {
@@ -155,7 +196,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "unspecified", ac: 15, maxHp: 65, attacksPerTurn: 3, speed: "30 ft",
+      kind: "unspecified", ac: 15, maxHp: 16, attacksPerTurn: 1, speed: "30 ft", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -192,7 +233,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "beast", ac: 13, maxHp: 22, speed: "30 ft., climb 30 ft.",
+      kind: "beast", ac: 13, maxHp: 26, speed: "30 ft., climb 30 ft.", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Webbing slows the party but does not make the spider harder to kill. Plain HP bar." },
       ],
@@ -227,7 +268,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "unspecified", ac: 13, maxHp: 26, speed: "30 ft.",
+      kind: "unspecified", ac: 13, maxHp: 16, attacksPerTurn: 2, speed: "30 ft.", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Ambush is an opener, not durability. Plain HP bar." },
       ],
@@ -262,7 +303,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Act 1 boss. No v12 workbook lane, but unlike the Act 1 chaff it has a real defensive
     // trait, so it is itemised rather than flattened to 1.0. ESTIMATE — no MC run.
     stats: {
-      kind: "unspecified", ac: 14, maxHp: 100, attacksPerTurn: 2, speed: "50 ft",
+      kind: "unspecified", ac: 13, maxHp: 100, attacksPerTurn: 2, speed: "50 ft", classification: "act-boss",
       defenses: [
         { name: "Phantom Step", ehpMultiplier: 1.18, note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
       ],
@@ -281,13 +322,26 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Condition Immunity - Frightened", kind: "trait", text: "The Stalker is immune to the frightened condition." },
     ],
     actions: [
-      { name: "Phantom Rake", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", text: "Melee Weapon Attack: +6 to hit, reach 10 ft., one target. Hit: 13 (2d8 + 4) piercing damage. The strike lands a half-second before the creature appears to move." },
-      { name: "Hollow Stamp", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 4", text: "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage. The hooves connect with a sound that is wrong." },
-      // `recharge` was only ever stated in the prose, so the estimator could not see it and
-      // treated the Charge as part of the standard routine. Christopher, 2026-08-14: "it can
-      // make a phantom charge (this is a recharge 5-6, not the after a multiattack turn) or it
-      // can make 1 multiattack turn." The field now matches the block's own text.
-      { name: "Phantom Charge", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", save: "STR DC 14", recharge: "5-6", text: "Recharge 5-6. Melee Weapon Attack after at least 20 ft. of straight-line movement. On hit after the movement requirement, target must succeed on the Strength save or be pushed 10 ft. and knocked prone." },
+      // Renamed to the authored block (Archetype Pass v4): Multiattack is one Gore + one Hooves.
+      { name: "Gore", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", text: "Melee Weapon Attack: +6 to hit, reach 10 ft., one target. Hit: 13 (2d8 + 4) piercing damage. The strike lands a half-second before the creature appears to move." },
+      { name: "Hooves", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 4", text: "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage. The hooves connect with a sound that is wrong." },
+      /**
+       * "Phantom Charge (recharges after a Multiattack turn). Full Action — replaces
+       * Multiattack." That cadence is strictly ALTERNATING — Charge, Multiattack, Charge — so
+       * it is up on half of all turns, which `rechargeAvailability("4-6")` states as 3/6.
+       *
+       * It is a DAMAGE SACRIFICE FOR CONTROL and is meant to be: one Gore instead of Gore +
+       * Hooves, bought with a DC 14 push-and-prone. The Stalker opens with it (Christopher:
+       * "most recharge abilities in dnd would be the opening hand of a creature, the
+       * limitation of the traits are what stop it").
+       *
+       * Cadence checked before choosing: alternating reads 12.03 DPR against 13.22 for a
+       * 1d6 recharge 5-6 — 1.19 apart, and BOTH resolve to the identical fight (3.99 rounds,
+       * "1 down, 1 badly hurt", never lethal). The cadence does not move the meter, because a
+       * Charge turn is a Multiattack turn the Stalker does not get.
+       */
+      { name: "Phantom Charge", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", save: "STR DC 14", recharge: "4-6", text: "Recharges after a Multiattack turn. Full Action — replaces Multiattack. Move up to its speed in a straight line and make one Gore attack at any point. If it moved 20+ ft. and hits, DC 14 STR save or the target is knocked prone and pushed 10 ft." },
+      { name: "Phase Shift (Bonus Action)", kind: "action", text: "Flickers up to 15 ft., no opportunity attacks. The afterimage stays in its old space. This does NOT reset Phantom Step's disadvantage — it stacks a stale image on top of the displacement." },
     ],
     reactions: [
       { name: "Phantom Lunge", kind: "reaction", roll: "1d20 + 6", damage: "2d6 + 4", text: "When a creature within 10 feet misses because of Phantom Step's afterimage, the Stalker can make one Hollow Stamp attack against that creature." },
@@ -317,7 +371,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // scale by the ×1.27 dynamics factor the two MC-run fights show. PROVISIONAL: this
     // fight has no MC lane of its own yet.
     stats: {
-      kind: "beast", ac: 13, maxHp: 75, speed: "50 ft",
+      kind: "beast", ac: 13, maxHp: 75, speed: "50 ft", classification: "strong",
       defenses: [
         { name: "Ambush + Apex Unleashed", ehpMultiplier: 1.40, note: "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics." },
       ],
@@ -353,7 +407,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Hollow Pack formation defense (see Pale Stalker). AC 12 is its own
     // offensive-side term — it is the easiest body in the fight to hit.
     stats: {
-      kind: "beast", ac: 12, maxHp: 26, speed: "40 ft",
+      kind: "beast", ac: 12, maxHp: 26, speed: "40 ft", classification: "normal",
       defenses: [
         { name: "Pack coordination", ehpMultiplier: 1.40, note: "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet." },
       ],
@@ -383,7 +437,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Frozen Hollow formation defense (shared across all three bodies) — v12 Encounter
     // Safety: 200 HP @5P won in 2.02 rounds, × 1.27 dynamics. PROVISIONAL, no MC lane yet.
     stats: {
-      kind: "undead", ac: 12, maxHp: 42, speed: "20 ft",
+      kind: "undead", ac: 12, maxHp: 42, speed: "20 ft", classification: "normal",
       defenses: [
         { name: "Hollow Fortitude", ehpMultiplier: 1.45, note: "DC 5 + damage CON save at 0 HP drops it to 1 instead (radiant or a crit bypasses), so kills must be confirmed. Carries the Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics." },
       ],
@@ -449,7 +503,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
-      kind: "undead", ac: 13, maxHp: 36, speed: "30 ft",
+      kind: "undead", ac: 13, maxHp: 36, speed: "30 ft", classification: "normal",
       defenses: [
         { name: "Cold Aura + paralysis", ehpMultiplier: 1.45, note: "Aura saves compound with the Hunter's drain and paralysis removes whole PC turns. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
       ],
@@ -527,7 +581,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // absorbed AC; now AC 14 is its own offensive-side term, so this number is traits only.
     // v12 Encounter Safety: Last Directive 151 HP @5P won in 1.74 rounds × 1.27 dynamics.
     stats: {
-      kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft",
+      kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft", classification: "elite",
       defenses: [
         { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
       ],
@@ -562,7 +616,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // out (acFactor 0.62 at L4 — by far the hardest thing to hit in the act) what remains is
     // the shared Last Directive formation value, not a second helping of the same armour.
     stats: {
-      kind: "undead", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)",
+      kind: "undead", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)", classification: "normal",
       defenses: [
         { name: "Patrol screen", ehpMultiplier: 1.64, note: "Three Lights tracked separately; magical vs nonmagical matters per attacker. Shares the Last Directive formation value. PROVISIONAL — analytic-derived, no MC lane yet." },
       ],
@@ -596,7 +650,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "unspecified", ac: 15, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
+      kind: "unspecified", ac: 14, maxHp: 65, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -639,7 +693,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "unspecified", ac: 16, maxHp: 45, attacksPerTurn: 2, speed: "30 ft",
+      kind: "unspecified", ac: 14, maxHp: 65, attacksPerTurn: 2, speed: "30 ft", classification: "strong",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
       ],
@@ -680,7 +734,7 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
-      kind: "unspecified", ac: 14, maxHp: 27, speed: "30 ft",
+      kind: "unspecified", ac: 14, maxHp: 33, speed: "30 ft", classification: "strong",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Slip Between repositions it; bright light grounds that entirely. Plain HP bar." },
       ],

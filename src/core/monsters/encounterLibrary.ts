@@ -77,7 +77,10 @@ const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-ww-halfdrain";
+// Bumped 2026-08-14: Act 1 rebuilt to the Archetype Pass v4 doc (HP/AC/tiers), the Mosshide
+// Cub added, and authored roster COUNTS moved into the seed. A DM's own edits to campaign rows
+// are re-seeded by design — the doc is the truth document and the app data was code-built.
+const ENCOUNTER_LIBRARY_SEED_VERSION = "0.7.8.7-act1-archetype-pass-v4";
 
 /**
  * TARGET tier per campaign fight (Christopher, 2026-07-17) — the round band each Act 2
@@ -91,7 +94,47 @@ const ENCOUNTER_LIBRARY_SEED_VERSION = "0.6.0-act2-ww-halfdrain";
  * That is an OUTCOME of HP, not a setting — the model reports it, so use these as the
  * tuning intent when the panel disagrees.
  */
+/**
+ * AUTHORED ROSTER COUNTS — how many of each body the fight actually fields.
+ *
+ * The seed used to write `count: 1` for every template, so a freshly seeded library
+ * understated every multi-body fight until a DM fixed it by hand. The counts are authored
+ * data (the Act 1 Archetype Pass v4 and Act 2 4P Baseline encounter tables), so they belong
+ * in the seed rather than in one browser's localStorage.
+ *
+ * Act 1 totals these reproduce at 4P: Thornfang Pack 26+2×11 = 48 · Greenwood Raider Band
+ * 2×16 = 32 · Mosshide Owlbear 59+2×5 = 69 · Threadbare Spider Nest 4×26 = 104 · Swamp Ambush
+ * 4×16 = 64 · Bandit Fort 65+65+33 = 163 · Mirage Stalker 100.
+ */
+const ENCOUNTER_ROSTER: Record<string, Record<string, number>> = {
+  "act1-thornfang-pack": {
+    "broken-chain:act1:thornfang-wolf:v1": 2,   // "Fixed two in F1"
+    "broken-chain:act1:thornfang-packlord:v1": 1,
+  },
+  "act1-greenwood-reaver": { "broken-chain:act1:greenwood-reaver:v1": 2 },
+  "act1-mosshide-owlbear": {
+    "broken-chain:act1:mosshide-owlbear:v1": 1,
+    "broken-chain:act1:mosshide-cub:v1": 2,     // both cubs active at every party size
+  },
+  "act1-threadbare-spider-nest": { "broken-chain:act1:threadbare-spider:v1": 4 },
+  "act1-swamp-ambush": { "broken-chain:act1:swamp-ambusher:v1": 4 },
+  // Act 2 — the only multi-body counts its table publishes.
+  "act2-s1-e1-hollow-pack": { "broken-chain:act2-s1:pack-hunter:v1": 2 },
+  "act2-s2-e2-last-directive": { "broken-chain:act2-s2:grave-light:v1": 3 },
+  "act2-s3-village-defense": { "broken-chain:act2:lesser-wendigo:v1": 2 },
+};
+
 const ENCOUNTER_CLASSIFICATION: Record<string, MonsterClassification> = {
+  // Act 1 ladder, in play order — from the Archetype Pass v4 "Pressure" column. These were
+  // MISSING entirely, so every Act 1 fight (including its boss) fell back to its strongest
+  // creature and was judged against "normal", which expects nobody to go down.
+  "act1-thornfang-pack": "normal",
+  "act1-greenwood-reaver": "normal",
+  "act1-mosshide-owlbear": "mid-boss",         // GATE -> Lvl 2
+  "act1-threadbare-spider-nest": "normal",
+  "act1-swamp-ambush": "normal",
+  "fort-cervan-band": "elite",                 // Bandit Fort, "Elite (no gate)"
+  "act1-boss": "act-boss",                     // Mirage Stalker, GATE -> Lvl 3
   // Act 2 ladder, in play order.
   "act2-s1-e1-hollow-pack": "strong",        // first fight of the act (Stalker 75 + 2x Pack Hunter 26)
   // ELITE because the Corrupted Hunter (Wight chassis, 82 HP, elite-classed) is a genuine
@@ -282,7 +325,8 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
       classification: ENCOUNTER_CLASSIFICATION[encounterId],
       entries: encounterTemplates.map(t => ({
         templateId: t.templateId,
-        count: 1,
+        // Authored count, not a flat 1 — see ENCOUNTER_ROSTER.
+        count: ENCOUNTER_ROSTER[encounterId]?.[t.templateId] ?? 1,
         startingVisibility: t.visibility.defaultState,
         hiddenNameOverride: t.visibility.hiddenName,
       })),
