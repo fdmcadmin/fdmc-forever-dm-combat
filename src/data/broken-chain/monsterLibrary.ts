@@ -1327,6 +1327,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E1 - The First Court",
     stats: {
       kind: "fey", ac: 17, maxHp: 59, speed: "30 ft., climb 20 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Root-Road and Deep-Footed are movement and anti-prone; neither reduces damage taken. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "bruiser",
       skills: [{ label: "Athletics", modifier: 7 }],
@@ -1362,6 +1365,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E1 - The First Court",
     stats: {
       kind: "fey", ac: 16, maxHp: 76, speed: "40 ft.",
+      defenses: [
+        { name: "Bark-Ribbed", ehpMultiplier: 1.028819, note: "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). Reduces B/P/S by 3, first time each round." },
+      ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "guardian",
       skills: [{ label: "Perception", modifier: 5 }],
@@ -1397,6 +1403,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E1 - The First Court",
     stats: {
       kind: "fey", ac: 14, maxHp: 36, speed: "30 ft., fly 30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Leafway and Pollen Map are mobility and tracking. Plain HP bar." },
+      ],
       size: "Small", classification: "elite", archetype: "mystic",
       skills: [{ label: "Stealth", modifier: 7 }, { label: "Perception", modifier: 8 }],
     },
@@ -1431,6 +1440,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E2 - The Cut Below",
     stats: {
       kind: "fiend", ac: 17, maxHp: 39, speed: "40 ft., climb 20 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "First Nails and Snap to the Nail are repositioning. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
       skills: [{ label: "Acrobatics", modifier: 8 }, { label: "Stealth", modifier: 8 }],
@@ -1466,6 +1478,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E2 - The Cut Below",
     stats: {
       kind: "fiend", ac: 15, maxHp: 68, speed: "30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Breakroot is terrain, Marrow Grip is a speed debuff on the target. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "bruiser",
       skills: [{ label: "Athletics", modifier: 7 }],
@@ -1501,6 +1516,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E2 - The Cut Below",
     stats: {
       kind: "fiend", ac: 17, maxHp: 46, speed: "30 ft.",
+      defenses: [
+        { name: "Break the Survey", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Spends a stake to impose disadvantage on one attack; two stakes." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
       skills: [{ label: "Arcana", modifier: 8 }],
@@ -1537,6 +1555,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
     stats: {
       kind: "fey", ac: 16, maxHp: 119, speed: "30 ft., swim 30 ft.",
+      defenses: [
+        { name: "Control spellcasting", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). Entangle, Web and Hold Person cost the party attacking turns; this is a CLOCK tax, not resistance." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "mid-boss", archetype: "mystic",
       // "7th-level spellcaster; spell save DC 17, +9 to hit. Slots 4 / 3 / 3 / 1."
@@ -1577,6 +1598,10 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
     stats: {
       kind: "fiend", ac: 12, maxHp: 97, speed: "50 ft.",
+      defenses: [
+        { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
+        { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
+      ],
       attacksPerTurn: 2,
       size: "Large", classification: "mid-boss", archetype: "bruiser",
       skills: [{ label: "Perception", modifier: 5 }],
@@ -1613,6 +1638,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
       kind: "fey", ac: 15, maxHp: 75, speed: "30 ft., climb 20 ft.",
+      defenses: [
+        { name: "Offered Shelter", ehpMultiplier: 1.049548, note: "Workbook: Half cover vs ranged attacks (+0.049548). Two 5-ft circles granting half cover." },
+      ],
       size: "Small", classification: "elite", archetype: "tactician",
       skills: [{ label: "Nature", modifier: 8 }],
     },
@@ -1647,6 +1675,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
       kind: "fey", ac: 16, maxHp: 75, speed: "30 ft.",
+      defenses: [
+        { name: "Declare the Courtesy", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). A 5-ft movement tax in either direction within 15 ft." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "commander",
       skills: [{ label: "Deception", modifier: 8 }, { label: "Insight", modifier: 5 }],
@@ -1682,6 +1713,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
       kind: "fey", ac: 14, maxHp: 44, speed: "30 ft., fly 30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Hush After Failure and Moonless Swarm are movement. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "mystic",
       skills: [{ label: "Stealth", modifier: 7 }, { label: "Perception", modifier: 8 }],
@@ -1717,6 +1751,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
       kind: "fey", ac: 14, maxHp: 105, speed: "40 ft.",
+      defenses: [
+        { name: "Rooted Turn", ehpMultiplier: 1.056615, note: "Workbook: temporary AC, interpolated to +2 AC for 1 round (+0.056615)." },
+      ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "guardian",
       skills: [{ label: "Athletics", modifier: 7 }, { label: "Perception", modifier: 6 }],
@@ -1752,6 +1789,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
       kind: "fiend", ac: 12, maxHp: 59, speed: "40 ft., climb 30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Through the Wound and Scar Slip are movement. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
       skills: [{ label: "Acrobatics", modifier: 8 }, { label: "Stealth", modifier: 8 }],
@@ -1787,6 +1827,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
       kind: "fiend", ac: 16, maxHp: 56, speed: "30 ft.",
+      defenses: [
+        { name: "Claimed Line", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). Costs the first crosser each round 10 extra ft or stops it." },
+      ],
       size: "Medium", classification: "elite", archetype: "tactician",
       skills: [{ label: "Arcana", modifier: 8 }],
     },
@@ -1821,6 +1864,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E7 - The Last Court",
     stats: {
       kind: "fey", ac: 17, maxHp: 100, speed: "25 ft.",
+      defenses: [
+        { name: "Root or Roam (Rooted)", ehpMultiplier: 1.056615, note: "Workbook: temporary AC, interpolated to +2 AC for 1 round (+0.056615). Available every turn by choice." },
+      ],
       attacksPerTurn: 2,
       size: "Huge", classification: "elite", archetype: "guardian",
       skills: [{ label: "Perception", modifier: 6 }],
@@ -1856,6 +1902,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E7 - The Last Court",
     stats: {
       kind: "fey", ac: 18, maxHp: 52, speed: "40 ft.",
+      defenses: [
+        { name: "False Familiarity", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Hushrunner's applies only to opportunity attacks, so this is the generous end of its true value." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
       skills: [{ label: "Stealth", modifier: 8 }, { label: "Deception", modifier: 7 }],
@@ -1891,6 +1940,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E7 - The Last Court",
     stats: {
       kind: "fiend", ac: 15, maxHp: 46, speed: "30 ft., fly 30 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Burn Script and Written Origin change where an attack originates, not what it takes. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "mystic",
       skills: [{ label: "Perception", modifier: 8 }],
@@ -1926,6 +1978,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
       kind: "fiend", ac: 15, maxHp: 104, speed: "35 ft.",
+      defenses: [
+        { name: "First Claim", ehpMultiplier: 1.049548, note: "Workbook: Half cover vs ranged attacks (+0.049548). Two claim posts granting half cover." },
+      ],
       attacksPerTurn: 2,
       size: "Huge", classification: "elite", archetype: "guardian",
       skills: [{ label: "Athletics", modifier: 7 }],
@@ -1961,6 +2016,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
       kind: "fiend", ac: 15, maxHp: 36, speed: "40 ft.",
+      defenses: [
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Spent Stain and Ashstep are movement. Plain HP bar." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
       skills: [{ label: "Acrobatics", modifier: 8 }, { label: "Stealth", modifier: 8 }],
@@ -1996,6 +2054,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
       kind: "fiend", ac: 16, maxHp: 50, speed: "30 ft.",
+      defenses: [
+        { name: "Boundary Script", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). A 20-ft line that taxes the first hostile crossing." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
       skills: [{ label: "Arcana", modifier: 8 }],
@@ -2031,6 +2092,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
       kind: "dragon", ac: 17, maxHp: 39, speed: "30 ft., glide 30 ft.",
+      defenses: [
+        { name: "Moon-Slick Scales", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round." },
+      ],
       size: "Small", classification: "mid-boss", archetype: "skirmisher",
       skills: [{ label: "Perception", modifier: 5 }],
     },
@@ -2065,6 +2129,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
       kind: "dragon", ac: 18, maxHp: 195, speed: "40 ft.; Broken Lift only",
+      defenses: [
+        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
+      ],
       attacksPerTurn: 3,
       size: "Huge", classification: "mid-boss", archetype: "commander",
       legendaryPerRound: 1,
@@ -2106,6 +2173,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E10 - The Center",
     stats: {
       kind: "aberration", ac: 17, maxHp: 173, speed: "30 ft.",
+      defenses: [
+        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "act-boss", archetype: "tactician",
       legendaryPerRound: 1,
@@ -2147,6 +2217,10 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: "Act 3 E10 - The Center",
     stats: {
       kind: "aberration", ac: 18, maxHp: 230, speed: "35 ft.",
+      defenses: [
+        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
+        { name: "Body Between", ehpMultiplier: 1.232313, note: "Workbook: Fixed prevention - 12/round (+0.232313), exact. Reduces the triggering damage by 12 once per round." },
+      ],
       attacksPerTurn: 2,
       size: "Huge", classification: "act-boss", archetype: "guardian",
       skills: [{ label: "Athletics", modifier: 10 }],
