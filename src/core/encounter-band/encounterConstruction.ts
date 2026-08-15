@@ -366,7 +366,25 @@ export function estimateMonsterDamage(
 
     const avg = damageExpressionAverage(a.damage);
     if (avg <= 0) {
-      if (a.damage) unread.push(`${a.name ?? "unnamed"} — could not read "${a.damage}"`);
+      if (a.damage) {
+        unread.push(`${a.name ?? "unnamed"} — could not read "${a.damage}"`);
+      } else if (/\d+d\d+/.test(a.text ?? "")) {
+        /**
+         * ⚠ DAMAGE THAT LIVES ONLY IN PROSE SCORES ZERO, SILENTLY. This branch is why it no
+         * longer does so quietly.
+         *
+         * The Veilwood Crone's Venomous Eruption is "27 (6d8) poison damage" in its text with
+         * an empty `damage` field, so she was reading 15.6 DPR — two Claws and nothing else —
+         * while her signature AoE contributed nothing at all. The Lesser Wendigo's Grab was
+         * the same. Neither appeared in `unread`, because the old check only fired when a
+         * damage field existed and failed to parse.
+         *
+         * The dice pattern is used only to DETECT a probable omission and warn about it —
+         * never to price one. Reading a number out of campaign prose is exactly the mistake
+         * that must not be made; saying "this looks authored wrong" is not.
+         */
+        unread.push(`${a.name ?? "unnamed"} — has dice in its text but no damage field, so it scores 0`);
+      }
       continue;
     }
 
