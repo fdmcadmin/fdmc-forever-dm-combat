@@ -21,7 +21,7 @@ import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
 import {
-  resolveEncounter, lethalityVerdict, partyBaselineFor, DPR_FLAT_FROM_ROUND,
+  resolveEncounter, partyBaselineFor, DPR_FLAT_FROM_ROUND,
   LETHAL_ENEMY_REMAINING, effectiveSustain, type EncounterBody,
 } from "./encounterChecker";
 import { EXPECTED_MONSTER_AC } from "./dprBaseline";
@@ -207,16 +207,26 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     });
   }, [partyLevel, bodies, est.landedDpr, monsterDamage.dpr]);
 
-  const lethal = resolution
-    ? lethalityVerdict({ pcsDowned: resolution.pcsDowned }, est.classification)
-    : null;
-
-  // Colour and wording come from the PRICE, not the clock: on the mark, under it, or over it.
-  const priceRead: { label: string; color: string } = !lethal
+  /**
+   * THE READING IS THE LETHAL ROUND — not a tier's expected body count
+   * (Christopher, 2026-08-14): *"expected lethality is as we stated this is where it becomes
+   * lethal at X rounds, downs and scratched can still be shown but should not be a benchmark."*
+   *
+   * `EXPECTED_LETHALITY` used to drive an ON PRICE / TOO CHEAP / TOO DEADLY verdict here. Its
+   * numbers came from an ILLUSTRATION — *"a mid boss MIGHT last 3 rounds but down 1 person"* —
+   * that was turned into a threshold, and then every fight in the campaign was graded against
+   * it. Worse, a tier label is a STORY label as much as a mechanical one, so a fight tagged
+   * mid-boss is not promising to cost exactly one character.
+   *
+   * So the verdict is now the fight's own behaviour: does it turn lethal, and when. The
+   * casualty read is still printed — it is useful — but nothing is graded against it.
+   */
+  const lethalRound = resolution?.lethalRound ?? null;
+  const priceRead: { label: string; color: string } = !resolution
     ? { label: "NO READ", color: "#8a6a2a" }
-    : lethal.ok ? { label: "ON PRICE", color: "#4caf50" }
-    : lethal.actual > lethal.expected ? { label: "TOO DEADLY", color: "#ff4444" }
-    : { label: "TOO CHEAP", color: "#e07b39" };
+    : lethalRound === null ? { label: "HOLDS", color: "#4caf50" }
+    : lethalRound <= 2 ? { label: `LETHAL R${lethalRound}`, color: "#ff4444" }
+    : { label: `LETHAL R${lethalRound}`, color: "#e07b39" };
   const vColor = priceRead.color;
 
   return (
@@ -356,15 +366,13 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                   <span style={{ fontSize: 18, fontWeight: 700, color: vColor, lineHeight: 1.15 }}>
                     {resolution ? resolution.lethalityRead : "no damage read"}
                   </span>
-                  {/* What this tier is SUPPOSED to cost — set by the fight's strongest creature. */}
+                  {/* The fight's tier — CONTEXT, not a target. A tier is a story label as much
+                      as a mechanical one, so nothing is graded against it. */}
                   <span
                     style={{ fontSize: 10, color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 10, padding: "2px 7px" }}
-                    title={lethal
-                      ? `${CLASSIFICATION_LABEL[est.classification]}: ${lethal.note} One character either side of the mark is inside authoring tolerance — the workbook is a distribution over 150k runs, not a promise about one table's dice.`
-                      : "Add readable damage to these creatures to get a lethality read."}
+                    title="The fight's tier, from its strongest creature or the encounter's own tag. Shown for context — the reading is the LETHAL round, not a body count this tier is supposed to cost."
                   >
                     {CLASSIFICATION_LABEL[est.classification]}
-                    {lethal && ` · should cost ${lethal.expected}`}
                   </span>
                   <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${vColor}22`, border: `1px solid ${vColor}`, color: vColor }}>
                     {priceRead.label}
@@ -432,11 +440,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     {partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest
                   </div>
                 </div>
-                {lethal && !lethal.ok && (
-                  <div style={{ fontSize: 9, color: "#8a8aa0", marginTop: 4 }}>
-                    {lethal.note}
-                  </div>
-                )}
+                {/* (The tier's "should cost N" note is gone with the verdict it belonged to.) */}
                 {/* ── The escalation ladder: PCER against MER ────────────────────────
                     The rounds figure above only answers "how long". This answers "how
                     close to collapse", which is the half the old model could not see —
