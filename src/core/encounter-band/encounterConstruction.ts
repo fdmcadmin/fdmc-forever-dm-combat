@@ -338,6 +338,10 @@ export function estimateMonsterDamage(
   const breakdown: MonsterDamageEstimate["breakdown"] = [];
   const unread: string[] = [];
 
+  /** One damaging entry, already resolved to expected damage for a single use. */
+  type Priced = { name: string; per: number; note: string; recharge?: string; limited: boolean };
+  const priced: Priced[] = [];
+
   for (const a of actions ?? []) {
     if (!a || a.kind === "trait") continue;
 
@@ -347,27 +351,91 @@ export function estimateMonsterDamage(
       continue;
     }
 
-    const uptime = rechargeAvailability(a.recharge);
-    const count = Math.max(1, a.attackCount ?? options.attacksPerTurn ?? 1);
-
-    let expected: number;
+    let per: number;
     let note: string;
     if (a.roll) {
       const hit = hitChance(attackBonusFromRoll(a.roll), targetAc);
-      expected = avg * hit * count * uptime;
-      note = `${avg.toFixed(1)} × ${(hit * 100).toFixed(0)}% hit${count > 1 ? ` × ${count}` : ""}${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
+      per = avg * hit;
+      note = `${avg.toFixed(1)} × ${(hit * 100).toFixed(0)}% hit`;
     } else if (a.save) {
-      expected = (avg * (1 - saveRate) + avg * 0.5 * saveRate) * uptime;
-      note = `${avg.toFixed(1)}, ${(saveRate * 100).toFixed(0)}% save for half${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
+      per = avg * (1 - saveRate) + avg * 0.5 * saveRate;
+      note = `${avg.toFixed(1)}, ${(saveRate * 100).toFixed(0)}% save for half`;
     } else {
-      expected = avg * uptime;
-      note = `${avg.toFixed(1)} automatic${uptime < 1 ? ` × ${(uptime * 100).toFixed(0)}% uptime` : ""}`;
+      per = avg;
+      note = `${avg.toFixed(1)} automatic`;
     }
-    breakdown.push({ name: a.name ?? "unnamed", dpr: expected, note });
+    // An entry carrying its own attackCount states its full routine on its own.
+    const own = a.attackCount ?? 0;
+    if (own > 1) { per *= own; note += ` × ${own}`; }
+    priced.push({ name: a.name ?? "unnamed", per, note, recharge: a.recharge,
+      limited: own > 1 });
+  }
+
+  if (priced.length === 0) return { dpr: 0, breakdown, unread };
+
+  /**
+   * A CREATURE TAKES ONE ACTION PER TURN (Christopher, 2026-08-14): *"it can make a phantom
+   * charge … or it can make 1 multiattack turn."*
+   *
+   * The old code SUMMED every damaging entry, which charged the party for a creature doing
+   * its whole stat block every round. The Mirage Stalker read 48.1 DPR — Phantom Rake plus
+   * Hollow Stamp plus Phantom Charge, each doubled — for a creature that cannot exceed ~16.
+   *
+   * So the estimate is now built around what a turn can actually contain:
+   *
+   *  · THE ROUTINE — the standard multiattack. `attacksPerTurn` is the SIZE OF THE ROUTINE,
+   *    not a multiplier on every line. A block listing one Claw with attacksPerTurn 2 makes
+   *    two Claws; a block listing three named attacks with attacksPerTurn 2 makes the best
+   *    TWO of them, not all three doubled. Getting this backwards is what produced both the
+   *    under-read (Lesser Wendigo, 6.05 for two Claws) and the over-read (Stalker, 48.1).
+   *
+   *  · AN ALTERNATIVE — anything on a recharge REPLACES the routine on the turns it is up,
+   *    and only when it is actually better. Expected = p·max(alt, routine) + (1−p)·routine.
+   *    Adding it on top was the second half of the over-read.
+   *
+   * Still deliberately NOT modelled, because the data has nowhere to say it: per-day limits
+   * (a 2/day ability is priced as if always available), abilities that only trigger off
+   * another ability, and legendary/lair actions, which genuinely DO add to a turn.
+   */
+  const routineSize = Math.max(1, options.attacksPerTurn ?? 1);
+  const alternatives = priced.filter(x => x.recharge);
+  const routinePool = priced.filter(x => !x.recharge);
+
+  let routine = 0;
+  if (routinePool.length > 0) {
+    const sorted = [...routinePool].sort((a, b) => b.per - a.per);
+    // Fill the routine from the best entries, repeating the best when the block names fewer
+    // distinct attacks than the routine has swings.
+    for (let i = 0; i < routineSize; i++) {
+      const pick = sorted[Math.min(i, sorted.length - 1)];
+      // An entry that states its own attackCount already IS a whole routine; do not stack it.
+      if (pick.limited && i > 0) break;
+      routine += pick.per;
+    }
+    const used = Math.min(routineSize, sorted.length);
+    for (let i = 0; i < used; i++) {
+      const pick = sorted[i];
+      const reps = i === used - 1 && routineSize > sorted.length && !pick.limited
+        ? routineSize - sorted.length + 1 : 1;
+      breakdown.push({ name: pick.name, dpr: pick.per * reps,
+        note: pick.note + (reps > 1 ? ` × ${reps} (routine of ${routineSize})` : "") });
+    }
+  }
+
+  let dpr = routine;
+  for (const alt of alternatives) {
+    const p = rechargeAvailability(alt.recharge);
+    // It replaces the routine, and only when it beats it.
+    const gain = p * Math.max(0, alt.per - routine);
+    dpr += gain;
+    breakdown.push({ name: alt.name, dpr: gain,
+      note: alt.per > routine
+        ? `${alt.note}, replaces the routine on ${(p * 100).toFixed(0)}% of turns`
+        : `${alt.note} — weaker than the routine (${routine.toFixed(1)}), so it never raises DPR` });
   }
 
   breakdown.sort((x, y) => y.dpr - x.dpr);
-  return { dpr: breakdown.reduce((s, b) => s + b.dpr, 0), breakdown, unread };
+  return { dpr, breakdown, unread };
 }
 
 // ─── Auditing a built creature against the ladder ─────────────────────────────
