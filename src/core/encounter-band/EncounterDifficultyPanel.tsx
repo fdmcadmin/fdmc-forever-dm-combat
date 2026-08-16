@@ -1,68 +1,58 @@
 /**
- * EncounterDifficultyPanel — what a fight COSTS, for a given party (DM tool).
+ * EncounterDifficultyPanel — the encounter checker, running the WORKBOOK's model.
  *
- * Pick an encounter, a party size (3 / 4 / 5) and the party's ACTUAL level, and get the
- * fight's price in characters: who is on the floor when it ends, the round it turns lethal,
- * and whether it outlasts the party's nova. Reads only the encounter definitions + monster
- * template library passed in as props; mutates nothing.
+ * This is `simulateEncounter` from `checkerV2.ts` (a verified port of the workbook's own
+ * reference runtime, 11/11 of its tests green) driven by app data. It replaced the previous
+ * model wholesale — Christopher, 2026-08-14: *"why is the old model a thing still, this
+ * replaces the checker wholesale."* Nothing here computes balance arithmetic of its own.
  *
- * ⚠ It reports, it does not ADVISE. There is no add/remove recommendation — the docstring
- * promised one for a while after the machinery was deleted with `encounterDifficulty.ts`.
- * `buildTargetFor` in `encounterConstruction.ts` holds the numbers a recommendation would
- * need (target sustain and target damage per ladder position), and nothing renders them.
+ * The two DM inputs that matter most:
+ *  · EQUIPMENT MODE — turning the Broken Chain campaign OFF is a first-class feature, because
+ *    the campaign curve has its projected loot distribution baked in. A table not running the
+ *    campaign gets `wotcStandard`: the generalized four-player progression, no assumed magic
+ *    items, Convergence ignored.
+ *  · DAMAGE ALLOCATION — focus fire or spread evenly. The contract is explicit that survivor
+ *    counts are MODEL PROJECTIONS under the selected allocation, not observed outcomes.
  *
- * The model: `dprBaseline.ts` (the transcribed workbook) → `encounterChecker.ts`
- * (`effectiveSustain`, `resolveEncounter`) with `encounterRounds.ts` supplying the party-size,
- * lane, resource and AC adjustments that scale the workbook's curve.
+ * Any creature works. The roster adapter does not care whether a creature is SRD, Broken Chain,
+ * or a DM's own homebrew — same arithmetic, same outputs.
  */
 
 import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
-import { ESCALATION_LADDER, auditEncounter, estimateMonsterDamage, type EscalationId } from "./encounterConstruction";
 import {
-  resolveEncounter, partyBaselineFor, DPR_FLAT_FROM_ROUND,
-  LETHAL_ENEMY_REMAINING, effectiveSustain, type EncounterBody,
-} from "./encounterChecker";
-import { EXPECTED_MONSTER_AC } from "./dprBaseline";
+  simulateEncounter, resolvePartyProfile,
+  type DamageAllocation, type EncounterResult,
+} from "./checkerV2";
 import {
-  estimateRounds, partyDpr, hpForPartySize, LANE_MULTIPLIER, LANE_LABEL, RESOURCE_LABEL, RESOURCE_MULTIPLIER,
-  CLASSIFICATION_LABEL,
-  type PartyLane, type PartyResources, type RoundsMonster,
-} from "./encounterRounds";
+  GENERIC_CHECKER_LEVELS, isProjectedLevel, partySizeHpMultiplier,
+  type PartyEquipmentMode,
+} from "./partyCurveV2";
+import { rosterFromTemplates } from "./rosterFromLibrary";
 
-// 3 / 4 / 5 — the campaign is authored against a FOUR-player baseline (Christopher,
-// 2026-07-21). low/standard/high HP = 3P/4P/5P; an encounter's authored HP is its 4P total.
-const PARTY_SIZES = [3, 4, 5] as const;
-const LANES: PartyLane[] = ["easy", "standard", "hard", "punishing"];
-const RESOURCES: PartyResources[] = ["fresh", "shortRest", "depleted"];
+const PARTY_SIZES = [3, 4, 5, 6] as const;
+const MODES: { id: PartyEquipmentMode; label: string; blurb: string }[] = [
+  { id: "wotcStandard", label: "Standard", blurb: "Generic 4-player progression. No assumed magic items; Convergence ignored. Use this when the table is not running The Broken Chain." },
+  { id: "brokenChain", label: "Broken Chain", blurb: "Campaign gear overlay included — the projected campaign loot distribution is part of this curve." },
+];
+const ALLOCATIONS: { id: DamageAllocation; label: string; blurb: string }[] = [
+  { id: "focus_fire", label: "Focus fire", blurb: "Sequential damage packing against equal per-PC pools. Projects the MOST individual downs for a given damage total." },
+  { id: "spread_evenly", label: "Spread evenly", blurb: "Even allocation across equal per-PC pools. Every standing PC is damaged before anyone falls." },
+];
 
-// The old round-band verdict colours (Throwaway/Short/On target/Long/Slog) are gone with the
-// verdict itself — the panel is judged on PRICE now, and its colours come from `priceRead`.
-
-// HP now scales off the SAME party size that drives partyDpr below. It used to come from a
-// per-creature `entry.hpVariant`, so the defensive and offensive sides of the estimate could
-// be told two different party sizes — a 5-man HP bar divided by 3-man damage.
-
-function toRoundsMonsters(encounter: EncounterDefinition, library: MainMonsterTemplate[], partySize: number): RoundsMonster[] {
-  const out: RoundsMonster[] = [];
-  for (const entry of encounter.entries) {
-    const t = library.find(m => m.templateId === entry.templateId);
-    if (!t) continue;
-    out.push({
-      id: entry.templateId,
-      name: t.name,
-      maxHp: hpForPartySize(t.stats.maxHp, partySize),
-      count: entry.count,
-      ac: typeof t.stats.ac === "number" ? t.stats.ac : Number.parseInt(String(t.stats.ac), 10) || undefined,
-      defenses: t.stats.defenses,
-      damageUptime: t.stats.damageUptime,
-      kitMultiplier: t.stats.kitMultiplier,
-      classification: t.stats.classification ?? "normal",
-    });
-  }
-  return out;
-}
+const box: React.CSSProperties = {
+  background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px",
+};
+const chip = (active: boolean): React.CSSProperties => ({
+  fontSize: 10, fontWeight: active ? 700 : 500, padding: "3px 8px",
+  background: active ? "#4f9dff" : "#0d0d14", color: active ? "#fff" : "#8a8aa0",
+  border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
+});
+const label: React.CSSProperties = {
+  display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase",
+  letterSpacing: 1, marginBottom: 3,
+};
 
 export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   encounters: EncounterDefinition[];
@@ -71,163 +61,50 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const [open, setOpen] = useState(false);
   const [encounterId, setEncounterId] = useState<string>("");
   const [partySize, setPartySize] = useState<number>(4);
-  const [targetPosition, setTargetPosition] = useState<EscalationId | undefined>(undefined);
-  const [partyLevel, setPartyLevel] = useState<number>(1);
-  const [lane, setLane] = useState<PartyLane>("standard");
-  const [resources, setResources] = useState<PartyResources>("fresh");
+  const [partyLevel, setPartyLevel] = useState<number>(GENERIC_CHECKER_LEVELS.minimum);
+  const [equipmentMode, setEquipmentMode] = useState<PartyEquipmentMode>("wotcStandard");
+  const [allocation, setAllocation] = useState<DamageAllocation>("focus_fire");
+  const [targetSafetyMargin, setTargetSafetyMargin] = useState<number>(1);
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
-  const roundsMonsters = useMemo(
-    () => (encounter ? toRoundsMonsters(encounter, monsterLibrary, partySize) : []),
-    [encounter, monsterLibrary, partySize],
-  );
-  const est = useMemo(
-    () => estimateRounds(roundsMonsters, partySize, partyLevel, lane, resources, encounter?.classification),
-    [roundsMonsters, partySize, partyLevel, lane, resources],
-  );
 
-  /**
-   * The roster's per-round output.
-   *
-   * Estimated PER TEMPLATE and then multiplied by its count, rather than by flattening every
-   * body's actions into one list. Flattening cannot carry `attacksPerTurn`, which is a property
-   * of the creature — one shared option across a mixed roster would give the boss's multiattack
-   * to the chaff, or the chaff's single attack to the boss.
-   */
-  const monsterDamage = useMemo(() => {
-    let dpr = 0;
-    const unread: string[] = [];
-    for (const m of roundsMonsters) {
-      const t = monsterLibrary.find(x => x.templateId === m.id);
-      const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
-      const est = estimateMonsterDamage(actions, {
-        partyLevel,
-        attacksPerTurn: t?.stats.attacksPerTurn,
+  const roster = useMemo(() => {
+    if (!encounter) return [];
+    const entries = encounter.entries
+      .map(entry => ({
+        template: monsterLibrary.find(m => m.templateId === entry.templateId),
+        quantity: Math.max(1, entry.count),
+      }))
+      .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
+    // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
+    // ones to cut incoming damage. The simulation depletes groups in exactly this order.
+    return rosterFromTemplates(entries, partyLevel)
+      .sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity);
+  }, [encounter, monsterLibrary, partyLevel]);
+
+  const result = useMemo<EncounterResult | null>(() => {
+    if (roster.length === 0) return null;
+    try {
+      const party = resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode });
+      return simulateEncounter({
+        party: { size: party.size, sustain: party.sustain, dpr: party.dpr },
+        roster,
+        settings: { damageAllocation: allocation, targetSafetyMargin },
       });
-      dpr += est.dpr * Math.max(1, m.count);
-      for (const u of est.unread) unread.push(`${m.name}: ${u}`);
+    } catch {
+      return null;
     }
-    return { dpr, unread };
-  }, [roundsMonsters, monsterLibrary, partyLevel]);
-  // (bodyCount removed 0.7.8.1 — the resolver expands counts into real bodies and reports
-  // its own total, so a separate tally was one more thing that could disagree.)
+  }, [roster, partyLevel, partySize, equipmentMode, allocation, targetSafetyMargin]);
 
-  /**
-   * THE READING (Christopher, 2026-08-14): *"this should not read as a round length it should
-   * read as a lethality."*
-   *
-   * A classification is a PRICE IN CHARACTERS, not a clock. Two fights can share a kill clock
-   * and be completely different fights, so the headline is who is on the floor when it ends.
-   * Round length is still computed and still shown — it is just a supporting fact now, and it
-   * is no longer judged against a band. That matters because the band targets were calibrated
-   * against the old v12 DPR curve that was deleted in 0.7.7.2; judging the workbook's numbers
-   * against v12's targets would have manufactured "Slog" verdicts out of a curve change.
-   */
-  /**
-   * The encounter as INDIVIDUAL BODIES, so the resolver can kill them on their own schedule.
-   *
-   * Weakest first: a party that is paying attention clears the cheap bodies to cut incoming
-   * damage, and the resolver applies the party's damage down the list in order. Passing the
-   * boss first would model a table that ignores the adds all fight.
-   */
-  const bodies = useMemo<EncounterBody[]>(() => {
-    const rows = roundsMonsters.map(m => {
-      const t = monsterLibrary.find(x => x.templateId === m.id);
-      const actions = (t?.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
-      /**
-       * SUSTAIN COMES FROM THE WORKBOOK NOW (0.7.8.2).
-       *
-       * This used to be `maxHp × defensiveMultiplier(defenses)` — the legacy multiplicative
-       * model — while `effectiveSustain`, `SUSTAIN_TRAITS` and the AC-delta table sat in the
-       * tree with ZERO callers. Christopher, on the lethal round: *"this is where a sustain
-       * feature is visible"* — and it could not be, because the priced traits never reached
-       * the number.
-       *
-       * A defence authored as `ehpMultiplier: 1.40` is the workbook's `contribution: 0.40` —
-       * its reference lists both columns for every trait and they differ by exactly 1.0, so
-       * existing authored creatures convert without being re-authored.
-       *
-       * Two real changes come with it, both deliberate:
-       *  · Contributions SUM instead of multiplying. The workbook is explicit that these are
-       *    shares of effective sustain and that stacking every defence overstates a creature.
-       *    A 1.30 × 1.14 × 1.26 creature was reading 1.87; it now reads 1.70.
-       *  · AC enters here, per level, from `EXPECTED_MONSTER_AC` — see the note on `acAlready`.
-       */
-      const contributions = (m.defenses ?? []).map(d => (d.ehpMultiplier || 1) - 1);
-      if (!m.defenses?.length && m.kitMultiplier) contributions.push(m.kitMultiplier - 1);
-      return {
-        name: m.name,
-        sustain: effectiveSustain({
-          rawHp: m.maxHp,
-          ac: m.ac ?? EXPECTED_MONSTER_AC[partyLevel] ?? 0,
-          partyLevel,
-          traitContributions: contributions,
-        }),
-        // ⚠ MULTIATTACK. `estimateMonsterDamage` has always supported `attacksPerTurn` and the
-        // stat blocks have always carried it — nothing passed it, so every multiattack creature
-        // was read at SINGLE-attack damage. The Lesser Wendigo (attacksPerTurn 2) scored 6.05
-        // where it should score ~12.1, which halves the damage side of every fight it is in.
-        // A per-action `attackCount` still wins over this, per the function's own precedence.
-        dpr: estimateMonsterDamage(actions, {
-          partyLevel,
-          attacksPerTurn: t?.stats.attacksPerTurn,
-        }).dpr,
-        count: Math.max(1, m.count),
-      };
-    });
-    return rows.sort((a, b) => a.sustain - b.sustain);
-  }, [roundsMonsters, monsterLibrary, partyLevel]);
+  const profile = useMemo(() => {
+    try { return resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode }); }
+    catch { return null; }
+  }, [partyLevel, partySize, equipmentMode]);
 
-  /**
-   * Round-by-round resolution. The panel's dials do not change the workbook's curve — they
-   * SCALE it, so party size, lane, rest, monster AC and uptime all still apply and the shape
-   * of the decay (nova → floor) is preserved.
-   */
-  const resolution = useMemo(() => {
-    const base = partyBaselineFor(partyLevel);
-    if (!base || monsterDamage.dpr <= 0) return null;
-    /**
-     * ⚠ AC IS DIVIDED BACK OUT HERE. It is now priced on the MONSTER, inside
-     * `effectiveSustain` above, which is the workbook's own convention. `est.landedDpr`
-     * carries `acFactor` because the pacing model prices armour on the party's damage
-     * instead — using it unmodified would charge for armour twice, once on each side.
-     *
-     * Everything else in `landedDpr` still applies: party size, bond lane, resource state
-     * and damage uptime. Only the AC term comes out.
-     */
-    const acFree = est.acFactor > 0 ? est.landedDpr / est.acFactor : est.landedDpr;
-    const k = base.dpr > 0 ? acFree / base.dpr : 1;
-    return resolveEncounter({
-      partyLevel,
-      bodies,
-      roundCurve: {
-        r1: base.rounds.r1 * k, r2: base.rounds.r2 * k,
-        r3: base.rounds.r3 * k, r4plus: base.rounds.r4plus * k,
-      },
-    });
-  }, [partyLevel, bodies, est.landedDpr, monsterDamage.dpr]);
-
-  /**
-   * THE READING IS THE LETHAL ROUND — not a tier's expected body count
-   * (Christopher, 2026-08-14): *"expected lethality is as we stated this is where it becomes
-   * lethal at X rounds, downs and scratched can still be shown but should not be a benchmark."*
-   *
-   * `EXPECTED_LETHALITY` used to drive an ON PRICE / TOO CHEAP / TOO DEADLY verdict here. Its
-   * numbers came from an ILLUSTRATION — *"a mid boss MIGHT last 3 rounds but down 1 person"* —
-   * that was turned into a threshold, and then every fight in the campaign was graded against
-   * it. Worse, a tier label is a STORY label as much as a mechanical one, so a fight tagged
-   * mid-boss is not promising to cost exactly one character.
-   *
-   * So the verdict is now the fight's own behaviour: does it turn lethal, and when. The
-   * casualty read is still printed — it is useful — but nothing is graded against it.
-   */
-  const lethalRound = resolution?.lethalRound ?? null;
-  const priceRead: { label: string; color: string } = !resolution
-    ? { label: "NO READ", color: "#8a6a2a" }
-    : lethalRound === null ? { label: "HOLDS", color: "#4caf50" }
-    : lethalRound <= 2 ? { label: `LETHAL R${lethalRound}`, color: "#ff4444" }
-    : { label: `LETHAL R${lethalRound}`, color: "#e07b39" };
-  const vColor = priceRead.color;
+  const fatal = result?.fatalRound ?? null;
+  const headline = !result ? { text: "no roster", color: "#8a6a2a" }
+    : fatal !== null ? { text: `FATAL R${fatal}`, color: "#ff4444" }
+    : { text: `CLEARS R${result.completionRound ?? "—"}`, color: "#4caf50" };
 
   return (
     <section style={{ marginBottom: 12, background: "#11131a", border: "1px solid #2a2a3e", borderLeft: "3px solid #4f9dff", borderRadius: 6 }}>
@@ -235,330 +112,191 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
         type="button"
         onClick={() => setOpen(o => !o)}
         style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "8px 10px", background: "transparent", border: "none", color: "#fff", cursor: "pointer" }}
-        title={open ? "Collapse" : "Check encounter difficulty for a party"}
       >
         <span style={{ fontSize: 11, color: "#4f9dff", width: 12, flexShrink: 0 }}>{open ? "▼" : "▶"}</span>
-        <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0 }}>📊 Party-Size Check</span>
-        <span style={{ fontSize: 10, color: "#666", flexShrink: 0 }}>homebrew guide</span>
+        <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0 }}>📊 Encounter Checker</span>
+        <span style={{ fontSize: 10, color: "#666", flexShrink: 0 }}>workbook v2</span>
       </button>
 
       {open && (
         <div style={{ padding: "0 10px 10px" }}>
           {encounters.length === 0 ? (
             <p style={{ fontSize: 12, color: "#777", fontStyle: "italic", margin: 0 }}>
-              No encounters to check yet. Build one with + Encounter first.
+              No encounters yet. Build one with + Encounter first.
             </p>
           ) : (
             <>
-              {/* Encounter picker */}
-              <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Encounter</label>
-              <select
-                value={encounter?.id ?? ""}
-                onChange={e => setEncounterId(e.target.value)}
-                style={{ width: "100%", fontSize: 12, padding: "4px 6px", background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 4, color: "#fff", marginBottom: 8 }}
-              >
-                {encounters.map(e => (
-                  <option key={e.id} value={e.id}>{e.name}{e.actTag ? ` · ${e.actTag}` : ""}</option>
-                ))}
-              </select>
+              <div style={{ marginBottom: 8 }}>
+                <label style={label}>Encounter</label>
+                <select
+                  value={encounter?.id ?? ""}
+                  onChange={e => setEncounterId(e.target.value)}
+                  style={{ width: "100%", fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }}
+                >
+                  {encounters.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
 
-              {/* Party size 4/5/6 + pseudo-level */}
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+              {/* Equipment mode — the campaign on/off switch. */}
+              <div style={{ marginBottom: 8 }}>
+                <label style={label}>Equipment mode</label>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {MODES.map(m => (
+                    <button key={m.id} type="button" title={m.blurb}
+                      onClick={() => setEquipmentMode(m.id)} style={chip(equipmentMode === m.id)}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Party size</label>
+                  <label style={label}>Party size</label>
                   <div style={{ display: "flex", gap: 4 }}>
-                    {PARTY_SIZES.map(size => {
-                      const active = partySize === size;
-                      return (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setPartySize(size)}
-                          style={{
-                            width: 30, fontSize: 13, fontWeight: active ? 700 : 500, padding: "4px 0",
-                            background: active ? "#4f9dff" : "#0d0d14",
-                            color: active ? "#fff" : "#8a8aa0",
-                            border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
-                          }}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
+                    {PARTY_SIZES.map(s => (
+                      <button key={s} type="button" onClick={() => setPartySize(s)} style={chip(partySize === s)}
+                        title={`HP multiplier ×${partySizeHpMultiplier(s)}`}>{s}P</button>
+                    ))}
                   </div>
                 </div>
                 <div>
-                  {/* ACTUAL party level. It used to say "pseudo level" and invite a +1 for the
-                      bonds — the DPR table already prices the bonds in, so a +1 double-counts. */}
-                  <label
-                    style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}
-                    title="The party's ACTUAL level. Do not add +1 for bonds — the DPR model already counts one free bond action per round."
+                  <label style={label}>Party level</label>
+                  <select
+                    value={partyLevel}
+                    onChange={e => setPartyLevel(Number(e.target.value))}
+                    style={{ fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }}
                   >
-                    Party level
-                  </label>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                    <button type="button" onClick={() => setPartyLevel(l => Math.max(1, l - 1))}
-                      style={{ width: 24, fontSize: 14, padding: "3px 0", background: "#0d0d14", color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 4, cursor: "pointer" }}>−</button>
-                    <span style={{ minWidth: 24, textAlign: "center", fontSize: 14, fontWeight: 600, color: "#fff" }}>{partyLevel}</span>
-                    <button type="button" onClick={() => setPartyLevel(l => Math.min(20, l + 1))}
-                      style={{ width: 24, fontSize: 14, padding: "3px 0", background: "#0d0d14", color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 4, cursor: "pointer" }}>+</button>
-                  </div>
+                    {Array.from({ length: GENERIC_CHECKER_LEVELS.maximum - GENERIC_CHECKER_LEVELS.minimum + 1 },
+                      (_, i) => GENERIC_CHECKER_LEVELS.minimum + i).map(l => (
+                        <option key={l} value={l}>L{l}{isProjectedLevel(l) ? " (projected)" : ""}</option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={label}>Safety margin</label>
+                  <input type="number" step="0.5" value={targetSafetyMargin}
+                    onChange={e => setTargetSafetyMargin(Number(e.target.value))}
+                    style={{ width: 60, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
                 </div>
               </div>
 
-              {/* Party bond lane — a party of 4 running all-offence fights like a 5 */}
               <div style={{ marginBottom: 10 }}>
-                <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Party bond lane</label>
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {LANES.map(l => {
-                    const active = lane === l;
-                    return (
-                      <button
-                        key={l}
-                        type="button"
-                        onClick={() => setLane(l)}
-                        title={`${LANE_LABEL[l]} — ${LANE_MULTIPLIER[l]}× midpoint DPR`}
-                        style={{
-                          fontSize: 10, fontWeight: active ? 700 : 500, padding: "3px 8px",
-                          background: active ? "#4f9dff" : "#0d0d14",
-                          color: active ? "#fff" : "#8a8aa0",
-                          border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
-                        }}
-                      >
-                        {LANE_LABEL[l]}
-                      </button>
-                    );
-                  })}
+                <label style={label}>Damage allocation</label>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {ALLOCATIONS.map(a => (
+                    <button key={a.id} type="button" title={a.blurb}
+                      onClick={() => setAllocation(a.id)} style={chip(allocation === a.id)}>
+                      {a.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Resource state — fixed by the MAP, not chance (e.g. no long rest between
-                  the Sentinels and the Drifter), so it belongs in the prediction. */}
-              <div style={{ marginBottom: 10 }}>
-                <label style={{ display: "block", fontSize: 10, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 }}>Resources at fight start</label>
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {RESOURCES.map(r => {
-                    const active = resources === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setResources(r)}
-                        title={`${RESOURCE_LABEL[r]} — ${RESOURCE_MULTIPLIER[r]}× party DPR`}
-                        style={{
-                          fontSize: 10, fontWeight: active ? 700 : 500, padding: "3px 8px",
-                          background: active ? "#4f9dff" : "#0d0d14",
-                          color: active ? "#fff" : "#8a8aa0",
-                          border: `1px solid ${active ? "#4f9dff" : "#2a2a3e"}`, borderRadius: 4, cursor: "pointer",
-                        }}
-                      >
-                        {RESOURCE_LABEL[r]}
-                      </button>
-                    );
-                  })}
+              {isProjectedLevel(partyLevel) && (
+                <div style={{ ...box, borderColor: "#8a6a2a", marginBottom: 8, fontSize: 10, color: "#c9a227" }}>
+                  ⚠ PROJECTED — levels 17–20 carry no field samples and are extrapolated.
                 </div>
-              </div>
+              )}
 
-              {/* LETHALITY — what the fight COSTS, in characters. The falsifiable number:
-                  predict here, count who went down at the table. */}
-              <div style={{ background: "#0d0d14", border: `1px solid ${vColor}`, borderRadius: 6, padding: "8px 10px", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: vColor, lineHeight: 1.15 }}>
-                    {resolution ? resolution.lethalityRead : "no damage read"}
-                  </span>
-                  {/* The fight's tier — CONTEXT, not a target. A tier is a story label as much
-                      as a mechanical one, so nothing is graded against it. */}
-                  <span
-                    style={{ fontSize: 10, color: "#8a8aa0", border: "1px solid #2a2a3e", borderRadius: 10, padding: "2px 7px" }}
-                    title="The fight's tier, from its strongest creature or the encounter's own tag. Shown for context — the reading is the LETHAL round, not a body count this tier is supposed to cost."
-                  >
-                    {CLASSIFICATION_LABEL[est.classification]}
-                  </span>
-                  <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${vColor}22`, border: `1px solid ${vColor}`, color: vColor }}>
-                    {priceRead.label}
-                  </span>
-                </div>
-                {/* The two sides shown separately — defence (their HP) over offence (your
-                    damage, after AC). Splitting them is what makes this a true check. */}
-                <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6 }}>
-                  <div>
-                    <span style={{ color: "#e0a87b" }}>DEF</span>{" "}
-                    {Math.round(est.rawHp)} raw HP × traits → <strong style={{ color: "#aaa" }}>{Math.round(est.effectiveHp)} effective</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: "#7bc8e0" }}>OFF</span>{" "}
-                    <strong style={{ color: "#aaa" }}>{est.landedDpr.toFixed(1)} DPR</strong>
-                    <span style={{ color: "#555" }}> · already target-resolved vs the L{partyLevel} AC/save profile</span>
-                  </div>
-                  {/* Length is INFORMATION, not a verdict. It is deliberately not judged against
-                      ROUND_BAND — those targets were calibrated against the deleted v12 curve. */}
-                  <div>
-                    <span style={{ color: "#9a9ab0" }}>LEN</span>{" "}
-                    <strong style={{ color: "#aaa" }}>
-                      {(resolution?.roundsToKill ?? est.rounds).toFixed(1)} rounds
-                    </strong>
-                    {resolution && (
-                      <span style={{ color: "#555" }}>
-                        {" · "}{resolution.damageTaken.toFixed(0)} damage absorbed across{" "}
-                        {resolution.bodies} bod{resolution.bodies === 1 ? "y" : "ies"}
+              {result && profile ? (
+                <>
+                  <div style={{ ...box, border: `1px solid ${headline.color}`, marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 5 }}>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: headline.color, lineHeight: 1 }}>
+                        {headline.text}
                       </span>
-                    )}
-                  </div>
-                  {/* LETHAL AT — the round the fight actually turns, and the round the party
-                      runs out of nova. "Win by round" is not a target; these two are the real
-                      extremes (Christopher, 2026-08-14). */}
-                  {resolution && (
-                    <div>
-                      <span
-                        style={{ color: "#ff8f6b" }}
-                        title={`Lethal = half the party down while the enemy still holds more than ${Math.round(LETHAL_ENEMY_REMAINING * 100)}% of its bodies or its sustain. One character dropping late in a fight the party wins is a cost, not a losing fight.`}
-                      >LETHAL</span>{" "}
-                      {resolution.lethalRound !== null ? (
-                        <strong style={{ color: "#ff4444" }}>R{resolution.lethalRound}</strong>
-                      ) : (
-                        <span style={{ color: "#4caf50" }}>never turns</span>
-                      )}
-                      {resolution.firstDownRound !== null && (
-                        <span style={{ color: "#777" }}>
-                          {" · first down R"}{resolution.firstDownRound}
-                        </span>
-                      )}
-                      {resolution.wipeRound !== null && (
-                        <strong style={{ color: "#ff4444" }}>
-                          {" · wipe R"}{resolution.wipeRound}
+                      <span style={{ fontSize: 11, color: "#aaa" }}>
+                        {result.standingAtCompletion ?? 0} of {partySize} standing
+                      </span>
+                      <span style={{ marginLeft: "auto", fontSize: 10, color: "#8a8aa0" }}>
+                        {result.downsAtCompletion ?? 0} down · {result.damagedButStandingAtCompletion ?? 0} damaged
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6 }}>
+                      <div>
+                        <span style={{ color: "#e0a87b" }}>EHP</span>{" "}
+                        <strong style={{ color: "#aaa" }}>{result.encounterEhp.toFixed(0)}</strong>
+                        <span style={{ color: "#555" }}> · roster DPR {result.startingEncounterDpr.toFixed(1)}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: "#7bc8e0" }}>PCER</span>{" "}
+                        {result.pcer === null ? "—" : result.pcer.toFixed(2)}
+                        <span style={{ color: "#555" }}> rds to clear · </span>
+                        <span style={{ color: "#e07be0" }}>MER</span>{" "}
+                        {result.mer === null ? "—" : result.mer.toFixed(2)}
+                        <span style={{ color: "#555" }}> rds to fall · margin </span>
+                        <strong style={{ color: (result.safetyMargin ?? 0) >= targetSafetyMargin ? "#4caf50" : "#e07b39" }}>
+                          {result.safetyMargin === null ? "—" : result.safetyMargin.toFixed(2)}
                         </strong>
-                      )}
+                      </div>
+                      <div style={{ color: "#666" }}>
+                        {partySize}P · L{partyLevel} · {equipmentMode === "brokenChain" ? "Broken Chain" : "Standard"}
+                        {" · party "}{profile.dpr.round1.toFixed(0)}/{profile.dpr.round2.toFixed(0)}/
+                        {profile.dpr.round3.toFixed(0)}/{profile.dpr.round4Plus.toFixed(0)} DPR
+                        {" · sustain "}{profile.sustain.toFixed(0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Balance adjustment — the contract's own recommendation output. */}
+                  {result.balanceAdjustment.scaledHpChange !== null && (
+                    <div style={{ ...box, marginBottom: 8, fontSize: 10, color: "#777" }}>
+                      <span style={{ color: "#7be08a" }}>TO HIT A {targetSafetyMargin}-ROUND MARGIN</span>{" "}
+                      <strong style={{ color: result.balanceAdjustment.scaledHpChange < 0 ? "#e07b39" : "#4caf50" }}>
+                        {result.balanceAdjustment.scaledHpChange > 0 ? "+" : ""}
+                        {result.balanceAdjustment.scaledHpChange.toFixed(0)} EHP
+                      </strong>
                       <span style={{ color: "#555" }}>
-                        {" · "}
-                        {resolution.reachesFlatDpr
-                          ? `runs past R${DPR_FLAT_FROM_ROUND} — party is on its flat DPR floor`
-                          : `ends before R${DPR_FLAT_FROM_ROUND}, still inside the nova`}
+                        {" ("}{((result.balanceAdjustment.percentChange ?? 0) * 100).toFixed(0)}%
+                        {", "}{(result.balanceAdjustment.baseFourPcHpChange ?? 0).toFixed(0)} at the 4P base{")"}
                       </span>
                     </div>
                   )}
-                  <div style={{ color: "#666" }}>
-                    {partySize}P · L{partyLevel} · {LANE_MULTIPLIER[lane]}× lane · {RESOURCE_MULTIPLIER[resources]}× rest
-                  </div>
-                </div>
-                {/* (The tier's "should cost N" note is gone with the verdict it belonged to.) */}
-                {/* ── The escalation ladder: PCER against MER ────────────────────────
-                    The rounds figure above only answers "how long". This answers "how
-                    close to collapse", which is the half the old model could not see —
-                    two fights can share a kill clock and be completely different fights. */}
-                {(() => {
-                  const audit = auditEncounter({
-                    monsterSustain: est.effectiveHp,
-                    monsterDamage: monsterDamage.dpr,
-                    level: partyLevel,
-                    target: targetPosition,
-                  });
-                  const marginColor = audit.roundMargin >= 1 ? "#4caf50" : audit.roundMargin >= 0 ? "#e07b39" : "#ff4444";
-                  return (
-                    <div style={{ marginTop: 7, paddingTop: 6, borderTop: "1px solid #1e1e2e" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-                        <span style={{ fontSize: 9, color: "#8a8aa0", textTransform: "uppercase", letterSpacing: 1 }}>Ladder</span>
-                        <select
-                          value={targetPosition ?? ""}
-                          onChange={e => setTargetPosition((e.target.value || undefined) as EscalationId | undefined)}
-                          style={{ fontSize: 10, padding: "1px 4px", borderRadius: 3, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#aaa" }}
-                        >
-                          <option value="">— reads as: {audit.nearest.label} —</option>
-                          {ESCALATION_LADDER.map(p => (
-                            <option key={p.id} value={p.id}>{p.order}. {p.label} · {p.targetPcer} rds · {Math.round(p.pressure * 100)}%</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div style={{ fontSize: 10, color: "#777", lineHeight: 1.6 }}>
-                        <div>
-                          <span style={{ color: "#7be08a" }}>PCER</span> {audit.pcer.toFixed(2)} rds
-                          <span style={{ color: "#555" }}> · fight length</span>
-                          {audit.target && (
-                            <span style={{ color: Math.abs(audit.target.pcerDelta) <= 0.5 ? "#4caf50" : "#e07b39" }}>
-                              {"  "}{audit.target.pcerDelta >= 0 ? "+" : ""}{audit.target.pcerDelta.toFixed(2)} vs target
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <span style={{ color: "#e07be0" }}>MER</span>{" "}
-                          {Number.isFinite(audit.mer) ? `${audit.mer.toFixed(2)} rds` : "—"}
-                          <span style={{ color: "#555" }}> · party collapse, at {monsterDamage.dpr.toFixed(1)} monster DPR</span>
-                        </div>
-                        <div>
-                          <span style={{ color: "#e0c87b" }}>PRESSURE</span> {(audit.pressure * 100).toFixed(0)}%
-                          {audit.target && (
-                            <span style={{ color: Math.abs(audit.target.pressureDelta) <= 0.08 ? "#4caf50" : "#e07b39" }}>
-                              {"  "}{audit.target.pressureDelta >= 0 ? "+" : ""}{(audit.target.pressureDelta * 100).toFixed(0)}pts vs target
-                            </span>
-                          )}
-                          <span style={{ color: "#555" }}> · margin </span>
-                          <strong style={{ color: marginColor }}>{audit.roundMargin.toFixed(2)} rds</strong>
-                        </div>
-                      </div>
-                      {monsterDamage.unread.length > 0 && (
-                        <div style={{ fontSize: 9, color: "#8a6a2a", marginTop: 3 }}>
-                          ⚠ monster DPR is incomplete — could not read: {monsterDamage.unread.slice(0, 3).join("; ")}
-                        </div>
-                      )}
-                      {monsterDamage.dpr <= 0 && (
-                        <div style={{ fontSize: 9, color: "#8a6a2a", marginTop: 3 }}>
-                          ⚠ no readable damage on these creatures, so MER and pressure are not meaningful yet.
-                        </div>
-                      )}
-                      {/* Lethality is the HEADLINE now (see the box above), not a footnote
-                          here — a classification is a price in characters, not a clock. */}
-                    </div>
-                  );
-                })()}
 
-                {/* Itemised defensive traits — every uplift is named and checkable. */}
-                {(() => {
-                  const rows = roundsMonsters.flatMap(m =>
-                    (m.defenses ?? []).map(d => ({ who: m.name, ...d })));
-                  if (rows.length === 0) return null;
-                  return (
-                    <div style={{ marginTop: 6, paddingTop: 5, borderTop: "1px solid #1e1e2e", fontSize: 9, color: "#777" }}>
-                      {rows.map((d, i) => (
-                        <div key={`${d.who}-${d.name}-${i}`} style={{ display: "flex", gap: 6, padding: "1px 0" }} title={d.note}>
-                          <span style={{ color: "#e0a87b", minWidth: 34 }}>×{d.ehpMultiplier.toFixed(2)}</span>
-                          <span style={{ color: "#999" }}>{d.name}</span>
-                          <span style={{ color: "#555", marginLeft: "auto" }}>{d.who}</span>
+                  {result.specialOutcomeRisks.length > 0 && (
+                    <div style={{ ...box, marginBottom: 8, fontSize: 10, color: "#c9a227" }}>
+                      {result.specialOutcomeRisks.map((r, i) => (
+                        <div key={i}>
+                          ⚠ {r.creature} · {r.name} — earliest R{r.earliestRound},{" "}
+                          {(r.probabilityAtLeastOne * 100).toFixed(0)}% at least one. Reported, never counted as damage.
                         </div>
                       ))}
                     </div>
-                  );
-                })()}
-                <div style={{ fontSize: 9, color: "#666", marginTop: 4, fontStyle: "italic" }}>
-                  Count the real rounds and compare. A mismatch means the model is wrong, not your table.
-                </div>
-              </div>
+                  )}
 
-              {/* Roster — read off the SAME model as the clocks above, not a second one.
-                  The old threat/budget verdict lived here ("1.25x budget", "threat 360 vs
-                  288"). Its units were invented, so a DM could never check it against
-                  anything at the table, and it rated 2x Lesser Wendigo as Hard for a fight
-                  that ran 3.5-4.5 rounds with nobody down. Rounds and pressure are
-                  falsifiable; that number never was. */}
-              <div style={{ fontSize: 11, color: "#888" }}>
-                {roundsMonsters.map(m => (
-                  <div key={m.id} style={{ display: "flex", justifyContent: "space-between", padding: "1px 0" }}>
-                    <span>
-                      {m.count}× {m.name}
-                      {m.classification && m.classification !== "normal" && (
-                        <span style={{ color: "#8a8aa0" }}> · {CLASSIFICATION_LABEL[m.classification]}</span>
-                      )}
-                    </span>
-                    <span style={{ color: "#666" }}>
-                      {Math.round(m.maxHp * m.count)} HP{m.ac !== undefined ? ` · AC ${m.ac}` : ""}
-                    </span>
+                  <div style={{ fontSize: 9, color: "#666", marginBottom: 6 }}>
+                    Survivor counts are model projections under {allocation === "focus_fire" ? "focus fire" : "even spread"}, not observed outcomes.
                   </div>
-                ))}
-              </div>
 
-              <p style={{ margin: "8px 0 0", fontSize: 9, color: "#555", lineHeight: 1.4 }}>
-                Homebrew pacing guide, not official CR. Authored at four players; 3P/5P scale HP
-                only. Check the round margin as well as the fight length — the same kill clock
-                can be a comfortable boss or a coin flip.
-              </p>
+                  <details>
+                    <summary style={{ fontSize: 10, color: "#8a8aa0", cursor: "pointer" }}>
+                      Round by round ({result.rounds.length})
+                    </summary>
+                    <div style={{ fontSize: 9, color: "#777", marginTop: 4 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "24px repeat(6, 1fr)", gap: 3, color: "#8a8aa0", fontWeight: 600 }}>
+                        <span>R</span><span>Party</span><span>Cum</span><span>EHP left</span><span>Mon dmg</span><span>Down</span><span>Standing</span>
+                      </div>
+                      {result.rounds.map(r => (
+                        <div key={r.round} style={{ display: "grid", gridTemplateColumns: "24px repeat(6, 1fr)", gap: 3,
+                          color: r.fatalNow ? "#ff4444" : r.completesNow ? "#4caf50" : "#777" }}>
+                          <span>{r.round}</span>
+                          <span>{r.partyDamage.toFixed(0)}</span>
+                          <span>{r.cumulativePartyDamage.toFixed(0)}</span>
+                          <span>{r.monsterEhpLeft.toFixed(0)}</span>
+                          <span>{r.monsterDamage.toFixed(0)}</span>
+                          <span>{r.downs}</span>
+                          <span>{r.standing}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </>
+              ) : (
+                <p style={{ fontSize: 11, color: "#8a6a2a", fontStyle: "italic" }}>
+                  This encounter has no readable creatures yet.
+                </p>
+              )}
             </>
           )}
         </div>
