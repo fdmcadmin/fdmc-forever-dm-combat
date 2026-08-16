@@ -111,6 +111,9 @@ export const PARTY_BASELINE: PartyBaseline[] = [
 export const EXPECTED_MONSTER_AC: Record<number, number> = {
   1: 13, 2: 13, 3: 14, 4: 15, 5: 16, 6: 16, 7: 16, 8: 17, 9: 17,
   10: 18, 11: 18, 12: 18, 13: 19, 14: 19, 15: 19, 16: 20,
+  // Extended to L20 from the v2 checker's Sustain Calibration table. Levels 17-20 are
+  // PROJECTED rather than empirical and the contract requires them to be badged as such.
+  17: 20, 18: 21, 19: 21, 20: 22,
 };
 
 /**

@@ -74,8 +74,27 @@ export function effectiveSustain(opts: {
       }
     }
   }
-  const traits = (opts.traitContributions ?? []).reduce((a, b) => a + b, 0);
-  return opts.rawHp * (1 + acContribution + traits);
+  /**
+   * TRAITS COMBINE AS A PRODUCT, AND AC IS ITS OWN MULTIPLIER.
+   *
+   * From the v2 App Contract / Sustain Calibration sheet, stated with a guardrail:
+   *   core rule   PRODUCT(1 + distinct contribution_i) − 1      guardrail: "Do not add contributions"
+   *   formula     (raw HP + explicit pools) × AC multiplier × trait product
+   *                 ÷ damage pass ÷ party damage uptime × party-size multiplier
+   *   evidence    "600 / 600 retained cases exact"
+   *
+   * ⚠ 0.7.8.2 changed this the WRONG WAY — it made contributions additive after reading the
+   * older workbook's description of them as "shares of effective sustain", and even recorded
+   * that a 1.30 × 1.14 × 1.26 creature "now reads 1.70" instead of 1.87. The v2 calibration
+   * says the opposite in as many words, so the product is restored.
+   *
+   * AC is deliberately a SEPARATE FACTOR rather than another addend: it is a different channel
+   * (how often a hit lands) from a trait (how much a landed hit is worth), and the contract
+   * lists them as separate terms in the chain.
+   */
+  const traitProduct = (opts.traitContributions ?? [])
+    .reduce((acc, c) => acc * (1 + c), 1);
+  return opts.rawHp * (1 + acContribution) * traitProduct;
 }
 
 // ─── Pricing a defence off the Sustain Trait Reference ────────────────────────
