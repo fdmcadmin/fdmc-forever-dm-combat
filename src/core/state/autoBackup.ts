@@ -51,8 +51,8 @@ export type BackupSnapshot = {
 export type BackupSettings = {
   /**
    * off      — nothing automatic; the DM presses Back Up Now.
-   * session  — one snapshot when the DM opens the tools for the day. Cheap, and covers the
-   *            case that actually bites: a wipe-and-reimport gone wrong mid-session.
+   * session  — one snapshot when the DM CLOSES the tools, and only if something changed.
+   *            Covers the case that actually bites: a wipe-and-reimport gone wrong.
    * interval — session, plus every `intervalMinutes` while the panel is open.
    */
   mode: "off" | "session" | "interval";
@@ -93,7 +93,8 @@ export function loadSnapshots(): BackupSnapshot[] {
 /**
  * Is the party actually different from the newest snapshot?
  *
- * The ring is five deep, so a backup that changes nothing is not free — it evicts a real one.
+ * The ring is only three deep, so a backup that changes nothing is not free — it evicts a real
+ * one.
  * Opening the tools twice in a session used to burn two slots on identical copies, and the
  * snapshot you actually wanted could be pushed off the end by the noise.
  *
@@ -146,7 +147,7 @@ export function takeSnapshot(
   try {
     window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
   } catch {
-    // Over quota — drop to the two most recent rather than losing the ring entirely.
+    // Over quota — keep the two most recent rather than losing the ring entirely.
     try { window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next.slice(0, 2))); } catch { return null; }
   }
   return snapshot;
