@@ -13,6 +13,10 @@ type PinnedReactionsProps = {
   usedCostSlots: ActionCost[];
   onUseReaction: (reaction: PinnedReaction) => void;
   onUnreadyReaction: (reaction: PinnedReaction) => void;
+  /** The actor weapon attacks an Opportunity Attack may be made WITH. */
+  weaponAttacks?: { id: string; label: string }[];
+  /** Ready that weapon action on the REACTION slot — the same action, spent off-turn. */
+  onUseWeaponAsReaction?: (actionId: string) => void;
   onCommitRoll: (candidate: ReadiedRollCandidate) => void;
 };
 
@@ -49,6 +53,8 @@ function rollButtonLabelForMode(mode: CommittedRollOutcomeMode) {
 export function PinnedReactions({
   actorName,
   reactions,
+  weaponAttacks,
+  onUseWeaponAsReaction,
   actionState,
   committedRoll,
   resolvedReadiedKeys,
@@ -112,6 +118,34 @@ export function PinnedReactions({
                   </span>
                 )}
               </button>
+
+              {/* ⚠ AN OPPORTUNITY ATTACK IS A WEAPON ATTACK, so it has to offer the weapons.
+                  Christopher, 2026-08-17: *"clicking a OA should open up any of the weapon attack
+                  actions to be used (this is like a rider that will allow an off turn attack)."*
+
+                  The OA carried no dice of its own, so its Roll button rolled nothing — it was a
+                  declaration and no more. These buttons ready the ACTUAL weapon action on the
+                  REACTION slot, so the swing uses that weapon's real to-hit and damage, scales
+                  with the character, and honours whatever is armed on it. Nothing is duplicated;
+                  the same action is simply spent off-turn.
+
+                  Only for a reaction with no authored source — an authored reaction already has
+                  its own dice and does not need a weapon picked for it. */}
+              {!reaction.sourceActionId && (weaponAttacks?.length ?? 0) > 0 && !resolved && (
+                <div className="pinned-weapon-row" style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "2px 0" }}>
+                  {weaponAttacks!.map(weapon => (
+                    <button
+                      key={weapon.id}
+                      type="button"
+                      className="inline-commit-button"
+                      title={`Make an ${reaction.label} with ${weapon.label} — readies it on the Reaction slot with its own attack and damage`}
+                      onClick={() => onUseWeaponAsReaction?.(weapon.id)}
+                    >
+                      ⚔ {weapon.label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {readied && !committed && !commitBlocked && (
                 <button

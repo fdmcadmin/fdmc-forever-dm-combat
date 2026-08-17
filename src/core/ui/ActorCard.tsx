@@ -1131,6 +1131,17 @@ export function ActorCard({
   const isCompanionCard = actor.kind === "companion";
   const levelDisplay = isCompanionCard && actor.level <= 0 ? "Ref" : `${actor.level}`;
   const pinnedReactions = useMemo(() => getPinnedReactionShortcuts(actor), [actor]);
+
+  /**
+   * The weapon attacks an Opportunity Attack can be made WITH.
+   *
+   * Main-tab actions that carry real attack DICE — that is what makes a weapon attack, and it is
+   * the same test the rest of the card uses. A spell is excluded: an OA is a weapon attack, so
+   * offering a cantrip here would invent a rule the game does not have.
+   */
+  const oaWeaponAttacks = useMemo(() => (actor.tabs.main ?? [])
+    .filter(a => a.actionKind !== "spell" && /[0-9]+d[0-9]+/i.test(a.metadata?.attack ?? ""))
+    .map(a => ({ id: a.id, label: a.label })), [actor.tabs.main]);
   // Upcast riders are folded in HERE, at the single point the tab's actions are handed to
   // TabPanel — which builds both the summary chips and the roll candidate from the same
   // object, so the damage shown and the damage rolled cannot drift apart. Ids and metadata
@@ -4743,6 +4754,18 @@ export function ActorCard({
       <PinnedReactions
         actorName={actor.name}
         reactions={pinnedReactions}
+        weaponAttacks={oaWeaponAttacks}
+        onUseWeaponAsReaction={(actionId) => {
+          /**
+           * ⚠ THE SAME ACTION, SPENT ON THE REACTION SLOT. Not a copy and not a new attack: the
+           * weapon's own `metadata.attack`/`damage` go through the normal use path with
+           * `costs: ["reaction"]`, so the swing scales with the character, keeps its mastery, and
+           * picks up anything armed on it. An Opportunity Attack IS a weapon attack.
+           */
+          const weapon = (actor.tabs.main ?? []).find(a => a.id === actionId);
+          if (!weapon) return;
+          handleUseAction({ action: weapon, tabId: "main", costs: ["reaction"] });
+        }}
         actionState={actionState}
         committedRoll={committedRoll}
         resolvedReadiedKeys={resolvedReadiedKeys}
