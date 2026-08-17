@@ -673,6 +673,8 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       effectKind: item.effectKind,
       armorType: item.armorType,
       count: item.count,
+      // Carried so the card can enforce the one-T4-per-character cap without a library lookup.
+      tier: item.tier,
       // Spellcasting focus bonuses — read by the spell roll workspace (clickable additive).
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
@@ -1375,6 +1377,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
         ?? ((m.attack || m.damage) ? "weapon" : "gear"),
       mastery: m.mastery as EquipmentItem["mastery"],
       effectKind: m.effectKind as EffectKind | undefined,
+      tier: m.tier,
       armorType: m.armorType as EquipmentItem["armorType"],
       count: m.count,
       description: action.description ?? "",

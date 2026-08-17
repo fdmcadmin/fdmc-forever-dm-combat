@@ -287,6 +287,8 @@ export type ActorActionMetadata = {
   armorType?: string;
   /** How many are held. */
   count?: number;
+  /** Convergence tier, carried so the card can cap T4 at one per character. Free text. */
+  tier?: string;
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;

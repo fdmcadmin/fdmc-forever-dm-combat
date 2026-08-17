@@ -54,6 +54,7 @@ import { loadEquipmentLibrary } from "./EquipmentBagEditor";
 import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
 import { CriticalFailureReference } from "./CriticalFailureReference";
+import { isT4Singular } from "../constants/itemTypeCapabilities";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
 import { TabPanel } from "./TabPanel";
@@ -1365,6 +1366,26 @@ export function ActorCard({
   const ATTUNEMENT_LIMIT = 3;
   const attunedItems = sendableItems.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false);
   const attunementFull = attunedItems.length >= ATTUNEMENT_LIMIT;
+
+  /**
+   * ONE T4 SINGULAR PER CHARACTER — a SECOND cap, on top of attunement.
+   *
+   * Christopher, 2026-08-17: *"a t4 per character would be a easy fix because it still takes a
+   * attunment slot and we just add a t4=1percharacter."* So a T4 spends one of the three
+   * attunement slots like anything else, AND no character may hold two. The two limits are
+   * independent: a character with one T4 and two ordinary attuned items is legal and full; a
+   * character with one T4 and nothing else still cannot take a second T4.
+   *
+   * ⚠ The tier ladder is the forge's own, documented in `EquipmentLibraryStandalone`: A1+A1 and
+   * A1+A2 make Tier 1, A1+A3/A2+A2/A2+A3 make Tier 2, A3+A3 reaches Tier 3 — and A4 tempered by
+   * a Catalyst is Tier 4. The field is free text in the editor, so "4", "T4" and "Tier 4" are all
+   * read; anything else is not a T4.
+   *
+   * No T4 exists in the campaign library yet (it tops out at tier 2), so this guards a shape the
+   * data has not reached rather than one it currently breaks.
+   */
+  const t4Items = sendableItems.filter(a => isT4Singular(a.metadata?.tier) && a.metadata?.equipped !== false);
+  const t4Full = t4Items.length >= 1;
 
   const activeActions = useMemo(
     () => tabContents(actor, activeTab)
@@ -5132,9 +5153,20 @@ export function ActorCard({
           <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4 }}>
               <span style={{ fontSize: 10, color: "#555", letterSpacing: 0.5 }}>CARRIED</span>
-              <span style={{ fontSize: 10, color: attunementFull ? "#e07b39" : "#555" }}
-                title="Attunement slots in use. Only EQUIPPED items hold one — an attuned item in the bag does not.">
-                ATTUNED {attunedItems.length}/{ATTUNEMENT_LIMIT}
+              <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {/* The T4 count only appears when one is held — a cap of one is not worth a
+                    permanent "0/1" on every character, and nothing in the campaign library is
+                    a T4 yet. */}
+                {t4Items.length > 0 && (
+                  <span style={{ fontSize: 10, color: "#e0b85a" }}
+                    title="T4 Singular — one per character, counted on TOP of the attunement cap.">
+                    T4 {t4Items.length}/1
+                  </span>
+                )}
+                <span style={{ fontSize: 10, color: attunementFull ? "#e07b39" : "#555" }}
+                  title="Attunement slots in use. Only EQUIPPED items hold one — an attuned item in the bag does not.">
+                  ATTUNED {attunedItems.length}/{ATTUNEMENT_LIMIT}
+                </span>
               </span>
             </div>
             {carriedCombatGear.map(item => {
@@ -5143,15 +5175,20 @@ export function ActorCard({
               // Equipping a fourth attuned item is the one move the cap forbids. Unequipping
               // is always allowed — that is how you free a slot.
               const attuneBlocked = !isEquipped && needsAttune && attunementFull;
+              // A SECOND T4 is forbidden independently of attunement — one per character, even
+              // when slots remain. Unequipping the one you have is how you swap.
+              const isT4 = isT4Singular(item.metadata?.tier);
+              const t4Blocked = !isEquipped && isT4 && t4Full;
               // Free action, but only on your own turn — and once each way per turn, which
               // the DM enforces since it performs every change and sees them all.
               const turnBlocked = combatActive && !isActiveTurn;
-              const blocked = attuneBlocked || turnBlocked;
+              const blocked = attuneBlocked || t4Blocked || turnBlocked;
               return (
                 <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #1a1a2e" }}>
                   <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: 12, color: isEquipped ? "#aaa" : "#555" }}>{item.label}</span>
                     {needsAttune && <span style={{ fontSize: 10, color: isEquipped ? "#e07b39" : "#e07b3966", marginLeft: 6 }}>attune</span>}
+                    {isT4 && <span title="T4 Singular — one per character, on top of the attunement cap" style={{ fontSize: 10, color: isEquipped ? "#e0b85a" : "#e0b85a66", marginLeft: 6 }}>T4</span>}
                   </div>
                   {/* GRIP SWITCH — versatile forms only.
                       Changing grip costs NO action and is not turn-bound, unlike equipping:
@@ -5203,6 +5240,8 @@ export function ActorCard({
                       ? "Gear can only be changed on your own turn."
                       : attuneBlocked
                       ? `Already attuned to ${ATTUNEMENT_LIMIT} items — unequip one first.`
+                      : t4Blocked
+                      ? "Already carrying a T4 Singular — one per character. Unequip it to swap."
                       : isEquipped ? "Unequip — free, once per turn, keeps it in the bag" : "Equip — free, once per turn"}>
                     {isEquipped ? "Equipped" : "Equip"}
                   </button>
