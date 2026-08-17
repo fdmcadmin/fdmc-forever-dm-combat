@@ -47,8 +47,31 @@ export const ITEM_TYPE_BLURB: Record<ItemType, string> = {
 };
 
 export type ItemCapability =
-  /** Attack / damage / crit dice, and the chassis that generates them. */
-  | "dice"
+  /**
+   * A TO-HIT ROLL: 1d20 attack + damage + crit, and the chassis that generates them.
+   * Only things that swing. A wondrous item never has this.
+   */
+  | "attackDice"
+  /**
+   * DICE THAT ARE NOT AN ATTACK — the shape almost every Convergence item actually is.
+   *
+   * ⚠ THIS IS THE CORRECTION TO MY OWN GATING. I gave wondrous items no dice at all, on the
+   * reasoning that they make no attack roll. True, and not the same thing: the A3/T3/T4 packet
+   * (2026-08-17) has every item as a Rider, Reaction, Bonus Action, Magic Action or Passive, and
+   * several of them ROLL —
+   *     Thornwake Splinter   "when you deal damage with an attack, deal +2d8"   (rider)
+   *     Bloodbriar Seed      "the first allied hit … deals +2d8"                (rider, ally's hit)
+   *     T4 rider             "when you hit, deal +2d10"                         (rider)
+   *     deferred-damage T4   "roll 2d8, reduce the triggering damage"           (REDUCTION)
+   *     ability-check T4     "add 1d10, potentially succeeding"                 (a check bonus)
+   * — so they need a die to roll and no to-hit to roll it behind.
+   *
+   * Note this is NOT necessarily damage: three of the campaign's convergence dice are damage
+   * REDUCTION and one is added to a saving throw. MASTER already records that the outcome
+   * vocabulary has no mode for "roll this, it is not damage"; that gap is still open, and this
+   * field at least gives the dice somewhere to live rather than forcing them into `damage`.
+   */
+  | "effectDice"
   /** Reach or range. */
   | "range"
   /** Weapon category + mastery. Mastery is INHERITED when the item resolves to a base weapon. */
@@ -77,13 +100,18 @@ export type ItemCapability =
  * that should be possible on any item."* If a row ever loses it, that is a bug.
  */
 export const ITEM_TYPE_CAPABILITIES: Record<ItemType, readonly ItemCapability[]> = {
-  weapon: ["dice", "range", "mastery", "saveDc", "spellFocus", "attunement", "charges", "statEffects"],
+  weapon: ["attackDice", "range", "mastery", "saveDc", "spellFocus", "attunement", "charges", "statEffects"],
   armor: ["ac", "armorType", "attunement", "charges", "statEffects"],
   shield: ["ac", "attunement", "charges", "statEffects"],
-  consumable: ["count", "dice", "saveDc", "range", "charges"],
+  // A thrown vial swings; a drunk potion does not. Both shapes are allowed here.
+  consumable: ["count", "attackDice", "effectDice", "saveDc", "range", "charges"],
   gear: ["count", "charges"],
-  // Wondrous. The ONLY type that may be Convergence, and the only non-armour that may set AC.
-  magic: ["ac", "saveDc", "spellFocus", "convergence", "attunement", "charges", "statEffects"],
+  /**
+   * Wondrous. The ONLY type that may be Convergence, and the only non-armour that may set AC.
+   * `effectDice` WITHOUT `attackDice` is the whole shape of a Convergence item: it rolls, and
+   * what it rolls rides someone else's hit, reduces damage, or lifts a check.
+   */
+  magic: ["ac", "effectDice", "saveDc", "spellFocus", "convergence", "attunement", "charges", "statEffects"],
   tool: ["count", "charges"],
   passive: ["charges"],
 };

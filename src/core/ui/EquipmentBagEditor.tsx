@@ -812,7 +812,7 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
    * the one type that may be Convergence.
    */
   const allows = (c: Parameters<typeof itemTypeAllows>[1]) => itemTypeAllows(draft.type, c);
-  const isWeapon = allows("dice");
+  const isWeapon = allows("attackDice");
   const isArmor = allows("ac");
 
   return (
@@ -973,6 +973,23 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
             </label>
           )}
         </div>
+      )}
+
+      {/* DICE THAT ARE NOT AN ATTACK — a wondrous item rolls, it just never rolls to hit.
+          Every A3/T3/T4 Convergence item is a Rider, Reaction, Bonus/Magic Action or Passive,
+          and several of them roll: "+2d8 when you deal damage with an attack", "roll 2d8, reduce
+          the triggering damage", "add 1d10" to a failed check. Removing the attack block from
+          wondrous items was right; removing their dice with it was not. */}
+      {allows("effectDice") && !allows("attackDice") && (
+        <label style={{ fontSize: 12 }}>
+          Effect dice <span style={{ color: "#666" }}>— what it rolls, when it is not an attack</span>
+          <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)}
+            placeholder="2d8, 1d10, +2d10..." style={inputStyle} />
+          <span style={{ fontSize: 10, color: "#5a5a6e" }}>
+            A rider on someone's hit, damage reduction, or a bonus to a check — not necessarily damage dealt.
+            Say which in Mechanics; the card cannot tell them apart yet.
+          </span>
+        </label>
       )}
 
       {/* HOW MANY ARE HELD — consumables, gear and tools. A stack of five potions is one row
