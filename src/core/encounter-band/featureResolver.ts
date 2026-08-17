@@ -72,6 +72,8 @@ export type ParsedFeature = {
   spellName?: string;
   /** The slot level it is cast with. THIS is what the spell is priced at. */
   spellSlotLevel?: number;
+  /** Authored as unusable in this encounter. Never scheduled, and always stated. */
+  gated?: boolean;
   text?: string;
 };
 
