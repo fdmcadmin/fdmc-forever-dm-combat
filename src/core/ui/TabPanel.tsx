@@ -41,7 +41,7 @@ const tabNotes: Record<TabId, string> = {
   feats: "Feats. Mechanical feats (Tough, ASI, initiative) feed the sheet's derived stats; the rest are reference.",
   status: "Track STR Drain, Life Drain, and other numeric debuffs here.",
   equipment: "Choose an equipment group to expand it. Passive/reference equipment is non-logging unless the item has a defined use action.",
-  resources: "Later resource automation lives here. BUILD 0.4.0b keeps class resources as feature/reference data instead.",
+  resources: "Resource pools and class features. Spell slots, Rage, Channel Divinity, Superiority Dice — anything with a count that a rest brings back.",
   outOfCombat: "Choose an out-of-combat group to expand it. Short Rest stays clickable because it can roll Hit Dice; Long Rest is reference-only.",
   notes: "Saved notes live here.",
 };

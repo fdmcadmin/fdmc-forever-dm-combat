@@ -652,7 +652,7 @@ function DmPanelApp() {
           >
             ⚡ Force Push
           </button>
-          <span style={{ fontSize: 10, color: "#444" }}>FDMC 0.6.0 DM Tools</span>
+          <span style={{ fontSize: 10, color: "#444" }}>FDMC 0.7.10 DM Tools</span>
           <button
             type="button"
             onClick={() => {
