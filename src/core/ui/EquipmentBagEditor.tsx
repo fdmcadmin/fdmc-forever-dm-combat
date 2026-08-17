@@ -15,6 +15,7 @@ import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
 import { ChassisFields } from "./ChassisFields";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
+import { ARMOR_TYPES, ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, type ArmorTypeId, type ItemType } from "../constants/itemTypeCapabilities";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
 import { composeChassisAttack, findForm, isVersatileForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
@@ -137,7 +138,17 @@ export const SLOT_LABEL: Record<EquipmentSlot, string> = {
 export type EquipmentItem = {
   id: string;
   name: string;
-  type: "weapon" | "armor" | "shield" | "consumable" | "gear" | "magic" | "tool" | "passive";
+  /**
+   * ⚠ `magic` MEANS WONDROUS ITEM. A magical weapon is a `weapon` — being magical is a property
+   * of the item (its +1), never its type. Wondrous is also the ONLY type that may be Convergence.
+   * `passive` is retired; it is still in the union so old records parse, but it is never offered.
+   * What each type may CARRY lives in `itemTypeCapabilities.ts`, read by both item editors.
+   */
+  type: ItemType;
+  /** Light / medium / heavy — armour only. Decides how DEX applies to the AC it sets. */
+  armorType?: ArmorTypeId;
+  /** How many are held. Consumables, gear and tools; a stack of 5 potions is one row. */
+  count?: number;
   /** Worn slot. Absent = carried, not worn, and never displaces anything. */
   slot?: EquipmentSlot;
   description: string;
@@ -716,7 +727,8 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
 
 // ─── Item form ────────────────────────────────────────────────────────────────
 
-const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consumable", "gear", "magic", "tool", "passive"];
+// Types a DM may choose.  is deliberately absent — retired, not gated.
+const ITEM_TYPES: EquipmentItem["type"][] = SELECTABLE_ITEM_TYPES;
 
 type ItemFormProps = {
   initial?: EquipmentItem;
@@ -789,8 +801,19 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
     background: "#111", color: "#fff", fontSize: 13,
   };
 
-  const isWeapon = draft.type === "weapon" || draft.type === "magic";
-  const isArmor = draft.type === "armor" || draft.type === "shield";
+  /**
+   * ⚠ WHAT SHOWS IS DECIDED BY THE TYPE, from the shared capability table.
+   *
+   * This used to be `isWeapon = type === "weapon" || type === "magic"`, which handed a wondrous
+   * item the full weapon dice block — and every item, whatever its type, got every other field
+   * underneath. *"right now the long scroll of creating any item is too much."*
+   *
+   * `magic` no longer means "might be a weapon": a magical weapon is a `weapon`, and wondrous is
+   * the one type that may be Convergence.
+   */
+  const allows = (c: Parameters<typeof itemTypeAllows>[1]) => itemTypeAllows(draft.type, c);
+  const isWeapon = allows("dice");
+  const isArmor = allows("ac");
 
   return (
     // Scrolls, same as the library panel's form — the chassis block pushed the Save button
@@ -821,8 +844,11 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         <label style={{ fontSize: 12 }}>
           Type
           <select value={draft.type} onChange={e => set("type", e.target.value as EquipmentItem["type"])} style={{ ...inputStyle, marginTop: 2 }}>
-            {ITEM_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+            {ITEM_TYPES.map(t => <option key={t} value={t}>{t === "magic" ? "Magic (wondrous)" : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
           </select>
+          {/* THE TYPE DECIDES WHAT THE REST OF THIS FORM EVEN SHOWS, so it has to say what it
+              means. "Magic" reading as "magical" is what got a +1 sword filed as wondrous. */}
+          <span style={{ fontSize: 10, color: "#5a5a6e" }}>{ITEM_TYPE_BLURB[draft.type]}</span>
         </label>
       </div>
 
@@ -922,16 +948,47 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         </div>
       )}
 
-      {/* Armor fields */}
+      {/* AC — armour, shields and wondrous items only.
+          *"you shouldnt be able to add a AC on anything except armor, and magical items."* */}
       {isArmor && !draft.chassis && (
+        <div style={{ display: "grid", gridTemplateColumns: allows("armorType") ? "1fr 1fr" : "1fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>
+            AC Value / Formula
+            <input type="text" value={draft.ac ?? ""} onChange={e => set("ac", e.target.value || undefined)}
+              placeholder={draft.type === "shield" ? "+2" : "14, 12 + DEX mod..."} style={inputStyle} />
+          </label>
+          {/* ARMOUR CARRIES ITS TYPE — *"armor is armor with armor type."* It is what decides
+              whether DEX applies to the AC above, and at what cap. */}
+          {allows("armorType") && (
+            <label style={{ fontSize: 12 }}>
+              Armour type
+              <select value={draft.armorType ?? ""} onChange={e => set("armorType", (e.target.value || undefined) as ArmorTypeId | undefined)}
+                style={{ ...inputStyle, marginTop: 2 }}>
+                <option value="">— none —</option>
+                {ARMOR_TYPES.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+              </select>
+              <span style={{ fontSize: 10, color: "#5a5a6e" }}>
+                {ARMOR_TYPES.find(a => a.id === draft.armorType)?.note ?? "Decides how DEX applies."}
+              </span>
+            </label>
+          )}
+        </div>
+      )}
+
+      {/* HOW MANY ARE HELD — consumables, gear and tools. A stack of five potions is one row
+          with a count, not five rows. */}
+      {allows("count") && (
         <label style={{ fontSize: 12 }}>
-          AC Value / Formula
-          <input type="text" value={draft.ac ?? ""} onChange={e => set("ac", e.target.value || undefined)} placeholder="14, 12 + DEX mod..." style={inputStyle} />
+          Count <span style={{ color: "#666" }}>— how many are carried</span>
+          <input type="number" min={0} value={draft.count ?? ""} placeholder="1"
+            onChange={e => set("count", e.target.value ? Math.max(0, Number(e.target.value)) : undefined)}
+            style={inputStyle} />
         </label>
       )}
 
-      {/* Spellcasting focus — bonuses this item adds to the SPELLS cast through it.
-          Leave blank for non-focus items. Works alongside a weapon attack (both). */}
+      {/* Spellcasting focus — weapons and wondrous items. A staff or a blade can be a focus;
+          armour and rations cannot. */}
+      {allows("spellFocus") && (
       <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
         <div style={{ fontSize: 11, color: "#9d8cff", marginBottom: 4 }}>🪄 Spellcasting focus</div>
         {/* ⚠ BEING A FOCUS IS ITS OWN FACT. A plain focus with no magical plus is still what
@@ -958,6 +1015,7 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
           Put riders (e.g. "ignore Half Cover") in Description.
         </div>
       </div>
+      )}
 
       <label style={{ fontSize: 12 }}>
         Description

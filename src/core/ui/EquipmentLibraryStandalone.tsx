@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { parseActField, parseSessionField } from "../campaign/actTags";
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/convergenceInbox";
+import { SELECTABLE_ITEM_TYPES } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { ChassisFields } from "./ChassisFields";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
@@ -124,7 +125,9 @@ export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
 
 // ─── Item form (inline) ───────────────────────────────────────────────────────
 
-const ITEM_TYPES: EquipmentItem["type"][] = ["weapon", "armor", "shield", "consumable", "gear", "magic", "tool"];
+// Read from the ONE shared table — this file used to keep its own list, and it silently
+// disagreed with EquipmentBagEditor (which also offered the now-retired "passive").
+const ITEM_TYPES: EquipmentItem["type"][] = SELECTABLE_ITEM_TYPES;
 
 // Loot groups by ACT first, then by encounter/merchant inside it, in campaign order —
 // so the library reads like the campaign runs instead of alphabetically. Base weapons
