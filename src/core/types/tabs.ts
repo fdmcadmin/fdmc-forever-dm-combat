@@ -279,6 +279,14 @@ export type ActorActionMetadata = {
   itemType?: string;
   /** Weapon mastery property carried with the item so the round-trip does not drop it. */
   mastery?: string;
+  /** What an item's effect dice MEAN — "damage" | "healing" | "temp" | "reduction". The last
+   *  three all resolve through the  outcome mode (HP the bearer keeps) but are named
+   *  separately so the roll button never calls a reduction "Roll Damage". */
+  effectKind?: string;
+  /** Light / medium / heavy, carried so the round-trip does not drop it. */
+  armorType?: string;
+  /** How many are held. */
+  count?: number;
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;

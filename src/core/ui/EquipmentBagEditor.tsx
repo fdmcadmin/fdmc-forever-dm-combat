@@ -15,7 +15,7 @@ import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
 import { ChassisFields } from "./ChassisFields";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
-import { ARMOR_TYPES, ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, type ArmorTypeId, type ItemType } from "../constants/itemTypeCapabilities";
+import { ARMOR_TYPES, EFFECT_KINDS, ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, outcomeModeForEffectKind, type ArmorTypeId, type EffectKind, type ItemType } from "../constants/itemTypeCapabilities";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
 import { composeChassisAttack, findForm, isVersatileForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
@@ -147,6 +147,19 @@ export type EquipmentItem = {
   type: ItemType;
   /** Light / medium / heavy — armour only. Decides how DEX applies to the AC it sets. */
   armorType?: ArmorTypeId;
+  /**
+   * WHAT THE EFFECT DICE MEAN — *"kind should be- damage, healing, temp, reduction."*
+   *
+   * ⚠ Effect dice were hardcoded to `damage-only`, so an item that ROLLS TO REDUCE damage got
+   * logged as damage dealt — the reading I had wrongly called a missing outcome mode. It is not
+   * missing: `healing` is the mode for all three HP kinds, because HP restored, temp HP granted
+   * and damage prevented are all HP the bearer keeps.
+   *
+   * The MODE is shared; the KIND is not. They resolve identically and read differently, so the
+   * card can say "Roll Temp HP" rather than flattening three distinct things into one word.
+   * Defaults to damage when unset, which is what every current campaign item is.
+   */
+  effectKind?: EffectKind;
   /** How many are held. Consumables, gear and tools; a stack of 5 potions is one row. */
   count?: number;
   /** Worn slot. Absent = carried, not worn, and never displaces anything. */
@@ -617,9 +630,12 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // A save comes FIRST: dc-check announces it and waits on Applies / No Effect, so the
       // table rolls the save before the damage is applied rather than seeing damage appear
       // and being asked to un-apply it. Without a save, effect dice just roll.
+      // HEALING IS ITS OWN MODE and it covers HP restored, temp HP AND damage prevented — all
+      // three are HP the bearer keeps. Effect dice used to be hardcoded to "damage-only", so an
+      // item that rolls to REDUCE damage announced itself as damage dealt.
       outcomeMode: isWeapon ? "passive"
         : hasSave ? "dc-check"
-        : hasEffectDice ? "damage-only"
+        : hasEffectDice ? outcomeModeForEffectKind(item.effectKind)
         : isConsumable ? "triggered"
         : "passive",
       // Carried on the action, like statEffects, so the card can enforce slot exclusivity
@@ -654,6 +670,9 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
        */
       itemType: item.type,
       mastery: item.mastery,
+      effectKind: item.effectKind,
+      armorType: item.armorType,
+      count: item.count,
       // Spellcasting focus bonuses — read by the spell roll workspace (clickable additive).
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
@@ -981,15 +1000,28 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
           the triggering damage", "add 1d10" to a failed check. Removing the attack block from
           wondrous items was right; removing their dice with it was not. */}
       {allows("effectDice") && !allows("attackDice") && (
-        <label style={{ fontSize: 12 }}>
-          Effect dice <span style={{ color: "#666" }}>— what it rolls, when it is not an attack</span>
-          <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)}
-            placeholder="2d8, 1d10, +2d10..." style={inputStyle} />
-          <span style={{ fontSize: 10, color: "#5a5a6e" }}>
-            A rider on someone's hit, damage reduction, or a bonus to a check — not necessarily damage dealt.
-            Say which in Mechanics; the card cannot tell them apart yet.
-          </span>
-        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>
+            Effect dice <span style={{ color: "#666" }}>— what it rolls, when it is not an attack</span>
+            <input type="text" value={draft.damage ?? ""} onChange={e => set("damage", e.target.value || undefined)}
+              placeholder="2d8, 1d10, +2d10..." style={inputStyle} />
+          </label>
+          {/* FOUR KINDS, TWO MODES. Healing, temp HP and reduction all resolve through the
+              `healing` outcome mode — they are HP the bearer keeps, so none may be announced as
+              damage dealt — but they are three different things at the table and the button says
+              which. Collapsing them into one word is what had me reporting a missing mode. */}
+          <label style={{ fontSize: 12 }}>
+            Rolls as
+            <select value={draft.effectKind ?? "damage"}
+              onChange={e => set("effectKind", e.target.value === "damage" ? undefined : e.target.value as EffectKind)}
+              style={{ ...inputStyle, marginTop: 2 }}>
+              {EFFECT_KINDS.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
+            </select>
+            <span style={{ fontSize: 10, color: "#5a5a6e" }}>
+              {(EFFECT_KINDS.find(k => k.id === (draft.effectKind ?? "damage")) ?? EFFECT_KINDS[0]).note}
+            </span>
+          </label>
+        </div>
       )}
 
       {/* HOW MANY ARE HELD — consumables, gear and tools. A stack of five potions is one row
@@ -1342,6 +1374,9 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       type: (m.itemType as EquipmentItem["type"] | undefined)
         ?? ((m.attack || m.damage) ? "weapon" : "gear"),
       mastery: m.mastery as EquipmentItem["mastery"],
+      effectKind: m.effectKind as EffectKind | undefined,
+      armorType: m.armorType as EquipmentItem["armorType"],
+      count: m.count,
       description: action.description ?? "",
       isUsable: Boolean(action.hasDefinedUse),
       attack: m.attack,

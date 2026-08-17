@@ -41,6 +41,7 @@ import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction, isMonsterLegendaryAction } from "../monsters/runtime/mainMonsterRuntime";
 import { CLASSIFICATION_LABEL } from "../monsters/runtime/mainMonsterRuntime";
+import { CriticalFailureReference } from "./CriticalFailureReference";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
 import { tabAccent } from "./tabVisuals";
@@ -675,6 +676,7 @@ export function MonsterActorCard({
   const [usedActionIds, setUsedActionIds] = useState<Set<string>>(() => new Set());
   // rechargedActionIds — actions with recharge that have been USED this turn and not yet recharged
   const [dischargedActionIds, setDischargedActionIds] = useState<Set<string>>(() => new Set());
+  const [showCritFailTables, setShowCritFailTables] = useState(false);
   const [traitsOpen, setTraitsOpen] = useState(false);
   // Only Actions is expanded by default — the rest collapse to a one-line header with a
   // count. This is where the card's height actually goes; the header/economy trims are
@@ -1334,6 +1336,20 @@ export function MonsterActorCard({
             Reset Turn
           </button>
         </div>
+
+        {/* ⚀ THE NAT 1 TABLES, ON THE MONSTER CARD — where a monster's Nat 1 actually happens.
+            The overlay was reachable only from a PC's card, so the DM running the monsters had no
+            way to look either table up, which is precisely backwards: a monster's Nat 1 is the
+            one that is table-facing. Both tables, always, no roll required. */}
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 0 4px" }}>
+          <button type="button"
+            onClick={() => setShowCritFailTables(true)}
+            title="Natural 1 failure tables — both the first and second tables"
+            style={{ fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #3a3a52", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>
+            ⚀ Nat 1 tables
+          </button>
+        </div>
+        <CriticalFailureReference open={showCritFailTables} onClose={() => setShowCritFailTables(false)} />
 
         {/* 3b. Ability checks & saves + advantage/disadvantage mode */}
         <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: "1px solid #1a1a2e" }}>

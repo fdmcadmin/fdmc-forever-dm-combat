@@ -130,3 +130,36 @@ export const ARMOR_TYPES = [
 ] as const;
 
 export type ArmorTypeId = (typeof ARMOR_TYPES)[number]["id"];
+
+/**
+ * WHAT A SET OF EFFECT DICE MEANS. Christopher, 2026-08-17: *"kind should be- damage, healing,
+ * temp, reduction."*
+ *
+ * ⚠ THE MODE IS SHARED; THE KIND IS NOT. Healing, temp HP and reduction all resolve through the
+ * `healing` outcome mode — they are all HP the bearer keeps, so none of them may be announced as
+ * damage dealt. But they are three different things at the table, and collapsing them into one
+ * word is why I mistakenly reported the vocabulary as missing a mode for "roll this, it is not
+ * damage". It was not missing. It was unlabelled.
+ */
+export const EFFECT_KINDS = [
+  { id: "damage", label: "Damage", mode: "damage-only", rollLabel: "Roll Damage",
+    note: "Damage dealt — including a rider on someone else's hit." },
+  { id: "healing", label: "Healing", mode: "healing", rollLabel: "Roll Healing",
+    note: "HP restored to a creature." },
+  { id: "temp", label: "Temp HP", mode: "healing", rollLabel: "Roll Temp HP",
+    note: "Temporary HP granted. Does not stack with itself." },
+  { id: "reduction", label: "Reduction", mode: "healing", rollLabel: "Roll Reduction",
+    note: "Damage PREVENTED, not dealt. Never logged as harm done." },
+] as const;
+
+export type EffectKind = (typeof EFFECT_KINDS)[number]["id"];
+
+/** The outcome mode a kind resolves through. Three of the four share `healing`. */
+export function outcomeModeForEffectKind(kind: EffectKind | undefined): "damage-only" | "healing" {
+  return (EFFECT_KINDS.find(k => k.id === kind)?.mode ?? "damage-only") as "damage-only" | "healing";
+}
+
+/** The button text, so a reduction never reads "Roll Damage". */
+export function rollLabelForEffectKind(kind: string | undefined): string | undefined {
+  return EFFECT_KINDS.find(k => k.id === kind)?.rollLabel;
+}

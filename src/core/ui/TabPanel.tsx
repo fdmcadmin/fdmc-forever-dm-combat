@@ -5,6 +5,7 @@ import type { ActorConcentrationState } from "../state/useActorConcentrationStat
 import { isUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { CommittedRollOutcomeMode, CommittedRollState } from "../types/committedRoll";
 import { normalizeOutcomeMode } from "../types/tabs";
+import { rollLabelForEffectKind } from "../constants/itemTypeCapabilities";
 import type { ActorAction, TabId } from "../types/tabs";
 import type { ReadiedRollCandidate } from "./CommittedRollPanel";
 
@@ -228,6 +229,17 @@ function inferOutcomeMode(action: ActorAction): CommittedRollOutcomeMode {
 function rollButtonLabelForMode(mode: CommittedRollOutcomeMode, action?: ActorAction) {
   if (mode === "dc-check") return "Check";
   if (mode === "ability-check") return "Roll Check";
+
+  /**
+   * ⚠ SAY WHICH KIND IT IS. Healing, temp HP and damage REDUCTION all resolve through the
+   * `healing` outcome mode, because all three are HP the bearer keeps — but they are three
+   * different things and "Roll Healing" on a reduction reads as HP gained rather than harm
+   * prevented. `effectKind` names it when the item carries one.
+   */
+  const kindLabel = rollLabelForEffectKind(action?.metadata?.effectKind);
+  if (mode === "triggered" && kindLabel) {
+    return kindLabel;
+  }
 
   // Healing — explicit outcomeMode only, no text scanning
   // Set metadata.outcomeMode = "healing" on the action when building it

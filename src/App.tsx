@@ -45,6 +45,7 @@ import { CombatLog } from "./core/combat-log/CombatLog";
 import { RecentEventsWidget } from "./core/combat-log/RecentEventsWidget";
 import { CombatTracker, buildCombatants, sortCombatants, isOutOfCombat, type Combatant } from "./core/ui/CombatTracker";
 import { ReadmeOverlay } from "./core/ui/ReadmeOverlay";
+import { CriticalFailureReference } from "./core/ui/CriticalFailureReference";
 import { playerSafeTier } from "./core/ui/ThreatHpBar";
 // getActorCopper is deliberately NOT imported here — useActorLiveState already exposes one
 // bound to the live room copy, and two functions of the same name with different arities is
@@ -797,6 +798,7 @@ export default function App() {
   const [editingActorId, setEditingActorId] = useState<string | null>(null);
   // P-UX4 Phase 8 — clickable quick-guide / onboarding overlay
   const [showReadme, setShowReadme] = useState(false);
+  const [showCritFailTables, setShowCritFailTables] = useState(false);
 
   // ── Level-up approval queue (DM side) ────────────────────────────────────
   const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>([]);
@@ -2727,10 +2729,17 @@ export default function App() {
     return (
       <main className="fdmc-app">
         <ReadmeOverlay open={showReadme} onClose={() => setShowReadme(false)} />
+        <CriticalFailureReference open={showCritFailTables} onClose={() => setShowCritFailTables(false)} />
         {isDmMode && (
           <header className="fdmc-dm-toolbar" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "6px 10px", background: "#0d0d14", borderBottom: "1px solid #2a2a3e" }}>
             <button type="button" style={DM_BTN.use} title="Open the quick guide — colors, flow, and controls"
               onClick={() => setShowReadme(true)}>📖 Guide</button>
+            {/* ⚀ THE NAT 1 TABLES, WITH NO MONSTER AND NO ROLL REQUIRED. Both entry points
+                before this needed something in play — a card to hang a button on, or an actual
+                natural 1 — so a DM could not read the tables while prepping. It sits beside the
+                Guide because it is the same kind of thing: pure reference, changes nothing. */}
+            <button type="button" style={DM_BTN.use} title="Natural 1 failure tables — both the first and second tables, for melee, ranged and spell attacks alike"
+              onClick={() => setShowCritFailTables(true)}>⚀ Nat 1</button>
             <span style={dmGroupLabel("#3f9d5f")}>Create</span>
             <button type="button" style={DM_CREATE_SHADES[0]} onClick={() => void openDmPanel("library", "actor")}>+ Party Character</button>
             <button type="button" style={DM_CREATE_SHADES[1]} onClick={() => void openDmPanel("library", "monster")}>+ Monster</button>
@@ -3004,6 +3013,7 @@ export default function App() {
     <main className="fdmc-app">
 
       <ReadmeOverlay open={showReadme} onClose={() => setShowReadme(false)} />
+        <CriticalFailureReference open={showCritFailTables} onClose={() => setShowCritFailTables(false)} />
 
       {/* ── DM toolbar — grouped, color-coded rows (P-UX1) ── */}
       {isDmMode && (
@@ -3016,6 +3026,12 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <button type="button" style={DM_BTN.use} title="Open the quick guide — colors, flow, and controls"
               onClick={() => setShowReadme(true)}>📖 Guide</button>
+            {/* ⚀ THE NAT 1 TABLES, WITH NO MONSTER AND NO ROLL REQUIRED. Both entry points
+                before this needed something in play — a card to hang a button on, or an actual
+                natural 1 — so a DM could not read the tables while prepping. It sits beside the
+                Guide because it is the same kind of thing: pure reference, changes nothing. */}
+            <button type="button" style={DM_BTN.use} title="Natural 1 failure tables — both the first and second tables, for melee, ranged and spell attacks alike"
+              onClick={() => setShowCritFailTables(true)}>⚀ Nat 1</button>
 
             <span style={{ flex: 1, minWidth: 8 }} />
 
