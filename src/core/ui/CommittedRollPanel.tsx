@@ -55,6 +55,13 @@ type CommittedRollPanelProps = {
   isMonsterActor?: boolean;
   /** Resolve a Nat 1 with a chosen d6 failure-table entry; parent logs + marks miss (P10). */
   onResolveCriticalFailure?: (entry: CriticalFailureEntry, kind: CriticalFailureTableKind) => void;
+  /** Seats that could be asked to roll a MONSTER's Nat 1 d6. */
+  seatNames?: string[];
+  /** DM opt-in. Off by default — a DM who wants to keep the die sees only the checkbox. */
+  letSeatRollMonsterNat1?: boolean;
+  onToggleSeatRollsMonsterNat1?: (on: boolean) => void;
+  /** Ask that seat to roll the monster's d6. Naming a seat does not hand over resolution. */
+  onAskSeatToRollNat1?: (seatName: string) => void;
 };
 
 function formatCosts(costs: ActionCost[]) {
@@ -318,6 +325,10 @@ export function CommittedRollPanel({
   onRerollWithSource,
   isPlayerMode = false,
   isMonsterActor = false,
+  seatNames,
+  letSeatRollMonsterNat1,
+  onToggleSeatRollsMonsterNat1,
+  onAskSeatToRollNat1,
   onResolveCriticalFailure,
 }: CommittedRollPanelProps) {
   const [showRerollPicker, setShowRerollPicker] = useState(false);
@@ -696,6 +707,32 @@ export function CommittedRollPanel({
                 Damage only exists on the second Nat 1 table when the d6 result is 6. Level 2+ actors use the non-damage replacement.
               </p>
             )}
+            {/* ⚀ HAND THE MONSTER'S d6 TO A SEAT. Christopher, 2026-08-17: *"when a monster rolls
+                a nat one the dm should be able to pick a seat to roll that monsters nat 1
+                (togglable option for DM who dont want to do that)."*
+
+                A monster's Nat 1 is the table-facing one — it creates an opening the party gets to
+                enjoy — so letting a player roll it is a table moment rather than a mechanic. It is
+                OPT-IN: a DM who would rather keep the die never sees more than this row, and the
+                choice persists so it is answered once, not every fight. Naming a seat only says
+                who rolls; the DM still resolves the result. */}
+            {isMonsterActor && seatNames && seatNames.length > 0 && (
+              <div className="critical-failure-seat-row" style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center", padding: "4px 0" }}>
+                <label style={{ fontSize: 10, color: "#8a8aa0", display: "flex", alignItems: "center", gap: 4 }}>
+                  <input type="checkbox" checked={Boolean(letSeatRollMonsterNat1)}
+                    onChange={e => onToggleSeatRollsMonsterNat1?.(e.target.checked)} />
+                  Let a player roll it
+                </label>
+                {letSeatRollMonsterNat1 && seatNames.map(seat => (
+                  <button key={seat} type="button" className="secondary-button compact"
+                    title={`Ask ${seat} to roll this monster's Nat 1 d6. You still read the table and resolve it.`}
+                    onClick={() => onAskSeatToRollNat1?.(seat)}>
+                    🎲 {seat}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* THE SPEED-UP. *"or choose miss if a dm is looking to speed up the combat."* A
                 nat 1 is a miss whatever the d6 says, so the table roll is optional — skipping
                 it resolves the attack immediately instead of stalling the turn on a lookup. */}
@@ -830,7 +867,12 @@ export function CommittedRollPanel({
           <div className="roll-prompt-row">
             {!committedRoll.isCrit && committedRoll.hasDamageChoice && (
               <button className="roll-prompt-button" type="button" onClick={() => onChooseDamage("damage")}>
-                Damage / Effect {committedRoll.damageFormula ? `(${committedRoll.damageFormula})` : ""}
+                {/* A DC-check with no authored formula still reaches this step (see
+                    useCommittedRollState) so the save does not dead-end. The label says which
+                    case it is, because "Damage / Effect" with nothing after it looks broken. */}
+                Damage / Effect {committedRoll.damageFormula
+                  ? `(${committedRoll.damageFormula})`
+                  : "— roll it at the table"}
               </button>
             )}
             {committedRoll.isCrit && committedRoll.hasCritDamageChoice && (

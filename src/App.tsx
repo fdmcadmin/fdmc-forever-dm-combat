@@ -2047,6 +2047,16 @@ export default function App() {
     [roomLiveState.seats],
   );
 
+  /**
+   * PLAYER SEAT NAMES, offered when a MONSTER rolls a Nat 1 so the DM can hand that d6 to a
+   * player — the one Nat 1 that is table-facing. Player characters only: a monster is never
+   * asked to roll its own failure, and the DM keeps every PC nat 1 as a plain miss.
+   */
+  const playerSeatNames = useMemo(
+    () => actors.filter(a => a.kind !== "monster").map(a => a.name),
+    [actors],
+  );
+
   /** Live HP map for all actors — used by combat tracker and actor selector */
   const liveHpByActorId = useMemo(
     () => Object.fromEntries(actors.map(a => [a.id, getActorHp(a.id)])),
@@ -3176,6 +3186,7 @@ export default function App() {
               <ActorCard
                 actor={shown}
                 seatColor={seatColorById[shown.id]}
+                seatNames={playerSeatNames}
                 hp={getActorHp(shown.id)}
                 actionState={getActionState(shown)}
                 concentration={getActorConcentration(shown)}
@@ -4106,6 +4117,7 @@ export default function App() {
           });
         }}
         seatColor={seatColorById[actorToShow.id]}
+                seatNames={playerSeatNames}
         hp={hp}
         actionState={actionState}
         concentration={concentration}
@@ -4474,6 +4486,7 @@ export default function App() {
               <ActorCard
                 actor={focusedActor}
                 seatColor={seatColorById[focusedActor.id]}
+                seatNames={playerSeatNames}
                 hp={focusedHp}
                 actionState={focusedActionState}
                 concentration={focusedConcentration}

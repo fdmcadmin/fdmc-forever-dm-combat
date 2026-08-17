@@ -55,6 +55,9 @@ import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis"
 import { PinnedReactions } from "./PinnedReactions";
 import { CriticalFailureReference } from "./CriticalFailureReference";
 import { isT4Singular } from "../constants/itemTypeCapabilities";
+
+/** DM preference: let a player roll a monster's Nat 1 d6. Off unless the DM turns it on. */
+const SEAT_ROLLS_NAT1_KEY = "fdmc.dm.seatRollsMonsterNat1";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
 import { TabPanel } from "./TabPanel";
@@ -72,6 +75,11 @@ type ActorCardProps = {
   turnResetVersion: number;
   /** Seat color for the character's seat — tints the name so the sheet carries seat identity. */
   seatColor?: string;
+  /**
+   * Player seats at the table, offered when a MONSTER rolls a Nat 1 so the DM can hand that d6 to
+   * a player. Opt-in, and only ever a monster's die — see `CommittedRollPanel`.
+   */
+  seatNames?: string[];
   onHpChange: (nextHp: HitPoints) => void;
   onResetHp: () => void;
   onReadyActionCosts: (costs: ActionCost[], readiedKey: string) => void;
@@ -810,6 +818,7 @@ export function ActorCard({
   rulesProfile,
   turnResetVersion,
   seatColor,
+  seatNames,
   onHpChange,
   onResetHp,
   onReadyActionCosts,
@@ -875,6 +884,10 @@ export function ActorCard({
   const [castLevelByActionKey, setCastLevelByActionKey] = useState<Record<string, number>>(() => readActorCardSessionSnapshot().castLevelByActionKey ?? {});
   const [twoWeaponByActorId, setTwoWeaponByActorId] = useState<Record<string, boolean>>(() => readActorCardSessionSnapshot().twoWeaponByActorId ?? {});
   const [showCritFailTables, setShowCritFailTables] = useState(false);
+  /** DM opt-in: may a player roll a MONSTER's Nat 1 d6. Persisted — asked once, not per fight. */
+  const [letSeatRollNat1, setLetSeatRollNat1] = useState<boolean>(() => {
+    try { return window.localStorage.getItem(SEAT_ROLLS_NAT1_KEY) === "1"; } catch { return false; }
+  });
   const [debuffNote, setDebuffNote] = useState("");
   // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
   const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
@@ -4710,6 +4723,28 @@ export function ActorCard({
         rerollSources={getRerollSources(actor)}
         isPlayerMode={isPlayerMode}
         isMonsterActor={actor.kind === "monster"}
+        seatNames={seatNames}
+        letSeatRollMonsterNat1={letSeatRollNat1}
+        onToggleSeatRollsMonsterNat1={(on) => {
+          setLetSeatRollNat1(on);
+          // Persisted so the DM answers this once rather than every fight.
+          try { window.localStorage.setItem(SEAT_ROLLS_NAT1_KEY, on ? "1" : "0"); } catch { /* ok */ }
+        }}
+        onAskSeatToRollNat1={(seatName) => {
+          /**
+           * ⚠ THE LOG *IS* THE HANDOFF. The encounter log is what the whole table already sees, so
+           * asking through it reaches the player without inventing a second channel — and it
+           * leaves a record of who rolled, which matters when the result decides a complication.
+           * The DM still reads the table and resolves; naming a seat only says whose hand the die
+           * is in.
+           */
+          onLog({
+            actorName: actor.name,
+            actionName: "Nat 1",
+            tabId: "main",
+            message: `${actor.name} rolled a natural 1 — ${seatName}, roll a d6 for the failure table.`,
+          });
+        }}
         onResolveCriticalFailure={(entry, kind) => {
           // Players see the soft player-summary in the shared log; the DM table effect
           // stays DM-side. The d6 result is always logged so the table has a record.

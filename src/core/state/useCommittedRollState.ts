@@ -216,7 +216,21 @@ export function useCommittedRollState(actors: Actor[]) {
   const startCommittedRoll = useCallback((actorId: string, input: StartCommittedRollInput) => {
     const outcomeMode = inferOutcomeMode(input);
     const requiresRollResult = outcomeMode === "attack-roll" || outcomeMode === "ability-check";
-    const hasDamageChoice = Boolean(input.damageFormula?.trim());
+    /**
+     * ⚠ A SAVE THAT LANDS STILL NEEDS SOMEWHERE TO ROLL. Christopher, 2026-08-17:
+     * *"it is a bonus action to do damage in a straight line but there is no way to trigger a mid
+     * roll spell to then roll that damage."*
+     *
+     * Lyrielle's Perforating Shot is the case: a bonus-action DC-check carrying `saveDc` and NO
+     * `damage` — its text says *"resolve its source-specific damage text at the table."* Gating the
+     * damage step on a formula EXISTING meant the save resolved and then the turn dead-ended, with
+     * no way to roll or record what it did.
+     *
+     * A `dc-check` therefore always reaches the damage step. The step accepts a typed result, so a
+     * spell whose damage is deliberately open-ended is resolved and LOGGED rather than abandoned —
+     * and nothing is invented on the creature's behalf.
+     */
+    const hasDamageChoice = Boolean(input.damageFormula?.trim()) || outcomeMode === "dc-check";
     const hasCritDamageChoice = Boolean(outcomeMode === "attack-roll" && input.critDamageFormula?.trim());
 
     setAndPersist((current) => ({
