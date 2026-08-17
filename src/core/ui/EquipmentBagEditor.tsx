@@ -10,7 +10,7 @@
  * The actor's bag = actor.tabs.equipment (ActorAction[]) with actionKind "equipment"
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
 import { ChassisFields } from "./ChassisFields";
@@ -491,6 +491,22 @@ function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: stri
  *   Reading still treats `undefined` as equipped, so actors saved before this keep working.
  */
 /**
+ * The mastery an item INHERITS, when it resolves to a base weapon.
+ *
+ * Two ways an item resolves to one: it IS a seeded base weapon (its id names the form), or it is
+ * a chassis whose form has been chosen. Either way the 2024 PHB table is the source of truth and
+ * the value is not the DM's to type. Returns null for everything else — a magic weapon with no
+ * base form, a homebrew, an unformed chassis — and those keep the free choice.
+ */
+export function inheritedMasteryFor(
+  item: { id?: string; chassis?: ChassisSpec },
+): { mastery: WeaponMasteryName; source: string } | null {
+  const own = item.id?.startsWith("base-") ? findForm(item.id) : undefined;
+  const form = own ?? findForm(item.chassis?.formId);
+  return form?.mastery ? { mastery: form.mastery, source: form.name } : null;
+}
+
+/**
  * Fill a chassis item's dice in from its chosen form.
  *
  * Returns the item untouched when it is not a chassis, or when no form has been picked yet —
@@ -513,9 +529,15 @@ export function resolveChassisItem(item: EquipmentItem): EquipmentItem {
     ...item,
     ...dice,
     category: form.category,
-    // The form's mastery carries, but HAVING the mastery is still required to use it — a Gift
-    // grants proficiency, not mastery freedom.
-    mastery: item.mastery ?? form.mastery,
+    /**
+     * ⚠ THE FORM'S MASTERY WINS. This was `item.mastery ?? form.mastery`, so a stale or
+     * hand-typed value on the item outranked the base weapon it is built on — a handaxe chassis
+     * could read as anything but Vex. The base weapon table is the source of truth.
+     *
+     * HAVING the mastery is still a separate question and still the character's: it is live only
+     * with a feature unlocking it. A Gift grants proficiency, not mastery freedom.
+     */
+    mastery: form.mastery ?? item.mastery,
     range: item.range ?? form.range,
   };
 }
@@ -712,6 +734,12 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
   });
 
   const [errors, setErrors] = useState<string[]>([]);
+  /**
+   * Non-null when this item resolves to a base weapon, in which case its mastery is INHERITED
+   * from the 2024 PHB table rather than chosen. Recomputed as the chassis form changes, so
+   * picking a handaxe form immediately shows Vex.
+   */
+  const inheritedMastery = useMemo(() => inheritedMasteryFor(draft), [draft]);
   // Pending drafts (P-ROLL3b) — only meaningful when creating a brand-new item
   const [equipDrafts, setEquipDrafts] = useState<PendingDraft<EquipmentItem>[]>(
     () => loadPendingDrafts<EquipmentItem>("equipment"),
@@ -823,10 +851,19 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
           </label>
 
           {/* Hand count + Weapon Mastery.
-              Mastery is deliberately a FREE CHOICE, never derived from the weapon name:
-              a mastery is only live when the character has a feature unlocking it for that
-              weapon, so the same longsword is Sap for a Fighter and nothing for a Wizard.
-              Picking one appends its rules text under Information on the generated attack. */}
+
+              ⚠ MASTERY COMES FROM THE BASE WEAPON — BUT THE PICKER STAYS. Christopher,
+              2026-08-17: *"base weapons need to be where the mastery comes from but there are
+              other wapons in DN so we cant just remove the mastery choice, but if it is a base
+              weapon it should get the inherited mastery."*
+
+              A Thornback Hatchet on a handaxe chassis is Vex because the handaxe is Vex, not
+              because someone typed it — so when the item resolves to a base weapon the value is
+              INHERITED and shown as such, never re-chosen. The game has weapons outside that
+              table, so anything that does NOT resolve to one keeps a free choice.
+
+              Whether the character can USE the mastery is a separate question and still theirs:
+              it is live only with a feature unlocking it, which is why the note below stays. */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <label style={{ fontSize: 12 }}>
               Category
@@ -839,17 +876,35 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
                 {WEAPON_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </label>
-            <label style={{ fontSize: 12 }}>
-              Weapon Mastery
-              <select
-                value={draft.mastery ?? ""}
-                onChange={e => set("mastery", (e.target.value || undefined) as WeaponMasteryName | undefined)}
-                style={{ ...inputStyle, marginTop: 2 }}
-              >
-                <option value="">— none —</option>
-                {WEAPON_MASTERY_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </label>
+            {inheritedMastery ? (
+              <div style={{ fontSize: 12 }}>
+                Weapon Mastery
+                <div style={{
+                  ...inputStyle, marginTop: 2, display: "flex", alignItems: "center",
+                  background: "#0d0d14", color: "#d7b36a", cursor: "default",
+                }}>
+                  {inheritedMastery.mastery}
+                </div>
+                <span style={{ fontSize: 10, color: "#5a5a6e" }}>
+                  Inherited from the {inheritedMastery.source} — a base weapon's mastery is not a choice.
+                </span>
+              </div>
+            ) : (
+              <label style={{ fontSize: 12 }}>
+                Weapon Mastery
+                <select
+                  value={draft.mastery ?? ""}
+                  onChange={e => set("mastery", (e.target.value || undefined) as WeaponMasteryName | undefined)}
+                  style={{ ...inputStyle, marginTop: 2 }}
+                >
+                  <option value="">— none —</option>
+                  {WEAPON_MASTERY_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <span style={{ fontSize: 10, color: "#5a5a6e" }}>
+                  Not a base weapon — choose its mastery.
+                </span>
+              </label>
+            )}
           </div>
           {draft.mastery && WEAPON_MASTERIES[draft.mastery] && (
             <p style={{ margin: 0, fontSize: 11, lineHeight: 1.45, color: "#8a8aa0", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
