@@ -396,17 +396,19 @@ export function CommittedRollPanel({
   const naturalStatus = naturalRollStatus(committedRoll);
   const isAttackCriticalFailure = committedRoll.outcomeMode === "attack-roll" && committedRoll.isCriticalFailure;
   /**
-   * ⚠ A PLAYER NEVER SEES A NAT 1 TABLE FOR THEIR OWN ROLL. Christopher, 2026-08-17:
-   * *"nat 1 rolled table needs removed from a player roll and the only time any PC should see a
-   * nat 1 table is when a monster rolls a nat one."*
+   * ⚠ THE PLAYER ROLLS THE DIE; THE PLAYER DOES NOT SEE THE TABLE.
    *
-   * The complication is the DM's to choose. Showing a player the d6 picker invites them to roll
-   * their own punishment and turns a miss into a negotiation. On a player seat the nat 1 stays
-   * a plain miss; a MONSTER's nat 1 is table-facing, because those create openings the party
-   * is meant to see.
+   * Christopher, 2026-08-17: *"i didnt tell you to make the players nat one a pure miss, i said
+   * they dont get to see the options, they still get to roll the dice or choose miss if a dm is
+   * looking to speed up the combat."*
+   *
+   * Two different things, and an earlier pass of mine collapsed them: it removed the whole box
+   * from a player seat, which took away their d6 as well as the table. The d6 is theirs. What is
+   * withheld is WHICH TABLE it reads against (first failure or second in the same fight) and
+   * what the six outcomes are — both DM decisions. A MONSTER's nat 1 is fully table-facing,
+   * because those create openings the party is meant to see.
    */
   const critFailBelongsToTable = !isPlayerMode || isMonsterActor;
-  const showCriticalFailureBox = isAttackCriticalFailure && critFailBelongsToTable;
   const isAttackCrit = committedRoll.outcomeMode === "attack-roll" && committedRoll.isCrit;
   const hasNaturalGateNotice = committedRoll.outcomeMode === "attack-roll" && committedRoll.phase !== "committed" && Boolean(committedRoll.rollResult);
 
@@ -416,7 +418,7 @@ export function CommittedRollPanel({
   const showDevTestRoll = canShowDevTestRoll && committedRoll.requiresRollResult && !bridgeResultReceived;
   const showMockTools = isBuilderMode && committedRoll.requiresRollResult && !bridgeResultReceived && mockToolsOpen;
   const attackCritAutoHit = isAttackCrit && committedRoll.rulesProfile.naturalAttack20AutoHits;
-  const showOutcomePrompt = committedRoll.phase === "result-held" && !showCriticalFailureBox && !attackCritAutoHit;
+  const showOutcomePrompt = committedRoll.phase === "result-held" && !isAttackCriticalFailure && !attackCritAutoHit;
   // Show reroll prompt if:
   //   - old generic flag is set, OR
   //   - there are available reroll sources from items/features
@@ -635,34 +637,48 @@ export function CommittedRollPanel({
           </div>
         )}
 
-        {showCriticalFailureBox && committedRoll.phase === "result-held" && (
+        {isAttackCriticalFailure && committedRoll.phase === "result-held" && (
           <div className="critical-failure-pending-box">
             <span className="committed-roll-label">Nat 1 failure check</span>
             <p>
-              Roll a d6 for the failure result. The DM sees the table for player/PC failures. Monster Nat 1 results are player-visible because they create openings.
+              {critFailBelongsToTable
+                ? "Roll a d6 for the failure result. Monster Nat 1 results are player-visible because they create openings."
+                : "Roll a d6. The DM reads what it means and resolves the complication."}
             </p>
-            <div className="critical-failure-toggle-row">
-              <button
-                className={`secondary-button compact ${criticalFailureKind === "standard" ? "active" : ""}`}
-                type="button"
-                onClick={() => {
-                  setCriticalFailureKind("standard");
-                  setCriticalFailureD6(null);
-                }}
-              >
-                First Nat 1
-              </button>
-              <button
-                className={`secondary-button compact ${criticalFailureKind === "double" ? "active" : ""}`}
-                type="button"
-                onClick={() => {
-                  setCriticalFailureKind("double");
-                  setCriticalFailureD6(null);
-                }}
-              >
-                Second Nat 1
-              </button>
-            </div>
+            {/*
+              ⚠ THE PLAYER ROLLS; THE PLAYER DOES NOT CHOOSE. Christopher, 2026-08-17:
+              *"i said they dont get to see the options, they still get to roll the dice."*
+
+              So the d6 row stays on every seat — it is their die. WHICH TABLE it reads against
+              is a DM decision (first failure or second in the same fight), and the six outcomes
+              are the DM's to know, so both are hidden from a player seat. An earlier pass of
+              mine removed the whole box from players and turned a nat 1 into a bare miss, which
+              took the die off them as well; this is the correction.
+            */}
+            {critFailBelongsToTable && (
+              <div className="critical-failure-toggle-row">
+                <button
+                  className={`secondary-button compact ${criticalFailureKind === "standard" ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setCriticalFailureKind("standard");
+                    setCriticalFailureD6(null);
+                  }}
+                >
+                  First Nat 1
+                </button>
+                <button
+                  className={`secondary-button compact ${criticalFailureKind === "double" ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setCriticalFailureKind("double");
+                    setCriticalFailureD6(null);
+                  }}
+                >
+                  Second Nat 1
+                </button>
+              </div>
+            )}
             <div className="critical-failure-d6-row" aria-label="Critical failure d6 result">
               {[1, 2, 3, 4, 5, 6].map((roll) => (
                 <button
@@ -675,11 +691,22 @@ export function CommittedRollPanel({
                 </button>
               ))}
             </div>
-            {criticalFailureKind === "double" && (
+            {criticalFailureKind === "double" && critFailBelongsToTable && (
               <p className="critical-failure-note">
                 Damage only exists on the second Nat 1 table when the d6 result is 6. Level 2+ actors use the non-damage replacement.
               </p>
             )}
+            {/* THE SPEED-UP. *"or choose miss if a dm is looking to speed up the combat."* A
+                nat 1 is a miss whatever the d6 says, so the table roll is optional — skipping
+                it resolves the attack immediately instead of stalling the turn on a lookup. */}
+            <button
+              className="secondary-button compact"
+              type="button"
+              onClick={() => onChooseOutcome("miss")}
+              title="A Nat 1 is a miss regardless — resolve it now and skip the failure table"
+            >
+              Skip the table — just a miss
+            </button>
             {(() => {
               const selectedEntry = typeof criticalFailureD6 === "number" ? getCriticalFailureEntry(criticalFailureKind, criticalFailureD6) : null;
               const canSeeTable = !isPlayerMode || isMonsterActor;
