@@ -32,7 +32,22 @@ export type RerollSourceKind = "item" | "feature" | "dm";
  * Treating a flip as a reroll would send a fresh request and produce an unrelated number, which is
  * the opposite of what the feat says.
  */
-export type RerollMethod = "reroll" | "flip";
+export type RerollMethod = "reroll" | "flip" | "advantage" | "bonus";
+
+/**
+ * ⚠ ALL FOUR FIRE BEFORE THE MISS IS COMMITTED. Christopher, 2026-08-17: *"if a miss they should
+ * be able to use something like this to add to the rolls before it is committed as a full miss."*
+ * The picker already appears while the roll is HELD, which is the right moment — a held result is
+ * not yet a miss. What was missing is that only one of the four things a player can actually do
+ * was expressible.
+ *
+ *   reroll    — throw it again. A new random result.
+ *   flip      — the OTHER SIDE of the die: 21 − natural. Determined, so it never re-rolls.
+ *   advantage — roll a SECOND d20 and keep the higher. Lucky. The first die is not discarded,
+ *               which is what separates it from a reroll: a reroll can make the result worse.
+ *   bonus     — ADD dice to the roll that was already made (+1d4, +1d10). Bardic Inspiration,
+ *               Bend Luck. The d20 stands; the total moves.
+ */
 
 export type RerollSource = {
   id: string;
@@ -48,6 +63,8 @@ export type RerollSource = {
   featureActionId?: string;
   /** The action id whose charge/use pool this spends — carried so the caller can spend it. */
   spendActionId?: string;
+  /** For method "bonus": the dice ADDED to the roll already made, e.g. "1d4", "1d10". */
+  bonusDice?: string;
 };
 
 /**
@@ -55,9 +72,22 @@ export type RerollSource = {
  * Anything that does not say otherwise is a true reroll — the common case.
  */
 function methodFromText(text: string | undefined): RerollMethod {
-  return /\b(other side|opposite (?:side|face)|flip the (?:die|dice))\b/i.test(text ?? "")
-    ? "flip"
-    : "reroll";
+  const t = text ?? "";
+  if (/\b(other side|opposite (?:side|face)|flip the (?:die|dice))\b/i.test(t)) return "flip";
+  if (/\badvantage\b/i.test(t)) return "advantage";
+  // "add 1d4 to the roll" — dice ADDED to the roll already made, not a new roll.
+  if (/\badd(?:s|ing)?\b[^.]*[0-9]*d[0-9]+/i.test(t)) return "bonus";
+  return "reroll";
+}
+
+/**
+ * The bonus die a source adds, when it was not stated outright.
+ *
+ * Only ever read for a `bonus` source, and an unreadable one leaves the field empty rather than
+ * guessing a die size — the picker then asks the table instead of inventing a d4.
+ */
+function bonusDiceFromText(text: string | undefined): string | undefined {
+  return /\badd(?:s|ing)?\b[^.]*?([0-9]*d[0-9]+)/i.exec(text ?? "")?.[1];
 }
 
 // ─── Scanner ─────────────────────────────────────────────────────────────────
@@ -99,6 +129,7 @@ export function getRerollSources(
       costLabel: `${remaining}/${item.charges.max} charge${item.charges.max === 1 ? "" : "s"}`,
       itemId: item.id,
       spendActionId: action.id,
+      bonusDice: bonusDiceFromText(`${item.effect.condition ?? ""} ${item.mechanicsText ?? ""}`),
     });
   }
 
@@ -124,6 +155,7 @@ export function getRerollSources(
       costLabel,
       featureActionId: action.id,
       spendActionId: action.id,
+      bonusDice: bonusDiceFromText(`${action.description ?? ""} ${action.metadata?.details ?? ""}`),
     });
   }
 
@@ -137,15 +169,19 @@ export function getRerollSources(
    *
    * Costs nothing and spends nothing: it is a ruling, not a resource.
    */
-  for (const method of ["reroll", "flip"] as RerollMethod[]) {
+  for (const method of ["reroll", "flip", "advantage"] as RerollMethod[]) {
     sources.push({
       id: `dm:approved:${method}`,
       kind: "dm",
-      label: method === "flip" ? "DM Approved — other side of the die" : "DM Approved — reroll",
+      label: method === "flip" ? "DM Approved — other side of the die"
+        : method === "advantage" ? "DM Approved — roll with Advantage"
+        : "DM Approved — reroll",
       method,
       condition: method === "flip"
         ? "Use the opposite face: 21 − the natural roll. Nothing is re-rolled."
-        : "Throw the die again for a new result.",
+        : method === "advantage"
+          ? "Roll a second d20 and keep the higher. The first die is not discarded."
+          : "Throw the die again for a new result.",
       costLabel: "no cost",
     });
   }

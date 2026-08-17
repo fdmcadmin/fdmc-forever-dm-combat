@@ -4868,6 +4868,48 @@ export function ActorCard({
             return;
           }
 
+          /**
+           * ⚠ ADVANTAGE IS NOT A REROLL, AND A BONUS DIE IS NEITHER.
+           *
+           * *"luck lets them add advantage to a roll, there are also feat that let PC add 1dx to a
+           * roll, so if a miss they should be able to use something like this to add to the rolls
+           * before it is committed as a full miss."*
+           *
+           *   advantage — a SECOND d20; the higher of the two stands. A reroll discards the first
+           *               die and can land worse, which is a different and worse deal.
+           *   bonus     — the d20 STANDS and dice are added to the total. Rerolling would throw
+           *               away a roll the player was trying to rescue.
+           *
+           * Both go out as their own labelled request so the table sees which die is which, and
+           * both fire while the result is HELD — before the miss is committed.
+           */
+          if (source.method === "advantage" || source.method === "bonus") {
+            const isAdvantage = source.method === "advantage";
+            const formula = isAdvantage
+              ? (committedRoll.attackFormula ?? "1d20")
+              : (source.bonusDice ?? "1d4");
+            const natural = committedRoll.naturalRoll;
+            onLog({
+              actorName: actor.name, actionName: source.label, tabId: "main",
+              message: isAdvantage
+                ? `${actor.name} uses ${source.label} on ${committedRoll.actionLabel} — rolling a second d20${typeof natural === "number" ? ` against the natural ${natural}` : ""}; keep the higher.`
+                : `${actor.name} uses ${source.label} on ${committedRoll.actionLabel} — adding ${formula} to the roll already made${typeof natural === "number" ? ` (natural ${natural} stands)` : ""}.`,
+            });
+            await onSendDicePlusRequest({
+              protocol: "forever-dm-combat.roll.request.v1" as const,
+              requestId: createDiceRequestId(isAdvantage ? "fdm-adv" : "fdm-bonus", actor.id),
+              source: "Forever DM Combat" as const,
+              actorId: actor.id,
+              actorName: actor.name,
+              actionId: committedRoll.actionId,
+              actionName: `${committedRoll.actionLabel} (${isAdvantage ? "Advantage" : `+${formula}`} — ${source.label})`,
+              formula: labeledDiceFormula(formula, `${committedRoll.actionLabel} ${isAdvantage ? "advantage" : "bonus"}`),
+              outcomeMode: committedRoll.outcomeMode,
+              sentAt: new Date().toISOString(),
+            }).catch(() => undefined);
+            return;
+          }
+
           // Fire the same roll formula again via Dice+
           if (committedRoll?.attackFormula) {
             const bridgeRequestId = createDiceRequestId("fdm-reroll", actor.id);

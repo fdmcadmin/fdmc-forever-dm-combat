@@ -418,6 +418,8 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
               onChange={e => set("rerollMethod", e.target.value as "reroll" | "flip")}
               style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
               <option value="reroll">Reroll — throw it again</option>
+              <option value="advantage">Advantage — second d20, keep the higher</option>
+              <option value="bonus">Add dice to the roll (+1d4, +1d10)</option>
               <option value="flip">Other side of the die (21 − roll)</option>
             </select>
             <span style={{ fontSize: 10, color: "#5a5a6e" }}>
