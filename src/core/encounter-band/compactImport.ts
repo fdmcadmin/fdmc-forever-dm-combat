@@ -101,6 +101,53 @@ export function effectFamily(family: string): EffectFamily | undefined {
   return COMPACT.effect_families.find(f => f.family === family);
 }
 
+// ─── The calibration: what a creature's traits are WORTH ──────────────────────
+//
+// This is the answer to "why would we not put in the things that tell us what a creature can
+// do" — all of it ships in the bundle and none of it needs transcribing by hand. 58 calibrated
+// trait rules, each carrying its own STACK GROUP so the double-count guard is data rather than
+// a name I invented, plus the expected-AC curve for levels 3-20 and the AC contribution bands.
+
+export type TraitRule = {
+  label: string;
+  contribution: number;
+  multiplier: number;
+  /** The double-count key. Two rules sharing one are the SAME effect and must not both apply. */
+  stack_group: string;
+  application: string;
+  scope: string;
+  status: string;
+};
+
+const SUSTAIN = (COMPACT.contract as { sustain?: Record<string, unknown> }).sustain ?? {};
+
+/** All 58 calibrated trait rules. The reference a DM's homebrew trait is priced against. */
+export const TRAIT_RULES: TraitRule[] = (SUSTAIN.trait_rules as TraitRule[]) ?? [];
+
+/** Monster AC the model expects at each party level, 3-20. */
+export const EXPECTED_MONSTER_AC: Record<number, number> =
+  Object.fromEntries(Object.entries((SUSTAIN.expected_monster_ac as Record<string, number>) ?? {})
+    .map(([k, v]) => [Number(k), v]));
+
+/** AC delta → effective-HP contribution. Bands are CUMULATIVE VALUES, not increments. */
+export const AC_CONTRIBUTION: Record<number, number> =
+  Object.fromEntries(Object.entries((SUSTAIN.ac_contribution as Record<string, number>) ?? {})
+    .map(([k, v]) => [Number(k), v]));
+
+/** Find a calibrated rule by its printed label. */
+export function traitRule(label: string): TraitRule | undefined {
+  const key = label.trim().toLowerCase();
+  return TRAIT_RULES.find(r => r.label.trim().toLowerCase() === key);
+}
+
+/**
+ * Every distinct stack group in the calibration — the vocabulary an authored trait can claim.
+ * Two traits on one creature sharing a group are one effect counted twice.
+ */
+export function stackGroups(): string[] {
+  return [...new Set(TRAIT_RULES.map(r => r.stack_group))].sort();
+}
+
 /** Identify a creature the DM named, for reference only — never to supply its stat block. */
 export function srdIdentify(name: string): SrdIndexEntry | undefined {
   const key = name.trim().toLowerCase();

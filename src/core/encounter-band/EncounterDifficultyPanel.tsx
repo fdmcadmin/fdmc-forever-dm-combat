@@ -69,7 +69,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
 
   const roster = useMemo(() => {
-    if (!encounter) return [];
+    if (!encounter) return { roster: [], assumptions: [] };
     const entries = encounter.entries
       .map(entry => ({
         template: monsterLibrary.find(m => m.templateId === entry.templateId),
@@ -78,17 +78,20 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
-    return rosterFromTemplates(entries, partyLevel)
-      .sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity);
+    const built = rosterFromTemplates(entries, partyLevel);
+    return {
+      roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
+      assumptions: built.assumptions,
+    };
   }, [encounter, monsterLibrary, partyLevel]);
 
   const result = useMemo<EncounterResult | null>(() => {
-    if (roster.length === 0) return null;
+    if (roster.roster.length === 0) return null;
     try {
       const party = resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode });
       return simulateEncounter({
         party: { size: party.size, sustain: party.sustain, dpr: party.dpr },
-        roster,
+        roster: roster.roster,
         settings: { damageAllocation: allocation, targetSafetyMargin },
       });
     } catch {
@@ -115,7 +118,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       >
         <span style={{ fontSize: 11, color: "#4f9dff", width: 12, flexShrink: 0 }}>{open ? "▼" : "▶"}</span>
         <span style={{ fontSize: 12, fontWeight: 600, flex: 1, minWidth: 0 }}>📊 Encounter Checker</span>
-        <span style={{ fontSize: 10, color: "#666", flexShrink: 0 }}>workbook v2</span>
+        <span style={{ fontSize: 10, color: "#666", flexShrink: 0 }}>workbook v3</span>
       </button>
 
       {open && (
@@ -251,6 +254,24 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                         {" ("}{((result.balanceAdjustment.percentChange ?? 0) * 100).toFixed(0)}%
                         {", "}{(result.balanceAdjustment.baseFourPcHpChange ?? 0).toFixed(0)} at the 4P base{")"}
                       </span>
+                    </div>
+                  )}
+
+                  {/* NOTHING IS SILENT — *"if the checker has no idea how to parse something
+                      it will tell the dm to cal[culate] that damage."* A silent OMISSION
+                      reaches the total exactly as unchallenged as a silent substitute would.
+                      A well-formed stat block should produce NONE of these; they mean
+                      something is written wrong or is an inferred action. */}
+                  {roster.assumptions.length > 0 && (
+                    <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 2, color: "#c9a227" }}>
+                        {roster.assumptions.length} thing{roster.assumptions.length === 1 ? "" : "s"} the checker could not price on its own
+                      </div>
+                      {roster.assumptions.map((a, i) => (
+                        <div key={i} style={{ color: a.flag === "NEEDS DM INPUT" ? "#e07b39" : "#8a8aa0" }}>
+                          [{a.flag}] {a.creature} · {a.field} — {a.detail}
+                        </div>
+                      ))}
                     </div>
                   )}
 
