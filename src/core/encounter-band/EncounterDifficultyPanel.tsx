@@ -73,6 +73,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
    */
   const [targetAc, setTargetAc] = useState<number>(DEFAULT_PARTY_DEFENCE.ac);
   const [targetSave, setTargetSave] = useState<number>(DEFAULT_PARTY_DEFENCE.saveBonus);
+  /** Share of the party's sustain already spent when this fight starts. 0 = fresh. */
+  const [arrivingSpent, setArrivingSpent] = useState<number>(0);
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
 
@@ -93,24 +95,48 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     };
   }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave]);
 
-  const result = useMemo<EncounterResult | null>(() => {
-    if (roster.roster.length === 0) return null;
+  /**
+   * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
+   * after the two encounters before it, which is exactly why a 35-45% gate still sends a party
+   * to a rest. `customSustain` is the contract's OWN input for this; nothing here models
+   * depletion, it just hands the checker the sustain the party actually walks in with.
+   */
+  const profile = useMemo(() => {
     try {
-      const party = resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode });
+      const full = resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode });
+      if (arrivingSpent <= 0) return full;
+      return resolvePartyProfile({
+        level: partyLevel, size: partySize, equipmentMode,
+        customSustain: full.sustain * (1 - arrivingSpent),
+      });
+    } catch { return null; }
+  }, [partyLevel, partySize, equipmentMode, arrivingSpent]);
+
+  const result = useMemo<EncounterResult | null>(() => {
+    if (roster.roster.length === 0 || !profile) return null;
+    try {
       return simulateEncounter({
-        party: { size: party.size, sustain: party.sustain, dpr: party.dpr },
+        party: { size: profile.size, sustain: profile.sustain, dpr: profile.dpr },
         roster: roster.roster,
         settings: { damageAllocation: allocation, targetSafetyMargin },
       });
     } catch {
       return null;
     }
-  }, [roster, partyLevel, partySize, equipmentMode, allocation, targetSafetyMargin]);
+  }, [roster, profile, allocation, targetSafetyMargin]);
 
-  const profile = useMemo(() => {
-    try { return resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode }); }
-    catch { return null; }
-  }, [partyLevel, partySize, equipmentMode]);
+  /**
+   * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
+   * that did not arrive full. Both read off the simulation's own per-round monster damage; no
+   * separate arithmetic.
+   */
+  const partyClock = useMemo(() => {
+    if (!result || !profile) return { thisFight: 0, cumulative: 0 };
+    const fullSustain = profile.sustain / Math.max(0.01, 1 - arrivingSpent);
+    const spent = result.rounds.reduce((s, r) => s + (r.monsterDamage ?? 0), 0);
+    const thisFight = fullSustain > 0 ? spent / fullSustain : 0;
+    return { thisFight, cumulative: arrivingSpent + thisFight };
+  }, [result, profile, arrivingSpent]);
 
   const fatal = result?.fatalRound ?? null;
   const headline = !result ? { text: "no roster", color: "#8a6a2a" }
@@ -190,6 +216,16 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     onChange={e => setTargetSafetyMargin(Number(e.target.value))}
                     style={{ width: 60, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
                 </div>
+                <div title="What the party has already spent when this fight starts. A gate is fought after the encounters before it, not fresh.">
+                  <label style={label}>Arrives spent</label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {[0, 0.25, 0.4, 0.6].map(v => (
+                      <button key={v} type="button" onClick={() => setArrivingSpent(v)} style={chip(arrivingSpent === v)}>
+                        {v === 0 ? "fresh" : `${v * 100}%`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div title="Your table's own numbers. The workbook publishes the hit and save formulas but no party AC table, so this is yours to enter — it is never assumed from your level.">
                   <label style={label}>Party AC / save</label>
                   <div style={{ display: "flex", gap: 4 }}>
@@ -257,6 +293,28 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                         {" · sustain "}{profile.sustain.toFixed(0)}
                       </div>
                     </div>
+                  </div>
+
+                  {/* THE PARTY CLOCK — what this fight COSTS, as a share of what the party has.
+                      Christopher, 2026-08-16: a gate landing at 35-45% *"would still make a
+                      party consider resting if they have used the resources against 2
+                      encounters and then hit that gate."* The rest decision is CUMULATIVE, so
+                      the cost of one fight is only half the reading — the other half is what
+                      the party has left when it walks in, which is the control below. */}
+                  <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
+                    <span style={{ color: "#8a8aa0" }}>PARTY CLOCK </span>
+                    <strong style={{ color: partyClock.thisFight >= 0.5 ? "#e07b39" : "#7be08a" }}>
+                      {(partyClock.thisFight * 100).toFixed(0)}%
+                    </strong>
+                    <span style={{ color: "#555" }}> of a full party's sustain spent on this fight</span>
+                    {arrivingSpent > 0 && (
+                      <>
+                        <span style={{ color: "#555" }}> · arriving {(arrivingSpent * 100).toFixed(0)}% down → </span>
+                        <strong style={{ color: partyClock.cumulative >= 1 ? "#ff4444" : partyClock.cumulative >= 0.75 ? "#e07b39" : "#7be08a" }}>
+                          {(partyClock.cumulative * 100).toFixed(0)}% spent by the end
+                        </strong>
+                      </>
+                    )}
                   </div>
 
                   {/* Balance adjustment — the contract's own recommendation output. */}
