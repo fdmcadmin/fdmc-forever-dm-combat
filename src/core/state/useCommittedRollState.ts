@@ -357,6 +357,39 @@ export function useCommittedRollState(actors: Actor[]) {
     });
   }, [setAndPersist]);
 
+  /**
+   * Merge a DURING-ACTION bonus effect into the roll that is already open.
+   *
+   * ⚠ NOT A SECOND ROLL. A bonus action taken during a main action has to resolve WITH it —
+   * Perforating Shot's damage IS the weapon's, so starting a fresh roll would throw away the very
+   * number it needs. Patching the live roll keeps one damage figure the table rolls once.
+   *
+   * Only ever touches the fields a rider legitimately contributes, and only while a roll exists.
+   */
+  const mergeIntoCommittedRoll = useCallback((actorId: string, patch: {
+    damageFormula?: string;
+    damageSource?: "weapon";
+    successDamage?: string;
+    saveDc?: string;
+  }) => {
+    setAndPersist((current) => {
+      const existing = current[actorId];
+      if (!existing) return current;
+      return {
+        ...current,
+        [actorId]: {
+          ...existing,
+          ...(patch.damageFormula?.trim() ? { damageFormula: patch.damageFormula.trim() } : {}),
+          ...(patch.damageSource ? { damageSource: patch.damageSource } : {}),
+          ...(patch.successDamage ? { successDamage: patch.successDamage } : {}),
+          ...(patch.saveDc?.trim() ? { saveDc: patch.saveDc.trim() } : {}),
+          // A rider that adds damage must not leave the roll stuck with nothing to roll.
+          hasDamageChoice: existing.hasDamageChoice || Boolean(patch.damageFormula?.trim()),
+        },
+      };
+    });
+  }, [setAndPersist]);
+
   const clearCommittedRoll = useCallback((actorId: string) => {
     setAndPersist((current) => ({
       ...current,
@@ -379,6 +412,7 @@ export function useCommittedRollState(actors: Actor[]) {
     chooseCommittedRollOutcome,
     chooseCommittedRollDamage,
     markCommittedRollBridgeSent,
+    mergeIntoCommittedRoll,
     clearCommittedRoll,
     resetAllCommittedRolls,
   };

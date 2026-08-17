@@ -909,6 +909,7 @@ export default function App() {
     setCommittedRollResult,
     chooseCommittedRollOutcome,
     chooseCommittedRollDamage,
+    mergeIntoCommittedRoll,
     markCommittedRollBridgeSent,
     clearCommittedRoll,
   } = useCommittedRollState(isDmMode ? bundledActors : seatActors);
@@ -3187,6 +3188,7 @@ export default function App() {
                 actor={shown}
                 seatColor={seatColorById[shown.id]}
                 seatNames={playerSeatNames}
+                onMergeIntoCommittedRoll={(patch) => mergeIntoCommittedRoll(shown.id, patch)}
                 hp={getActorHp(shown.id)}
                 actionState={getActionState(shown)}
                 concentration={getActorConcentration(shown)}
@@ -4118,6 +4120,7 @@ export default function App() {
         }}
         seatColor={seatColorById[actorToShow.id]}
                 seatNames={playerSeatNames}
+                onMergeIntoCommittedRoll={(patch) => mergeIntoCommittedRoll(actorToShow.id, patch)}
         hp={hp}
         actionState={actionState}
         concentration={concentration}
@@ -4487,6 +4490,7 @@ export default function App() {
                 actor={focusedActor}
                 seatColor={seatColorById[focusedActor.id]}
                 seatNames={playerSeatNames}
+                onMergeIntoCommittedRoll={(patch) => mergeIntoCommittedRoll(focusedActor.id, patch)}
                 hp={focusedHp}
                 actionState={focusedActionState}
                 concentration={focusedConcentration}

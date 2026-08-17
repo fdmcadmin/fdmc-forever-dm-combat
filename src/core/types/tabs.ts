@@ -149,6 +149,33 @@ export type ActorActionMetadata = {
    */
   damageSource?: "weapon";
   /**
+   * THIS BONUS ACTION IS TAKEN *DURING* A MAIN ACTION, not after it.
+   *
+   * Christopher, 2026-08-17: *"we are creating the ability to use bonus actions during a main
+   * action so things like this and other bonus spells can be triggered during a main action,
+   * because this and other spell say hit or miss, not miss then trigger a bonus spell that can do
+   * nothing expect take a spell slot and someone has to roll manually."*
+   *
+   * The spells themselves say so — Perforating Shot is *"1 bonus action, which you take
+   * immediately after hitting or missing with a ranged attack using a weapon"*, and its damage is
+   * the weapon's. Resolving the attack FIRST and casting afterwards throws away the very thing the
+   * spell needs: which weapon fired and what it rolled. So an action flagged here is offered while
+   * the attack is still in flight, and its effect merges INTO that roll — one damage number, rolled
+   * once, with the weapon's own dice already in it.
+   *
+   * `attack` is the only trigger so far; the field is named for the shape rather than the spell so
+   * a save-triggered or check-triggered rider can join later without renaming anything.
+   */
+  triggersDuring?: "attack";
+  /**
+   * WHEN it may fire. Read from the spell's printed text, never assumed:
+   *   "after hitting or missing"  → `either`
+   *   "after a weapon hit"        → `hit`   (Ensnaring Strike)
+   *   a miss-only rider           → `miss`
+   * Defaulting to `either` would offer Ensnaring Strike on a miss, which its text forbids.
+   */
+  triggerOn?: "hit" | "miss" | "either";
+  /**
    * What a SUCCESSFUL save still takes — "half", or an explicit formula.
    *
    * ⚠ Never assumed. Half is only half when the spell says half; plenty of saves are all-or-

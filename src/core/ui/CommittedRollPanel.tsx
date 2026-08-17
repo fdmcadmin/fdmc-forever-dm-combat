@@ -62,6 +62,10 @@ type CommittedRollPanelProps = {
   onToggleSeatRollsMonsterNat1?: (on: boolean) => void;
   /** Ask that seat to roll the monster's d6. Naming a seat does not hand over resolution. */
   onAskSeatToRollNat1?: (seatName: string) => void;
+  /** Bonus actions that may be taken DURING this attack, already filtered by hit/miss. */
+  duringActionBonuses?: { id: string; label: string }[];
+  /** Fire one — it spends its own economy and slot, and merges its effect into THIS roll. */
+  onTriggerDuringAction?: (actionId: string) => void;
 };
 
 function formatCosts(costs: ActionCost[]) {
@@ -329,6 +333,8 @@ export function CommittedRollPanel({
   letSeatRollMonsterNat1,
   onToggleSeatRollsMonsterNat1,
   onAskSeatToRollNat1,
+  duringActionBonuses,
+  onTriggerDuringAction,
   onResolveCriticalFailure,
 }: CommittedRollPanelProps) {
   const [showRerollPicker, setShowRerollPicker] = useState(false);
@@ -860,6 +866,29 @@ export function CommittedRollPanel({
                 onHoldResult(result);
               }}
             />
+          </div>
+        )}
+
+        {/* ⚠ BONUS ACTIONS TAKEN *DURING* THIS ATTACK, offered while the roll is still in flight.
+            *"we are creating the ability to use bonus actions during a main action… not miss then
+            trigger a bonus spell that can do nothing expect take a spell slot and someone has to
+            roll manually."*
+
+            Offered once the die is known (`result-held` onward) because the trigger depends on
+            whether it hit or missed — and dropped once the roll is finished, since "during" has
+            passed. Choosing one merges its effect into THIS roll, so the weapon's own damage is
+            already in the number and the table rolls once. */}
+        {(committedRoll.phase === "result-held" || committedRoll.phase === "awaiting-damage")
+          && (duringActionBonuses?.length ?? 0) > 0 && (
+          <div className="roll-prompt-row" style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+            <span style={{ fontSize: 10, color: "#8a8aa0" }}>During this attack:</span>
+            {duringActionBonuses!.map(b => (
+              <button key={b.id} type="button" className="secondary-button compact"
+                title={`${b.label} — taken during this attack. Its effect merges into this roll, using the weapon's own damage.`}
+                onClick={() => onTriggerDuringAction?.(b.id)}>
+                ⚡ {b.label}
+              </button>
+            ))}
           </div>
         )}
 

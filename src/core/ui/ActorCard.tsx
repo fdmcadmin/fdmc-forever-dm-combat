@@ -80,6 +80,13 @@ type ActorCardProps = {
    * a player. Opt-in, and only ever a monster's die — see `CommittedRollPanel`.
    */
   seatNames?: string[];
+  /** Merge a during-action bonus effect INTO the live committed roll (damage, save, half). */
+  onMergeIntoCommittedRoll?: (patch: {
+    damageFormula?: string;
+    damageSource?: "weapon";
+    successDamage?: string;
+    saveDc?: string;
+  }) => void;
   onHpChange: (nextHp: HitPoints) => void;
   onResetHp: () => void;
   onReadyActionCosts: (costs: ActionCost[], readiedKey: string) => void;
@@ -819,6 +826,7 @@ export function ActorCard({
   turnResetVersion,
   seatColor,
   seatNames,
+  onMergeIntoCommittedRoll,
   onHpChange,
   onResetHp,
   onReadyActionCosts,
@@ -1144,6 +1152,30 @@ export function ActorCard({
   const isCompanionCard = actor.kind === "companion";
   const levelDisplay = isCompanionCard && actor.level <= 0 ? "Ref" : `${actor.level}`;
   const pinnedReactions = useMemo(() => getPinnedReactionShortcuts(actor), [actor]);
+
+  /**
+   * Bonus actions this character may take DURING the attack currently in flight.
+   *
+   * Filtered by what the die did, from the spell's own printed trigger: Perforating Shot is
+   * "after hitting or missing" so it shows either way; Ensnaring Strike is "after a weapon hit"
+   * so it must NOT be offered on a miss. A spell with no trigger authored is never offered here —
+   * an unset field means the text did not say, and guessing would invent a rule.
+   */
+  const duringActionBonuses = useMemo(() => {
+    if (!committedRoll || committedRoll.outcomeMode !== "attack-roll") return [];
+    const hit = committedRoll.outcome === "hit" || committedRoll.isCrit;
+    const missed = committedRoll.outcome === "miss" || committedRoll.isCriticalFailure;
+    return [...(actor.tabs.bonus ?? []), ...(actor.tabs.spells ?? [])]
+      .filter(a => a.metadata?.triggersDuring === "attack")
+      .filter(a => {
+        const on = a.metadata?.triggerOn;
+        if (on === "either") return true;
+        if (on === "hit") return hit;
+        if (on === "miss") return missed;
+        return false;
+      })
+      .map(a => ({ id: a.id, label: a.label }));
+  }, [actor.tabs.bonus, actor.tabs.spells, committedRoll]);
 
   /**
    * The weapon attacks an Opportunity Attack can be made WITH.
@@ -4732,6 +4764,38 @@ export function ActorCard({
         isPlayerMode={isPlayerMode}
         isMonsterActor={actor.kind === "monster"}
         seatNames={seatNames}
+        duringActionBonuses={duringActionBonuses}
+        onTriggerDuringAction={(actionId) => {
+          const spell = [...(actor.tabs.bonus ?? []), ...(actor.tabs.spells ?? [])]
+            .find(a => a.id === actionId);
+          if (!spell || !committedRoll) return;
+          /**
+           * ⚠ IT RIDES THE ROLL THAT IS ALREADY OPEN. Spending its economy and slot through the
+           * normal use path, then MERGING its damage into the live roll — rather than starting a
+           * second roll — is what makes "during a main action" true rather than decorative. The
+           * weapon's own damage is already in that roll, which is exactly what a spell whose
+           * damage IS the weapon's needs and could never get by casting afterwards.
+           */
+          handleUseAction({ action: spell, tabId: "bonus", costs: spell.economyCost ?? ["bonus"] });
+          const md = spell.metadata ?? {};
+          const rider = md.upcastDamage?.trim();
+          onMergeIntoCommittedRoll?.({
+            // A weapon-sourced spell keeps the roll's existing damage (the weapon's) and adds its
+            // own rider on top; anything else contributes its printed damage.
+            damageFormula: md.damageSource === "weapon"
+              ? combineRollFormulas([committedRoll.damageFormula ?? "", resolveFormulaVars(rider ?? "", actor, deriveActorStats(actor, undefined, status), status)])
+              : combineRollFormulas([committedRoll.damageFormula ?? "", resolveFormulaVars(md.damage ?? "", actor, deriveActorStats(actor, undefined, status), status)]),
+            damageSource: md.damageSource ?? committedRoll.damageSource,
+            successDamage: md.successDamage ?? committedRoll.successDamage,
+            saveDc: resolveFormulaVars(md.saveDc ?? "", actor, deriveActorStats(actor, undefined, status), status) || committedRoll.saveDc,
+          });
+          onLog({
+            actorName: actor.name,
+            actionName: spell.label,
+            tabId: "main",
+            message: `${actor.name} uses ${spell.label} during the attack — its effect resolves with this roll.`,
+          });
+        }}
         letSeatRollMonsterNat1={letSeatRollNat1}
         onToggleSeatRollsMonsterNat1={(on) => {
           setLetSeatRollNat1(on);
