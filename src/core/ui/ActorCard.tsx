@@ -4838,25 +4838,31 @@ export function ActorCard({
           <option value="">— Declare a standard action —</option>
           {STANDARD_COMBAT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        {/* The Nat 1 tables, readable WITHOUT having rolled one. Before this the d6 picker in
-            CommittedRollPanel was the only way to see either table, so neither could be looked
-            up in advance. Sits here because this row is on every card and every tab. */}
-        <button
-          type="button"
-          onClick={() => setShowCritFailTables(true)}
-          title="Natural 1 failure tables — both the first and second tables, for melee, ranged and spell attacks alike"
-          style={{
-            flexShrink: 0, fontSize: 11, padding: "3px 8px", background: "#111",
-            border: "1px solid #3a3a52", borderRadius: 4, color: "#e07b39", cursor: "pointer",
-          }}
-        >⚀ Nat 1</button>
+        {/* The Nat 1 tables, readable WITHOUT having rolled one — the d6 picker in
+            CommittedRollPanel used to be the only way to see either table.
+
+            ⚠ DM SEATS ONLY. I put this on every card in 0.7.9.8, players included, which is
+            backwards: the complication is the DM's to choose, and handing a player the table
+            invites them to shop for their own punishment. A player's nat 1 is a plain miss. */}
+        {!isPlayerMode && (
+          <button
+            type="button"
+            onClick={() => setShowCritFailTables(true)}
+            title="Natural 1 failure tables — both the first and second tables, for melee, ranged and spell attacks alike"
+            style={{
+              flexShrink: 0, fontSize: 11, padding: "3px 8px", background: "#111",
+              border: "1px solid #3a3a52", borderRadius: 4, color: "#e07b39", cursor: "pointer",
+            }}
+          >⚀ Nat 1</button>
+        )}
       </div>
 
-      <CriticalFailureReference
-        open={showCritFailTables}
-        onClose={() => setShowCritFailTables(false)}
-        playerSafe={isPlayerMode && actor.kind !== "monster"}
-      />
+      {!isPlayerMode && (
+        <CriticalFailureReference
+          open={showCritFailTables}
+          onClose={() => setShowCritFailTables(false)}
+        />
+      )}
 
       {activeTab === "notes" ? (
         <ActorNotesPanel

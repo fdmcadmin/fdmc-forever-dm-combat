@@ -395,6 +395,18 @@ export function CommittedRollPanel({
 
   const naturalStatus = naturalRollStatus(committedRoll);
   const isAttackCriticalFailure = committedRoll.outcomeMode === "attack-roll" && committedRoll.isCriticalFailure;
+  /**
+   * ⚠ A PLAYER NEVER SEES A NAT 1 TABLE FOR THEIR OWN ROLL. Christopher, 2026-08-17:
+   * *"nat 1 rolled table needs removed from a player roll and the only time any PC should see a
+   * nat 1 table is when a monster rolls a nat one."*
+   *
+   * The complication is the DM's to choose. Showing a player the d6 picker invites them to roll
+   * their own punishment and turns a miss into a negotiation. On a player seat the nat 1 stays
+   * a plain miss; a MONSTER's nat 1 is table-facing, because those create openings the party
+   * is meant to see.
+   */
+  const critFailBelongsToTable = !isPlayerMode || isMonsterActor;
+  const showCriticalFailureBox = isAttackCriticalFailure && critFailBelongsToTable;
   const isAttackCrit = committedRoll.outcomeMode === "attack-roll" && committedRoll.isCrit;
   const hasNaturalGateNotice = committedRoll.outcomeMode === "attack-roll" && committedRoll.phase !== "committed" && Boolean(committedRoll.rollResult);
 
@@ -404,7 +416,7 @@ export function CommittedRollPanel({
   const showDevTestRoll = canShowDevTestRoll && committedRoll.requiresRollResult && !bridgeResultReceived;
   const showMockTools = isBuilderMode && committedRoll.requiresRollResult && !bridgeResultReceived && mockToolsOpen;
   const attackCritAutoHit = isAttackCrit && committedRoll.rulesProfile.naturalAttack20AutoHits;
-  const showOutcomePrompt = committedRoll.phase === "result-held" && !isAttackCriticalFailure && !attackCritAutoHit;
+  const showOutcomePrompt = committedRoll.phase === "result-held" && !showCriticalFailureBox && !attackCritAutoHit;
   // Show reroll prompt if:
   //   - old generic flag is set, OR
   //   - there are available reroll sources from items/features
@@ -623,7 +635,7 @@ export function CommittedRollPanel({
           </div>
         )}
 
-        {isAttackCriticalFailure && committedRoll.phase === "result-held" && (
+        {showCriticalFailureBox && committedRoll.phase === "result-held" && (
           <div className="critical-failure-pending-box">
             <span className="committed-roll-label">Nat 1 failure check</span>
             <p>

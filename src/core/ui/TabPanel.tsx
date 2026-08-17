@@ -266,6 +266,12 @@ function hasAttachedDice(action: ActorAction) {
   if (mode === "passive" || mode === "utility") return false;
 
   const metadata = action.metadata;
+  /**
+   * ⚠ A DC-CHECK'S "DICE" ARE THE TARGET'S SAVE. Shield Bash carries a STR DC 14 and no dice
+   * of its own, so a dice-only test said it had nothing to present and it rendered as a dead
+   * row. The thing to resolve is the save prompt.
+   */
+  if (mode === "dc-check" && metadata?.saveDc?.trim()) return true;
   return Boolean(
     hasRollableFormula(metadata?.attack) ||
       hasRollableFormula(metadata?.damage) ||
@@ -274,13 +280,29 @@ function hasAttachedDice(action: ActorAction) {
   );
 }
 
+/**
+ * ⚠ "SILENT" IS ABOUT THE LOG, NOT ABOUT WHETHER IT ROLLS — and conflating the two is why
+ * every FREE action was broken. Christopher, 2026-08-17: *"most if not all free actions are the
+ * ones that are broke, psionic strike, shield bash."*
+ *
+ * Both are authored the same way: `economyCost: []` (free) plus `logMode: "silent"`. An empty
+ * cost means the click cannot READY anything, so the row's only way to resolve is the direct
+ * Roll button — and this function refused to show one to any silent action. Click it and
+ * nothing happened, twice over: no roll, and no log entry either, because silent.
+ *
+ * Only an `additive` rider is genuinely silent AND non-rolling: it arms itself onto a later
+ * roll. Everything else that is silent still has something to resolve.
+ */
 function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, costs: ActionCost[], _outcomeMode: CommittedRollOutcomeMode) {
-  if (costs.length > 0 || action.logMode === "silent") {
+  if (costs.length > 0) {
     return false;
   }
   // No Roll button for the two non-rolling modes.
   const om = normalizeOutcomeMode(action.metadata?.outcomeMode);
   if (om === "passive" || om === "utility") {
+    return false;
+  }
+  if (action.logMode === "silent" && om === "additive") {
     return false;
   }
   return hasAttachedDice(action);
