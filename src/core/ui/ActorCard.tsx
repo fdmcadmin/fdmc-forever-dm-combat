@@ -3967,6 +3967,10 @@ export function ActorCard({
       attackFormula: resolvedCandidate.attackFormula,
       saveDc: resolvedCandidate.saveDc,
       damageFormula: resolvedCandidate.damageFormula,
+      // Carried so the damage step can say whether the formula IS the damage or is ADDED to
+      // the weapon's, and whether a made save still takes something.
+      damageSource: entry.action.metadata?.damageSource,
+      successDamage: entry.action.metadata?.successDamage,
       critDamageFormula: resolvedCandidate.critDamageFormula,
       critThreshold: resolvedCandidate.critThreshold,
       bridgeRequestId,
@@ -4070,6 +4074,10 @@ export function ActorCard({
       attackFormula: resolvedCandidate.attackFormula,
       saveDc: resolvedCandidate.saveDc,
       damageFormula: resolvedCandidate.damageFormula,
+      // Carried so the damage step can say whether the formula IS the damage or is ADDED to
+      // the weapon's, and whether a made save still takes something.
+      damageSource: entry.action.metadata?.damageSource,
+      successDamage: entry.action.metadata?.successDamage,
       critDamageFormula: resolvedCandidate.critDamageFormula,
       critThreshold: resolvedCandidate.critThreshold,
       bridgeRequestId,

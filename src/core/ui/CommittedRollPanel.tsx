@@ -869,10 +869,17 @@ export function CommittedRollPanel({
               <button className="roll-prompt-button" type="button" onClick={() => onChooseDamage("damage")}>
                 {/* A DC-check with no authored formula still reaches this step (see
                     useCommittedRollState) so the save does not dead-end. The label says which
-                    case it is, because "Damage / Effect" with nothing after it looks broken. */}
-                Damage / Effect {committedRoll.damageFormula
-                  ? `(${committedRoll.damageFormula})`
-                  : "— roll it at the table"}
+                    case it is, because "Damage / Effect" with nothing after it looks broken —
+                    and when the damage is the WEAPON's, the rider must read as an ADDITION or a
+                    player casting Perforating Shot at L2 rolls 1d8 instead of the weapon plus 1d8. */}
+                Damage / Effect {committedRoll.damageSource === "weapon"
+                  ? `(the weapon's damage${committedRoll.damageFormula ? ` + ${committedRoll.damageFormula}` : ""})`
+                  : committedRoll.damageFormula
+                    ? `(${committedRoll.damageFormula})`
+                    : "— roll it at the table"}
+                {committedRoll.successDamage
+                  ? ` · ${committedRoll.successDamage === "half" ? "half on a save" : committedRoll.successDamage + " on a save"}`
+                  : ""}
               </button>
             )}
             {committedRoll.isCrit && committedRoll.hasCritDamageChoice && (

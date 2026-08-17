@@ -47,6 +47,10 @@ export type CommittedRollState = {
   attackFormula?: string;
   saveDc?: string;
   damageFormula?: string;
+  /** The damage is the WEAPON's, so any formula here is an ADDITION to it, not the total. */
+  damageSource?: "weapon";
+  /** What a successful save still takes — "half", or a formula. Never assumed. */
+  successDamage?: string;
   critDamageFormula?: string;
   outcome?: CommittedRollOutcome;
   damageChoice?: CommittedRollDamageChoice;
@@ -65,6 +69,10 @@ export type StartCommittedRollInput = {
   attackFormula?: string;
   saveDc?: string;
   damageFormula?: string;
+  /** The damage is the WEAPON's, so any formula here is an ADDITION to it, not the total. */
+  damageSource?: "weapon";
+  /** What a successful save still takes — "half", or a formula. Never assumed. */
+  successDamage?: string;
   critDamageFormula?: string;
   critThreshold?: number;
   rulesProfile?: CombatRulesProfile;

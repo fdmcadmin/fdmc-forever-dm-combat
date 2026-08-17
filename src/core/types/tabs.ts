@@ -137,6 +137,25 @@ export type ActorActionMetadata = {
    * ray (`attackRollsPerLevel`), not dice; setting both would double-count.
    */
   upcastDamage?: string;
+  /**
+   * THE DAMAGE IS THE WEAPON'S, not a printed die — so `damage` is legitimately empty and
+   * `upcastDamage` is what gets ADDED to it, rather than the whole amount.
+   *
+   * Perforating Shot is the case: *"Each creature within the Line makes a Dexterity saving throw,
+   * taking Force damage equal to the weapon's normal damage"* and *"the weapon's damage increases
+   * by 1d8 for each slot level above 1."* The app cannot know which weapon fired, so the base is
+   * rolled at the table — but without this flag the upcast rider looks like the TOTAL, and a
+   * player casting at L2 would roll 1d8 instead of the weapon's damage plus 1d8.
+   */
+  damageSource?: "weapon";
+  /**
+   * What a SUCCESSFUL save still takes — "half", or an explicit formula.
+   *
+   * ⚠ Never assumed. Half is only half when the spell says half; plenty of saves are all-or-
+   * nothing, and defaulting to half would quietly halve those. Creature parsing has carried this
+   * distinction since row 10; PC actions had no field for it at all.
+   */
+  successDamage?: string;
   diceLabel?: string;
   initiativeBonus?: number;
   /** Equipment-tab items only: false = carried but NOT equipped (its stat effects /
