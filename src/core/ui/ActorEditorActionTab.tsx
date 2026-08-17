@@ -102,6 +102,8 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     weaponBuffDamage: action.metadata?.weaponBuffDamage,
     weaponBuffAttack: action.metadata?.weaponBuffAttack,
     turnRider: action.metadata?.turnRider,
+    isRerollSource: action.metadata?.additive === "reroll" || (action.tags ?? []).includes("reroll") || undefined,
+    rerollMethod: action.metadata?.rerollMethod as "reroll" | "flip" | undefined,
   };
 }
 
@@ -395,6 +397,36 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
           arms a PERSISTENT chip that adds this to weapon attacks until it ends. Use for
           Rage, Hunter's Mark, Channel Divinity damage. Pair with "Spends resource" above so
           the pool counts down on use; it auto-clears at End Combat. Numbers/dice only. */}
+      {/* ⚠ REROLL SOURCE — a feat like Lucky. The scanner has always looked for a "reroll" tag,
+          and nothing in the editor ever set one, so a Lucky feat on a sheet could not reach the
+          reroll picker no matter how its text was written.
+
+          The METHOD is chosen rather than read from the description, because "use the other side
+          of the die" resolves to a DETERMINED value (21 − the natural) while a reroll is random —
+          inferring the wrong one silently changes what the feat does. */}
+      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" checked={Boolean(draft.isRerollSource)}
+            onChange={e => set("isRerollSource", e.target.checked || undefined)} />
+          🎲 This can reroll a d20
+          <span style={{ color: "#555", fontSize: 10 }}>— offers it in the reroll picker (Lucky, Bend Luck)</span>
+        </label>
+        {draft.isRerollSource && (
+          <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
+            Method
+            <select value={draft.rerollMethod ?? "reroll"}
+              onChange={e => set("rerollMethod", e.target.value as "reroll" | "flip")}
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+              <option value="reroll">Reroll — throw it again</option>
+              <option value="flip">Other side of the die (21 − roll)</option>
+            </select>
+            <span style={{ fontSize: 10, color: "#5a5a6e" }}>
+              Pair with "Spends resource" above so using it counts down the pool.
+            </span>
+          </label>
+        )}
+      </div>
+
       {draft.tab !== "spell" && (
         <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
           <label style={{ fontSize: 12, display: "block" }}>

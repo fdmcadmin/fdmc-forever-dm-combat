@@ -67,6 +67,10 @@ export type PcActionDraft = {
   weaponBuffAttack?: string;
   /** Once-per-turn rider: arms a chip the player claims, refreshed at the start of their turn. */
   turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string };
+  /** This feature can reroll a d20 — surfaced in the reroll picker (Lucky, Bend Luck). */
+  isRerollSource?: boolean;
+  /** Throw it again, or use the other side of the die (21 - roll). Chosen, never inferred. */
+  rerollMethod?: "reroll" | "flip";
 };
 
 export type PcActorAction = PcActionDraft & {

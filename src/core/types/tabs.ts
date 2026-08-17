@@ -308,6 +308,8 @@ export type ActorActionMetadata = {
    *  through it (clickable additive on spell attack / damage rolls). */
   spellFocusAttack?: string;
   spellFocusDamage?: string;
+  /** How a reroll source changes the roll: "reroll" or "flip" (the other side of the die). */
+  rerollMethod?: string;
   /** Shift to the spell SAVE DC from the same focus ("+1"). The DC is a printed target, so
    *  this moves the number rather than appending a term to a roll. */
   spellFocusSaveDc?: string;

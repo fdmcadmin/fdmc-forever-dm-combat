@@ -92,7 +92,9 @@ export function getRerollSources(
       id: `item:${item.id}`,
       kind: "item",
       label: item.name,
-      method: methodFromText(`${item.effect.condition ?? ""} ${item.mechanicsText ?? ""} ${item.description ?? ""}`),
+      // An explicit choice beats reading the prose — see EquipmentEffect.rerollMethod.
+      method: item.effect.rerollMethod
+        ?? methodFromText(`${item.effect.condition ?? ""} ${item.mechanicsText ?? ""} ${item.description ?? ""}`),
       condition: item.effect.condition,
       costLabel: `${remaining}/${item.charges.max} charge${item.charges.max === 1 ? "" : "s"}`,
       itemId: item.id,
@@ -116,7 +118,8 @@ export function getRerollSources(
       id: `feature:${action.id}`,
       kind: "feature",
       label: action.label,
-      method: methodFromText(`${action.description ?? ""} ${action.metadata?.details ?? ""}`),
+      method: (action.metadata?.rerollMethod as RerollMethod | undefined)
+        ?? methodFromText(`${action.description ?? ""} ${action.metadata?.details ?? ""}`),
       condition: action.description ?? action.metadata?.details,
       costLabel,
       featureActionId: action.id,

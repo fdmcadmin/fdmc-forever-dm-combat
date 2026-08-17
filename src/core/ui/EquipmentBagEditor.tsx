@@ -41,6 +41,12 @@ export type EquipmentEffect = {
   value?: string;
   /** Condition that must be met to use e.g. "cantrip attack or damage roll" */
   condition?: string;
+  /**
+   * For `reroll`: HOW it changes the roll — throw again, or use the other side of the die
+   * (21 − the natural). Explicit because reading it out of prose is a guess, and a wrong guess
+   * silently turns a determined value into a random one. Absent falls back to the text.
+   */
+  rerollMethod?: "reroll" | "flip";
 };
 
 export type EquipmentCharges = {
@@ -1065,6 +1071,48 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
           </label>
         </div>
       )}
+
+      {/* ⚠ REROLL SOURCE — the option that had no way to be authored. The scanner has always
+          looked for `effect.type === "reroll"`, and NEITHER item editor ever offered it, so the
+          only reroll-capable item in the whole library was one seeded in code. Every reroll on a
+          live sheet — a Staring-Knot Wand, a Clarity Hood — was invisible to the picker.
+
+          The METHOD is chosen, not read from the description: prose-reading is a guess, and
+          guessing "other side of the die" turns a determined value into a random one. */}
+      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" checked={draft.effect?.type === "reroll"}
+            onChange={e => set("effect", e.target.checked
+              ? { ...(draft.effect ?? {}), type: "reroll", rerollMethod: draft.effect?.rerollMethod ?? "reroll" }
+              : (draft.effect?.type === "reroll" ? undefined : draft.effect))} />
+          🎲 This can reroll a d20
+          <span style={{ color: "#555", fontSize: 10 }}>— offers it in the reroll picker</span>
+        </label>
+        {draft.effect?.type === "reroll" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8, marginTop: 6 }}>
+            <label style={{ fontSize: 12 }}>
+              Method
+              <select value={draft.effect.rerollMethod ?? "reroll"}
+                onChange={e => set("effect", { ...draft.effect!, rerollMethod: e.target.value as "reroll" | "flip" })}
+                style={{ ...inputStyle, marginTop: 2 }}>
+                <option value="reroll">Reroll — throw it again</option>
+                <option value="flip">Other side of the die (21 − roll)</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 12 }}>
+              When it applies
+              <input type="text" value={draft.effect.condition ?? ""}
+                onChange={e => set("effect", { ...draft.effect!, condition: e.target.value || undefined })}
+                placeholder="a failed save vs Charmed or Frightened" style={inputStyle} />
+            </label>
+          </div>
+        )}
+        {draft.effect?.type === "reroll" && !draft.charges && (
+          <div style={{ fontSize: 10, color: "#e07b39", marginTop: 4 }}>
+            ⚠ Give it charges above, or it will never appear — the picker skips a reroll item with no pool to spend.
+          </div>
+        )}
+      </div>
 
       {/* HOW MANY ARE HELD — consumables, gear and tools. A stack of five potions is one row
           with a count, not five rows. */}

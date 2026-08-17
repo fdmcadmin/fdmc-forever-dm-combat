@@ -173,10 +173,20 @@ export function actionFromEditorDraft(draft: PcActionDraft, existingAction?: Act
     ...(draft.weaponBuffDamage?.trim() ? { weaponBuffDamage: draft.weaponBuffDamage.trim() } : {}),
     ...(draft.weaponBuffAttack?.trim() ? { weaponBuffAttack: draft.weaponBuffAttack.trim() } : {}),
     ...(draft.turnRider?.kind ? { turnRider: draft.turnRider } : {}),
+    /**
+     * ⚠ THE TAG, NOT `additive`. The scanner accepts either, but `additive` already carries
+     * `resourceName` — writing "reroll" into it would erase which pool the action spends. The
+     * tag is additive-free and is what the scanner checks first.
+     */
+    ...(draft.isRerollSource ? { rerollMethod: draft.rerollMethod ?? "reroll" } : {}),
   };
 
   const withEffects: ActorAction = (statEffects.length || Object.keys(combatStyle).length)
-    ? { ...base, metadata: { ...base.metadata, ...(statEffects.length ? { statEffects } : {}), ...combatStyle } }
+    ? {
+      ...base,
+      tags: draft.isRerollSource ? [...(base.tags ?? []), "reroll"] : base.tags,
+      metadata: { ...base.metadata, ...(statEffects.length ? { statEffects } : {}), ...combatStyle },
+    }
     : base;
 
   if (existingAction) {
