@@ -4830,6 +4830,44 @@ export function ActorCard({
           handleChooseCommittedRollOutcome("miss");
         }}
         onRerollWithSource={async (source: RerollSource) => {
+          if (!committedRoll) return;
+
+          /**
+           * ⚠ SPEND IT. The picker carried `spendActionId` and nothing ever used it, so Lucky and
+           * every charged reroll item were free and infinitely reusable. A DM ruling spends
+           * nothing by design; everything else pays.
+           */
+          if (source.kind !== "dm" && source.spendActionId) {
+            const spender = Object.values(actor.tabs).flat()
+              .find(a => a?.id === source.spendActionId);
+            if (spender) handleUseAction({ action: spender, tabId: "features", costs: [] });
+          }
+
+          /**
+           * ⚠ A FLIP IS NOT A REROLL. *"a feat that says use the other side of the dice."*
+           * The other side of a d20 is 21 − the natural, so a 3 becomes an 18 — the value is
+           * already determined by the die that was thrown. Sending a dice request would produce an
+           * unrelated random number, which is the opposite of what the feat grants. So it is
+           * computed here and held as the new result, and the log shows both faces.
+           */
+          if (source.method === "flip") {
+            const natural = committedRoll.naturalRoll;
+            if (typeof natural !== "number") {
+              onLog({
+                actorName: actor.name, actionName: "Flip", tabId: "system",
+                message: `${actor.name} cannot use ${source.label} yet — no natural die result is held to flip.`,
+              });
+              return;
+            }
+            const flipped = 21 - natural;
+            onLog({
+              actorName: actor.name, actionName: source.label, tabId: "main",
+              message: `${actor.name} uses ${source.label} on ${committedRoll.actionLabel} — natural ${natural} becomes ${flipped} (the other side of the die).`,
+            });
+            handleHoldCommittedRollResult(`natural ${flipped}`);
+            return;
+          }
+
           // Fire the same roll formula again via Dice+
           if (committedRoll?.attackFormula) {
             const bridgeRequestId = createDiceRequestId("fdm-reroll", actor.id);
