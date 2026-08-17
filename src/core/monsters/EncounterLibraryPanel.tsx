@@ -367,8 +367,39 @@ export function EncounterLibraryPanel({
   // creations use `custom-...` ids, so they are never caught here.
   const isCampaignTemplate = (id: string) => campaignIds.has(id) || id.startsWith("broken-chain:");
   const myMonsters = dmLibrary.filter(m => !isCampaignTemplate(m.templateId));
+  /**
+   * ⚠ A STORED COPY OF A CAMPAIGN CREATURE ONLY WINS IF THE DM ACTUALLY EDITED IT.
+   *
+   * This line used to be `dmLibrary.find(...) ?? t` — any localStorage entry with a matching
+   * templateId silently replaced the shipped template, forever and invisibly. The campaign
+   * library is authored content that gets CORRECTED (0.7.8.16 repriced all 24 Act 3 creatures),
+   * and a copy saved by an older build shadowed every one of those corrections.
+   *
+   * Christopher, 2026-08-17: *"i did not edit any of the creatures we created for act 3, why
+   * would i change something."* He is right — his Hollow Warden showed 78 HP / AC 18 where the
+   * library has shipped 76 / 16 since the day it was written, and NO code path computes 78.
+   * It was a stale stored copy outranking the real one.
+   *
+   * So a stored campaign copy now has to carry `dmEdited`, which `handleSaveMonsterTemplate`
+   * stamps on save. An unmarked copy is a stale seed and the shipped template wins — which
+   * heals existing data with no action from the DM, because nothing wrote that marker before.
+   */
+  const shadowedCampaignTemplates: { name: string; was: string; now: string }[] = [];
   const campaignBase = unlocked
-    ? monsterLibrary.map(t => dmLibrary.find(m => m.templateId === t.templateId) ?? t)
+    ? monsterLibrary.map(t => {
+      const stored = dmLibrary.find(m => m.templateId === t.templateId);
+      if (!stored) return t;
+      if (stored.dmEdited) return stored;
+      // Stale seed. Report it only when it actually disagrees, so the notice means something.
+      if (stored.stats.maxHp !== t.stats.maxHp || String(stored.stats.ac) !== String(t.stats.ac)) {
+        shadowedCampaignTemplates.push({
+          name: t.name,
+          was: `${stored.stats.maxHp} HP / AC ${stored.stats.ac}`,
+          now: `${t.stats.maxHp} HP / AC ${t.stats.ac}`,
+        });
+      }
+      return t;
+    })
     : [];
   const baseLibrary = [...myMonsters, ...campaignBase];
   const resolvedLibrary = [
@@ -380,12 +411,20 @@ export function EncounterLibraryPanel({
   ];
 
   function handleSaveMonsterTemplate(updated: MainMonsterTemplate) {
+    /**
+     * Stamp a DELIBERATE edit. Only a marked copy of a campaign creature outranks the shipped
+     * template — see `campaignBase` above. Without the stamp an old stored copy shadowed
+     * corrected campaign data silently and permanently.
+     */
+    const stamped: MainMonsterTemplate = isCampaignTemplate(updated.templateId)
+      ? { ...updated, dmEdited: { at: new Date().toISOString() } }
+      : updated;
     // Save to DM localStorage library
-    upsertMonsterTemplate(updated);
+    upsertMonsterTemplate(stamped);
     // Refresh My Library from localStorage so the created/edited monster persists across reloads.
     setDmLibrary(loadMonsterLibrary());
     // Update local override so the encounter editor sees it immediately
-    setMonsterOverrides(prev => ({ ...prev, [updated.templateId]: updated }));
+    setMonsterOverrides(prev => ({ ...prev, [updated.templateId]: stamped }));
     // Notify parent if it wants to refresh its static library copy
     onMonsterLibraryUpdate?.(updated);
     setEditingMonsterTemplateId(null);
@@ -831,6 +870,26 @@ export function EncounterLibraryPanel({
           )}
         </div>
       </div>
+
+      {/* ⚠ NOTHING HEALS SILENTLY. A stale stored copy shadowing corrected campaign data is
+          exactly the kind of thing that has to be SAID — if it were fixed quietly, the next
+          person to see a number they did not recognise would have no way to know why it moved. */}
+      {shadowedCampaignTemplates.length > 0 && (
+        <div style={{ padding: "6px 14px", background: "#1a1608", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#c9a227" }}>
+          <strong>
+            {shadowedCampaignTemplates.length} campaign creature{shadowedCampaignTemplates.length === 1 ? "" : "s"} had
+            {" "}an older saved copy — now reading the campaign version:
+          </strong>
+          {shadowedCampaignTemplates.map(s => (
+            <div key={s.name} style={{ color: "#8a8aa0" }}>
+              {s.name}: was {s.was} → {s.now}
+            </div>
+          ))}
+          <div style={{ color: "#666", marginTop: 2 }}>
+            Nothing you edited was discarded — only copies with no recorded edit. Edit and save one to take it over again.
+          </div>
+        </div>
+      )}
 
       {/* Import result notification */}
       {monsterImportResult && (

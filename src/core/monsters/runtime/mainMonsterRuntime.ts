@@ -122,6 +122,17 @@ export type MainMonsterTemplate = {
   name: string;
   encounterId?: string;
   encounterLabel?: string;
+  /**
+   * Set when a DM DELIBERATELY saved an edit to a CAMPAIGN creature.
+   *
+   * ⚠ This is what lets a stored copy outrank the shipped template. Without it, any stale
+   * localStorage entry with a matching templateId silently shadowed corrected campaign data —
+   * which is how a Hollow Warden saved by an older build kept reading 78 HP / AC 18 after the
+   * library had shipped 76 / 16 all along. An unmarked stored copy is treated as a stale seed.
+   *
+   * Never author this in the bundled library; it is written by the editor on save.
+   */
+  dmEdited?: { at: string };
   stats: {
     kind: MonsterKind;
     ac: number | string;

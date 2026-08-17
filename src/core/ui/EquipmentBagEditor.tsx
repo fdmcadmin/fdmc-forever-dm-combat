@@ -612,6 +612,15 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Baked at attach time — no library lookup needed for AC/stat derivation
       statEffects: bakeStatEffects(item),
       acDisplay: item.ac,
+      /**
+       * ⚠ WHAT THE ITEM IS, CARRIED WITH IT. Without this the round-trip GUESSED the type from
+       * whether the item had dice — anything without an attack or damage became "gear". That is
+       * why armour, shields and a wand all read as gear on a live sheet, why the wand stopped
+       * qualifying as a focus, and why editing an item on a character and saving it "regressed":
+       * the guess was written back over the real type every time.
+       */
+      itemType: item.type,
+      mastery: item.mastery,
       // Spellcasting focus bonuses — read by the spell roll workspace (clickable additive).
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
@@ -1193,7 +1202,16 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
     return {
       id: itemId,
       name: action.label,
-      type: (m.attack || m.damage) ? "weapon" : "gear",
+      /**
+       * ⚠ READ THE TYPE, DO NOT GUESS IT. The old `(m.attack || m.damage) ? "weapon" : "gear"`
+       * turned every non-dice item into gear — armour, shields, wands, tools alike — and since
+       * the on-character editor loads through this function, saving an item wrote that guess
+       * back over its real type. The guess survives only as a fallback for a copy baked before
+       * `itemType` existed.
+       */
+      type: (m.itemType as EquipmentItem["type"] | undefined)
+        ?? ((m.attack || m.damage) ? "weapon" : "gear"),
+      mastery: m.mastery as EquipmentItem["mastery"],
       description: action.description ?? "",
       isUsable: Boolean(action.hasDefinedUse),
       attack: m.attack,

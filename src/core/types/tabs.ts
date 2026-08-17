@@ -269,6 +269,16 @@ export type ActorActionMetadata = {
    *  a plain focus with no magical plus is still what every spell is cast through, and it is
    *  what supplies @SPELL to the roll. Spells themselves carry no @SPELL. */
   isSpellFocus?: boolean;
+  /**
+   * WHAT THE ITEM IS — "weapon" | "armor" | "shield" | "magic" | "gear" | "consumable".
+   *
+   * ⚠ Carried on the actor's baked copy because the round-trip out of it used to GUESS: anything
+   * without an attack or damage formula became "gear", so armour, shields and wands all read as
+   * gear, and editing an item on a character wrote that guess back over its real type.
+   */
+  itemType?: string;
+  /** Weapon mastery property carried with the item so the round-trip does not drop it. */
+  mastery?: string;
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;
