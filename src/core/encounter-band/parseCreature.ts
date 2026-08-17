@@ -24,7 +24,7 @@
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
-import { spellProfile } from "./compactImport";
+import { spellProfile, campaignProfile, type CampaignProfile } from "./compactImport";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
 
@@ -154,6 +154,7 @@ function parseSection(
       targets: parseTargets(a.text),
       recharge: parseRecharge(a.recharge, name),
       uses: parseUses(name, a.text),
+      replacesRoutineSlot: replacesRoutineSlot(name),
       spellSlotLevel: a.spellSlotLevel,
       spellName: detectSpell(name, a.text),
       gated: a.gated,
@@ -215,4 +216,149 @@ export function parseCreature(template: MainMonsterTemplate): ParsedCreature {
   }
 
   return { name, ac, maxHp: template.stats.maxHp, attacksPerTurn, features, assumptions };
+}
+
+// ─── The workbook's own reading of a campaign creature ────────────────────────
+//
+// Christopher, 2026-08-16: *"anything that disagrees with the workbook is now legacy."*
+//
+// 51 Broken Chain creatures ship in the bundle already parsed BY THE WORKBOOK — AC, HP,
+// calibrated trait multiplier, and each feature's channel, attack roll, save, averaged damage,
+// recharge and use limit. When a creature has a profile, that profile is what the checker
+// prices. The app's authored copy is not a second opinion; where the two differ, the difference
+// is reported and the workbook's number is the one used.
+
+/** A field where the app's authored creature and the workbook's record disagree. */
+export type ProfileDisagreement = {
+  field: string;
+  app: string;
+  workbook: string;
+};
+
+export type WorkbookCreature = {
+  parsed: ParsedCreature;
+  profile: CampaignProfile;
+  /** THE calibrated trait product for this creature — supersedes any app-side trait pricing. */
+  traitMultiplier: number;
+  traitStackGroups: string[];
+  disagreements: ProfileDisagreement[];
+};
+
+/**
+ * A feature whose printed name says it takes the place of a routine attack — the workbook
+ * prints "Grab (replaces one Claw)" exactly that way. It competes for ONE Multiattack slot;
+ * it is not an extra attack, and counting it as one inflates the routine.
+ */
+export function replacesRoutineSlot(name: string | undefined): boolean {
+  return /\b(?:replaces|instead of|in place of)\b/i.test(name ?? "");
+}
+
+/** "STR DC 12" → 12, via the same reader the app path uses. */
+function featureFromProfile(f: CampaignProfile["f"][number]): ParsedFeature {
+  const channel = f.t === "bonus_action" ? "bonus_action"
+    : f.t === "reaction" ? "reaction"
+      : f.t === "trait" ? "trait"
+        : "action";
+  // The workbook has already averaged the damage; hand it over pre-averaged so the resolver
+  // reads the number it computed rather than re-rolling the expression.
+  const [average] = f.d[0] ?? [];
+  return {
+    name: f.n,
+    activationType: channel,
+    damage: average !== undefined ? `${average} (${f.d[0]?.[1] ?? ""})` : undefined,
+    attackBonus: parseAttackBonus(f.a ?? undefined),
+    saveDc: parseSaveDc(f.s ?? undefined),
+    targets: parseTargets(f.n),
+    recharge: f.r ? `${f.r[0]}-${f.r[1]}` : undefined,
+    uses: f.u?.uses,
+    spellSlotLevel: f.c ?? undefined,
+    spellName: detectSpell(f.n, undefined),
+    replacesRoutineSlot: replacesRoutineSlot(f.n),
+    text: undefined,
+  };
+}
+
+/**
+ * Read a campaign creature from the workbook, and report where the app disagrees with it.
+ *
+ * Returns undefined when the workbook has no record — a DM's own creature, which is the normal
+ * case and takes the `parseCreature` path instead.
+ *
+ * `attacksPerTurn` still comes from the app: the profiles publish no Multiattack size, so it is
+ * the one combat field the app supplies rather than overrides.
+ */
+export function workbookCreature(template: MainMonsterTemplate): WorkbookCreature | undefined {
+  const profile = campaignProfile(template.name);
+  if (!profile) return undefined;
+
+  const disagreements: ProfileDisagreement[] = [];
+  const appAc = typeof template.stats.ac === "number"
+    ? template.stats.ac : Number.parseInt(String(template.stats.ac), 10);
+  if (Number.isFinite(appAc) && appAc !== profile.ac) {
+    disagreements.push({ field: "AC", app: String(appAc), workbook: String(profile.ac) });
+  }
+  if (template.stats.maxHp !== profile.hp) {
+    disagreements.push({ field: "HP", app: String(template.stats.maxHp), workbook: String(profile.hp) });
+  }
+
+  const appTraitProduct = (template.stats.defenses ?? [])
+    .reduce((p, d) => p * (d.ehpMultiplier || 1), 1);
+  if (Math.abs(appTraitProduct - profile.tm) > 0.005) {
+    disagreements.push({
+      field: "trait multiplier",
+      app: `×${appTraitProduct.toFixed(3)}`,
+      workbook: `×${profile.tm.toFixed(3)}`,
+    });
+  }
+
+  const assumptions: FeatureAssumption[] = [];
+  const attacksPerTurn = template.stats.attacksPerTurn ?? 1;
+  if (!template.stats.attacksPerTurn) {
+    assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
+      detail: "The workbook profile publishes no Multiattack size, so the Action budget is one attack per turn." });
+  }
+
+  /**
+   * WHAT THE WORKBOOK DOES NOT PUBLISH, THE APP SUPPLIES — and a null is not a contradiction.
+   *
+   * The profiles carry no gating concept at all: whether a feature is usable in THIS encounter
+   * is authoring the workbook never saw. Same for a recharge or use limit it recorded as null
+   * while the entered block prints one. Neither is the workbook being overruled; it is silent
+   * there, and silence is not an answer to override.
+   *
+   * Without this the Lesser Wendigo threw a gated Rend and a gated bonus-action Claw, both of
+   * which its encounter says it cannot use.
+   */
+  const appActions = (template.actions ?? []) as RawAction[];
+  const features = profile.f.map(f => {
+    const parsed = featureFromProfile(f);
+    const app = appActions.find(a => (a?.name ?? "").trim().toLowerCase() === f.n.trim().toLowerCase());
+    if (!app) return parsed;
+    if (app.gated) {
+      parsed.gated = true;
+      assumptions.push({ feature: f.n, flag: "ESTIMATED", field: "timing",
+        detail: `"${f.n}" is authored as unavailable under this encounter's conditions and is not counted. The workbook profile records no gating either way.` });
+    }
+    if (!parsed.recharge && app.recharge) {
+      parsed.recharge = parseRecharge(app.recharge, app.name);
+      assumptions.push({ feature: f.n, flag: "ESTIMATED", field: "timing",
+        detail: `Recharge ${parsed.recharge} comes from the entered stat block; the workbook profile records none for "${f.n}".` });
+    }
+    return parsed;
+  });
+
+  return {
+    parsed: {
+      name: profile.n,
+      ac: profile.ac,
+      maxHp: profile.hp,
+      attacksPerTurn,
+      features,
+      assumptions,
+    },
+    profile,
+    traitMultiplier: profile.tm,
+    traitStackGroups: profile.tt,
+    disagreements,
+  };
 }

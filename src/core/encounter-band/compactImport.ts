@@ -53,6 +53,61 @@ export type SrdIndexEntry = {
   variants?: string[];
 };
 
+/**
+ * THE WORKBOOK'S OWN PARSE OF A CAMPAIGN CREATURE.
+ *
+ * 51 of them ship in the bundle — every Broken Chain creature, read by the workbook itself:
+ * its AC, its HP, its calibrated trait multiplier, its trait stack groups, and each feature
+ * with the activation channel, attack roll, save, averaged damage, recharge and use limit
+ * already resolved.
+ *
+ * ⚠ THIS IS THE LAW. Christopher, 2026-08-16: *"anything that disagrees with the workbook is
+ * now legacy."* Where an app-authored creature disagrees with its profile here, the profile
+ * wins and the disagreement is stated. The app is not a second opinion about a creature the
+ * workbook has already measured across 80k sustain calibrations.
+ */
+export type CampaignFeature = {
+  /** Printed feature name. */
+  n: string;
+  /** Activation channel, from the section heading. */
+  t: "trait" | "action" | "bonus_action" | "reaction" | string;
+  /** What kind of thing it is: trait, attack, action, reaction. */
+  k: string;
+  /** Recharge range as [min, max]. Availability only — never a channel. */
+  r: [number, number] | null;
+  /** Use limit, e.g. `{ uses: 1, period: "day" }`. */
+  u: { uses: number; period: string } | null;
+  /** Printed attack roll, e.g. "1d20 + 6". */
+  a: string | null;
+  /** Printed save, e.g. "STR DC 12". */
+  s: string | null;
+  /** Damage as [average, expression, type] — the workbook has already averaged it. */
+  d: Array<[number, string, string]>;
+  /** Cast level, when the feature casts a spell. */
+  c: number | null;
+  /** Spell level. */
+  l: number | null;
+  /** Rechargeable — the ability replaces the routine Action when it is up. */
+  rr: boolean;
+};
+
+export type CampaignProfile = {
+  id: string;
+  /** Creature name. */
+  n: string;
+  ac: number;
+  hp: number;
+  cr: number | null;
+  /** Legendary action budget. */
+  la: number;
+  /** THE calibrated trait multiplier — the product the workbook computed for this creature. */
+  tm: number;
+  /** Trait stack groups this creature claims. */
+  tt: string[];
+  /** Features. */
+  f: CampaignFeature[];
+};
+
 export type CompactImport = {
   schema: string;
   version: string;
@@ -75,7 +130,7 @@ export type CompactImport = {
   full_caster_slots: Array<Record<string, number>>;
   effect_families: EffectFamily[];
   srd_index: SrdIndexEntry[];
-  campaign_profiles: Array<Record<string, unknown>>;
+  campaign_profiles: CampaignProfile[];
   campaign_presets: Array<Record<string, unknown>>;
   source_policy: Record<string, unknown>;
 };
@@ -152,4 +207,15 @@ export function stackGroups(): string[] {
 export function srdIdentify(name: string): SrdIndexEntry | undefined {
   const key = name.trim().toLowerCase();
   return COMPACT.srd_index.find(e => e.n.toLowerCase() === key);
+}
+
+/**
+ * The workbook's own record for a campaign creature, by name.
+ *
+ * Returns undefined for a DM's homebrew, which is the normal case — the checker then prices
+ * the entered creature. It is only campaign creatures the workbook has already measured.
+ */
+export function campaignProfile(name: string): CampaignProfile | undefined {
+  const key = name.trim().toLowerCase();
+  return COMPACT.campaign_profiles.find(p => p.n.trim().toLowerCase() === key);
 }

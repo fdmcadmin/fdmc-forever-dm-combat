@@ -40,7 +40,7 @@ import {
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction, isMonsterLegendaryAction } from "../monsters/runtime/mainMonsterRuntime";
-import { CLASSIFICATION_LABEL } from "../encounter-band/encounterRounds";
+import { CLASSIFICATION_LABEL } from "../monsters/runtime/mainMonsterRuntime";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
 import { tabAccent } from "./tabVisuals";

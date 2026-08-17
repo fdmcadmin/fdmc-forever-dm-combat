@@ -14,7 +14,7 @@ import {
   type EncounterDefinition,
   type EncounterMonsterEntry,
 } from "./encounterLibrary";
-import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/encounterRounds";
+import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/partyCurveV2";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";

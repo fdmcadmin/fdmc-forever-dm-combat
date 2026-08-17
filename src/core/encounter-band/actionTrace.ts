@@ -146,9 +146,17 @@ export function traceCreature(
     });
   }
 
-  const routine = budgeted
+  const routineAll = budgeted
     .filter(b => b.channel === "action" && !b.fullAction && b.perUse > 0)
     .sort((a, b) => b.perUse - a.perUse);
+  /**
+   * A "(replaces one Claw)" feature is NOT a second attack. It competes for one Multiattack
+   * slot against the attack it displaces, and only takes it when it is worth more.
+   * Counting it as an extra routine entry gave the Lesser Wendigo a Claw + a Grab where the
+   * block says two Claws, one of which MAY become a Grab.
+   */
+  const routine = routineAll.filter(b => !b.feature.replacesRoutineSlot);
+  const replacers = routineAll.filter(b => b.feature.replacesRoutineSlot);
   const actionAlternatives = budgeted
     .filter(b => b.channel === "action" && b.fullAction)
     .sort((a, b) => b.perUse - a.perUse);
@@ -168,11 +176,44 @@ export function traceCreature(
       if (a.usesLeft !== null && used >= a.usesLeft) return false;
       return true;
     });
-    const routineTotal = routine.slice(0, creature.attacksPerTurn).reduce((s, r) => s + r.perUse, 0)
-      + (routine.length === 1 && creature.attacksPerTurn > 1
-        ? routine[0].perUse * (creature.attacksPerTurn - 1) : 0);
+    /**
+     * The routine's slots: the best printed attacks, repeating the single named attack when the
+     * block lists fewer than the Multiattack allows. A "replaces one X" feature may then take
+     * ONE slot — the weakest — and only if it is worth more than what it displaces.
+     */
+    const slots: Budgeted[] = [];
+    for (let i = 0; i < creature.attacksPerTurn && routine.length > 0; i++) {
+      slots.push(routine[Math.min(i, routine.length - 1)]);
+    }
+    const bestReplacer = replacers[0];
+    if (bestReplacer && slots.length > 0) {
+      let weakest = 0;
+      for (let i = 1; i < slots.length; i++) if (slots[i].perUse < slots[weakest].perUse) weakest = i;
+      if (bestReplacer.perUse > slots[weakest].perUse) slots[weakest] = bestReplacer;
+    } else if (bestReplacer && slots.length === 0) {
+      slots.push(bestReplacer);
+    }
+    const routineTotal = slots.reduce((s, r) => s + r.perUse, 0);
 
-    if (alt && alt.perUse > 0) {
+    /**
+     * ⚠ "USE POWERFUL LIMITED ABILITIES EARLY, MULTIATTACK OTHERWISE" — the contract's own
+     * wording, and POWERFUL is the operative word. A limited or rechargeable Action only
+     * displaces the routine when it is worth MORE than the routine it displaces. Taking it
+     * unconditionally had the Lesser Wendigo spend its Action on a 2.8-damage Rend instead of
+     * 13.2 of Claws, and burn the recharge doing it.
+     *
+     * A stronger-in-play ability that prices LOWER — a charge that knocks prone, a grapple —
+     * is kept as the routine and reported, because the checker prices damage and cannot price
+     * a rider. It says so rather than quietly choosing for the DM.
+     */
+    if (alt && alt.perUse > 0 && alt.perUse <= routineTotal && routine.length > 0) {
+      assumptions.push({
+        feature: alt.feature.name, flag: "ESTIMATED", field: "action_cost",
+        detail: `"${alt.feature.name}" prices at ${alt.perUse.toFixed(1)} against a routine worth ${routineTotal.toFixed(1)}, so the routine is scheduled. If it is worth using for a rider the checker cannot price — knockback, prone, a grapple — that value is not in this number.`,
+      });
+    }
+
+    if (alt && alt.perUse > 0 && (alt.perUse > routineTotal || routine.length === 0)) {
       const used = spent.get(alt) ?? 0;
       // Round 1 it is available outright; later rounds it is up on its recharge probability.
       const availability = used === 0 ? 1 : rechargeProbability(alt.recharge);
@@ -191,19 +232,16 @@ export function traceCreature(
       if (alt.delayed > 0) {
         delayedByRound.set(round + 1, (delayedByRound.get(round + 1) ?? 0) + alt.delayed);
       }
-    } else if (routine.length > 0) {
-      // Fill the Action budget with the routine: the best attacks, repeating the single
-      // named attack when the block lists fewer than the budget allows.
-      for (let i = 0; i < creature.attacksPerTurn; i++) {
-        const pick = routine[Math.min(i, routine.length - 1)];
+    } else if (slots.length > 0) {
+      slots.forEach((pick, i) => {
         scheduled.push({
           feature: pick.feature.name, channel: "action", method: pick.method,
           castLevel: pick.castLevel, targets: pick.targets,
           expectation: pick.expectation, expectedDamage: pick.perUse,
           resourceSpent: null,
-          note: creature.attacksPerTurn > 1 ? `Multiattack ${i + 1} of ${creature.attacksPerTurn}` : undefined,
+          note: slots.length > 1 ? `Multiattack ${i + 1} of ${slots.length}` : undefined,
         });
-      }
+      });
     }
 
     // ── Separate budgets: none of these consumes the Action ──────────────────

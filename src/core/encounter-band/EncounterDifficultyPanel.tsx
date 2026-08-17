@@ -30,6 +30,7 @@ import {
   type PartyEquipmentMode,
 } from "./partyCurveV2";
 import { rosterFromTemplates } from "./rosterFromLibrary";
+import { DEFAULT_PARTY_DEFENCE } from "./damageExpression";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
 const MODES: { id: PartyEquipmentMode; label: string; blurb: string }[] = [
@@ -65,6 +66,13 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const [equipmentMode, setEquipmentMode] = useState<PartyEquipmentMode>("wotcStandard");
   const [allocation, setAllocation] = useState<DamageAllocation>("focus_fire");
   const [targetSafetyMargin, setTargetSafetyMargin] = useState<number>(1);
+  /**
+   * The party's own defensive numbers — a DM INPUT, because the workbook publishes the hit and
+   * save FORMULAS but no party AC or save-bonus table anywhere in the bundle. Inventing one
+   * here would move every damage figure in the checker on an unmeasured guess.
+   */
+  const [targetAc, setTargetAc] = useState<number>(DEFAULT_PARTY_DEFENCE.ac);
+  const [targetSave, setTargetSave] = useState<number>(DEFAULT_PARTY_DEFENCE.saveBonus);
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
 
@@ -78,12 +86,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
-    const built = rosterFromTemplates(entries, partyLevel);
+    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave });
     return {
       roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0) return null;
@@ -181,6 +189,15 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                   <input type="number" step="0.5" value={targetSafetyMargin}
                     onChange={e => setTargetSafetyMargin(Number(e.target.value))}
                     style={{ width: 60, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
+                </div>
+                <div title="Your table's own numbers. The workbook publishes the hit and save formulas but no party AC table, so this is yours to enter — it is never assumed from your level.">
+                  <label style={label}>Party AC / save</label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <input type="number" value={targetAc} onChange={e => setTargetAc(Number(e.target.value))}
+                      style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
+                    <input type="number" value={targetSave} onChange={e => setTargetSave(Number(e.target.value))}
+                      style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
+                  </div>
                 </div>
               </div>
 
@@ -288,6 +305,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
 
                   <div style={{ fontSize: 9, color: "#666", marginBottom: 6 }}>
                     Survivor counts are model projections under {allocation === "focus_fire" ? "focus fire" : "even spread"}, not observed outcomes.
+                    {" "}Every attack was resolved against AC {targetAc} and every save against a +{targetSave} bonus — your entry, not a workbook figure.
                   </div>
 
                   <details>

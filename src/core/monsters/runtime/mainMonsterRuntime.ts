@@ -1,7 +1,27 @@
 import type { MonsterCombatCandidate, MonsterReaderAction } from "../MonsterJconScanner";
-// Type-only (erased at compile), so this does not create a runtime import cycle with
-// encounterRounds.ts, which imports MonsterClassification back from here.
-import type { MonsterDefense } from "../../encounter-band/encounterRounds";
+
+/**
+ * One named defensive trait and what it is worth as an effective-HP multiplier.
+ *
+ * ITEMISED ON PURPOSE. "Reknit in the Cold returns it at 40% once" is checkable at the table;
+ * a bare 1.84 is not. `rosterFromLibrary` converts each of these into a checker sustain factor
+ * — `ehpMultiplier: 1.40` is the workbook's `contribution: 0.40`, and the two columns differ by
+ * exactly 1.0 — and the checker then combines them as a PRODUCT, rejecting duplicate stack
+ * groups so one effect cannot be credited twice.
+ *
+ * ⚠ FOR A CAMPAIGN CREATURE THE WORKBOOK HAS MEASURED, ITS `tm` WINS OVER THIS. These stay as
+ * the DM-facing itemisation and as the pricing for homebrew, but they do not get to contradict
+ * a calibrated figure. Lives here rather than in the deleted `encounterRounds.ts`, next to the
+ * `MonsterClassification` it used to import back — the cycle is gone with it.
+ */
+export type MonsterDefense = {
+  /** The trait's actual name, as printed on the stat block. Doubles as its stack group. */
+  name: string;
+  /** Effective-HP multiplier. 1.40 = "this trait is worth 40% more HP". */
+  ehpMultiplier: number;
+  /** Why it is worth that — the arithmetic, so a future session can re-check it. */
+  note?: string;
+};
 
 export type MainMonsterVisibilityState = "hidden" | "label-only" | "condition" | "hp-bar" | "full";
 
@@ -54,6 +74,32 @@ export type MonsterClassification =
   /** The final three bosses of the story — the longest fights in the campaign.
    *  UI label: "Major Story Boss" (Christopher, Monster Gate). */
   | "final-boss";
+
+export const CLASSIFICATION_LABEL: Record<MonsterClassification, string> = {
+  normal: "Normal",
+  strong: "Strong",
+  elite: "Elite",
+  "mid-boss": "Mid boss",
+  "act-boss": "Act boss",
+  "final-boss": "Final boss",
+};
+
+/** Weakest → strongest. A fight's tier comes from the strongest creature in it. */
+export const CLASSIFICATION_ORDER: readonly MonsterClassification[] = [
+  "normal", "strong", "elite", "mid-boss", "act-boss", "final-boss",
+];
+
+/**
+ * The higher of two tiers — a declared encounter tier may only ESCALATE above what its roster
+ * justifies, never soften it.
+ */
+export function maxClassification(
+  a: MonsterClassification | undefined,
+  b: MonsterClassification,
+): MonsterClassification {
+  if (!a) return b;
+  return CLASSIFICATION_ORDER.indexOf(a) >= CLASSIFICATION_ORDER.indexOf(b) ? a : b;
+}
 
 /**
  * How a creature FIGHTS — the six FDMC styles (Monster Gate WS-A / A1).

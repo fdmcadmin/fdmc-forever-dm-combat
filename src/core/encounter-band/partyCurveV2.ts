@@ -134,3 +134,39 @@ export const PARTY_CURVE_V2: PartyCurveRow[] = [
 export function partyCurveRow(level: number): PartyCurveRow | undefined {
   return PARTY_CURVE_V2.find(r => r.level === level);
 }
+
+// ─── Party size, for the UI ───────────────────────────────────────────────────
+//
+// These moved here when `encounterRounds.ts` was deleted (0.7.9.5). They belong beside
+// `partySizeHpMultiplier`, which is the workbook's formula and the only authority any of them
+// has — nothing below re-derives a multiplier, it only presents one.
+
+/**
+ * The party size the campaign is AUTHORED against. An encounter's authored HP is its 4-player
+ * total; every other size scales from there.
+ */
+export const BASELINE_PARTY_SIZE = 4;
+
+/** Sizes offered in the library UI. The model itself accepts any positive integer. */
+export const SUPPORTED_PARTY_SIZES = [3, 4, 5, 6] as const;
+
+/** The multiplier for each offered size — GENERATED from the formula, never a second table. */
+export const PARTY_SIZE_HP_MULTIPLIER: Record<number, number> = Object.fromEntries(
+  SUPPORTED_PARTY_SIZES.map(size => [size, partySizeHpMultiplier(size)]),
+);
+
+/**
+ * An encounter's authored 4P HP scaled to the party actually fighting it.
+ *
+ * ⚠ FOR DISPLAY ONLY. The checker applies `partySizeHpMultiplier` INSIDE `effectiveHpPerBody`,
+ * so a roster passed to `simulateEncounter` must carry RAW authored HP — scaling it here as
+ * well would apply the multiplier twice.
+ *
+ * ROUNDS, not floors: rounding reproduces the workbook's own published bands exactly
+ * (129/172/215, 166/221/276, 180/240/300), where flooring read one HP light.
+ */
+export function hpForPartySize(baseHp: number, partySize: number): number {
+  const mult = partySizeHpMultiplier(partySize);
+  if (mult === 1) return baseHp;
+  return Math.max(1, Math.round(baseHp * mult));
+}

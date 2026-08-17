@@ -9,7 +9,7 @@
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState, MonsterClassification } from "./runtime/mainMonsterRuntime";
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
 import { actTagForId } from "../campaign/actTags";
-import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/encounterRounds";
+import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/partyCurveV2";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,7 +84,8 @@ const ENCOUNTER_LIBRARY_SEED_VERSION = "0.7.8.7-act1-archetype-pass-v4";
 
 /**
  * TARGET tier per campaign fight (Christopher, 2026-07-17) — the round band each Act 2
- * encounter should land in. See `ROUND_BAND` in `encounter-band/encounterRounds.ts`.
+ * encounter should land in. The checker reports a completion round and a lethal round; it does
+ * not grade a fight against a band.
  *
  * These are FIGHT targets, not creature ratings: the Frozen Hollow is elite purely because
  * the stacked HP of its chaff pushes the round count into the elite band — which is also

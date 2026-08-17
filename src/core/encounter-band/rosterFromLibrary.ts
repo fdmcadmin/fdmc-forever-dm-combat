@@ -1,31 +1,39 @@
 /**
- * Turns app creatures into checker `RosterGroup` records — priced against the BUNDLED
- * calibration, and silent about nothing.
+ * Turns app creatures into checker `RosterGroup` records — parsed, traced, and silent about
+ * nothing.
  *
- * Two rules govern this file.
+ * ⚠ THERE IS NO OLD MODEL LEFT IN THIS PATH. A creature's damage now comes from
+ * `parseCreature` → `traceCreature`, the contract's own row 10 and row 13. The previous
+ * `estimateMonsterDamage` carried a SECOND action-budget implementation beside the trace, and
+ * two implementations of one rule always drift — the trace is the one with the channel
+ * separation, the use limits and the gating.
  *
- * 1. THE CALIBRATION IS DATA, NOT JUDGEMENT. The 58 trait rules, the expected-AC curve and the
- *    AC bands all ship in the v3 compact import, each rule carrying its own STACK GROUP. This
- *    module reads them; it does not restate them. Christopher: *"why would we not put the
- *    things in that tells us what a creature can do."*
+ * Three rules govern this file:
  *
- * 2. NOTHING IS SILENT. *"if the checker has no idea how to parse something it will tell the
- *    dm to cal[culate] that damage."* Every path that cannot price something raises an
- *    assumption naming the creature, the field and the reason. A trait that scores nothing
- *    says so; a duplicate stack group says so; an unknown AC says so. The contract's own
- *    wording is that a silent substitute must never happen — and a silent OMISSION is the same
- *    failure wearing different clothes, because both reach the total unchallenged.
+ * 1. THE CALIBRATION IS DATA. The 58 trait rules, the expected-AC curve and the AC bands ship
+ *    in the v3 compact import, each rule carrying its own stack group. This module reads them.
+ *
+ * 2. THE TRACE IS THE DAMAGE. A creature's per-round profile comes straight off its action
+ *    trace, so a front-loaded creature actually reads front-loaded: the Veilwood Crone's 1/Day
+ *    burst lands in round 1 and her routine carries rounds 2+, instead of one flat average
+ *    pretending both are the same fight.
+ *
+ * 3. NOTHING IS SILENT. Every path that cannot price something raises an assumption naming the
+ *    creature, the field and the reason. A silent omission reaches the total exactly as
+ *    unchallenged as a silent substitute.
  */
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
-import { estimateMonsterDamage } from "./encounterConstruction";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, traitRule } from "./compactImport";
+import { parseCreature, workbookCreature } from "./parseCreature";
+import { traceCreature } from "./actionTrace";
+import type { PartyDefence } from "./damageExpression";
 import type { RosterGroup, SustainFactor } from "./checkerV2";
 
 export type RosterAssumption = {
   creature: string;
   flag: "NEEDS DM INPUT" | "ESTIMATED";
-  field: "ac" | "trait" | "damage" | "stack_group";
+  field: string;
   detail: string;
 };
 
@@ -67,8 +75,8 @@ export function acMultiplierFor(
  * A creature's authored `defenses` become checker sustain factors.
  *
  * `ehpMultiplier: 1.40` is the calibration's `contribution: 0.40` — its table prints both
- * columns for every rule and they differ by exactly 1.0. When a defence's name matches a
- * calibrated rule, that rule's OWN stack group is used, so the double-count guard is the
+ * columns for every rule and they differ by exactly 1.0. A defence whose name matches a
+ * calibrated rule inherits THAT RULE'S stack group, so the double-count guard is the
  * workbook's classification rather than a name this app made up.
  */
 export function traitFactorsFor(
@@ -89,8 +97,6 @@ export function traitFactorsFor(
     const contribution = (d.ehpMultiplier || 1) - 1;
     const rule = traitRule(d.name);
     if (contribution === 0) {
-      // An explicit 1.0 is an authored decision ("plain HP bar"), not an omission — but it is
-      // still stated, so nobody has to guess whether it was assessed.
       out.push({ creature: name, flag: "ESTIMATED", field: "trait",
         detail: `"${d.name}" is assessed at 1.0 — no effective-HP contribution.` });
       continue;
@@ -128,40 +134,82 @@ export type RosterBuild = { roster: RosterGroup[]; assumptions: RosterAssumption
  * ⚠ `baseHp` is the creature's RAW authored HP. Do NOT pre-scale it for party size — the
  * contract applies `partySizeHpMultiplier` inside `effectiveHpPerBody`, and scaling here as
  * well would apply it twice.
+ *
+ * TWO PATHS, and the first one wins wherever it applies:
+ *  · A CAMPAIGN CREATURE the workbook has measured is read from its workbook profile. Every
+ *    field the app disagrees on is reported and overridden.
+ *  · A DM'S OWN CREATURE is parsed from what they entered, which is the case the whole
+ *    row 10 / row 13 machinery exists for.
  */
-export function rosterFromTemplates(entries: RosterEntryInput[], partyLevel: number): RosterBuild {
+export function rosterFromTemplates(
+  entries: RosterEntryInput[], partyLevel: number, target: PartyDefence,
+): RosterBuild {
   const assumptions: RosterAssumption[] = [];
+
   const roster = entries.map(({ template, quantity }) => {
-    const ac = typeof template.stats.ac === "number"
-      ? template.stats.ac
-      : Number.parseInt(String(template.stats.ac), 10);
-    const actions = (template.actions ?? []).map(a => ({ ...a, kind: a.kind as string }));
-    const est = estimateMonsterDamage(actions, {
-      partyLevel, attacksPerTurn: template.stats.attacksPerTurn,
-    });
-    // Anything the damage estimator could not read is surfaced, never dropped.
-    for (const u of est.unread) {
-      assumptions.push({ creature: template.name, flag: "NEEDS DM INPUT", field: "damage", detail: u });
+    const fromWorkbook = workbookCreature(template);
+    const parsed = fromWorkbook ? fromWorkbook.parsed : parseCreature(template);
+
+    if (fromWorkbook) {
+      for (const d of fromWorkbook.disagreements) {
+        assumptions.push({ creature: parsed.name, flag: "ESTIMATED", field: d.field.toLowerCase(),
+          detail: `The app has ${d.field} ${d.app}; the workbook has ${d.workbook}. The workbook's value is used — it is the measured one.` });
+      }
     }
-    if (est.dpr <= 0) {
-      assumptions.push({ creature: template.name, flag: "NEEDS DM INPUT", field: "damage",
-        detail: "No readable damage at all, so this creature contributes nothing to the fight's pressure." });
+
+    const trace = traceCreature(parsed, target, 4);
+    for (const a of trace.assumptions) {
+      assumptions.push({ creature: parsed.name, flag: a.flag, field: a.field, detail: a.detail });
     }
+
+    // The per-round profile IS the trace. Round 4 carries the sustained figure.
+    const r = trace.rounds;
+    const dpr = {
+      round1: r[0]?.totalExpectedDamage ?? 0,
+      round2: r[1]?.totalExpectedDamage ?? 0,
+      round3: r[2]?.totalExpectedDamage ?? 0,
+      round4Plus: r[3]?.totalExpectedDamage ?? 0,
+    };
+    if (dpr.round1 <= 0 && dpr.round4Plus <= 0) {
+      assumptions.push({ creature: parsed.name, flag: "NEEDS DM INPUT", field: "damage",
+        detail: "No readable damage in any round, so this creature contributes nothing to the fight's pressure." });
+    }
+
+    /**
+     * THE WORKBOOK'S TRAIT MULTIPLIER IS THE TRAIT MULTIPLIER. `tm` is the product it computed
+     * for this exact creature across its own calibration run — a single factor carrying the
+     * creature's whole defensive kit. It is not combined with the app's itemised pricing;
+     * it REPLACES it, and any difference has already been reported above.
+     */
+    const traitFactors: SustainFactor[] = fromWorkbook
+      ? (fromWorkbook.traitMultiplier === 1 ? [] : [{
+        stackGroup: fromWorkbook.traitStackGroups[0] ?? "workbook_calibrated",
+        label: fromWorkbook.traitStackGroups.length
+          ? `Workbook calibration (${fromWorkbook.traitStackGroups.join(", ")})`
+          : "Workbook calibration",
+        contribution: fromWorkbook.traitMultiplier - 1,
+      }])
+      : traitFactorsFor(template, assumptions);
+
     return {
       id: template.templateId,
-      name: template.name,
+      name: parsed.name,
       quantity,
-      baseHp: template.stats.maxHp,
-      acMultiplier: acMultiplierFor(Number.isFinite(ac) ? ac : undefined, partyLevel, template.name, assumptions),
-      traitFactors: traitFactorsFor(template, assumptions),
-      /**
-       * A creature's printed output does not change round to round, so the same figure fills
-       * all four slots. The ROUND SHAPE belongs to the PARTY (nova → floor); the monster side
-       * varies through continuous depletion instead.
-       */
-      dpr: { round1: est.dpr, round2: est.dpr, round3: est.dpr, round4Plus: est.dpr },
+      baseHp: parsed.maxHp,
+      acMultiplier: acMultiplierFor(parsed.ac, partyLevel, parsed.name, assumptions),
+      traitFactors,
+      dpr,
       damageUptime: template.stats.damageUptime ?? 1,
     };
   });
-  return { roster, assumptions };
+
+  // One line per distinct message across the whole roster.
+  const seen = new Set<string>();
+  const deduped = assumptions.filter(a => {
+    const key = a.creature + "|" + a.flag + "|" + a.field + "|" + a.detail;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return { roster, assumptions: deduped };
 }

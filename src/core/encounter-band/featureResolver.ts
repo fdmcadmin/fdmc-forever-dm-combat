@@ -21,7 +21,7 @@
  */
 
 import { spellProfile, type SpellProfile, type SrdVersion } from "./compactImport";
-import { damageExpressionAverage } from "./encounterConstruction";
+import { damageExpressionAverage } from "./damageExpression";
 
 /** How a feature's damage was arrived at — carried all the way to the trace. */
 export type DamageMethod =
@@ -74,6 +74,8 @@ export type ParsedFeature = {
   spellSlotLevel?: number;
   /** Authored as unusable in this encounter. Never scheduled, and always stated. */
   gated?: boolean;
+  /** Printed as taking the place of a routine attack — competes for ONE Multiattack slot. */
+  replacesRoutineSlot?: boolean;
   text?: string;
 };
 

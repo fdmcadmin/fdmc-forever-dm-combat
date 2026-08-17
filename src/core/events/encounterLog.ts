@@ -101,7 +101,7 @@ const ENCOUNTER_LOG_KEY = "fdmc.dm.encounterLog.v1";
  * Derivation of the worst realistic case, so this is a budget rather than a guess:
  *
  *   combatants     11   (a 5-6 PC party + companion, a boss and ~4 adds)
- *   rounds          8   (ABSOLUTE_ROUND_CAP in encounterRounds.ts)
+ *   rounds          8   (a long fight; the checker reports its own completion round)
  *   entries/turn   ~22  (turn-start, 3-6 attacks x 3 entries, a bonus action,
  *                        a reaction, a resource spend, turn-end)
  *   ---------------------------------------------------------------
