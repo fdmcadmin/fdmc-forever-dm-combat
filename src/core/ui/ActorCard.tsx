@@ -14,7 +14,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import { HitPointBadge } from "../hp/HitPointBadge";
 import { getHpStatus } from "../hp/hpStatus";
 import type { AbilityId, Actor, DrainTracker, HitPoints, PinnedReaction } from "../types/actor";
-import { effectiveMaxHp } from "../types/actor";
+import { effectiveMaxHp, OPPORTUNITY_ATTACK_REACTION } from "../types/actor";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
 import { actionCostLabels, isUsedActionStateValue, makeUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { AddCombatLogEntryInput } from "../types/combatLog";
@@ -53,6 +53,7 @@ import { useEquippedState, applyEquippedOverlay } from "../state/useEquippedStat
 import { loadEquipmentLibrary } from "./EquipmentBagEditor";
 import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
+import { CriticalFailureReference } from "./CriticalFailureReference";
 import { withAlpha } from "../seats/seatColors";
 import { TabBar } from "./TabBar";
 import { TabPanel } from "./TabPanel";
@@ -179,6 +180,16 @@ type ArmedEffect = {
   /** Bonus added to the ATTACK roll — used by spellcasting focuses (id "focus:*") and
    *  fighting styles (id "buff:*"). */
   attackFormula?: string;
+  /**
+   * Bonus added to the SPELL SAVE DC — the third thing a focus buys and the one that had no
+   * mechanism at all. Three campaign items already say "+1 to spell attack rolls AND spell
+   * save DC"; only the attack half existed, so half of each item did nothing.
+   *
+   * A NUMBER, not a formula. A DC is a printed target ("WIS DC 15"), not a roll, so this
+   * shifts the number rather than appending a term — appending would produce "WIS DC 15+1"
+   * and get broadcast to the table like that.
+   */
+  saveDcBonus?: number;
   /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
   appliesTo?: "ranged" | "melee" | "weapon" | "two-handed" | "spell" | "any";
   /**
@@ -523,6 +534,15 @@ function actionToPinnedReaction(tabId: TabId, action: ActorAction): PinnedReacti
 function getPinnedReactionShortcuts(actor: Actor) {
   const pinnedById = new Map<string, PinnedReaction>();
 
+  /**
+   * ⚠ SEED THE OPPORTUNITY ATTACK FIRST, so anything the actor carries can overwrite it.
+   * It is a rule every melee creature has, not content an actor has to be given — and it had
+   * VANISHED FROM EVERY CARD because nothing ever wrote it in. Seeding at render reaches
+   * code-authored actors, imported ones and new ones alike, with no data migration; an actor
+   * that pins its own `opportunity-attack` action replaces this below.
+   */
+  pinnedById.set(OPPORTUNITY_ATTACK_REACTION.id, OPPORTUNITY_ATTACK_REACTION);
+
   (actor.pinnedReactions ?? []).forEach((reaction) => {
     pinnedById.set(reaction.id, reaction);
   });
@@ -823,6 +843,7 @@ export function ActorCard({
   const [attackUseByActorId, setAttackUseByActorId] = useState<Record<string, AttackUseState | null>>(() => readActorCardSessionSnapshot().attackUseByActorId ?? {});
   const [castLevelByActionKey, setCastLevelByActionKey] = useState<Record<string, number>>(() => readActorCardSessionSnapshot().castLevelByActionKey ?? {});
   const [twoWeaponByActorId, setTwoWeaponByActorId] = useState<Record<string, boolean>>(() => readActorCardSessionSnapshot().twoWeaponByActorId ?? {});
+  const [showCritFailTables, setShowCritFailTables] = useState(false);
   const [debuffNote, setDebuffNote] = useState("");
   // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
   const [pendingAdditiveDie, setPendingAdditiveDie] = useState<string | null>(null);
@@ -2657,13 +2678,18 @@ export function ActorCard({
   function getEquippedSpellFocuses() {
     return (actor.tabs.equipment ?? [])
       .filter(a => a.metadata?.equipped !== false)
-      .filter(a => a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim())
-      .map(a => ({
-        id: a.id.replace(/^equip-/, ""),
-        label: a.label,
-        attack: a.metadata?.spellFocusAttack?.trim() || undefined,
-        damage: a.metadata?.spellFocusDamage?.trim() || undefined,
-      }));
+      .filter(a => a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim()
+        || a.metadata?.spellFocusSaveDc?.trim())
+      .map(a => {
+        const dc = Number.parseInt((a.metadata?.spellFocusSaveDc ?? "").replace(/[^\d+-]/g, ""), 10);
+        return {
+          id: a.id.replace(/^equip-/, ""),
+          label: a.label,
+          attack: a.metadata?.spellFocusAttack?.trim() || undefined,
+          damage: a.metadata?.spellFocusDamage?.trim() || undefined,
+          saveDc: Number.isFinite(dc) && dc !== 0 ? dc : undefined,
+        };
+      });
   }
 
   function isSpellFocusArmed(focusId: string) {
@@ -2694,20 +2720,50 @@ export function ActorCard({
     return parts.length ? parts.join(" · ") : effect.label;
   }
 
-  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string }) {
+  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
     const effectId = `focus:${focus.id}`;
     if (isSpellFocusArmed(focus.id)) {
       clearArmedEffect(effectId);
       return;
     }
+    const parts = [
+      focus.attack ? `atk ${formatBonusForChip(focus.attack)}` : "",
+      focus.damage ? `dmg ${formatBonusForChip(focus.damage)}` : "",
+      focus.saveDc ? `DC ${focus.saveDc > 0 ? "+" : ""}${focus.saveDc}` : "",
+    ].filter(Boolean);
     upsertArmedEffect({
       id: effectId,
-      label: [focus.attack ? `atk ${formatBonusForChip(focus.attack)}` : "", focus.damage ? `dmg ${formatBonusForChip(focus.damage)}` : ""].filter(Boolean).join(" · ") || focus.label,
-      details: `${focus.label} — spellcasting focus. Adds to spell attack & damage rolls while armed.`,
+      label: parts.join(" · ") || focus.label,
+      details: `${focus.label} — spellcasting focus. Adds to spell attack, damage and save DC while armed.`,
       source: focus.label,
       formula: focus.damage,
       attackFormula: focus.attack,
+      saveDcBonus: focus.saveDc,
     });
+  }
+
+  /**
+   * Shift a printed save DC by an armed focus bonus.
+   *
+   * ⚠ THE DC IS A NUMBER IN A SENTENCE, not a roll. It arrives as "WIS DC 15" / "DC 15
+   * Wisdom saving throw" / "8+@SAVE_BONUS" already resolved to "8+7". Appending "+1" would
+   * broadcast "WIS DC 15+1" to the table, so the number itself moves and the wording is left
+   * exactly as authored. A DC with no readable number is returned untouched rather than
+   * guessed at.
+   */
+  function applySaveDcBonus(saveText: string | undefined, bonus: number): string | undefined {
+    if (!saveText || !bonus) return saveText;
+    const withDc = saveText.match(/(DC\s*)(\d+)/i);
+    if (withDc) {
+      return saveText.replace(/(DC\s*)(\d+)/i, (_m, lead: string, n: string) =>
+        `${lead}${Number.parseInt(n, 10) + bonus}`);
+    }
+    // A bare resolved expression like "8+7" — bump its total, keeping it a single number.
+    const bare = saveText.trim().match(/^(\d+)\s*\+\s*(\d+)$/);
+    if (bare) return String(Number.parseInt(bare[1], 10) + Number.parseInt(bare[2], 10) + bonus);
+    const single = saveText.trim().match(/^(\d+)$/);
+    if (single) return String(Number.parseInt(single[1], 10) + bonus);
+    return saveText;
   }
 
   function renderSpellFocusPanel() {
@@ -2729,9 +2785,9 @@ export function ActorCard({
                 onClick={() => toggleSpellFocus(f)}
                 className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}
                 style={{ cursor: "pointer", opacity: armed ? 1 : 0.65 }}
-                title={`${f.label}${f.attack ? ` · ${formatBonusForChip(f.attack)} to spell attack` : ""}${f.damage ? ` · ${formatBonusForChip(f.damage)} to spell damage` : ""} (applies to spell rolls only)`}
+                title={`${f.label}${f.attack ? ` · ${formatBonusForChip(f.attack)} to spell attack` : ""}${f.damage ? ` · ${formatBonusForChip(f.damage)} to spell damage` : ""}${f.saveDc ? ` · ${f.saveDc > 0 ? "+" : ""}${f.saveDc} to spell save DC` : ""} (applies to spell rolls only)`}
               >
-                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${formatBonusForChip(f.attack)}` : ""}{f.damage ? ` dmg ${formatBonusForChip(f.damage)}` : ""}
+                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${formatBonusForChip(f.attack)}` : ""}{f.damage ? ` dmg ${formatBonusForChip(f.damage)}` : ""}{f.saveDc ? ` DC ${f.saveDc > 0 ? "+" : ""}${f.saveDc}` : ""}
               </button>
             );
           })}
@@ -3880,6 +3936,20 @@ export function ActorCard({
       }
     }
 
+    /**
+     * The focus's SAVE-DC half. Gated to spells exactly like the attack half — a focus never
+     * touches a weapon attack or a non-spell save. Applied to the already-resolved DC text so
+     * "8+@SAVE_BONUS" has become a number by the time it is bumped.
+     */
+    if (entry.action.actionKind === "spell" && resolvedCandidate.saveDc) {
+      const focusDcBonus = armedEffects
+        .filter(e => e.id.startsWith("focus:") && typeof e.saveDcBonus === "number")
+        .reduce((sum, e) => sum + (e.saveDcBonus ?? 0), 0);
+      if (focusDcBonus !== 0) {
+        resolvedCandidate.saveDc = applySaveDcBonus(resolvedCandidate.saveDc, focusDcBonus);
+      }
+    }
+
     // Fighting styles (Archery etc.): armed weapon-buff toggles add their attack bonus to a
     // matching WEAPON attack roll (gated by target). Damage bonus rides via getDamageAdditives.
     const weaponAttackFormula = resolvedCandidate.attackFormula?.trim();
@@ -4727,7 +4797,25 @@ export function ActorCard({
           <option value="">— Declare a standard action —</option>
           {STANDARD_COMBAT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
+        {/* The Nat 1 tables, readable WITHOUT having rolled one. Before this the d6 picker in
+            CommittedRollPanel was the only way to see either table, so neither could be looked
+            up in advance. Sits here because this row is on every card and every tab. */}
+        <button
+          type="button"
+          onClick={() => setShowCritFailTables(true)}
+          title="Natural 1 failure tables — both the first and second tables, for melee, ranged and spell attacks alike"
+          style={{
+            flexShrink: 0, fontSize: 11, padding: "3px 8px", background: "#111",
+            border: "1px solid #3a3a52", borderRadius: 4, color: "#e07b39", cursor: "pointer",
+          }}
+        >⚀ Nat 1</button>
       </div>
+
+      <CriticalFailureReference
+        open={showCritFailTables}
+        onClose={() => setShowCritFailTables(false)}
+        playerSafe={isPlayerMode && actor.kind !== "monster"}
+      />
 
       {activeTab === "notes" ? (
         <ActorNotesPanel

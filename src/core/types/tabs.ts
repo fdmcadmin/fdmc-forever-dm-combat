@@ -262,6 +262,9 @@ export type ActorActionMetadata = {
    *  through it (clickable additive on spell attack / damage rolls). */
   spellFocusAttack?: string;
   spellFocusDamage?: string;
+  /** Shift to the spell SAVE DC from the same focus ("+1"). The DC is a printed target, so
+   *  this moves the number rather than appending a term to a roll. */
+  spellFocusSaveDc?: string;
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;

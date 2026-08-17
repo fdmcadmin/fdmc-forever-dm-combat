@@ -213,6 +213,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@STR+1",
     "mastery": "Topple",
     "spellFocusAttack": "+1",
+    "spellFocusSaveDc": "+1",
     "act": "Act 2",
     "sourceEncounter": "DISPLACED OWLBEAR",
     "isLocked": true
@@ -635,6 +636,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Can be used as a spellcasting focus. +1 to spell attack rolls and spell save DC. Once per long rest, when you cast a healing spell, one target of that spell regains an additional 1d8 hit points.",
     "isUsable": false,
     "spellFocusAttack": "+1",
+    "spellFocusSaveDc": "+1",
     "act": "Act 2",
     "sourceEncounter": "LESSER WENDIGOS",
     "charges": {"max":1,"reset":"longRest"},
@@ -807,6 +809,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
     "spellFocusAttack": "+1",
+    "spellFocusSaveDc": "+1",
     "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,

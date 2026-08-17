@@ -93,6 +93,25 @@ export type PinnedReaction = {
   sourceActionId?: string;
 };
 
+/**
+ * THE OPPORTUNITY ATTACK IS A RULE, NOT ACTOR DATA.
+ *
+ * Every creature that can make a melee attack has it. Carrying it as per-actor content is why
+ * it disappeared: the campaign module declared `defaultPlayerPinnedReactions` but nothing ever
+ * imported it, and every authored actor — plus every actor the editor creates — ships
+ * `pinnedReactions: []`. So the row rendered empty on all six characters at once.
+ *
+ * It lives in core because it is a rule of the game rather than campaign content, and it is
+ * seeded at RENDER time (`getPinnedReactionShortcuts`) rather than written into actor records,
+ * so it reaches code-authored actors, imported actors and brand-new ones with no migration.
+ * An actor that pins its own `opportunity-attack` action still wins — the seed is a floor.
+ */
+export const OPPORTUNITY_ATTACK_REACTION: PinnedReaction = {
+  id: "opportunity-attack",
+  label: "Opportunity Attack",
+  description: "Reaction attack when a creature you can see leaves your reach.",
+};
+
 export type BondTiming =
   | "beforeAction"
   | "afterHit"

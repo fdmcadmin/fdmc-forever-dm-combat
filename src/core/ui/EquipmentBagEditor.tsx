@@ -161,6 +161,11 @@ export type EquipmentItem = {
    *  spell attack / damage rolls. An item can be both a weapon AND a focus. */
   spellFocusAttack?: string;
   spellFocusDamage?: string;
+  /** The THIRD thing a focus buys: a shift to the spell save DC ("+1"). A number, not a
+   *  formula — a DC is a printed target, so this moves the number rather than appending a
+   *  term. Three campaign items say "+1 to spell attack rolls and spell save DC" and only
+   *  the attack half existed, so half of each did nothing. */
+  spellFocusSaveDc?: string;
   value?: string;
   weight?: string;
   tags?: string[];
@@ -607,6 +612,7 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       // Spellcasting focus bonuses — read by the spell roll workspace (clickable additive).
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
+      spellFocusSaveDc: item.spellFocusSaveDc,
       equipped,
       charges: item.charges,
       // Carried so the card can count attunement against what's equipped, without a library
@@ -860,11 +866,20 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
           Leave blank for non-focus items. Works alongside a weapon attack (both). */}
       <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
         <div style={{ fontSize: 11, color: "#9d8cff", marginBottom: 4 }}>🪄 Spellcasting focus <span style={{ color: "#555" }}>(blank = not a focus)</span></div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <label style={{ fontSize: 12 }}>Spell Attack Bonus <input type="text" value={draft.spellFocusAttack ?? ""} onChange={e => set("spellFocusAttack", e.target.value || undefined)} placeholder="+1" style={inputStyle} /></label>
           <label style={{ fontSize: 12 }}>Spell Damage Bonus <input type="text" value={draft.spellFocusDamage ?? ""} onChange={e => set("spellFocusDamage", e.target.value || undefined)} placeholder="+1, +1d4..." style={inputStyle} /></label>
+          <label style={{ fontSize: 12 }}>Spell Save DC <input type="text" value={draft.spellFocusSaveDc ?? ""} onChange={e => set("spellFocusSaveDc", e.target.value || undefined)} placeholder="+1" style={inputStyle} /></label>
         </div>
-        <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>Added to spell attack/damage rolls as a clickable focus toggle. Put riders (e.g. "ignore Half Cover") in Description.</div>
+        {/* ⚠ WRITE THE BONUS, NOT THE TOTAL. These are ADDED to the spell's own formula, so
+            "+1" is right and "@SPELL+1" double-counts the spell attack bonus the spell
+            already carries. A live sheet had a wand set to "1+@SPELL" and every spell cast
+            through it rolled its attack bonus twice. */}
+        <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>
+          Added to spell attack/damage rolls as a clickable focus toggle; the DC bonus shifts the spell's printed save DC.
+          Write the BONUS only — "+1", never "@SPELL+1", which counts the spell attack bonus twice.
+          Put riders (e.g. "ignore Half Cover") in Description.
+        </div>
       </div>
 
       <label style={{ fontSize: 12 }}>
@@ -1175,6 +1190,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       ac: m.acDisplay,
       spellFocusAttack: m.spellFocusAttack,
       spellFocusDamage: m.spellFocusDamage,
+      spellFocusSaveDc: m.spellFocusSaveDc,
       charges: m.charges,
       attunementRequired: m.attunementRequired,
       // Round-tripped so editing a sheet's copy does not quietly strip the item's Convergence
