@@ -289,7 +289,10 @@ const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-3-v0.7.3-v12-revisions";
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
   if (key) {
-    try { return (JSON.parse(window.localStorage.getItem(key) ?? "[]") as EquipmentItem[]); } catch { return []; }
+    // REPAIRED ON READ. Years of the round-trip guessing the type left live libraries full
+    // of armour and wands filed as gear; this heals them wherever they load rather than needing
+    // a hand-edit each. It only ever promotes OUT of the catch-all, from stated fields.
+    try { return (JSON.parse(window.localStorage.getItem(key) ?? "[]") as EquipmentItem[]).map(repairItemType); } catch { return []; }
   }
   // Both combined — DM items override campaign items with same ID (so edits to campaign items persist)
   const campaign = loadEquipmentLibrary("campaign");
@@ -514,6 +517,43 @@ function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: stri
  *
  *   Reading still treats `undefined` as equipped, so actors saved before this keep working.
  */
+/**
+ * Repair an item whose TYPE is wrong, from what the item itself states.
+ *
+ * Christopher, 2026-08-17: *"why would i need to tell you armor types of things that are a clear
+ * understanding a shield is a shield, and if you looked at attached stat blocks they read as what
+ * they do."* Correct — and I had over-applied my own "never infer from prose" rule, which is about
+ * inventing a taxonomy from FLAVOUR. These are stat lines: `Chain Mail` carries
+ * *"Heavy armor. AC 16; Strength 13; Disadvantage on Stealth"* and an `ac` of "16". Nothing is
+ * being guessed; it is being READ.
+ *
+ * Two stated facts do the work, and neither is a name:
+ *   · `ac` EXISTS → this is not gear. Gear has no armour class.
+ *   · `ac` STARTS WITH "+" → it ADDS to AC, which is what a shield does; a bare number SETS AC,
+ *     which is what body armour does. That is a mechanical distinction, not a word.
+ *   · the armour weight is taken only from an explicit "<Heavy|Medium|Light> armor" statement.
+ *     No statement, no armourType — an unset field is safe, a wrong one is not.
+ *
+ * This exists because the round-trip GUESSED the type for years (`attack||damage ? weapon : gear`),
+ * so live libraries are full of armour typed `gear`. Repairing on read means those heal wherever
+ * they are loaded instead of needing a hand-edit each.
+ */
+export function repairItemType(item: EquipmentItem): EquipmentItem {
+  const ac = item.ac?.trim();
+  const stated = `${item.description ?? ""} ${item.mechanicsText ?? ""}`;
+  const weight = /\b(heavy|medium|light)\s+armor\b/i.exec(stated)?.[1]?.toLowerCase() as
+    ArmorTypeId | undefined;
+
+  let type = item.type;
+  // Only ever promotes OUT of the catch-all. An item already typed armor/shield/weapon is left
+  // alone — a DM's explicit choice outranks a re-read.
+  if ((type === "gear" || type === "tool") && ac) {
+    type = ac.startsWith("+") ? "shield" : "armor";
+  }
+  const armorType = type === "armor" ? (item.armorType ?? weight) : item.armorType;
+  return type === item.type && armorType === item.armorType ? item : { ...item, type, armorType };
+}
+
 /**
  * The mastery an item INHERITS, when it resolves to a base weapon.
  *
@@ -1363,7 +1403,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
    */
   function actionToItem(action: ActorAction, itemId: string): EquipmentItem {
     const m = action.metadata ?? {};
-    return {
+    return repairItemType({
       id: itemId,
       name: action.label,
       /**
@@ -1404,7 +1444,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       statEffects: m.statEffects as StatEffect[] | undefined,
       category: action.category,
       tags: action.tags,
-    };
+    });
   }
 
   function detachItem(actionId: string) {
