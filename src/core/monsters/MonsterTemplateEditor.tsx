@@ -8,8 +8,8 @@
  * Steps:
  *   1 Identity   — name · kind · size · creature type · classification · archetype · visibility
  *   2 Abilities  — chassis-sourced scores, archetype REDISTRIBUTES the pool, manual override
- *   3 Defenses   — HP / AC / speed / attacks-per-turn + band/pressure references (Apply, never silent)
- *   4 Actions    — attacks, saves, recharge (first-class)
+ *   3 Defenses   — HP / AC / speed + band/pressure references (Apply, never silent)
+ *   4 Actions    — attacks-per-turn budget, attacks, saves, recharge (first-class)
  *   5 Reactions  — true reactions (trigger + effect + optional save)
  *   6 Legendary  — N per round + per-option cost (stored in actions[] via legendaryCost)
  *   7 Traits & Resources — passives, trackers, notes
@@ -339,12 +339,6 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             <span style={labelStyle}>Speed</span>
             <input value={draft.stats.speed} onChange={e => updateStat("speed", e.target.value)} style={inputStyle} />
           </div>
-          <div style={{ flex: 1 }}>
-            <span style={labelStyle}>Attacks / turn</span>
-            <input type="number" min={1} value={draft.stats.attacksPerTurn ?? ""} placeholder="1"
-              onChange={e => updateStat("attacksPerTurn", e.target.value ? Math.max(1, Number(e.target.value)) : undefined)}
-              style={inputStyle} title="Drives the multiattack counter directly — no action needs to be named 'Multiattack'" />
-          </div>
         </div>
         <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10 }}>
           <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#34c759" }}>Band / pressure reference (starting points)</span>
@@ -377,7 +371,27 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   function renderActions() {
     return (
       <>
-        <p style={hintStyle}>Attacks and standard actions. Recharge is a field, not a name suffix — the card's recharge roller reads it. Set Attacks/turn in step 3 for multiattack; legendary actions live in step 6.</p>
+        <p style={hintStyle}>Attacks and standard actions. Recharge is a field, not a name suffix — the card's recharge roller reads it. Legendary actions live in step 6.</p>
+        {/* ⚠ ATTACKS/TURN IS AN ACTION-ECONOMY FIELD AND BELONGS HERE. It sat under Defenses
+            beside HP and AC, which is where you look for what a creature can SURVIVE, not for
+            how many swings it gets — so the number that decides the whole turn was filed with
+            the wrong question. It sits above the action list because it governs it. */}
+        <div style={{
+          display: "flex", alignItems: "flex-end", gap: 10, marginBottom: 8,
+          background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10,
+        }}>
+          <div style={{ width: 130 }}>
+            <span style={labelStyle}>Attacks / turn</span>
+            <input type="number" min={1} value={draft.stats.attacksPerTurn ?? ""} placeholder="1"
+              onChange={e => updateStat("attacksPerTurn", e.target.value ? Math.max(1, Number(e.target.value)) : undefined)}
+              style={inputStyle} title="How many of the actions below the creature may take on its turn. No action needs to be named 'Multiattack'." />
+          </div>
+          <p style={{ ...hintStyle, flex: 1, margin: 0 }}>
+            How many of the actions below it may take on one turn — blank or 1 means a single
+            action. This is the budget, not a list: the DM spends it on whichever actions they
+            want. A spell or recharge ability IS the whole action and ends the turn's attacks.
+          </p>
+        </div>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <SmallBtn color="#ff6b5e" onClick={() => addListItem("actions", { name: "", kind: "action" })}>+ Add action</SmallBtn>
         </div>

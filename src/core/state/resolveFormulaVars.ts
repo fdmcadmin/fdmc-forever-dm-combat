@@ -141,6 +141,29 @@ export function resolveFormulaVars(
   const vars = buildFormulaVarMap(actor, derivedStats, drainState);
   let resolved = formula;
 
+  /**
+   * ⚠ A VARIABLE IN DICE-COUNT POSITION IS A COUNT, NOT A BONUS.
+   *
+   * `@PROFd4` means "proficiency-many d4s" — the shape a scaling cantrip needs so it grows with
+   * level instead of being re-authored at every tier (Raphael's Healing Hands is authored
+   * exactly this way). Every value in the map is SIGNED for use as a bonus, so the plain
+   * substitution turned it into "+3d4": a signed number where a die count belongs, which reads
+   * as a bonus of 3d4 rather than 3d4 of healing, and breaks outright mid-expression.
+   *
+   * Anything immediately followed by `d<number>` therefore substitutes the MAGNITUDE:
+   *   "@PROFd4"        → "3d4"
+   *   "2d8+@INTd6"     → "2d8+4d6"
+   * A modifier of 0 or less yields ONE die rather than "0d4" or a negative count, because a
+   * character with no bonus still rolls the spell.
+   */
+  resolved = resolved.replace(/@([A-Z_]+)(?=d\d)/gi, (match, name: string) => {
+    const value = vars[`@${name.toUpperCase()}`];
+    if (value === undefined) return match;          // unknown token: leave it visible
+    const magnitude = Math.abs(Number.parseInt(value, 10));
+    if (!Number.isFinite(magnitude)) return match;
+    return String(Math.max(1, magnitude));
+  });
+
   for (const [token, value] of Object.entries(vars)) {
     // Replace all occurrences — handles both "+@STR" and "@STR" at start
     resolved = resolved.replaceAll(token, value);

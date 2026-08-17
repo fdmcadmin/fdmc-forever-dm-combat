@@ -652,29 +652,33 @@ function condenseFlatModifiers(formula: string): string {
 }
 
 /**
- * A FOCUS BONUS IS A BONUS, NOT A TOTAL — strip a `@SPELL` that would be counted twice.
+ * THE SPELL ATTACK BONUS LIVES ON THE FOCUS. Christopher, 2026-08-17:
+ * *"the spell attack needs to live on the focuses because this is what all casts are made
+ * with… no spell should carry a @SPELL because you cant cast them without a focus."*
  *
- * Focus bonuses are ADDED to the spell's own attack formula (`combineRollFormulas` joins with
- * "+"), and that formula already carries `@SPELL`. So a focus authored as "1+@SPELL" or
- * "@SPELL+1" makes every spell cast through it roll the spell attack bonus TWICE — at level 6
- * that is a silent +5 to hit on every cast.
+ * So a spell authors its attack as a bare `1d20` — which is how the live sheets are already
+ * written: Fire Bolt, Ray of Frost and Scorching Ray all carry `1d20` and nothing else — and
+ * the armed focus supplies `@SPELL`. An item flagged as a focus inherits it whether or not it
+ * states a bonus of its own: a plain focus contributes `@SPELL`, a +1 wand `@SPELL+1`.
  *
- * Three items on live sheets had exactly this: a Staring-Knot Wand and a Wand of the War Mage
- * at "1+@SPELL", and a Voidtempered Blade at "@SPELL+1". Stripping it here fixes them in place
- * rather than requiring every character to be re-entered, and the editor now says which form
- * to write. A value that is ONLY "@SPELL" leaves nothing to add, so it drops out entirely.
+ * ⚠ I HAD THIS BACKWARDS IN 0.7.9.9. I stripped `@SPELL` out of focus bonuses on the
+ * assumption that the spell carried it. On these sheets the spell does not, so that removed
+ * the whole casting bonus from every cast. This is the correction.
+ *
+ * Exactly ONE `@SPELL` reaches the roll: any author-written copy is normalised out here, and
+ * the caller re-adds it for the FIRST armed focus only, so two armed focuses cannot stack the
+ * casting bonus the way a hand-written "1+@SPELL" once did.
  */
-function stripFocusSpellVar(raw?: string): string | undefined {
-  const value = raw?.trim();
-  if (!value) return undefined;
-  if (!/@SPELL\b/i.test(value)) return value;
-  const stripped = value
+function focusAttackContribution(raw: string | undefined, includeSpellVar: boolean): string | undefined {
+  const extra = (raw ?? "")
     .replace(/@SPELL\b/gi, "")
     .replace(/\+\s*\+/g, "+")
     .replace(/^\s*\+/, "")
     .replace(/\+\s*$/, "")
     .trim();
-  return stripped ? (/^[+-]/.test(stripped) ? stripped : `+${stripped}`) : undefined;
+  const signedExtra = extra ? (/^[+-]/.test(extra) ? extra : `+${extra}`) : "";
+  if (!includeSpellVar) return signedExtra || undefined;
+  return `@SPELL${signedExtra}`;
 }
 
 function combineRollFormulas(formulas: string[]) {
@@ -2701,21 +2705,32 @@ export function ActorCard({
   // Equipped items with a spell focus bonus surface as clickable toggles. When armed,
   // the focus adds its attack bonus to spell attack rolls (handleCommitRoll) and its
   // damage bonus to spell damage rolls (getDamageAdditives). Stays armed until toggled.
+  /**
+   * ⚠ BEING A FOCUS IS ITS OWN FACT, not something inferred from carrying a bonus.
+   * *"if a item is listed as spell focus it should inherit this."* A plain focus with no
+   * magical plus is still what the spell is cast through, so `isSpellFocus` alone qualifies an
+   * item — before this, an item had to state a bonus to appear at all, which is why a plain
+   * wand never showed up in the list.
+   *
+   * The FIRST focus in the list supplies `@SPELL`; any others contribute only their own extra,
+   * so arming two never doubles the casting bonus.
+   */
   function getEquippedSpellFocuses() {
-    return (actor.tabs.equipment ?? [])
+    const focuses = (actor.tabs.equipment ?? [])
       .filter(a => a.metadata?.equipped !== false)
-      .filter(a => a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim()
-        || a.metadata?.spellFocusSaveDc?.trim())
-      .map(a => {
-        const dc = Number.parseInt((a.metadata?.spellFocusSaveDc ?? "").replace(/[^\d+-]/g, ""), 10);
-        return {
-          id: a.id.replace(/^equip-/, ""),
-          label: a.label,
-          attack: stripFocusSpellVar(a.metadata?.spellFocusAttack),
-          damage: stripFocusSpellVar(a.metadata?.spellFocusDamage),
-          saveDc: Number.isFinite(dc) && dc !== 0 ? dc : undefined,
-        };
-      });
+      .filter(a => a.metadata?.isSpellFocus
+        || a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim()
+        || a.metadata?.spellFocusSaveDc?.trim());
+    return focuses.map((a, index) => {
+      const dc = Number.parseInt((a.metadata?.spellFocusSaveDc ?? "").replace(/[^\d+-]/g, ""), 10);
+      return {
+        id: a.id.replace(/^equip-/, ""),
+        label: a.label,
+        attack: focusAttackContribution(a.metadata?.spellFocusAttack, index === 0),
+        damage: a.metadata?.spellFocusDamage?.trim() || undefined,
+        saveDc: Number.isFinite(dc) && dc !== 0 ? dc : undefined,
+      };
+    });
   }
 
   function isSpellFocusArmed(focusId: string) {

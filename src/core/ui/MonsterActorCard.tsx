@@ -593,11 +593,21 @@ function ActionCard({
 
 // ─── Section label ────────────────────────────────────────────────────────────
 
-function SectionLabel({ text, count, collapsible, open, onToggle, accent }: {
+function SectionLabel({ text, count, collapsible, open, onToggle, accent, budget }: {
   text: string; count: number; collapsible?: boolean; open?: boolean; onToggle?: () => void;
   /** Per-type colour from tabVisuals, so a monster's sections read in the same language
    *  as the PC sheet's tabs. Falls back to the old violet. */
   accent?: string;
+  /**
+   * ⚠ HOW MANY OF THESE THE CREATURE MAY TAKE PER TURN — a different question from `count`,
+   * which is how many are WRITTEN DOWN.
+   *
+   * Those two being one badge is what made the Hollow Warden read as one spear attack (one
+   * action listed, two per turn) and the Larkskein as two Glass-Thorns (two actions listed,
+   * one per turn — and the second is Summer Fold, not an attack at all). The pip row said
+   * "2 LEFT" and "ACTION" correctly the whole time; the badge above it disagreed.
+   */
+  budget?: number;
 }) {
   const c = accent ?? "#7b68ee";
   return (
@@ -612,7 +622,19 @@ function SectionLabel({ text, count, collapsible, open, onToggle, accent }: {
       }}>
       <span style={{ fontSize: 9, color: c, textTransform: "uppercase", letterSpacing: 1.2, fontWeight: 700 }}>{text}</span>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <span style={{ fontSize: 9, color: c, background: `${c}1f`, padding: "1px 5px", borderRadius: 8 }}>{count}</span>
+        {budget !== undefined && budget > 1 && (
+          <span
+            title={`This creature takes ${budget} of these per turn. The number beside it is how many are written on the block, which is a different thing.`}
+            style={{
+              fontSize: 9, color: "#0d0d14", background: c, fontWeight: 700,
+              padding: "1px 6px", borderRadius: 8, letterSpacing: 0.3,
+            }}
+          >{budget}/turn</span>
+        )}
+        <span
+          title={`${count} written on the stat block`}
+          style={{ fontSize: 9, color: c, background: `${c}1f`, padding: "1px 5px", borderRadius: 8 }}
+        >{count}</span>
         {collapsible && (
           <button type="button" onClick={onToggle}
             style={{ fontSize: 9, padding: "1px 5px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#444", cursor: "pointer" }}>
@@ -1450,7 +1472,7 @@ export function MonsterActorCard({
         {/* 4. Actions — true action-cost only */}
         {mainActions.length > 0 && (
           <>
-            <SectionLabel text="Actions" count={mainActions.length} accent={SECTION_ACCENT.actions} />
+            <SectionLabel text="Actions" count={mainActions.length} accent={SECTION_ACCENT.actions} budget={actionsMax} />
             {mainActions.map(a => (
               // Main actions share the turn's action budget: usable until the budget is spent,
               // or until this specific action is out of slots. Not gated per-action.

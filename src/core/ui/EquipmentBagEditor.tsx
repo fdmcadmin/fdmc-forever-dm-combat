@@ -166,6 +166,9 @@ export type EquipmentItem = {
    *  term. Three campaign items say "+1 to spell attack rolls and spell save DC" and only
    *  the attack half existed, so half of each did nothing. */
   spellFocusSaveDc?: string;
+  /** Marks the item as a spellcasting focus. A focus supplies @SPELL to every spell cast
+   *  through it; the bonus fields above are only the item's OWN extra on top. */
+  isSpellFocus?: boolean;
   value?: string;
   weight?: string;
   tags?: string[];
@@ -613,6 +616,7 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
       spellFocusAttack: item.spellFocusAttack,
       spellFocusDamage: item.spellFocusDamage,
       spellFocusSaveDc: item.spellFocusSaveDc,
+      isSpellFocus: item.isSpellFocus,
       equipped,
       charges: item.charges,
       // Carried so the card can count attunement against what's equipped, without a library
@@ -865,19 +869,28 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
       {/* Spellcasting focus — bonuses this item adds to the SPELLS cast through it.
           Leave blank for non-focus items. Works alongside a weapon attack (both). */}
       <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
-        <div style={{ fontSize: 11, color: "#9d8cff", marginBottom: 4 }}>🪄 Spellcasting focus <span style={{ color: "#555" }}>(blank = not a focus)</span></div>
+        <div style={{ fontSize: 11, color: "#9d8cff", marginBottom: 4 }}>🪄 Spellcasting focus</div>
+        {/* ⚠ BEING A FOCUS IS ITS OWN FACT. A plain focus with no magical plus is still what
+            every spell is cast through, and it is what supplies @SPELL to the roll — spells
+            carry no @SPELL of their own. Before this, an item only counted as a focus if it
+            stated a bonus, so a plain wand never appeared in the caster's focus list at all. */}
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+          <input type="checkbox" checked={Boolean(draft.isSpellFocus)}
+            onChange={e => set("isSpellFocus", e.target.checked || undefined)} />
+          This item is a spellcasting focus
+          <span style={{ color: "#555", fontSize: 10 }}>— supplies @SPELL to every spell cast through it</span>
+        </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           <label style={{ fontSize: 12 }}>Spell Attack Bonus <input type="text" value={draft.spellFocusAttack ?? ""} onChange={e => set("spellFocusAttack", e.target.value || undefined)} placeholder="+1" style={inputStyle} /></label>
           <label style={{ fontSize: 12 }}>Spell Damage Bonus <input type="text" value={draft.spellFocusDamage ?? ""} onChange={e => set("spellFocusDamage", e.target.value || undefined)} placeholder="+1, +1d4..." style={inputStyle} /></label>
           <label style={{ fontSize: 12 }}>Spell Save DC <input type="text" value={draft.spellFocusSaveDc ?? ""} onChange={e => set("spellFocusSaveDc", e.target.value || undefined)} placeholder="+1" style={inputStyle} /></label>
         </div>
-        {/* ⚠ WRITE THE BONUS, NOT THE TOTAL. These are ADDED to the spell's own formula, so
-            "+1" is right and "@SPELL+1" double-counts the spell attack bonus the spell
-            already carries. A live sheet had a wand set to "1+@SPELL" and every spell cast
-            through it rolled its attack bonus twice. */}
+        {/* WRITE THE ITEM'S OWN EXTRA ONLY. @SPELL comes from being a focus, so a +1 wand is
+            "+1" and not "@SPELL+1" — writing the variable in as well is harmless (it is
+            normalised out) but reads as though the item granted it. */}
         <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>
-          Added to spell attack/damage rolls as a clickable focus toggle; the DC bonus shifts the spell's printed save DC.
-          Write the BONUS only — "+1", never "@SPELL+1", which counts the spell attack bonus twice.
+          The item's OWN extra, on top of the @SPELL every focus supplies — "+1", not "@SPELL+1".
+          Attack and damage ride the spell's rolls; the DC bonus shifts its printed save DC.
           Put riders (e.g. "ignore Half Cover") in Description.
         </div>
       </div>
@@ -1191,6 +1204,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       spellFocusAttack: m.spellFocusAttack,
       spellFocusDamage: m.spellFocusDamage,
       spellFocusSaveDc: m.spellFocusSaveDc,
+      isSpellFocus: m.isSpellFocus,
       charges: m.charges,
       attunementRequired: m.attunementRequired,
       // Round-tripped so editing a sheet's copy does not quietly strip the item's Convergence

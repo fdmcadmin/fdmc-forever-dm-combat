@@ -265,6 +265,10 @@ export type ActorActionMetadata = {
   /** Shift to the spell SAVE DC from the same focus ("+1"). The DC is a printed target, so
    *  this moves the number rather than appending a term to a roll. */
   spellFocusSaveDc?: string;
+  /** THIS ITEM IS A SPELLCASTING FOCUS. Its own fact, not inferred from carrying a bonus —
+   *  a plain focus with no magical plus is still what every spell is cast through, and it is
+   *  what supplies @SPELL to the roll. Spells themselves carry no @SPELL. */
+  isSpellFocus?: boolean;
   /** Weapon-buff rider (e.g. Hungering Blade): when this spell/ability is toggled on, the
    *  formula is added to the actor's WEAPON attack damage (clickable persistent additive). */
   weaponBuffDamage?: string;
