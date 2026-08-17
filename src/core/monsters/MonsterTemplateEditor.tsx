@@ -37,6 +37,9 @@ import {
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
+import { estimateCreature } from "../encounter-band/creatureEstimator";
+import { parseCreature } from "../encounter-band/parseCreature";
+import { traceCreature } from "../encounter-band/actionTrace";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -95,6 +98,37 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   const [chassisId, setChassisId] = useState<string>("");
   const [refBand, setRefBand] = useState<CreatorBandId>("mid");
   const [refPressure, setRefPressure] = useState<CreatorPressureId>("standard");
+  const [desiredCr, setDesiredCr] = useState<number | undefined>(undefined);
+
+  /**
+   * The workbook estimator, fed from THIS creature.
+   *
+   * ⚠ THE DPR COMES FROM THE TRACE, not from a number typed twice. `parseCreature` +
+   * `traceCreature` are the same pair the encounter checker uses, so the estimate cannot drift
+   * from what the checker says the creature does — and it already honours Recharge, use limits and
+   * gated features. The sheet asks for "expected DPR from the parser"; this IS the parser.
+   *
+   * The trait multiplier is the PRODUCT of the authored defences, matching the checker's own
+   * combination rule. Target AC 16 / save +3 is the estimator's fixed reference frame — it is
+   * measuring the creature, not a specific party, so it must not move with a party level.
+   */
+  const estimate = useMemo(() => {
+    const parsed = parseCreature(draft);
+    const trace = traceCreature(parsed, { ac: 16, saveBonus: 3 }, 4);
+    const traitMultiplier = (draft.stats.defenses ?? [])
+      .reduce((product, d) => product * (d.ehpMultiplier || 1), 1);
+    const acValue = typeof draft.stats.ac === "number"
+      ? draft.stats.ac
+      : Number.parseInt(String(draft.stats.ac), 10);
+    return estimateCreature({
+      rawHp: draft.stats.maxHp || 0,
+      ac: Number.isFinite(acValue) ? acValue : 15,
+      traitMultiplier,
+      r1Dpr: trace.rounds[0]?.totalExpectedDamage ?? 0,
+      r2PlusDpr: trace.rounds[1]?.totalExpectedDamage ?? 0,
+      desiredCr,
+    });
+  }, [draft, desiredCr]);
 
   function updateStat<K extends keyof MainMonsterTemplate["stats"]>(key: K, val: MainMonsterTemplate["stats"][K]) {
     setDraft(d => ({ ...d, stats: { ...d.stats, [key]: val } }));
@@ -363,6 +397,47 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             <SmallBtn color="#34c759" onClick={() => updateStat("maxHp", hpRef.suggested)}>Apply HP</SmallBtn>
             <span style={{ color: "#667" }}>attack +{band.attackBonus} · starter {band.starterDamage}</span>
           </div>
+        </div>
+
+        {/* ── THE WORKBOOK'S CREATURE ESTIMATOR ──────────────────────────────────────────
+            A faithful port of the v4 audit workbook's "Creature Estimator" sheet, reading THIS
+            creature rather than asking for its numbers again: raw HP and AC from the fields
+            above, the trait multiplier as the PRODUCT of its authored defences, and the DPR from
+            its own traced action schedule — the same trace the encounter checker uses, so the
+            estimate and the encounter check can never disagree about what the creature does.
+
+            The sheet's own bounds, quoted because they limit what this may claim: *"it is not an
+            official CR ruling and it never rewrites a creature's printed action budget."* So it
+            SUGGESTS a range. Nothing here writes to the creature. */}
+        <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
+          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4f9dff" }}>
+            Creature estimator — workbook v4
+          </span>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 6, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
+            <span>armour factor <strong style={{ color: "#dfe4ff" }}>×{estimate.armorFactor.toFixed(3)}</strong></span>
+            <span>effective HP <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveHp.toFixed(0)}</strong></span>
+            <span>modeled DPR <strong style={{ color: "#dfe4ff" }}>{estimate.modeledDpr.toFixed(1)}</strong></span>
+          </div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 4, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
+            <span>defensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.defensiveCr}</strong></span>
+            <span>offensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.offensiveCr}</strong></span>
+            <span>suggested <strong style={{ color: "#7be08a" }}>CR {estimate.suggestedCrRange}</strong>
+              <span style={{ color: "#667" }}> centre {estimate.suggestedCrCenter}</span></span>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginTop: 8, flexWrap: "wrap" }}>
+            <div style={{ width: 120 }}>
+              <span style={labelStyle}>Desired CR</span>
+              <input type="number" min={1} max={20} value={desiredCr ?? ""} placeholder="—"
+                onChange={e => setDesiredCr(e.target.value ? Math.max(1, Math.min(20, Number(e.target.value))) : undefined)}
+                style={inputStyle} />
+            </div>
+            <p style={{ ...hintStyle, flex: 1, minWidth: 220, margin: 0 }}>{estimate.guidance}</p>
+          </div>
+          <p style={{ ...hintStyle, margin: "6px 0 0" }}>
+            Estimated from selected SRD medians — a practical range, not an official CR ruling. The
+            DPR is this creature's own traced schedule, so it already respects Recharge, use limits
+            and gating. Nothing here writes to the creature.
+          </p>
         </div>
       </>
     );
