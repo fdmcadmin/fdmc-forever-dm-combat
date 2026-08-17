@@ -100,6 +100,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     combatStyleDamage: action.metadata?.combatStyleDamage,
     combatStyleTarget: action.metadata?.combatStyleTarget,
     weaponBuffDamage: action.metadata?.weaponBuffDamage,
+    weaponBuffAttack: action.metadata?.weaponBuffAttack,
     turnRider: action.metadata?.turnRider,
   };
 }
@@ -395,10 +396,29 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
           Rage, Hunter's Mark, Channel Divinity damage. Pair with "Spends resource" above so
           the pool counts down on use; it auto-clears at End Combat. Numbers/dice only. */}
       {draft.tab !== "spell" && (
-        <label style={{ fontSize: 12 }}>
-          Weapon buff (activated) <span style={{ color: "#555", fontSize: 10 }}>— arms a persistent bonus on weapon attacks when used (Rage, Hunter's Mark)</span>
-          <input type="text" value={draft.weaponBuffDamage ?? ""} onChange={e => set("weaponBuffDamage", e.target.value || undefined)} placeholder="+2 or +1d6" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
-        </label>
+        <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+          <label style={{ fontSize: 12, display: "block" }}>
+            Weapon buff — damage <span style={{ color: "#555", fontSize: 10 }}>— arms a persistent bonus on weapon attacks when used (Rage, Hunter's Mark)</span>
+            <input type="text" value={draft.weaponBuffDamage ?? ""} onChange={e => set("weaponBuffDamage", e.target.value || undefined)} placeholder="+2 or +1d6" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+          </label>
+          {/* ⚠ SOME RIDERS BUY TO-HIT, NOT DAMAGE. Sacred Weapon adds CHA to ATTACK ROLLS;
+              authoring it in the damage box makes the paladin hit no more often and swing
+              harder, which is the opposite of the feature. The runtime has carried
+              `weaponBuffAttack` since it was written — one chip, both halves — but there was
+              no box to type it in, so it could never be authored. */}
+          <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
+            Weapon buff — to hit <span style={{ color: "#555", fontSize: 10 }}>— rides the ATTACK ROLL instead (Sacred Weapon +CHA, Bless)</span>
+            <input type="text" value={draft.weaponBuffAttack ?? ""} onChange={e => set("weaponBuffAttack", e.target.value || undefined)} placeholder="+@CHA or +1d4" style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+          </label>
+          {(draft.weaponBuffAttack?.trim() || draft.weaponBuffDamage?.trim()) && (
+            <div style={{ fontSize: 10, color: "#7be08a", marginTop: 4 }}>
+              ⚔ One chip carries both: {[
+                draft.weaponBuffAttack?.trim() ? `${draft.weaponBuffAttack.trim()} to hit` : "",
+                draft.weaponBuffDamage?.trim() ? `${draft.weaponBuffDamage.trim()} to damage` : "",
+              ].filter(Boolean).join(" and ")}. Armed on use, cleared by ✕ or End Combat.
+            </div>
+          )}
+        </div>
       )}
 
       {/* Fighting style toggle (Archery / Two-Weapon / Great Weapon). Shows as a clickable

@@ -171,6 +171,7 @@ export function actionFromEditorDraft(draft: PcActionDraft, existingAction?: Act
     ...(draft.combatStyleDamage?.trim() ? { combatStyleDamage: draft.combatStyleDamage.trim() } : {}),
     ...(draft.combatStyleTarget ? { combatStyleTarget: draft.combatStyleTarget } : {}),
     ...(draft.weaponBuffDamage?.trim() ? { weaponBuffDamage: draft.weaponBuffDamage.trim() } : {}),
+    ...(draft.weaponBuffAttack?.trim() ? { weaponBuffAttack: draft.weaponBuffAttack.trim() } : {}),
     ...(draft.turnRider?.kind ? { turnRider: draft.turnRider } : {}),
   };
 
