@@ -81,9 +81,32 @@ function isCollapsibleCategoryTab(tabId: TabId) {
   return ["bond", "checks", "spells", "features", "equipment", "outOfCombat"].includes(tabId);
 }
 
+/**
+ * A spell's heading comes from ITS OWN LEVEL, not from however the category was typed.
+ *
+ * ⚠ THE SHEET GROUPED BY AN EXACT STRING, so "Cantrip" and "Cantrips" rendered as two separate
+ * sections on the same character — four cantrips under one heading and two under another.
+ * The same drift puts an L2 spell under an "L1 Spells" heading if the category was typed by
+ * hand while the level was set correctly.
+ *
+ * ONLY LEVEL HEADINGS ARE REWRITTEN. A deliberate grouping like "Class Spell" (a free cast
+ * that spends a long-rest use instead of a slot) is left exactly as authored — those are a
+ * real distinction on the sheet, not a typo, and collapsing them into the level sections would
+ * hide that Cure Wounds is available both ways.
+ */
+const LEVEL_HEADING = /^\s*(?:cantrips?|l(?:evel)?\s*(\d+)(?:\s*spells?)?)\s*$/i;
+
+function canonicalSpellCategory(action: ActorAction): string | null {
+  const raw = action.category ?? null;
+  const level = action.metadata?.spellLevel;
+  if (raw === null || typeof level !== "number") return raw;
+  if (!LEVEL_HEADING.test(raw)) return raw;      // "Class Spell" and friends stay put
+  return level === 0 ? "Cantrips" : `L${level} Spells`;
+}
+
 function groupActions(actions: ActorAction[]) {
   return actions.reduce<Array<{ category: string | null; actions: ActorAction[] }>>((groups, action) => {
-    const category = action.category ?? null;
+    const category = canonicalSpellCategory(action);
     const existing = groups.find((group) => group.category === category);
 
     if (existing) {

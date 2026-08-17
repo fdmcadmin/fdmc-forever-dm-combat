@@ -651,6 +651,32 @@ function condenseFlatModifiers(formula: string): string {
   return out || formula;
 }
 
+/**
+ * A FOCUS BONUS IS A BONUS, NOT A TOTAL — strip a `@SPELL` that would be counted twice.
+ *
+ * Focus bonuses are ADDED to the spell's own attack formula (`combineRollFormulas` joins with
+ * "+"), and that formula already carries `@SPELL`. So a focus authored as "1+@SPELL" or
+ * "@SPELL+1" makes every spell cast through it roll the spell attack bonus TWICE — at level 6
+ * that is a silent +5 to hit on every cast.
+ *
+ * Three items on live sheets had exactly this: a Staring-Knot Wand and a Wand of the War Mage
+ * at "1+@SPELL", and a Voidtempered Blade at "@SPELL+1". Stripping it here fixes them in place
+ * rather than requiring every character to be re-entered, and the editor now says which form
+ * to write. A value that is ONLY "@SPELL" leaves nothing to add, so it drops out entirely.
+ */
+function stripFocusSpellVar(raw?: string): string | undefined {
+  const value = raw?.trim();
+  if (!value) return undefined;
+  if (!/@SPELL\b/i.test(value)) return value;
+  const stripped = value
+    .replace(/@SPELL\b/gi, "")
+    .replace(/\+\s*\+/g, "+")
+    .replace(/^\s*\+/, "")
+    .replace(/\+\s*$/, "")
+    .trim();
+  return stripped ? (/^[+-]/.test(stripped) ? stripped : `+${stripped}`) : undefined;
+}
+
 function combineRollFormulas(formulas: string[]) {
   const normalized = formulas
     .map((formula) => normalizeRollFormula(formula))
@@ -2685,8 +2711,8 @@ export function ActorCard({
         return {
           id: a.id.replace(/^equip-/, ""),
           label: a.label,
-          attack: a.metadata?.spellFocusAttack?.trim() || undefined,
-          damage: a.metadata?.spellFocusDamage?.trim() || undefined,
+          attack: stripFocusSpellVar(a.metadata?.spellFocusAttack),
+          damage: stripFocusSpellVar(a.metadata?.spellFocusDamage),
           saveDc: Number.isFinite(dc) && dc !== 0 ? dc : undefined,
         };
       });

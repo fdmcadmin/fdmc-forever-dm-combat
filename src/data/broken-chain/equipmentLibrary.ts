@@ -505,6 +505,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "id": "tbc-marrow",
     "name": "Marrow Shield",
     "type": "shield",
+    "ac": "+3",
     "description": "Named for the first thing strength drain reaches. The face of it is unmarked — no emblem, no device. It belonged to someone who didn't want to be found.",
     "mechanicsText": "+3 bonus to AC — a shield's base +2 plus a +1 magical bonus. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
     "isUsable": false,
