@@ -349,6 +349,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-the-staring-knot",
     "name": "Staring-Knot Wand",
+    "effect": { "type": "reroll", "rerollMethod": "reroll", "condition": "a creature succeeded on a save against your spell — it rerolls" },
     "isSpellFocus": true,
     "type": "magic",
     "description": "A short length of pale wood, the grain spiralling to a knot at the tip. Sight along it and the tip never sits quite where your hand says it should. The knot has a centre, and the centre has a way of being aimed back at you.",
@@ -900,6 +901,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-clarity-hood",
     "name": "Clarity Hood",
+    "effect": { "type": "reroll", "rerollMethod": "reroll", "condition": "a failed save vs Charmed, Frightened, or an illusion" },
     "type": "magic",
     "description": "A light hood whose inner weave sharpens at the edge of false images and invasive emotion. Tags: Recipe: Defense + Utility · Completed: Utility",
     "mechanicsText": "Once per long rest, when you fail a saving throw against being Charmed or Frightened, or against an illusion spell or effect, reroll the save and use the new result.",
@@ -979,6 +981,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-hollowlight",
     "name": "Hollowlight",
+    "effect": { "type": "reroll", "rerollMethod": "reroll", "condition": "a failed save vs Blinded, Charmed, Frightened or Restrained" },
     "type": "magic",
     "description": "A pale light source that does not brighten darkness so much as make it stop lying. Tags: Recipe: Cleanse + Utility · Completed: Utility",
     "mechanicsText": "You can see through magical darkness within 30 feet. Once per day, when you fail a saving throw against being Blinded, Charmed, Frightened, or Restrained, you can reroll the save and use the new result.",
@@ -1099,6 +1102,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "tbc-mirrorbark-scale",
     "name": "Mirrorbark Scale",
+    "effect": { "type": "reroll", "rerollMethod": "reroll", "condition": "when an attack hits you (Reaction) — the attacker rerolls" },
     "type": "magic",
     "description": "A thumb-sized plate of polished bark whose grain catches reflections a fraction too early. At the instant of impact, the false reflection seems to pull the real blow after it. Tags: A3 · Defense",
     "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to force the attacker to reroll the attack roll and use the new roll.",
