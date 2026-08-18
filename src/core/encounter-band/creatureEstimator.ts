@@ -1,184 +1,230 @@
 /**
  * creatureEstimator — a faithful port of the workbook's "Creature Estimator" sheet.
  *
- * Source: `broken_chain_encounter_checker_audit_v4.xlsx`, sheet 3 "Creature Estimator".
- * Christopher, 2026-08-17: *"then utilize the workbooks updated creature estimator for the
- * encounter builder."*
+ * Source: `broken_chain_encounter_checker_audit_v6.xlsx`, sheet 3 "Creature Estimator",
+ * transcribed from the FORMULA layer (cells E5–E16, A19), not from the displayed values. The
+ * display cells are blank by design: the checker fills them from the traits a DM authors and
+ * from the monster library, so the sheet ships as a shape, not as data.
  *
- * The sheet's own framing, quoted because it bounds what this may claim:
- *   *"Enter a creature's actual defensive data and expected DPR from the parser. This estimates a
- *   practical CR range from selected SRD medians; it is not an official CR ruling and it never
- *   rewrites a creature's printed action budget."*
- *   *"This workbook displays the estimator only; it does not author or alter creature rules."*
+ * ⚠ THIS REPLACES THE v4 PORT. v4 rated from selected SRD medians; v6 rates 2014 WotC
+ * DMG-style, separately on defence and offence, through CR 25. What changed:
+ *   · three-round DPR `(R1 + 2×R2+)/3`, was a four-round `(R1 + 3×R2+)/4`
+ *   · a source-traced FLAT EHP adjustment and an AC adjustment, ALONGSIDE the trait multiplier
+ *     v4 already had — two channels now, not one replacing the other (see `ehpMultiplier`)
+ *   · attack bonus OR save DC as an offence delivery axis — v4 had no such axis at all
+ *   · base AND adjusted CR on both axes, was one figure each
+ *   · CR 0–25 with fractional low CRs (0, 1/8, 1/4, 1/2), was CR 1–20
  *
- * So this SUGGESTS. It never writes to a creature, never touches an action budget, and its output
- * is a range plus a sentence of guidance.
+ * ⚠ THE v4 LADDERS WERE NON-MONOTONIC AND CARRIED A "DO NOT SORT" WARNING. That warning does
+ * NOT apply here and has been removed deliberately. v6's ladders are DMG bands and ARE
+ * monotonic — every threshold below rises. If you are diffing against the old file, the
+ * ordering changed because the source table changed, not because it got tidied.
  *
- * ⚠ THE CR LADDERS ARE NOT MONOTONIC AND THAT IS NOT A BUG. Read the defensive ladder: 178 → CR 9,
- * 180.2 → CR 10, then 203.8 → CR **12**, 207.2 → CR **14**, 219.0 → CR **13**, 222.0 → CR **15**,
- * 245.5 → CR **11**. The offensive ladder is shuffled the same way (94.05 → CR 19, 106.075 → 14).
- * They are compiled from SELECTED SRD MEDIANS, and real SRD creatures are not monotonic in HP or
- * damage by CR. Every branch below is transcribed in the sheet's own order. Do not "fix" the
- * sequence — sorting it would be inventing a model, which is the exact failure that got the
- * previous checker deleted.
+ * The sheet's own framing still bounds what this may claim: it SUGGESTS. It never writes to a
+ * creature, never rewrites an authored action budget, and its output is a range plus guidance.
+ * Control, target allocation, individual saves, action denial and sequencing are NOT priced
+ * here — `requiredRuntimeTrace` says so in the result, because the sheet says so on its face.
  */
 
 /** Inputs, mapped to the sheet's cells so the port stays auditable. */
 export type EstimatorInput = {
-  /** B4 — the creature's printed HP, before AC or traits. */
+  /** B4 — printed HP, before adjustments. */
   rawHp: number;
   /** B5 — printed Armor Class. */
   ac: number;
-  /** B6 — the trait/sustain multiplier (the PRODUCT of its defensive traits). */
-  traitMultiplier: number;
-  /** B7 — expected damage in round 1. */
+  /**
+   * The source-traced EHP MULTIPLIER — the product of applicable defensive traits, and the
+   * figure the sustain calibration produces. Defaults to 1.
+   *
+   * ⚠ THIS EXTENDS THE SHEET DELIBERATELY. v6's E5 is `MAX(1, B4+B6)`, additive only. Folding
+   * a ×1.25 into the flat channel gives the same effective HP — `raw + raw×(m−1) = raw×m` — but
+   * it ERASES the calibrated multiplier from view and makes the workbook unauditable. So the
+   * two channels are kept separate. A diff against cell E5 will show the extra term; that is
+   * intended, not a transcription slip.
+   */
+  ehpMultiplier?: number;
+  /**
+   * B6 — the source-traced FLAT effective HP adjustment: regeneration, healing, restored HP,
+   * fixed barriers. ADDITIVE, and applied after the multiplier.
+   *
+   * ⚠ ONE TRAIT, ONE CHANNEL. Anything counted in `ehpMultiplier` must not also appear here,
+   * and AC-equivalent effects belong in `acAdjustment` so the DMG defensive-CR shift prices
+   * them — not in either HP channel.
+   */
+  ehpAdjustment?: number;
+  /** B7 — source-traced effective AC adjustment. ADDITIVE. */
+  acAdjustment?: number;
+  /** B8 — expected damage in round 1. */
   r1Dpr: number;
-  /** B8 — expected damage in round 2 onward. */
+  /** B9 — expected damage in round 2 onward. */
   r2PlusDpr: number;
-  /** B9 — optional. Set it to receive editor guidance toward that CR. */
+  /** B10 — which axis the offence is delivered on. */
+  offenseBasis?: "attack" | "saveDc";
+  /** B11 — creature attack bonus. Read when `offenseBasis` is "attack". */
+  attackBonus?: number;
+  /** B12 — creature save DC. Read when `offenseBasis` is "saveDc". */
+  saveDc?: number;
+  /** B13 — optional. Set it to receive editor guidance toward that CR. */
   desiredCr?: number;
 };
 
 export type EstimatorResult = {
-  /** E5 — MAX(0.5, 1 + 0.045 × (AC − 15)). */
-  armorFactor: number;
-  /** E6 — rawHp × traitMultiplier × armorFactor. */
+  /** The multiplier that was applied, surfaced so the calibration stays visible in the UI. */
+  ehpMultiplier: number;
+  /** E5, extended — MAX(1, rawHp × ehpMultiplier + ehpAdjustment). */
   effectiveHp: number;
-  /** E7 — (R1 + 3 × R2+) / 4. A four-round fight, one opener and three sustained. */
+  /** E6 — ac + acAdjustment. */
+  effectiveAc: number;
+  /** E7 — (R1 + 2×R2+) / 3. THREE rounds: one opener, two sustained. */
   modeledDpr: number;
-  /** E8 — CR implied by effective HP. */
-  defensiveCr: number;
-  /** E9 — CR implied by modeled DPR. */
-  offensiveCr: number;
-  /** E10 — "4–7". The two CRs widened by one in each direction. */
-  suggestedCrRange: string;
-  /** E11 — ROUND(AVERAGE(defensive, offensive), 0). */
-  suggestedCrCenter: number;
-  /** E12 — effective HP to add (+) or remove (−) to reach `desiredCr`. Null without one. */
+  /** E8 — CR implied by effective HP alone. */
+  baseDefensiveCr: number;
+  /** E9 — E8 shifted 1 CR per FULL 2 points of AC difference, clamped 0–25. */
+  acAdjustedDefensiveCr: number;
+  /** E10 — CR implied by three-round DPR alone. */
+  baseOffensiveCr: number;
+  /** E11 — E10 shifted 1 CR per FULL 2 points of attack-bonus or save-DC difference. */
+  deliveryAdjustedOffensiveCr: number;
+  /** E12 — ROUND(AVERAGE(E9, E11), 0), or "25+" past the table. */
+  estimatedCr: number | "25+";
+  /** E13 — "CR 4-CR 7". */
+  crRange: string;
+  /** E14 — effective HP to add (+) or remove (−) to reach `desiredCr`. Null without one. */
   targetEhpAdjustment: number | null;
-  /** E13 — expected DPR to add (+) or remove (−) to reach `desiredCr`. Null without one. */
+  /** E15 — three-round DPR to add (+) or remove (−) to reach `desiredCr`. Null without one. */
   targetDprAdjustment: number | null;
-  /** E14 — the sentence the sheet prints, verbatim in shape. */
+  /** E16 — whether the profile still sits inside the CR 0–25 table. */
+  capStatus: "WITHIN CR 0-25 TABLE" | "ABOVE CR 25 - MANUAL REVIEW";
+  /** A19 — the sentence the sheet prints, verbatim in shape. */
   guidance: string;
+  /** The sheet's standing caveat, surfaced so a caller cannot quietly drop it. */
+  requiredRuntimeTrace: string;
 };
+
+/** Threshold ladders: `[upperBound, value]`, first match wins, else the trailing value. */
+type Ladder = ReadonlyArray<readonly [number, number]>;
+
+const step = (ladder: Ladder, fallback: number, x: number): number => {
+  for (const [bound, value] of ladder) if (x <= bound) return value;
+  return fallback;
+};
+
+/** E8 — effective HP → CR. */
+const DEFENSIVE_CR: Ladder = [
+  [6, 0], [35, 0.125], [49, 0.25], [70, 0.5], [85, 1], [100, 2], [115, 3], [130, 4],
+  [145, 5], [160, 6], [175, 7], [190, 8], [205, 9], [220, 10], [235, 11], [250, 12],
+  [265, 13], [280, 14], [295, 15], [310, 16], [325, 17], [340, 18], [355, 19], [400, 20],
+  [445, 21], [490, 22], [535, 23], [580, 24],
+];
+
+/** E10 — three-round DPR → CR. */
+const OFFENSIVE_CR: Ladder = [
+  [1, 0], [3, 0.125], [5, 0.25], [8, 0.5], [14, 1], [20, 2], [26, 3], [32, 4],
+  [38, 5], [44, 6], [50, 7], [56, 8], [62, 9], [68, 10], [74, 11], [80, 12],
+  [86, 13], [92, 14], [98, 15], [104, 16], [110, 17], [116, 18], [122, 19], [140, 20],
+  [158, 21], [176, 22], [194, 23], [212, 24],
+];
+
+/** E9's inner ladder — the AC a creature of this CR is expected to have. */
+const EXPECTED_AC: Ladder = [[3, 13], [4, 14], [7, 15], [9, 16], [12, 17], [16, 18]];
+/** E11's inner ladder, save-DC branch. */
+const EXPECTED_SAVE_DC: Ladder = [[3, 13], [4, 14], [7, 15], [10, 16], [12, 17], [16, 18], [20, 19], [23, 20]];
+/** E11's inner ladder, attack-bonus branch. */
+const EXPECTED_ATTACK: Ladder = [[2, 3], [3, 4], [4, 5], [7, 6], [10, 7], [15, 8], [16, 9], [20, 10], [23, 11]];
+
+/** The sheet's ceilings. Past either, the table stops meaning anything. */
+const EHP_CEILING = 625;
+const DPR_CEILING = 230;
 
 /**
- * E8. Transcribed branch-for-branch from the sheet.
- *
- * The first two branches both yield 1 — that is in the source, and it means anything under 45
- * effective HP is CR 1. Kept rather than collapsed so a diff against the sheet stays line-for-line.
+ * The shared shape of E9 and E11: shift the base CR by one step per FULL 2 points of
+ * difference, in the direction of the difference, then clamp to the table.
+ * `SIGN(d) * INT(ABS(d)/2)` — a difference of 1 moves nothing.
  */
-function defensiveCrFor(ehp: number): number {
-  if (ehp < 26.389888) return 1;
-  if (ehp < 45.000000) return 1;
-  if (ehp < 60.000000) return 2;
-  if (ehp < 82.000000) return 3;
-  if (ehp < 105.000000) return 4;
-  if (ehp < 123.000000) return 5;
-  if (ehp < 126.500000) return 6;
-  if (ehp < 136.000000) return 7;
-  if (ehp < 165.000000) return 8;
-  if (ehp < 178.000000) return 9;
-  if (ehp < 180.205575) return 10;
-  if (ehp < 203.834878) return 12;
-  if (ehp < 207.186514) return 14;
-  if (ehp < 218.991831) return 13;
-  if (ehp < 222.048975) return 15;
-  if (ehp < 245.481279) return 11;
-  if (ehp < 260.804113) return 16;
-  if (ehp < 260.804113) return 17;   // unreachable in the sheet too — kept for fidelity
-  if (ehp < 334.750689) return 18;
-  if (ehp < 347.138402) return 19;
-  return 20;
+function shiftPerTwo(baseCr: number, actual: number, expected: number): number {
+  const delta = actual - expected;
+  const steps = Math.sign(delta) * Math.trunc(Math.abs(delta) / 2);
+  return Math.max(0, Math.min(25, baseCr + steps));
 }
 
-/** E9. Same rule: transcribed in the sheet's order, including the shuffled CR labels. */
-function offensiveCrFor(dpr: number): number {
-  if (dpr < 7.350000) return 1;
-  if (dpr < 9.625000) return 1;
-  if (dpr < 15.400000) return 2;
-  if (dpr < 16.800000) return 3;
-  if (dpr < 22.550000) return 4;
-  if (dpr < 33.787500) return 5;
-  if (dpr < 36.275000) return 7;
-  if (dpr < 40.075000) return 6;
-  if (dpr < 40.100000) return 8;
-  if (dpr < 45.712500) return 9;
-  if (dpr < 52.000000) return 10;
-  if (dpr < 63.450000) return 11;
-  if (dpr < 67.150000) return 12;
-  if (dpr < 75.400000) return 13;
-  if (dpr < 94.050000) return 19;
-  if (dpr < 106.075000) return 14;
-  if (dpr < 106.075000) return 17;   // unreachable in the sheet too — kept for fidelity
-  if (dpr < 110.400000) return 18;
-  if (dpr < 112.400000) return 16;
-  if (dpr < 138.375000) return 15;
-  return 20;
+/** The band a desired CR sits in, derived from the ladder rather than restated. */
+function bandMidpoint(ladder: Ladder, ceiling: number, cr: number): number {
+  const index = ladder.findIndex(([, value]) => value === cr);
+  if (index === -1) {
+    // CR 25 — the open top band, closed by the sheet's ceiling.
+    const lower = ladder[ladder.length - 1][0] + 1;
+    return (lower + ceiling) / 2;
+  }
+  const lower = index === 0 ? 0 : ladder[index - 1][0] + 1;
+  return (lower + ladder[index][0]) / 2;
 }
 
-/** E12's lookup: the effective-HP target for a desired CR. */
-const TARGET_EHP: Record<number, number> = {
-  1: 26.389888, 2: 45.000000, 3: 60.000000, 4: 82.000000, 5: 105.000000,
-  6: 123.000000, 7: 126.500000, 8: 136.000000, 9: 165.000000, 10: 178.000000,
-  11: 222.048975, 12: 180.205575, 13: 207.186514, 14: 203.834878, 15: 218.991831,
-  16: 245.481279, 17: 260.804113, 18: 260.804113, 19: 334.750689, 20: 347.138402,
-};
-
-/** E13's lookup: the DPR target for a desired CR. */
-const TARGET_DPR: Record<number, number> = {
-  1: 7.350000, 2: 9.625000, 3: 15.400000, 4: 16.800000, 5: 22.550000,
-  6: 36.275000, 7: 33.787500, 8: 40.075000, 9: 40.100000, 10: 45.712500,
-  11: 52.000000, 12: 63.450000, 13: 67.150000, 14: 94.050000, 15: 112.400000,
-  16: 110.400000, 17: 106.075000, 18: 106.075000, 19: 75.400000, 20: 138.375000,
-};
-
-/** Excel ROUND — half away from zero, which is not what `Math.round` does for negatives. */
-function excelRound(value: number, digits = 0): number {
-  const factor = 10 ** digits;
-  const scaled = value * factor;
-  return (scaled < 0 ? -Math.round(-scaled) : Math.round(scaled)) / factor;
-}
+const round1 = (n: number): number => Math.round(n * 10) / 10;
 
 export function estimateCreature(input: EstimatorInput): EstimatorResult {
-  const armorFactor = Math.max(0.5, 1 + 0.045 * (input.ac - 15));
-  const effectiveHp = input.rawHp * input.traitMultiplier * armorFactor;
-  const modeledDpr = (input.r1Dpr + 3 * input.r2PlusDpr) / 4;
+  const ehpMultiplier = input.ehpMultiplier ?? 1;
+  const effectiveHp = Math.max(                                                        // E5+
+    1, input.rawHp * ehpMultiplier + (input.ehpAdjustment ?? 0),
+  );
+  const effectiveAc = input.ac + (input.acAdjustment ?? 0);                            // E6
+  const modeledDpr = (input.r1Dpr + 2 * input.r2PlusDpr) / 3;                          // E7
 
-  const defensiveCr = defensiveCrFor(effectiveHp);
-  const offensiveCr = offensiveCrFor(modeledDpr);
+  const baseDefensiveCr = step(DEFENSIVE_CR, 25, effectiveHp);                         // E8
+  const acAdjustedDefensiveCr = shiftPerTwo(                                           // E9
+    baseDefensiveCr, effectiveAc, step(EXPECTED_AC, 19, baseDefensiveCr),
+  );
 
-  const low = Math.max(1, Math.min(defensiveCr, offensiveCr) - 1);
-  const high = Math.min(20, Math.max(defensiveCr, offensiveCr) + 1);
+  const baseOffensiveCr = step(OFFENSIVE_CR, 25, modeledDpr);                          // E10
+  const bySaveDc = input.offenseBasis === "saveDc";
+  const deliveryAdjustedOffensiveCr = shiftPerTwo(                                     // E11
+    baseOffensiveCr,
+    bySaveDc ? (input.saveDc ?? 0) : (input.attackBonus ?? 0),
+    bySaveDc
+      ? step(EXPECTED_SAVE_DC, 21, baseOffensiveCr)
+      : step(EXPECTED_ATTACK, 12, baseOffensiveCr),
+  );
+
+  // E16, and the same test gates E12 and E13. Both adjusted CRs are already clamped to 25, so
+  // the third arm of the sheet's OR() can never fire — transcribed anyway, to stay diffable.
+  const averageCr = (acAdjustedDefensiveCr + deliveryAdjustedOffensiveCr) / 2;
+  const aboveTable = effectiveHp > EHP_CEILING || modeledDpr > DPR_CEILING || averageCr > 25;
+  const capStatus = aboveTable ? "ABOVE CR 25 - MANUAL REVIEW" : "WITHIN CR 0-25 TABLE";
+
+  const lowCr = Math.min(acAdjustedDefensiveCr, deliveryAdjustedOffensiveCr);
+  const highCr = Math.max(acAdjustedDefensiveCr, deliveryAdjustedOffensiveCr);
 
   const desired = input.desiredCr;
-  const hasDesired = typeof desired === "number" && desired >= 1 && desired <= 20;
-  const targetEhpAdjustment = hasDesired ? TARGET_EHP[desired] - effectiveHp : null;
-  const targetDprAdjustment = hasDesired ? TARGET_DPR[desired] - modeledDpr : null;
+  const hasDesired = typeof desired === "number" && Number.isFinite(desired);
+  const targetEhpAdjustment = hasDesired                                               // E14
+    ? bandMidpoint(DEFENSIVE_CR, EHP_CEILING, desired as number) - effectiveHp : null;
+  const targetDprAdjustment = hasDesired                                               // E15
+    ? bandMidpoint(OFFENSIVE_CR, DPR_CEILING, desired as number) - modeledDpr : null;
 
-  /**
-   * E14, verbatim in shape. The closing clause is the important half and is quoted from the
-   * sheet: the estimator may move HP and DPR, and it must NOT move the action economy.
-   */
-  const guidance = !hasDesired
-    ? "Set a desired CR to receive editor guidance."
-    : `To approach CR ${desired}: ${(targetEhpAdjustment as number) >= 0 ? "add " : "remove "}`
-      + `${Math.abs(targetEhpAdjustment as number).toFixed(0)} effective HP and `
+  const guidance = !hasDesired                                                         // A19
+    ? "Set a desired CR to receive baseline editor guidance."
+    : `To approach the CR ${desired} baseline: `
+      + `${(targetEhpAdjustment as number) >= 0 ? "add " : "remove "}`
+      + `${Math.abs(Math.round(targetEhpAdjustment as number))} source-traced effective HP and `
       + `${(targetDprAdjustment as number) >= 0 ? "add " : "remove "}`
-      + `${Math.abs(targetDprAdjustment as number).toFixed(1)} expected DPR. `
-      + "Preserve action channels, Recharge, slots, and printed timing; then rerun the parser "
-      + "and encounter check.";
+      + `${Math.abs(round1(targetDprAdjustment as number)).toFixed(1)} expected three-round DPR. `
+      + "AC and attack/save differences can shift the final rating; preserve authored actions, "
+      + "Recharge, slots, and timing, then rerun the parser and encounter trace.";
 
   return {
-    armorFactor,
+    ehpMultiplier,
     effectiveHp,
+    effectiveAc,
     modeledDpr,
-    defensiveCr,
-    offensiveCr,
-    suggestedCrRange: `${low}–${high}`,
-    suggestedCrCenter: excelRound((defensiveCr + offensiveCr) / 2, 0),
+    baseDefensiveCr,
+    acAdjustedDefensiveCr,
+    baseOffensiveCr,
+    deliveryAdjustedOffensiveCr,
+    estimatedCr: aboveTable ? "25+" : Math.round(averageCr),                           // E12
+    crRange: aboveTable ? `CR ${lowCr}-CR 25+` : `CR ${lowCr}-CR ${highCr}`,           // E13
     targetEhpAdjustment,
     targetDprAdjustment,
+    capStatus,
     guidance,
+    requiredRuntimeTrace: "PER-TARGET ACTION / CONTROL / SEQUENCING",
   };
 }

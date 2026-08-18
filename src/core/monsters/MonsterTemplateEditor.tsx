@@ -114,18 +114,35 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
    */
   const estimate = useMemo(() => {
     const parsed = parseCreature(draft);
-    const trace = traceCreature(parsed, { ac: 16, saveBonus: 3 }, 4);
+    // THREE rounds, not four: v6 rates the legal three-round action sequence.
+    const trace = traceCreature(parsed, { ac: 16, saveBonus: 3 }, 3);
+    // TWO CHANNELS, and a trait belongs to exactly one. The authored trait product stays a
+    // MULTIPLIER — collapsing it into the flat term gives the same effective HP but hides the
+    // sustain calibration. Flat effects (regeneration, healing, restored HP, fixed barriers)
+    // belong in `ehpAdjustment`; AC-equivalent effects belong in `acAdjustment`.
     const traitMultiplier = (draft.stats.defenses ?? [])
       .reduce((product, d) => product * (d.ehpMultiplier || 1), 1);
+    const rawHp = draft.stats.maxHp || 0;
     const acValue = typeof draft.stats.ac === "number"
       ? draft.stats.ac
       : Number.parseInt(String(draft.stats.ac), 10);
+    // The offence axis comes from what the creature actually leads with. A creature that only
+    // forces saves is rated on its DC; anything with an attack roll is rated on that.
+    const attackBonus = parsed.features.reduce(
+      (best, f) => Math.max(best, f.attackBonus ?? 0), 0);
+    const saveDc = parsed.features.reduce(
+      (best, f) => Math.max(best, f.saveDc ?? 0), 0);
     return estimateCreature({
-      rawHp: draft.stats.maxHp || 0,
+      rawHp,
       ac: Number.isFinite(acValue) ? acValue : 15,
-      traitMultiplier,
+      ehpMultiplier: traitMultiplier,
+      ehpAdjustment: 0,
+      acAdjustment: 0,
       r1Dpr: trace.rounds[0]?.totalExpectedDamage ?? 0,
       r2PlusDpr: trace.rounds[1]?.totalExpectedDamage ?? 0,
+      offenseBasis: attackBonus > 0 ? "attack" : "saveDc",
+      attackBonus,
+      saveDc,
       desiredCr,
     });
   }, [draft, desiredCr]);
@@ -414,15 +431,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             Creature estimator — workbook v4
           </span>
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 6, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
-            <span>armour factor <strong style={{ color: "#dfe4ff" }}>×{estimate.armorFactor.toFixed(3)}</strong></span>
+            <span>EHP multiplier <strong style={{ color: "#dfe4ff" }}>×{estimate.ehpMultiplier.toFixed(3)}</strong></span>
+            <span>effective AC <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveAc}</strong></span>
             <span>effective HP <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveHp.toFixed(0)}</strong></span>
-            <span>modeled DPR <strong style={{ color: "#dfe4ff" }}>{estimate.modeledDpr.toFixed(1)}</strong></span>
+            <span>three-round DPR <strong style={{ color: "#dfe4ff" }}>{estimate.modeledDpr.toFixed(1)}</strong></span>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 4, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
-            <span>defensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.defensiveCr}</strong></span>
-            <span>offensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.offensiveCr}</strong></span>
-            <span>suggested <strong style={{ color: "#7be08a" }}>CR {estimate.suggestedCrRange}</strong>
-              <span style={{ color: "#667" }}> centre {estimate.suggestedCrCenter}</span></span>
+            <span>defensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.baseDefensiveCr}</strong>
+              <span style={{ color: "#667" }}> → AC-adj {estimate.acAdjustedDefensiveCr}</span></span>
+            <span>offensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.baseOffensiveCr}</strong>
+              <span style={{ color: "#667" }}> → atk/DC-adj {estimate.deliveryAdjustedOffensiveCr}</span></span>
+            <span>suggested <strong style={{ color: "#7be08a" }}>{estimate.crRange}</strong>
+              <span style={{ color: "#667" }}> centre {estimate.estimatedCr}</span></span>
+            {estimate.capStatus !== "WITHIN CR 0-25 TABLE" && (
+              <span style={{ color: "#e8b64c" }}>{estimate.capStatus}</span>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginTop: 8, flexWrap: "wrap" }}>
             <div style={{ width: 120 }}>
