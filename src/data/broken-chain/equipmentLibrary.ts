@@ -1122,7 +1122,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when a creature you can see within 30 feet ends its turn, you can use your Reaction. You and one willing creature you can see within 30 feet can each move up to 10 feet without provoking opportunity attacks.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "sourceEncounter": "Act 3 E10 - The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Tactical","actLabel":"A3"},
     "isLocked": true
@@ -1135,7 +1135,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The Reaction otherwise resolves normally.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "sourceEncounter": "Act 3 E10 - The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Continuity","actLabel":"A3"},
     "isLocked": true
@@ -1148,7 +1148,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, as a Magic action, touch a creature and end one of the following conditions on it: Blinded, Deafened, Paralyzed, or Poisoned.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "sourceEncounter": "Act 3 E10 - The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Cleanse","actLabel":"A3"},
     "isLocked": true
@@ -1162,7 +1162,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when you deal damage to a creature, you can cause the splinter to flare. The creature takes an additional 2d8 damage of one type dealt by the triggering effect, and it cannot regain hit points until the start of your next turn.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+    "sourceEncounter": "Act 3 E10 - The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A3"},
     "isLocked": true
