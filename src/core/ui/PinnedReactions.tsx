@@ -13,10 +13,16 @@ type PinnedReactionsProps = {
   usedCostSlots: ActionCost[];
   onUseReaction: (reaction: PinnedReaction) => void;
   onUnreadyReaction: (reaction: PinnedReaction) => void;
-  /** The actor weapon attacks an Opportunity Attack may be made WITH. */
-  weaponAttacks?: { id: string; label: string }[];
+  /**
+   * The actor weapon attacks an Opportunity Attack may be made WITH.
+   * `readiedKey` is the key that weapon occupies once picked — the pinned block needs it to tell
+   * "my swing is readied" apart from "someone else took the reaction slot".
+   */
+  weaponAttacks?: { id: string; label: string; readiedKey: string }[];
   /** Ready that weapon action on the REACTION slot — the same action, spent off-turn. */
   onUseWeaponAsReaction?: (actionId: string) => void;
+  /** Take it back off. Right-click has to unready the WEAPON, not the declaration it replaced. */
+  onUnreadyWeaponAsReaction?: (actionId: string) => void;
   onCommitRoll: (candidate: ReadiedRollCandidate) => void;
 };
 
@@ -55,6 +61,7 @@ export function PinnedReactions({
   reactions,
   weaponAttacks,
   onUseWeaponAsReaction,
+  onUnreadyWeaponAsReaction,
   actionState,
   committedRoll,
   resolvedReadiedKeys,
@@ -73,12 +80,25 @@ export function PinnedReactions({
       <div className="pinned-grid">
         {reactions.map((reaction) => {
           const readiedKey = getReadiedKey(reaction.id);
-          const readied = actionState.reaction === readiedKey;
-          const resolved = resolvedReadiedKeys.includes(readiedKey) || usedCostSlots.includes("reaction");
-          const committed = committedRoll?.readiedKey === readiedKey;
-          const commitBlocked = Boolean(committedRoll && committedRoll.readiedKey !== readiedKey);
+          /**
+           * A weapon picked under this OA holds the reaction slot under ITS OWN key. That is the
+           * intended end state, not a conflict — the OA is a declaration, the weapon is the
+           * swing. Treat it as this reaction being readied, with the weapon's key and label, so
+           * the Roll button appears here instead of the pick looking like it failed.
+           */
+          const oaWeapon = reaction.sourceActionId
+            ? undefined
+            : weaponAttacks?.find(w => actionState.reaction === w.readiedKey);
+          const activeKey = oaWeapon?.readiedKey ?? readiedKey;
+          const activeLabel = oaWeapon ? `${reaction.label} — ${oaWeapon.label}` : reaction.label;
+
+          const readied = actionState.reaction === activeKey;
+          const resolved = resolvedReadiedKeys.includes(activeKey) || usedCostSlots.includes("reaction");
+          const committed = committedRoll?.readiedKey === activeKey;
+          const commitBlocked = Boolean(committedRoll && committedRoll.readiedKey !== activeKey);
           const willSwap = Boolean(actionState.reaction && !readied);
-          const outcomeMode = inferPinnedOutcomeMode(reaction);
+          // A weapon swing rolls to hit, whatever the reaction's own prose says.
+          const outcomeMode = oaWeapon ? "attack-roll" as const : inferPinnedOutcomeMode(reaction);
 
           return (
             <div className={`action-button-shell ${readied ? "readied-shell" : ""} ${resolved ? "resolved-shell" : ""}`} key={reaction.id}>
@@ -99,6 +119,7 @@ export function PinnedReactions({
                   }
 
                   event.preventDefault();
+                  if (oaWeapon) { onUnreadyWeaponAsReaction?.(oaWeapon.id); return; }
                   onUnreadyReaction(reaction);
                 }}
               >
@@ -153,8 +174,8 @@ export function PinnedReactions({
                   type="button"
                   onClick={() =>
                     onCommitRoll({
-                      readiedKey,
-                      actionLabel: reaction.label,
+                      readiedKey: activeKey,
+                      actionLabel: activeLabel,
                       costs: ["reaction"],
                       outcomeMode,
                     })

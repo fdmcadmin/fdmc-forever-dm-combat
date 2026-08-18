@@ -1184,9 +1184,19 @@ export function ActorCard({
    * the same test the rest of the card uses. A spell is excluded: an OA is a weapon attack, so
    * offering a cantrip here would invent a rule the game does not have.
    */
+  /**
+   * The weapons an Opportunity Attack may be made with — each carrying the readied key it will
+   * occupy, because the pinned block has to RECOGNISE its own swing.
+   *
+   * Picking a weapon readies that weapon on the reaction slot, so `actionState.reaction` holds
+   * the WEAPON's key, not the reaction's. Without the key here the OA compared the slot against
+   * its own key, saw a stranger, and rendered "already has a Reaction readied — clicking will
+   * swap" while hiding its Roll button: the pick succeeded and then looked like a conflict, with
+   * no way to roll it. The key format lives in this file, so it is supplied from this file.
+   */
   const oaWeaponAttacks = useMemo(() => (actor.tabs.main ?? [])
     .filter(a => a.actionKind !== "spell" && /[0-9]+d[0-9]+/i.test(a.metadata?.attack ?? ""))
-    .map(a => ({ id: a.id, label: a.label })), [actor.tabs.main]);
+    .map(a => ({ id: a.id, label: a.label, readiedKey: makeReadiedKey("main", a.id) })), [actor.tabs.main]);
   // Upcast riders are folded in HERE, at the single point the tab's actions are handed to
   // TabPanel — which builds both the summary chips and the roll candidate from the same
   // object, so the damage shown and the damage rolled cannot drift apart. Ids and metadata
@@ -4952,6 +4962,12 @@ export function ActorCard({
           const weapon = (actor.tabs.main ?? []).find(a => a.id === actionId);
           if (!weapon) return;
           handleUseAction({ action: weapon, tabId: "main", costs: ["reaction"] });
+        }}
+        onUnreadyWeaponAsReaction={(actionId) => {
+          // Right-click on the OA takes the SWING back off, not the declaration it replaced.
+          const weapon = (actor.tabs.main ?? []).find(a => a.id === actionId);
+          if (!weapon) return;
+          handleUnreadyAction({ action: weapon, tabId: "main", costs: ["reaction"] });
         }}
         actionState={actionState}
         committedRoll={committedRoll}
