@@ -1,6 +1,7 @@
 import type { Actor } from "../types/actor";
 import type { ActorAction, ActionOutcomeMode, TabId } from "../types/tabs";
 import { normalizePcActionDraft, type PcActionDraft, type PcRollMode } from "./pcActionTypes";
+import { readDamageTypeChoice } from "../rules/damageTypeChoice";
 
 // Persist the editor's chosen outcome mode so it round-trips (a "Triggered Feature" on a
 // damage action must not re-derive to "Straight Damage" on reopen). inferOutcomeMode honors
@@ -120,6 +121,15 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
       attack: typeof normalized.attackBonus === "number" ? String(normalized.attackBonus) : typeof normalized.attackBonus === "string" ? normalized.attackBonus : undefined,
       damage: normalized.damage,
       damageType: normalized.damageType,
+      /**
+       * The permitted set, derived from the action's own rules text at save time. Stored so
+       * the CARD can offer the pick without re-parsing prose at every render — and so a later
+       * edit to the text updates the set on the next save rather than drifting silently.
+       */
+      damageTypeOptions: (() => {
+        const r = readDamageTypeChoice(normalized.description, normalized.rollMode === "healing" ? "healing" : undefined);
+        return r.kind === "choice" ? r.options : undefined;
+      })(),
       castingClass: normalized.castingClass,
       crit: normalized.critDamage,
       saveDc: typeof normalized.saveDc === "number" ? String(normalized.saveDc) : typeof normalized.saveDc === "string" ? normalized.saveDc : undefined,

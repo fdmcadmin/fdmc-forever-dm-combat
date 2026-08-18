@@ -145,6 +145,14 @@ export type ActorActionMetadata = {
   damage?: string;
   /** Damage type for the damage formula — standard D&D type or a custom free-text value. */
   damageType?: string;
+  /**
+   * The types the CASTER may pick from, when the spell says the choice is theirs.
+   *
+   * `damageType` stays the default/pre-selected one; this is the permitted set. Absent means
+   * the type is fixed, which is every ordinary action — Chromatic Orb and Sorcerous Burst are
+   * the shapes that need it, and they could not be expressed at all while type was one string.
+   */
+  damageTypeOptions?: string[];
   crit?: string;
   saveDc?: string;
   range?: string;

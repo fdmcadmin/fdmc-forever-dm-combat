@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
 import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
+import { readDamageTypeChoice } from "../rules/damageTypeChoice";
 import { tabAccent } from "./tabVisuals";
 import { resolveOutcomeMode } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
@@ -335,6 +336,28 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
               </span>
             </label>
           )}
+
+          {/* WHAT THE SPELL'S OWN TEXT SAYS ABOUT ITS TYPE. Read, never silently applied —
+              a wrong guess has to be visible, which is why this is a note beside the picker
+              rather than something that rewrites the field. "cold instead of fire" is one type;
+              "you CAN use cold instead of fire" is two; "a type you choose" is all of them. */}
+          {(() => {
+            const reading = readDamageTypeChoice(draft.description, draft.rollMode === "healing" ? "healing" : undefined);
+            if (reading.kind === "none") return null;
+            return (
+              <div style={{ fontSize: 10, color: reading.kind === "choice" ? "#7be08a" : "#667", padding: "2px 0" }}>
+                {reading.kind === "choice" ? "⚡ Caster picks: " : "Reads as: "}
+                <strong style={{ color: "#dfe4ff" }}>{reading.options.join(" · ")}</strong>
+                <span style={{ display: "block", color: "#667" }}>{reading.reason}</span>
+                {reading.primary && draft.damageType !== reading.primary && (
+                  <button type="button" className="inline-commit-button" style={{ marginTop: 2 }}
+                    onClick={() => { set("damageType", reading.primary); setCustomDamageType(false); }}>
+                    Use {reading.primary}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {/* P-UX4 Phase 3: damage type — standard D&D defaults + Custom free text so the
               engine stays all-system, not D&D-locked. */}
