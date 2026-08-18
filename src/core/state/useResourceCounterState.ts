@@ -284,13 +284,27 @@ export function useResourceCounterState(actors: Actor[]) {
     // anything that isn't manual-only; a short rest fills the shortRest items — and the
     // encounter ones too, since resting necessarily ends the encounter.
     for (const { key, charges } of chargeBearingActions(actor.tabs)) {
-      // A LONG rest fills every item pool, "manual" included — same reasoning as the
-      // counter pools above: manual is the fallback tag for something that isn't pulling
-      // automatically, not a declaration that the pool opts out of resting. Leaving it out
-      // made the fallback the one pool that never came back.
-      // A SHORT rest still only fills the pools that say short rest (or encounter, since
-      // resting necessarily ends the encounter) — manual is not assumed to be short.
-      if (restType === "long" || charges.reset === "shortRest" || charges.reset === "encounter") {
+      /**
+       * A LONG rest fills every item pool EXCEPT a `manual` one that names its own cadence.
+       *
+       * Two rulings collide here and the NOTE is what separates them:
+       *   · *"manual counters are the fallback and should follow the rest"* — a bare `manual`
+       *     tag means "this isn't pulling automatically", not "this opts out of resting". Those
+       *     still fill, or the fallback becomes the one pool that never comes back.
+       *   · *"dawn is not a rest — a party can take two long rests before a dawn."* An item
+       *     whose note says **Recharges at dawn** is DELIBERATELY gated. Refilling it on a long
+       *     rest hands the party a second use the item does not have.
+       *
+       * So: `manual` + a cadence note = only the manual +1 restores it. All 21 dawn items in the
+       * Broken Chain library carry that note, and every one of them was refilling on a dusk long
+       * rest before this.
+       *
+       * A SHORT rest still only fills the pools that say short rest (or encounter, since resting
+       * necessarily ends the encounter) — manual is not assumed to be short.
+       */
+      const manuallyGated = charges.reset === "manual" && Boolean(charges.note?.trim());
+      if ((restType === "long" && !manuallyGated)
+        || charges.reset === "shortRest" || charges.reset === "encounter") {
         actorCounters[key] = charges.max;
       }
     }
