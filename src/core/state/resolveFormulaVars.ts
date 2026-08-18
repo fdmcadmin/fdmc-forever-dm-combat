@@ -33,6 +33,7 @@
 
 import type { Actor } from "../types/actor";
 import type { DerivedStats } from "./deriveActorStats";
+import { classLevels, hitDicePools } from "../rules/multiclass";
 import { deriveActorStats } from "./deriveActorStats";
 import type { ActorStatusTrackerState } from "../types/status";
 
@@ -121,7 +122,55 @@ export function buildFormulaVarMap(
     "STR_MOD": signed(stats.str.modifier),
     "DEX_MOD": signed(stats.dex.modifier),
     "PROF": signed(prof),
+
+    /**
+     * CLASS LEVELS BY SLOT (Christopher, 2026-08-18): *"we already have the classes on the
+     * profile so why cant it use @main @second @third for the reference to the class."*
+     *
+     * `classes[]` is ordered, so slot 0 is the main class. Referring to the SLOT rather than
+     * the class name means a formula survives a rename and reads the same on every sheet —
+     * `@MAIN` is "my main class's level" for anyone, where `@FIGHTERLVL` would only ever be
+     * right for one character.
+     *
+     * This is what Second Wind needed: `1d10+@MAIN` on a Fighter. Before this the only
+     * level-derived token was `@PROF`, which is the wrong curve entirely.
+     *
+     * A slot with no class resolves to 0, so a single-class sheet using `@SECOND` degrades to
+     * "+0" rather than leaving a raw token in the dice string.
+     *
+     * ⚠ BOTH CASES ARE REGISTERED. Replacement is a literal `replaceAll`, so `@main` typed in
+     * lowercase would otherwise never resolve and would reach Dice+ as text — a trap this file
+     * has already sprung once.
+     */
+    ...classLevelVars(actor),
+
+    /**
+     * @CLASSCOMBINED — the hit dice this character can actually roll, as a readable pool
+     * ("5d10 + 1d6" for a Paladin 5 / Sorcerer 1). Sourced from `hitDicePools`, which already
+     * groups by die and sums the levels that share it.
+     *
+     * ⚠ NOT A ROLLABLE EXPRESSION. Spending a hit die is a CHOICE of which die, so this is a
+     * readout for the resource row, not something to hand to the dice bridge. An action that
+     * rolls "a hit die" needs the picker, not this string.
+     */
+    "@CLASSCOMBINED": hitDicePools(actor).map(p => `${p.count}${p.die}`).join(" + ") || "—",
   };
+}
+
+/** `@MAIN` / `@SECOND` / `@THIRD` (and lowercase aliases) → that class slot's level. */
+function classLevelVars(actor: Actor): Record<string, string> {
+  const rows = classLevels(actor);
+  const slots: [string, number][] = [
+    ["MAIN", rows[0]?.level ?? 0],
+    ["SECOND", rows[1]?.level ?? 0],
+    ["THIRD", rows[2]?.level ?? 0],
+  ];
+  const out: Record<string, string> = {};
+  for (const [name, level] of slots) {
+    out[`@${name}`] = signed(level);
+    out[`@${name.toLowerCase()}`] = signed(level);
+  }
+  return out;
 }
 
 // ─── Main resolver ────────────────────────────────────────────────────────────
