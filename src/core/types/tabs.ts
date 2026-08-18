@@ -53,12 +53,23 @@ export type ActionDisplayMode = "card" | "compact";
  *                    The distinction from `triggered` is whose roll the dice land on: its own,
  *                    or somebody else's.
  *
- *   utility        : CLICKABLE, but rolls nothing and never will — no dice, no check. The
- *                    click is the whole action: it logs that the thing happened and spends its
- *                    economy. Relentless Endurance, Heavenly Wings, a stance you turn on.
+ *   utility        : CLICKABLE, rolls nothing itself, and MODIFIES THE ATTACKS THAT PC MAKES
+ *                    THIS TURN. You activate it, and it changes what your own subsequent
+ *                    actions do. Rage, Great Weapon Master, Sacred Weapon, Celestial Revelation.
+ *                    The click is the whole action; the effect lands on what you do next.
  *
- *   passive        : NOT clickable. Display text only, and never renders a button. If it has an
- *                    action cost it is not passive — it is `utility`.
+ *   passive        : NOT clickable. ALWAYS affecting the character — no activation, nothing to
+ *                    press. A standing bonus, an always-on defence, a spell that is simply on.
+ *                    If it has an action cost it is not passive; if you turn it ON, it is
+ *                    `utility`.
+ *
+ * ⚠ THE UTILITY / ADDITIVE LINE (Christopher, 2026-08-18). Both change a later roll, so the
+ * test is WHAT they contribute:
+ *   · `additive` contributes DICE that land when the attack is rolled — a bond like Overcharge.
+ *   · `utility` contributes an EFFECT on the actions you take this turn — Rage, GWM, Sacred
+ *     Weapon, Celestial Revelation. It is not "no dice anywhere"; it is "no dice of its own".
+ * And `passive` is the always-on case, not the "I could not find a mode" case. An activated
+ * thing is never passive, however little it rolls.
  */
 export type ActionOutcomeMode =
   | "attack-roll"

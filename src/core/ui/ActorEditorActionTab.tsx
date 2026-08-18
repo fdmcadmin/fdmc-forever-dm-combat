@@ -263,7 +263,18 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
             value={String(draft.saveDc ?? "")}
             onChange={v => set("saveDc", v || undefined)}
             placeholder="CON DC 13"
-            showVars={[]}
+            /**
+             * A SAVE DC IS DERIVED, NOT TYPED. This field shipped with `showVars={[]}` — dice
+             * buttons and nothing else — so the only way to author a DC was to hard-code the
+             * number, which then never moved as the character levelled.
+             *
+             * Which modifier drives it depends on what the effect IS: a martial effect keys off
+             * the attack modifier (`@ATK`, the higher of STR/DEX) and a magical one off spell
+             * attack (`@SPELL`, casting mod + proficiency). Both already resolve; only the chips
+             * were missing. The six abilities are here too, because a DC that keys off a
+             * specific stat regardless of martial/magical is common enough to need one click.
+             */
+            showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@ATK","@SPELL"]}
           />
           <label style={{ fontSize: 12 }}>
             Save Ability
