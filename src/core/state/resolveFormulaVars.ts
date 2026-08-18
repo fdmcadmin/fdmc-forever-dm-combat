@@ -4,7 +4,7 @@
  * Replaces @VARIABLE tokens in roll formulas with real values derived from
  * the actor's current stats (including equipment modifiers).
  *
- * Supported variables:
+ * Supported variables (RAW ability mods vs COMPLETE bonuses — see @ATK below):
  *   @STR  — STR modifier (e.g. +3, -1)
  *   @DEX  — DEX modifier
  *   @CON  — CON modifier
@@ -13,6 +13,9 @@
  *   @CHA  — CHA modifier
  *   @PROF — Proficiency bonus (+2 through +6 based on level)
  *   @SPELL — Spell attack bonus (spellcasting mod + PROF)
+ *   @ATK  — Martial attack bonus (best of STR/DEX + PROF) — the twin of @SPELL
+ *   @MAIN/@SECOND/@THIRD — that class slot's level
+ *   @CLASSCOMBINED — hit-dice pool readout ("5d10 + 1d6"), NOT rollable
  *
  * Example:
  *   formula: "1d20+@STR+@PROF"
@@ -102,9 +105,26 @@ export function buildFormulaVarMap(
   const prof = getProficiencyBonus(actor.level);
   const spellMod = getSpellcastingMod(actor, stats);
 
-  // @ATK = highest of STR or DEX — for flexible weapons (finesse, thrown)
-  const atkMod = Math.max(stats.str.modifier, stats.dex.modifier);
-  // @SAVE = spellcasting DC without the 8 + part (just the mod + prof portion)
+  /**
+   * @ATK — the MARTIAL counterpart to @SPELL, and it includes proficiency.
+   *
+   * ⚠ CHANGED 2026-08-18. It used to be the bare modifier, `max(STR, DEX)`, while @SPELL was
+   * mod + proficiency. Two tokens that read as a matched pair meant different things, so
+   * `1d20+@ATK` was quietly missing proficiency where `1d20+@SPELL` was not. Christopher:
+   * *"shouldnt @atk be: main modifier and PB? while @str would pull the +3 modifier."*
+   *
+   * The vocabulary now has one rule:
+   *   · @STR/@DEX/… are RAW ability modifiers.
+   *   · @PROF is proficiency alone.
+   *   · @ATK and @SPELL are COMPLETE bonuses — the number you add to a d20, mod + proficiency.
+   *
+   * So a martial save DC is `8+@ATK`, a spell save DC is `8+@SPELL`, and a DC keyed to one
+   * specific stat is `8+@STR+@PROF`. Safe to change: @ATK appeared nowhere in the campaign
+   * library or the live party, and authored weapons spell out `@PROF+@STR` explicitly, so
+   * nothing double-counts.
+   */
+  const atkMod = Math.max(stats.str.modifier, stats.dex.modifier) + prof;
+  // @SPELL/@SAVE_BONUS — spellcasting mod + proficiency (a DC's "8 +" part is typed, not here)
   const saveMod = spellMod + prof;
 
   return {
@@ -117,7 +137,7 @@ export function buildFormulaVarMap(
     "@PROF": signed(prof),
     "@SPELL": signed(saveMod),         // spell attack bonus (mod + prof)
     "@SAVE_BONUS": signed(saveMod),    // same value, alias for clarity in save DC expressions
-    "@ATK": signed(atkMod),            // highest of STR/DEX — for finesse weapons
+    "@ATK": signed(atkMod),            // martial attack bonus: best of STR/DEX + proficiency
     // Shorthand without @ for weapon builders who prefer no prefix
     "STR_MOD": signed(stats.str.modifier),
     "DEX_MOD": signed(stats.dex.modifier),

@@ -30,7 +30,7 @@ const FORMULA_VARS: FormulaVar[] = [
   { token: "@CHA", label: "CHA",   hint: "CHA modifier", color: "#7b68ee" },
   { token: "@PROF", label: "PROF", hint: "Proficiency bonus (auto from level)", color: "#4caf50" },
   { token: "@SPELL", label: "SPELL", hint: "Spellcasting mod + PROF (auto-detects class stat)", color: "#4caf50" },
-  { token: "@ATK",  label: "ATK",  hint: "Higher of STR or DEX — for finesse weapons", color: "#4caf50" },
+  { token: "@ATK",  label: "ATK",  hint: "Martial attack bonus — best of STR/DEX + PROF (the martial twin of SPELL)", color: "#4caf50" },
 ];
 
 /** Quick-assemble dice buttons (appended as "1dX"). */
