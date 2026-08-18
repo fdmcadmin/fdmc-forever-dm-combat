@@ -766,6 +766,7 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "act": "Act 2",
     "sourceEncounter": "FULL WENDIGO",
     "attunementRequired": true,
+    "charges": { "max": 1, "reset": "shortRest" },
     "isLocked": true
   },
   {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { actionCostLabels } from "../types/actionEconomy";
 import type { ActionCost } from "../types/actionEconomy";
-import { normalizeOutcomeMode } from "../types/tabs";
+import { resolveOutcomeMode } from "../types/tabs";
 import type { ActorAction } from "../types/tabs";
 
 type ActionButtonProps = {
@@ -123,8 +123,26 @@ export function ActionButton({
    * `utility` is deliberately NOT here. It is clickable — the click IS the action — it just
    * never rolls.
    */
-  const mode = normalizeOutcomeMode(action.metadata?.outcomeMode);
-  const referenceOnly = mode === "passive" || (action.logMode === "silent" && costs.length === 0);
+  const mode = resolveOutcomeMode(action);
+  /**
+   * ⚠ AN ACTION THAT SPENDS SOMETHING CAN NEVER BE INERT.
+   *
+   * `passive` means not clickable — but an action carrying a `slotCost` spends a pool, and a
+   * pool can only be spent by clicking. Tagged both ways it is DEAD: it shows on the card,
+   * costs a resource on paper, and cannot be used at all.
+   *
+   * That is not hypothetical. The retired `reference` tag normalises to `passive`, so every
+   * pre-split action that spent a resource became unclickable the day the tag was retired —
+   * while a sibling authored moments later, with no tag at all, kept working. Three options of
+   * one class feature, two dead and one live, all "authored the same way". It reads as the app
+   * randomly breaking, and it is the kind of thing that only shows up mid-fight.
+   *
+   * So the contradiction is resolved in favour of the COST: if it spends, it clicks. Data
+   * cannot reproduce this bug now, whatever it carries.
+   */
+  const spendsAResource = Boolean(action.metadata?.slotCost?.trim());
+  const referenceOnly = !spendsAResource
+    && (mode === "passive" || (action.logMode === "silent" && costs.length === 0));
   // BUILD 0.5.3.1.3: action-card click may prime the roll workspace immediately,
   // but table players still need the visible Roll button to send the selected roll to Dice+.
   // Keep the button available for the selected/committed action; hide only when another

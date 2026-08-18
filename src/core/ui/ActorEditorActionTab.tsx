@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
 import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
 import { tabAccent } from "./tabVisuals";
-import { normalizeOutcomeMode } from "../types/tabs";
+import { resolveOutcomeMode } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
 
 // Human heading per tab so the editor reads as a labeled section, not a raw list.
@@ -59,12 +59,12 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
 
   // Honor the explicitly-saved outcome mode first so the editor's choice round-trips
   // (e.g. "Triggered Feature" on a damage action no longer reverts to "Straight Damage").
-  // NORMALIZED, not raw. `reference` was retired into `passive`, but actions authored before
-  // that split still carry it on disk — 17 of them in the live party. Reading the raw value
-  // left every one of them falling past this chain into the inference below, where a leftover
-  // formula decides the mode instead of the author. Everything else resolves `reference`
-  // through this function; the editor was the one place still reading around it.
-  const explicitOutcome = normalizeOutcomeMode(action.metadata?.outcomeMode);
+  // RESOLVED, not raw — and resolved the same way the runtime does, which is the whole point.
+  // Reading the raw value let a legacy `reference` tag fall past this chain into the inference
+  // below and land on the "utility" fallback, so the editor SHOWED Utility while the engine
+  // treated it as passive and refused the click. The DM saw three identical rows and two of
+  // them silently did nothing. Editor and engine must resolve a mode through one function.
+  const explicitOutcome = resolveOutcomeMode(action);
   const rollMode: PcRollMode =
     explicitOutcome === "attack-roll" ? "attack" :
     explicitOutcome === "dc-check" ? "save" :

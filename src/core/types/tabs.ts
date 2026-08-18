@@ -79,11 +79,48 @@ export type ActionOutcomeMode =
 export type LegacyOutcomeMode = ActionOutcomeMode | "reference";
 
 /**
- * "reference" -> passive. Anything that carried an action cost was never really passive, but
- * the old tag could not say so; those are the ones to re-author as `utility`.
+ * "reference" -> passive, when all you have is the mode.
+ *
+ * ⚠ PREFER `resolveOutcomeMode(action)`. This overload cannot see whether the action carries a
+ * cost, and a `reference` action that spends something was never passive — mapping it to
+ * `passive` makes it unclickable and therefore unspendable. Kept for call sites that genuinely
+ * only hold a mode.
  */
 export function normalizeOutcomeMode(mode: LegacyOutcomeMode | undefined): ActionOutcomeMode | undefined {
   return mode === "reference" ? "passive" : mode;
+}
+
+/**
+ * The retired `reference` tag, resolved with the ACTION in hand.
+ *
+ * `reference` meant two things at once — no dice, and (sometimes) not clickable. Splitting it
+ * needed information the tag never carried: whether the entry costs anything. The rule was
+ * written down when the split landed and then could not be applied, because the normaliser only
+ * received the mode:
+ *
+ *   spends something  -> `utility`  (clickable, the click IS the action, never rolls)
+ *   costs nothing     -> `passive`  (display text, no button)
+ *
+ * Applying it here rather than asking Christopher to re-author every legacy entry is the point.
+ * Three options of one class feature sat in the sheet with two of them tagged `reference` and
+ * one untagged; the editor showed all three as "Utility" because `reference` matched none of its
+ * checks and fell to that fallback, while the runtime mapped it to `passive` and killed two of
+ * them. Same display, opposite behaviour, and nothing on screen to explain it.
+ *
+ * ⚠ A DM cannot debug this class of bug. The stored value is invisible, the editor disagrees
+ * with the engine, and the only symptom is "I made this action and it will not work." Resolve
+ * legacy tags in code; never make the table re-author around them.
+ */
+export function resolveOutcomeMode(action: {
+  metadata?: { outcomeMode?: LegacyOutcomeMode; slotCost?: string; cost?: string };
+  economyCost?: readonly string[];
+}): ActionOutcomeMode | undefined {
+  const mode = action.metadata?.outcomeMode;
+  if (mode !== "reference") return mode;
+  const spends = Boolean(action.metadata?.slotCost?.trim())
+    || Boolean(action.metadata?.cost?.trim())
+    || (action.economyCost?.length ?? 0) > 0;
+  return spends ? "utility" : "passive";
 }
 
 // F05 — resource kind determines rest reset behavior
