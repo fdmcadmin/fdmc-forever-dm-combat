@@ -16,7 +16,7 @@ const ACTION_TAB_HEADING: Partial<Record<TabId, string>> = {
 };
 import type { ActionCost } from "../types/actionEconomy";
 import { actionFromEditorDraft, archiveActionFromTab, replaceActionInTab } from "./pcActionAdapters";
-import type { PcActionDraft, PcRollMode, PcActionCost } from "./pcActionTypes";
+import type { PcActionDraft, PcRollMode, PcActionCost, PcCastingClass } from "./pcActionTypes";
 import { slugifyForActionId } from "./pcActionTypes";
 
 // ─── Outcome mode UI label ────────────────────────────────────────────────────
@@ -98,6 +98,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     saveDc: action.metadata?.saveDc,
     damage: action.metadata?.damage,
     damageType: action.metadata?.damageType,
+    castingClass: action.metadata?.castingClass,
     critDamage: action.metadata?.crit,
     range: action.metadata?.range,
     slotCost: action.metadata?.slotCost,
@@ -128,9 +129,14 @@ type ActionFormProps = {
   onCancel: () => void;
   /** The actor's resource labels — populates the "Spends resource" picker. */
   resourceLabels?: string[];
+  /**
+   * The character's class rows, in slot order. Populates the "Cast using" picker, which is
+   * what makes `@SPELL` resolve per action instead of per sheet.
+   */
+  classRows?: { name: string; level: number }[];
 };
 
-function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: ActionFormProps) {
+function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], classRows = [] }: ActionFormProps) {
   const [draft, setDraft] = useState<PcActionDraft>(() =>
     initial ? actionToEditorDraft(initial, tabId) : {
       name: "",
@@ -304,6 +310,32 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
             placeholder="2d6+@STR"
             showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@SPELL"]}
           />
+          {/* WHICH CLASS CASTS THIS. Only worth asking when the character HAS more than one
+              class — a single-class sheet has nothing to choose and the fallback already picks
+              the main class. Naming the slot (not the stat) means `@SPELL` resolves through
+              that class's spellcasting ability, so a Wizard/Cleric gets INT on one spell and
+              WIS on the next instead of one stat for the whole sheet. */}
+          {classRows.length > 1 && (
+            <label style={{ fontSize: 12 }}>
+              Cast using
+              <select
+                value={draft.castingClass ?? ""}
+                onChange={e => set("castingClass", (e.target.value || undefined) as PcCastingClass | undefined)}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
+              >
+                <option value="">— main class ({classRows[0]?.name}) —</option>
+                {classRows.slice(0, 3).map((c, i) => (
+                  <option key={c.name + i} value={i === 0 ? "main" : i === 1 ? "second" : "third"}>
+                    {c.name} {c.level}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontSize: 10, color: "#667", display: "block", marginTop: 2 }}>
+                Sets which spellcasting ability @SPELL uses for THIS action.
+              </span>
+            </label>
+          )}
+
           {/* P-UX4 Phase 3: damage type — standard D&D defaults + Custom free text so the
               engine stays all-system, not D&D-locked. */}
           <label style={{ fontSize: 12 }}>
@@ -552,6 +584,8 @@ type ActorEditorActionTabProps = {
   actions: ActorAction[];
   onChange: (actions: ActorAction[]) => void;
   resourceLabels?: string[];
+  /** Passed through to the form so an action can name which class casts it. */
+  classRows?: { name: string; level: number }[];
   /**
    * Move or copy an action to ANOTHER tab.
    *
@@ -576,7 +610,7 @@ const MOVE_TARGETS: Array<{ id: TabId; label: string }> = [
   { id: "outOfCombat", label: "Out of Combat" },
 ];
 
-export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels, onMoveToTab }: ActorEditorActionTabProps) {
+export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels, classRows, onMoveToTab }: ActorEditorActionTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   // Shift held when the Move dropdown was opened -> copy instead of move.

@@ -4,6 +4,9 @@ export type PcActionCost = "action" | "bonus" | "reaction" | "bond" | "free" | "
 
 export type PcRollMode = "attack" | "save" | "check" | "damageOnly" | "healing" | "triggered" | "additive" | "utility" | "passive" | "reference";
 
+/** Which class slot casts this action — drives @SPELL per action rather than per sheet. */
+export type PcCastingClass = "main" | "second" | "third";
+
 export type PcActionVisibility = "player" | "dm" | "hidden";
 
 export type PcActionUses = {
@@ -24,6 +27,8 @@ export type PcActionDraft = {
   checkAbility?: string;
   damage?: string;
   damageType?: string;
+  /** Which class casts this — resolves @SPELL through that class's ability. */
+  castingClass?: PcCastingClass;
   critDamage?: string;
   healing?: string;
   range?: string;
@@ -113,6 +118,9 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.checkAbility?.trim() ? { checkAbility: draft.checkAbility.trim() } : {}),
     ...(draft.damage?.trim() ? { damage: draft.damage.trim() } : {}),
     ...(draft.damageType?.trim() ? { damageType: draft.damageType.trim() } : {}),
+    // The normaliser is an ALLOW-LIST: a field absent from here is silently dropped on save,
+    // however correctly it is wired everywhere else.
+    ...(draft.castingClass ? { castingClass: draft.castingClass } : {}),
     ...(draft.critDamage?.trim() ? { critDamage: draft.critDamage.trim() } : {}),
     ...(draft.healing?.trim() ? { healing: draft.healing.trim() } : {}),
     ...(draft.range?.trim() ? { range: draft.range.trim() } : {}),

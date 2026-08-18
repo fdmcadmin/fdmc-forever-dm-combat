@@ -473,6 +473,13 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   const actor = actorProp ?? createBlankActor();
   const [activeTab, setActiveTab] = useState<EditorTab>("profile");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => actorToProfileDraft(actor));
+
+  /**
+   * Class rows in slot order, for the action editor's "Cast using" picker. Parsed from the
+   * SAME source the profile summary uses, so the picker can never disagree with the split the
+   * sheet displays.
+   */
+  const editorClassRows = parseClassLevels(profileDraft.className, profileDraft.multiclassLevels);
   const [tabsDraft, setTabsDraft] = useState<TabActionMap>(() => ({ ...actor.tabs }));
   const [showDanger, setShowDanger] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -716,10 +723,10 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "features" && (
-          <ActorEditorActionTab tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          <ActorEditorActionTab classRows={editorClassRows} tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "bonds" && (
-          <ActorEditorActionTab tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          <ActorEditorActionTab classRows={editorClassRows} tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "spells" && (
           <SpellTableEditor
@@ -734,7 +741,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "feats" && (
-          <ActorEditorActionTab tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          <ActorEditorActionTab classRows={editorClassRows} tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
         )}
         {activeTab === "equipment" && (
           <EquipmentBagEditor
@@ -749,7 +756,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "notes" && (
-          <ActorEditorActionTab tabId="notes" actions={tabsDraft.notes ?? []} onChange={handleTabActions("notes")} onMoveToTab={handleMoveActionToTab} />
+          <ActorEditorActionTab classRows={editorClassRows} tabId="notes" actions={tabsDraft.notes ?? []} onChange={handleTabActions("notes")} onMoveToTab={handleMoveActionToTab} />
         )}
       </div>
 
