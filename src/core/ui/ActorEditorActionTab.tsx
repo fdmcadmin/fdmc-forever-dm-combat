@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
 import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
 import { tabAccent } from "./tabVisuals";
+import { normalizeOutcomeMode } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
 
 // Human heading per tab so the editor reads as a labeled section, not a raw list.
@@ -58,7 +59,12 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
 
   // Honor the explicitly-saved outcome mode first so the editor's choice round-trips
   // (e.g. "Triggered Feature" on a damage action no longer reverts to "Straight Damage").
-  const explicitOutcome = action.metadata?.outcomeMode;
+  // NORMALIZED, not raw. `reference` was retired into `passive`, but actions authored before
+  // that split still carry it on disk — 17 of them in the live party. Reading the raw value
+  // left every one of them falling past this chain into the inference below, where a leftover
+  // formula decides the mode instead of the author. Everything else resolves `reference`
+  // through this function; the editor was the one place still reading around it.
+  const explicitOutcome = normalizeOutcomeMode(action.metadata?.outcomeMode);
   const rollMode: PcRollMode =
     explicitOutcome === "attack-roll" ? "attack" :
     explicitOutcome === "dc-check" ? "save" :
@@ -68,6 +74,12 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     explicitOutcome === "triggered" ? "triggered" :
     explicitOutcome === "additive" ? "additive" :
     explicitOutcome === "passive" ? "passive" :
+    // `utility` MUST be honoured explicitly, not left to the fallback at the bottom. Without
+    // this line an action saved as utility falls through to the inference chain, and any
+    // leftover `damage` from a previous mode makes it read back as "Straight Damage" —
+    // Rage - Enter, authored utility with a stale `damage: "+2"`, did exactly that. The mode
+    // survived every export and every resolve; only the editor could not see it.
+    explicitOutcome === "utility" ? "utility" :
     action.actionKind === "check" ? "check" :
     hasAttack ? "attack" :
     hasSave ? "save" :
@@ -141,6 +153,32 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
     setErrors([]);
   }
 
+  /**
+   * CHANGING THE OUTCOME MODE STARTS THE FORMULAS OVER.
+   *
+   * The form only renders the boxes the current mode uses, but the draft kept every value it
+   * had ever held, so a formula authored under one mode survived a switch invisibly and came
+   * back the moment you switched again. Rage - Enter is the case: authored as an attack with
+   * `damage "+2"`, moved to utility, and the +2 rode along — flip it back to Straight Damage
+   * and the box was already filled, so it never looked like anything had been kept.
+   *
+   * Only the ROLL formulas reset. Name, description, cost, range, slot and riders describe the
+   * action itself rather than how it resolves, and re-typing those on every mode change would
+   * be its own bug. Nothing is written until Save.
+   */
+  function changeRollMode(next: PcRollMode) {
+    setDraft(d => d.rollMode === next ? d : {
+      ...d,
+      rollMode: next,
+      attackBonus: undefined,
+      saveDc: undefined,
+      damage: undefined,
+      damageType: undefined,
+      critDamage: undefined,
+    });
+    setErrors([]);
+  }
+
   function handleSave() {
     const errs: string[] = [];
     if (!draft.name?.trim()) errs.push("Name is required.");
@@ -199,7 +237,7 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [] }: A
 
         <label style={{ fontSize: 12 }}>
           Outcome Mode
-          <select value={draft.rollMode} onChange={e => set("rollMode", e.target.value as PcRollMode)}
+          <select value={draft.rollMode} onChange={e => changeRollMode(e.target.value as PcRollMode)}
             style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
             {(Object.entries(OUTCOME_MODE_LABELS) as [PcRollMode, string][]).map(([v, l]) =>
               <option key={v} value={v}>{l}</option>
