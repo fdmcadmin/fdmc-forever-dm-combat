@@ -97,6 +97,7 @@ import {
   saveActorLibrary,
   saveActorOverride,
   clearActorOverride,
+  foldNonEquipmentOverrides,
   upsertActorInLibrary,
 } from "./core/seats/dmActorLibrary";
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
@@ -682,12 +683,13 @@ export default function App() {
     const freshOverrides = loadActorOverrides();
     setActorOverrides(freshOverrides);
 
-    let freshLib = actorLibrary;
-    if (saveMode === "current-and-library") {
-      upsertActorInLibrary(editedActor);
-      freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
-      setActorLibrary(() => freshLib);
-    }
+    // ⛔ ALWAYS write the base library (2026-08-17). Overrides carry equipment alone now, so a
+    // "current only" save had nowhere left to put an action edit and would silently drop it.
+    // The saveMode split was an artifact of the two-layer model: *"base actors don't exist"* —
+    // a DM editing an action IS the author, so there is no lesser place to write it.
+    upsertActorInLibrary(editedActor);
+    const freshLib = { ...actorLibrary, [editedActor.id]: editedActor };
+    setActorLibrary(() => freshLib);
 
     // Sync edited HP to live state so resolveActor's live-HP-wins rule doesn't
     // silently discard the DM's HP change (live HP overlays stats.hp in resolveActor).
@@ -773,6 +775,11 @@ export default function App() {
   // loadActorLibrary() returns actors imported via Edit Actors → Import.
   // seedLibraryFromBundled is only used as the fallback when localStorage has nothing.
   const [actorLibrary, setActorLibrary] = useState<Record<string, Actor>>(() => {
+    // Fold BEFORE reading: overrides carry equipment alone now, so any non-equipment tab still
+    // sitting in that layer has to move into base or it stops resolving. Idempotent — once
+    // folded there is nothing left to fold — so running it on every load is the cheap way to
+    // catch a room that was last opened on an older build.
+    foldNonEquipmentOverrides();
     const stored = loadActorLibrary();
     return Object.keys(stored).length > 0 ? stored : seedLibraryFromBundled(brokenChainActors);
   });

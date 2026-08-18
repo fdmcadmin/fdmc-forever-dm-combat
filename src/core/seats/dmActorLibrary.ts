@@ -41,14 +41,100 @@ export function loadActorOverrides(): ActorOverrideMap {
   }
 }
 
+/**
+ * ⛔ OVERRIDES ARE FOR EQUIPMENT ONLY (Christopher, 2026-08-17).
+ *
+ * *"nothing in the 'base' actor should ever live because base actors don't exist"* /
+ * *"everything else is a hard edit with level up approvals and DM editing actions."*
+ *
+ * The override layer earns its place only where an actor's state is genuinely a LAYER over
+ * content it does not own — equipment, which arrives from the equipment library, loot, merchants
+ * and convergence. A hand-authored PC has no upstream: the DM wrote every action, so a second
+ * copy of those actions can only ever drift from the first.
+ *
+ * It had already drifted into a full duplicate. Keyed by action id across the live party:
+ * 335 identical, 0 diverging, 0 override-only, 0 base-only — a byte-for-byte copy carrying no
+ * information, doubling the export, and shadowing base so completely that anything written to
+ * base "succeeded and then disappeared". That is what ate bought loot and convergence outputs.
+ *
+ * So this strips everything except `tabs.equipment` on the way in. Callers keep their shape;
+ * the non-equipment fields simply stop being written here and are expected to reach the BASE
+ * library instead.
+ */
+function equipmentOnly(override: Partial<Actor>): Partial<Actor> {
+  const equipment = override.tabs?.equipment;
+  if (!equipment) return {};
+  return { tabs: { equipment } as Actor["tabs"] };
+}
+
 export function saveActorOverride(actorId: string, override: Partial<Actor>): void {
   const overrides = loadActorOverrides();
-  overrides[actorId] = { ...overrides[actorId], ...override };
+  const next = { ...overrides[actorId], ...equipmentOnly(override) };
+  // An override that no longer carries equipment has no reason to exist. Leaving an empty
+  // object behind would keep a shadow that resolves to nothing but still looks meaningful.
+  if (!next.tabs?.equipment) {
+    delete overrides[actorId];
+  } else {
+    overrides[actorId] = next;
+  }
   try {
     window.localStorage.setItem(ACTOR_OVERRIDES_KEY, JSON.stringify(overrides));
   } catch {
     // localStorage unavailable
   }
+}
+
+/**
+ * ONE-TIME FOLD-DOWN. Merges every non-equipment override tab into the base library and drops
+ * it, so the party stops carrying two copies of the same actions.
+ *
+ * FOLDS rather than deletes: the audit found zero divergence today, but a room that has been
+ * open across builds may have drifted, and in a drift the override is the layer that was
+ * WINNING — so it is the one that must survive into base.
+ *
+ * Returns the number of actors changed so the caller can log it. Safe to run on every load:
+ * once folded there is nothing left to fold.
+ */
+export function foldNonEquipmentOverrides(): number {
+  const overrides = loadActorOverrides();
+  const library = loadActorLibrary();
+  let changed = 0;
+
+  for (const [actorId, override] of Object.entries(overrides)) {
+    const base = library[actorId];
+    const { equipment, ...otherTabs } = override.tabs ?? {};
+    const hasOtherTabs = Object.keys(otherTabs).length > 0;
+    const hasOtherFields = Object.keys(override).some(k => k !== "tabs");
+    if (!hasOtherTabs && !hasOtherFields) continue;
+
+    // NO BASE, NO FOLD. Stripping an override whose base does not exist would delete the only
+    // copy — the override IS the actor in that case. Leave it untouched and let a later load,
+    // after the library has seeded, do the fold.
+    if (!base) continue;
+
+    const { tabs: _overrideTabs, ...scalarFields } = override;
+    library[actorId] = {
+      ...base,
+      ...scalarFields,
+      tabs: { ...base.tabs, ...otherTabs },
+    };
+    if (equipment) {
+      overrides[actorId] = { tabs: { equipment } as Actor["tabs"] };
+    } else {
+      delete overrides[actorId];
+    }
+    changed += 1;
+  }
+
+  if (changed > 0) {
+    saveActorLibrary(library);
+    try {
+      window.localStorage.setItem(ACTOR_OVERRIDES_KEY, JSON.stringify(overrides));
+    } catch {
+      // localStorage unavailable — the library write already landed
+    }
+  }
+  return changed;
 }
 
 export function clearActorOverride(actorId: string): void {
@@ -152,9 +238,13 @@ export function upsertActorInLibrary(actor: Actor): void {
   library[actor.id] = actor;
   saveActorLibrary(library);
 
+  // ⛔ The tab MIRROR is gone (2026-08-17). It existed only to stop the override contradicting
+  // the base — a problem that cannot occur now that the override carries equipment alone.
+  // Equipment still mirrors, because that IS the layer the override owns: a code-granted item
+  // must reach the winning copy or it reads as having voided.
   const override = loadActorOverrides()[actor.id];
-  if (override?.tabs) {
-    saveActorOverride(actor.id, { ...override, tabs: { ...override.tabs, ...actor.tabs } });
+  if (override?.tabs?.equipment && actor.tabs.equipment) {
+    saveActorOverride(actor.id, { tabs: { equipment: actor.tabs.equipment } as Actor["tabs"] });
   }
 }
 
