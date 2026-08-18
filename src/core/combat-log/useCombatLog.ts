@@ -28,7 +28,25 @@ function inferTone(input: AddCombatLogEntryInput): CombatLogEntry["tone"] {
 
 const SHARED_COMBAT_LOG_STORAGE_KEY = "fdm:shared-combat-log:v1";
 const SHARED_COMBAT_LOG_CHANNEL = "forever-dm-combat:shared-combat-log:v1";
-const MAX_SHARED_LOG_ENTRIES = 100;
+/**
+ * ⚠ THERE ARE TWO LOGS AND THIS IS THE ONE ON SCREEN.
+ *
+ * `events/encounterLog.ts` carries its own `ENCOUNTER_LOG_MAX` and was raised to 2500 in
+ * 0.7.9.5 — but that log feeds EXPORT and the encounter-library panel. The "Encounter Log"
+ * panel a DM actually reads renders `CombatLogEntry[]` from THIS hook, so the raise never
+ * reached the screen and the panel kept reporting "100 entries stored" through every fight.
+ *
+ * The sizing argument is the same one that file already makes: an 8-round boss fight with a
+ * ~11-combatant board produces roughly 2,050 entries once attacks, bonus actions, legendary
+ * actions, initiative and system markers are counted. 100 truncates exactly the fights the log
+ * matters most for — the long ones.
+ *
+ * This log is broadcast to every seat and mirrored into localStorage, so it is bounded for the
+ * same reason: at ~220 bytes an entry, 2500 is ~550KB against a ~5MB budget.
+ *
+ * KEEP THE TWO IN STEP. Raising one and not the other is what produced this bug.
+ */
+const MAX_SHARED_LOG_ENTRIES = 2500;
 
 type CombatLogSyncMessage =
   | { type: "add"; entry: CombatLogEntry; supersedePendingKeys?: string[] }

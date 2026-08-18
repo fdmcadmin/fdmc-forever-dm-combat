@@ -1,7 +1,7 @@
 /**
  * P8 — Encounter Log
  * DM-local localStorage log of all combat events in the current encounter.
- * Max 150 entries, oldest trimmed. Cleared when a new encounter loads.
+ * Max ENCOUNTER_LOG_MAX entries (see the constant), oldest trimmed. Cleared when a new encounter loads.
  * Used by post-combat summary export.
  */
 
