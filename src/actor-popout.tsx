@@ -311,6 +311,19 @@ function ActorPopout() {
       )}
       <ActorCard
         actor={actor}
+        /**
+         * ⚠ THIS WINDOW NEVER SAID WHO WAS LOOKING.
+         *
+         * `isPlayerMode` defaults to false, so the popped-out card — the one a PLAYER opens for
+         * their own character — rendered every DM-seat-only control, the `⚀ Nat 1` table among
+         * them. MASTER's rule is "every PC card, DM seats only · player seats get the d6 and
+         * nothing else"; the gate was written correctly in ActorCard and then never fed here.
+         *
+         * The d6 is NOT affected. It lives in CommittedRollPanel and stays with the player, who
+         * rolls their own Nat 1 — only the table and the first/second choice are withheld.
+         * (Removing the d6 from players was a 0.7.9.13 mistake; do not repeat it.)
+         */
+        isPlayerMode={!isGm}
         // The purse renders as a line under the character's own wallet, inside the card.
         partyCoins={getPartyCoins(roomLiveState)}
         onEditPartyCoins={isGm ? ((c) => void commitRoomState(patchPartyCoins(roomLiveState, c))) : undefined}

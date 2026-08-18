@@ -5072,9 +5072,13 @@ export function ActorCard({
         {/* The Nat 1 tables, readable WITHOUT having rolled one — the d6 picker in
             CommittedRollPanel used to be the only way to see either table.
 
-            ⚠ DM SEATS ONLY. I put this on every card in 0.7.9.8, players included, which is
-            backwards: the complication is the DM's to choose, and handing a player the table
-            invites them to shop for their own punishment. A player's nat 1 is a plain miss. */}
+            ⚠ DM SEATS ONLY — the TABLE, not the roll. The complication is the DM's to choose,
+            and handing a player the table invites them to shop for their own punishment.
+
+            ⚠ A PLAYER'S NAT 1 IS NOT "just a miss". They roll their own Nat 1 d6; only the table
+            and the first/second choice are withheld. An earlier comment here said otherwise and
+            that idea already cost one revert (0.7.9.13 removed the d6 from players entirely when
+            only the table was ever meant to be hidden). Gate the TABLE; leave the die alone. */}
         {!isPlayerMode && (
           <button
             type="button"
