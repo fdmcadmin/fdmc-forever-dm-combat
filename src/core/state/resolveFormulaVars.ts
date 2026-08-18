@@ -36,7 +36,7 @@
 
 import type { Actor } from "../types/actor";
 import type { DerivedStats } from "./deriveActorStats";
-import { classLevels, hitDicePools } from "../rules/multiclass";
+import { classLevels, hitDicePools, castingAbilityForClass } from "../rules/multiclass";
 import { deriveActorStats } from "./deriveActorStats";
 import type { ActorStatusTrackerState } from "../types/status";
 
@@ -48,6 +48,8 @@ import { proficiencyBonus as getProficiencyBonus } from "../rules/dnd5e";
 export { getProficiencyBonus };
 
 // ─── Signed number string ─────────────────────────────────────────────────────
+
+export type CastingClassSlot = "main" | "second" | "third";
 
 function signed(n: number): string {
   return n >= 0 ? `+${n}` : String(n);
@@ -67,7 +69,23 @@ function signed(n: number): string {
  *   "spell-uses-wis" → uses WIS
  *   "spell-uses-cha" → uses CHA
  */
-function getSpellcastingMod(actor: Actor, stats: DerivedStats): number {
+function getSpellcastingMod(actor: Actor, stats: DerivedStats, castingClass?: CastingClassSlot): number {
+  /**
+   * THE ACTION'S OWN CLASS WINS. A Paladin 5 / Sorcerer 1 casts Paladin spells off CHA and
+   * Sorcerer spells off CHA too — but a Wizard/Cleric needs INT for one and WIS for the other,
+   * and before this there was no way to say so: the scan below is ACTOR-WIDE and returns on the
+   * first tagged action it finds, so a single action's tag set @SPELL for the entire sheet.
+   *
+   * The ability is derived from the class NAME (see castingAbilityForClass), so this needed no
+   * new field on any class row and no migration.
+   */
+  const slotIndex = castingClass === "second" ? 1 : castingClass === "third" ? 2 : castingClass === "main" ? 0 : -1;
+  if (slotIndex >= 0) {
+    const row = classLevels(actor)[slotIndex];
+    const ability = row && castingAbilityForClass(row.name);
+    if (ability) return stats[ability].modifier;
+  }
+
   // Check features/actions for trait-based stat swap
   const allActions = Object.values(actor.tabs).flat();
   for (const action of allActions) {
@@ -81,7 +99,17 @@ function getSpellcastingMod(actor: Actor, stats: DerivedStats): number {
     if (tags.includes("spell-uses-cha-or-str")) return Math.max(stats.cha.modifier, stats.str.modifier);
   }
 
-  // Class-based defaults
+  /**
+   * No action-declared class and no tag: fall back to the MAIN class's derived ability before
+   * the string-matching below. `classes[0]` is structured data; `className` is a display string
+   * that a multiclass character writes as "Paladin 5 / Sorcerer 1", where `.includes()` returns
+   * whichever branch happens to be listed first in the chain.
+   */
+  const mainClass = classLevels(actor)[0];
+  const mainAbility = mainClass && castingAbilityForClass(mainClass.name);
+  if (mainAbility) return stats[mainAbility].modifier;
+
+  // Legacy: single-class display string, kept for sheets with no `classes[]` rows.
   const className = (actor.className ?? "").toLowerCase();
   if (className.includes("warlock") || className.includes("sorcerer") || className.includes("bard")) {
     return stats.cha.modifier;
@@ -99,11 +127,13 @@ function getSpellcastingMod(actor: Actor, stats: DerivedStats): number {
 export function buildFormulaVarMap(
   actor: Actor,
   derivedStats?: DerivedStats,
-  drainState?: ActorStatusTrackerState
+  drainState?: ActorStatusTrackerState,
+  /** The action being resolved, so @SPELL can use ITS class rather than the sheet's. */
+  castingClass?: CastingClassSlot,
 ): Record<string, string> {
   const stats = derivedStats ?? deriveActorStats(actor, undefined, drainState);
   const prof = getProficiencyBonus(actor.level);
-  const spellMod = getSpellcastingMod(actor, stats);
+  const spellMod = getSpellcastingMod(actor, stats, castingClass);
 
   /**
    * @ATK — the MARTIAL counterpart to @SPELL, and it includes proficiency.
@@ -203,11 +233,17 @@ export function resolveFormulaVars(
   formula: string | undefined,
   actor: Actor,
   derivedStats?: DerivedStats,
-  drainState?: ActorStatusTrackerState
+  drainState?: ActorStatusTrackerState,
+  /**
+   * Which class slot casts this, when resolving ONE action's formula. Optional so the 19
+   * existing call sites keep their behaviour; pass it (or use `resolveActionFormula`) wherever
+   * the action is in hand and @SPELL should follow the action rather than the sheet.
+   */
+  castingClass?: CastingClassSlot,
 ): string {
   if (!formula?.trim()) return formula ?? "";
 
-  const vars = buildFormulaVarMap(actor, derivedStats, drainState);
+  const vars = buildFormulaVarMap(actor, derivedStats, drainState, castingClass);
   let resolved = formula;
 
   /**
@@ -265,4 +301,21 @@ export function formulaDisplayLabel(
   if (!formulaHasVars(formula)) return formula;
   const resolved = resolveFormulaVars(formula, actor, derivedStats);
   return resolved; // show resolved value; tooltip can show original template
+}
+
+/**
+ * Resolve one ACTION's formula, with `@SPELL` following that action's declared class.
+ *
+ * Prefer this over `resolveFormulaVars` anywhere the action is in hand. A Wizard/Cleric has two
+ * casting stats, and the sheet-wide resolver can only ever pick one of them — which is how a
+ * single tagged action came to set `@SPELL` for every spell on the character.
+ */
+export function resolveActionFormula(
+  formula: string | undefined,
+  action: { metadata?: { castingClass?: CastingClassSlot } } | undefined,
+  actor: Actor,
+  derivedStats?: DerivedStats,
+  drainState?: ActorStatusTrackerState,
+): string {
+  return resolveFormulaVars(formula, actor, derivedStats, drainState, action?.metadata?.castingClass);
 }

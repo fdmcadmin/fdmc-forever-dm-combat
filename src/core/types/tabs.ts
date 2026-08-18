@@ -151,6 +151,23 @@ export type ActorActionMetadata = {
   cost?: string;
   slotCost?: string;
   spellLevel?: number;
+  /**
+   * WHICH CLASS CASTS THIS — a slot, not an ability.
+   *
+   * `@SPELL` resolves through the named class's spellcasting ability, so a Paladin 5 /
+   * Sorcerer 1 can carry both a Paladin spell and a Sorcerer spell and each gets the right
+   * modifier. Naming the SLOT rather than the stat means it keeps working if the character
+   * multiclasses differently later, and it matches how `@MAIN`/`@SECOND`/`@THIRD` already read.
+   *
+   * ⚠ THIS EXISTS BECAUSE THE OLD BEHAVIOUR WAS ACTOR-WIDE. `getSpellcastingMod` scanned EVERY
+   * action on the sheet for a `spell-uses-*` tag and returned on the first hit, so one action
+   * tagged for INT silently made every spell on that character resolve as INT. The tag looked
+   * per-action and was not.
+   *
+   * Unset falls back to the main class, then to the legacy tag scan — so nothing that works
+   * today stops working.
+   */
+  castingClass?: "main" | "second" | "third";
   details?: string;
   concentration?: string;
   /** How long the effect lasts, e.g. "1 minute", "Concentration, up to 10 min", "Instantaneous". Display only. */

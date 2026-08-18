@@ -27,6 +27,28 @@ export function hitDieForClass(name: string): string | undefined {
   return CLASS_HIT_DIE[name.trim().toLowerCase()];
 }
 
+export type CastingAbility = "str" | "dex" | "con" | "int" | "wis" | "cha";
+
+/**
+ * Spellcasting ability by class — DERIVED, exactly like the hit die above.
+ *
+ * Deriving it means a per-action casting stat needs NO new field on any class row and no
+ * migration of existing sheets: name the class, get the ability. The alternative was adding a
+ * casting-ability column to every character in the party.
+ *
+ * ⚠ Half-casters are here too (paladin CHA, ranger WIS, artificer INT) because they cast; the
+ * table answers "which stat", not "how many slots".
+ */
+const CLASS_CASTING_ABILITY: Record<string, CastingAbility> = {
+  bard: "cha", sorcerer: "cha", warlock: "cha", paladin: "cha",
+  cleric: "wis", druid: "wis", ranger: "wis", monk: "wis",
+  wizard: "int", artificer: "int",
+};
+
+export function castingAbilityForClass(name: string): CastingAbility | undefined {
+  return CLASS_CASTING_ABILITY[name.trim().toLowerCase()];
+}
+
 /** Every class row, normalised. Empty for a single-class character. */
 export function classLevels(actor: Pick<Actor, "classes">): ClassLevel[] {
   return (actor.classes ?? [])
