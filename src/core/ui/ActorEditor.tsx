@@ -7,6 +7,8 @@ import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { parseClassLevels, hitDicePools } from "../rules/multiclass";
+import { resourcesForClasses } from "../rules/classResources";
+import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
 import { tabAccent } from "./tabVisuals";
@@ -486,11 +488,14 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
         );
       })()}
       <h4 style={{ margin: "4px 0 0" }}>Class Feature Tracker</h4>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <label style={labelStyle}>Label <input type="text" value={draft.classFeatureLabel} onChange={e => set("classFeatureLabel", e.target.value)} placeholder="Rage / Ki / Spell Slots" style={inputStyle} /></label>
-        <label style={labelStyle}>Value <input type="text" value={draft.classFeatureValue} onChange={e => set("classFeatureValue", e.target.value)} placeholder="2/3 Rage" style={inputStyle} /></label>
-        <label style={{ ...labelStyle, gridColumn: "span 2" }}>Note <input type="text" value={draft.classFeatureNote} onChange={e => set("classFeatureNote", e.target.value)} placeholder="Save DC 13. Recharges on Short Rest." style={inputStyle} /></label>
-      </div>
+      {/* LABEL AND VALUE ARE GONE. They were hand-typed copies of things the engine derives —
+          a class pool belongs in Resources where it can be spent and restored, and spell DC /
+          attack come off the casting ability. Note stays: it is the one field holding something
+          nothing else knows. The stored label/value are left untouched on existing actors. */}
+      <label style={{ ...labelStyle }}>Note
+        <input type="text" value={draft.classFeatureNote} onChange={e => set("classFeatureNote", e.target.value)}
+          placeholder="Anything the sheet cannot derive" style={inputStyle} />
+      </label>
     </div>
   );
 }
@@ -764,10 +769,58 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "resources" && (
-          <ResourceTableEditor
-            actions={tabsDraft.resources ?? []}
-            onChange={handleTabActions("resources")}
-          />
+          <>
+            {/* AUTO-FILL FROM THE CLASS TABLE. Second Wind is 2 uses on a short rest for every
+                Fighter alive, so typing it onto each one is copying a rule the app already
+                knows. Same idea as weapon mastery: the class and level decide it.
+                ⚠ ADDS ONLY WHAT IS MISSING, matched by label — an existing pool keeps its
+                current count, because a half-spent Rage must not be silently refilled. */}
+            {(() => {
+              const rows = editorClassRows.length > 0
+                ? editorClassRows
+                : [{ name: profileDraft.className, level: Number(profileDraft.level) || 1 }];
+              const granted = resourcesForClasses(rows);
+              const existing = new Set((tabsDraft.resources ?? []).map(r => r.label?.toLowerCase()));
+              const missing = granted.filter(g => !existing.has(g.label.toLowerCase()));
+              if (granted.length === 0) return null;
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                  <button type="button" disabled={missing.length === 0}
+                    onClick={() => handleTabActions("resources")([
+                      ...(tabsDraft.resources ?? []),
+                      ...missing.map(g => ({
+                        id: `res-${slugifyForActionId(g.label)}`,
+                        label: g.label,
+                        actionKind: "resource" as const,
+                        economyCost: [],
+                        logMode: "silent" as const,
+                        displayMode: "compact" as const,
+                        category: "Resources",
+                        tags: [],
+                        metadata: {
+                          resourceKind: g.kind,
+                          cost: g.reset === "shortRest" ? "Short Rest" : g.reset === "longRest" ? "Long Rest" : g.reset,
+                          details: [`Pool: ${g.max}`, `Reset: ${g.reset}`, g.note].filter(Boolean).join(" · "),
+                          additive: String(g.max),
+                        },
+                      })),
+                    ])}
+                    style={{ fontSize: 11, padding: "4px 10px", borderRadius: 4, border: "1px solid #7b68ee",
+                             background: missing.length ? "#2a3550" : "#111",
+                             color: missing.length ? "#dfe4ff" : "#555", cursor: missing.length ? "pointer" : "default" }}>
+                    {missing.length ? `Add ${missing.length} class resource${missing.length === 1 ? "" : "s"}` : "Class resources already present"}
+                  </button>
+                  <span style={{ fontSize: 10, color: "#667" }}>
+                    {granted.map(g => `${g.label} ${g.max}`).join(" · ")}
+                  </span>
+                </div>
+              );
+            })()}
+            <ResourceTableEditor
+              actions={tabsDraft.resources ?? []}
+              onChange={handleTabActions("resources")}
+            />
+          </>
         )}
         {activeTab === "feats" && (
           <ActorEditorActionTab classRows={editorClassRows} tabId="feats" actions={tabsDraft.feats ?? []} onChange={handleTabActions("feats")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
