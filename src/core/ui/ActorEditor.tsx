@@ -7,7 +7,7 @@ import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { parseClassLevels, hitDicePools } from "../rules/multiclass";
-import { resourcesForClasses } from "../rules/classResources";
+import { resourcesForClasses, classHasResources } from "../rules/classResources";
 import { castingAbilityForClass } from "../rules/multiclass";
 import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
@@ -167,6 +167,13 @@ type ProfileDraft = {
    * from an item or a race still needs a stat, and no class lookup will ever supply it.
    */
   castingAbility: string;
+  /**
+   * Declares a class the lookup does not know to be a caster — third-party or homebrew.
+   * The derived table covers the 12 core classes; anything else needs to be able to say so.
+   */
+  isSpellcaster: boolean;
+  /** Declares custom class resources for the same reason: the table cannot know them. */
+  hasClassResource: boolean;
   level: string;
   /** Extra Attack — weapon/unarmed attacks per Attack action. Spells always cast once. */
   attacksPerAction: string;
@@ -219,6 +226,8 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
       })
     ) as ProfileDraft["abilities"],
     castingAbility: actor.classes?.[0]?.castingAbility ?? "",
+    isSpellcaster: Boolean(actor.classes?.[0]?.castingAbility) || Boolean(actor.tabs?.spells?.length),
+    hasClassResource: Boolean(actor.tabs?.resources?.length),
     classFeatureLabel: actor.classFeatureTracker?.label ?? "",
     classFeatureValue: actor.classFeatureTracker?.value ?? "",
     classFeatureNote: actor.classFeatureTracker?.note ?? "",
@@ -480,6 +489,31 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
         })}
       </div>
 
+      {/* THIRD-PARTY AND HOMEBREW ESCAPE HATCHES.
+          The derived tables cover the 12 core classes. A class they have never heard of has no
+          way to say "I cast" or "I track something" — and a table running its own content
+          should not have to wait for the lookup to be taught about it. */}
+      {!castingAbilityForClass(draft.className) && (
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+          <input type="checkbox" checked={draft.isSpellcaster}
+            onChange={e => set("isSpellcaster", e.target.checked)} />
+          Spellcaster <span style={{ color: "#667" }}>— tick for a class the app does not know casts</span>
+        </label>
+      )}
+      {!classHasResources(draft.className) && (
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <input type="checkbox" checked={draft.hasClassResource}
+            onChange={e => set("hasClassResource", e.target.checked)} />
+          Has class resources <span style={{ color: "#667" }}>— adds them on the Resources tab</span>
+        </label>
+      )}
+      {draft.hasClassResource && !classHasResources(draft.className) && (
+        <p style={{ margin: "2px 0 0", fontSize: 10, color: "#667" }}>
+          Add each pool on the <strong style={{ color: "#8a8aa0" }}>Resources</strong> tab — name, uses and
+          when it comes back. Anything added there is spendable and restores on rest like a built-in pool.
+        </p>
+      )}
+
       {/* ONE ROW PER CASTING CLASS, derived and never typed.
           A multiclass caster has a spellcasting entry per class — a Wizard/Cleric casts off INT
           for one list and WIS for the other, and even where both land on the same stat they are
@@ -514,7 +548,8 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
           : rows.filter(c => c.castingAbility).map(c => ({ name: c.name, ability: c.castingAbility! }));
 
         if (casters.length === 0) {
-          if (!hasSpells) return null;
+          // A declared caster gets the picker even before a single spell is added.
+          if (!hasSpells && !draft.isSpellcaster) return null;
           return (
             <div style={{ margin: "6px 0 0", fontSize: 11 }}>
               <span style={{ color: "#e8b64c" }}>⚠ This character has spells but no casting ability — pick one:</span>
