@@ -64,11 +64,19 @@ function tabToActionKind(tab: PcActionDraft["tab"]): ActorAction["actionKind"] {
   }
 }
 
+/**
+ * The authored economy, stored as itself.
+ *
+ * ⚠ "free" and "passive" used to BOTH return `[]`, which is what made them indistinguishable
+ * and cost Shield Bash its click. They are real values now, so `economyCost` says what the DM
+ * picked and `slotsOf()` says what it occupies — two questions, two answers.
+ */
 function actionCostToEconomy(cost: PcActionDraft["actionCost"]): ActorAction["economyCost"] {
   if (cost === "bonus") return ["bonus"];
   if (cost === "reaction") return ["reaction"];
   if (cost === "bond") return ["bond"];
-  if (cost === "free" || cost === "passive") return [];
+  if (cost === "free") return ["free"];
+  if (cost === "passive") return ["passive"];
   return ["main"];
 }
 

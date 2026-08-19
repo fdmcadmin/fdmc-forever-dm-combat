@@ -21,6 +21,8 @@ import type { AddCombatLogEntryInput } from "../types/combatLog";
 import type { CombatRulesProfile, CommittedRollDamageChoice, CommittedRollOutcome, CommittedRollState, StartCommittedRollInput } from "../types/committedRoll";
 import { formatCriticalFailureLog } from "../data/criticalFailureTables";
 import type { ActorNote, ActorNoteVisibility } from "../state/useActorNotesState";
+import { slotsOf } from "../types/actionEconomy";
+import type { EconomySlot } from "../types/actionEconomy";
 import { isFreeEconomy } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
 import { spellAttackRollCount } from "../types/spellSlots";
@@ -1612,7 +1614,7 @@ export function ActorCard({
 
   function getSupersededPendingLogKeys(costs: ActionCost[], nextReadiedKey: string) {
     return uniqueStrings(
-      costs
+      slotsOf(costs)
         .map((cost) => actionState[cost])
         .filter((currentKey): currentKey is string => Boolean(currentKey) && currentKey !== nextReadiedKey && !isUsedActionStateValue(currentKey))
         .map((currentKey) => makePendingLogKey(actor.id, currentKey))
@@ -1621,7 +1623,7 @@ export function ActorCard({
 
   function getCurrentPendingLogKeys() {
     return uniqueStrings(
-      (Object.keys(actionState) as ActionCost[])
+      (Object.keys(actionState) as EconomySlot[])
         .map((cost) => actionState[cost])
         .filter((readiedKey): readiedKey is string => Boolean(readiedKey) && !isUsedActionStateValue(readiedKey))
         .map((readiedKey) => makePendingLogKey(actor.id, readiedKey))
@@ -2733,7 +2735,7 @@ export function ActorCard({
   // tab). Re-derived from the readied state each render; consumed when another action resolves.
   function getReadiedRiderEffects(): ArmedEffect[] {
     const effects: ArmedEffect[] = [];
-    (Object.keys(actionState) as ActionCost[]).forEach((slot) => {
+    (Object.keys(actionState) as EconomySlot[]).forEach((slot) => {
       const key = actionState[slot];
       if (!key || isUsedActionStateValue(key)) return;
       const entry = getActionForReadiedKey(key);
@@ -2768,7 +2770,7 @@ export function ActorCard({
   function consumeReadiedBondWithResolvedAction(resolvedReadiedKey: string) {
     // A readied rider (Bond or "additive" outcome mode) is applied/cleared when a DIFFERENT
     // action resolves — it rode that action. Scan every readied slot.
-    (Object.keys(actionState) as ActionCost[]).forEach((slot) => {
+    (Object.keys(actionState) as EconomySlot[]).forEach((slot) => {
       const key = actionState[slot];
       if (!key || isUsedActionStateValue(key) || key === resolvedReadiedKey) return;
       const entry = getActionForReadiedKey(key);
@@ -3204,7 +3206,8 @@ export function ActorCard({
 
   function createReadiedMessage(action: ActorAction, costs: ActionCost[], readiedKey: string) {
     const actionLabel = getActionLogLabel(action);
-    const swappedCost = costs.find((cost) => {
+    // Only a slot can be swapped — a free action displaces nothing.
+    const swappedCost = slotsOf(costs).find((cost) => {
       const currentKey = actionState[cost];
       return currentKey && currentKey !== readiedKey;
     });
@@ -3218,11 +3221,13 @@ export function ActorCard({
   }
 
   function isAlreadyReadiedForCosts(costs: ActionCost[], readiedKey: string) {
-    return costs.length > 0 && costs.every((cost) => actionState[cost] === readiedKey);
+    // A free action holds no slot, so it is never "already readied" — it is simply used.
+    const slots = slotsOf(costs);
+    return slots.length > 0 && slots.every((cost) => actionState[cost] === readiedKey);
   }
 
   function unreadiesKey(readiedKey: string) {
-    return (Object.keys(actionState) as ActionCost[]).some((cost) => actionState[cost] === readiedKey);
+    return (Object.keys(actionState) as EconomySlot[]).some((cost) => actionState[cost] === readiedKey);
   }
 
   function createUtilityActionMessage(action: ActorAction, tabId: TabId) {
@@ -3745,7 +3750,7 @@ export function ActorCard({
       : null;
     const concentrationWouldBeSuperseded = Boolean(
       pendingConcentrationKey &&
-        costs.some((cost) => actionState[cost] === pendingConcentrationKey) &&
+        slotsOf(costs).some((cost) => actionState[cost] === pendingConcentrationKey) &&
         pendingConcentrationKey !== readiedKey
     );
     if (costs.length > 0) {

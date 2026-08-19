@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ActionButton } from "./ActionButton";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
-import { isUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
+import { isUsedActionStateValue, slotsOf, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { CommittedRollOutcomeMode, CommittedRollState } from "../types/committedRoll";
 import { normalizeOutcomeMode } from "../types/tabs";
 import { isInertAction } from "../types/tabs";
@@ -49,6 +49,17 @@ const tabNotes: Record<TabId, string> = {
 
 function inferCosts(action: ActorAction, activeTab: TabId): ActionCost[] {
   if (action.economyCost) {
+    /**
+     * LEGACY BACKFILL. Every action authored before 0.7.10.18 stored `[]` for BOTH free and
+     * passive, so an empty array is ambiguous on disk even though it can no longer be produced.
+     * The authored value survived on `metadata.cost`; recover it rather than asking the table
+     * to re-save every action to get its clicks back.
+     */
+    if (action.economyCost.length === 0) {
+      const authored = action.metadata?.cost?.trim().toLowerCase();
+      if (authored === "free") return ["free"];
+      if (authored === "passive") return ["passive"];
+    }
     return action.economyCost;
   }
 
@@ -72,7 +83,8 @@ function getReadiedKey(tabId: TabId, actionId: string) {
 }
 
 function getWillSwapCosts(costs: ActionCost[], actionState: ActorActionEconomyState, readiedKey: string) {
-  return costs.filter((cost) => actionState[cost] && actionState[cost] !== readiedKey && !isUsedActionStateValue(actionState[cost]));
+  // Only a SLOT can be displaced. A free action never warns about swapping anything.
+  return slotsOf(costs).filter((cost) => actionState[cost] && actionState[cost] !== readiedKey && !isUsedActionStateValue(actionState[cost]));
 }
 
 function isCompactUtilityTab(tabId: TabId) {
@@ -306,7 +318,10 @@ function hasAttachedDice(action: ActorAction) {
  * roll. Everything else that is silent still has something to resolve.
  */
 function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, costs: ActionCost[], _outcomeMode: CommittedRollOutcomeMode) {
-  if (costs.length > 0) {
+  // Costless means NO SLOT. A free action arrives as ["free"] and still qualifies for a
+  // direct roll — testing raw length here would have taken Shield Bash's Roll button away
+  // the moment "free" became a real value.
+  if (slotsOf(costs).length > 0) {
     return false;
   }
   // No Roll button for the two non-rolling modes.
@@ -403,9 +418,10 @@ export function TabPanel({
                   const readiedKey = getReadiedKey(activeTab, action.id);
                   const outcomeMode = inferOutcomeMode(action);
                   const directRollAvailable = shouldShowDirectRollButton(action, activeTab, costs, outcomeMode);
-                  const selectedDirectRoll = costs.length === 0 && directRollAvailable && selectedRollKey === readiedKey;
-                  const readied = costs.some((cost) => actionState[cost] === readiedKey) || selectedDirectRoll;
-                  const resolved = resolvedReadiedKeys.includes(readiedKey) || costs.some((cost) => usedCostSlots.includes(cost));
+                  const slots = slotsOf(costs);
+                  const selectedDirectRoll = slots.length === 0 && directRollAvailable && selectedRollKey === readiedKey;
+                  const readied = slots.some((cost) => actionState[cost] === readiedKey) || selectedDirectRoll;
+                  const resolved = resolvedReadiedKeys.includes(readiedKey) || slots.some((cost) => usedCostSlots.includes(cost));
                   const committed = committedRoll?.readiedKey === readiedKey;
                   const commitBlocked = Boolean(committedRoll && committedRoll.readiedKey !== readiedKey);
                   const willSwapCosts = getWillSwapCosts(costs, actionState, readiedKey);
@@ -432,7 +448,7 @@ export function TabPanel({
                       key={action.id}
                       onClick={() => {
                         // Checks (no cost, direct roll): select for roll workspace
-                        if (costs.length === 0 && directRollAvailable) {
+                        if (slots.length === 0 && directRollAvailable) {
                           // AN ITEM CHARGE IS SPENT BY THE CLICK. This branch is the one an
                           // equipment row actually takes — no economyCost means `costs` is
                           // empty, and a charged item has dice — so it selected the roll and
@@ -450,7 +466,7 @@ export function TabPanel({
 
                         // Check actions with no cost but with dice — prime directly on click
                         // (compact check list: single click → roll fires)
-                        if (costs.length === 0 && isCheckAction(action) && hasAttachedDice(action) && onPrimeRoll) {
+                        if (slots.length === 0 && isCheckAction(action) && hasAttachedDice(action) && onPrimeRoll) {
                           const candidate = createCandidate(action, activeTab, costs, readiedKey);
                           onPrimeRoll(candidate);
                           return;
@@ -465,7 +481,7 @@ export function TabPanel({
                         }
                       }}
                       onUnready={() => {
-                        if (costs.length === 0 && selectedRollKey === readiedKey) {
+                        if (slots.length === 0 && selectedRollKey === readiedKey) {
                           setSelectedRollKey(null);
                           return;
                         }

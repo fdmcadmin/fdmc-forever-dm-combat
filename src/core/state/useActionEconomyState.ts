@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
-import type { ActionCost, ActorActionEconomyMap, ActorActionEconomyState } from "../types/actionEconomy";
+import { slotsOf } from "../types/actionEconomy";
+import type { ActionCost, EconomySlot, ActorActionEconomyMap, ActorActionEconomyState } from "../types/actionEconomy";
 import { emptyActionEconomyState } from "../types/actionEconomy";
 
 const ACTION_STATE_STORAGE_KEY = "fdm:action-economy-state:v1";
@@ -139,7 +140,10 @@ export function useActionEconomyState(actors: Actor[]) {
   );
 
   const readyActionCosts = useCallback((actorId: string, costs: ActionCost[], readiedKey: string) => {
-    if (costs.length === 0) {
+    // Only SLOT costs are readied. A free action still reaches here with ["free"], and readying
+    // it must be a no-op rather than inventing a slot to hold it.
+    const slots = slotsOf(costs);
+    if (slots.length === 0) {
       return;
     }
 
@@ -147,7 +151,7 @@ export function useActionEconomyState(actors: Actor[]) {
       const currentActorState = current[actorId] ?? cloneEmptyState();
       const nextActorState = { ...currentActorState };
 
-      costs.forEach((cost) => {
+      slots.forEach((cost) => {
         nextActorState[cost] = readiedKey;
       });
 
@@ -164,7 +168,7 @@ export function useActionEconomyState(actors: Actor[]) {
       const nextActorState = { ...currentActorState };
       let changed = false;
 
-      (Object.keys(nextActorState) as ActionCost[]).forEach((cost) => {
+      (Object.keys(nextActorState) as EconomySlot[]).forEach((cost) => {
         if (nextActorState[cost] === readiedKey) {
           nextActorState[cost] = null;
           changed = true;

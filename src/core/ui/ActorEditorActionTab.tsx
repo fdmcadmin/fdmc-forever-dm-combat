@@ -68,8 +68,11 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     economyCost === "reaction" ? "reaction" :
     economyCost === "bond" ? "bond" :
     economyCost === "main" ? "action" :
-    // Costless is AMBIGUOUS on the way back in — "free" and "passive" both stored []. The
-    // authored value is on metadata.cost; without it every passive action reopened as "Free".
+    economyCost === "free" ? "free" :
+    economyCost === "passive" ? "passive" :
+    // LEGACY ONLY: actions saved before 0.7.10.18 stored [] for both free and passive, so the
+    // array says nothing and metadata.cost is the only surviving record. Anything saved since
+    // is answered by the two lines above.
     action.metadata?.cost === "passive" ? "passive" : "free";
 
   const hasAttack = Boolean(action.metadata?.attack?.trim());
