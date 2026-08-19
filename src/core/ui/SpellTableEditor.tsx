@@ -523,7 +523,7 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                   value={row.damage}
                   onChange={v => setRow(idx, { damage: v })}
                   placeholder="8d6 fire"
-                  showVars={["@STR","@DEX","@WIS","@CHA"]}
+                  showVars={["@STR","@DEX","@WIS","@CHA","@CASTMOD","@PROF","@MAIN"]}
                 />
                 <FormulaInput
                   label="Crit / Upcast Damage"

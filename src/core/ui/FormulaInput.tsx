@@ -31,6 +31,9 @@ const FORMULA_VARS: FormulaVar[] = [
   { token: "@PROF", label: "PROF", hint: "Proficiency bonus (auto from level)", color: "#4caf50" },
   { token: "@SPELL", label: "SPELL", hint: "Spellcasting mod + PROF (auto-detects class stat)", color: "#4caf50" },
   { token: "@ATK",  label: "ATK",  hint: "Martial attack bonus — best of STR/DEX + PROF (the martial twin of SPELL)", color: "#4caf50" },
+  { token: "@CASTMOD", label: "CAST", hint: "Spellcasting modifier ALONE, no PROF — what healing scales on", color: "#7be08a" },
+  { token: "@MAIN", label: "MAIN", hint: "Main class level — Second Wind is 1d10+@MAIN", color: "#7be08a" },
+  { token: "@SECOND", label: "2ND", hint: "Second class level (multiclass)", color: "#7be08a" },
 ];
 
 /** Quick-assemble dice buttons (appended as "1dX"). */

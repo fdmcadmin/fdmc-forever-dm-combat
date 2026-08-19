@@ -13,6 +13,7 @@
  *   @CHA  — CHA modifier
  *   @PROF — Proficiency bonus (+2 through +6 based on level)
  *   @SPELL — Spell attack bonus (spellcasting mod + PROF)
+ *   @CASTMOD — Spellcasting modifier ALONE, no PROF — what healing scales on
  *   @ATK  — Martial attack bonus (best of STR/DEX + PROF) — the twin of @SPELL
  *   @MAIN/@SECOND/@THIRD — that class slot's level
  *   @CLASSCOMBINED — hit-dice pool readout ("5d10 + 1d6"), NOT rollable
@@ -165,6 +166,21 @@ export function buildFormulaVarMap(
     "@WIS": signed(stats.wis.modifier),
     "@CHA": signed(stats.cha.modifier),
     "@PROF": signed(prof),
+    /**
+     * THE BARE CASTING MODIFIER — no proficiency. This is what HEALING scales on.
+     *
+     * ⚠ Do not reach for @SPELL here. That is an ATTACK BONUS (mod + proficiency); using it on
+     * Cure Wounds over-heals by the proficiency bonus on every single cast, and grows worse as
+     * the character levels. Christopher: *"healing spells are usually based on spell modifier
+     * or PB or even class levels."*
+     *
+     * It follows the action's castingClass exactly as @SPELL does, so on a Wizard/Cleric the
+     * Cleric heal keys off WIS while the Wizard spell keys off INT. Every healing formula in the
+     * party currently hardcodes an ability instead — @CHA on one sheet, @INT on another, @WIS on
+     * a third — none of which follow the picker, and all of which are wrong the moment the
+     * character multiclasses.
+     */
+    "@CASTMOD": signed(spellMod),
     "@SPELL": signed(saveMod),         // spell attack bonus (mod + prof)
     "@SAVE_BONUS": signed(saveMod),    // same value, alias for clarity in save DC expressions
     "@ATK": signed(atkMod),            // martial attack bonus: best of STR/DEX + proficiency
