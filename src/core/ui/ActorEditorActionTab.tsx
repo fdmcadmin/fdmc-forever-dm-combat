@@ -214,7 +214,9 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
     if (!draft.name?.trim()) errs.push("Name is required.");
     if (draft.rollMode !== "utility" && draft.rollMode !== "passive" && draft.rollMode !== "triggered") {
       const hasFormula = draft.attackBonus || draft.saveDc || draft.damage || draft.healing;
-      if (!hasFormula) errs.push("This outcome mode requires at least one formula. Add a formula or switch to Reference Only.");
+      // "Reference Only" is retired and no longer in the dropdown — telling a DM to switch to a
+      // mode that is not offered is a dead end.
+      if (!hasFormula) errs.push("This outcome mode rolls something, so it needs a formula. Add one, or switch to Utility (clickable, no dice) or Passive (not clickable).");
     }
     if (errs.length > 0) { setErrors(errs); return; }
 

@@ -120,6 +120,7 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     rollMode: draft.rollMode,
     ...(draft.attackBonus !== undefined && String(draft.attackBonus).trim() ? { attackBonus: draft.attackBonus } : {}),
     ...(draft.saveAbility?.trim() ? { saveAbility: draft.saveAbility.trim() } : {}),
+    ...(Number.isFinite(draft.initiativeBonus) ? { initiativeBonus: draft.initiativeBonus } : {}),
     ...(draft.saveDc !== undefined && String(draft.saveDc).trim() ? { saveDc: draft.saveDc } : {}),
     ...(draft.checkAbility?.trim() ? { checkAbility: draft.checkAbility.trim() } : {}),
     ...(draft.damage?.trim() ? { damage: draft.damage.trim() } : {}),

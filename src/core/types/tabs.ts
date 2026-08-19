@@ -178,6 +178,10 @@ export function isInertAction(
 ): boolean {
   if (action.metadata?.slotCost?.trim()) return false;
   if (isFreeEconomy(action)) return false;
+  // The PASSIVE economy is inert by definition. This was missing entirely: only the passive
+  // outcome MODE was checked, so an action authored "Passive" in the economy dropdown stayed
+  // clickable and the choice did nothing at all.
+  if (authoredEconomy(action) === "passive") return true;
   if (resolveOutcomeMode(action) === "passive") return true;
   return action.logMode === "silent" && slotsConsumed.length === 0;
 }

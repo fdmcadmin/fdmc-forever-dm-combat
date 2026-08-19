@@ -144,6 +144,9 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
       isSpellFocus: normalized.spellFocusAttack ? true : undefined,
       crit: normalized.critDamage,
       saveDc: typeof normalized.saveDc === "number" ? String(normalized.saveDc) : typeof normalized.saveDc === "string" ? normalized.saveDc : undefined,
+      // Which save the TARGET rolls. The DC composer sets this and nothing stored it, so every
+      // ability picked in the action editor was discarded on save.
+      saveAbility: normalized.saveAbility,
       range: normalized.range,
       cost: normalized.actionCost,
       slotCost: normalized.slotCost,
