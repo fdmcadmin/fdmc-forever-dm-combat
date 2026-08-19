@@ -134,6 +134,54 @@ export function resolveOutcomeMode(action: {
   return spends ? "utility" : "passive";
 }
 
+/**
+ * Every economy the editor offers — including the two that consume no slot.
+ *
+ * `free` and `passive` are the pair that keep getting conflated: both consume nothing, and only
+ * one of them is inert.
+ */
+export type ActionEconomyKind = "action" | "bonus" | "reaction" | "bond" | "free" | "passive";
+
+/** The authored economy, when it is one of the known kinds. */
+export function authoredEconomy(action: { metadata?: { cost?: string } }): ActionEconomyKind | undefined {
+  const c = action.metadata?.cost?.trim().toLowerCase();
+  return c === "action" || c === "bonus" || c === "reaction" || c === "bond" || c === "free" || c === "passive"
+    ? c : undefined;
+}
+
+/** A FREE action costs no slot and is fully usable. The distinction slots cannot express. */
+export function isFreeEconomy(action: { metadata?: { cost?: string } }): boolean {
+  return authoredEconomy(action) === "free";
+}
+
+/**
+ * ⛔ THE ONE PLACE THAT DECIDES WHETHER AN ACTION IS INERT. Call this; never re-derive it.
+ *
+ * Every previous gate asked `logMode === "silent" && costs.length === 0` and got it wrong for
+ * free actions, because "consumes no slot" and "cannot be used" are different statements that
+ * happened to share a representation. Shield Bash — a dc-check with a real save DC, authored
+ * Free and hidden from the log — sat dead on the sheet for exactly that reason.
+ *
+ * The rule, in precedence order:
+ *   1. Spends a named resource  -> USABLE. A pool can only be spent by clicking.
+ *   2. Authored Free            -> USABLE. Free is an economy, not an absence.
+ *   3. Outcome mode passive     -> INERT. Always-on, nothing to press.
+ *   4. Silent with no slot      -> INERT. The reference-text convention.
+ *
+ * 1 and 2 come first deliberately: a contradiction between "this costs something" and "this is
+ * passive" resolves toward usable, because a visible no-op is debuggable and an invisible dead
+ * row is not.
+ */
+export function isInertAction(
+  action: { logMode?: string; metadata?: { cost?: string; slotCost?: string; outcomeMode?: LegacyOutcomeMode }; economyCost?: readonly string[] },
+  slotsConsumed: readonly unknown[],
+): boolean {
+  if (action.metadata?.slotCost?.trim()) return false;
+  if (isFreeEconomy(action)) return false;
+  if (resolveOutcomeMode(action) === "passive") return true;
+  return action.logMode === "silent" && slotsConsumed.length === 0;
+}
+
 // F05 — resource kind determines rest reset behavior
 export type ResourceKind = "spellSlot" | "pactSlot" | "freeCast" | "pool" | "toggle" | "counter";
 
@@ -156,7 +204,16 @@ export type ActorActionMetadata = {
   crit?: string;
   saveDc?: string;
   range?: string;
-  cost?: string;
+  /**
+   * The AUTHORED economy — what the DM picked in the editor.
+   *
+   * ⚠ NOT the same thing as `economyCost`, and the difference is load-bearing. `economyCost`
+   * lists the SLOTS an action consumes, so "free" and "passive" both correctly produce `[]`.
+   * That made them indistinguishable to every gate that asked "does this cost anything?", and
+   * several of those gates were really asking "is this usable?" — a different question with the
+   * same wrong answer. Read this field for the second question. Never infer it from slots.
+   */
+  cost?: ActionEconomyKind | string;
   slotCost?: string;
   spellLevel?: number;
   /**

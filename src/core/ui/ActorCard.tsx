@@ -21,6 +21,7 @@ import type { AddCombatLogEntryInput } from "../types/combatLog";
 import type { CombatRulesProfile, CommittedRollDamageChoice, CommittedRollOutcome, CommittedRollState, StartCommittedRollInput } from "../types/committedRoll";
 import { formatCriticalFailureLog } from "../data/criticalFailureTables";
 import type { ActorNote, ActorNoteVisibility } from "../state/useActorNotesState";
+import { isFreeEconomy } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
 import { spellAttackRollCount } from "../types/spellSlots";
 import type { ActorStatusTrackerState, StatusTrackerId } from "../types/status";
@@ -520,9 +521,11 @@ function getVisibleTabs(actor: Actor, status: ActorStatusTrackerState): TabId[] 
   });
 }
 
-function formatCosts(costs: ActionCost[]) {
+function formatCosts(costs: ActionCost[], action?: ActorAction) {
   if (costs.length === 0) {
-    return "Reminder";
+    // "Reminder" is the label for a reference entry. A FREE action also consumes no slot and
+    // is nothing of the sort — it was being announced in the log as a reminder of itself.
+    return action && isFreeEconomy(action) ? "Free" : "Reminder";
   }
 
   return costs.map((cost) => actionCostLabels[cost]).join(" + ");
@@ -3211,7 +3214,7 @@ export function ActorCard({
       return `${actor.name} swapped readied ${actionCostLabels[swappedCost]}: ${previousLabel} → ${actionLabel}.`;
     }
 
-    return `${actor.name} has readied ${actionLabel} [${formatCosts(costs)}].`;
+    return `${actor.name} has readied ${actionLabel} [${formatCosts(costs, action)}].`;
   }
 
   function isAlreadyReadiedForCosts(costs: ActionCost[], readiedKey: string) {
@@ -3785,7 +3788,9 @@ export function ActorCard({
       actionName: action.label,
       tabId,
       actionCosts: costs,
-      tone: action.logMode === "table-note" || costs.length === 0 ? "table-note" : "combat",
+      // A free action is COMBAT — Shield Bash is not a table note. Only genuine reference
+      // entries (no slot, not free) get demoted out of the combat log.
+      tone: action.logMode === "table-note" || (costs.length === 0 && !isFreeEconomy(action)) ? "table-note" : "combat",
       message: createUtilityActionMessage(action, tabId),
     });
   }

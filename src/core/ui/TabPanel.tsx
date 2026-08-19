@@ -5,6 +5,7 @@ import type { ActorConcentrationState } from "../state/useActorConcentrationStat
 import { isUsedActionStateValue, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { CommittedRollOutcomeMode, CommittedRollState } from "../types/committedRoll";
 import { normalizeOutcomeMode } from "../types/tabs";
+import { isInertAction } from "../types/tabs";
 import { rollLabelForEffectKind } from "../constants/itemTypeCapabilities";
 import type { ActorAction, TabId } from "../types/tabs";
 import type { ReadiedRollCandidate } from "./CommittedRollPanel";
@@ -125,11 +126,7 @@ function categoryKey(category: string | null) {
 }
 
 function isReferenceOnlyAction(action: ActorAction, activeTab: TabId) {
-  // A FREE action is costless, not inert — see ActionButton. "free" and "passive" both store
-  // economyCost [], so this must read the authored cost or a free row renders as reference text.
-  if (action.metadata?.cost === "free") return false;
-  const costs = inferCosts(action, activeTab);
-  return action.logMode === "silent" && costs.length === 0;
+  return isInertAction(action, inferCosts(action, activeTab));
 }
 
 function getActionGridClass(groupActions: ActorAction[], activeTab: TabId, compact: boolean) {
