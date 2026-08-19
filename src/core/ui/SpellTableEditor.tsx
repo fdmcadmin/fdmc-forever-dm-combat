@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
+import { SaveDcComposer } from "./SaveDcComposer";
 import type { ActorAction } from "../types/tabs";
 import { formatSpellLevel, type SpellActionLevel } from "../types/spellSlots";
 
@@ -46,6 +47,16 @@ type SpellRow = {
   classFeatureUses: string;
   /** Weapon-buff rider (Hungering Blade): damage added to weapon attacks while toggled on. */
   weaponBuffDamage: string;
+  /**
+   * Which class casts this spell. "" = the main class.
+   *
+   * SPELLS are where this matters most and the picker was built in the OTHER editor first —
+   * a Wizard/Cleric resolves @SPELL through INT or WIS depending on the spell, and until this
+   * row carried the choice the whole sheet used one stat.
+   */
+  castingClass: "" | "main" | "second" | "third";
+  /** Which save the TARGET rolls. Separate from how the DC number is derived. */
+  saveAbility: string;
   include: boolean;
 };
 
@@ -115,6 +126,8 @@ function rowToAction(row: SpellRow): ActorAction {
       // freeCast routes the cast to the dedicated resource (App.tsx consume routing).
       ...(isClassFeature ? { spellSlotMode: "freeCast" as const, classFeatureUses: cfUses } : {}),
       ...(row.weaponBuffDamage.trim() ? { weaponBuffDamage: row.weaponBuffDamage.trim() } : {}),
+      ...(row.castingClass ? { castingClass: row.castingClass } : {}),
+      ...(row.saveAbility.trim() ? { saveAbility: row.saveAbility.trim() } : {}),
       concentration: row.concentration ? "Yes" : undefined,
       details: detailParts || row.details,
     },
@@ -160,6 +173,8 @@ function actionToRow(action: ActorAction): SpellRow {
       ? String(action.metadata.classFeatureUses)
       : "",
     weaponBuffDamage: action.metadata?.weaponBuffDamage ?? "",
+    castingClass: action.metadata?.castingClass ?? "",
+    saveAbility: action.metadata?.saveAbility ?? "",
     upcastDamage: action.metadata?.upcastDamage ?? "",
     attackRolls: action.metadata?.attackRolls ? String(action.metadata.attackRolls) : "",
     attackRollsPerLevel: action.metadata?.attackRollsPerLevel ? String(action.metadata.attackRollsPerLevel) : "",
@@ -191,6 +206,8 @@ function makeBlankRow(): SpellRow {
     economyCost: "main",
     classFeatureUses: "",
     weaponBuffDamage: "",
+    castingClass: "",
+    saveAbility: "",
     include: false,
   };
 }
@@ -200,9 +217,11 @@ function makeBlankRow(): SpellRow {
 type SpellTableEditorProps = {
   actions: ActorAction[];
   onChange: (actions: ActorAction[]) => void;
+  /** The character's class rows, in slot order — populates the per-spell "Cast using" picker. */
+  classRows?: { name: string; level: number }[];
 };
 
-export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
+export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTableEditorProps) {
   const [rows, setRows] = useState<SpellRow[]>(() =>
     actions.length > 0 ? actions.map(actionToRow) : [makeBlankRow()]
   );
@@ -469,6 +488,36 @@ export function SpellTableEditor({ actions, onChange }: SpellTableEditorProps) {
                   <input type="text" value={row.saveDc} onChange={e => setRow(idx, { saveDc: e.target.value })}
                     placeholder="CON DC 13" style={{ ...inputStyle, marginTop: 2 }} />
                 </label>
+                {/* WHICH CLASS CASTS THIS SPELL. Only asked when the character has more than one
+                    class. @SPELL resolves through that class's ability, so a Wizard/Cleric gets
+                    INT on one spell and WIS on the next instead of one stat for every spell. */}
+                {classRows.length > 1 && (
+                  <label style={{ fontSize: 12 }}>
+                    Cast using
+                    <select
+                      value={row.castingClass}
+                      onChange={e => setRow(idx, { castingClass: e.target.value as SpellRow["castingClass"] })}
+                      style={{ ...inputStyle, marginTop: 2 }}
+                    >
+                      <option value="">— main class ({classRows[0]?.name}) —</option>
+                      {classRows.slice(0, 3).map((c, i) => (
+                        <option key={c.name + i} value={i === 0 ? "main" : i === 1 ? "second" : "third"}>
+                          {c.name} {c.level}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {/* A save DC is DERIVED. This was a bare text box, so the only way to author a
+                    DC was to type the number — which then never moved again as the character
+                    levelled. 8+@SPELL for a magical effect, 8+@ATK for a martial one. */}
+                <FormulaInput
+                  label="Save DC (formula)"
+                  value={row.saveDc}
+                  onChange={v => setRow(idx, { saveDc: v })}
+                  placeholder="8+@SPELL"
+                  showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@ATK","@SPELL","@PROF"]}
+                />
                 <FormulaInput
                   label="Damage"
                   value={row.damage}

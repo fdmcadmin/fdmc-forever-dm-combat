@@ -203,6 +203,14 @@ export type ActorActionMetadata = {
   damageTypeOptions?: string[];
   crit?: string;
   saveDc?: string;
+  /**
+   * Which save the TARGET rolls (STR/DEX/CON/INT/WIS/CHA).
+   *
+   * Separate from `saveDc`, which is the NUMBER. Two questions the old free-text box ran
+   * together: a shove is a STR save whose DC comes off the attacker’s martial modifier, and
+   * nothing in "STR DC 14" says which half is which.
+   */
+  saveAbility?: string;
   range?: string;
   /**
    * The AUTHORED economy — what the DM picked in the editor.

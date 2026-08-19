@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
 import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
 import { readDamageTypeChoice } from "../rules/damageTypeChoice";
+import { SaveDcComposer } from "./SaveDcComposer";
 import { tabAccent } from "./tabVisuals";
 import { resolveOutcomeMode } from "../types/tabs";
 import type { ActorAction, TabId } from "../types/tabs";
@@ -289,32 +290,18 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
       )}
 
       {showSaveFields && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <FormulaInput
-            label="Save DC"
-            value={String(draft.saveDc ?? "")}
-            onChange={v => set("saveDc", v || undefined)}
-            placeholder="CON DC 13"
-            /**
-             * A SAVE DC IS DERIVED, NOT TYPED. This field shipped with `showVars={[]}` — dice
-             * buttons and nothing else — so the only way to author a DC was to hard-code the
-             * number, which then never moved as the character levelled.
-             *
-             * Which modifier drives it depends on what the effect IS: a martial effect keys off
-             * the attack modifier (`@ATK`, the higher of STR/DEX) and a magical one off spell
-             * attack (`@SPELL`, casting mod + proficiency). Both already resolve; only the chips
-             * were missing. The six abilities are here too, because a DC that keys off a
-             * specific stat regardless of martial/magical is common enough to need one click.
-             */
-            showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@ATK","@SPELL"]}
-          />
-          <label style={{ fontSize: 12 }}>
-            Save Ability
-            <input type="text" value={draft.saveAbility ?? ""} onChange={e => set("saveAbility", e.target.value)}
-              placeholder="CON, DEX, WIS..."
-              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
-          </label>
-        </div>
+        /**
+         * TOGGLES, NOT A TYPED BOX. The 8 is constant in every save DC, so authoring it is
+         * pure ceremony — and a hand-typed "STR DC 14" freezes at the level it was written
+         * with nothing to say it has gone stale. Two questions instead: which save the target
+         * rolls, and whether the number comes off martial or magical attack.
+         */
+        <SaveDcComposer
+          saveDc={String(draft.saveDc ?? "")}
+          onSaveDc={v => set("saveDc", v || undefined)}
+          saveAbility={draft.saveAbility ?? ""}
+          onSaveAbility={v => set("saveAbility", v || undefined)}
+        />
       )}
 
       {showCheckFields && (

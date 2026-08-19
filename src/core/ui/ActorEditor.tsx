@@ -732,6 +732,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           <SpellTableEditor
             actions={tabsDraft.spells ?? []}
             onChange={handleTabActions("spells")}
+            classRows={editorClassRows}
           />
         )}
         {activeTab === "resources" && (
