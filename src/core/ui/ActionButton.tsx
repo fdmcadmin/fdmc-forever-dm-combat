@@ -141,7 +141,20 @@ export function ActionButton({
    * cannot reproduce this bug now, whatever it carries.
    */
   const spendsAResource = Boolean(action.metadata?.slotCost?.trim());
-  const referenceOnly = !spendsAResource
+  /**
+   * ⚠ FREE IS NOT PASSIVE, and the runtime could not tell them apart.
+   *
+   * The editor offers six economies; `actionCostToEconomy` collapses BOTH "free" and "passive"
+   * to `economyCost: []`, so every gate testing `costs.length === 0` treats a free action as
+   * a reference entry. Combined with "hide from log" — two ordinary authoring choices — that
+   * made the row unclickable: Shield Bash, a dc-check with a real DC, sat dead on the sheet.
+   *
+   * The authored value survives on `metadata.cost`, so ask THAT rather than inferring inertness
+   * from the absence of a slot. Christopher's rule: every action economy except passive is a
+   * clickable button.
+   */
+  const isFreeAction = action.metadata?.cost === "free";
+  const referenceOnly = !spendsAResource && !isFreeAction
     && (mode === "passive" || (action.logMode === "silent" && costs.length === 0));
   // BUILD 0.5.3.1.3: action-card click may prime the roll workspace immediately,
   // but table players still need the visible Roll button to send the selected roll to Dice+.

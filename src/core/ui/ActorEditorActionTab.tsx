@@ -35,6 +35,21 @@ const OUTCOME_MODE_LABELS: Record<PcRollMode, string> = {
   reference: "Reference Only",
 };
 
+/**
+ * WHAT THE DROPDOWN OFFERS — every mode except the retired one.
+ *
+ * `reference` still has a LABEL above, because an action authored before the split can be
+ * opened and must show something sensible rather than an empty box. But it must not be
+ * offered as a NEW choice: picking it stores `passive`, and a passive action that spends a
+ * resource can never spend it. Two of one class feature's three options were dead for
+ * exactly that reason.
+ *
+ * Nothing has to be re-authored — `resolveOutcomeMode` resolves legacy `reference` at read
+ * time. This only stops the tag being created again.
+ */
+const AUTHORABLE_OUTCOME_MODES = (Object.keys(OUTCOME_MODE_LABELS) as PcRollMode[])
+  .filter(m => m !== "reference");
+
 const ACTION_COST_LABELS: Record<PcActionCost, string> = {
   action: "Action",
   bonus: "Bonus Action",
@@ -52,7 +67,10 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     economyCost === "bonus" ? "bonus" :
     economyCost === "reaction" ? "reaction" :
     economyCost === "bond" ? "bond" :
-    economyCost === "main" ? "action" : "free";
+    economyCost === "main" ? "action" :
+    // Costless is AMBIGUOUS on the way back in — "free" and "passive" both stored []. The
+    // authored value is on metadata.cost; without it every passive action reopened as "Free".
+    action.metadata?.cost === "passive" ? "passive" : "free";
 
   const hasAttack = Boolean(action.metadata?.attack?.trim());
   const hasSave = Boolean(action.metadata?.saveDc?.trim());
@@ -246,8 +264,12 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           Outcome Mode
           <select value={draft.rollMode} onChange={e => changeRollMode(e.target.value as PcRollMode)}
             style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
-            {(Object.entries(OUTCOME_MODE_LABELS) as [PcRollMode, string][]).map(([v, l]) =>
-              <option key={v} value={v}>{l}</option>
+            {AUTHORABLE_OUTCOME_MODES.map(v =>
+              <option key={v} value={v}>{OUTCOME_MODE_LABELS[v]}</option>
+            )}
+            {/* Only present when the action being edited still carries the retired tag. */}
+            {draft.rollMode === "reference" && (
+              <option value="reference">{OUTCOME_MODE_LABELS.reference} (retired — pick another)</option>
             )}
           </select>
         </label>
