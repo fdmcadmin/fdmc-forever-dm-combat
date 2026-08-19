@@ -14,6 +14,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import type { ActorAction } from "../types/tabs";
 import { FormulaInput } from "./FormulaInput";
 import { ChassisFields } from "./ChassisFields";
+import { ChargesFields } from "./ChargesFields";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
 import { ARMOR_TYPES, EFFECT_KINDS, ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, outcomeModeForEffectKind, type ArmorTypeId, type EffectKind, type ItemType } from "../constants/itemTypeCapabilities";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
@@ -1196,35 +1197,8 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         {/* Uses, for a thing they are building — a wand with three charges. How it comes
             back is a rest cadence; "manual" means nothing restores it but a hand on the
             card, which is what a dawn recharge needs. */}
-        <label style={{ fontSize: 12 }}>Uses
-          <input type="number" min={0} value={draft.charges?.max ?? ""} placeholder="0"
-            onChange={e => {
-              const max = Number.parseInt(e.target.value, 10);
-              set("charges", Number.isFinite(max) && max > 0
-                ? { max, reset: draft.charges?.reset ?? "longRest", note: draft.charges?.note }
-                : undefined);
-            }} style={inputStyle} />
-        </label>
+        <ChargesFields charges={draft.charges} onChange={v => set("charges", v)} inputStyle={inputStyle} />
       </div>
-      {draft.charges && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 8 }}>
-          <label style={{ fontSize: 12 }}>Comes back on
-            <select value={draft.charges.reset}
-              onChange={e => draft.charges && set("charges", { ...draft.charges, reset: e.target.value as NonNullable<EquipmentItem["charges"]>["reset"] })}
-              style={{ ...inputStyle, marginTop: 2 }}>
-              <option value="longRest">Long rest</option>
-              <option value="shortRest">Short rest</option>
-              <option value="encounter">Each encounter</option>
-              <option value="manual">Manual — no rest restores it</option>
-            </select>
-          </label>
-          <label style={{ fontSize: 12 }}>Cadence note
-            <input type="text" value={draft.charges.note ?? ""}
-              onChange={e => draft.charges && set("charges", { ...draft.charges, note: e.target.value || undefined })}
-              placeholder="Recharges at dawn" style={inputStyle} />
-          </label>
-        </div>
-      )}
 
       {/* An artificer's own creations can require attunement just as campaign loot does, so
           this has to be authorable here — not only a property of shipped items. It feeds the

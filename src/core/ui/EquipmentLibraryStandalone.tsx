@@ -12,6 +12,7 @@ import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/conve
 import { SELECTABLE_ITEM_TYPES } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { ChassisFields } from "./ChassisFields";
+import { ChargesFields } from "./ChargesFields";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
@@ -336,30 +337,7 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
       <fieldset style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
         <legend style={{ fontSize: 11, color: "#e0b34a", padding: "0 4px" }}>Charges</legend>
         <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1.4fr", gap: 8 }}>
-          <label style={{ fontSize: 12 }}>Uses
-            <input type="number" min={0} value={draft.charges?.max ?? ""} placeholder="0"
-              onChange={e => {
-                const max = Number.parseInt(e.target.value, 10);
-                set("charges", Number.isFinite(max) && max > 0
-                  ? { max, reset: draft.charges?.reset ?? "longRest", note: draft.charges?.note }
-                  : undefined);
-              }} style={input} />
-          </label>
-          <label style={{ fontSize: 12 }}>Comes back on
-            <select value={draft.charges?.reset ?? "longRest"} disabled={!draft.charges}
-              onChange={e => draft.charges && set("charges", { ...draft.charges, reset: e.target.value as NonNullable<EquipmentItem["charges"]>["reset"] })}
-              style={{ ...input, marginTop: 2, opacity: draft.charges ? 1 : 0.4 }}>
-              <option value="longRest">Long rest</option>
-              <option value="shortRest">Short rest</option>
-              <option value="encounter">Each encounter</option>
-              <option value="manual">Manual — no rest restores it</option>
-            </select>
-          </label>
-          <label style={{ fontSize: 12 }}>Cadence note
-            <input type="text" value={draft.charges?.note ?? ""} disabled={!draft.charges}
-              onChange={e => draft.charges && set("charges", { ...draft.charges, note: e.target.value || undefined })}
-              placeholder="Recharges at dawn" style={{ ...input, opacity: draft.charges ? 1 : 0.4 }} />
-          </label>
+          <ChargesFields charges={draft.charges} onChange={v => set("charges", v)} inputStyle={input} dimWhenEmpty />
         </div>
         {draft.charges?.reset === "manual" && (
           <p style={{ margin: "6px 0 0", fontSize: 11, color: "#888" }}>
