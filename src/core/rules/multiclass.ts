@@ -120,6 +120,8 @@ export function parseClassLevels(className: string, levels: string): ClassLevel[
   if (names.length < 2) return [];
   const nums = levels.split("/").map(s => Number.parseInt(s.trim(), 10));
   return names
-    .map((name, i) => ({ name, level: nums[i], hitDie: hitDieForClass(name) }))
+    // castingAbility too — classLevels() derives it, and this parallel builder did not, so a
+    // multiclass sheet came back with every row saying it casts on nothing.
+    .map((name, i) => ({ name, level: nums[i], hitDie: hitDieForClass(name), castingAbility: castingAbilityForClass(name) }))
     .filter(c => Number.isFinite(c.level) && c.level > 0);
 }

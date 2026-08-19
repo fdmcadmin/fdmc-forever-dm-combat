@@ -8,6 +8,7 @@ import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { parseClassLevels, hitDicePools } from "../rules/multiclass";
 import { resourcesForClasses } from "../rules/classResources";
+import { castingAbilityForClass } from "../rules/multiclass";
 import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
@@ -479,28 +480,40 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
         })}
       </div>
 
-      {/* DERIVED, NOT TYPED. Spell DC and spell attack come from the casting ability and
-          proficiency, so hand-typing them into the tracker below freezes them at the level they
-          were written. Shown here so the sheet can be checked against the numbers the engine
-          will actually roll. */}
+      {/* ONE ROW PER CASTING CLASS, derived and never typed.
+          A multiclass caster has a spellcasting entry per class — a Wizard/Cleric casts off INT
+          for one list and WIS for the other, and even where both land on the same stat they are
+          two separate entries, not one blended line.
+
+          ⚠ Ability scores live at draft.abilities[id].score. Reading draft[ability] returns
+          undefined and falls back to 10, which is how this first shipped showing "CHA +0" on a
+          character with CHA 16. */}
       {(() => {
         const rows = parseClassLevels(draft.className, draft.multiclassLevels);
+        const modOf = (id: string) => {
+          const raw = (draft.abilities as Record<string, { score: string }> | undefined)?.[id]?.score;
+          const score = Number.parseInt(raw ?? "10", 10);
+          return Math.floor(((Number.isFinite(score) ? score : 10) - 10) / 2);
+        };
+        const total = rows.reduce((n, c) => n + c.level, 0) || Number(draft.level) || 1;
+        const prof = Math.floor((total - 1) / 4) + 2;
+        const sign = (n: number) => (n >= 0 ? `+${n}` : String(n));
+        const single = rows.length < 2;
         /**
-         * THE MOMENT A CHARACTER HAS A SPELL, THEY HAVE SPELLCASTING NUMBERS.
-         *
-         * Deriving the ability from the class covers the ordinary cases and misses the ones that
-         * actually need help: a Barbarian handed a spell by an item or a race casts on something,
-         * and no class lookup will ever say what. So an explicit choice wins, and the block
-         * appears whenever there are spells even if the class implies nothing.
+         * ⚠ parseClassLevels returns [] for a SINGLE-class character by design — className and
+         * level already say it, so it grows no array. That meant rows[0] was undefined for every
+         * single-class caster and NONE of them derived an ability: an Artificer, a Wizard, a
+         * Cleric all fell through to "pick one" as though the class implied nothing. Ask the
+         * class name directly when there is no split.
          */
-        const derived = rows[0]?.castingAbility;
-        const ability = draft.castingAbility || derived;
-        /**
-         * ⚠ ALWAYS OVERRIDABLE. Showing the picker only when the class derives NOTHING meant a
-         * Hexblade — or anything whose subclass breaks the default — could be corrected in the
-         * export but not in the app. Nothing the code can set should be beyond the editor.
-         */
-        if (!ability) {
+        const chosen = draft.castingAbility
+          || rows[0]?.castingAbility
+          || castingAbilityForClass(draft.className);
+        const casters = single
+          ? (chosen ? [{ name: draft.className || "Class", ability: chosen }] : [])
+          : rows.filter(c => c.castingAbility).map(c => ({ name: c.name, ability: c.castingAbility! }));
+
+        if (casters.length === 0) {
           if (!hasSpells) return null;
           return (
             <div style={{ margin: "6px 0 0", fontSize: 11 }}>
@@ -509,41 +522,41 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
                 {["str","dex","con","int","wis","cha"].map(a => (
                   <button key={a} type="button" onClick={() => set("castingAbility", a)}
                     style={{ fontSize: 11, padding: "3px 9px", borderRadius: 4, cursor: "pointer",
-                             background: "#111", border: "1px solid #3a3a52", color: "#8a8aa0" }}>
-                    {a.toUpperCase()}
-                  </button>
+                             background: "#111", border: "1px solid #3a3a52", color: "#8a8aa0" }}>{a.toUpperCase()}</button>
                 ))}
               </div>
             </div>
           );
         }
-        const score = Number(draft[ability as keyof ProfileDraft] ?? 10);
-        const mod = Math.floor((score - 10) / 2);
-        const total = rows.reduce((n, c) => n + c.level, 0) || Number(draft.level) || 1;
-        const prof = Math.floor((total - 1) / 4) + 2;
-        const sign = (n: number) => (n >= 0 ? `+${n}` : String(n));
+
         return (
-          <p style={{ margin: "6px 0 0", fontSize: 11, color: "#7be08a" }}>
-            Spellcasting — {ability.toUpperCase()} {sign(mod)} · PROF {sign(prof)} ·
-            {" "}spell attack {sign(mod + prof)} · save DC {8 + mod + prof}
-            <span style={{ color: "#667" }}> — derived; no need to type it below</span>
-            <span style={{ display: "block", marginTop: 3 }}>
-              {["str","dex","con","int","wis","cha"].map(x => (
-                <button key={x} type="button"
-                  title={x === derived ? "The class default" : `Override — cast on ${x.toUpperCase()} instead`}
-                  onClick={() => set("castingAbility", draft.castingAbility === x ? "" : x)}
-                  style={{ fontSize: 10, padding: "2px 7px", marginRight: 3, borderRadius: 3, cursor: "pointer",
-                           background: ability === x ? "#2a3550" : "#111",
-                           border: `1px solid ${ability === x ? "#7b68ee" : "#3a3a52"}`,
-                           color: ability === x ? "#dfe4ff" : "#667" }}>
-                  {x.toUpperCase()}
-                </button>
-              ))}
-              {draft.castingAbility && <span style={{ color: "#e8b64c" }}> override — click again to clear</span>}
-            </span>
-          </p>
+          <div style={{ margin: "6px 0 0", fontSize: 11 }}>
+            {casters.map(c => {
+              const mod = modOf(c.ability);
+              return (
+                <p key={c.name + c.ability} style={{ margin: "0 0 2px", color: "#7be08a" }}>
+                  <strong style={{ color: "#dfe4ff" }}>{c.name}</strong> — {c.ability.toUpperCase()} {sign(mod)} ·
+                  {" "}PROF {sign(prof)} · spell attack {sign(mod + prof)} · save DC {8 + mod + prof}
+                </p>
+              );
+            })}
+            {single && (
+              <span style={{ display: "block", marginTop: 2 }}>
+                {["str","dex","con","int","wis","cha"].map(x => (
+                  <button key={x} type="button"
+                    onClick={() => set("castingAbility", draft.castingAbility === x ? "" : x)}
+                    style={{ fontSize: 10, padding: "2px 7px", marginRight: 3, borderRadius: 3, cursor: "pointer",
+                             background: chosen === x ? "#2a3550" : "#111",
+                             border: `1px solid ${chosen === x ? "#7b68ee" : "#3a3a52"}`,
+                             color: chosen === x ? "#dfe4ff" : "#667" }}>{x.toUpperCase()}</button>
+                ))}
+                {draft.castingAbility && <span style={{ color: "#e8b64c" }}> override — click again to clear</span>}
+              </span>
+            )}
+          </div>
         );
       })()}
+
       <h4 style={{ margin: "4px 0 0" }}>Class Feature Tracker</h4>
       {/* LABEL AND VALUE ARE GONE. They were hand-typed copies of things the engine derives —
           a class pool belongs in Resources where it can be spent and restored, and spell DC /
