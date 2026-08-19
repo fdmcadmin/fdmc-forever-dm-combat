@@ -1634,8 +1634,9 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   {
     templateId: "broken-chain:act3:hollowbloom:v1",
     name: "Hollowbloom",
-    encounterId: "act3-e4-the-hollow-feast",
-    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    // ⚠ REPLACED OUT OF FIGHT 4 by the v3_13 Hollow Feast rewrite. The creature is kept —
+    // the doc replaces the ROSTER, not the authored statblock — but it is no longer in any
+    // encounter. Give it an encounterId to field it again.
     stats: {
       kind: "fey", ac: 15, maxHp: 75, speed: "30 ft., climb 20 ft.",
       defenses: [
@@ -1669,48 +1670,141 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     visibility: { defaultState: "hp-bar", hiddenName: "Hollowbloom", revealedName: "Hollowbloom" },
   },
   {
+    templateId: "broken-chain:act3:briar-regent:v1",
+    name: "Briar Regent",
+    encounterId: "act3-e4-the-hollow-feast",
+    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    stats: {
+      kind: "fey", ac: 16, maxHp: 55, speed: "35 ft.",
+      defenses: [
+        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: forced movement is priced by the runtime trace, never as raw HP. Unyielding Bearing is a prone save, not survivability." },
+      ],
+      attacksPerTurn: 2,
+      size: "Large", classification: "elite", archetype: "bruiser",
+      skills: [{ label: "Intimidation", modifier: 7 }],
+    },
+    abilities: [
+      { label: "STR", value: "20 (+5)", save: 8 },
+      { label: "DEX", value: "14 (+2)" },
+      { label: "CON", value: "16 (+3)" },
+      { label: "INT", value: "14 (+2)" },
+      { label: "WIS", value: "16 (+3)", save: 6 },
+      { label: "CHA", value: "18 (+4)" },
+    ],
+    traits: [
+      { name: "Keep Your Distance", kind: "trait", text: "Once on each of the Regent's turns when it hits a creature with a melee attack, it can push that creature up to 5 ft. directly away from itself." },
+      { name: "Unyielding Bearing", kind: "trait", text: "The Regent has advantage on saving throws against being knocked prone." },
+    ],
+    actions: [
+      { name: "Briar Talon", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 14 (2d8 + 5) slashing. Multiattack: two Briar Talon attacks." },
+      { name: "Invitation Withdrawn (Recharge 5-6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Each enemy of the Regent's choice within 15 ft. makes a DC 16 Strength save. On a failure, a creature takes 18 (4d8) slashing damage, is pushed 15 ft. directly away from the Regent, and cannot take reactions until the start of its next turn. On a success, it takes half damage and is pushed 5 ft. This action REPLACES the Regent's Multiattack." },
+    ],
+    reactions: [
+    ],
+    resources: [],
+    notes: [
+      "A tall, narrow Fey whose long limbs make it seem larger in motion than at rest. Wine-dark growth overlaps its body like formal dress, and backward-growing branchwork frames its head without resembling horns. It carries itself as the most dangerous creature in the meeting, because it is.",
+      "The primary danger of Fight 4. Its melee loop drives characters AWAY; Invitation Withdrawn is a larger rejection, not a pull inward.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Briar Regent", revealedName: "Briar Regent" },
+  },
+  {
+    templateId: "broken-chain:act3:folded-bulwark:v1",
+    name: "Folded Bulwark",
+    encounterId: "act3-e4-the-hollow-feast",
+    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    stats: {
+      kind: "fiend", ac: 18, maxHp: 46, speed: "25 ft.",
+      defenses: [
+        // ⚠ TAKE THE BLOW IS NOT AN EHP MULTIPLIER, BY INSTRUCTION. It reduces an ALLY's damage
+        // by 8 and costs the Bulwark 4 unpreventable damage — it moves damage rather than
+        // removing it, and the encounter page says to price it in the runtime trace.
+        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: Take the Blow is priced by the runtime trace. It redirects damage to the guardian; it does not add effective HP to the roster." },
+      ],
+      attacksPerTurn: 2,
+      size: "Large", classification: "strong", archetype: "guardian",
+      skills: [{ label: "Athletics", modifier: 7 }],
+    },
+    abilities: [
+      { label: "STR", value: "18 (+4)", save: 7 },
+      { label: "DEX", value: "10 (+0)" },
+      { label: "CON", value: "18 (+4)", save: 7 },
+      { label: "INT", value: "8 (-1)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "12 (+1)" },
+    ],
+    traits: [
+      { name: "Braced Form", kind: "trait", text: "The Bulwark has advantage on saving throws and ability checks made to resist being knocked prone or moved against its will." },
+      { name: "Interposing Bulk", kind: "trait", text: "A hostile creature moving through the Bulwark's reach toward a creature on the opposite side of the Bulwark treats that movement as difficult terrain." },
+    ],
+    actions: [
+      { name: "Bulwark Fist", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Bulwark Fist attacks." },
+    ],
+    reactions: [
+      { name: "Take the Blow", kind: "reaction", text: "When another creature within 10 ft. of the Bulwark is hit by an attack, the Bulwark can move up to 5 ft. toward that creature without provoking opportunity attacks. If it ends within 5 ft. of that creature, reduce the triggering damage by 8. The Bulwark then takes 4 damage that cannot be reduced or prevented. Once per round." },
+    ],
+    resources: [],
+    notes: [
+      "A broad Fiend built from overlapping folds of black-red hide and dense plated tissue. Its mass spreads sideways rather than upward. It carries no chains, stakes, saintly shape, or siege hardware; every part of it looks designed for one purpose - putting itself between danger and the creature beside it.",
+      "Bodyguard. Protects any nearby ally, but its encounter priority is the Regent. Killing it does NOT turn the Host hostile.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Folded Bulwark", revealedName: "Folded Bulwark" },
+  },
+  {
     templateId: "broken-chain:act3:velvet-host:v1",
     name: "Velvet Host",
     encounterId: "act3-e4-the-hollow-feast",
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
-      kind: "fey", ac: 16, maxHp: 75, speed: "30 ft.",
+      kind: "fey", ac: 17, maxHp: 82, speed: "30 ft.",
       defenses: [
-        { name: "Declare the Courtesy", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). A 5-ft movement tax in either direction within 15 ft." },
+        // ⚠ NO DEFENSIVE MULTIPLIER, BY INSTRUCTION. The encounter page: "Conditional defense
+        // from Take the Blow, forced movement, and Host state changes should be priced through
+        // the workbook runtime trace rather than hidden as raw HP." Courtesy/Discourtesy are
+        // movement economy, not survivability, so nothing here inflates effective HP.
+        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: Host state changes are priced by the runtime trace, never as raw HP." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "commander",
-      skills: [{ label: "Deception", modifier: 8 }, { label: "Insight", modifier: 5 }],
+      skills: [{ label: "Insight", modifier: 5 }, { label: "Persuasion", modifier: 8 }],
     },
     abilities: [
-      { label: "STR", value: "14 (+2)" },
-      { label: "DEX", value: "14 (+2)" },
+      { label: "STR", value: "12 (+1)" },
+      { label: "DEX", value: "16 (+3)" },
       { label: "CON", value: "18 (+4)", save: 7 },
       { label: "INT", value: "16 (+3)" },
       { label: "WIS", value: "14 (+2)" },
       { label: "CHA", value: "20 (+5)", save: 8 },
     ],
     traits: [
-      { name: "Declare the Courtesy", kind: "trait", text: "At the start of each turn choose Welcome or Leave-Taking, visibly changing the mask. Welcome: hostile creatures spend 5 extra ft. of movement to move closer while within 15 ft. Leave-Taking: hostile creatures spend 5 extra ft. of movement to move farther away while within 15 ft. This does not stack with difficult terrain." },
-      { name: "Perfect Host", kind: "trait", text: "Velvet Host has advantage on saves against being charmed or frightened." },
+      { name: "Perfect Host", kind: "trait", text: "The Host has advantage on saving throws against being charmed or frightened." },
+      { name: "Even-Handed Hospitality", kind: "trait", text: "At the start of each of the Host's turns while neutral, choose exactly one party creature and one creature opposing the party within 60 ft. A creature chosen on the previous Host turn cannot be chosen again. Both gain Courtesy until the start of the Host's next turn." },
+      { name: "Courtesy", kind: "trait", text: "The target's speed increases by 10 ft. The first 5 ft. it willingly moves while Courtesy lasts does not provoke opportunity attacks." },
+      { name: "Hospitality Broken", kind: "trait", text: "If a party creature damages the Host, or the party reduces a Fey allied with the Host to 0 HP, the Host becomes hostile to the party immediately. The death of a Fiend does not trigger this trait." },
+      { name: "Courtesy Withdrawn", kind: "trait", text: "While hostile, Even-Handed Hospitality continues to choose one creature from each side. The allied target receives Courtesy. The party target instead receives Discourtesy." },
+      { name: "Discourtesy", kind: "trait", text: "The target's speed is reduced by 10 ft. The first time it willingly moves on its turn, it cannot take reactions until that movement ends." },
+      { name: "An Unwelcome Guest", kind: "trait", text: "While hostile, once per turn when the Host damages a creature affected by Discourtesy, it can move that creature up to 5 ft. to an unoccupied space it can see. This movement does not provoke opportunity attacks." },
     ],
     actions: [
-      { name: "Velvet Rebuke", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 12 (2d6 + 5) psychic." },
-      { name: "Wrong Invitation (Recharge 5–6)", kind: "action", save: "CHA DC 16", recharge: "5-6", text: "Choose one creature within 60 ft. It makes a DC 16 Charisma save. On a failure, choose one: it is moved up to 15 ft. toward a space of natural cover it can see, or up to 15 ft. away from such a space. This movement does not provoke. On a success, move it up to 5 ft. only." },
+      // ⚠ BOTH ARE HOSTILE-ONLY. The Host contributes NO attack DPR while neutral — the
+      // encounter page prices its opening trace at 0 and its hostile trace at ~19 DPR.
+      { name: "Velvet Rebuke (Hostile Only)", kind: "attack", roll: "1d20 + 8", damage: "1d8 + 5", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 9 (1d8 + 5) psychic. Hostile only — the Host makes no attack while neutral." },
     ],
     reactions: [
     ],
     resources: [],
     notes: [
-      "A tall arrangement of velvet leaves, ribbon-thin limbs, and a porcelain collar with no face above it. When it turns toward someone, nearby branches bow first. The Wood has learned the rules of its manners.",
+      "A composed Fey wrapped in velvet-dark leaves and ribbon-thin growth. It stands beside the meeting ground, never above it, and treats hospitality as a rule that remains true until one side proves otherwise.",
+      "Begins NEUTRAL. Turns hostile if the party damages it or drops a Fey under its hospitality; a Fiend's death does not turn it.",
     ],
     visibility: { defaultState: "hp-bar", hiddenName: "Velvet Host", revealedName: "Velvet Host" },
   },
   {
     templateId: "broken-chain:act3:mothwake:v1",
     name: "Mothwake",
-    encounterId: "act3-e4-the-hollow-feast",
-    encounterLabel: "Act 3 E4 - The Hollow Feast",
+    // ⚠ REPLACED OUT OF FIGHT 4 by the v3_13 Hollow Feast rewrite. The creature is kept —
+    // the doc replaces the ROSTER, not the authored statblock — but it is no longer in any
+    // encounter. Give it an encounterId to field it again.
     stats: {
       kind: "fey", ac: 14, maxHp: 44, speed: "30 ft., fly 30 ft.",
       defenses: [
