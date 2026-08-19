@@ -483,11 +483,6 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                   placeholder="1d20+@SPELL"
                   showVars={["@STR","@DEX","@SPELL","@WIS","@CHA","@PROF"]}
                 />
-                <label style={{ fontSize: 11 }}>
-                  Save DC
-                  <input type="text" value={row.saveDc} onChange={e => setRow(idx, { saveDc: e.target.value })}
-                    placeholder="CON DC 13" style={{ ...inputStyle, marginTop: 2 }} />
-                </label>
                 {/* WHICH CLASS CASTS THIS SPELL. Only asked when the character has more than one
                     class. @SPELL resolves through that class's ability, so a Wizard/Cleric gets
                     INT on one spell and WIS on the next instead of one stat for every spell. */}
@@ -508,15 +503,14 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                     </select>
                   </label>
                 )}
-                {/* A save DC is DERIVED. This was a bare text box, so the only way to author a
-                    DC was to type the number — which then never moved again as the character
-                    levelled. 8+@SPELL for a magical effect, 8+@ATK for a martial one. */}
-                <FormulaInput
-                  label="Save DC (formula)"
-                  value={row.saveDc}
-                  onChange={v => setRow(idx, { saveDc: v })}
-                  placeholder="8+@SPELL"
-                  showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@ATK","@SPELL","@PROF"]}
+                {/* TOGGLES, NOT A TYPED BOX — the same composer the action editor uses. The 8
+                    is constant in every save DC, so authoring it is ceremony, and a typed
+                    number freezes at the level it was written with nothing to flag it stale. */}
+                <SaveDcComposer
+                  saveDc={row.saveDc}
+                  onSaveDc={v => setRow(idx, { saveDc: v })}
+                  saveAbility={row.saveAbility}
+                  onSaveAbility={v => setRow(idx, { saveAbility: v })}
                 />
                 <FormulaInput
                   label="Damage"
