@@ -161,6 +161,11 @@ type ProfileDraft = {
   className: string;
   /** e.g. "3 / 2" for Fighter 3 / Rogue 2. Left blank for single-class. */
   multiclassLevels: string;
+  /**
+   * Spellcasting ability, when the class does not imply one. A Barbarian who picks up a spell
+   * from an item or a race still needs a stat, and no class lookup will ever supply it.
+   */
+  castingAbility: string;
   level: string;
   /** Extra Attack — weapon/unarmed attacks per Attack action. Spells always cast once. */
   attacksPerAction: string;
@@ -212,6 +217,7 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
         }];
       })
     ) as ProfileDraft["abilities"],
+    castingAbility: actor.classes?.[0]?.castingAbility ?? "",
     classFeatureLabel: actor.classFeatureTracker?.label ?? "",
     classFeatureValue: actor.classFeatureTracker?.value ?? "",
     classFeatureNote: actor.classFeatureTracker?.note ?? "",
@@ -260,7 +266,14 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
     // what every per-class rule actually needs — weapon mastery counts four levels of Fighter,
     // not the character's ten. A single-class character grows no array: className and level
     // already say it, and duplicating that is how the two end up disagreeing.
-    classes: multiclassRows.length > 0 ? multiclassRows : undefined,
+    classes: multiclassRows.length > 0
+      ? multiclassRows.map((c, i) => (i === 0 && draft.castingAbility
+          ? { ...c, castingAbility: draft.castingAbility as never } : c))
+      // A single-class sheet grows no array UNLESS a casting ability was chosen — that choice
+      // has nowhere else to live, and a Barbarian with one spell needs it as much as a Wizard.
+      : draft.castingAbility
+        ? [{ name: draft.className, level: Number(draft.level) || 1, castingAbility: draft.castingAbility as never }]
+        : undefined,
     // With a split present the character's level IS the sum, so the two can never drift.
     level: multiclassRows.length > 0
       ? multiclassRows.reduce((n, c) => n + c.level, 0)
@@ -292,7 +305,7 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[] }) {
+function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean }) {
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     onChange({ ...draft, [key]: value });
   }
@@ -472,8 +485,32 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
           will actually roll. */}
       {(() => {
         const rows = parseClassLevels(draft.className, draft.multiclassLevels);
-        const ability = rows[0]?.castingAbility;
-        if (!ability) return null;
+        /**
+         * THE MOMENT A CHARACTER HAS A SPELL, THEY HAVE SPELLCASTING NUMBERS.
+         *
+         * Deriving the ability from the class covers the ordinary cases and misses the ones that
+         * actually need help: a Barbarian handed a spell by an item or a race casts on something,
+         * and no class lookup will ever say what. So an explicit choice wins, and the block
+         * appears whenever there are spells even if the class implies nothing.
+         */
+        const ability = draft.castingAbility || rows[0]?.castingAbility;
+        if (!ability) {
+          if (!hasSpells) return null;
+          return (
+            <div style={{ margin: "6px 0 0", fontSize: 11 }}>
+              <span style={{ color: "#e8b64c" }}>⚠ This character has spells but no casting ability — pick one:</span>
+              <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
+                {["str","dex","con","int","wis","cha"].map(a => (
+                  <button key={a} type="button" onClick={() => set("castingAbility", a)}
+                    style={{ fontSize: 11, padding: "3px 9px", borderRadius: 4, cursor: "pointer",
+                             background: "#111", border: "1px solid #3a3a52", color: "#8a8aa0" }}>
+                    {a.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        }
         const score = Number(draft[ability as keyof ProfileDraft] ?? 10);
         const mod = Math.floor((score - 10) / 2);
         const total = rows.reduce((n, c) => n + c.level, 0) || Number(draft.level) || 1;
@@ -745,7 +782,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       {/* Tab content */}
       <div style={{ flex: 1, overflow: "auto", padding: 14 }}>
         {activeTab === "profile" && (
-          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} />
+          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0} />
         )}
         {activeTab === "combat" && (
           <CombatActionsTab
