@@ -332,7 +332,14 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
 
           {/* Expanded detail row */}
           {expandedId === row.id && (
-            <div style={{ padding: "8px 10px", background: "#0d0d1a", borderTop: "1px solid #2a2a3e", display: "flex", flexDirection: "column", gap: 8 }}>
+            /**
+             * TWO COLUMNS. Every field was a full-width row, so a single spell ran off the
+             * bottom of the panel and authoring one meant scrolling past fields that are three
+             * characters wide. Blocks that genuinely need the width — the cantrip tiers, the
+             * slot-level row, and the roll fields, which are a two-column grid of their own —
+             * span both.
+             */
+            <div style={{ padding: "8px 10px", background: "#0d0d1a", borderTop: "1px solid #2a2a3e", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "start" }}>
 
               {/* CANTRIPS scale on CHARACTER level, not a slot — so they get these three
                   boxes where a levelled spell gets its upcast rider. Each box is the whole
@@ -340,7 +347,7 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                   to them: Fire Bolt is 2d10 at 5th, not 1d10 + 1d10. Leave a tier blank when
                   nothing changes there. */}
               {row.level === 0 && (
-                <div>
+                <div style={{ gridColumn: "span 2" }}>
                   <p style={{ margin: "0 0 5px", fontSize: 11, color: "#7b68ee" }}>
                     Damage by character level — each box replaces the base, not added to it
                   </p>
@@ -365,7 +372,7 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
 
               {/* Slot levels — only for non-cantrips */}
               {row.level > 0 && (
-                <div>
+                <div style={{ gridColumn: "span 2" }}>
                   {/* The per-spell "available at" checkbox grid is gone. EVERY SPELL UPCASTS,
                       so the castable range is base→9 and re-stating it on each spell was 39
                       lists all saying the same thing — plus one more way to lock a spell out
@@ -475,7 +482,7 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
               </label>
 
               {/* Roll fields */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, gridColumn: "span 2" }}>
                 <FormulaInput
                   label="Attack Formula"
                   value={row.attack}
