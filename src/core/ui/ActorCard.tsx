@@ -2808,11 +2808,27 @@ export function ActorCard({
    * so arming two never doubles the casting bonus.
    */
   function getEquippedSpellFocuses() {
-    const focuses = (actor.tabs.equipment ?? [])
-      .filter(a => a.metadata?.equipped !== false)
-      .filter(a => a.metadata?.isSpellFocus
-        || a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim()
-        || a.metadata?.spellFocusSaveDc?.trim());
+    const isFocus = (a: ActorAction) => Boolean(a.metadata?.isSpellFocus
+      || a.metadata?.spellFocusAttack?.trim() || a.metadata?.spellFocusDamage?.trim()
+      || a.metadata?.spellFocusSaveDc?.trim());
+    /**
+     * ⚠ A RACIAL TRAIT IS A FOCUS THE CHARACTER CANNOT PUT DOWN.
+     *
+     * Spells carry no attack bonus of their own — the focus supplies @SPELL and any +1. That is
+     * correct for a caster holding a wand, and it left an INNATE caster rolling a bare d20 with
+     * nothing to add: Rimekin coldfire on a Fighter is a species feature, and 2024 species
+     * features need no focus to function. Scanning only equipment meant the app demanded an item
+     * the rules explicitly say is not required.
+     *
+     * So a FEATURE carrying focus fields counts too. It is never "unequipped" — a trait is always
+     * on — and it is listed first so it is the one that contributes @SPELL when a character has
+     * both a trait and a wand.
+     */
+    const innate = [...(actor.tabs.features ?? []), ...(actor.tabs.feats ?? [])].filter(isFocus);
+    const focuses = [
+      ...innate,
+      ...(actor.tabs.equipment ?? []).filter(a => a.metadata?.equipped !== false).filter(isFocus),
+    ];
     return focuses.map((a, index) => {
       const dc = Number.parseInt((a.metadata?.spellFocusSaveDc ?? "").replace(/[^\d+-]/g, ""), 10);
       return {
