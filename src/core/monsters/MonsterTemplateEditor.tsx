@@ -591,6 +591,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
 
   const stepIdx = STEPS.findIndex(s => s.id === step);
 
+  /**
+   * WHAT MUST BE TRUE BEFORE THIS CAN BE SAVED.
+   *
+   * The draft carries across the step tabs and “Save to My Library” is the commit, so this is
+   * the only point that can catch a statblock with nothing on it. It BLOCKS on the two things
+   * that make a monster unusable and only CAUTIONS about the rest — a DM saving a
+   * work-in-progress should not be argued with.
+   */
+  const blockers: string[] = [];
+  const cautions: string[] = [];
+  if (!draft.name?.trim()) blockers.push("Name is required.");
+  if (!((draft.stats?.maxHp ?? 0) > 0)) blockers.push("Max HP must be above 0 — a monster with no hit points cannot be fought.");
+  if (!(draft.actions ?? []).length) cautions.push("No actions yet — it will have nothing to do on its turn.");
+  if (!draft.stats?.ac) cautions.push("No AC set — attacks against it have nothing to beat.");
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Header */}
@@ -600,8 +615,13 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
           <span title="Monsters you create are saved to your personal My Library" style={{ fontSize: 9, padding: "1px 7px", borderRadius: 8, background: "#16291b", border: "1px solid #2f7d3f", color: "#7be08a", textTransform: "uppercase", letterSpacing: 1 }}>My Library</span>
         </span>
         <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" onClick={() => onSave(draft)}
-            style={{ fontSize: 11, padding: "3px 12px", background: "#34c759", color: "#06210f", border: "none", borderRadius: 3, cursor: "pointer", fontWeight: 700 }}>
+          <button type="button" disabled={blockers.length > 0}
+            title={blockers.length ? blockers.join("  ") : cautions.join("  ") || "Save to My Library"}
+            onClick={() => { if (blockers.length === 0) onSave(draft); }}
+            style={{ fontSize: 11, padding: "3px 12px", border: "none", borderRadius: 3, fontWeight: 700,
+                     background: blockers.length ? "#2a2a3e" : "#34c759",
+                     color: blockers.length ? "#666" : "#06210f",
+                     cursor: blockers.length ? "not-allowed" : "pointer" }}>
             ✓ Save to My Library
           </button>
           <button type="button" onClick={onCancel}
