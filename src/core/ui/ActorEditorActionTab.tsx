@@ -122,6 +122,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     damage: action.metadata?.damage,
     damageType: action.metadata?.damageType,
     castingClass: action.metadata?.castingClass,
+    spellFocusAttack: action.metadata?.spellFocusAttack,
     critDamage: action.metadata?.crit,
     range: action.metadata?.range,
     slotCost: action.metadata?.slotCost,
@@ -328,6 +329,21 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
               the main class. Naming the slot (not the stat) means `@SPELL` resolves through
               that class's spellcasting ability, so a Wizard/Cleric gets INT on one spell and
               WIS on the next instead of one stat for the whole sheet. */}
+          {/* INNATE SPELL FOCUS — a species trait or feat that grants casting.
+              Spells carry no attack bonus of their own; a focus supplies it. A 2024 species
+              feature needs no focus to function, so the trait IS the focus — without this a
+              Rimekin Fighter casting coldfire rolls a bare d20 with nothing to add, and the
+              only fix was hand-editing the export. Features and feats both count. */}
+          {(tabId === "features" || tabId === "feats") && (
+            <label style={{ fontSize: 12 }}>
+              Innate spell focus <span style={{ color: "#667" }}>— grants the spell attack bonus, like a wand</span>
+              <input type="text" value={draft.spellFocusAttack ?? ""}
+                onChange={e => set("spellFocusAttack", e.target.value || undefined)}
+                placeholder="@SPELL   (add +1 if the trait grants one)"
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+          )}
+
           {classRows.length > 1 && (
             <label style={{ fontSize: 12 }}>
               Cast using

@@ -29,6 +29,12 @@ export type PcActionDraft = {
   damageType?: string;
   /** Which class casts this — resolves @SPELL through that class's ability. */
   castingClass?: PcCastingClass;
+  /**
+   * INNATE SPELL FOCUS. A species or feat that grants casting supplies the spell attack bonus
+   * the way a wand does — 2024 species features need no focus to function, so the trait IS one.
+   * Usually just "@SPELL"; add a +N if the trait grants one.
+   */
+  spellFocusAttack?: string;
   critDamage?: string;
   healing?: string;
   range?: string;
@@ -121,6 +127,7 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     // The normaliser is an ALLOW-LIST: a field absent from here is silently dropped on save,
     // however correctly it is wired everywhere else.
     ...(draft.castingClass ? { castingClass: draft.castingClass } : {}),
+    ...(draft.spellFocusAttack?.trim() ? { spellFocusAttack: draft.spellFocusAttack.trim() } : {}),
     ...(draft.critDamage?.trim() ? { critDamage: draft.critDamage.trim() } : {}),
     ...(draft.healing?.trim() ? { healing: draft.healing.trim() } : {}),
     ...(draft.range?.trim() ? { range: draft.range.trim() } : {}),

@@ -493,7 +493,13 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
          * and no class lookup will ever say what. So an explicit choice wins, and the block
          * appears whenever there are spells even if the class implies nothing.
          */
-        const ability = draft.castingAbility || rows[0]?.castingAbility;
+        const derived = rows[0]?.castingAbility;
+        const ability = draft.castingAbility || derived;
+        /**
+         * ⚠ ALWAYS OVERRIDABLE. Showing the picker only when the class derives NOTHING meant a
+         * Hexblade — or anything whose subclass breaks the default — could be corrected in the
+         * export but not in the app. Nothing the code can set should be beyond the editor.
+         */
         if (!ability) {
           if (!hasSpells) return null;
           return (
@@ -521,6 +527,20 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
             Spellcasting — {ability.toUpperCase()} {sign(mod)} · PROF {sign(prof)} ·
             {" "}spell attack {sign(mod + prof)} · save DC {8 + mod + prof}
             <span style={{ color: "#667" }}> — derived; no need to type it below</span>
+            <span style={{ display: "block", marginTop: 3 }}>
+              {["str","dex","con","int","wis","cha"].map(x => (
+                <button key={x} type="button"
+                  title={x === derived ? "The class default" : `Override — cast on ${x.toUpperCase()} instead`}
+                  onClick={() => set("castingAbility", draft.castingAbility === x ? "" : x)}
+                  style={{ fontSize: 10, padding: "2px 7px", marginRight: 3, borderRadius: 3, cursor: "pointer",
+                           background: ability === x ? "#2a3550" : "#111",
+                           border: `1px solid ${ability === x ? "#7b68ee" : "#3a3a52"}`,
+                           color: ability === x ? "#dfe4ff" : "#667" }}>
+                  {x.toUpperCase()}
+                </button>
+              ))}
+              {draft.castingAbility && <span style={{ color: "#e8b64c" }}> override — click again to clear</span>}
+            </span>
           </p>
         );
       })()}
