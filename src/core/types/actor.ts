@@ -177,7 +177,17 @@ export type Actor = {
    * `hitDie` is what makes a mixed hit-dice pool expressible — a Paladin 5 / Sorcerer 1 has
    * 5d10 and 1d6, not 6 of anything.
    */
-  classes?: { name: string; level: number; hitDie?: string }[];
+  classes?: {
+    name: string;
+    level: number;
+    hitDie?: string;
+    /**
+     * Spellcasting ability for THIS class. Normally derived from the class name; set it only
+     * when the character breaks the default — a Hexblade casting off CHA, or a homebrew class
+     * the table invented that no lookup could know about.
+     */
+    castingAbility?: "str" | "dex" | "con" | "int" | "wis" | "cha";
+  }[];
   /**
    * Character level. With `classes` present this is the SUM of their levels — use
    * `characterLevel(actor)` rather than reading it raw, so the two can never disagree.

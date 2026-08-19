@@ -12,7 +12,7 @@
 
 import type { Actor } from "../types/actor";
 
-export type ClassLevel = { name: string; level: number; hitDie?: string };
+export type ClassLevel = { name: string; level: number; hitDie?: string; castingAbility?: CastingAbility };
 
 /** Default hit die by class, used when a class row does not name one. */
 const CLASS_HIT_DIE: Record<string, string> = {
@@ -56,6 +56,8 @@ export function classLevels(actor: Pick<Actor, "classes">): ClassLevel[] {
       name: String(c.name ?? "").trim(),
       level: Math.max(0, Math.floor(Number(c.level) || 0)),
       hitDie: c.hitDie?.trim() || hitDieForClass(String(c.name ?? "")),
+      // An explicit choice always beats the name lookup.
+      castingAbility: c.castingAbility ?? castingAbilityForClass(String(c.name ?? "")),
     }))
     .filter(c => c.name && c.level > 0);
 }

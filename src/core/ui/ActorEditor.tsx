@@ -388,6 +388,13 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
               return <span style={{ fontSize: 10, color: "#7b68ee", display: "block", marginTop: 4 }}>
                 {rows.map(c => `${c.name} ${c.level}`).join(" / ")} — character level {total}
                 {dice.length > 0 && <> · hit dice {dice.map(d => `${d.count}${d.die}`).join(" + ")}</>}
+                {/* WHICH STAT EACH CLASS CASTS ON. Derived from the class name, shown so it is
+                    checkable, and overridable for the cases no lookup can know — a Hexblade on
+                    CHA, or a homebrew class the table invented. This is what @SPELL and @CASTMOD
+                    resolve through, per action, via the "Cast using" picker. */}
+                <span style={{ display: "block", marginTop: 3, color: "#8a8aa0" }}>
+                  casts on {rows.map(c => `${c.name} ${(c.castingAbility ?? "—").toUpperCase()}`).join(" · ")}
+                </span>
               </span>;
             })()}
           </label>
@@ -457,6 +464,27 @@ function ProfileTab({ draft, onChange, ownerOptions }: { draft: ProfileDraft; on
         })}
       </div>
 
+      {/* DERIVED, NOT TYPED. Spell DC and spell attack come from the casting ability and
+          proficiency, so hand-typing them into the tracker below freezes them at the level they
+          were written. Shown here so the sheet can be checked against the numbers the engine
+          will actually roll. */}
+      {(() => {
+        const rows = parseClassLevels(draft.className, draft.multiclassLevels);
+        const ability = rows[0]?.castingAbility;
+        if (!ability) return null;
+        const score = Number(draft[ability as keyof ProfileDraft] ?? 10);
+        const mod = Math.floor((score - 10) / 2);
+        const total = rows.reduce((n, c) => n + c.level, 0) || Number(draft.level) || 1;
+        const prof = Math.floor((total - 1) / 4) + 2;
+        const sign = (n: number) => (n >= 0 ? `+${n}` : String(n));
+        return (
+          <p style={{ margin: "6px 0 0", fontSize: 11, color: "#7be08a" }}>
+            Spellcasting — {ability.toUpperCase()} {sign(mod)} · PROF {sign(prof)} ·
+            {" "}spell attack {sign(mod + prof)} · save DC {8 + mod + prof}
+            <span style={{ color: "#667" }}> — derived; no need to type it below</span>
+          </p>
+        );
+      })()}
       <h4 style={{ margin: "4px 0 0" }}>Class Feature Tracker</h4>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={labelStyle}>Label <input type="text" value={draft.classFeatureLabel} onChange={e => set("classFeatureLabel", e.target.value)} placeholder="Rage / Ki / Spell Slots" style={inputStyle} /></label>

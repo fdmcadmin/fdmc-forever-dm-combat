@@ -37,7 +37,7 @@
 
 import type { Actor } from "../types/actor";
 import type { DerivedStats } from "./deriveActorStats";
-import { classLevels, hitDicePools, castingAbilityForClass } from "../rules/multiclass";
+import { classLevels, hitDicePools } from "../rules/multiclass";
 import { deriveActorStats } from "./deriveActorStats";
 import type { ActorStatusTrackerState } from "../types/status";
 
@@ -82,8 +82,8 @@ function getSpellcastingMod(actor: Actor, stats: DerivedStats, castingClass?: Ca
    */
   const slotIndex = castingClass === "second" ? 1 : castingClass === "third" ? 2 : castingClass === "main" ? 0 : -1;
   if (slotIndex >= 0) {
-    const row = classLevels(actor)[slotIndex];
-    const ability = row && castingAbilityForClass(row.name);
+    // classLevels() already resolves an explicit override ahead of the name lookup.
+    const ability = classLevels(actor)[slotIndex]?.castingAbility;
     if (ability) return stats[ability].modifier;
   }
 
@@ -106,8 +106,7 @@ function getSpellcastingMod(actor: Actor, stats: DerivedStats, castingClass?: Ca
    * that a multiclass character writes as "Paladin 5 / Sorcerer 1", where `.includes()` returns
    * whichever branch happens to be listed first in the chain.
    */
-  const mainClass = classLevels(actor)[0];
-  const mainAbility = mainClass && castingAbilityForClass(mainClass.name);
+  const mainAbility = classLevels(actor)[0]?.castingAbility;
   if (mainAbility) return stats[mainAbility].modifier;
 
   // Legacy: single-class display string, kept for sheets with no `classes[]` rows.
