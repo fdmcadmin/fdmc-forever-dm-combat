@@ -1082,7 +1082,9 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
         </label>
       )}
 
-      {/* Spellcasting focus. Shared with the DM library so the two cannot drift. */}
+      {/* Spellcasting focus — a player-legal mechanic, so it is shared. Campaign-authoritative
+          fields (Convergence, tier, source encounter) are NOT available in this player-facing
+          editor by design; see ItemMechanicsFields for the boundary. */}
       <ItemMechanicsFields draft={draft} set={set} inputStyle={inputStyle} include={["spellFocus"]} />
 
       <label style={{ fontSize: 12 }}>

@@ -25,6 +25,7 @@
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
 import { spellProfile, campaignProfile, type CampaignProfile } from "./compactImport";
+import { conditionsImposedBy } from "./controlPricing";
 import { parseSaveAbility } from "./partyDefenceCurve";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
@@ -51,6 +52,53 @@ export function parseAttackBonus(roll: string | undefined): number | undefined {
   if (!roll) return undefined;
   const m = roll.match(/([+-])\s*(\d+)\s*$/);
   return m ? (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10) : undefined;
+}
+
+/**
+ * PRINTED melee reach, in feet: "reach 10 ft." → 10.
+ *
+ * ⚠ ONLY THE PRINTED VALUE. The v7 reach reference forbids inferring reach from size — a Huge
+ * creature has a 15-ft footprint and whatever reach its attack prints, commonly still 5 or 10.
+ * `undefined` means "not printed", and the caller applies the ruleset default rather than
+ * guessing something size-flavoured here.
+ */
+export function parseReachFt(text: string | undefined): number | undefined {
+  const m = (text ?? "").match(/\breach\s+(\d+)\s*(?:ft|feet|')/i);
+  return m ? Number.parseInt(m[1], 10) : undefined;
+}
+
+/**
+ * PRINTED range, in feet: "range 80/320 ft." → 80, "within 30 feet" → 30, "60-foot cone" → 60.
+ *
+ * The NORMAL range is what prices — the long range carries disadvantage, which is a separate
+ * repricing and must not be silently treated as free reach.
+ */
+export function parseRangeFt(text: string | undefined): number | undefined {
+  const t = text ?? "";
+  const slash = t.match(/\brange\s+(\d+)\s*\/\s*\d+\s*(?:ft|feet|')/i);
+  if (slash) return Number.parseInt(slash[1], 10);
+  const plain = t.match(/\brange\s+(\d+)\s*(?:ft|feet|')/i);
+  if (plain) return Number.parseInt(plain[1], 10);
+  const within = t.match(/\bwithin\s+(\d+)\s*(?:ft|feet|')/i);
+  if (within) return Number.parseInt(within[1], 10);
+  const shape = t.match(/(\d+)[-\s]*(?:ft|foot|feet)[-\s]*(?:cone|line|radius|sphere|cube|emanation)/i);
+  if (shape) return Number.parseInt(shape[1], 10);
+  return undefined;
+}
+
+/**
+ * FORCED MOVEMENT in feet: "pushed 15 feet away" → +15, "pulled 20 feet" → −20.
+ *
+ * Sign is direction: positive opens the gap, negative closes it. Both change reachability, and
+ * a pull can be as disabling as a push for a creature whose damage is a 120-ft spell.
+ */
+export function parseForcedMovementFt(text: string | undefined): number | undefined {
+  const t = text ?? "";
+  const push = t.match(/\b(?:push(?:ed|es)?|shov(?:ed|es)?|knock(?:ed|s)?\s+back|thrown|hurled)\b[^.]{0,40}?(\d+)\s*(?:ft|feet|')/i);
+  if (push) return Number.parseInt(push[1], 10);
+  const pull = t.match(/\b(?:pull(?:ed|s)?|drag(?:ged|s)?|yank(?:ed|s)?)\b[^.]{0,40}?(\d+)\s*(?:ft|feet|')/i);
+  if (pull) return -Number.parseInt(pull[1], 10);
+  return undefined;
 }
 
 /**
@@ -226,6 +274,7 @@ type RawAction = {
   legendaryCost?: number; economyCost?: string; gated?: boolean;
   /** Authored in the monster editor — these outrank anything parsed from the action text. */
   targets?: number; onSave?: string; successDamage?: string; uses?: number;
+  reachFt?: number; rangeFt?: number; conditions?: string[]; forcedMovementFt?: number;
 };
 
 function parseSection(
@@ -251,6 +300,11 @@ function parseSection(
       attackBonus: parseAttackBonus(a.roll),
       saveDc: parseSaveDc(a.save ?? a.text),
       saveAbility: parseSaveAbility(a.save ?? a.text),
+      // Reachability inputs. Authored beats printed, printed beats the ruleset default.
+      reachFt: a.reachFt ?? parseReachFt(a.text),
+      rangeFt: a.rangeFt ?? parseRangeFt(a.text),
+      conditions: a.conditions ?? conditionsImposedBy({ text: a.text }),
+      forcedMovementFt: a.forcedMovementFt ?? parseForcedMovementFt(a.text),
       /**
        * ⚠ AUTHORED DATA BEATS PARSED PROSE. `a.targets` and `a.onSave` are fields the monster
        * editor now writes; the text is the fallback for a block that predates them. A printed
@@ -388,6 +442,11 @@ function featureFromProfile(
     attackBonus: parseAttackBonus(f.a ?? undefined),
     saveDc: parseSaveDc(f.s ?? undefined),
     saveAbility: parseSaveAbility(f.s ?? printedText),
+    // The profile carries no geometry, so reach/range/conditions come from the printed text.
+    reachFt: parseReachFt(printedText),
+    rangeFt: parseRangeFt(printedText),
+    conditions: conditionsImposedBy({ text: printedText }),
+    forcedMovementFt: parseForcedMovementFt(printedText),
     targets: parseTargets(f.n) ?? parseTargets(printedText),
     // The profile records the FAIL damage only. Half-on-a-success and the shape of an area live
     // in the printed text, so they are read from there — the two things the profile cannot hold.

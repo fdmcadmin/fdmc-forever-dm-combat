@@ -22,6 +22,8 @@
 
 import { spellProfile, type SpellProfile, type SrdVersion } from "./compactImport";
 import { aoeTargetsForParty } from "./parseCreature";
+import { applySwing, combineSwings, conditionEffect, pHitVsProne, withAdvantage, withDisadvantage, type RollSwing } from "./controlPricing";
+import { reachOfFeature } from "./reachability";
 import type { SaveAbility } from "./partyDefenceCurve";
 import { damageExpressionAverage } from "./damageExpression";
 
@@ -76,6 +78,20 @@ export type ParsedFeature = {
    */
   isArea?: boolean;
   targets?: number;
+  /**
+   * PRINTED melee reach, in feet. Never inferred from creature size — the v7 reach reference is
+   * explicit that size is occupied space, not reach.
+   */
+  reachFt?: number;
+  /** PRINTED range for a ranged attack, spell, aura or save effect, in feet. */
+  rangeFt?: number;
+  /**
+   * Conditions this feature imposes on its target. Authored beats prose; the parser falls back to
+   * reading the action text so existing library creatures still price.
+   */
+  conditions?: string[];
+  /** Forced movement in feet: positive pushes away, negative pulls closer. */
+  forcedMovementFt?: number;
   recharge?: string;
   uses?: number;
   resourcePool?: string;
@@ -90,6 +106,18 @@ export type ParsedFeature = {
   replacesRoutineSlot?: boolean;
   text?: string;
 };
+
+/**
+ * How much of a feature's offence happens inside 5 ft.
+ *
+ * An explicit party melee share wins. Otherwise it is read from the action itself: a 5-ft reach
+ * is entirely melee, anything longer is entirely not. That is the honest reading of a single
+ * action — the weighted blend belongs to a whole party's attack mix, which the caller supplies.
+ */
+function meleeShareOf(feature: ParsedFeature, target: { meleeShare?: number }): number {
+  if (typeof target.meleeShare === "number") return Math.min(1, Math.max(0, target.meleeShare));
+  return reachOfFeature(feature) <= 5 ? 1 : 0;
+}
 
 /**
  * Damage for a spell profile at a GIVEN CAST LEVEL.
@@ -211,6 +239,14 @@ export function expectedDamageForFeature(
     partySize?: number;
     /** All six save averages, so each feature is priced against the save it actually calls for. */
     saves?: Record<SaveAbility, number>;
+    /** Conditions the TARGET is currently under. Reprices the die, per the pricing contract. */
+    conditions?: string[];
+    /**
+     * The share of this creature's attacks made from within 5 ft. Only prone needs it, because
+     * prone is the one condition whose sign flips with distance. Defaults from the action's own
+     * reach when not supplied.
+     */
+    meleeShare?: number;
   },
 ): { expected: number; basis: string; assumptions: FeatureAssumption[] } {
   const assumptions = [...resolved.assumptions];
@@ -235,11 +271,33 @@ export function expectedDamageForFeature(
   }
   if (resolved.rawAverage <= 0) return { expected: 0, basis: "no readable damage", assumptions };
 
+  /**
+   * ⚠ CONDITIONS REPRICE THE DIE, AND THEY ARE APPLIED HERE RATHER THAN AS A MULTIPLIER LATER.
+   * The contract prices Restrained, Stunned, Prone and the rest through their actual effect on
+   * hit and save probability; a flat tax applied downstream would both misprice the extremes and
+   * risk double-counting against the sustain channel.
+   */
+  const targetConditions = target.conditions ?? [];
+  const incomingSwing = targetConditions.reduce<RollSwing>(
+    (swing, c) => combineSwings(swing, conditionEffect(c)?.incomingAttacks ?? "none"), "none");
+  const isTargetProne = targetConditions.includes("prone");
+
   if (feature.attackBonus !== undefined) {
-    const hit = Math.min(0.95, Math.max(0.05, (21 + feature.attackBonus - target.ac) / 20));
+    const base = Math.min(0.95, Math.max(0.05, (21 + feature.attackBonus - target.ac) / 20));
+    /**
+     * PRONE IS RANGE-DEPENDENT, so it cannot go through the flat swing. Advantage inside 5 ft,
+     * disadvantage beyond it — weighted by how much of this creature's offence is actually in
+     * melee. Everything else is a single swing.
+     */
+    const hit = isTargetProne
+      ? pHitVsProne(base, meleeShareOf(feature, target))
+      : applySwing(base, incomingSwing);
+    const swingNote = isTargetProne
+      ? ` (prone: ${(meleeShareOf(feature, target) * 100).toFixed(0)}% within 5 ft at advantage, the rest at disadvantage)`
+      : incomingSwing !== "none" ? ` (${incomingSwing})` : "";
     return {
       expected: resolved.rawAverage * hit * targets,
-      basis: `${resolved.rawAverage.toFixed(1)} × ${(hit * 100).toFixed(0)}% hit${targets > 1 ? ` × ${targets}` : ""}`,
+      basis: `${resolved.rawAverage.toFixed(1)} × ${(hit * 100).toFixed(0)}% hit${swingNote}${targets > 1 ? ` × ${targets}` : ""}`,
       assumptions,
     };
   }
@@ -252,7 +310,25 @@ export function expectedDamageForFeature(
     const saveBonus = target.saves && feature.saveAbility
       ? target.saves[feature.saveAbility]
       : target.saveBonus;
-    const pFail = Math.min(1, Math.max(0, (feature.saveDc - saveBonus - 1) / 20));
+    const baseFail = Math.min(1, Math.max(0, (feature.saveDc - saveBonus - 1) / 20));
+    /**
+     * ⚠ THE SWING IS ON THE SAVE, SO IT INVERTS. `p_fail` is a FAILURE probability: disadvantage
+     * on the save raises it, advantage lowers it. Applying the attack-side transform directly
+     * here would have made every restrained target BETTER at saving.
+     *
+     * Restrained narrows to DEX only (`savesDexOnly`) — the contract grants disadvantage on Dex
+     * saves specifically, and spreading it to all six would over-price every WIS-save effect in
+     * the campaign against a restrained target.
+     */
+    const saveSwing = targetConditions.reduce<RollSwing>((swing, c) => {
+      const effect = conditionEffect(c);
+      if (!effect || effect.saves === "none") return swing;
+      if (effect.savesDexOnly && feature.saveAbility !== "dex") return swing;
+      return combineSwings(swing, effect.saves);
+    }, "none");
+    const pFail = saveSwing === "disadvantage" ? withAdvantage(baseFail)
+      : saveSwing === "advantage" ? withDisadvantage(baseFail)
+      : baseFail;
     const success = damageExpressionAverage(feature.successDamage);
     if (feature.successDamage === undefined) {
       assumptions.push({

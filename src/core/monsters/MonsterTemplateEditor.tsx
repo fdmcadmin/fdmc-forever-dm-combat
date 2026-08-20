@@ -303,6 +303,33 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
               style={inputStyle}
               title="How many creatures this hits. Blank = single target, or an area priced against the party. Setting it turns the checker's estimate into a printed fact." />
           </div>
+          {/* ── REACH / RANGE ────────────────────────────────────────────────────────────
+              RULE 1A, the legitimate kind: these are D&D-facing statblock facts the DM authors,
+              not pricing weights the workbook owns. They are also what makes control pricing
+              deterministic — reachability is measured from footprint and PRINTED reach, and the
+              v7 reach reference forbids inferring either from creature size. Blank falls back to
+              reading the action text, then to the ruleset default melee reach. */}
+          <div style={{ width: 58 }}>
+            <span style={labelStyle}>Reach ft</span>
+            <input type="number" min={0} value={a.reachFt ?? ""} placeholder="5"
+              onChange={e => updateListItem(list, realIdx, { reachFt: e.target.value ? Math.max(0, Number(e.target.value)) : undefined })}
+              style={inputStyle}
+              title="Printed MELEE reach. Never inferred from size — a Huge creature has a 15 ft footprint and usually still a 5 or 10 ft reach. Blank reads the action text, then the ruleset default." />
+          </div>
+          <div style={{ width: 58 }}>
+            <span style={labelStyle}>Range ft</span>
+            <input type="number" min={0} value={a.rangeFt ?? ""} placeholder="—"
+              onChange={e => updateListItem(list, realIdx, { rangeFt: e.target.value ? Math.max(0, Number(e.target.value)) : undefined })}
+              style={inputStyle}
+              title="Printed NORMAL range for a ranged attack, spell, aura or save effect. The long range carries disadvantage and is priced separately, so it is not entered here." />
+          </div>
+          <div style={{ width: 74 }}>
+            <span style={labelStyle}>Push/pull ft</span>
+            <input type="number" value={a.forcedMovementFt ?? ""} placeholder="—"
+              onChange={e => updateListItem(list, realIdx, { forcedMovementFt: e.target.value ? Number(e.target.value) : undefined })}
+              style={inputStyle}
+              title="Forced movement: positive pushes away, negative pulls closer. Priced through reachability — whether the target can still reach — never as a flat damage tax." />
+          </div>
           {(a.save ?? "").trim() !== "" && (
             <div style={{ width: 92 }}>
               <span style={labelStyle}>On a save</span>

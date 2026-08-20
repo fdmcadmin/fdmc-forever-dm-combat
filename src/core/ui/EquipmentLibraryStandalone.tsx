@@ -361,8 +361,11 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           only in the bag editor, so an item authored HERE — in the DM library, where every
           module item is actually made — could not be a focus, could not carry an armour type,
           and could not be a reroll source. Those facts were reachable only by writing them in
-          code, which is the gap RULE 1A names. Now one shared block, so the two editors cannot
-          drift apart again. */}
+          code, which is the gap RULE 1A names.
+
+          ⚠ Shared because these four are PLAYER-LEGAL mechanics. This form keeps sole ownership
+          of the campaign-authoritative fields below — Convergence, tier, source encounter,
+          session, sourceType, DM note — and those must never be added to the bag editor. */}
       <ItemMechanicsFields draft={draft} set={set} inputStyle={input} />
 
       {/* ── Worn slot + tier ──────────────────────────────────────────────────

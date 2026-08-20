@@ -17,6 +17,29 @@
  * Following the `ChassisFields` / `ChargesFields` convention already in this folder: the FIELDS
  * are shared, the SKIN is the caller's — each editor passes its own input styling, and the
  * capability gate (`allows`) so each item type still only shows what it can legitimately carry.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * ⚠ THIS COMPONENT IS DELIBERATELY LIMITED TO PLAYER-LEGAL ITEM MECHANICS. DO NOT ADD TO IT.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * The two editors are NOT meant to converge, and an earlier note here — "so the two cannot drift
+ * apart again" — read as an invitation to normalize them. It was wrong. Christopher, 2026-08-20:
+ * *"Do not normalize the permissions of EquipmentBagEditor and EquipmentLibraryStandalone. Their
+ * difference is intentional."*
+ *
+ *   EquipmentBagEditor        PLAYER-FACING. A character's bag. May only author mechanics that
+ *                             are legal through character creation and level-up.
+ *   EquipmentLibraryStandalone  DM/CAMPAIGN-AUTHORITATIVE. The module catalogue. Owns Convergence,
+ *                             tier, source encounter, session, sourceType and DM notes.
+ *
+ * The boundary is a SUBMISSION-INTEGRITY boundary, not a tidiness one: if a campaign-authoritative
+ * control appeared in the bag editor, a player submission could author campaign-only properties on
+ * an item — minting a Convergence input, or restamping which encounter a piece of loot came from.
+ * Sharing the `EquipmentItem` schema is fine and intended; sharing the AUTHORING CONTROLS is not.
+ *
+ * The four families below (armour type, non-attack dice, reroll source, spellcasting focus) are
+ * all things a PC can legitimately acquire, so they are safe in both. Anything campaign-owned
+ * belongs in the standalone form alone.
  */
 
 import type { RerollMethod } from "../state/rerollMethod";

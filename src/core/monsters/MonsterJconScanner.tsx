@@ -80,6 +80,21 @@ export type MonsterReaderAction = {
   successDamage?: string;
   /** Limited uses, e.g. 1 for "1/Day". Recharge is separate: that is availability, this is a pool. */
   uses?: number;
+  /**
+   * PRINTED melee reach in feet. Never inferred from creature size — the v7 reach reference is
+   * explicit that size defines occupied space, not reach. Blank reads the action text, then the
+   * ruleset default.
+   */
+  reachFt?: number;
+  /** PRINTED normal range in feet, for a ranged attack, spell, aura or save effect. */
+  rangeFt?: number;
+  /** Forced movement in feet: positive pushes away, negative pulls closer. */
+  forcedMovementFt?: number;
+  /**
+   * Conditions this action imposes. Authored outranks the prose the parser would otherwise read.
+   * Drives the deterministic control repricing — advantage/disadvantage and reachability.
+   */
+  conditions?: string[];
 };
 
 export type MonsterActionCounter = {
