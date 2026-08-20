@@ -21,6 +21,7 @@
  */
 
 import type { ParsedCreature } from "./parseCreature";
+import type { SaveAbility } from "./partyDefenceCurve";
 import {
   resolveFeature, expectedDamageForFeature,
   type ParsedFeature, type FeatureAssumption,
@@ -96,7 +97,7 @@ function rechargeProbability(range: string | undefined): number {
  */
 export function traceCreature(
   creature: ParsedCreature,
-  target: { ac: number; saveBonus: number; partySize?: number },
+  target: { ac: number; saveBonus: number; partySize?: number; saves?: Record<SaveAbility, number> },
   rounds = 4,
 ): CreatureTrace {
   const assumptions: FeatureAssumption[] = [...creature.assumptions];

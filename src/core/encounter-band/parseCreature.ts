@@ -25,6 +25,7 @@
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
 import { spellProfile, campaignProfile, type CampaignProfile } from "./compactImport";
+import { parseSaveAbility } from "./partyDefenceCurve";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
 
@@ -249,6 +250,7 @@ function parseSection(
       damage: a.damage,
       attackBonus: parseAttackBonus(a.roll),
       saveDc: parseSaveDc(a.save ?? a.text),
+      saveAbility: parseSaveAbility(a.save ?? a.text),
       /**
        * ⚠ AUTHORED DATA BEATS PARSED PROSE. `a.targets` and `a.onSave` are fields the monster
        * editor now writes; the text is the fallback for a block that predates them. A printed
@@ -385,6 +387,7 @@ function featureFromProfile(
     damage: average !== undefined ? `${average} (${f.d[0]?.[1] ?? ""})` : undefined,
     attackBonus: parseAttackBonus(f.a ?? undefined),
     saveDc: parseSaveDc(f.s ?? undefined),
+    saveAbility: parseSaveAbility(f.s ?? printedText),
     targets: parseTargets(f.n) ?? parseTargets(printedText),
     // The profile records the FAIL damage only. Half-on-a-success and the shape of an area live
     // in the printed text, so they are read from there — the two things the profile cannot hold.

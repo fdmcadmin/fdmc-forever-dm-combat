@@ -22,6 +22,7 @@
 
 import { spellProfile, type SpellProfile, type SrdVersion } from "./compactImport";
 import { aoeTargetsForParty } from "./parseCreature";
+import type { SaveAbility } from "./partyDefenceCurve";
 import { damageExpressionAverage } from "./damageExpression";
 
 /** How a feature's damage was arrived at — carried all the way to the trace. */
@@ -64,6 +65,11 @@ export type ParsedFeature = {
   saveDc?: number;
   /** Printed success damage. Never assumed to be half unless the block says half. */
   successDamage?: string;
+  /**
+   * WHICH save the target rolls. v7's targeting rule: *"Use the matching ability save average."*
+   * A flat bonus prices an INT save like a DEX save; the party is far worse at one than the other.
+   */
+  saveAbility?: SaveAbility;
   /**
    * An AREA effect with no printed target count — a cone, a radius, "each creature within X".
    * Priced against the party the checker is running (half of it), not counted as one target.
@@ -199,7 +205,13 @@ export function resolveFeature(
 export function expectedDamageForFeature(
   resolved: ResolvedFeature,
   feature: ParsedFeature,
-  target: { ac: number; saveBonus: number; partySize?: number },
+  target: {
+    ac: number;
+    saveBonus: number;
+    partySize?: number;
+    /** All six save averages, so each feature is priced against the save it actually calls for. */
+    saves?: Record<SaveAbility, number>;
+  },
 ): { expected: number; basis: string; assumptions: FeatureAssumption[] } {
   const assumptions = [...resolved.assumptions];
   /**
@@ -232,7 +244,15 @@ export function expectedDamageForFeature(
     };
   }
   if (feature.saveDc !== undefined) {
-    const pFail = Math.min(1, Math.max(0, (feature.saveDc - target.saveBonus - 1) / 20));
+    /**
+     * ⚠ THE SAVE THE BLOCK NAMES, NOT A FLAT NUMBER. v7: *"Use the matching ability save average."*
+     * `target.saves` carries all six; the flat `saveBonus` is the fallback for a caller that has
+     * not been given the party profile, and for a block whose save ability is unreadable.
+     */
+    const saveBonus = target.saves && feature.saveAbility
+      ? target.saves[feature.saveAbility]
+      : target.saveBonus;
+    const pFail = Math.min(1, Math.max(0, (feature.saveDc - saveBonus - 1) / 20));
     const success = damageExpressionAverage(feature.successDamage);
     if (feature.successDamage === undefined) {
       assumptions.push({

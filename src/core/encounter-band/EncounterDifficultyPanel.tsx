@@ -30,7 +30,7 @@ import {
   type PartyEquipmentMode,
 } from "./partyCurveV2";
 import { rosterFromTemplates } from "./rosterFromLibrary";
-import { DEFAULT_PARTY_DEFENCE } from "./damageExpression";
+import { partyDefenceAt } from "./partyDefenceCurve";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
 const MODES: { id: PartyEquipmentMode; label: string; blurb: string }[] = [
@@ -67,12 +67,22 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const [allocation, setAllocation] = useState<DamageAllocation>("focus_fire");
   const [targetSafetyMargin, setTargetSafetyMargin] = useState<number>(1);
   /**
-   * The party's own defensive numbers — a DM INPUT, because the workbook publishes the hit and
-   * save FORMULAS but no party AC or save-bonus table anywhere in the bundle. Inventing one
-   * here would move every damage figure in the checker on an unmeasured guess.
+   * ⚠ AC AND SAVES ARE NOW READ, NOT ASKED FOR. v7 ships `party_defense_curve` — an average AC and
+   * all SIX save averages, by level and by equipment mode. The checker used to require a typed AC
+   * because the workbook published the formulas and no table; it publishes the table now.
+   *
+   * `null` means "use the curve". A typed value overrides it, because a real table is not the
+   * average table — and the override is what stops an automatic number being unarguable.
    */
-  const [targetAc, setTargetAc] = useState<number>(DEFAULT_PARTY_DEFENCE.ac);
-  const [targetSave, setTargetSave] = useState<number>(DEFAULT_PARTY_DEFENCE.saveBonus);
+  const [acOverride, setAcOverride] = useState<number | null>(null);
+  const [saveOverride, setSaveOverride] = useState<number | null>(null);
+  const defence = partyDefenceAt(partyLevel, equipmentMode);
+  const targetAc = acOverride ?? defence.ac;
+  /** Six saves, unless the DM has typed one number to flatten them. */
+  const saves = saveOverride === null
+    ? { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha }
+    : { str: saveOverride, dex: saveOverride, con: saveOverride, int: saveOverride, wis: saveOverride, cha: saveOverride };
+  const targetSave = saveOverride ?? (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
   /** Share of the party's sustain already spent when this fight starts. 0 = fresh. */
   const [arrivingSpent, setArrivingSpent] = useState<number>(0);
 
@@ -88,12 +98,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
-    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize });
+    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves });
     return {
       roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
@@ -229,9 +239,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                 <div title="Your table's own numbers. The workbook publishes the hit and save formulas but no party AC table, so this is yours to enter — it is never assumed from your level.">
                   <label style={label}>Party AC / save</label>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <input type="number" value={targetAc} onChange={e => setTargetAc(Number(e.target.value))}
+                    <input type="number" value={targetAc} onChange={e => setAcOverride(e.target.value === "" ? null : Number(e.target.value))}
                       style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
-                    <input type="number" value={targetSave} onChange={e => setTargetSave(Number(e.target.value))}
+                    <input type="number" value={Number(targetSave.toFixed(2))} onChange={e => setSaveOverride(e.target.value === "" ? null : Number(e.target.value))}
                       style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
                   </div>
                 </div>

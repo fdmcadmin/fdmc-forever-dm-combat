@@ -75,6 +75,13 @@ export type PartyDefence = {
    * exactly half of one. Defaults to the workbook's own four-PC baseline.
    */
   partySize?: number;
+  /**
+   * All six save averages, from v7's `party_defense_curve`. Each feature is priced against the
+   * save it actually calls for — the bundle's targeting rule says so outright, and an INT save is
+   * a very different proposition from a DEX save at the same DC. `saveBonus` above stays as the
+   * single-number fallback for callers that have no party profile.
+   */
+  saves?: Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 };
 
 /**
