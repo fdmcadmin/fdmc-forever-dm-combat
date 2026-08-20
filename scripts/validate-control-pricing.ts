@@ -17,7 +17,8 @@ import {
   priceForcedMovement, priceFrightened, reachOfFeature, DEFAULT_MELEE_REACH_FT,
 } from "../src/core/encounter-band/reachability";
 import type { ParsedFeature } from "../src/core/encounter-band/featureResolver";
-import { parseReachFt, parseRangeFt, parseForcedMovementFt } from "../src/core/encounter-band/parseCreature";
+import { parseReachFt, parseRangeFt, parseForcedMovementFt, parseCreature } from "../src/core/encounter-band/parseCreature";
+import { isMultiattackAction, multiattackCountFromText } from "../src/core/monsters/multiattackText";
 
 let passed = 0;
 const failures: string[] = [];
@@ -134,6 +135,28 @@ check("'unless' prerequisite is not an imposition", conditionsImposedBy({ text: 
 check("'immune to' is not an imposition", conditionsImposedBy({ text: "the creature is immune to the frightened condition" }), []);
 check("a real imposition still reads", conditionsImposedBy({ text: "the target is knocked prone" }), ["prone"]);
 check("negation earlier in the sentence does not mask a later imposition", conditionsImposedBy({ text: "the ally isn't incapacitated. On a failed save the target is restrained" }), ["restrained"]);
+
+console.log("\n── Multiattack (contract: auto=YES, 'resolve the printed legal sequence')");
+check("'makes three slam attacks' → 3", multiattackCountFromText("The brute makes three slam attacks."), 3);
+check("'attacks twice' → 2", multiattackCountFromText("It attacks twice with its claws."), 2);
+check("'makes two claw attacks' → 2", multiattackCountFromText("Makes two claw attacks."), 2);
+check("named components beat a bare number", multiattackCountFromText("makes two attacks", ["Claw", "Bite", "Tail"]), 3);
+check("unreadable sequence returns undefined, never a guess", multiattackCountFromText("It attacks in a manner beyond description."), undefined);
+// Caught against the live library — and the SECOND time this exact negation bug was written.
+check("'no multiattack' is NOT a Multiattack (Frozen Husk)", isMultiattackAction("Rime Claw", "Its only attack — no multiattack, no rider."), false);
+check("a real Multiattack is still detected", isMultiattackAction("Multiattack", "The brute makes three slam attacks."), true);
+// End to end: a block that prints its sequence is priced at that sequence, not at one attack.
+const brute = { name: "T", stats: { ac: 15, maxHp: 80, speed: "30 ft." },
+  actions: [{ name: "Multiattack", text: "The brute makes three slam attacks." },
+            { name: "Slam", roll: "1d20 + 7", damage: "2d6 + 4" }] } as never;
+check("printed Multiattack drives the Action budget end to end", parseCreature(brute).attacksPerTurn, 3);
+const vague = { name: "T", stats: { ac: 15, maxHp: 80, speed: "30 ft." },
+  actions: [{ name: "Multiattack", text: "It attacks strangely." },
+            { name: "Slam", roll: "1d20 + 7", damage: "2d6 + 4" }] } as never;
+const vagueParsed = parseCreature(vague);
+check("unreadable Multiattack falls back to 1…", vagueParsed.attacksPerTurn, 1);
+check("…and says so as NEEDS DM INPUT, not a silent estimate",
+  vagueParsed.assumptions.find(a => a.field === "action_cost")?.flag, "NEEDS DM INPUT");
 
 console.log(`\n${failures.length === 0 ? "ALL PASS" : "FAILURES"} — ${passed} passed, ${failures.length} failed`);
 if (failures.length) { failures.forEach(f => console.log(`  - ${f}`)); process.exit(1); }

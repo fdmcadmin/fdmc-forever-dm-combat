@@ -41,6 +41,8 @@ import {
 import { estimateCreature } from "../encounter-band/creatureEstimator";
 import { parseCreature } from "../encounter-band/parseCreature";
 import { traceCreature } from "../encounter-band/actionTrace";
+import { partyDefenceAt } from "../encounter-band/partyDefenceCurve";
+import type { PartyEquipmentMode } from "../encounter-band/partyCurveV2";
 import { TRAIT_RULES, traitRule } from "../encounter-band/compactImport";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -101,6 +103,8 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   const [chassisId, setChassisId] = useState<string>("");
   const [refBand, setRefBand] = useState<CreatorBandId>("mid");
   const [refPressure, setRefPressure] = useState<CreatorPressureId>("standard");
+  /** Which party the estimate is rated against. Both curves exist, so both are offered. */
+  const [refMode, setRefMode] = useState<PartyEquipmentMode>("wotcStandard");
   const [desiredCr, setDesiredCr] = useState<number | undefined>(undefined);
 
   /**
@@ -112,13 +116,27 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
    * gated features. The sheet asks for "expected DPR from the parser"; this IS the parser.
    *
    * The trait multiplier is the PRODUCT of the authored defences, matching the checker's own
-   * combination rule. Target AC 16 / save +3 is the estimator's fixed reference frame — it is
-   * measuring the creature, not a specific party, so it must not move with a party level.
+   * combination rule.
+   *
+   * ⚠ THE TARGET COMES FROM THE CURVE, NOT FROM AC 16 / SAVE +3. Those were hardcoded here as
+   * "the estimator's fixed reference frame", justified on the grounds that it measures a creature
+   * rather than a party. The justification survived the fact that changed it: v7 publishes an
+   * average AC and all six save averages for every level in BOTH modes, so the frame can be a real
+   * party at the band's own level instead of two magic numbers.
+   *
+   * It is still a FIXED frame — it moves with the selected band, not with any particular table —
+   * which keeps the estimate comparable between creatures in the same band.
    */
   const estimate = useMemo(() => {
     const parsed = parseCreature(draft);
+    const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
+    const defence = partyDefenceAt(band.referenceLevel, refMode);
+    const saveAverage = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
     // THREE rounds, not four: v6 rates the legal three-round action sequence.
-    const trace = traceCreature(parsed, { ac: 16, saveBonus: 3 }, 3);
+    const trace = traceCreature(parsed, {
+      ac: defence.ac, saveBonus: saveAverage,
+      saves: { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha },
+    }, 3);
     // TWO CHANNELS, and a trait belongs to exactly one. The authored trait product stays a
     // MULTIPLIER — collapsing it into the flat term gives the same effective HP but hides the
     // sustain calibration. Flat effects (regeneration, healing, restored HP, fixed barriers)
@@ -148,7 +166,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
       saveDc,
       desiredCr,
     });
-  }, [draft, desiredCr]);
+  }, [draft, desiredCr, refBand, refMode]);
 
   function updateStat<K extends keyof MainMonsterTemplate["stats"]>(key: K, val: MainMonsterTemplate["stats"][K]) {
     setDraft(d => ({ ...d, stats: { ...d.stats, [key]: val } }));
@@ -665,6 +683,31 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
           <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4f9dff" }}>
             Creature estimator — workbook v4
           </span>
+          {/* WHICH PARTY IT IS RATED AGAINST. Both curves are published, so both are offered
+              rather than one being hardcoded. The level follows the band above. */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: "#667" }}>rated vs</span>
+            {(["wotcStandard", "brokenChain"] as const).map(m => (
+              <button key={m} type="button" onClick={() => setRefMode(m)}
+                style={{
+                  fontSize: 10, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
+                  background: refMode === m ? "#4f9dff" : "#0d0d14",
+                  color: refMode === m ? "#fff" : "#8a8aa0",
+                  border: `1px solid ${refMode === m ? "#4f9dff" : "#2a2a3e"}`,
+                }}>
+                {m === "brokenChain" ? "Broken Chain" : "WotC standard"}
+              </button>
+            ))}
+            {(() => {
+              const b = CREATOR_BANDS.find(x => x.id === refBand) ?? CREATOR_BANDS[1];
+              const d = partyDefenceAt(b.referenceLevel, refMode);
+              return (
+                <span style={{ fontSize: 10, color: "#667" }}>
+                  L{b.referenceLevel} party · AC <strong style={{ color: "#99a" }}>{d.ac}</strong> · saves STR {d.str} DEX {d.dex} CON {d.con} INT {d.int} WIS {d.wis} CHA {d.cha}
+                </span>
+              );
+            })()}
+          </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 6, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
             <span>EHP multiplier <strong style={{ color: "#dfe4ff" }}>×{estimate.ehpMultiplier.toFixed(3)}</strong></span>
             <span>effective AC <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveAc}</strong></span>

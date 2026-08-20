@@ -4,11 +4,9 @@
  * `broken_chain_encounter_checker_app_ready_v2.xlsx` and SHA-256 verified against that sheet's
  * own manifest before transcription.
  *
- * ⚠ THIS SUPERSEDES `dprBaseline.PARTY_BASELINE`. Christopher, 2026-08-14: *"the app is wrong
- * if it contradicts the workbook. you invented designs and guessed at the outcome, this
- * workbook has used over 300+ real creatures and spells/traits/actions to give a true design."*
- * Where the two disagree, this wins. The old baseline stopped at L12, had one equipment mode,
- * and carried per-PC thresholds that were authored rather than derived.
+ * ⚠ THIS SUPERSEDES `dprBaseline.PARTY_BASELINE`. Where the two disagree, this wins — the old
+ * baseline stopped at L12, had one equipment mode, and carried per-PC thresholds that were
+ * authored rather than derived.
  *
  * TWO EQUIPMENT MODES, and the switch is a REQUIRED app feature — a table running the checker
  * without the Broken Chain campaign must be able to turn it off:

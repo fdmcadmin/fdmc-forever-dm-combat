@@ -17,6 +17,8 @@
  * multiplier"* the reference tells us to avoid when event math is available.
  */
 
+import { mentionsUnnegated } from "../text/negatedMention";
+
 /** Roll two d20s and keep the better: the chance of success rises to 1 − (1−p)². */
 export function withAdvantage(p: number): number {
   return 1 - (1 - p) * (1 - p);
@@ -193,29 +195,6 @@ export function conditionsImposedBy(feature: { conditions?: readonly string[]; t
   }
   const text = (feature.text ?? "").toLowerCase();
   if (!text) return [];
-  return Object.keys(CONDITION_EFFECTS).filter(c => imposesCondition(text, c));
+  return Object.keys(CONDITION_EFFECTS).filter(c => mentionsUnnegated(text, c));
 }
 
-/**
- * Does this text IMPOSE the condition, or merely mention it?
- *
- * ⚠ A NEGATED MENTION IS NOT AN IMPOSITION, and this is not hypothetical — it was caught
- * validating against the live library. Pack Tactics reads *"…if that ally isn't incapacitated"*,
- * and a bare word match tagged every Thornfang Wolf and Packlord as imposing Incapacitated, which
- * zeroes a creature's damage outright. The trait that GRANTS them advantage would have deleted
- * their offence instead.
- *
- * A condition inside a negation ("isn't incapacitated", "not restrained", "no longer prone") or a
- * prerequisite ("unless…", "immune to…") is a CONDITION OF USE, not an effect. Only an unnegated
- * mention counts, and even then the authored list is the reliable path — this is the fallback for
- * blocks written before the field existed.
- */
-function imposesCondition(text: string, condition: string): boolean {
-  const pattern = new RegExp(`\\b${condition}\\b`, "g");
-  for (const match of text.matchAll(pattern)) {
-    const before = text.slice(Math.max(0, match.index - 40), match.index);
-    const negated = /\b(?:isn'?t|aren'?t|not|non|no longer|unless|immune to|immunity to|ends? if|already)\b[^.]{0,20}$/.test(before);
-    if (!negated) return true;
-  }
-  return false;
-}

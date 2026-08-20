@@ -26,6 +26,7 @@ import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
 import { spellProfile, campaignProfile, type CampaignProfile } from "./compactImport";
 import { conditionsImposedBy } from "./controlPricing";
+import { isMultiattackAction, multiattackCountFromText } from "../monsters/multiattackText";
 import { parseSaveAbility } from "./partyDefenceCurve";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
@@ -371,10 +372,34 @@ export function parseCreature(template: MainMonsterTemplate): ParsedCreature {
     ...parseSection(t.lairActions, "lair", name, assumptions),
   ];
 
-  const attacksPerTurn = template.stats.attacksPerTurn ?? 1;
-  if (!template.stats.attacksPerTurn && features.some(f => f.activationType === "action" && f.attackBonus !== undefined)) {
+  /**
+   * ⚠ MULTIATTACK IS PRICED, NOT ESTIMATED. v7 contract, auto=YES: *"Resolve the printed legal
+   * sequence and sum the expected values of its component attacks/actions."*
+   *
+   * This used to take `stats.attacksPerTurn ?? 1` and flag ESTIMATED — so a block that plainly
+   * says "makes three attacks" was priced at ONE and reported as an assumption. Two failures at
+   * once: it under-counted the creature by two thirds of its routine offence, and it called a
+   * printed fact unreadable.
+   *
+   * Order: authored count, then the PRINTED sequence, then flag. Only the last is an assumption.
+   */
+  const multiattackAction = (template.actions as RawAction[] | undefined)
+    ?.find(a => isMultiattackAction(a.name, a.text));
+  const printedSequence = multiattackAction
+    ? multiattackCountFromText(multiattackAction.text ?? multiattackAction.name)
+    : undefined;
+  const attacksPerTurn = template.stats.attacksPerTurn ?? printedSequence ?? 1;
+  const hasRoutineAttacks = features.some(f => f.activationType === "action" && f.attackBonus !== undefined);
+  if (!template.stats.attacksPerTurn && printedSequence !== undefined) {
+    // Read, not assumed — recorded so the trace shows where the budget came from.
     assumptions.push({ feature: name, flag: "ESTIMATED", field: "action_cost",
-      detail: "No Multiattack size printed, so the Action budget is one attack per turn." });
+      detail: `Action budget of ${printedSequence} read from the printed Multiattack sequence. Set Attacks per turn to make it a stated fact.` });
+  } else if (!template.stats.attacksPerTurn && hasRoutineAttacks && multiattackAction) {
+    assumptions.push({ feature: name, flag: "NEEDS DM INPUT", field: "action_cost",
+      detail: "This creature has a Multiattack but its sequence could not be read, so the Action budget is one attack per turn — almost certainly too few. Enter Attacks per turn." });
+  } else if (!template.stats.attacksPerTurn && hasRoutineAttacks) {
+    assumptions.push({ feature: name, flag: "ESTIMATED", field: "action_cost",
+      detail: "No Multiattack printed, so the Action budget is one attack per turn." });
   }
 
   return { name, ac, maxHp: template.stats.maxHp, attacksPerTurn, features, assumptions };
@@ -495,10 +520,27 @@ export function workbookCreature(template: MainMonsterTemplate): WorkbookCreatur
   }
 
   const assumptions: FeatureAssumption[] = [];
-  const attacksPerTurn = template.stats.attacksPerTurn ?? 1;
-  if (!template.stats.attacksPerTurn) {
+  /**
+   * ⚠ THE PROFILE CARRIES NO ATTACK COUNT, BUT THE BLOCK DOES. A profile publishes
+   * `id, n, ac, hp, cr, la, tm, tt, f` — no Multiattack size, in v3 or v7. That is a fact about
+   * the PROFILE, and the old note here stopped there and defaulted to one attack.
+   *
+   * It should never have. v7 prices Multiattack auto=YES from *"the printed legal sequence"*, and
+   * the printed sequence is on the app-side action text, which this path also has. Reading the
+   * profile's silence as "unknowable" discarded a fact sitting in the same template.
+   */
+  const profileMultiattack = (template.actions as RawAction[] | undefined)
+    ?.find(a => isMultiattackAction(a.name, a.text));
+  const profileSequence = profileMultiattack
+    ? multiattackCountFromText(profileMultiattack.text ?? profileMultiattack.name)
+    : undefined;
+  const attacksPerTurn = template.stats.attacksPerTurn ?? profileSequence ?? 1;
+  if (!template.stats.attacksPerTurn && profileSequence !== undefined) {
     assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
-      detail: "The workbook profile publishes no Multiattack size, so the Action budget is one attack per turn." });
+      detail: `The workbook profile publishes no Multiattack size, so the Action budget of ${profileSequence} was read from the block's printed sequence.` });
+  } else if (!template.stats.attacksPerTurn) {
+    assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
+      detail: "Neither the workbook profile nor the printed text gives a Multiattack size, so the Action budget is one attack per turn." });
   }
 
   /**

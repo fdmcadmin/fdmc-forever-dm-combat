@@ -148,28 +148,36 @@ export type CreatorBandRef = {
   baselineAc: number;
   attackBonus: number;
   starterDamage: string;
+  /**
+   * The party level this band is rated against — the MIDPOINT of its range.
+   *
+   * Exists so the creature estimator can read the v7 party defence curve instead of a hardcoded
+   * AC 16 / save +3. The curve publishes an average AC and six save averages for every level in
+   * BOTH modes, so a fixed pair of magic numbers was never the only option available.
+   */
+  referenceLevel: number;
   hp: Record<CreatorPressureId, { low: number; high: number | null; suggested: number }>;
 };
 
 export const CREATOR_BANDS: CreatorBandRef[] = [
   {
-    id: "low", label: "Low · party levels 1–4", baselineAc: 13, attackBonus: 4, starterDamage: "1d6 + 2",
+    id: "low", label: "Low · party levels 1–4", baselineAc: 13, referenceLevel: 3, attackBonus: 4, starterDamage: "1d6 + 2",
     hp: { standard: { low: 11, high: 35, suggested: 22 }, strong: { low: 35, high: 55, suggested: 44 }, elite: { low: 55, high: 75, suggested: 65 }, bossGate: { low: 75, high: null, suggested: 90 } },
   },
   {
-    id: "mid", label: "Mid · party levels 5–8", baselineAc: 15, attackBonus: 6, starterDamage: "2d6 + 3",
+    id: "mid", label: "Mid · party levels 5–8", baselineAc: 15, referenceLevel: 7, attackBonus: 6, starterDamage: "2d6 + 3",
     hp: { standard: { low: 45, high: 90, suggested: 65 }, strong: { low: 90, high: 135, suggested: 110 }, elite: { low: 135, high: 190, suggested: 160 }, bossGate: { low: 190, high: null, suggested: 220 } },
   },
   {
-    id: "high", label: "High · party levels 9–12", baselineAc: 17, attackBonus: 8, starterDamage: "3d8 + 4",
+    id: "high", label: "High · party levels 9–12", baselineAc: 17, referenceLevel: 11, attackBonus: 8, starterDamage: "3d8 + 4",
     hp: { standard: { low: 90, high: 160, suggested: 125 }, strong: { low: 160, high: 235, suggested: 195 }, elite: { low: 235, high: 320, suggested: 275 }, bossGate: { low: 320, high: null, suggested: 360 } },
   },
   {
-    id: "extreme", label: "Extreme · party levels 13–16", baselineAc: 19, attackBonus: 10, starterDamage: "4d10 + 5",
+    id: "extreme", label: "Extreme · party levels 13–16", baselineAc: 19, referenceLevel: 15, attackBonus: 10, starterDamage: "4d10 + 5",
     hp: { standard: { low: 160, high: 260, suggested: 215 }, strong: { low: 260, high: 380, suggested: 315 }, elite: { low: 380, high: 520, suggested: 450 }, bossGate: { low: 520, high: null, suggested: 600 } },
   },
   {
-    id: "final", label: "Final · party levels 17–20", baselineAc: 21, attackBonus: 12, starterDamage: "6d10 + 6",
+    id: "final", label: "Final · party levels 17–20", baselineAc: 21, referenceLevel: 18, attackBonus: 12, starterDamage: "6d10 + 6",
     hp: { standard: { low: 260, high: 420, suggested: 340 }, strong: { low: 420, high: 650, suggested: 520 }, elite: { low: 650, high: 900, suggested: 760 }, bossGate: { low: 900, high: null, suggested: 1000 } },
   },
 ];

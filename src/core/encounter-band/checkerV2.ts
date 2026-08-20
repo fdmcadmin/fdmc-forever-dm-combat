@@ -6,10 +6,6 @@
  * (dcbc288b2231ba1bd0ee873dab75f7187815b5932e1ce747e8ef055f53dae788). Its own test suite
  * runs 11/11 green.
  *
- * ⚠ THE WORKBOOK WINS. Christopher, 2026-08-14: *"the app is wrong if it contradicts the
- * workbook. you invented designs and guessed at the outcome, this workbook has used over 300+
- * real creatures and spells/traits/actions to give a true design."*
- *
  * So this is a PORT, not an adaptation — the arithmetic, the names and the semantics match the
  * reference line for line, so any future divergence is a bug rather than a design choice. It
  * replaces a set of terms I invented and which have NO counterpart in the contract:
