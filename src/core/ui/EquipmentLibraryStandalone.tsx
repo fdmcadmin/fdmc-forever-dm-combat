@@ -13,7 +13,7 @@ import { SELECTABLE_ITEM_TYPES } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
-import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult } from "./EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult, fingerprintEquipmentItem } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
@@ -948,7 +948,13 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
 
   // TODO: remove at 0.9.0 alpha lock — DM-only pre-alpha unlock for campaign item editing
   function handleUnlockItem(item: EquipmentItem) {
-    const unlockedCopy: EquipmentItem = { ...item, isLocked: false };
+    // Fingerprint the item AS UNLOCKED, so a later re-seed can tell an untouched snapshot
+    // (safe to drop for fresher module data) from an edit the DM actually made (never dropped).
+    const unlockedCopy: EquipmentItem = {
+      ...item,
+      isLocked: false,
+      unlockSnapshot: fingerprintEquipmentItem({ ...item, isLocked: false }),
+    };
     const lib = loadEquipmentLibrary("dm");
     const idx = lib.findIndex(i => i.id === item.id);
     if (idx === -1) lib.push(unlockedCopy); else lib[idx] = unlockedCopy;

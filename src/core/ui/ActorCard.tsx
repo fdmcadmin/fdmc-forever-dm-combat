@@ -2804,8 +2804,13 @@ export function ActorCard({
    * item — before this, an item had to state a bonus to appear at all, which is why a plain
    * wand never showed up in the list.
    *
-   * The FIRST focus in the list supplies `@SPELL`; any others contribute only their own extra,
-   * so arming two never doubles the casting bonus.
+   * ⚠ EVERY focus reads `@SPELL` + its own plus. @SPELL is the CASTER's bonus — the same number
+   * whichever focus it is cast through — so a chip that omits it is lying about what the roll
+   * will be. Listing only the first one with @SPELL made the wand read "atk +1" beside a holy
+   * symbol reading "atk +6", as though the wand were the worse focus rather than the better one.
+   *
+   * Arming two still must not DOUBLE the casting bonus. That is settled where the formulas
+   * combine (search "counts once"), not by hiding it from the label.
    */
   function getEquippedSpellFocuses() {
     const isFocus = (a: ActorAction) => Boolean(a.metadata?.isSpellFocus
@@ -2829,12 +2834,12 @@ export function ActorCard({
       ...innate,
       ...(actor.tabs.equipment ?? []).filter(a => a.metadata?.equipped !== false).filter(isFocus),
     ];
-    return focuses.map((a, index) => {
+    return focuses.map((a) => {
       const dc = Number.parseInt((a.metadata?.spellFocusSaveDc ?? "").replace(/[^\d+-]/g, ""), 10);
       return {
         id: a.id.replace(/^equip-/, ""),
         label: a.label,
-        attack: focusAttackContribution(a.metadata?.spellFocusAttack, index === 0),
+        attack: focusAttackContribution(a.metadata?.spellFocusAttack, true),
         damage: a.metadata?.spellFocusDamage?.trim() || undefined,
         saveDc: Number.isFinite(dc) && dc !== 0 ? dc : undefined,
       };
@@ -4119,11 +4124,25 @@ export function ActorCard({
     // never touch non-spell attacks.
     const spellAttackFormula = resolvedCandidate.attackFormula?.trim();
     if (entry.action.actionKind === "spell" && spellAttackFormula) {
+      /**
+       * @SPELL COUNTS ONCE, however many focuses are armed.
+       *
+       * Every focus now STORES "@SPELL+N" so its own chip reads the true total it would give
+       * you (+7, not +1). That is a labelling truth, and it would be a rolling lie if two
+       * armed focuses each contributed a second copy of the caster's bonus — a wand plus a
+       * staff would read +12 on a +6 caster.
+       *
+       * So the first armed focus carries @SPELL and the rest are reduced to their own extra.
+       * Which one is "first" does not matter: the base is identical either way, and only the
+       * per-item pluses differ, all of which are kept.
+       */
       const focusAttackBonuses = armedEffects
         .filter(e => e.id.startsWith("focus:") && e.attackFormula?.trim())
+        .map((e, i) => focusAttackContribution((e.attackFormula as string).trim(), i === 0) ?? "")
         // Resolve @VARIABLE tokens in the focus bonus (e.g. a wand "@SPELL+1") — otherwise
         // the raw @SPELL is sent to Dice+ and only the flat part lands.
-        .map(e => resolveFormulaVars((e.attackFormula as string).trim(), actor, _derivedForRoll, status));
+        .filter(f => f.trim())
+        .map(f => resolveFormulaVars(f, actor, _derivedForRoll, status));
       if (focusAttackBonuses.length > 0) {
         resolvedCandidate.attackFormula = combineRollFormulas([spellAttackFormula, ...focusAttackBonuses]);
       }

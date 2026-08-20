@@ -200,6 +200,18 @@ export type EquipmentItem = {
   /** Marks the item as a spellcasting focus. A focus supplies @SPELL to every spell cast
    *  through it; the bonus fields above are only the item's OWN extra on top. */
   isSpellFocus?: boolean;
+  /**
+   * WHAT THE CAMPAIGN ITEM LOOKED LIKE WHEN THE DM UNLOCKED IT.
+   *
+   * Unlocking copies a bundled item into the DM store, where it WINS by id. That copy is a
+   * snapshot, and a re-seed used to delete every one of them so a stale copy could not mask
+   * newer module data. It could not tell a stale copy from a deliberate edit, so it threw
+   * both away — which is why campaign changes never stayed changed.
+   *
+   * Holding the fingerprint makes the question answerable: still identical = untouched, drop
+   * it and take the fresh bundled data; different = the DM changed it, keep their work.
+   */
+  unlockSnapshot?: string;
   value?: string;
   weight?: string;
   tags?: string[];
@@ -291,7 +303,7 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // that catalogue at ten. Tactical and Continuity join the tag vocabulary. Tier 3 weapons and
 // Tier 3 convergence are deliberately NOT seeded — the doc leaves that tier unbuilt and
 // Christopher is authoring part of it himself.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-4-v5-focus-plus-one";
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-4-v5-focus-all-three";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -326,6 +338,15 @@ export function saveEquipmentLibrary(library: EquipmentItem[], owner: "campaign"
  * Bundled items win for their own ids, so edits to the shipped module data still land;
  * anything else already in the library is preserved.
  */
+/**
+ * A stable fingerprint of an item's content, ignoring the bookkeeping fields that unlocking
+ * itself writes. Key order is normalised so a re-serialised item still matches.
+ */
+export function fingerprintEquipmentItem(item: EquipmentItem): string {
+  const { isLocked: _l, unlockSnapshot: _s, ...rest } = item as EquipmentItem & Record<string, unknown>;
+  return JSON.stringify(rest, Object.keys(rest).sort());
+}
+
 export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds: string[] = []): void {
   if (window.localStorage.getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
   const byId = new Map(loadEquipmentLibrary("campaign").map(i => [i.id, i]));
@@ -352,7 +373,22 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds:
    */
   const seededIds = new Set(items.map(i => i.id));
   const dm = loadEquipmentLibrary("dm");
-  const keep = dm.filter(i => !seededIds.has(i.id));
+  /**
+   * ⚠ ONLY UNTOUCHED SHADOWS ARE DROPPED.
+   *
+   * A shadow whose content still matches its unlock fingerprint is a pure snapshot — nothing
+   * is lost by dropping it, and dropping it is what keeps Rimecleaver from staying a one-handed
+   * thrown weapon across rebuilds. A shadow that no longer matches holds DM work, and a version
+   * bump is not consent to delete it.
+   *
+   * Shadows unlocked before this existed carry no fingerprint. They are KEPT: a stale item is
+   * visible and one re-unlock away from fixed, whereas silently destroyed work is neither.
+   */
+  const keep = dm.filter(i => {
+    if (!seededIds.has(i.id)) return true;              // genuinely custom gear
+    if (!i.unlockSnapshot) return true;                 // pre-fingerprint, assume it is work
+    return i.unlockSnapshot !== fingerprintEquipmentItem(i);
+  });
   if (keep.length !== dm.length) saveEquipmentLibrary(keep, "dm");
 
   window.localStorage.setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);

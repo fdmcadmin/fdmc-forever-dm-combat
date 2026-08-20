@@ -9,6 +9,7 @@
  */
 
 import { useState } from "react";
+import { readDamageTypeChoice } from "../rules/damageTypeChoice";
 import { FormulaInput } from "./FormulaInput";
 import { SaveDcComposer } from "./SaveDcComposer";
 import type { ActorAction } from "../types/tabs";
@@ -131,6 +132,22 @@ function rowToAction(row: SpellRow): ActorAction {
       ...(row.castingClass ? { castingClass: row.castingClass } : {}),
       ...(row.saveAbility.trim() ? { saveAbility: row.saveAbility.trim() } : {}),
       ...(row.explodingDamage ? { explodingDamage: true } : {}),
+      /**
+       * THE ELEMENT PICKER, on the editor a spell is ACTUALLY built in.
+       *
+       * This was derived only in pcActionAdapters (the ACTION editor), so a spell authored
+       * here — which is every spell — reached the card with no permitted set and therefore no
+       * picker. Sorcerous Burst names seven types in its own text and offered none of them.
+       *
+       * A spell takes an ARRAY where an action takes one element: *"an action editor is a pick
+       * the attack element while a spell is a possable array of elements"*. A healing spell needs
+       * no mode flag here — "spells doesnt need it because you are casting a spell that says
+       * healing" — its text names no damage type, so the reader returns `none` unprompted.
+       */
+      ...(() => {
+        const reading = readDamageTypeChoice(detailParts || row.details);
+        return reading.kind === "choice" ? { damageTypeOptions: reading.options } : {};
+      })(),
       concentration: row.concentration ? "Yes" : undefined,
       details: detailParts || row.details,
     },
