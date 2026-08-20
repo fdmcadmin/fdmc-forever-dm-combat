@@ -24,6 +24,7 @@
 // IDS SURVIVE RENAMES, because an item attached to a character is referenced by id.
 // RETIRED_EQUIPMENT_IDS is removed from the campaign library on re-seed.
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
+import { AUTHORED_EQUIPMENT, mergeAuthored } from "./authored.generated";
 
 /** Items the loot doc no longer contains. Removed from the campaign library on re-seed. */
 export const RETIRED_EQUIPMENT_IDS: string[] = [
@@ -72,7 +73,7 @@ export const RETIRED_EQUIPMENT_IDS: string[] = [
   "bc-wendigo-ember-heart", // Wendigo Ember Heart
 ];
 
-export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
+const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   {
     "id": "bc-tools-repairs",
     "name": "Tools / Repairs",
@@ -1247,3 +1248,12 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isLocked": true
   }
 ];
+
+/**
+ * The campaign equipment library the app actually reads — bundled items with in-app authoring
+ * folded over them by id. This is the path an unpicked Gift chassis takes into the build:
+ * authored in the app, exported, folded here, shipped to every DM. The DM's only local choice
+ * stays the form they pick when handing it over, which lives on the actor's copy.
+ */
+export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] =
+  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id);

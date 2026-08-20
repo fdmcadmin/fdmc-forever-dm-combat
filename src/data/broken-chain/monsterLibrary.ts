@@ -1,5 +1,6 @@
 import type { MonsterReaderAction } from "../../core/monsters/MonsterJconScanner";
 import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
+import { AUTHORED_MONSTERS, mergeAuthored } from "./authored.generated";
 
 /**
  * `save` is the SAVING-THROW modifier when it differs from the ability modifier — i.e.
@@ -38,7 +39,7 @@ const act2S2E1Label = "Act 2 S2 E1 - Corrupted Hunters";
 const act2S2E2Label = "Act 2 S2 E2 - Last Directive";
 const fortCervanBandLabel = "The Fort — Cervan's Band";
 
-export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
+const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   // ── Act 1 · Wardenwood — Thornfang Pack ──────────────────────────────────────
   {
     templateId: "broken-chain:act1:thornfang-wolf:v1",
@@ -2346,3 +2347,13 @@ export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     visibility: { defaultState: "hp-bar", hiddenName: "Grief Colossus", revealedName: "Grief Colossus" },
   },
 ];
+
+/**
+ * The campaign creature library the app actually reads.
+ *
+ * Hand-authored content above, in-app authoring folded in from the generated file. A creature
+ * the author edited in the app replaces its bundled twin by templateId; a brand new one is
+ * appended. Nothing above this line is ever rewritten by a tool.
+ */
+export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] =
+  mergeAuthored(BUNDLED_MONSTER_LIBRARY, AUTHORED_MONSTERS, t => t.templateId);

@@ -16,6 +16,7 @@ import {
 } from "./encounterLibrary";
 import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/partyCurveV2";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
+import { exportCampaignAuthoring } from "../campaign/authorExport";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
@@ -330,6 +331,7 @@ export function EncounterLibraryPanel({
   const [confirmClear, setConfirmClear] = useState(false);
   const [activeTab, setActiveTab] = useState<"library" | "staged">("library");
   const [saveTargetDraft, setSaveTargetDraft] = useState<"campaign" | "dm">("dm");
+  const [authorExportMsg, setAuthorExportMsg] = useState<string | null>(null);
   /**
    * The party actually at the table — Lever 1, and the ONLY thing that may change about a
    * locked encounter. Set once for the panel rather than per encounter or per creature: one
@@ -847,6 +849,20 @@ export function EncounterLibraryPanel({
               ↓ Monsters
             </button>
           )}
+          {/*
+            AUTHOR EXPORT — the only route by which content built in this app reaches the
+            shipped library. Everything authored here otherwise lives in localStorage, which
+            belongs to one browser: authoring a whole act that way loses the act. Gated on the
+            module unlock because it publishes CAMPAIGN content, not a DM's own creations.
+          */}
+          {unlocked && (
+            <button type="button"
+              onClick={() => setAuthorExportMsg(exportCampaignAuthoring().message)}
+              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", color: "#7b68ee", border: "1px solid #7b68ee55", borderRadius: 3, cursor: "pointer" }}
+              title="Export everything authored on this machine — edited campaign creatures and custom equipment, including unpicked Gift chassis — for folding into the build with scripts/fold-authoring.mjs. Local picks (a chassis's chosen weapon form) are stripped: the template ships, the pick does not.">
+              ↓ Author
+            </button>
+          )}
           {/* Monster library import */}
           <label style={{ fontSize: 11, padding: "3px 8px", background: "#2a2a3e", color: "#aaa", border: "1px solid #444", borderRadius: 3, cursor: "pointer", display: "flex", alignItems: "center" }}
             title="Import custom monsters from a previously exported JSON file">
@@ -896,6 +912,15 @@ export function EncounterLibraryPanel({
         <div style={{ padding: "5px 14px", background: monsterImportResult.ok ? "#0d1a0d" : "#1a0a0a", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: monsterImportResult.ok ? "#4caf50" : "#ff9999", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>{monsterImportResult.ok ? "✓" : "✕"} {monsterImportResult.message}</span>
           <button type="button" onClick={() => setMonsterImportResult(null)} style={{ background: "transparent", border: "none", color: "#555", cursor: "pointer", fontSize: 11 }}>×</button>
+        </div>
+      )}
+
+      {/* The fold command is part of the result, because an export that is never folded has
+          changed nothing — the file in the downloads folder is not yet in the build. */}
+      {authorExportMsg && (
+        <div style={{ padding: "5px 14px", background: "#12101f", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#9d8cff", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <span style={{ flex: 1, minWidth: 0 }}>{authorExportMsg}</span>
+          <button type="button" onClick={() => setAuthorExportMsg(null)} style={{ background: "transparent", border: "none", color: "#555", cursor: "pointer", fontSize: 11 }}>×</button>
         </div>
       )}
 

@@ -1,0 +1,117 @@
+#!/usr/bin/env node
+/**
+ * fold-authoring — take an author export from the app and write it into the build.
+ *
+ *   node scripts/fold-authoring.mjs fdmc-campaign-authoring-2026-08-19.json
+ *
+ * Regenerates `src/data/broken-chain/authored.generated.ts` WHOLESALE. That file is merged
+ * over the hand-written libraries by id at module load, so this script never touches
+ * monsterLibrary.ts or equipmentLibrary.ts — a generated blob must not be able to rewrite
+ * hand-authored source, and a bad fold must never be able to corrupt it.
+ *
+ * The fold is the point where in-app authoring stops being one browser's localStorage and
+ * becomes content that ships. Run it, build, push.
+ */
+
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const SCHEMA = "fdmc.campaign-authoring.v1";
+const OUT = resolve("src/data/broken-chain/authored.generated.ts");
+
+/** Must match campaignDigest() in src/core/campaign/authorExport.ts exactly. */
+function campaignDigest(monsters, equipment) {
+  const canonical = JSON.stringify({ monsters, equipment }, (_k, v) => {
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)));
+    }
+    return v;
+  });
+  let h = 0x811c9dc5;
+  for (let i = 0; i < canonical.length; i++) {
+    h ^= canonical.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `fnv1a-${h.toString(16).padStart(8, "0")}-${canonical.length}`;
+}
+
+const file = process.argv[2];
+if (!file) {
+  console.error("usage: node scripts/fold-authoring.mjs <author-export.json>");
+  process.exit(1);
+}
+
+let payload;
+try {
+  payload = JSON.parse(readFileSync(resolve(file), "utf8"));
+} catch (e) {
+  console.error(`Could not read ${file}: ${e.message}`);
+  process.exit(1);
+}
+
+if (payload.schema !== SCHEMA) {
+  console.error(`Wrong file. Expected schema "${SCHEMA}", got "${payload.schema ?? "(none)"}".`);
+  console.error("This script takes an AUTHOR export (DM panel → Export campaign authoring),");
+  console.error("not a monster-library or equipment-library export.");
+  process.exit(1);
+}
+
+const monsters = Array.isArray(payload.monsters) ? payload.monsters : [];
+const equipment = Array.isArray(payload.equipment) ? payload.equipment : [];
+
+// The export states its own digest. A mismatch means the file was edited between export and
+// fold — refuse rather than publish something the app never produced.
+const digest = campaignDigest(monsters, equipment);
+if (payload.digest && payload.digest !== digest) {
+  console.error("Digest mismatch — this file was modified after it was exported.");
+  console.error(`  stated:   ${payload.digest}`);
+  console.error(`  computed: ${digest}`);
+  console.error("Re-export from the app rather than hand-editing the JSON.");
+  process.exit(1);
+}
+
+// Refuse entries that cannot be merged: a creature with no templateId, or an item with no id,
+// would silently vanish into the merge rather than replacing or appending anything.
+const badMonsters = monsters.filter(m => !m?.templateId);
+const badItems = equipment.filter(i => !i?.id);
+if (badMonsters.length || badItems.length) {
+  console.error(`Unmergeable entries: ${badMonsters.length} creature(s) with no templateId, ${badItems.length} item(s) with no id.`);
+  process.exit(1);
+}
+
+const header = readFileSync(OUT, "utf8").split("import type { MainMonsterTemplate }")[0];
+const body = `import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
+import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
+
+/** Creatures authored in-app. Replaces a bundled creature by templateId, or adds a new one. */
+export const AUTHORED_MONSTERS: MainMonsterTemplate[] = ${JSON.stringify(monsters, null, 2)};
+
+/** Equipment authored in-app — including unpicked Gift chassis. Replaces or adds by id. */
+export const AUTHORED_EQUIPMENT: EquipmentItem[] = ${JSON.stringify(equipment, null, 2)};
+
+/** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
+export const AUTHORED_DIGEST = ${JSON.stringify(digest)};
+
+/** When the fold script last wrote this file. */
+export const AUTHORED_AT = ${JSON.stringify(new Date().toISOString())};
+
+/**
+ * Merge authored content over a bundled list by id.
+ *
+ * Authored entries WIN for their own id — that is the point of authoring — and anything the
+ * author has not touched is left exactly as the hand-written source has it. Order is stable:
+ * bundled entries keep their position, genuinely new ones are appended.
+ */
+export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) => string): T[] {
+  if (authored.length === 0) return bundled;
+  const overrides = new Map(authored.map(a => [idOf(a), a]));
+  const merged = bundled.map(b => overrides.get(idOf(b)) ?? b);
+  const bundledIds = new Set(bundled.map(idOf));
+  return [...merged, ...authored.filter(a => !bundledIds.has(idOf(a)))];
+}
+`;
+
+writeFileSync(OUT, header + body);
+console.log(`Folded ${monsters.length} creature(s) and ${equipment.length} item(s) into authored.generated.ts`);
+console.log(`  digest ${digest}`);
+console.log("Next: npx tsc -b && npm run build, then commit and push.");
