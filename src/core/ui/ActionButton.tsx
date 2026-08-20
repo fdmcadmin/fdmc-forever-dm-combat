@@ -27,6 +27,12 @@ type ActionButtonProps = {
   /** Upcast level picker for a levelled spell. Rendered outside the action <button>,
    *  since its chips are buttons and nesting them would be invalid HTML. */
   castLevelPicker?: ReactNode;
+  /**
+   * The damage type the caster has chosen, when the spell lets them choose. Undefined means
+   * nothing picked yet — the roll still works, it is just untyped until they say.
+   */
+  chosenDamageType?: string;
+  onChooseDamageType?: (type: string | undefined) => void;
 };
 
 const summaryRowLabels = new Set(["Charges", "Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost", "Spell Level", "Concentration"]);
@@ -94,6 +100,8 @@ export function ActionButton({
   rollButtonLabel = "Roll",
   resolveFormula,
   castLevelPicker,
+  chosenDamageType,
+  onChooseDamageType,
 }: ActionButtonProps) {
   const swapMessage = formatSwapMessage(willSwapCosts, action.label);
   const rows = metadataRows(action, resolveFormula);
@@ -245,6 +253,36 @@ export function ActionButton({
       </button>
 
       {castLevelPicker}
+
+      {/* ELEMENT PICKER — the caster chooses, at the table, not in the editor.
+          Chromatic Orb and Sorcerous Burst name several damage types and let the caster pick
+          one per cast. `damageTypeOptions` is the permitted set, read off the spell’s own
+          rules text when it was saved; this is where that set finally becomes a choice.
+          Until one is picked the roll still works — it is simply untyped. */}
+      {(action.metadata?.damageTypeOptions?.length ?? 0) > 0 && !resolved && onChooseDamageType && (
+        <div className="pinned-weapon-row" style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "2px 0", alignItems: "center" }}>
+          <span style={{ fontSize: 10, color: "#667" }}>element</span>
+          {action.metadata!.damageTypeOptions!.map(type => {
+            const active = chosenDamageType === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                className="inline-commit-button"
+                title={active ? `Casting as ${type} — click to clear` : `Cast as ${type}`}
+                onClick={() => onChooseDamageType(active ? undefined : type)}
+                style={{
+                  background: active ? "#2a3550" : undefined,
+                  borderColor: active ? "#7b68ee" : undefined,
+                  color: active ? "#dfe4ff" : undefined,
+                }}
+              >
+                {type}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="action-card-footer-row">
         {/* Visible unready button — shown for any readied economy-costed action, not just right-click */}

@@ -27,6 +27,16 @@ export type ReadiedRollCandidate = {
   damageFormula?: string;
   critDamageFormula?: string;
   critThreshold?: number;
+  /** The element the caster picked for THIS cast, when the spell offers a choice. */
+  damageType?: string;
+  /**
+   * EXPLODING DAMAGE DICE — on a maximum damage die, roll another and add it.
+   *
+   * Sorcerous Burst is the shape: "if you roll the highest number on a damage die, you can roll
+   * another". Dice+ rolls exploding natively; this flag is what tells the panel to ask for it
+   * and what the log needs to explain the extra die.
+   */
+  explodingDamage?: boolean;
 };
 
 type CommittedRollPanelProps = {

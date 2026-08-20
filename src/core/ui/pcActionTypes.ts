@@ -35,6 +35,8 @@ export type PcActionDraft = {
    * Usually just "@SPELL"; add a +N if the trait grants one.
    */
   spellFocusAttack?: string;
+  /** On a MAXIMUM damage die, roll another and add it — Sorcerous Burst. */
+  explodingDamage?: boolean;
   critDamage?: string;
   healing?: string;
   range?: string;
@@ -129,6 +131,7 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     // however correctly it is wired everywhere else.
     ...(draft.castingClass ? { castingClass: draft.castingClass } : {}),
     ...(draft.spellFocusAttack?.trim() ? { spellFocusAttack: draft.spellFocusAttack.trim() } : {}),
+    ...(draft.explodingDamage ? { explodingDamage: true } : {}),
     ...(draft.critDamage?.trim() ? { critDamage: draft.critDamage.trim() } : {}),
     ...(draft.healing?.trim() ? { healing: draft.healing.trim() } : {}),
     ...(draft.range?.trim() ? { range: draft.range.trim() } : {}),

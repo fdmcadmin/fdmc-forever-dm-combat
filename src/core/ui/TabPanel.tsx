@@ -267,7 +267,7 @@ function rollButtonLabelForMode(mode: CommittedRollOutcomeMode, action?: ActorAc
   return "Roll";
 }
 
-function createCandidate(action: ActorAction, activeTab: TabId, costs: ActionCost[], readiedKey: string): ReadiedRollCandidate {
+function createCandidate(action: ActorAction, activeTab: TabId, costs: ActionCost[], readiedKey: string, chosenDamageType?: string): ReadiedRollCandidate {
   const outcomeMode = inferOutcomeMode(action);
 
   return {
@@ -280,6 +280,9 @@ function createCandidate(action: ActorAction, activeTab: TabId, costs: ActionCos
     damageFormula: action.metadata?.damage,
     critDamageFormula: action.metadata?.crit,
     critThreshold: action.metadata?.critThreshold,
+    // The caster's pick wins; the authored type is the default when the spell has no choice.
+    damageType: chosenDamageType ?? action.metadata?.damageType,
+    explodingDamage: action.metadata?.explodingDamage,
   };
 }
 
@@ -366,6 +369,14 @@ export function TabPanel({
   const groupedActions = useMemo(() => groupActions(actions), [actions]);
   const collapsibleCategories = isCollapsibleCategoryTab(activeTab);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  /**
+   * The element a caster picked for THIS cast, keyed by readied key.
+   *
+   * Held here rather than on the action, because it is a choice about one casting — Chromatic
+   * Orb is fire this time and cold the next, and writing it back onto the spell would make the
+   * last choice look like the authored default.
+   */
+  const [chosenDamageTypes, setChosenDamageTypes] = useState<Record<string, string | undefined>>({});
   const [selectedRollKey, setSelectedRollKey] = useState<string | null>(null);
 
   // Which actions are present, not which object identities. Depending on `actions` itself
@@ -467,7 +478,7 @@ export function TabPanel({
                         // Check actions with no cost but with dice — prime directly on click
                         // (compact check list: single click → roll fires)
                         if (slots.length === 0 && isCheckAction(action) && hasAttachedDice(action) && onPrimeRoll) {
-                          const candidate = createCandidate(action, activeTab, costs, readiedKey);
+                          const candidate = createCandidate(action, activeTab, costs, readiedKey, chosenDamageTypes[readiedKey]);
                           onPrimeRoll(candidate);
                           return;
                         }
@@ -488,10 +499,12 @@ export function TabPanel({
 
                         onUnreadyAction({ action, tabId: activeTab, costs });
                       }}
-                      onCommitRoll={readied ? () => onCommitRoll(createCandidate(action, activeTab, costs, readiedKey)) : undefined}
+                      onCommitRoll={readied ? () => onCommitRoll(createCandidate(action, activeTab, costs, readiedKey, chosenDamageTypes[readiedKey])) : undefined}
                       onResetCommittedRoll={commitBlocked ? onResetCommittedRoll : undefined}
                       rollButtonLabel={rollButtonLabelForMode(outcomeMode, action)}
                       castLevelPicker={renderCastLevelPicker?.(action)}
+                      chosenDamageType={chosenDamageTypes[readiedKey]}
+                      onChooseDamageType={(type) => setChosenDamageTypes(prev => ({ ...prev, [readiedKey]: type }))}
                     />
                   );
                 })}

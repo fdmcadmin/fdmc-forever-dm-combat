@@ -123,6 +123,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     damageType: action.metadata?.damageType,
     castingClass: action.metadata?.castingClass,
     spellFocusAttack: action.metadata?.spellFocusAttack,
+    explodingDamage: action.metadata?.explodingDamage,
     critDamage: action.metadata?.crit,
     range: action.metadata?.range,
     slotCost: action.metadata?.slotCost,
@@ -366,6 +367,16 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
               </span>
             </label>
           )}
+
+          {/* EXPLODING DAMAGE DICE. Same detector shape as the crit rider that grants Great
+              Weapon Master its extra attack — watch the result, and when it hits the trigger,
+              add one more. The difference is WHICH die is watched: GWM reads the d20, this
+              reads the damage die. Dice+ rolls exploding natively. */}
+          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <input type="checkbox" checked={Boolean(draft.explodingDamage)}
+              onChange={e => set("explodingDamage", e.target.checked || undefined)} />
+            Exploding damage dice <span style={{ color: "#667" }}>— on a max damage die, roll another and add it</span>
+          </label>
 
           {/* WHAT THE SPELL'S OWN TEXT SAYS ABOUT ITS TYPE. Read, never silently applied —
               a wrong guess has to be visible, which is why this is a note beside the picker

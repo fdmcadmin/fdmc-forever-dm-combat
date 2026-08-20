@@ -205,6 +205,14 @@ export type ActorActionMetadata = {
    * the shapes that need it, and they could not be expressed at all while type was one string.
    */
   damageTypeOptions?: string[];
+  /**
+   * On a MAXIMUM damage die, roll another and add it — Sorcerous Burst.
+   *
+   * Same detector shape as the crit rider that grants Great Weapon Master its extra attack:
+   * watch the result, and when it hits the trigger, add one more. The difference is which die
+   * is watched — GWM reads the d20, this reads the DAMAGE die.
+   */
+  explodingDamage?: boolean;
   crit?: string;
   saveDc?: string;
   /**

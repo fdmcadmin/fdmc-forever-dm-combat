@@ -139,6 +139,7 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
         return r.kind === "choice" ? r.options : undefined;
       })(),
       castingClass: normalized.castingClass,
+      explodingDamage: normalized.explodingDamage,
       // Tagging a FEATURE with this makes it an innate focus — see getEquippedSpellFocuses.
       spellFocusAttack: normalized.spellFocusAttack,
       isSpellFocus: normalized.spellFocusAttack ? true : undefined,
