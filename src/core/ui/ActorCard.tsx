@@ -2908,17 +2908,29 @@ export function ActorCard({
     });
   }
 
-  // Arm on mount and whenever the equipped focuses change. Idempotent per focus, and it
-  // never re-arms one the player deliberately switched off.
+  /**
+   * Arm on mount and whenever the equipped focuses change. Idempotent per focus, and it never
+   * re-arms one the player deliberately switched off.
+   *
+   * ⚠ AN ALREADY-ARMED FOCUS IS REFRESHED, NOT LEFT ALONE. Armed effects persist in the session
+   * snapshot, so an effect armed under older data keeps the formula it was armed with — and that
+   * formula is what the ROLL uses, not the item. A focus armed before the item gained @SPELL or a
+   * damage bonus would keep quietly rolling the old, smaller number for as long as it stayed
+   * armed. Re-deriving from the item on every pass means the item is always the source of truth.
+   */
   useEffect(() => {
     if (!actorCasts) return;
     for (const focus of getEquippedSpellFocuses()) {
       if (disarmedFocusIds.current.has(focus.id)) continue;
-      if (isSpellFocusArmed(focus.id)) continue;
+      const armed = armedEffects.find(e => e.id === `focus:${focus.id}`);
+      if (armed
+        && (armed.attackFormula ?? "") === (focus.attack ?? "")
+        && (armed.formula ?? "") === (focus.damage ?? "")
+        && (armed.saveDcBonus ?? undefined) === focus.saveDc) continue;
       armSpellFocus(focus);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actorCasts, JSON.stringify(actor.tabs.equipment ?? []), armedEffects.length]);
+  }, [actorCasts, JSON.stringify(actor.tabs.equipment ?? []), JSON.stringify(armedEffects)]);
 
   function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
     const effectId = `focus:${focus.id}`;
