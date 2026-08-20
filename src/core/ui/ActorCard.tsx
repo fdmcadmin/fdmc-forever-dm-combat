@@ -37,7 +37,7 @@ import {
   MASTERY_PROPERTIES, MASTERY_BLURB, masteryCount, normalizeMasteryChoices,
   type MasteryProperty,
 } from "../rules/weaponMastery";
-import { characterLevel, classLevels } from "../rules/multiclass";
+import { characterLevel, classLevels, castingAbilityForClass } from "../rules/multiclass";
 import { coinsToCopper, type Coins } from "../currency/currency";
 import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
@@ -2869,19 +2869,31 @@ export function ActorCard({
     return parts.length ? parts.join(" · ") : effect.label;
   }
 
-  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
-    const effectId = `focus:${focus.id}`;
-    if (isSpellFocusArmed(focus.id)) {
-      clearArmedEffect(effectId);
-      return;
-    }
+  /**
+   * AN EQUIPPED FOCUS ARMS ITSELF FOR ANYONE WHO CASTS.
+   *
+   * Spells carry no attack bonus of their own — the focus supplies @SPELL and any +N. That
+   * made the toggle load-bearing in a way it never used to be: an un-armed focus meant the
+   * spell rolled a bare d20, which is exactly what happened at the table. Nobody wants to
+   * remember to tick their wand before every cast.
+   *
+   * It stays a TOGGLE. Turning one off is still one click and still sticks, because
+   * `disarmedFocusIds` records the deliberate off rather than the auto-arm re-arming over it.
+   */
+  const disarmedFocusIds = useRef<Set<string>>(new Set());
+  const actorCasts =
+    (actor.tabs.spells?.length ?? 0) > 0
+    || Boolean(classLevels(actor)[0]?.castingAbility)
+    || Boolean(castingAbilityForClass(actor.className ?? ""));
+
+  function armSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
     const parts = [
       focus.attack ? `atk ${formatBonusForChip(focus.attack)}` : "",
       focus.damage ? `dmg ${formatBonusForChip(focus.damage)}` : "",
       focus.saveDc ? `DC ${focus.saveDc > 0 ? "+" : ""}${focus.saveDc}` : "",
     ].filter(Boolean);
     upsertArmedEffect({
-      id: effectId,
+      id: `focus:${focus.id}`,
       label: parts.join(" · ") || focus.label,
       details: `${focus.label} — spellcasting focus. Adds to spell attack, damage and save DC while armed.`,
       source: focus.label,
@@ -2889,6 +2901,29 @@ export function ActorCard({
       attackFormula: focus.attack,
       saveDcBonus: focus.saveDc,
     });
+  }
+
+  // Arm on mount and whenever the equipped focuses change. Idempotent per focus, and it
+  // never re-arms one the player deliberately switched off.
+  useEffect(() => {
+    if (!actorCasts) return;
+    for (const focus of getEquippedSpellFocuses()) {
+      if (disarmedFocusIds.current.has(focus.id)) continue;
+      if (isSpellFocusArmed(focus.id)) continue;
+      armSpellFocus(focus);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actorCasts, JSON.stringify(actor.tabs.equipment ?? []), armedEffects.length]);
+
+  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
+    const effectId = `focus:${focus.id}`;
+    if (isSpellFocusArmed(focus.id)) {
+      disarmedFocusIds.current.add(focus.id);
+      clearArmedEffect(effectId);
+      return;
+    }
+    disarmedFocusIds.current.delete(focus.id);
+    armSpellFocus(focus);
   }
 
   /**

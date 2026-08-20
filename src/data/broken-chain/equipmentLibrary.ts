@@ -351,6 +351,8 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "name": "Staring-Knot Wand",
     "effect": { "type": "reroll", "rerollMethod": "reroll", "condition": "a creature succeeded on a save against your spell — it rerolls" },
     "isSpellFocus": true,
+    "spellFocusAttack": "+1",
+    "spellFocusSaveDc": "+1",
     "type": "magic",
     "description": "A short length of pale wood, the grain spiralling to a knot at the tip. Sight along it and the tip never sits quite where your hand says it should. The knot has a centre, and the centre has a way of being aimed back at you.",
     "mechanicsText": "Can be used as a spellcasting focus. The wand has 1 charge. When a creature succeeds on a saving throw against a spell you cast, you can expend the charge to force that creature to reroll the save; it must use the new result. The wand regains its charge when you finish a long rest.",

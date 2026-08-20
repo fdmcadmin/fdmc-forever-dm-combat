@@ -57,6 +57,8 @@ type SpellRow = {
   castingClass: "" | "main" | "second" | "third";
   /** Which save the TARGET rolls. Separate from how the DC number is derived. */
   saveAbility: string;
+  /** On a MAXIMUM damage die, roll another and add it — Sorcerous Burst. */
+  explodingDamage: boolean;
   include: boolean;
 };
 
@@ -128,6 +130,7 @@ function rowToAction(row: SpellRow): ActorAction {
       ...(row.weaponBuffDamage.trim() ? { weaponBuffDamage: row.weaponBuffDamage.trim() } : {}),
       ...(row.castingClass ? { castingClass: row.castingClass } : {}),
       ...(row.saveAbility.trim() ? { saveAbility: row.saveAbility.trim() } : {}),
+      ...(row.explodingDamage ? { explodingDamage: true } : {}),
       concentration: row.concentration ? "Yes" : undefined,
       details: detailParts || row.details,
     },
@@ -175,6 +178,7 @@ function actionToRow(action: ActorAction): SpellRow {
     weaponBuffDamage: action.metadata?.weaponBuffDamage ?? "",
     castingClass: action.metadata?.castingClass ?? "",
     saveAbility: action.metadata?.saveAbility ?? "",
+    explodingDamage: Boolean(action.metadata?.explodingDamage),
     upcastDamage: action.metadata?.upcastDamage ?? "",
     attackRolls: action.metadata?.attackRolls ? String(action.metadata.attackRolls) : "",
     attackRollsPerLevel: action.metadata?.attackRollsPerLevel ? String(action.metadata.attackRollsPerLevel) : "",
@@ -208,6 +212,7 @@ function makeBlankRow(): SpellRow {
     weaponBuffDamage: "",
     castingClass: "",
     saveAbility: "",
+    explodingDamage: false,
     include: false,
   };
 }
@@ -519,6 +524,15 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                   saveAbility={row.saveAbility}
                   onSaveAbility={v => setRow(idx, { saveAbility: v })}
                 />
+                {/* Sorcerous Burst is the shape this exists for, and it is a SPELL — so the
+                    control has to be here, not only on the action editor. Same detector as the
+                    crit rider that grants GWM its extra attack; the difference is which die is
+                    watched. */}
+                <label style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6, gridColumn: "span 2" }}>
+                  <input type="checkbox" checked={row.explodingDamage}
+                    onChange={e => setRow(idx, { explodingDamage: e.target.checked })} />
+                  Exploding damage dice <span style={{ color: "#667" }}>— on a max damage die, roll another and add it</span>
+                </label>
                 <FormulaInput
                   label="Damage"
                   value={row.damage}
