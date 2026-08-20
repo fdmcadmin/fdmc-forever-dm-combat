@@ -246,6 +246,41 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             <span style={labelStyle}>Save</span>
             <input value={a.save ?? ""} onChange={e => updateListItem(list, realIdx, { save: e.target.value })} placeholder="DEX DC 13" style={inputStyle} />
           </div>
+          {/* ⚠ THE TWO FIELDS THE CHECKER OTHERWISE HAS TO GUESS.
+              Christopher: *"there is no reason the PC looks so good and the creatures are all
+              still text."* The PC side authors targets and success damage as DATA; the monster
+              side left both in prose, so the checker parsed the sentence and reported an
+              ESTIMATE. These make the same facts printed.
+
+              Both blank is a legitimate state and stays supported: the checker falls back to
+              reading the action text, prices an area against the party, and says it estimated. */}
+          <div style={{ width: 62 }}>
+            <span style={labelStyle}>Targets</span>
+            <input type="number" min={1} value={a.targets ?? ""} placeholder="auto"
+              onChange={e => updateListItem(list, realIdx, { targets: e.target.value ? Math.max(1, Number(e.target.value)) : undefined })}
+              style={inputStyle}
+              title="How many creatures this hits. Blank = single target, or an area priced against the party. Setting it turns the checker's estimate into a printed fact." />
+          </div>
+          {(a.save ?? "").trim() !== "" && (
+            <div style={{ width: 92 }}>
+              <span style={labelStyle}>On a save</span>
+              <select value={a.onSave ?? ""} onChange={e => updateListItem(list, realIdx, { onSave: (e.target.value || undefined) as MonsterReaderAction["onSave"] })}
+                style={inputStyle}
+                title="What a SUCCESSFUL save still takes. Half is never assumed — plenty of saves are all-or-nothing.">
+                <option value="">— read text —</option>
+                <option value="half">Half damage</option>
+                <option value="none">No damage</option>
+                <option value="custom">Printed amount</option>
+              </select>
+            </div>
+          )}
+          {a.onSave === "custom" && (
+            <div style={{ width: 70 }}>
+              <span style={labelStyle}>On success</span>
+              <input value={a.successDamage ?? ""} onChange={e => updateListItem(list, realIdx, { successDamage: e.target.value || undefined })}
+                placeholder="2d6" style={inputStyle} />
+            </div>
+          )}
           {!opts.legendary && !opts.reaction && !opts.spell && list === "actions" && (
             <div style={{ width: 70 }}>
               <span style={labelStyle}>Recharge</span>

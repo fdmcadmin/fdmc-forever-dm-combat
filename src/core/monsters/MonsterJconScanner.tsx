@@ -56,6 +56,30 @@ export type MonsterReaderAction = {
    * a condition stated in prose is not a condition the app can read.
    */
   gated?: boolean;
+  /**
+   * HOW MANY CREATURES THIS HITS — a printed count, not a shape.
+   *
+   * ⚠ THIS IS THE FIELD THAT TURNS AN ESTIMATE INTO A FACT. Without it the checker sees only
+   * "30-ft. cone" and has to price the area against the party (half of it, stated as ESTIMATED).
+   * Set it and the estimate disappears, because the block now says how many it catches.
+   *
+   * Leave blank for a single-target action and for any area whose reach genuinely depends on
+   * where the party stands — a blank is honest, and the checker prices it against the party.
+   */
+  targets?: number;
+  /**
+   * What a SUCCESSFUL save still takes. v7 `parser.success_patterns`: half / none / a printed
+   * alternate.
+   *
+   * ⚠ Half is NEVER assumed. Plenty of saves are all-or-nothing, and defaulting to half would
+   * quietly halve every one of them. This is the field that says which — the checker reads the
+   * action text as a fallback, but text is prose and this is data.
+   */
+  onSave?: "half" | "none" | "custom";
+  /** For `onSave: "custom"` — the printed alternate damage, e.g. "2d6". */
+  successDamage?: string;
+  /** Limited uses, e.g. 1 for "1/Day". Recharge is separate: that is availability, this is a pool. */
+  uses?: number;
 };
 
 export type MonsterActionCounter = {

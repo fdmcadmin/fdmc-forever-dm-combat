@@ -129,6 +129,23 @@ export function parseSuccessDamage(text: string | undefined, failDamage: string 
   return avg === undefined ? undefined : String(avg / 2);
 }
 
+/**
+ * Success damage for one authored action, data first.
+ *
+ * `onSave` is the monster editor's own field and outranks the prose; the text is only read when
+ * the block was written before that field existed. "custom" without an amount falls back to the
+ * text rather than silently pricing zero.
+ */
+function successDamageFor(a: { onSave?: string; successDamage?: string; damage?: string; text?: string }): string | undefined {
+  if (a.onSave === "none") return "0";
+  if (a.onSave === "half") {
+    const avg = damageAverageOf(a.damage);
+    return avg === undefined ? undefined : String(avg / 2);
+  }
+  if (a.onSave === "custom" && a.successDamage?.trim()) return a.successDamage.trim();
+  return parseSuccessDamage(a.text, a.damage);
+}
+
 /** Average of a printed damage expression, so "half" can be resolved to a number. */
 function damageAverageOf(expr: string | undefined): number | undefined {
   if (!expr) return undefined;
@@ -206,6 +223,8 @@ type RawAction = {
   name?: string; kind?: string; roll?: string; damage?: string; save?: string;
   text?: string; recharge?: string; attackCount?: number; spellSlotLevel?: number;
   legendaryCost?: number; economyCost?: string; gated?: boolean;
+  /** Authored in the monster editor — these outrank anything parsed from the action text. */
+  targets?: number; onSave?: string; successDamage?: string; uses?: number;
 };
 
 function parseSection(
@@ -230,11 +249,15 @@ function parseSection(
       damage: a.damage,
       attackBonus: parseAttackBonus(a.roll),
       saveDc: parseSaveDc(a.save ?? a.text),
-      targets: parseTargets(a.text),
-      // An area with no printed count is priced against the party, not counted as one.
-      isArea: parseTargets(a.text) === undefined && isAreaEffect(a.text),
+      /**
+       * ⚠ AUTHORED DATA BEATS PARSED PROSE. `a.targets` and `a.onSave` are fields the monster
+       * editor now writes; the text is the fallback for a block that predates them. A printed
+       * count also clears the area estimate outright — there is nothing left to estimate.
+       */
+      targets: a.targets ?? parseTargets(a.text),
+      isArea: (a.targets ?? parseTargets(a.text)) === undefined && isAreaEffect(a.text),
       // v7 success_patterns: half / none / printed alternate. Read, never assumed.
-      successDamage: parseSuccessDamage(a.text, a.damage),
+      successDamage: successDamageFor(a),
       recharge: parseRecharge(a.recharge, name),
       uses: parseUses(name, a.text),
       replacesRoutineSlot: replacesRoutineSlot(name),
