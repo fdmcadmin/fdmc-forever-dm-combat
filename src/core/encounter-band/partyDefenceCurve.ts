@@ -15,11 +15,19 @@
  * level 7 those differ by 0.8 — INT is the party's weakest and DEX its strongest. Every INT-save
  * burst in the campaign was under-priced and every DEX-save burst over-priced.
  *
- * ⚠ STATUS IS PROVISIONAL, and the bundle says so on its face:
- * `PROVISIONAL_UNTIL_RUN_MODELS_SOURCE_ROWS_AVAILABLE`. v7 carries aggregated DPR/sustain curves
- * but NOT the individual 128-party AC/save rows, so these are a standard-progression proxy plus a
- * conservative Broken Chain unconditional-AC overlay. When Run Models A45:BD2092 is supplied,
- * replace the rows below and nothing downstream changes.
+ * ⚠ THIS TABLE IS THE AUTHORITY. RULE ONE — a document Christopher hands over is the truth.
+ * `encounter_checker_pricing_ac_save_reference_v7_reach_provisional.json` was supplied *as* the
+ * pricing + AC/save reference, and reconciled 0.7.10.41: reference == runtime == these rows across
+ * all 280 cells (20 levels × 2 modes × 7 values), with the Broken Chain overlay arithmetically
+ * consistent at every level (`bc_ac − std_ac == unconditional_ac_overlay`).
+ *
+ * ⚠ DO NOT GO LOOKING FOR THE 128-PARTY RUN MODELS WORKBOOK. The bundle's own note names it as a
+ * future refinement source, and I twice treated that as a reason to withhold — reporting the curve
+ * as not-yet-real and asking for workbook 1. That is backwards: a reference handed over for this
+ * purpose is not downgraded by naming what could sharpen it later. Christopher, 2026-08-20:
+ * *"why would i hand you a file and then say o by the way this is just a reference let me go back
+ * to the workbook 1 and find the original 128 parties."* The bundled run population is sufficient
+ * for the published averages. If a revised table arrives, swap the rows — nothing downstream moves.
  *
  * ⚠ CONDITIONAL DEFENCE IS NOT IN HERE. Shield, cover, rerolls, resistance, condition-specific
  * advantage and Convergence defences are priced PER EVENT. Only UNCONDITIONAL AC belongs in an

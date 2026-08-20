@@ -55,16 +55,16 @@ export function damageExpressionAverage(expr: string | undefined): number {
 /**
  * What a creature's attacks are resolving AGAINST — the party's own numbers.
  *
- * ⚠ THIS IS A DM INPUT, NOT A CURVE. The workbook publishes the arithmetic —
- *     hit    = clamp((21 + attack_bonus − target_ac) / 20, 0.05, 0.95)
- *     save   = p_fail × fail_damage + (1 − p_fail) × success_damage
- * — and it publishes NO party AC or save-bonus table. There is no such column anywhere in the
- * bundle: not in the contract, not in the party curve, not in the campaign profiles.
+ * ⚠ THIS IS READ FROM THE CURVE, NOT ASKED FOR. An earlier version of this comment said the
+ * workbook published the hit/save arithmetic but *"NO party AC or save-bonus table… not in the
+ * contract, not in the party curve, not in the campaign profiles"*, and concluded the app must
+ * never supply one.
  *
- * So the app does not get to supply one. A per-level table here would be exactly the kind of
- * invented design that got the previous model deleted — plausible, unmeasured, and silently
- * moving every damage number in the checker. The DM enters their table's real armour class;
- * the checker states what it used.
+ * That was true of the v6 bundle and is FALSE of v7, which ships `party_defense_curve` — average
+ * AC and all six save averages, by level and by mode. See `partyDefenceCurve.ts`, which is the
+ * authority. The values here are the fallback for callers with no party profile, and the DM's
+ * typed AC/save remains available as an explicit OVERRIDE, because a real table is not the
+ * average table.
  */
 export type PartyDefence = {
   ac: number;
