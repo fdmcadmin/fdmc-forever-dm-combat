@@ -83,6 +83,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
     ? { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha }
     : { str: saveOverride, dex: saveOverride, con: saveOverride, int: saveOverride, wis: saveOverride, cha: saveOverride };
   const targetSave = saveOverride ?? (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
+  /** Whether the checker is using the curve or the DM's typed numbers — surfaced in the panel. */
+  const isOverridden = acOverride !== null || saveOverride !== null;
+  const curveModeLabel = equipmentMode === "brokenChain" ? "Broken Chain" : "WotC standard";
   /** Share of the party's sustain already spent when this fight starts. 0 = fresh. */
   const [arrivingSpent, setArrivingSpent] = useState<number>(0);
 
@@ -236,13 +239,32 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     ))}
                   </div>
                 </div>
-                <div title="Your table's own numbers. The workbook publishes the hit and save formulas but no party AC table, so this is yours to enter — it is never assumed from your level.">
-                  <label style={label}>Party AC / save</label>
+                {/* ⚠ THIS TOOLTIP USED TO SAY THE OPPOSITE OF WHAT THE PANEL DOES. It read "the
+                    workbook publishes the hit and save formulas but no party AC table, so this is
+                    yours to enter" — true of v6, false since v7 shipped `party_defense_curve`, and
+                    the panel has been reading that curve since 0.7.10.38. A stale code comment is
+                    a trap for the next session; a stale TOOLTIP is a lie told to the DM at the
+                    table, so it is the more urgent of the two. */}
+                <div title={
+                  isOverridden
+                    ? "OVERRIDDEN — the checker is using your typed numbers, not the party curve. Clear both to go back to the curve."
+                    : `Read from the party defence curve at level ${partyLevel} (${curveModeLabel}): average AC and the matching ability save. Type over either one for your own table — a real table is not the average table.`
+                }>
+                  <label style={label}>
+                    Party AC / save{" "}
+                    {isOverridden
+                      ? <button type="button" onClick={() => { setAcOverride(null); setSaveOverride(null); }}
+                          title="Go back to the curve value for this level"
+                          style={{ fontSize: 9, padding: "0 4px", background: "#e07b3922", border: "1px solid #e07b3955", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>
+                          overridden · reset
+                        </button>
+                      : <span style={{ fontSize: 9, color: "#5a5a6e" }}>from curve</span>}
+                  </label>
                   <div style={{ display: "flex", gap: 4 }}>
                     <input type="number" value={targetAc} onChange={e => setAcOverride(e.target.value === "" ? null : Number(e.target.value))}
-                      style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
+                      style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: `1px solid ${acOverride === null ? "#2a2a3e" : "#e07b3988"}`, background: "#0d0d14", color: "#ddd" }} />
                     <input type="number" value={Number(targetSave.toFixed(2))} onChange={e => setSaveOverride(e.target.value === "" ? null : Number(e.target.value))}
-                      style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }} />
+                      style={{ width: 48, fontSize: 11, padding: "3px 6px", borderRadius: 4, border: `1px solid ${saveOverride === null ? "#2a2a3e" : "#e07b3988"}`, background: "#0d0d14", color: "#ddd" }} />
                   </div>
                 </div>
               </div>
