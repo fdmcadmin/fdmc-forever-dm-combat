@@ -35,6 +35,18 @@ export type MonsterReaderAction = {
    *  creature's `stats.legendaryPerRound` pool (Monster Gate A6). */
   legendaryCost?: number;
   /**
+   * THIS SPELL IS A CANDIDATE FOR A SLOT, NOT AUTOMATICALLY LIVE.
+   *
+   * A caster like Hale is authored the way a character is: every spell he COULD have is written
+   * on the template, and which ones he actually walks in with is decided per fight. Marking a
+   * spell as a candidate takes it out of the creature's live action list and puts it in the pool
+   * that `spellSlotLevel` slots are filled from.
+   *
+   * Unmarked spells are unaffected — a creature whose spells are all fixed needs no pool, and
+   * every existing creature keeps behaving exactly as authored.
+   */
+  slotCandidate?: boolean;
+  /**
    * The action cannot be used under this encounter's default conditions, so the damage model
    * must not count it (Christopher, 2026-08-14: *"a recharge is always available action unless
    * the creature can't use it — the pale stalker is a example"*).

@@ -12,6 +12,7 @@
  *   4 Actions    — attacks-per-turn budget, attacks, saves, recharge (first-class)
  *   5 Reactions  — true reactions (trigger + effect + optional save)
  *   6 Legendary  — N per round + per-option cost (stored in actions[] via legendaryCost)
+ *   7 Spellcasting — slot pools per level, plus which spells are POOL candidates for them
  *   7 Traits & Resources — passives, trackers, notes
  *
  * Everything generated is a STARTING POINT — reference scaffolding, not a rules engine.
@@ -60,7 +61,8 @@ const STEPS = [
   { id: "actions", label: "4 · Actions", accent: "#ff6b5e" },
   { id: "reactions", label: "5 · Reactions", accent: "#9be9a8" },
   { id: "legendary", label: "6 · Legendary", accent: "#f0c040" },
-  { id: "extras", label: "7 · Traits & Resources", accent: "#e07bff" },
+  { id: "spells", label: "7 · Spellcasting", accent: "#9d8cff" },
+  { id: "extras", label: "8 · Traits & Resources", accent: "#e07bff" },
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
@@ -153,8 +155,14 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
 
   // ── Actions plumbing — legendary actions live in actions[] tagged legendaryCost ──
 
-  const standardActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost), [draft.actions]);
+  /**
+   * One `actions[]` array, three views. A row must appear in exactly ONE step or the same
+   * action is editable from two places and the DM cannot tell which they are looking at —
+   * so a slot-costed spell leaves the Actions list the moment it becomes one.
+   */
+  const standardActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && typeof a.spellSlotLevel !== "number"), [draft.actions]);
   const legendaryActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !!a.legendaryCost), [draft.actions]);
+  const slotSpells = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && typeof a.spellSlotLevel === "number"), [draft.actions]);
 
   function updateListItem(list: "actions" | "traits" | "reactions", idx: number, patch: Partial<MonsterReaderAction>) {
     setDraft(d => {
@@ -205,7 +213,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
 
   // ── Row renderers ──
 
-  function actionRow(list: "actions" | "traits" | "reactions", a: MonsterReaderAction, realIdx: number, opts: { legendary?: boolean; reaction?: boolean } = {}) {
+  function actionRow(list: "actions" | "traits" | "reactions", a: MonsterReaderAction, realIdx: number, opts: { legendary?: boolean; reaction?: boolean; spell?: boolean } = {}) {
     return (
       <div key={realIdx} style={rowStyle}>
         <div style={{ display: "flex", gap: 4 }}>
@@ -238,11 +246,45 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             <span style={labelStyle}>Save</span>
             <input value={a.save ?? ""} onChange={e => updateListItem(list, realIdx, { save: e.target.value })} placeholder="DEX DC 13" style={inputStyle} />
           </div>
-          {!opts.legendary && !opts.reaction && list === "actions" && (
+          {!opts.legendary && !opts.reaction && !opts.spell && list === "actions" && (
             <div style={{ width: 70 }}>
               <span style={labelStyle}>Recharge</span>
               <input value={a.recharge ?? ""} onChange={e => updateListItem(list, realIdx, { recharge: e.target.value })} placeholder="5-6" style={inputStyle} title="Recharge range, e.g. '6' or '5-6'" />
             </div>
+          )}
+          {/*
+            SPELLCASTING — RULE ZERO. Both of these existed in the type and in NO editor, so a
+            creature that spends spell slots could only be built by hand-editing code. A DM
+            authoring their own caster could not express "this costs a level 2 slot" at all.
+
+            Slot = which pool the action spends. Pool = the spell is a CANDIDATE for that slot
+            rather than always live, so an authored caster can carry more spells than it brings
+            to any one fight and the DM chooses at generation.
+          */}
+          {opts.spell && (
+            <>
+              <div style={{ width: 62 }}>
+                <span style={labelStyle}>Slot</span>
+                <select value={a.spellSlotLevel ?? ""} style={inputStyle}
+                  title="Spell-slot level this action spends. Blank = costs no slot."
+                  onChange={e => updateListItem(list, realIdx, {
+                    spellSlotLevel: e.target.value ? Number(e.target.value) : undefined,
+                    // A spell that costs no slot cannot be a candidate FOR one.
+                    ...(e.target.value ? {} : { slotCandidate: undefined }),
+                  })}>
+                  <option value="">—</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(l => <option key={l} value={l}>L{l}</option>)}
+                </select>
+              </div>
+              {typeof a.spellSlotLevel === "number" && (
+                <label style={{ width: 54, alignSelf: "flex-end", display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "#9d8cff", cursor: "pointer", paddingBottom: 4 }}
+                  title="Pool candidate — the creature MAY bring this spell. The DM picks which candidates fill its slots when the creature is generated, and a picked spell leaves the pool for the other slots at that level. Unticked = always available.">
+                  <input type="checkbox" checked={Boolean(a.slotCandidate)}
+                    onChange={e => updateListItem(list, realIdx, { slotCandidate: e.target.checked || undefined })} />
+                  Pool
+                </label>
+              )}
+            </>
           )}
           <button type="button" onClick={() => removeListItem(list, realIdx)}
             style={{ alignSelf: "flex-end", fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
@@ -512,6 +554,90 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
     );
   }
 
+  /**
+   * SPELL SLOTS — the pools an action's "Slot" dropdown spends from.
+   *
+   * RULE ZERO: nothing that lives in the creators can be code gated. `stats.spellSlots` was
+   * read at runtime and authorable NOWHERE, so a DM building their own caster had no way to
+   * give it slots — the field could only be set by editing the campaign source. Hale and the
+   * UR need it, and so does anybody building a caster of their own.
+   */
+  function renderSpellcasting() {
+    const slots = draft.stats.spellSlots ?? [];
+    const setSlots = (next: { level: number; max: number }[]) =>
+      updateStat("spellSlots", next.length ? next.sort((a, b) => a.level - b.level) : undefined);
+    const poolCount = (level: number) =>
+      draft.actions.filter(a => a.slotCandidate && a.spellSlotLevel === level).length;
+    return (
+      <>
+        <p style={hintStyle}>A caster's slot pools, and the spells that spend them. Tick <strong>Pool</strong> on a spell to make it a CANDIDATE rather than always-available: the DM then picks which candidates fill each slot when the creature is generated, and a picked spell leaves the pool for the other slots at that level.</p>
+        <div style={{ marginBottom: 12, padding: "8px 10px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#9d8cff" }}>Spell slots</span>
+          <SmallBtn color="#7b68ee" onClick={() => {
+            const used = new Set(slots.map(s => s.level));
+            const next = [1, 2, 3, 4, 5, 6, 7, 8, 9].find(l => !used.has(l));
+            if (next) setSlots([...slots, { level: next, max: 1 }]);
+          }}>+ Slot level</SmallBtn>
+        </div>
+        {slots.length === 0 && (
+          <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: 0 }}>
+            No slots — the creature casts nothing that costs one. Add a level to make it a caster.
+          </p>
+        )}
+        {slots.map((s, i) => {
+          const pool = poolCount(s.level);
+          // A pool smaller than the slot count cannot fill them: picks are distinct, so 3 slots
+          // need at least 3 candidates. Saying so here beats failing at generation.
+          const short = pool > 0 && pool < s.max;
+          return (
+            <div key={s.level} style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 5 }}>
+              <div style={{ width: 62 }}>
+                <span style={labelStyle}>Level</span>
+                <select value={s.level} style={inputStyle}
+                  onChange={e => setSlots(slots.map((x, j) => j === i ? { ...x, level: Number(e.target.value) } : x))}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9]
+                    .filter(l => l === s.level || !slots.some(x => x.level === l))
+                    .map(l => <option key={l} value={l}>L{l}</option>)}
+                </select>
+              </div>
+              <div style={{ width: 62 }}>
+                <span style={labelStyle}>Slots</span>
+                <input type="number" min={1} max={9} value={s.max} style={inputStyle}
+                  onChange={e => setSlots(slots.map((x, j) => j === i ? { ...x, max: Math.max(1, Number(e.target.value) || 1) } : x))} />
+              </div>
+              <span style={{ flex: 1, fontSize: 10, color: short ? "#ff9999" : "#666", paddingBottom: 5 }}>
+                {pool === 0
+                  ? "no pool — spells at this level are always available"
+                  : short
+                    ? `only ${pool} candidate${pool === 1 ? "" : "s"} for ${s.max} slots — picks are distinct, so add ${s.max - pool} more`
+                    : `${pool} candidates → DM picks ${s.max}`}
+              </span>
+              <button type="button" onClick={() => setSlots(slots.filter((_, j) => j !== i))}
+                style={{ fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
+            </div>
+          );
+        })}
+      </div>
+        {/*
+          The spells themselves, filtered out of the noise. An authored caster carries more
+          spells than it brings to a fight, so the list that matters here is the slot-costed
+          one — everything else is an attack or a trait and belongs in step 4.
+        */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+          <SmallBtn color="#9d8cff" onClick={() => addListItem("actions", { name: "", kind: "spell", spellSlotLevel: 1, slotCandidate: true })}>+ Add spell</SmallBtn>
+        </div>
+        {slotSpells.map(({ a, i }) => actionRow("actions", a, i, { spell: true }))}
+        {slotSpells.length === 0 && (
+          <p style={{ fontSize: 11, color: "#555", fontStyle: "italic" }}>
+            No slot-costed spells yet. Add one, set its level, and tick Pool to make it a
+            candidate the DM chooses between when the creature is generated.
+          </p>
+        )}
+      </>
+    );
+  }
+
   function renderLegendary() {
     return (
       <>
@@ -586,6 +712,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
     actions: renderActions,
     reactions: renderReactions,
     legendary: renderLegendary,
+    spells: renderSpellcasting,
     extras: renderExtras,
   };
 
