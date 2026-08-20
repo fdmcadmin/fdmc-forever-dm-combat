@@ -53,6 +53,14 @@ export type MonsterTemplateEditorProps = {
   chassisOptions?: MainMonsterTemplate[];
   onSave: (updated: MainMonsterTemplate) => void;
   onCancel: () => void;
+  /**
+   * Drop the DM's saved copy and go back to the shipped campaign creature.
+   *
+   * Supplied ONLY for a campaign creature that currently has an override — undefined otherwise,
+   * so the control never offers to revert something that has nothing to revert to. It is not a
+   * delete: the campaign template holds the same templateId and takes the slot straight back.
+   */
+  onRevertToCampaign?: () => void;
 };
 
 // ─── Step defs ────────────────────────────────────────────────────────────────
@@ -97,7 +105,7 @@ function SmallBtn({ onClick, children, color = "#7b68ee", title }: { onClick: ()
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
-export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, onCancel }: MonsterTemplateEditorProps) {
+export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, onCancel, onRevertToCampaign }: MonsterTemplateEditorProps) {
   const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
   const [step, setStep] = useState<StepId>("identity");
   const [chassisId, setChassisId] = useState<string>("");
@@ -987,6 +995,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
                      cursor: blockers.length ? "not-allowed" : "pointer" }}>
             ✓ Save to My Library
           </button>
+          {/* ⚠ THE WAY OUT OF AN OVERRIDE. Only rendered for a campaign creature that actually
+              has one. Reverting is NOT deleting: the campaign template shares this templateId,
+              so it takes the slot back and every encounter using it keeps working. */}
+          {onRevertToCampaign && (
+            <button type="button"
+              onClick={() => {
+                if (window.confirm(`Discard your saved copy of ${template.name} and go back to the campaign version?\n\nThis is not a delete — the campaign creature keeps the same slot and every encounter using it keeps working.`)) {
+                  onRevertToCampaign();
+                }
+              }}
+              title="Discard your edits and go back to the shipped campaign creature. Nothing leaves the library."
+              style={{ fontSize: 11, padding: "3px 8px", background: "#4caf5022", border: "1px solid #4caf5055", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>
+              ↩ Revert to campaign
+            </button>
+          )}
           <button type="button" onClick={onCancel}
             style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
             Cancel

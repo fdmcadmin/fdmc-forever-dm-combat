@@ -320,6 +320,8 @@ export function EncounterLibraryPanel({
   const [editingMonsterTemplateId, setEditingMonsterTemplateId] = useState<string | null>(null);
   // Local overrides for templates edited this session (before parent re-renders)
   const [monsterOverrides, setMonsterOverrides] = useState<Record<string, MainMonsterTemplate>>({});
+  /** The override list starts folded — it is a reference, not an alert. */
+  const [overridesOpen, setOverridesOpen] = useState(false);
   const [monsterImportResult, setMonsterImportResult] = useState<MonsterImportResult | null>(null);
   // DM's own monster library from localStorage — "My Library" (DM creations). Reactive: the
   // monster picker + count derive from this, so created monsters persist and appear after reload.
@@ -413,11 +415,35 @@ export function EncounterLibraryPanel({
    * heals existing data with no action from the DM, because nothing wrote that marker before.
    */
   const shadowedCampaignTemplates: { name: string; was: string; now: string; signature: string }[] = [];
+  /**
+   * ⚠ AN OVERRIDE NEEDED A WAY OUT THAT IS NOT DELETION. Christopher, 2026-08-20: *"there is no
+   * way for me to remove overrides without deleting the creatures and encounter from my library."*
+   *
+   * Editing a campaign creature stamps `dmEdited`, and a stamped copy outranks the shipped
+   * template permanently — correct, because his edit must never be silently overwritten by a
+   * later correction. But the only exit was Delete, which is the wrong tool twice over: it is
+   * only offered on My Monsters, and deleting a CAMPAIGN creature reads as destroying content
+   * the encounters depend on.
+   *
+   * Reverting is safe and is not deletion. The shipped template has the SAME templateId, so
+   * dropping the stored copy restores the campaign version in place and every encounter
+   * referencing it keeps resolving. Nothing leaves the library.
+   */
+  const overriddenCampaignTemplates: { id: string; name: string; mine: string; campaign: string; at?: string }[] = [];
   const campaignBase = unlocked
     ? monsterLibrary.map(t => {
       const stored = dmLibrary.find(m => m.templateId === t.templateId);
       if (!stored) return t;
-      if (stored.dmEdited) return stored;
+      if (stored.dmEdited) {
+        overriddenCampaignTemplates.push({
+          id: t.templateId,
+          name: t.name,
+          mine: `${stored.stats.maxHp} HP / AC ${stored.stats.ac}`,
+          campaign: `${t.stats.maxHp} HP / AC ${t.stats.ac}`,
+          at: stored.dmEdited.at,
+        });
+        return stored;
+      }
       // Stale seed. Report it only when it actually disagrees, so the notice means something.
       if (stored.stats.maxHp !== t.stats.maxHp || String(stored.stats.ac) !== String(t.stats.ac)) {
         // The signature carries the numbers, so acknowledging THIS divergence does not silence a
@@ -443,6 +469,22 @@ export function EncounterLibraryPanel({
       t => !baseLibrary.some(m => m.templateId === t.templateId) && (unlocked || !isCampaignTemplate(t.templateId)),
     ),
   ];
+
+  /**
+   * Drop a DM override and go back to the shipped campaign creature.
+   *
+   * NOT a delete: the campaign template carries the same templateId, so it takes the slot straight
+   * back and every encounter that references it is untouched. Only the stored copy goes.
+   */
+  function revertCampaignOverride(templateId: string) {
+    deleteMonsterTemplate(templateId);
+    setDmLibrary(loadMonsterLibrary());
+    setMonsterOverrides(prev => {
+      const next = { ...prev };
+      delete next[templateId];
+      return next;
+    });
+  }
 
   function handleSaveMonsterTemplate(updated: MainMonsterTemplate) {
     /**
@@ -637,6 +679,15 @@ export function EncounterLibraryPanel({
           chassisOptions={resolvedLibrary.filter(t => t.templateId !== template.templateId)}
           onSave={handleSaveMonsterTemplate}
           onCancel={() => setEditingMonsterTemplateId(null)}
+          /* The exit belongs HERE too, not only in the library list — this is where a DM is
+             looking when they decide their edit was a mistake. Passed only for a campaign
+             creature that actually has an override, so it never appears on a DM's own creature
+             (where Revert would be meaningless) or on an unedited campaign one. */
+          onRevertToCampaign={
+            overriddenCampaignTemplates.some(o => o.id === template.templateId)
+              ? () => { revertCampaignOverride(template.templateId); setEditingMonsterTemplateId(null); }
+              : undefined
+          }
         />
       );
     }
@@ -942,6 +993,42 @@ export function EncounterLibraryPanel({
               Got it
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ⚠ YOUR EDITS, AND THE WAY BACK. A stamped edit outranks the shipped campaign creature
+          forever, which is right — a later correction must never quietly overwrite the DM. What
+          was missing is the exit: the only control that removed an override was Delete, offered
+          on My Monsters only, and deleting a campaign creature reads as destroying something the
+          encounters need. Revert restores the campaign version IN PLACE. */}
+      {overriddenCampaignTemplates.length > 0 && (
+        <div style={{ padding: "6px 14px", background: "#0f1412", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#4caf50" }}>
+          <button type="button" onClick={() => setOverridesOpen(o => !o)}
+            style={{ background: "transparent", border: "none", padding: 0, color: "#4caf50", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
+            {overridesOpen ? "▼" : "▶"} {overriddenCampaignTemplates.length} campaign creature{overriddenCampaignTemplates.length === 1 ? " is" : "s are"} running your edited version
+          </button>
+          {overridesOpen && (
+            <>
+              {overriddenCampaignTemplates.map(o => (
+                <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+                  <span style={{ color: "#8a8aa0" }}>
+                    {o.name}: yours {o.mine} · campaign {o.campaign}
+                    {o.at && <span style={{ color: "#555" }}> · edited {new Date(o.at).toLocaleDateString()}</span>}
+                  </span>
+                  {o.mine !== o.campaign && (
+                    <button type="button" onClick={() => revertCampaignOverride(o.id)}
+                      title="Go back to the campaign version. This is NOT a delete — the campaign creature takes the same slot and every encounter using it keeps working."
+                      style={{ fontSize: 10, padding: "1px 7px", background: "#4caf5022", border: "1px solid #4caf5055", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>
+                      ↩ Revert to campaign
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div style={{ color: "#666", marginTop: 3 }}>
+                Reverting removes your saved copy only — the creature stays in the library and every encounter using it keeps working.
+              </div>
+            </>
+          )}
         </div>
       )}
 
