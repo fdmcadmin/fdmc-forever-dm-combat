@@ -32,7 +32,8 @@ export type RerollSourceKind = "item" | "feature" | "dm";
  * Treating a flip as a reroll would send a fresh request and produce an unrelated number, which is
  * the opposite of what the feat says.
  */
-export type RerollMethod = "reroll" | "flip" | "advantage" | "bonus";
+export type { RerollMethod } from "./rerollMethod";
+import type { RerollMethod } from "./rerollMethod";
 
 /**
  * ⚠ ALL FOUR FIRE BEFORE THE MISS IS COMMITTED. Christopher, 2026-08-17: *"if a miss they should

@@ -1,3 +1,5 @@
+import type { RerollMethod } from "../state/rerollMethod";
+
 export type PcActionTab = "action" | "bonus" | "reaction" | "bond" | "spell" | "feature" | "resource" | "outOfCombat";
 
 export type PcActionCost = "action" | "bonus" | "reaction" | "bond" | "free" | "passive";
@@ -83,7 +85,8 @@ export type PcActionDraft = {
   /** This feature can reroll a d20 — surfaced in the reroll picker (Lucky, Bend Luck). */
   isRerollSource?: boolean;
   /** Throw it again, or use the other side of the die (21 - roll). Chosen, never inferred. */
-  rerollMethod?: "reroll" | "flip";
+  /** All four — see `RerollMethod`. Narrowing this to two is what hid Advantage and Add-dice. */
+  rerollMethod?: RerollMethod;
 };
 
 export type PcActorAction = PcActionDraft & {

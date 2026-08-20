@@ -1,3 +1,4 @@
+import type { RerollMethod } from "../state/rerollMethod";
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
 import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
@@ -141,7 +142,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     weaponBuffAttack: action.metadata?.weaponBuffAttack,
     turnRider: action.metadata?.turnRider,
     isRerollSource: action.metadata?.additive === "reroll" || (action.tags ?? []).includes("reroll") || undefined,
-    rerollMethod: action.metadata?.rerollMethod as "reroll" | "flip" | undefined,
+    rerollMethod: action.metadata?.rerollMethod as RerollMethod | undefined,
   };
 }
 
@@ -565,7 +566,7 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
             Method
             <select value={draft.rerollMethod ?? "reroll"}
-              onChange={e => set("rerollMethod", e.target.value as "reroll" | "flip")}
+              onChange={e => set("rerollMethod", e.target.value as RerollMethod)}
               style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
               <option value="reroll">Reroll — throw it again</option>
               <option value="advantage">Advantage — second d20, keep the higher</option>

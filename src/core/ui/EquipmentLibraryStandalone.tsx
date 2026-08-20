@@ -13,6 +13,7 @@ import { SELECTABLE_ITEM_TYPES } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
+import { ItemMechanicsFields } from "./ItemMechanicsFields";
 import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult, fingerprintEquipmentItem } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
@@ -346,6 +347,15 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           </p>
         )}
       </fieldset>
+
+      {/* ── What the item DOES ────────────────────────────────────────────────
+          RULE 1A. Armour type, non-attack dice, reroll source and spellcasting focus existed
+          only in the bag editor, so an item authored HERE — in the DM library, where every
+          module item is actually made — could not be a focus, could not carry an armour type,
+          and could not be a reroll source. Those facts were reachable only by writing them in
+          code, which is the gap RULE 1A names. Now one shared block, so the two editors cannot
+          drift apart again. */}
+      <ItemMechanicsFields draft={draft} set={set} inputStyle={input} />
 
       {/* ── Worn slot + tier ──────────────────────────────────────────────────
           Two items in the same slot cannot both be worn; the newer displaces the older.

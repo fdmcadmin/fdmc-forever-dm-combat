@@ -164,6 +164,37 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   const legendaryActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !!a.legendaryCost), [draft.actions]);
   const slotSpells = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && typeof a.spellSlotLevel === "number"), [draft.actions]);
 
+  /** Defensive traits — the EHP multipliers. See the Defenses tab for why these are editable. */
+  function updateDefense(idx: number, patch: Partial<{ name: string; ehpMultiplier: number; note: string }>) {
+    setDraft(d => ({
+      ...d,
+      stats: { ...d.stats, defenses: (d.stats.defenses ?? []).map((x, i) => (i === idx ? { ...x, ...patch } : x)) },
+    }));
+  }
+  function addDefense() {
+    setDraft(d => ({
+      ...d,
+      stats: { ...d.stats, defenses: [...(d.stats.defenses ?? []), { name: "", ehpMultiplier: 1 }] },
+    }));
+  }
+  function removeDefense(idx: number) {
+    setDraft(d => ({ ...d, stats: { ...d.stats, defenses: (d.stats.defenses ?? []).filter((_, i) => i !== idx) } }));
+  }
+
+  /** Skills — per-creature, because two creatures at the same CR are not good at the same things. */
+  function updateSkill(idx: number, patch: Partial<{ label: string; modifier: number }>) {
+    setDraft(d => ({
+      ...d,
+      stats: { ...d.stats, skills: (d.stats.skills ?? []).map((x, i) => (i === idx ? { ...x, ...patch } : x)) },
+    }));
+  }
+  function addSkill() {
+    setDraft(d => ({ ...d, stats: { ...d.stats, skills: [...(d.stats.skills ?? []), { label: "", modifier: 0 }] } }));
+  }
+  function removeSkill(idx: number) {
+    setDraft(d => ({ ...d, stats: { ...d.stats, skills: (d.stats.skills ?? []).filter((_, i) => i !== idx) } }));
+  }
+
   function updateListItem(list: "actions" | "traits" | "reactions", idx: number, patch: Partial<MonsterReaderAction>) {
     setDraft(d => {
       const next = [...d[list]];
@@ -444,6 +475,31 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             </div>
           ))}
         </div>
+
+        {/* RULE 1A — skills were code-only. The rolled-check UI reads `stats.skills`, so a
+            creature built in the app had no Perception or Stealth to roll and a code-authored
+            one did. */}
+        <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 12 }}>
+          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#f0c040" }}>Skills</span>
+          <p style={{ ...hintStyle, marginTop: 4 }}>
+            Only the ones this creature is actually trained in — the modifier is the whole roll, not a bonus on top of the ability. Two creatures at the same CR are rarely good at the same things.
+          </p>
+          {(draft.stats.skills ?? []).map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
+              <div style={{ flex: 3 }}>
+                <span style={labelStyle}>Skill</span>
+                <input value={s.label} onChange={e => updateSkill(i, { label: e.target.value })} placeholder="Perception" style={inputStyle} />
+              </div>
+              <div style={{ width: 90 }}>
+                <span style={labelStyle}>Modifier</span>
+                <input type="number" value={s.modifier} onChange={e => updateSkill(i, { modifier: Number(e.target.value) || 0 })}
+                  style={{ ...inputStyle, textAlign: "center" }} />
+              </div>
+              <SmallBtn color="#ff6b6b" onClick={() => removeSkill(i)}>✕</SmallBtn>
+            </div>
+          ))}
+          <div style={{ marginTop: 8 }}><SmallBtn color="#f0c040" onClick={() => addSkill()}>+ Skill</SmallBtn></div>
+        </div>
       </>
     );
   }
@@ -490,6 +546,59 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             <span>HP <strong style={{ color: "#dfe4ff" }}>{hpRef.suggested}</strong> <span style={{ color: "#667" }}>(range {hpRef.low}–{hpRef.high ?? "∞"})</span></span>
             <SmallBtn color="#34c759" onClick={() => updateStat("maxHp", hpRef.suggested)}>Apply HP</SmallBtn>
             <span style={{ color: "#667" }}>attack +{band.attackBonus} · starter {band.starterDamage}</span>
+          </div>
+        </div>
+
+        {/* ── DEFENSIVE TRAITS ───────────────────────────────────────────────────────────
+            RULE 1A. Every creature in the campaign library carries these, and until now they
+            could ONLY be written in code — the editor showed the resulting ×multiplier on the
+            estimator line and gave no way to author the traits producing it. A DM building a
+            resistant creature in the app got a silent ×1.000 while a code-authored one got its
+            real effective HP, so the same creature priced two different ways depending on who
+            made it. That is exactly the half-built feature RULE 1A exists to catch. */}
+        <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
+          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#34c759" }}>Defensive traits (effective-HP multipliers)</span>
+          <p style={{ ...hintStyle, marginTop: 4 }}>
+            What makes this creature harder to kill than its HP says. The multipliers <strong style={{ color: "#aaa" }}>multiply together</strong> — resistance to the party's main damage type is roughly ×1.4, a legendary-resistance-style bail-out ×1.15, a strong ranged/reposition game ×1.1. Leave empty for a creature whose HP is the whole story.
+          </p>
+          {(draft.stats.defenses ?? []).map((d, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
+              <div style={{ flex: 2, minWidth: 120 }}>
+                <span style={labelStyle}>Trait</span>
+                <input value={d.name} onChange={e => updateDefense(i, { name: e.target.value })} placeholder="Damage Resistance" style={inputStyle} />
+              </div>
+              <div style={{ width: 90 }}>
+                <span style={labelStyle}>EHP ×</span>
+                <input type="number" step="0.05" value={d.ehpMultiplier}
+                  onChange={e => updateDefense(i, { ehpMultiplier: Number(e.target.value) || 1 })} style={inputStyle} />
+              </div>
+              <div style={{ flex: 3, minWidth: 140 }}>
+                <span style={labelStyle}>Why (the arithmetic)</span>
+                <input value={d.note ?? ""} onChange={e => updateDefense(i, { note: e.target.value })}
+                  placeholder="half damage from the party's two main types" style={inputStyle} />
+              </div>
+              <SmallBtn color="#ff6b6b" onClick={() => removeDefense(i)}>✕</SmallBtn>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
+            <SmallBtn color="#34c759" onClick={() => addDefense()}>+ Defensive trait</SmallBtn>
+            <span style={{ fontSize: 11, color: "#99a" }}>
+              Combined <strong style={{ color: "#dfe4ff" }}>
+                ×{(draft.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1).toFixed(3)}
+              </strong> → effective HP <strong style={{ color: "#dfe4ff" }}>
+                {Math.round(draft.stats.maxHp * (draft.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1))}
+              </strong>
+            </span>
+          </div>
+          <div style={{ marginTop: 10, maxWidth: 320 }}>
+            <span style={labelStyle}>Damage uptime (0–1)</span>
+            <input type="number" step="0.01" min={0.1} max={1}
+              value={draft.stats.damageUptime ?? 1}
+              onChange={e => updateStat("damageUptime", Math.min(1, Math.max(0.1, Number(e.target.value) || 1)))}
+              style={inputStyle} />
+            <p style={{ ...hintStyle, marginTop: 2 }}>
+              The share of rounds this creature is actually <em>dealing</em> its damage. 1 = every round. Drop it for a creature that spends rounds repositioning, cycling an aura, or out of reach — the checker divides its output by this, so 0.86 means it needs to be worth more per active round to hit the same pressure.
+            </p>
           </div>
         </div>
 
