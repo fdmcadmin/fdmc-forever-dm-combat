@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react";
 import { parseActField, parseSessionField } from "../campaign/actTags";
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/convergenceInbox";
-import { SELECTABLE_ITEM_TYPES } from "../constants/itemTypeCapabilities";
+import { SELECTABLE_ITEM_TYPES, itemTypeAllows } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
@@ -253,8 +253,16 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
     setDraft(d => ({ ...d, [k]: v }));
   }
 
-  const isWeapon = draft.type === "weapon" || draft.type === "magic";
-  const isArmor = draft.type === "armor" || draft.type === "shield";
+  /**
+   * ⚠ ONE GATE, THE SHARED MATRIX. This form previously gated NOTHING through
+   * `itemTypeAllows` — it had two ad-hoc booleans for attack dice and AC, and left Convergence,
+   * Mastery and the spell-focus pair visible on every item type, which is the long scroll
+   * Christopher objected to: *"each gear type should only allow the editing of fields that would
+   * effect those types, like you shouldn't be able to add a AC on anything except armor."*
+   */
+  const allows = (c: Parameters<typeof itemTypeAllows>[1]) => itemTypeAllows(draft.type, c);
+  const isWeapon = allows("attackDice");
+  const isArmor = allows("ac");
 
   return (
     // The form SCROLLS. It grew past the panel height once the chassis block landed, and with
@@ -458,7 +466,8 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           </select>
         </label>
         {/* Mastery is a closed set in the 2024 rules, so it picks rather than types —
-            a mistyped property would silently match nothing. */}
+            a mistyped property would silently match nothing. WEAPONS ONLY; it was ungated. */}
+        {allows("mastery") && (
         <label style={{ fontSize: 12 }}>Mastery
           <select value={draft.mastery ?? ""} onChange={e => set("mastery", (e.target.value || undefined) as EquipmentItem["mastery"])}
             style={{ ...input, marginTop: 2 }}>
@@ -466,6 +475,7 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
             {WEAPON_MASTERY_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </label>
+        )}
       </div>
 
       {/* What spending a charge actually DOES. Without this an item can carry uses that
@@ -500,7 +510,10 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           </div>
         </fieldset>
       )}
-      {/* Whether this item feeds a convergence or is one of its outputs. */}
+      {/* Whether this item feeds a convergence or is one of its outputs.
+          ⚠ WONDROUS ONLY — *"you shouldn't be able to add convergence on weapons and armor, this
+          is why they are wonderous items."* This was ungated and offered Convergence on rations. */}
+      {allows("convergence") && (
       <fieldset style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", margin: 0 }}>
         <legend style={{ fontSize: 11, color: "#4caf50", padding: "0 4px" }}>Convergence</legend>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 0.6fr 1.4fr", gap: 8 }}>
@@ -529,18 +542,13 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           </label>
         </div>
       </fieldset>
+      )}
 
-      {/* Bonuses this item gives to SPELLS cast through it, as opposed to its own attack.
-          An item can be both a weapon and a focus. */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-        <label style={{ fontSize: 12 }}>Focus: spell attack
-          <input type="text" value={draft.spellFocusAttack ?? ""} onChange={e => set("spellFocusAttack", e.target.value || undefined)}
-            placeholder="+1" style={input} />
-        </label>
-        <label style={{ fontSize: 12 }}>Focus: spell damage
-          <input type="text" value={draft.spellFocusDamage ?? ""} onChange={e => set("spellFocusDamage", e.target.value || undefined)}
-            placeholder="+1" style={input} />
-        </label>
+      {/* ⚠ The spell-focus pair used to sit here, UNGATED — it showed on rations and armour, and
+          once ItemMechanicsFields landed it also showed TWICE on a weapon. The focus block now
+          lives in that shared component behind `allows("spellFocus")`, which is the only place
+          it belongs. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>Session
           <input type="text" value={draft.session ?? ""} onChange={e => set("session", e.target.value || undefined)}
             placeholder="Session 4" style={input} />

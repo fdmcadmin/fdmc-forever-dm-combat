@@ -41,6 +41,7 @@ import {
 import { estimateCreature } from "../encounter-band/creatureEstimator";
 import { parseCreature } from "../encounter-band/parseCreature";
 import { traceCreature } from "../encounter-band/actionTrace";
+import { TRAIT_RULES, traitRule } from "../encounter-band/compactImport";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -164,11 +165,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   const legendaryActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !!a.legendaryCost), [draft.actions]);
   const slotSpells = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && typeof a.spellSlotLevel === "number"), [draft.actions]);
 
-  /** Defensive traits — the EHP multipliers. See the Defenses tab for why these are editable. */
-  function updateDefense(idx: number, patch: Partial<{ name: string; ehpMultiplier: number; note: string }>) {
+  /**
+   * Pick a calibrated defensive trait. The multiplier is READ from the workbook rule, never
+   * typed — see the Defenses tab for why. A rule the workbook leaves unpriced stores 1 and is
+   * flagged downstream rather than silently weighted.
+   */
+  function selectDefense(idx: number, label: string) {
+    const rule = traitRule(label);
     setDraft(d => ({
       ...d,
-      stats: { ...d.stats, defenses: (d.stats.defenses ?? []).map((x, i) => (i === idx ? { ...x, ...patch } : x)) },
+      stats: {
+        ...d.stats,
+        defenses: (d.stats.defenses ?? []).map((x, i) => (i === idx
+          ? { ...x, name: label, ehpMultiplier: rule?.multiplier ?? 1, note: rule?.application }
+          : x)),
+      },
     }));
   }
   function addDefense() {
@@ -550,55 +561,66 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
         </div>
 
         {/* ── DEFENSIVE TRAITS ───────────────────────────────────────────────────────────
-            RULE 1A. Every creature in the campaign library carries these, and until now they
-            could ONLY be written in code — the editor showed the resulting ×multiplier on the
-            estimator line and gave no way to author the traits producing it. A DM building a
-            resistant creature in the app got a silent ×1.000 while a code-authored one got its
-            real effective HP, so the same creature priced two different ways depending on who
-            made it. That is exactly the half-built feature RULE 1A exists to catch. */}
+            ⚠ THE DM PICKS THE TRAIT; THE WORKBOOK PRICES IT. `ehpMultiplier` is not a D&D fact,
+            it is the checker's normalized pricing weight — the calibration's `contribution`
+            column plus 1. So it is DERIVED here, never typed.
+
+            An earlier version of this block gave the DM a free-text "EHP ×" box. That was wrong
+            on Christopher's correction (2026-08-20): *"Do not add a generic DM control that lets
+            the DM author arbitrary defense pricing simply because the internal schema contains
+            stats.defenses."* Typing a multiplier is authoring the pricing model, which the
+            workbook owns. RULE 1A means one authoritative pricing path, not an editable one.
+
+            The 58 calibrated rules ship in the bundle with their own stack groups, so the
+            double-count guard is the workbook's classification rather than a name this app
+            invented. A rule with a null multiplier is calibrated as UNPRICED — it is a real
+            trait the workbook has not assigned a weight to, and the checker flags it rather
+            than inventing one. */}
         <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
-          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#34c759" }}>Defensive traits (effective-HP multipliers)</span>
+          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#34c759" }}>Defensive traits</span>
           <p style={{ ...hintStyle, marginTop: 4 }}>
-            What makes this creature harder to kill than its HP says. The multipliers <strong style={{ color: "#aaa" }}>multiply together</strong> — resistance to the party's main damage type is roughly ×1.4, a legendary-resistance-style bail-out ×1.15, a strong ranged/reposition game ×1.1. Leave empty for a creature whose HP is the whole story.
+            What makes this creature harder to kill than its raw HP says — resistances, regeneration, a revival, a reaction that blunts a hit. Pick the trait; <strong style={{ color: "#aaa" }}>the workbook supplies its effective-HP weight</strong>. Leave empty for a creature whose HP is the whole story.
           </p>
-          {(draft.stats.defenses ?? []).map((d, i) => (
-            <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
-              <div style={{ flex: 2, minWidth: 120 }}>
-                <span style={labelStyle}>Trait</span>
-                <input value={d.name} onChange={e => updateDefense(i, { name: e.target.value })} placeholder="Damage Resistance" style={inputStyle} />
+          {(draft.stats.defenses ?? []).map((d, i) => {
+            const rule = traitRule(d.name);
+            return (
+              <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
+                <div style={{ flex: 3, minWidth: 200 }}>
+                  <span style={labelStyle}>Trait</span>
+                  <select value={d.name} onChange={e => selectDefense(i, e.target.value)} style={inputStyle}>
+                    <option value="">— pick a calibrated trait —</option>
+                    {TRAIT_RULES.map(r => (
+                      <option key={r.label} value={r.label}>
+                        {r.label}{r.multiplier == null ? " (unpriced)" : ` — ×${r.multiplier.toFixed(3)}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ width: 110 }}>
+                  <span style={labelStyle}>EHP × (derived)</span>
+                  <div style={{ ...inputStyle, background: "#0d0d16", color: rule?.multiplier == null ? "#e07b39" : "#dfe4ff", cursor: "default" }}>
+                    {rule?.multiplier == null ? "unpriced" : `×${rule.multiplier.toFixed(3)}`}
+                  </div>
+                </div>
+                <div style={{ flex: 2, minWidth: 120 }}>
+                  <span style={labelStyle}>Stack group</span>
+                  <div style={{ ...inputStyle, background: "#0d0d16", color: "#888", cursor: "default" }}>
+                    {rule?.stack_group ?? "—"}
+                  </div>
+                </div>
+                <SmallBtn color="#ff6b6b" onClick={() => removeDefense(i)}>✕</SmallBtn>
               </div>
-              <div style={{ width: 90 }}>
-                <span style={labelStyle}>EHP ×</span>
-                <input type="number" step="0.05" value={d.ehpMultiplier}
-                  onChange={e => updateDefense(i, { ehpMultiplier: Number(e.target.value) || 1 })} style={inputStyle} />
-              </div>
-              <div style={{ flex: 3, minWidth: 140 }}>
-                <span style={labelStyle}>Why (the arithmetic)</span>
-                <input value={d.note ?? ""} onChange={e => updateDefense(i, { note: e.target.value })}
-                  placeholder="half damage from the party's two main types" style={inputStyle} />
-              </div>
-              <SmallBtn color="#ff6b6b" onClick={() => removeDefense(i)}>✕</SmallBtn>
-            </div>
-          ))}
+            );
+          })}
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
             <SmallBtn color="#34c759" onClick={() => addDefense()}>+ Defensive trait</SmallBtn>
             <span style={{ fontSize: 11, color: "#99a" }}>
               Combined <strong style={{ color: "#dfe4ff" }}>
-                ×{(draft.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1).toFixed(3)}
+                ×{(draft.stats.defenses ?? []).reduce((p, d) => p * (traitRule(d.name)?.multiplier ?? 1), 1).toFixed(3)}
               </strong> → effective HP <strong style={{ color: "#dfe4ff" }}>
-                {Math.round(draft.stats.maxHp * (draft.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1))}
+                {Math.round(draft.stats.maxHp * (draft.stats.defenses ?? []).reduce((p, d) => p * (traitRule(d.name)?.multiplier ?? 1), 1))}
               </strong>
             </span>
-          </div>
-          <div style={{ marginTop: 10, maxWidth: 320 }}>
-            <span style={labelStyle}>Damage uptime (0–1)</span>
-            <input type="number" step="0.01" min={0.1} max={1}
-              value={draft.stats.damageUptime ?? 1}
-              onChange={e => updateStat("damageUptime", Math.min(1, Math.max(0.1, Number(e.target.value) || 1)))}
-              style={inputStyle} />
-            <p style={{ ...hintStyle, marginTop: 2 }}>
-              The share of rounds this creature is actually <em>dealing</em> its damage. 1 = every round. Drop it for a creature that spends rounds repositioning, cycling an aura, or out of reach — the checker divides its output by this, so 0.86 means it needs to be worth more per active round to hit the same pressure.
-            </p>
           </div>
         </div>
 
