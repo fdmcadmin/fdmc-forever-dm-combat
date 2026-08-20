@@ -393,24 +393,63 @@ export function prepareRoster(roster: RosterGroup[], partySize: number): Prepare
     });
 }
 
-/** How much of this group is still standing, 0–1, given cumulative party damage. */
+/**
+ * How much of this group is still standing, 0–1, given cumulative party damage.
+ *
+ * ⚠ RETAINED FOR REPORTING ONLY — it is NOT what prices damage any more. See `livingBodies`.
+ * A continuous fraction is the right way to describe how far through a group the party has got;
+ * it is the wrong way to decide how hard that group hits.
+ */
 export function remainingGroupFraction(group: PreparedGroup, cumulativePartyDamage: number): number {
   if (group.groupEhp <= 0) return 0;
   return clamp((group.cumulativeEnd - cumulativePartyDamage) / group.groupEhp, 0, 1);
 }
 
 /**
- * ⚠ CONTINUOUS DEPLETION. A group that is half dead deals half damage — it does not fight at
- * full output until the last body drops. This replaces the old `attritionFactor` and
- * `KILLED_BODY_DPR_RETAINED` outright.
+ * How many bodies of this group are STILL ALIVE after `cumulativePartyDamage`.
+ *
+ * ⚠ v7 `campaign_semantics.whole_body_attrition`: *"A living creature retains its full legal
+ * output until its body reaches 0 HP. Do not linearly reduce a singleton's DPR as its HP is
+ * chipped."*
+ *
+ * This is the rule the engine used to break. `encounterDprAt` multiplied each group's DPR by the
+ * continuous remaining fraction, so a creature at 60% HP dealt 60% damage — the exact linear
+ * reduction the rule forbids, and applied from the FIRST round in which the party lands a hit.
+ * Two 100-EHP bodies read 36 in round 1 where the rule says 40, and the error compounded every
+ * round, so a fight read easier the longer it ran. Both Fight 10 creatures are singletons, so
+ * they were under-counted from round one to the end.
+ *
+ * Bodies die one at a time and in kill order. Damage lands on THIS group only after every earlier
+ * group in the order is dead, so the group's own share is measured from `cumulativeStart`.
+ */
+export function livingBodies(group: PreparedGroup, cumulativePartyDamage: number): number {
+  if (group.bodyEhp <= 0) return 0;
+  const cumulativeStart = group.cumulativeEnd - group.groupEhp;
+  const intoThisGroup = clamp(cumulativePartyDamage - cumulativeStart, 0, group.groupEhp);
+  // A body is dead only once its WHOLE effective pool is gone; a chipped body is still a body.
+  const killed = Math.floor((intoThisGroup + EPSILON) / group.bodyEhp);
+  return Math.max(0, group.quantity - killed);
+}
+
+/**
+ * ⚠ WHOLE-BODY ATTRITION, per v7 `campaign_semantics.whole_body_attrition`.
+ *
+ * Output falls in STEPS of one body's DPR as bodies drop, never smoothly as HP is chipped. A
+ * group of four at 60% total HP is not "four creatures at 60% output" — it is one dead and three
+ * fighting at full strength, and those are very different numbers.
+ *
+ * The previous version multiplied by `remainingGroupFraction` and was labelled "CONTINUOUS
+ * DEPLETION … replaces the old attritionFactor outright" — a deliberate app decision taken
+ * against an explicit workbook rule. RULE ZERO-B: where the app and the workbook disagree, the
+ * workbook wins and the app is the thing that changes.
  */
 export function encounterDprAt(
   roster: PreparedGroup[], cumulativePartyDamage: number, round: number,
 ): number {
   return roster.reduce((total, group) => {
-    const remaining = remainingGroupFraction(group, cumulativePartyDamage);
+    const alive = livingBodies(group, cumulativePartyDamage);
     const bodyDpr = roundValue(group.dpr, round);
-    return total + group.quantity * bodyDpr * group.dprUptime * remaining;
+    return total + alive * bodyDpr * group.dprUptime;
   }, 0);
 }
 
@@ -591,10 +630,22 @@ export function simulateEncounter(opts: {
       && cumulativePartyDamage + EPSILON >= encounterEhp;
     const monsterDprStart = encounterDprAt(prepared, partyDamageBefore, round);
     const monsterDprEnd = encounterDprAt(prepared, cumulativePartyDamage, round);
-    // ⚠ Monster damage is NOT scaled by PCs standing — survivors remain valid targets.
+    /**
+     * ⚠ Monster damage is NOT scaled by PCs standing — survivors remain valid targets.
+     *
+     * ⚠ NO EXTRA COMPLETION-ROUND DISCOUNT. v7 `campaign_semantics.final_round`: *"Use a single
+     * initiative model; never apply an extra completion-round damage discount ON TOP OF
+     * midpoint/whole-body attrition."*
+     *
+     * The midpoint of start-of-round and end-of-round output IS the single initiative model, and
+     * with whole-body attrition it already accounts for bodies dropping mid-round. Multiplying it
+     * again by `completionRoundMonsterFraction` (0.5 by default) was the second discount the rule
+     * names — it halved the monsters' output in the very round the fight is decided, which is
+     * usually their most dangerous one.
+     */
     const monsterDamage = completionRound || pcsStart === 0
       ? 0
-      : ((monsterDprStart + monsterDprEnd) / 2) * (completesNow ? completionRoundMonsterFraction : 1);
+      : (monsterDprStart + monsterDprEnd) / 2;
     cumulativeMonsterDamage += monsterDamage;
     const downs = damageAllocation === "spread_evenly"
       ? (cumulativeMonsterDamage + EPSILON >= partySustain ? partySize : 0)

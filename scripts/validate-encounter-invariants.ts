@@ -13,7 +13,7 @@
  * rather than the test being softened to meet the engine.
  *
  * ═══════════════════════════════════════════════════════════════════════════════════════════
- * ⚠ THE RULE THESE TESTS ENFORCE, AND THE ONE THE ENGINE CURRENTLY BREAKS
+ * ⚠ THE RULE THESE TESTS ENFORCE — BROKEN BY THE ENGINE UNTIL 0.7.10.52, NOW FIXED
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  *
  * v7 runtime → `campaign_semantics.whole_body_attrition`:
@@ -21,17 +21,21 @@
  *     "A living creature retains its full legal output until its body reaches 0 HP.
  *      Do not linearly reduce a singleton's DPR as its HP is chipped."
  *
- * `checkerV2.encounterDprAt` does precisely what that forbids. It multiplies each group's DPR by
- * `remainingGroupFraction` — a continuous 0–1 ratio of damage taken — so a creature at 60% HP
- * deals 60% damage. The code comment above it calls this "⚠ CONTINUOUS DEPLETION … replaces the
- * old attritionFactor outright", which means it was a deliberate app decision taken against an
- * explicit workbook rule. Under RULE ZERO-B the workbook wins.
+ * `checkerV2.encounterDprAt` used to do precisely what that forbids: it multiplied each group's
+ * DPR by `remainingGroupFraction`, a continuous 0–1 ratio of damage taken, so a creature at 60%
+ * HP dealt 60% damage. The comment above it read "⚠ CONTINUOUS DEPLETION … replaces the old
+ * attritionFactor outright" — a deliberate app decision taken against an explicit workbook rule.
+ * Under RULE ZERO-B the workbook wins, and `livingBodies` now counts whole bodies.
  *
  * The consequence is not small and it is not symmetrical:
  *   · A SINGLETON is under-counted from round ONE. Two 100-EHP bodies deal 36 in round 1 where
  *     the rule says 40 — nothing has died, so nothing should be reduced.
  *   · The error compounds every round, so a boss fight reads easier the longer it runs.
- *   · Both Fight 10 creatures are singletons, which is why F10 is the fight where it shows.
+ *   · Both Fight 10 creatures are singletons, which is why F10 is the fight where it showed.
+ *
+ * A SECOND violation sat beside it. v7 `campaign_semantics.final_round` forbids "an extra
+ * completion-round damage discount on top of midpoint/whole-body attrition", and the simulator
+ * multiplied the midpoint by `completionRoundMonsterFraction` (0.5) in the deciding round.
  *
  * A GROUP of N bodies is a different case: bodies die one at a time, so output falls in STEPS of
  * one body's DPR, not smoothly. Test 8.4 pins that.
@@ -109,11 +113,23 @@ console.log("\n── 8.3 Kill ORDER must change the trace (high-offense first v
 
 console.log("\n── 8.4 A dead body contributes nothing (no fractional ghost)");
 {
-  // Four bodies of 25 EHP / 10 DPR. Party 40/round removes 1.6 bodies of EHP in round 1 —
-  // but a body is a BODY: 1 dead and 1 damaged still means 3 alive, so round 2 offence is 30.
+  /**
+   * Four bodies of 25 EHP / 10 DPR; the party deals 40 a round. Round 2, step by step:
+   *
+   *   start  cumulative 40 → floor(40/25) = 1 dead → 3 alive → 30
+   *   end    cumulative 80 → floor(80/25) = 3 dead → 1 alive → 10
+   *   midpoint (30 + 10) / 2 = 20
+   *
+   * ⚠ 20 IS THE WHOLE-BODY ANSWER; the old continuous model gave 16 (24 → 8). That gap is the
+   * fix. A third arithmetic slip of mine lived here: I first expected 30, which is the START of
+   * round figure — it contradicts the midpoint model v7 `final_round` endorses and that 8.1 and
+   * 8.2 already rely on. Deriving both ends and halving is the rule; reading one end is not.
+   */
   const r = run([body("mob", 10, 25, 4)]);
   report("monster damage by round", r.rounds.map(x => Number(x.monsterDamage.toFixed(2))));
-  check("round 2 offence reflects whole bodies, not a fraction", Number((r.rounds[1]?.monsterDamage ?? 0).toFixed(2)), 30);
+  check("R2 is the midpoint of whole-body output, 30 → 10", Number((r.rounds[1]?.monsterDamage ?? 0).toFixed(2)), 20);
+  // The step is what matters: bodies leave one at a time, so R1 loses exactly one of four.
+  check("R1 midpoint reflects losing exactly ONE body (40 → 30)", Number((r.rounds[0]?.monsterDamage ?? 0).toFixed(2)), 35);
 }
 
 console.log("\n── 8.5 Damage allocation is a party-side projection, not a monster-side one");
