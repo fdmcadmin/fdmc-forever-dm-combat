@@ -19,7 +19,8 @@
     "assemble:dev": "node ./scripts/dev-host-required.mjs --assemble",
     "stage:candidate:dev:main": "node ./scripts/build-dev-main.mjs && node ./scripts/stage-dev-main.mjs",
     "promote:dev:main": "node ./scripts/promote-dev-main.mjs",
-    "validate:control": "npx tsx scripts/validate-control-pricing.ts"
+    "validate:control": "npx tsx scripts/validate-control-pricing.ts",
+    "validate:invariants": "npx tsx scripts/validate-encounter-invariants.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",
