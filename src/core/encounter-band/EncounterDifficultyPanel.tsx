@@ -88,12 +88,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
-    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave });
+    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize });
     return {
       roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought

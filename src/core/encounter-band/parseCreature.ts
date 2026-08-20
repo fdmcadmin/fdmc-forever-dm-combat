@@ -53,6 +53,42 @@ export function parseAttackBonus(roll: string | undefined): number | undefined {
 }
 
 /**
+ * Is this an AREA effect — a shape rather than a target list?
+ *
+ * v7 wants "an explicit target count from the statblock or runtime catalog when available". A
+ * cone, a radius or a line has neither: it has GEOMETRY, and how many PCs it catches depends on
+ * the party standing in it. That is not unknowable — the checker is a FOUR-PC BASELINE model and
+ * already knows the party size it is running. `aoeTargetsForParty` turns the shape into a count.
+ */
+export function isAreaEffect(text: string | undefined): boolean {
+  const t = text ?? "";
+  if (!t) return false;
+  return /\b(?:cone|radius|emanation|cube|sphere|\bline\b)\b/i.test(t)
+    || /\b(?:each|every|all) (?:other )?creatures?\b/i.test(t)
+    || /\bcreatures? of the [^.]*?choice\b/i.test(t);
+}
+
+/**
+ * How many PCs an area effect is expected to catch, for a party of this size.
+ *
+ * ⚠ HALF THE PARTY — AND THE "TWO-TARGET BENCHMARK" IS EXACTLY THAT. The catalog's two-target
+ * figure is stated as a FOUR-PC benchmark: two of four. The workbook is a four-PC baseline
+ * throughout (`fourPcBaseline: true`, `campaign_baseline.party_size: 4`), so the benchmark is not
+ * a magic constant — it is half the party, and it scales with the party actually being run.
+ *
+ * Counting an area as ONE target, which is what this did before, under-prices every cone and
+ * every burst in the campaign. It is why the Grief Colossus's Collapse Space read as WEAKER than
+ * its own Fist routine and got scheduled out of the fight.
+ *
+ * Floor, minimum 1: rounding up would claim an area reliably catches a larger share of a small
+ * party than of a big one, which is backwards.
+ */
+export function aoeTargetsForParty(partySize: number): number {
+  const size = Number.isFinite(partySize) && partySize > 0 ? partySize : 4;
+  return Math.max(1, Math.floor(size / 2));
+}
+
+/**
  * Target count from the printed wording. Only counts what the text actually says — an area
  * effect with no stated target count is left undefined so the resolver can flag it, because
  * the catalog's two-target figure is a four-PC benchmark and not a default.
@@ -68,6 +104,49 @@ export function parseTargets(text: string | undefined): number | undefined {
     return words[n[1].toLowerCase()] ?? (Number.parseInt(n[1], 10) || undefined);
   }
   return undefined;
+}
+
+/**
+ * The damage a SUCCESSFUL save still takes, read from the block's own words.
+ *
+ * v7 `parser.success_patterns` lists exactly this: "Half damage" · "No damage" · "printed
+ * alternate damage". So half IS parseable and always was — the checker simply never read it and
+ * flagged every save-for-half in the campaign as *"No success damage printed; treated as none."*
+ * That under-prices each of them by the entire success half.
+ *
+ * ⚠ STILL NEVER ASSUMED. A block that says nothing gets nothing. That is the rule that stops an
+ * all-or-nothing save being quietly halved, and it is why this reads wording rather than defaulting.
+ */
+export function parseSuccessDamage(text: string | undefined, failDamage: string | undefined): string | undefined {
+  const t = text ?? "";
+  if (!t) return undefined;
+  if (/\b(?:no damage|isn't affected|is not affected|takes no damage)\b/i.test(t)) return "0";
+  const saysHalf = /\bhalf(?: as much)?(?: damage)?\b[^.]{0,40}\bsuccess/i.test(t)
+    || /\bsuccess(?:ful save)?\b[^.]{0,40}\bhalf\b/i.test(t)
+    || /\bhalf as much damage\b/i.test(t);
+  if (!saysHalf) return undefined;
+  const avg = damageAverageOf(failDamage);
+  return avg === undefined ? undefined : String(avg / 2);
+}
+
+/** Average of a printed damage expression, so "half" can be resolved to a number. */
+function damageAverageOf(expr: string | undefined): number | undefined {
+  if (!expr) return undefined;
+  const pre = expr.trim().match(/^\s*(\d+(?:\.\d+)?)\s*\(/);
+  if (pre) return Number.parseFloat(pre[1]);
+  let total = 0;
+  let saw = false;
+  for (const m of expr.matchAll(/([+-]?)\s*(\d*)d(\d+)/gi)) {
+    saw = true;
+    const sign = m[1] === "-" ? -1 : 1;
+    const count = m[2] === "" ? 1 : Number.parseInt(m[2], 10);
+    total += sign * (count * (Number.parseInt(m[3], 10) + 1)) / 2;
+  }
+  for (const m of expr.replace(/[+-]?\s*\d*d\d+/gi, " ").matchAll(/([+-])\s*(\d+)/g)) {
+    saw = true;
+    total += (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10);
+  }
+  return saw ? total : undefined;
 }
 
 /** "Recharge 5-6" / "Recharge 6" → the printed range. Availability ONLY. */
@@ -152,6 +231,10 @@ function parseSection(
       attackBonus: parseAttackBonus(a.roll),
       saveDc: parseSaveDc(a.save ?? a.text),
       targets: parseTargets(a.text),
+      // An area with no printed count is priced against the party, not counted as one.
+      isArea: parseTargets(a.text) === undefined && isAreaEffect(a.text),
+      // v7 success_patterns: half / none / printed alternate. Read, never assumed.
+      successDamage: parseSuccessDamage(a.text, a.damage),
       recharge: parseRecharge(a.recharge, name),
       uses: parseUses(name, a.text),
       replacesRoutineSlot: replacesRoutineSlot(name),
@@ -253,8 +336,19 @@ export function replacesRoutineSlot(name: string | undefined): boolean {
   return /\b(?:replaces|instead of|in place of)\b/i.test(name ?? "");
 }
 
-/** "STR DC 12" → 12, via the same reader the app path uses. */
-function featureFromProfile(f: CampaignProfile["f"][number]): ParsedFeature {
+/**
+ * "STR DC 12" → 12, via the same reader the app path uses.
+ *
+ * ⚠ `printedText` IS THE APP'S ACTION TEXT, and it matters. The v7 profiles carry the numbers —
+ * damage, attack, save, recharge — but NOT the action prose, so on their own they can say nothing
+ * about "half on a success" or "30-ft. cone". The workbook being silent on those is not the
+ * workbook contradicting the block; it simply does not record them. So the app's own text is read
+ * for exactly the two things the profile cannot express, and for nothing else.
+ */
+function featureFromProfile(
+  f: CampaignProfile["f"][number],
+  printedText?: string,
+): ParsedFeature {
   const channel = f.t === "bonus_action" ? "bonus_action"
     : f.t === "reaction" ? "reaction"
       : f.t === "trait" ? "trait"
@@ -268,13 +362,17 @@ function featureFromProfile(f: CampaignProfile["f"][number]): ParsedFeature {
     damage: average !== undefined ? `${average} (${f.d[0]?.[1] ?? ""})` : undefined,
     attackBonus: parseAttackBonus(f.a ?? undefined),
     saveDc: parseSaveDc(f.s ?? undefined),
-    targets: parseTargets(f.n),
+    targets: parseTargets(f.n) ?? parseTargets(printedText),
+    // The profile records the FAIL damage only. Half-on-a-success and the shape of an area live
+    // in the printed text, so they are read from there — the two things the profile cannot hold.
+    successDamage: parseSuccessDamage(printedText, f.d[0]?.[1]),
+    isArea: (parseTargets(f.n) ?? parseTargets(printedText)) === undefined && isAreaEffect(printedText),
     recharge: f.r ? `${f.r[0]}-${f.r[1]}` : undefined,
     uses: f.u?.uses,
     spellSlotLevel: f.c ?? undefined,
     spellName: detectSpell(f.n, undefined),
     replacesRoutineSlot: replacesRoutineSlot(f.n),
-    text: undefined,
+    text: printedText,
   };
 }
 
@@ -331,8 +429,8 @@ export function workbookCreature(template: MainMonsterTemplate): WorkbookCreatur
    */
   const appActions = (template.actions ?? []) as RawAction[];
   const features = profile.f.map(f => {
-    const parsed = featureFromProfile(f);
     const app = appActions.find(a => (a?.name ?? "").trim().toLowerCase() === f.n.trim().toLowerCase());
+    const parsed = featureFromProfile(f, app?.text);
     if (!app) return parsed;
     if (app.gated) {
       parsed.gated = true;

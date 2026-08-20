@@ -21,6 +21,7 @@
  */
 
 import { spellProfile, type SpellProfile, type SrdVersion } from "./compactImport";
+import { aoeTargetsForParty } from "./parseCreature";
 import { damageExpressionAverage } from "./damageExpression";
 
 /** How a feature's damage was arrived at — carried all the way to the trace. */
@@ -63,6 +64,11 @@ export type ParsedFeature = {
   saveDc?: number;
   /** Printed success damage. Never assumed to be half unless the block says half. */
   successDamage?: string;
+  /**
+   * An AREA effect with no printed target count — a cone, a radius, "each creature within X".
+   * Priced against the party the checker is running (half of it), not counted as one target.
+   */
+  isArea?: boolean;
   targets?: number;
   recharge?: string;
   uses?: number;
@@ -193,14 +199,26 @@ export function resolveFeature(
 export function expectedDamageForFeature(
   resolved: ResolvedFeature,
   feature: ParsedFeature,
-  target: { ac: number; saveBonus: number },
+  target: { ac: number; saveBonus: number; partySize?: number },
 ): { expected: number; basis: string; assumptions: FeatureAssumption[] } {
   const assumptions = [...resolved.assumptions];
-  const targets = feature.targets ?? 1;
-  if (feature.targets === undefined && (feature.saveDc !== undefined)) {
+  /**
+   * ⚠ AN AREA IS PRICED AGAINST THE PARTY, NOT COUNTED AS ONE.
+   *
+   * This used to take `feature.targets ?? 1` and flag every cone in the campaign as unpriceable.
+   * That was wrong twice over: it under-priced the effect by the whole party minus one, and it
+   * called a determinable number unknown. The checker is a FOUR-PC BASELINE model that already
+   * knows its party size, and the catalog's "two-target" figure IS that baseline — two of four.
+   *
+   * Printed count wins. An area with no printed count takes half the party. Anything else is one.
+   */
+  const partySize = target.partySize ?? 4;
+  const targets = feature.targets
+    ?? (feature.isArea ? aoeTargetsForParty(partySize) : 1);
+  if (feature.targets === undefined && feature.isArea) {
     assumptions.push({
       feature: resolved.name, flag: "ESTIMATED", field: "targets",
-      detail: "No target count printed for an area effect; counted as 1. The catalog's two-target value is a four-PC benchmark, not a default.",
+      detail: `Area effect with no printed target count; priced against ${targets} of ${partySize} PCs — half the party, which is what the catalog's two-target four-PC benchmark means. Set an explicit count on the action to override.`,
     });
   }
   if (resolved.rawAverage <= 0) return { expected: 0, basis: "no readable damage", assumptions };
@@ -219,7 +237,7 @@ export function expectedDamageForFeature(
     if (feature.successDamage === undefined) {
       assumptions.push({
         feature: resolved.name, flag: "ESTIMATED", field: "damage",
-        detail: "No success damage printed; treated as none. Half is never assumed unless the block says half.",
+        detail: "No success damage printed OR readable in the action text; treated as none. Half is only applied when the block says half — it is never assumed.",
       });
     }
     return {

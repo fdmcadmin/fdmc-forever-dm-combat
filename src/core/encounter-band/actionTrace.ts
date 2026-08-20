@@ -96,7 +96,7 @@ function rechargeProbability(range: string | undefined): number {
  */
 export function traceCreature(
   creature: ParsedCreature,
-  target: { ac: number; saveBonus: number },
+  target: { ac: number; saveBonus: number; partySize?: number },
   rounds = 4,
 ): CreatureTrace {
   const assumptions: FeatureAssumption[] = [...creature.assumptions];
