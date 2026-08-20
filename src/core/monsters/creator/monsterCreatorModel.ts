@@ -28,7 +28,7 @@ export type AbilityLabel = (typeof ABILITY_ORDER)[number];
  * do the same arithmetic — two private copies of "score over 10, halved" is how the two
  * lanes quietly drift apart. Swapping the ruleset has to move both at once.
  */
-import { abilityModifier, savingThrowModifier } from "../../rules/dnd5e";
+import { abilityModifier, savingThrowModifier, inferSaveProficiency } from "../../rules/dnd5e";
 export { abilityModifier };
 
 export function formatAbilityEntry(label: string, score: number): { label: string; value: string } {
@@ -234,6 +234,41 @@ export function creatureSaveModifier(
     // CR feeds the same stepped table as level. An unstated CR is treated as the bottom of it.
     level: Math.max(1, Math.floor(cr ?? 1)),
   });
+}
+
+/**
+ * How an ability's save should READ in the editor — the value, and whether the tick belongs.
+ *
+ * ⚠ THE TICK WAS LYING. Christopher, 2026-08-20: *"the encounter document for act 3 has all the
+ * saves listed others might not but why would you leave them as a unchecked option."*
+ *
+ * The saves were never missing. 51 of them are authored in the library right now — Snarlroot
+ * carries `save: 7` on STR and `save: 6` on CON, exactly the doc's "STR +7, CON +6". What was
+ * missing is that a freshly added checkbox reads `saveProficient`, which none of that data sets,
+ * so every creature displayed an EMPTY tick next to a save it actually had. A control that shows
+ * "not proficient" over real data is worse than no control.
+ *
+ * `inferSaveProficiency` already solves this on the player side, for exactly the same reason —
+ * sheets authored before the flag existed. It is reused rather than re-derived: a save one
+ * proficiency bonus above the modifier WAS a proficient save, one equal to the modifier was not,
+ * and anything else is bespoke and keeps its explicit number.
+ */
+export function creatureSaveDisplay(
+  entry: { value: string; save?: number; saveProficient?: boolean } | undefined,
+  cr: number | undefined,
+): { save: number; proficient: boolean; explicit: boolean } {
+  if (!entry) return { save: 0, proficient: false, explicit: false };
+  const modifier = abilityModifier(parseAbilityScore(entry.value));
+  const level = Math.max(1, Math.floor(cr ?? 1));
+  if (typeof entry.save === "number") {
+    const read = inferSaveProficiency({ save: entry.save, modifier, level });
+    return { save: entry.save, proficient: read.saveProficient, explicit: read.keepExplicit };
+  }
+  return {
+    save: savingThrowModifier({ modifier, saveProficient: entry.saveProficient, level }),
+    proficient: Boolean(entry.saveProficient),
+    explicit: false,
+  };
 }
 
 /** All six of a creature's save modifiers, keyed the way the checker asks for them. */

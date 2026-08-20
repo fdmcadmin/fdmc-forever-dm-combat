@@ -81,15 +81,17 @@ export type MonsterReaderAction = {
   /** Limited uses, e.g. 1 for "1/Day". Recharge is separate: that is availability, this is a pool. */
   uses?: number;
   /**
-   * PRINTED melee reach in feet. Never inferred from creature size — the v7 reach reference is
-   * explicit that size defines occupied space, not reach. Blank reads the action text, then the
-   * ruleset default.
+   * This action's reach or range, as printed — "5 ft", "120 ft", "30-ft. cone".
+   *
+   * ⚠ ONE FIELD, matching `ActorAction.range` on the PC side. It was briefly three (reach ft,
+   * range ft, push/pull ft), which made the DM classify an action before typing a number and
+   * spread one fact across three columns. Occupied SPACE comes from the creature's size; this is
+   * how far the action itself goes.
+   *
+   * Forced movement is deliberately NOT here: it is a consequence written in the action text and
+   * the parser reads it, so a control for it would be a schema field mistaken for a DM input.
    */
-  reachFt?: number;
-  /** PRINTED normal range in feet, for a ranged attack, spell, aura or save effect. */
-  rangeFt?: number;
-  /** Forced movement in feet: positive pushes away, negative pulls closer. */
-  forcedMovementFt?: number;
+  range?: string;
   /**
    * Conditions this action imposes. Authored outranks the prose the parser would otherwise read.
    * Drives the deterministic control repricing — advantage/disadvantage and reachability.

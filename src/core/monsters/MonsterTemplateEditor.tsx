@@ -35,7 +35,7 @@ import {
   parseAbilityScore,
   redistributeAbilityEntries,
   scoresFromTemplate,
-  creatureSaveModifier,
+  creatureSaveDisplay,
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
@@ -298,33 +298,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
               style={inputStyle}
               title="How many creatures this hits. Blank = single target, or an area priced against the party. Setting it turns the checker's estimate into a printed fact." />
           </div>
-          {/* ── REACH / RANGE ────────────────────────────────────────────────────────────
-              RULE 1A, the legitimate kind: these are D&D-facing statblock facts the DM authors,
-              not pricing weights the workbook owns. They are also what makes control pricing
-              deterministic — reachability is measured from footprint and PRINTED reach, and the
-              v7 reach reference forbids inferring either from creature size. Blank falls back to
-              reading the action text, then to the ruleset default melee reach. */}
-          <div style={{ width: 58 }}>
-            <span style={labelStyle}>Reach ft</span>
-            <input type="number" min={0} value={a.reachFt ?? ""} placeholder="5"
-              onChange={e => updateListItem(list, realIdx, { reachFt: e.target.value ? Math.max(0, Number(e.target.value)) : undefined })}
-              style={inputStyle}
-              title="Printed MELEE reach. Never inferred from size — a Huge creature has a 15 ft footprint and usually still a 5 or 10 ft reach. Blank reads the action text, then the ruleset default." />
-          </div>
-          <div style={{ width: 58 }}>
-            <span style={labelStyle}>Range ft</span>
-            <input type="number" min={0} value={a.rangeFt ?? ""} placeholder="—"
-              onChange={e => updateListItem(list, realIdx, { rangeFt: e.target.value ? Math.max(0, Number(e.target.value)) : undefined })}
-              style={inputStyle}
-              title="Printed NORMAL range for a ranged attack, spell, aura or save effect. The long range carries disadvantage and is priced separately, so it is not entered here." />
-          </div>
-          <div style={{ width: 74 }}>
-            <span style={labelStyle}>Push/pull ft</span>
-            <input type="number" value={a.forcedMovementFt ?? ""} placeholder="—"
-              onChange={e => updateListItem(list, realIdx, { forcedMovementFt: e.target.value ? Number(e.target.value) : undefined })}
-              style={inputStyle}
-              title="Forced movement: positive pushes away, negative pulls closer. Priced through reachability — whether the target can still reach — never as a flat damage tax." />
-          </div>
+          {/* ── RANGE — ONE FIELD, AS ON THE PC SIDE ─────────────────────────────────────
+              ⚠ THIS WAS THREE FIELDS AND SHOULD NEVER HAVE BEEN. Christopher, 2026-08-20:
+              *"why is there a need to have reach feet, range ft and push/pull ft, this isnt how
+              we designed the player side, the size of a creature should determine most of these,
+              and then the action should have the range of that action, just like the PC side
+              does."*
+
+              He is right on both counts, and I broke the same rule twice in one row:
+
+                · The PC action editor has ONE "Range" box — "5 ft, 120 ft…" — because an action
+                  has A range. Splitting it into reach-vs-range made the DM classify the action
+                  before typing a number, and the row grew three columns wide for one fact.
+                · PUSH/PULL IS NOT AN AUTHORED FIELD. It is a consequence written in the action
+                  text, and the parser reads it. Adding a box for it was RULE 1A applied
+                  literally again — a schema field is not a reason to expose a control.
+
+              Occupied space comes from creature SIZE, which is already authored in step 1. The
+              parser derives reach/range feet from this string, so reachability pricing is
+              unchanged — it just stops asking the DM to do the classifying. */}
+          <div style={{ flex: 1, minWidth: 90 }}>
+            <span style={labelStyle}>Range</span>
+            <input value={a.range ?? ""} onChange={e => updateListItem(list, realIdx, { range: e.target.value || undefined })}
+              placeholder="5 ft, 120 ft..." style={inputStyle}
+              title="This action's reach or range, exactly as the PC sheet takes it. Occupied space comes from the creature's size; this is how far the action itself goes. Blank reads it from the action text." /></div>
           {(a.save ?? "").trim() !== "" && (
             <div style={{ width: 92 }}>
               <span style={labelStyle}>On a save</span>
@@ -522,8 +519,9 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
         <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
           {ABILITY_ORDER.map(label => {
             const entry = draft.abilities.find(a => a.label.toUpperCase().startsWith(label));
-            const proficient = Boolean(entry?.saveProficient);
-            const save = creatureSaveModifier(entry, draft.stats.cr);
+            // Reads the REAL save — an authored explicit value included — so the tick can never
+            // sit empty next to a save the creature actually has.
+            const { save, proficient, explicit } = creatureSaveDisplay(entry, draft.stats.cr);
             return (
               <div key={label}>
                 <span style={{ ...labelStyle, textAlign: "center", fontWeight: 700 }}>{label}</span>
@@ -535,10 +533,12 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
                 <label
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3, marginTop: 3,
                     fontSize: 9, color: proficient ? "#34c759" : "#667", cursor: "pointer" }}
-                  title={`Proficient in ${label} saves — adds the proficiency bonus. Save becomes ${save >= 0 ? "+" : ""}${save}.`}>
-                  <input type="checkbox" checked={proficient}
+                  title={explicit
+                    ? `This creature has an authored save of ${save >= 0 ? "+" : ""}${save}, which is neither its bare modifier nor modifier + proficiency. It is kept exactly as authored.`
+                    : `Proficient in ${label} saves — adds the proficiency bonus. Save becomes ${save >= 0 ? "+" : ""}${save}.`}>
+                  <input type="checkbox" checked={proficient} disabled={explicit}
                     onChange={e => setSaveProficient(label, e.target.checked)} style={{ margin: 0 }} />
-                  save {save >= 0 ? "+" : ""}{save}
+                  save {save >= 0 ? "+" : ""}{save}{explicit ? "*" : ""}
                 </label>
               </div>
             );

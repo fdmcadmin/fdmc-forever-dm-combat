@@ -286,7 +286,8 @@ type RawAction = {
   legendaryCost?: number; economyCost?: string; gated?: boolean;
   /** Authored in the monster editor — these outrank anything parsed from the action text. */
   targets?: number; onSave?: string; successDamage?: string; uses?: number;
-  reachFt?: number; rangeFt?: number; conditions?: string[]; forcedMovementFt?: number;
+  /** The action's printed reach/range, one field — see MonsterReaderAction.range. */
+  range?: string; conditions?: string[];
 };
 
 function parseSection(
@@ -312,11 +313,16 @@ function parseSection(
       attackBonus: parseAttackBonus(a.roll),
       saveDc: parseSaveDc(a.save ?? a.text),
       saveAbility: parseSaveAbility(a.save ?? a.text),
-      // Reachability inputs. Authored beats printed, printed beats the ruleset default.
-      reachFt: a.reachFt ?? parseReachFt(a.text),
-      rangeFt: a.rangeFt ?? parseRangeFt(a.text),
+      /**
+       * Reachability inputs, all DERIVED. The DM authors one `range` string exactly as on the PC
+       * sheet; whether it reads as a melee reach or a ranged distance is the parser's job, not a
+       * classification the DM should have to make before typing a number. Forced movement is read
+       * from the action text, because it is a consequence the text states.
+       */
+      reachFt: parseReachFt(a.range) ?? parseReachFt(a.text),
+      rangeFt: parseRangeFt(a.range) ?? parseRangeFt(a.text),
       conditions: a.conditions ?? conditionsImposedBy({ text: a.text }),
-      forcedMovementFt: a.forcedMovementFt ?? parseForcedMovementFt(a.text),
+      forcedMovementFt: parseForcedMovementFt(a.text),
       /**
        * ⚠ AUTHORED DATA BEATS PARSED PROSE. `a.targets` and `a.onSave` are fields the monster
        * editor now writes; the text is the fallback for a block that predates them. A printed
