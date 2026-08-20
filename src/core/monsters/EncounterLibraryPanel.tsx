@@ -22,6 +22,7 @@ import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloa
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyPanel";
+import { CreatureEstimatorPanel } from "../encounter-band/CreatureEstimatorPanel";
 import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
 
 /** One table, one party — persisted so every encounter loads scaled to it. */
@@ -1227,6 +1228,10 @@ export function EncounterLibraryPanel({
               <>
                 {/* P9.5 — party-size / level difficulty band check (homebrew guide) */}
                 <EncounterDifficultyPanel encounters={encounters} monsterLibrary={resolvedLibrary} />
+                {/* The estimator rates ONE creature; the checker rates a whole encounter. Two
+                    measuring tools, side by side — and neither sits inside the creator, where a
+                    grade on half-typed numbers reads as instruction rather than measurement. */}
+                <CreatureEstimatorPanel monsterLibrary={resolvedLibrary} />
 
                 {/* My Library — always visible, no password needed */}
                 <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>

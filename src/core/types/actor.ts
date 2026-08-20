@@ -193,6 +193,15 @@ export type Actor = {
    * `characterLevel(actor)` rather than reading it raw, so the two can never disagree.
    */
   level: number;
+  /**
+   * Challenge Rating, for a monster. The creature-side counterpart of `level`: it drives the
+   * PROFICIENCY BONUS used by save proficiencies, and the two tables step identically (CR 0–4 and
+   * levels 1–4 are both +2, and so on), so the same helper serves both.
+   *
+   * Kept SEPARATE from `level` rather than overloading it — a monster does not have a character
+   * level, and writing its CR into that field would quietly feed every other level-driven rule.
+   */
+  cr?: number;
   /** Extra Attack — how many weapon/unarmed attacks a single Attack action grants.
    *  2 for martials at L5, 3 for a Fighter at L11. Spells are never affected: casting
    *  always consumes the whole action regardless of this value. Unset or 1 = one attack.

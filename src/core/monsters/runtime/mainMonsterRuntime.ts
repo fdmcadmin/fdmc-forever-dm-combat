@@ -190,6 +190,12 @@ export type MainMonsterTemplate = {
     creatureType?: string;
     /** Size category — Tiny/Small/Medium/Large/Huge/Gargantuan. */
     size?: string;
+    /**
+     * Challenge Rating. A printed statblock fact, and the source of the creature's PROFICIENCY
+     * BONUS — the monster table steps at exactly the same points as the character one (CR 0–4 →
+     * +2, 5–8 → +3, 9–12 → +4 …), so `proficiencyBonus` is reused rather than reimplemented.
+     */
+    cr?: number;
     /** Legendary actions per round (Monster Gate A6). Actions carrying a
      *  `legendaryCost` spend from this pool; unset = no legendary actions. */
     legendaryPerRound?: number;
@@ -201,9 +207,17 @@ export type MainMonsterTemplate = {
      *  Stealth/Perception/Acrobatics for every creature alike. Unset = derive nothing. */
     skills?: { label: string; modifier: number }[];
   };
-  /** `save` is the saving-throw modifier when the creature is PROFICIENT in that save;
-   *  omit it and the save equals the ability modifier. */
-  abilities: { label: string; value: string; save?: number }[];
+  /**
+   * ⚠ PROFICIENCY IS A FLAG, EXACTLY AS ON THE PLAYER SIDE. `saveProficient` adds the creature's
+   * proficiency bonus (derived from CR) to the ability modifier; `save` stays supported as the
+   * explicit escape hatch and still wins when set.
+   *
+   * The typed-number-only shape was the whole problem: nothing in the editor ever offered it, so
+   * every creature in the library saved at its bare ability modifier. A CR 9 boss proficient in
+   * WIS should save at +4 over its modifier, and the checker was pricing it as if it were not
+   * proficient at all — which under-prices every control effect aimed at it.
+   */
+  abilities: { label: string; value: string; save?: number; saveProficient?: boolean }[];
   traits: MonsterReaderAction[];
   actions: MonsterReaderAction[];
   reactions: MonsterReaderAction[];
@@ -229,6 +243,8 @@ export type MainEncounterMonsterInstance = MonsterCombatCandidate & {
   status: string;
   visibilityState: MainMonsterVisibilityState;
   templateRef: string;
+  /** Challenge Rating — the source of this creature's proficiency bonus for saves. */
+  cr?: number;
 };
 
 /**
@@ -516,6 +532,8 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     speed: template.stats.speed,
     sourceFlavor: "FDMC Monster Template",
     abilityScores: template.abilities,
+    // CR rides along so the card computes save proficiency at the creature's own bonus.
+    cr: template.stats.cr,
     actions: template.actions,
     reactions: template.reactions,
     traits: template.traits,

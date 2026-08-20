@@ -28,7 +28,7 @@ export type AbilityLabel = (typeof ABILITY_ORDER)[number];
  * do the same arithmetic — two private copies of "score over 10, halved" is how the two
  * lanes quietly drift apart. Swapping the ruleset has to move both at once.
  */
-import { abilityModifier } from "../../rules/dnd5e";
+import { abilityModifier, savingThrowModifier } from "../../rules/dnd5e";
 export { abilityModifier };
 
 export function formatAbilityEntry(label: string, score: number): { label: string; value: string } {
@@ -207,4 +207,44 @@ export function chassisFromTemplate(t: MainMonsterTemplate): ChassisPayload {
     maxHp: t.stats.maxHp,
     speed: t.stats.speed,
   };
+}
+
+/**
+ * A creature's saving-throw modifier for one ability.
+ *
+ * ⚠ SAME RULE AS THE PLAYER SIDE, and deliberately the same function underneath. Proficiency is a
+ * FLAG that adds the proficiency bonus; an explicit `save` is the escape hatch and still wins.
+ * The monster proficiency table steps at the same points as the character one — CR 0–4 → +2,
+ * 5–8 → +3, 9–12 → +4 — so `proficiencyBonus` takes CR where it takes level, rather than a second
+ * near-identical table being written next to it.
+ *
+ * Christopher, 2026-08-20: *"the player side has this in exisitance why would the creature side
+ * not also have this."* No reason — the field was on the type and nothing ever set it.
+ */
+export function creatureSaveModifier(
+  entry: { value: string; save?: number; saveProficient?: boolean } | undefined,
+  cr: number | undefined,
+): number {
+  if (!entry) return 0;
+  if (typeof entry.save === "number") return entry.save;
+  const modifier = abilityModifier(parseAbilityScore(entry.value));
+  return savingThrowModifier({
+    modifier,
+    saveProficient: entry.saveProficient,
+    // CR feeds the same stepped table as level. An unstated CR is treated as the bottom of it.
+    level: Math.max(1, Math.floor(cr ?? 1)),
+  });
+}
+
+/** All six of a creature's save modifiers, keyed the way the checker asks for them. */
+export function creatureSaves(
+  abilities: { label: string; value: string; save?: number; saveProficient?: boolean }[],
+  cr: number | undefined,
+): Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number> {
+  const out = {} as Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
+  for (const label of ABILITY_ORDER) {
+    const entry = abilities.find(a => a.label.toUpperCase().startsWith(label));
+    out[label.toLowerCase() as keyof typeof out] = creatureSaveModifier(entry, cr);
+  }
+  return out;
 }

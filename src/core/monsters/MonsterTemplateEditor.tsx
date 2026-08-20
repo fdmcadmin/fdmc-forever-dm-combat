@@ -35,14 +35,11 @@ import {
   parseAbilityScore,
   redistributeAbilityEntries,
   scoresFromTemplate,
+  creatureSaveModifier,
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
-import { estimateCreature } from "../encounter-band/creatureEstimator";
 import { parseCreature } from "../encounter-band/parseCreature";
-import { traceCreature } from "../encounter-band/actionTrace";
-import { partyDefenceAt } from "../encounter-band/partyDefenceCurve";
-import type { PartyEquipmentMode } from "../encounter-band/partyCurveV2";
 import { TRAIT_RULES, traitRule } from "../encounter-band/compactImport";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -111,70 +108,12 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
   const [chassisId, setChassisId] = useState<string>("");
   const [refBand, setRefBand] = useState<CreatorBandId>("mid");
   const [refPressure, setRefPressure] = useState<CreatorPressureId>("standard");
-  /** Which party the estimate is rated against. Both curves exist, so both are offered. */
-  const [refMode, setRefMode] = useState<PartyEquipmentMode>("wotcStandard");
-  const [desiredCr, setDesiredCr] = useState<number | undefined>(undefined);
 
   /**
-   * The workbook estimator, fed from THIS creature.
-   *
-   * ⚠ THE DPR COMES FROM THE TRACE, not from a number typed twice. `parseCreature` +
-   * `traceCreature` are the same pair the encounter checker uses, so the estimate cannot drift
-   * from what the checker says the creature does — and it already honours Recharge, use limits and
-   * gated features. The sheet asks for "expected DPR from the parser"; this IS the parser.
-   *
-   * The trait multiplier is the PRODUCT of the authored defences, matching the checker's own
-   * combination rule.
-   *
-   * ⚠ THE TARGET COMES FROM THE CURVE, NOT FROM AC 16 / SAVE +3. Those were hardcoded here as
-   * "the estimator's fixed reference frame", justified on the grounds that it measures a creature
-   * rather than a party. The justification survived the fact that changed it: v7 publishes an
-   * average AC and all six save averages for every level in BOTH modes, so the frame can be a real
-   * party at the band's own level instead of two magic numbers.
-   *
-   * It is still a FIXED frame — it moves with the selected band, not with any particular table —
-   * which keeps the estimate comparable between creatures in the same band.
+   * The creature estimator no longer lives here — it MEASURES a creature rather than helping
+   * build one. See `CreatureEstimatorPanel`, which runs the same parse + trace pair so the
+   * estimate and the encounter check still cannot disagree about what a creature does.
    */
-  const estimate = useMemo(() => {
-    const parsed = parseCreature(draft);
-    const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
-    const defence = partyDefenceAt(band.referenceLevel, refMode);
-    const saveAverage = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
-    // THREE rounds, not four: v6 rates the legal three-round action sequence.
-    const trace = traceCreature(parsed, {
-      ac: defence.ac, saveBonus: saveAverage,
-      saves: { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha },
-    }, 3);
-    // TWO CHANNELS, and a trait belongs to exactly one. The authored trait product stays a
-    // MULTIPLIER — collapsing it into the flat term gives the same effective HP but hides the
-    // sustain calibration. Flat effects (regeneration, healing, restored HP, fixed barriers)
-    // belong in `ehpAdjustment`; AC-equivalent effects belong in `acAdjustment`.
-    const traitMultiplier = (draft.stats.defenses ?? [])
-      .reduce((product, d) => product * (d.ehpMultiplier || 1), 1);
-    const rawHp = draft.stats.maxHp || 0;
-    const acValue = typeof draft.stats.ac === "number"
-      ? draft.stats.ac
-      : Number.parseInt(String(draft.stats.ac), 10);
-    // The offence axis comes from what the creature actually leads with. A creature that only
-    // forces saves is rated on its DC; anything with an attack roll is rated on that.
-    const attackBonus = parsed.features.reduce(
-      (best, f) => Math.max(best, f.attackBonus ?? 0), 0);
-    const saveDc = parsed.features.reduce(
-      (best, f) => Math.max(best, f.saveDc ?? 0), 0);
-    return estimateCreature({
-      rawHp,
-      ac: Number.isFinite(acValue) ? acValue : 15,
-      ehpMultiplier: traitMultiplier,
-      ehpAdjustment: 0,
-      acAdjustment: 0,
-      r1Dpr: trace.rounds[0]?.totalExpectedDamage ?? 0,
-      r2PlusDpr: trace.rounds[1]?.totalExpectedDamage ?? 0,
-      offenseBasis: attackBonus > 0 ? "attack" : "saveDc",
-      attackBonus,
-      saveDc,
-      desiredCr,
-    });
-  }, [draft, desiredCr, refBand, refMode]);
 
   function updateStat<K extends keyof MainMonsterTemplate["stats"]>(key: K, val: MainMonsterTemplate["stats"][K]) {
     setDraft(d => ({ ...d, stats: { ...d.stats, [key]: val } }));
@@ -257,7 +196,37 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
       const entries = ABILITY_ORDER.map(l => {
         const current = d.abilities.find(a => a.label.toUpperCase().startsWith(l));
         const s = l === label ? score : current ? parseAbilityScore(current.value) : 10;
-        return formatAbilityEntry(l, s);
+        /**
+         * ⚠ CARRY THE SAVE FIELDS THROUGH. `formatAbilityEntry` returns ONLY `{label, value}`, and
+         * this rebuilds all six entries from it on every keystroke — so without the spread,
+         * ticking a save proficiency and then nudging any score wiped all six ticks. Silent, and
+         * invisible until the checker priced a boss as though it were not proficient.
+         *
+         * Same shape as the actor-tabs data loss: a rebuild that reconstructs a record from a
+         * partial factory drops whatever the factory does not know about.
+         */
+        return { ...(current ?? {}), ...formatAbilityEntry(l, s) };
+      });
+      return { ...d, abilities: entries };
+    });
+  }
+
+  /**
+   * Tick or untick save proficiency for one ability.
+   *
+   * Stores the FLAG, never a computed number — the modifier follows the score and the CR on its
+   * own, exactly as it does on a player sheet. An explicit `save` still overrides it.
+   */
+  function setSaveProficient(label: string, proficient: boolean) {
+    setDraft(d => {
+      const entries = ABILITY_ORDER.map(l => {
+        const current: MainMonsterTemplate["abilities"][number] =
+          d.abilities.find(a => a.label.toUpperCase().startsWith(l)) ?? formatAbilityEntry(l, 10);
+        if (l !== label) return current;
+        const next = { ...current };
+        if (proficient) next.saveProficient = true;
+        else delete next.saveProficient;
+        return next;
       });
       return { ...d, abilities: entries };
     });
@@ -527,17 +496,53 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
             ♻ Reshape by {draft.stats.archetype ? archetypeInfo(draft.stats.archetype).label : "archetype"}
           </SmallBtn>
         </div>
+        {/* CR sits with the abilities because it is what turns a proficiency TICK into a save
+            number — the monster proficiency table steps at the same points as the character one. */}
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8 }}>
+          <div style={{ width: 90 }}>
+            <span style={labelStyle}>CR</span>
+            <input type="number" step="0.125" min={0} value={draft.stats.cr ?? ""} placeholder="—"
+              onChange={e => updateStat("cr", e.target.value === "" ? undefined : Math.max(0, Number(e.target.value)))}
+              style={inputStyle}
+              title="Challenge Rating. Sets the proficiency bonus used by save proficiencies: CR 0–4 = +2, 5–8 = +3, 9–12 = +4, and so on." />
+          </div>
+          <span style={{ fontSize: 10, color: "#667", paddingBottom: 4 }}>
+            proficiency bonus <strong style={{ color: "#99a" }}>
+              +{Math.floor((Math.max(1, Math.floor(draft.stats.cr ?? 1)) - 1) / 4) + 2}
+            </strong> — added to every ticked save below
+          </span>
+        </div>
+        {/* ⚠ SAVE PROFICIENCY, THE SAME WAY THE PLAYER SHEET DOES IT. Christopher, 2026-08-20:
+            *"the player side has this in exisitance why would the creature side not also have
+            this."* The field was on the type all along — `abilities[].save`, with a comment saying
+            it is the modifier "when the creature is PROFICIENT" — and no editor ever offered it,
+            so every creature in the library saves at its bare ability modifier. A CR 9 boss
+            proficient in WIS saves four points higher than the checker was giving it, which
+            over-prices every control effect aimed at it. */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
-          {ABILITY_ORDER.map(label => (
-            <div key={label}>
-              <span style={{ ...labelStyle, textAlign: "center", fontWeight: 700 }}>{label}</span>
-              <input type="number" value={scores[label]} onChange={e => setScore(label, Number(e.target.value) || 0)}
-                style={{ ...inputStyle, textAlign: "center" }} />
-              <div style={{ fontSize: 10, color: "#888", textAlign: "center", marginTop: 2 }}>
-                {(() => { const m = Math.floor((scores[label] - 10) / 2); return `${m >= 0 ? "+" : ""}${m}`; })()}
+          {ABILITY_ORDER.map(label => {
+            const entry = draft.abilities.find(a => a.label.toUpperCase().startsWith(label));
+            const proficient = Boolean(entry?.saveProficient);
+            const save = creatureSaveModifier(entry, draft.stats.cr);
+            return (
+              <div key={label}>
+                <span style={{ ...labelStyle, textAlign: "center", fontWeight: 700 }}>{label}</span>
+                <input type="number" value={scores[label]} onChange={e => setScore(label, Number(e.target.value) || 0)}
+                  style={{ ...inputStyle, textAlign: "center" }} />
+                <div style={{ fontSize: 10, color: "#888", textAlign: "center", marginTop: 2 }}>
+                  {(() => { const m = Math.floor((scores[label] - 10) / 2); return `${m >= 0 ? "+" : ""}${m}`; })()}
+                </div>
+                <label
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3, marginTop: 3,
+                    fontSize: 9, color: proficient ? "#34c759" : "#667", cursor: "pointer" }}
+                  title={`Proficient in ${label} saves — adds the proficiency bonus. Save becomes ${save >= 0 ? "+" : ""}${save}.`}>
+                  <input type="checkbox" checked={proficient}
+                    onChange={e => setSaveProficient(label, e.target.checked)} style={{ margin: 0 }} />
+                  save {save >= 0 ? "+" : ""}{save}
+                </label>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* RULE 1A — skills were code-only. The rolled-check UI reads `stats.skills`, so a
@@ -677,77 +682,10 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
           </div>
         </div>
 
-        {/* ── THE WORKBOOK'S CREATURE ESTIMATOR ──────────────────────────────────────────
-            A faithful port of the v4 audit workbook's "Creature Estimator" sheet, reading THIS
-            creature rather than asking for its numbers again: raw HP and AC from the fields
-            above, the trait multiplier as the PRODUCT of its authored defences, and the DPR from
-            its own traced action schedule — the same trace the encounter checker uses, so the
-            estimate and the encounter check can never disagree about what the creature does.
-
-            The sheet's own bounds, quoted because they limit what this may claim: *"it is not an
-            official CR ruling and it never rewrites a creature's printed action budget."* So it
-            SUGGESTS a range. Nothing here writes to the creature. */}
-        <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
-          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4f9dff" }}>
-            Creature estimator — workbook v4
-          </span>
-          {/* WHICH PARTY IT IS RATED AGAINST. Both curves are published, so both are offered
-              rather than one being hardcoded. The level follows the band above. */}
-          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10, color: "#667" }}>rated vs</span>
-            {(["wotcStandard", "brokenChain"] as const).map(m => (
-              <button key={m} type="button" onClick={() => setRefMode(m)}
-                style={{
-                  fontSize: 10, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
-                  background: refMode === m ? "#4f9dff" : "#0d0d14",
-                  color: refMode === m ? "#fff" : "#8a8aa0",
-                  border: `1px solid ${refMode === m ? "#4f9dff" : "#2a2a3e"}`,
-                }}>
-                {m === "brokenChain" ? "Broken Chain" : "WotC standard"}
-              </button>
-            ))}
-            {(() => {
-              const b = CREATOR_BANDS.find(x => x.id === refBand) ?? CREATOR_BANDS[1];
-              const d = partyDefenceAt(b.referenceLevel, refMode);
-              return (
-                <span style={{ fontSize: 10, color: "#667" }}>
-                  L{b.referenceLevel} party · AC <strong style={{ color: "#99a" }}>{d.ac}</strong> · saves STR {d.str} DEX {d.dex} CON {d.con} INT {d.int} WIS {d.wis} CHA {d.cha}
-                </span>
-              );
-            })()}
-          </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 6, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
-            <span>EHP multiplier <strong style={{ color: "#dfe4ff" }}>×{estimate.ehpMultiplier.toFixed(3)}</strong></span>
-            <span>effective AC <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveAc}</strong></span>
-            <span>effective HP <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveHp.toFixed(0)}</strong></span>
-            <span>three-round DPR <strong style={{ color: "#dfe4ff" }}>{estimate.modeledDpr.toFixed(1)}</strong></span>
-          </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 4, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
-            <span>defensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.baseDefensiveCr}</strong>
-              <span style={{ color: "#667" }}> → AC-adj {estimate.acAdjustedDefensiveCr}</span></span>
-            <span>offensive CR <strong style={{ color: "#dfe4ff" }}>{estimate.baseOffensiveCr}</strong>
-              <span style={{ color: "#667" }}> → atk/DC-adj {estimate.deliveryAdjustedOffensiveCr}</span></span>
-            <span>suggested <strong style={{ color: "#7be08a" }}>{estimate.crRange}</strong>
-              <span style={{ color: "#667" }}> centre {estimate.estimatedCr}</span></span>
-            {estimate.capStatus !== "WITHIN CR 0-25 TABLE" && (
-              <span style={{ color: "#e8b64c" }}>{estimate.capStatus}</span>
-            )}
-          </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginTop: 8, flexWrap: "wrap" }}>
-            <div style={{ width: 120 }}>
-              <span style={labelStyle}>Desired CR</span>
-              <input type="number" min={1} max={20} value={desiredCr ?? ""} placeholder="—"
-                onChange={e => setDesiredCr(e.target.value ? Math.max(1, Math.min(20, Number(e.target.value))) : undefined)}
-                style={inputStyle} />
-            </div>
-            <p style={{ ...hintStyle, flex: 1, minWidth: 220, margin: 0 }}>{estimate.guidance}</p>
-          </div>
-          <p style={{ ...hintStyle, margin: "6px 0 0" }}>
-            Estimated from selected SRD medians — a practical range, not an official CR ruling. The
-            DPR is this creature's own traced schedule, so it already respects Recharge, use limits
-            and gating. Nothing here writes to the creature.
-          </p>
-        </div>
+        {/* The creature estimator used to sit here. It MEASURES a creature rather than helping
+            build one, and inside the Defenses step it read as a live grade on the numbers being
+            typed — as though the creator were steering toward a target CR. It is now its own
+            tool: CreatureEstimatorPanel, beside the encounter checker. */}
       </>
     );
   }

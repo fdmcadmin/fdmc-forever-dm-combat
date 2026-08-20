@@ -4825,7 +4825,10 @@ export function ActorCard({
           </div>
         </div>
 
-        <AbilityScoreRow abilityScores={actor.abilityScores} derivedStats={deriveActorStats(actor, undefined, status)} level={actor.level} />
+        {/* A monster's proficiency bonus comes from its CR, a PC's from its level — same stepped
+            table, different source. Passing `level` for both priced every creature's saves as if
+            it were level 1. */}
+        <AbilityScoreRow abilityScores={actor.abilityScores} derivedStats={deriveActorStats(actor, undefined, status)} level={actor.cr ?? actor.level} />
         {renderCompactDebuffSummary()}
         {renderAttackUsePanel()}
       </header>
