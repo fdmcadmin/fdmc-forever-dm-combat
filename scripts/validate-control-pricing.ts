@@ -140,7 +140,14 @@ console.log("\n── Multiattack (contract: auto=YES, 'resolve the printed lega
 check("'makes three slam attacks' → 3", multiattackCountFromText("The brute makes three slam attacks."), 3);
 check("'attacks twice' → 2", multiattackCountFromText("It attacks twice with its claws."), 2);
 check("'makes two claw attacks' → 2", multiattackCountFromText("Makes two claw attacks."), 2);
-check("named components beat a bare number", multiattackCountFromText("makes two attacks", ["Claw", "Bite", "Tail"]), 3);
+// ⚠ A PRINTED COUNT BEATS THE COMPONENT LIST. This assertion used to expect 3 — it encoded the
+// bug rather than the rule. The action list is the menu of legal options; "makes two attacks"
+// means two, whether the creature has three attacks to choose from or ten.
+check("a printed count beats the component list", multiattackCountFromText("The dragon makes two attacks.", ["Claw", "Bite", "Tail"]), 2);
+// With no printed count, the named sequence IS the count — and each name carries its quantifier.
+check("named sequence with no count → counted by name", multiattackCountFromText("It makes a Bite attack and a Claw attack.", ["Bite", "Claw"]), 2);
+check("…and a quantified component counts fully", multiattackCountFromText("It makes a Bite attack and two Claw attacks.", ["Bite", "Claw"]), 3);
+check("a component not mentioned is not counted", multiattackCountFromText("It makes a Bite attack.", ["Bite", "Claw", "Tail"]), 1);
 check("unreadable sequence returns undefined, never a guess", multiattackCountFromText("It attacks in a manner beyond description."), undefined);
 // Caught against the live library — and the SECOND time this exact negation bug was written.
 check("'no multiattack' is NOT a Multiattack (Frozen Husk)", isMultiattackAction("Rime Claw", "Its only attack — no multiattack, no rider."), false);

@@ -385,8 +385,17 @@ export function parseCreature(template: MainMonsterTemplate): ParsedCreature {
    */
   const multiattackAction = (template.actions as RawAction[] | undefined)
     ?.find(a => isMultiattackAction(a.name, a.text));
+  /**
+   * ⚠ THE COMPONENT NAMES ARE PASSED IN, which is the whole point of reading a printed sequence.
+   * The helper has always accepted them and NEITHER call site supplied them, so a Multiattack that
+   * spells itself out by name — "makes a Bite attack and two Claw attacks" — returned undefined
+   * and asked the DM for a number sitting in the creature's own action list.
+   */
+  const componentNames = (template.actions as RawAction[] | undefined)
+    ?.filter(a => a !== multiattackAction && a.name)
+    .map(a => a.name as string) ?? [];
   const printedSequence = multiattackAction
-    ? multiattackCountFromText(multiattackAction.text ?? multiattackAction.name)
+    ? multiattackCountFromText(multiattackAction.text ?? multiattackAction.name, componentNames)
     : undefined;
   const attacksPerTurn = template.stats.attacksPerTurn ?? printedSequence ?? 1;
   const hasRoutineAttacks = features.some(f => f.activationType === "action" && f.attackBonus !== undefined);
@@ -531,8 +540,11 @@ export function workbookCreature(template: MainMonsterTemplate): WorkbookCreatur
    */
   const profileMultiattack = (template.actions as RawAction[] | undefined)
     ?.find(a => isMultiattackAction(a.name, a.text));
+  const profileComponents = (template.actions as RawAction[] | undefined)
+    ?.filter(a => a !== profileMultiattack && a.name)
+    .map(a => a.name as string) ?? [];
   const profileSequence = profileMultiattack
-    ? multiattackCountFromText(profileMultiattack.text ?? profileMultiattack.name)
+    ? multiattackCountFromText(profileMultiattack.text ?? profileMultiattack.name, profileComponents)
     : undefined;
   const attacksPerTurn = template.stats.attacksPerTurn ?? profileSequence ?? 1;
   if (!template.stats.attacksPerTurn && profileSequence !== undefined) {

@@ -59,14 +59,53 @@ export function isMultiattackAction(name: string | undefined, text: string | und
  */
 export function multiattackCountFromText(
   text: string | undefined,
-  namedComponents?: readonly string[],
+  actionNames?: readonly string[],
 ): number | undefined {
-  if (namedComponents?.length) return namedComponents.length;
   const t = text ?? "";
   if (!t) return undefined;
+
+  /**
+   * ⚠ A TOTAL AND A COMPONENT QUANTIFIER LOOK IDENTICAL, AND THEY MEAN OPPOSITE THINGS.
+   *
+   *   "The dragon makes two attacks."                    → two is the TOTAL.
+   *   "It makes a Bite attack and two Claw attacks."      → two is ONE COMPONENT of a total of 3.
+   *
+   * The number-word patterns cannot tell these apart — the second matches "two Claw attacks" and
+   * confidently returns 2, losing the Bite. What separates them is whether the text SPELLS OUT a
+   * sequence: two or more of the creature's own actions named in the Multiattack line.
+   *
+   * So a spelled-out sequence is summed component by component, and only text that does NOT name
+   * multiple components is read as a bare total. Both orderings are wrong on their own — an
+   * earlier version returned `actionNames.length` first and read "makes two attacks" as THREE for
+   * a creature with three actions in its list, which is the menu, not the sequence.
+   */
+  const named = (actionNames ?? []).filter((n): n is string => Boolean(n));
+  const mentioned = named.filter(n => new RegExp(`\\b${escapeForRegExp(n)}\\b`, "i").test(t));
+
+  if (mentioned.length >= 2) {
+    let total = 0;
+    for (const name of mentioned) total += componentCount(t, name);
+    if (total > 0) return total;
+  }
+
   for (const pattern of MULTIATTACK_PATTERNS) {
     const count = parseSmallNumberWord(t.match(pattern)?.[1]);
     if (count && count > 0) return count;
   }
+
+  // One component named and no count printed — "It makes a Bite attack." — is a sequence of one.
+  if (mentioned.length === 1) return componentCount(t, mentioned[0]);
   return undefined;
+}
+
+function escapeForRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** How many times one named component appears in the sequence: "two Claw attacks" → 2. */
+function componentCount(text: string, name: string): number {
+  const escaped = escapeForRegExp(name);
+  const quantified = text.match(
+    new RegExp(`\\b(one|two|twice|three|four|five|six|\\d+)\\s+(?:[^.]{0,20}?\\s)?${escaped}\\b`, "i"));
+  return quantified ? (parseSmallNumberWord(quantified[1]) ?? 1) : 1;
 }
