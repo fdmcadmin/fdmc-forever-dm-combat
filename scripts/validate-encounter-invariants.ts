@@ -43,6 +43,7 @@
 
 import { simulateEncounter } from "../src/core/encounter-band/checkerV2";
 import type { RosterGroup } from "../src/core/encounter-band/checkerV2";
+import { diagnoseEncounter } from "../src/core/encounter-band/encounterDiagnostics";
 
 let passed = 0;
 const failures: string[] = [];
@@ -143,6 +144,78 @@ console.log("\n── 8.5 Damage allocation is a party-side projection, not a mo
   check("allocation does not change monster output", JSON.stringify(fd), JSON.stringify(sd));
   report("focus-fire downs at completion", focus.downsAtCompletion);
   report("spread-evenly downs at completion", spread.downsAtCompletion);
+}
+
+console.log("\n── §3 Damage allocation: what it governs, and what it must not");
+{
+  // Audit §3 asks what Focus Fire and Spread Evenly actually do. The answer, from the engine:
+  // they govern ONLY the projection of monster damage across PCs. Party damage against monsters
+  // is always sequential in kill order, whichever is selected.
+  const roster = [body("a", 20, 100), body("b", 20, 100)];
+  const focus = run(roster, "focus_fire");
+  const spread = run(roster, "spread_evenly");
+  check("completion round is identical under both", focus.completionRound, spread.completionRound);
+  check("party damage per round is identical under both",
+    JSON.stringify(focus.rounds.map(r => r.partyDamage)), JSON.stringify(spread.rounds.map(r => r.partyDamage)));
+  // ⚠ And they MUST differ where v7 says they differ — downs are the aggregate projection.
+  const hardParty = { size: 4, sustain: 100, dpr: { round1: 10, round2: 10, round3: 10, round4Plus: 10 } };
+  const hard = (alloc: "focus_fire" | "spread_evenly") =>
+    simulateEncounter({ party: hardParty, roster: [body("big", 30, 400)], settings: { damageAllocation: alloc } });
+  const hf = hard("focus_fire"), hs = hard("spread_evenly");
+  report("focus-fire downs by round", hf.rounds.map(r => r.downs));
+  report("spread-evenly downs by round", hs.rounds.map(r => r.downs));
+  check("focus fire drops PCs one at a time, spread drops none until all fall",
+    hf.rounds.some(r => r.downs > 0 && r.downs < 4) && hs.rounds.every(r => r.downs === 0 || r.downs === 4), true);
+}
+
+console.log("\n── §6 Party Clock is downstream: monster damage must not read party sustain");
+{
+  // Same roster, same party size, WILDLY different sustain. If monster output changed with
+  // sustain, the clock would be feeding the engine instead of reading it.
+  const mk = (sustain: number) => simulateEncounter({
+    party: { size: 4, sustain, dpr: { round1: 40, round2: 40, round3: 40, round4Plus: 40 } },
+    roster: [body("x", 20, 200)], settings: { damageAllocation: "focus_fire" },
+  });
+  const lean = mk(120), fat = mk(4000);
+  check("monster damage is identical regardless of party sustain",
+    JSON.stringify(lean.rounds.slice(0, 3).map(r => Number(r.monsterDamage.toFixed(4)))),
+    JSON.stringify(fat.rounds.slice(0, 3).map(r => Number(r.monsterDamage.toFixed(4)))));
+  check("…and so is the encounter EHP the party must chew through", lean.encounterEhp, fat.encounterEhp);
+}
+
+console.log("\n── §4 Monster offense is built from individual creatures, not an encounter total");
+{
+  // Audit §4: "For each round, build monster offense from the legal actions of the individual
+  // creatures that can act that round. Do not begin with an expected encounter damage result."
+  // Two groups with different DPR: the encounter total must be the SUM of what each body does,
+  // and each body's share must be independently identifiable — not a top-down split.
+  const roster = [body("fast", 30, 60, 2), body("slow", 10, 200)];
+  const r = run(roster);
+  const d = diagnoseEncounter(r, roster, 4, 400);
+  const r1 = d.rounds[0];
+  const fast = r1.bodies.find(b => b.creature.includes("fast"))!;
+  const slow = r1.bodies.find(b => b.creature.includes("slow"))!;
+  // R1 start: 2 fast (60) + 1 slow (10) = 70. End: party deals 40 → kills nothing (60 EHP each,
+  // 40 < 60), so still 70. Midpoint 70.
+  check("round 1 total is the sum of the individual bodies", Number(r1.monsterDamage.toFixed(2)), 70);
+  check("the fast pair's own share is identifiable", Number(fast.contribution.toFixed(2)), 60);
+  check("the slow body's own share is identifiable", Number(slow.contribution.toFixed(2)), 10);
+  check("shares sum to the total with nothing left over",
+    Number((fast.contribution + slow.contribution).toFixed(6)), Number(r1.monsterDamage.toFixed(6)));
+}
+
+console.log("\n── §7 Diagnostic trace reconciles with the engine it describes");
+{
+  const roster = [body("front", 15, 120, 2), body("back", 25, 90)];
+  const r = run(roster);
+  const d = diagnoseEncounter(r, roster, 4, 400);
+  // ⚠ The point of the check: the trace must be a VIEW of the engine, never a second engine.
+  check("per-body contributions sum to the engine's own monster damage, every round", d.reconciles, true);
+  check("worst discrepancy is zero", d.worstDiscrepancy < 1e-6, true);
+  const r1 = d.rounds[0];
+  check("round 1 has every body alive", r1.bodies.every(b => b.aliveAtStart === b.quantity), true);
+  report("bodies alive at end of each round",
+    d.rounds.map(x => x.bodies.map(b => b.aliveAtEnd).join("/")));
 }
 
 console.log(`\n${failures.length === 0 ? "ALL PASS" : "FAILURES"} — ${passed} passed, ${failures.length} failed`);

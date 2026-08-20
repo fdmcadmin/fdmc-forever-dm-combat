@@ -621,9 +621,31 @@ export function simulateEncounter(opts: {
   for (let round = 1; round <= maxRounds; round += 1) {
     const pcsStart = standing;
     const partyPotential = roundValue(party.dpr, round);
-    // Party damage scales with survivors.
-    const partyDamage = completionRound || pcsStart === 0
-      ? 0 : partyPotential * pcsStart / partySize;
+    /**
+     * ⚠ THE SURVIVOR PROJECTION IS AN OUTPUT AND MUST NOT DRIVE THE TRACE.
+     *
+     * This used to read `partyPotential * pcsStart / partySize` — party damage scaled by how many
+     * PCs the model projected were still standing. That makes a PROJECTION an INPUT, and v7 is
+     * explicit about what these numbers are (`contract.survivor_projection.precision`):
+     *
+     *     "Downs, damaged-but-standing, and standing counts are model projections under the
+     *      selected allocation, not observed combat outcomes."
+     *
+     * The audit says the same in its own words: *"Down, Standing, completion round and safety
+     * margin must be outputs of the trace rather than assumptions used to force the trace toward
+     * a verdict."*
+     *
+     * ⚠ THE OBSERVABLE DEFECT: the two allocations project downs on different schedules —
+     * focus fire drops PCs one at a time, spread-evenly drops none until the party's whole
+     * sustain is gone — so feeding that back changed PARTY DAMAGE, and with it the completion
+     * round. The same fight completed in 5 rounds or 6 depending on a display toggle. A lens on
+     * the result was silently rewriting the result.
+     *
+     * The party curve is already the party's expected output for the round; scaling it again by
+     * projected casualties counts the same attrition twice. A total-party-down is still terminal —
+     * that is the `pcsStart === 0` guard, and the loop breaks on it.
+     */
+    const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential;
     const partyDamageBefore = cumulativePartyDamage;
     cumulativePartyDamage += partyDamage;
     const completesNow = completionRound === null && encounterEhp > 0
