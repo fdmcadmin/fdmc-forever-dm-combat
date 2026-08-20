@@ -93,6 +93,18 @@ export type MonsterReaderAction = {
    */
   range?: string;
   /**
+   * ACTION ECONOMY — "bonus" marks a Bonus Action. Anything else is a normal Action.
+   *
+   * ⚠ THE PARSER HAS ALWAYS READ THIS AND THE AUTHORED TYPE NEVER OFFERED IT, so every bonus
+   * action in the campaign was filed as a TRAIT — the Act 3 document writes them inside its
+   * TRAITS section, marked "Bonus Action:" in the prose, and the library copied that layout
+   * faithfully. A trait is never scheduled, so 14 creatures' bonus actions were invisible to the
+   * checker: the creatures were doing less than the document says they do.
+   *
+   * Christopher, 2026-08-20: *"it doesnt move campaign number it fixes campaign numbers."*
+   */
+  economyCost?: string;
+  /**
    * Conditions this action imposes. Authored outranks the prose the parser would otherwise read.
    * Drives the deterministic control repricing — advantage/disadvantage and reachability.
    */

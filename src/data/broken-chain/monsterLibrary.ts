@@ -1382,10 +1382,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "12 (+1)" },
     ],
     traits: [
-      { name: "Name the Threshold", kind: "trait", text: "Bonus Action: choose a 15-ft. line of natural ground within 15 ft. Until the start of the Warden’s next turn, the line is visibly braced by roots and bent branches. The Warden can use Bar the Way when a hostile creature crosses that line." },
       { name: "Bark-Ribbed", kind: "trait", text: "The first time each round the Warden takes bludgeoning, piercing, or slashing damage, reduce it by 3." },
     ],
     actions: [
+      { name: "Name the Threshold", kind: "action", economyCost: "bonus", text: "Bonus Action: choose a 15-ft. line of natural ground within 15 ft. Until the start of the Warden’s next turn, the line is visibly braced by roots and bent branches. The Warden can use Bar the Way when a hostile creature crosses that line." },
       { name: "Branch Spear", kind: "attack", roll: "1d20 + 6", damage: "1d10 + 3", text: "Melee Weapon Attack: +6 to hit, reach 10 ft.; Hit: 8 (1d10 + 3) piercing." },
     ],
     reactions: [
@@ -1458,9 +1458,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "First Nails", kind: "trait", text: "When initiative is rolled, place two visible nail marks in spaces within 20 ft. Quillshrike may then move up to half speed toward one of them. No attack or save occurs." },
-      { name: "Snap to the Nail", kind: "trait", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
     ],
     actions: [
+      { name: "Snap to the Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
       { name: "Quillblade", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
       { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
@@ -1533,10 +1533,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "12 (+1)" },
     ],
     traits: [
-      { name: "Survey Stake", kind: "trait", text: "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover." },
       { name: "Refracted Origin", kind: "trait", text: "When making a ranged spell attack, Shardbound can have the attack originate from itself or from one of its stakes it can see. Range is measured from the chosen origin. This can bend a sight line but does not increase damage." },
     ],
     actions: [
+      { name: "Survey Stake", kind: "action", economyCost: "bonus", text: "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover." },
       { name: "Shard Bolt", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
       { name: "Survey Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
     ],
@@ -1656,9 +1656,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Offered Shelter", kind: "trait", save: "DEX DC 16", text: "When initiative is rolled, create two 5-ft. flower circles on natural ground within 40 ft. A creature in a circle has half cover. At the start of Hollowbloom’s turn, each occupied circle closes; the occupant makes a DC 16 Dexterity save or is restrained until the end of its turn. The circle then withers." },
-      { name: "Set the Table", kind: "trait", text: "Bonus Action: create one new Offered Shelter circle within 30 ft. Maximum two circles at a time." },
     ],
     actions: [
+      { name: "Set the Table", kind: "action", economyCost: "bonus", text: "Bonus Action: create one new Offered Shelter circle within 30 ft. Maximum two circles at a time." },
       { name: "Bark Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) piercing." },
       { name: "Close the Bloom (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible 10-ft. area of flowers or natural growth within 60 ft. Creatures there make a DC 16 Dexterity save; 18 (4d8) slashing on failure, half on success, and a creature that fails cannot take reactions until the end of its turn." },
     ],
@@ -1863,9 +1863,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Boughway", kind: "trait", text: "When the Charger moves at least 15 ft. through natural vegetation, the path it crossed becomes easy ground until the start of its next turn: difficult terrain from plants is suppressed there for every creature." },
-      { name: "Rooted Turn", kind: "trait", text: "Bonus Action: speed becomes 0 until the start of the next turn; AC increases by 2 and it has advantage on saves against forced movement. It cannot use this after moving more than 10 ft. this turn." },
     ],
     actions: [
+      { name: "Rooted Turn", kind: "action", economyCost: "bonus", text: "Bonus Action: speed becomes 0 until the start of the next turn; AC increases by 2 and it has advantage on saves against forced movement. It cannot use this after moving more than 10 ft. this turn." },
       { name: "Tusk", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing." },
       { name: "Canopy Rush (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Move up to 30 ft. in a line through natural vegetation. One creature in the path makes a DC 16 Strength save. Failure: 18 (4d8) bludgeoning and pushed up to 15 ft.; success: half damage and no push." },
     ],
@@ -1901,9 +1901,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Through the Wound", kind: "trait", text: "Rift-Slick can move through a space as narrow as 3 inches without squeezing. When it passes through natural cover, roots, or a tree-space, it leaves a 5-ft. scar at the exit until the start of its next turn." },
-      { name: "Scar Slip", kind: "trait", text: "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation." },
     ],
     actions: [
+      { name: "Scar Slip", kind: "action", economyCost: "bonus", text: "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation." },
       { name: "Slick Claw", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
       { name: "Warping Cut (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round." },
     ],
@@ -1937,10 +1937,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "14 (+2)" },
     ],
     traits: [
-      { name: "Drive Nail", kind: "trait", text: "Bonus Action: place one nail in an adjacent solid surface. Maximum two. A nail is an object (AC 13, 8 HP). A straight line up to 20 ft. long between Nail Saint and a nail is a claimed line until the start of the next turn." },
       { name: "Claimed Line", kind: "trait", text: "The first hostile creature each round that crosses a claimed line must spend 10 extra ft. of movement or stop immediately before crossing, its choice. Forced movement ignores this rule." },
     ],
     actions: [
+      { name: "Drive Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: place one nail in an adjacent solid surface. Maximum two. A nail is an object (AC 13, 8 HP). A straight line up to 20 ft. long between Nail Saint and a nail is a claimed line until the start of the next turn." },
       { name: "Boundary Spike", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force." },
       { name: "Hammer the Border (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success." },
     ],
@@ -2051,10 +2051,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "16 (+3)" },
     ],
     traits: [
-      { name: "Burn Script", kind: "trait", text: "Bonus Action: mark one solid surface within 30 ft. with a burning sigil until the start of the next turn. Natural vegetation around the sigil blackens but does not ignite." },
       { name: "Written Origin", kind: "trait", text: "Brandwing can originate one ranged spell attack or line effect from itself or from its Burn Script sigil. Range is still measured from the chosen origin." },
     ],
     actions: [
+      { name: "Burn Script", kind: "action", economyCost: "bonus", text: "Bonus Action: mark one solid surface within 30 ft. with a burning sigil until the start of the next turn. Natural vegetation around the sigil blackens but does not ignite." },
       { name: "Brand Ray", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 14 (2d8 + 5) fire plus 3 (1d6) force once per turn." },
       { name: "Scald the Name (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "30-ft. line from Brandwing or its sigil, DC 16 Dexterity save; 22 (5d8) fire/force on failure, half on success. On a failure, the target cannot benefit from half cover until the end of its next turn." },
     ],
@@ -2128,9 +2128,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Spent Stain", kind: "trait", text: "When a creature within 60 ft. expends a spell slot or a limited-use class or item resource, that creature’s space becomes stained until the start of Ashstep’s next turn. A space can hold only one stain." },
-      { name: "Ashstep", kind: "trait", text: "Bonus Action: move up to 30 ft. toward a stained space without provoking opportunity attacks. It must use normal terrain and cannot pass through creatures or solid objects." },
     ],
     actions: [
+      { name: "Ashstep", kind: "action", economyCost: "bonus", text: "Bonus Action: move up to 30 ft. toward a stained space without provoking opportunity attacks. It must use normal terrain and cannot pass through creatures or solid objects." },
       { name: "Rend", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) slashing plus 4 (1d8) psychic once per turn." },
       { name: "Follow the Spend (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Move up to speed toward a stained space, then make one Rend attack with advantage. The stain is removed whether the attack hits or misses." },
     ],
@@ -2165,10 +2165,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "14 (+2)" },
     ],
     traits: [
-      { name: "Boundary Script", kind: "trait", save: "INT DC 16", text: "Bonus Action: draw one visible 20-ft. line on ground or between two solid surfaces within 40 ft. Until the start of the next turn, the first hostile creature to cross it must make a DC 16 Intelligence save. Failure: its remaining movement is halved for that turn. Success: no effect." },
       { name: "Write from the Edge", kind: "trait", text: "Rift Scribe ignores half cover when the attack line crosses its own Boundary Script." },
     ],
     actions: [
+      { name: "Boundary Script", kind: "action", economyCost: "bonus", save: "INT DC 16", text: "Bonus Action: draw one visible 20-ft. line on ground or between two solid surfaces within 40 ft. Until the start of the next turn, the first hostile creature to cross it must make a DC 16 Intelligence save. Failure: its remaining movement is halved for that turn. Success: no effect." },
       { name: "Rift Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 14 (2d8 + 5) psychic." },
       { name: "Erase the Curve (Recharge 5–6)", kind: "action", save: "INT DC 16", recharge: "5-6", damage: "4d8", text: "Choose a 30-ft. path within 60 ft. Creatures on the path make a DC 16 Intelligence save; 18 (4d8) psychic on failure, half on success. Until the end of the next round, the path is a straight claimed scar and natural difficult terrain there is suppressed." },
     ],
@@ -2202,10 +2202,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "16 (+3)", save: 6 },
     ],
     traits: [
-      { name: "Broken Gleam", kind: "trait", text: "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground." },
       { name: "Moon-Slick Scales", kind: "trait", text: "The first opportunity attack made against the wyrmling each round has disadvantage." },
     ],
     actions: [
+      { name: "Broken Gleam", kind: "action", economyCost: "bonus", text: "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground." },
       { name: "Bite", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant." },
       { name: "Moonshard Breath (Recharge 5–6)", kind: "action", save: "DEX DC 14", recharge: "5-6", damage: "4d6", text: "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success." },
     ],
@@ -2242,10 +2242,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the dragon fails a saving throw, it can choose to succeed instead." },
-      { name: "Broken Lift (Recharge 5–6)", kind: "trait", recharge: "5-6", text: "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed." },
       { name: "Moonmark (2/Day)", kind: "trait", save: "DEX DC 17", text: "Action: choose a point within 60 ft.; a 15-ft. radius fills with pale motes until the start of the dragon’s next turn. Creatures of the dragon’s choice in the area make a DC 17 Dexterity save. On a failure, they cannot benefit from invisibility and the first attack against them before the effect ends has advantage. No damage." },
     ],
     actions: [
+      { name: "Broken Lift (Recharge 5–6)", kind: "action", economyCost: "bonus", recharge: "5-6", text: "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed." },
       { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10 + 5", text: "Melee Weapon Attack: +9 to hit, reach 10 ft.; Hit: 16 (2d10 + 5) piercing plus 7 (2d6) radiant." },
       { name: "Claw", kind: "attack", roll: "1d20 + 9", damage: "2d6 + 5", text: "Melee Weapon Attack: +9 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) slashing." },
       { name: "Fractured Dream Breath (Recharge 5–6)", kind: "action", save: "CON DC 17", recharge: "5-6", text: "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends." },
@@ -2287,10 +2287,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     traits: [
       { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the Harrower fails a saving throw, it can choose to succeed instead." },
       { name: "Residual Hunger", kind: "trait", text: "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed." },
-      { name: "Fracture Seed", kind: "trait", text: "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated." },
       { name: "Wrong Origin", kind: "trait", text: "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage." },
     ],
     actions: [
+      { name: "Fracture Seed", kind: "action", economyCost: "bonus", text: "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated." },
       { name: "Rift Lance", kind: "attack", roll: "1d20 + 10", damage: "2d8 + 6", text: "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (2d8 + 6) psychic." },
       { name: "Unmake Distance (Recharge 5–6)", kind: "action", save: "INT DC 18", recharge: "5-6", damage: "6d8", text: "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice." },
       { name: "Mind Hook", kind: "action", save: "WIS DC 18", legendaryCost: 1, damage: "2d6", text: "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (2d6) psychic and moved 10 ft. toward the origin; success: no effect." },
@@ -2331,9 +2331,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     traits: [
       { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the Colossus fails a saving throw, it can choose to succeed instead." },
       { name: "Impossible Mass", kind: "trait", text: "Advantage on saves against being knocked prone or moved against its will." },
-      { name: "Anchor the Wrong", kind: "trait", text: "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn." },
     ],
     actions: [
+      { name: "Anchor the Wrong", kind: "action", economyCost: "bonus", text: "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn." },
       { name: "Fist", kind: "attack", roll: "1d20 + 10", damage: "2d10 + 6", text: "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning." },
       { name: "Collapse Space (Recharge 5–6)", kind: "action", save: "STR DC 18", recharge: "5-6", damage: "5d8", text: "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone." },
     ],
