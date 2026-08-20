@@ -260,15 +260,30 @@ export function expectedDamageForFeature(
    *
    * Printed count wins. An area with no printed count takes half the party. Anything else is one.
    */
+  /**
+   * ⚠ THE BENCHMARK IS VALIDATED, SO USING IT IS NOT AN ASSUMPTION.
+   *
+   * This used to raise an ESTIMATED flag on every area effect. Christopher, 2026-08-20: *"this
+   * should not be a stated assumption because we have validated the assumption, it can go up or
+   * down per the actual encounter but that is player agency for how they move, the checker just
+   * needs to use the validated assumption."*
+   *
+   * He is right, and the contract says the same thing in its own words: *"Do not silently default
+   * an area to one target when no target count is known; use an authored runtime benchmark **or**
+   * mark NEEDS DM INPUT."* We HAVE the authored benchmark — the workbook's four-PC two-target
+   * figure — so the first branch applies and there is nothing to flag. Flagging it anyway asked
+   * the DM to resolve something the model had already resolved correctly, and made a fully priced
+   * library encounter read as half-broken.
+   *
+   * How many PCs a cone actually catches is decided at the table by where people stand. That is
+   * player agency, not missing data, and no amount of DM input makes it knowable in advance —
+   * which is precisely why the model carries a validated average instead.
+   *
+   * The count still appears in `basis` ("× 2"), so the trace always shows what was used.
+   */
   const partySize = target.partySize ?? 4;
   const targets = feature.targets
     ?? (feature.isArea ? aoeTargetsForParty(partySize) : 1);
-  if (feature.targets === undefined && feature.isArea) {
-    assumptions.push({
-      feature: resolved.name, flag: "ESTIMATED", field: "targets",
-      detail: `Area effect with no printed target count; priced against ${targets} of ${partySize} PCs — half the party, which is what the catalog's two-target four-PC benchmark means. Set an explicit count on the action to override.`,
-    });
-  }
   if (resolved.rawAverage <= 0) return { expected: 0, basis: "no readable damage", assumptions };
 
   /**
@@ -329,16 +344,28 @@ export function expectedDamageForFeature(
     const pFail = saveSwing === "disadvantage" ? withAdvantage(baseFail)
       : saveSwing === "advantage" ? withDisadvantage(baseFail)
       : baseFail;
+    /**
+     * ⚠ ALL-OR-NOTHING IS A COMPLETE CALCULATION, NOT A MISSING ONE.
+     *
+     * This raised an ESTIMATED flag whenever no success damage was printed. That is backwards:
+     * a save that negates is the DEFAULT and the contract states it as a rule — *"Half is only
+     * applied when the block says half."* When the block says nothing, none IS the printed answer.
+     *
+     * Christopher, 2026-08-20: *"if mind hook is all or nothing then the checker needs to read
+     * exactly that because it should take the listed save and cal the chance it has to be all and
+     * the chance it has to be none and then if 80% of the time it is all damage then there is a
+     * valid number to compute."* Exactly — and the line below already computes it: p_fail × full
+     * plus (1 − p_fail) × 0. Mind Hook at DC 18 WIS against a +2.9 party is 71% × 7.0 = 5.0. That
+     * is a number, not a gap, and flagging it implied the total could not be trusted.
+     *
+     * The `basis` string already prints both halves of the split, so the trace shows the working.
+     */
     const success = damageExpressionAverage(feature.successDamage);
-    if (feature.successDamage === undefined) {
-      assumptions.push({
-        feature: resolved.name, flag: "ESTIMATED", field: "damage",
-        detail: "No success damage printed OR readable in the action text; treated as none. Half is only applied when the block says half — it is never assumed.",
-      });
-    }
     return {
       expected: (pFail * resolved.rawAverage + (1 - pFail) * success) * targets,
-      basis: `${(pFail * 100).toFixed(0)}% fail → ${resolved.rawAverage.toFixed(1)}, else ${success.toFixed(1)}${targets > 1 ? ` × ${targets}` : ""}`,
+      basis: feature.successDamage === undefined || success === 0
+        ? `${(pFail * 100).toFixed(0)}% fail → ${resolved.rawAverage.toFixed(1)}, ${((1 - pFail) * 100).toFixed(0)}% save → 0 (all or nothing)${targets > 1 ? ` × ${targets}` : ""}`
+        : `${(pFail * 100).toFixed(0)}% fail → ${resolved.rawAverage.toFixed(1)}, else ${success.toFixed(1)}${targets > 1 ? ` × ${targets}` : ""}`,
       assumptions,
     };
   }

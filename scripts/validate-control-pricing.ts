@@ -16,7 +16,7 @@ import {
   spaceForSize, edgeGapFromCentres, isReachable, priceProne, priceGrappled,
   priceForcedMovement, priceFrightened, reachOfFeature, DEFAULT_MELEE_REACH_FT,
 } from "../src/core/encounter-band/reachability";
-import type { ParsedFeature } from "../src/core/encounter-band/featureResolver";
+import { resolveFeature, expectedDamageForFeature, type ParsedFeature } from "../src/core/encounter-band/featureResolver";
 import { parseReachFt, parseRangeFt, parseForcedMovementFt, parseCreature, parseSuccessDamage } from "../src/core/encounter-band/parseCreature";
 import { isMultiattackAction, multiattackCountFromText } from "../src/core/monsters/multiattackText";
 
@@ -135,6 +135,36 @@ check("'unless' prerequisite is not an imposition", conditionsImposedBy({ text: 
 check("'immune to' is not an imposition", conditionsImposedBy({ text: "the creature is immune to the frightened condition" }), []);
 check("a real imposition still reads", conditionsImposedBy({ text: "the target is knocked prone" }), ["prone"]);
 check("negation earlier in the sentence does not mask a later imposition", conditionsImposedBy({ text: "the ally isn't incapacitated. On a failed save the target is restrained" }), ["restrained"]);
+
+console.log("\n── A validated rule is not an assumption");
+{
+  const party = { ac: 16, saveBonus: 3, partySize: 4, saves: { str: 2.8, dex: 3.1, con: 3.2, int: 2.3, wis: 2.9, cha: 2.4 } };
+  // An area with no printed count: priced against the workbook's four-PC benchmark, NOT flagged.
+  const cone: ParsedFeature = { name: "Cone", saveDc: 18, saveAbility: "int", damage: "6d8", isArea: true };
+  const coneOut = expectedDamageForFeature(resolveFeature(cone), cone, party);
+  check("an area priced on the validated benchmark raises NO assumption", coneOut.assumptions.length, 0);
+  check("…and still shows the count it used in the basis", coneOut.basis.includes("× 2"), true);
+
+  // ALL-OR-NOTHING IS A COMPLETE CALCULATION. p_fail × full + (1 − p_fail) × 0.
+  const hook: ParsedFeature = { name: "Mind Hook", saveDc: 18, saveAbility: "wis", damage: "2d6", successDamage: "0" };
+  const hookOut = expectedDamageForFeature(resolveFeature(hook), hook, party);
+  // DC 18 vs WIS +2.9 → p_fail = (18 − 2.9 − 1)/20 = 0.705; 0.705 × 7 = 4.935
+  check("all-or-nothing computes p_fail × full damage", Number(hookOut.expected.toFixed(3)), 4.935);
+  check("…and raises NO assumption — it is a number, not a gap", hookOut.assumptions.length, 0);
+  check("…and says so in the basis", hookOut.basis.includes("all or nothing"), true);
+
+  // An unstated success is the same calculation: the contract's default is that a save negates.
+  const unstated: ParsedFeature = { name: "Burst", saveDc: 15, saveAbility: "dex", damage: "4d6" };
+  const unstatedOut = expectedDamageForFeature(resolveFeature(unstated), unstated, party);
+  check("an unstated success is all-or-nothing, not a flag", unstatedOut.assumptions.length, 0);
+  // DC 15 vs DEX +3.1 → p_fail = (15 − 3.1 − 1)/20 = 0.545; 0.545 × 14 = 7.63
+  check("…priced at p_fail × full", Number(unstatedOut.expected.toFixed(2)), 7.63);
+
+  // Half-on-save is still the printed value, never assumed.
+  const half: ParsedFeature = { name: "Breath", saveDc: 15, saveAbility: "dex", damage: "4d6", successDamage: "7" };
+  check("half-on-save still uses the printed success value",
+    Number(expectedDamageForFeature(resolveFeature(half), half, party).expected.toFixed(2)), 10.82);
+}
 
 console.log("\n── Success damage (v7 parser.success_patterns: Half damage / No damage / printed alternate)");
 check("'half on success' → half the fail damage", parseSuccessDamage("27 (6d8) psychic on failure, half on success.", "6d8"), "13.5");
