@@ -170,7 +170,18 @@ export function parseTargets(text: string | undefined): number | undefined {
 export function parseSuccessDamage(text: string | undefined, failDamage: string | undefined): string | undefined {
   const t = text ?? "";
   if (!t) return undefined;
-  if (/\b(?:no damage|isn't affected|is not affected|takes no damage)\b/i.test(t)) return "0";
+  /**
+   * v7 `parser.success_patterns` names the CATEGORY — "No damage" — not the wording, and stat
+   * blocks write that category several ways.
+   *
+   * ⚠ "NO EFFECT" WAS MISSING, AND IT COST A REAL FLAG. The Thought Harrower's Mind Hook prints
+   * *"Failure: 7 (2d6) psychic … ; success: no effect."* That is the clearest possible statement
+   * of the "No damage" pattern, and the checker reported it as unreadable — one of three things it
+   * claimed it could not price about creatures shipped in the campaign library.
+   *
+   * These are all the same category, never an assumption: the block SAYS the save negates.
+   */
+  if (/\b(?:no damage|no effect|negates?|isn'?t affected|is not affected|takes no damage|nothing happens)\b/i.test(t)) return "0";
   const saysHalf = /\bhalf(?: as much)?(?: damage)?\b[^.]{0,40}\bsuccess/i.test(t)
     || /\bsuccess(?:ful save)?\b[^.]{0,40}\bhalf\b/i.test(t)
     || /\bhalf as much damage\b/i.test(t);

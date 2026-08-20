@@ -25,6 +25,7 @@ import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyP
 import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
 
 /** One table, one party — persisted so every encounter loads scaled to it. */
+const SHADOW_ACK_KEY = "fdmc.dm.monsterShadowAck.v1";
 const PARTY_SIZE_KEY = "fdmc.dm.encounterPartySize.v1";
 
 // ─── Module unlock ────────────────────────────────────────────────────────────
@@ -345,6 +346,31 @@ export function EncounterLibraryPanel({
     } catch { return BASELINE_PARTY_SIZE; }
   });
 
+  /**
+   * ⚠ THE NOTICE HAD NO WAY TO END, WHICH TURNED AN EXPLANATION INTO NAGGING.
+   *
+   * The shadow check recomputes on EVERY render and the stale copy is deliberately never deleted
+   * — an unmarked copy might predate the `dmEdited` marker, so throwing it away could discard a
+   * real edit. Correct, but it means the banner reappears forever: Christopher, 2026-08-20:
+   * *"why is this note at the top always there."*
+   *
+   * A one-time explanation should be acknowledgeable. This records WHAT was reported — id plus
+   * the stored numbers — so the notice stays gone while the situation is unchanged, and comes
+   * back if a later correction moves the numbers again. Nothing is deleted either way.
+   */
+  const [shadowAck, setShadowAck] = useState<Set<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem(SHADOW_ACK_KEY);
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch { return new Set<string>(); }
+  });
+
+  function acknowledgeShadowed(signatures: string[]) {
+    const next = new Set([...shadowAck, ...signatures]);
+    setShadowAck(next);
+    try { window.localStorage.setItem(SHADOW_ACK_KEY, JSON.stringify([...next])); } catch { /* ok */ }
+  }
+
   function changePartySize(next: number) {
     setPartySize(next);
     try { window.localStorage.setItem(PARTY_SIZE_KEY, String(next)); } catch { /* ok */ }
@@ -386,7 +412,7 @@ export function EncounterLibraryPanel({
    * stamps on save. An unmarked copy is a stale seed and the shipped template wins — which
    * heals existing data with no action from the DM, because nothing wrote that marker before.
    */
-  const shadowedCampaignTemplates: { name: string; was: string; now: string }[] = [];
+  const shadowedCampaignTemplates: { name: string; was: string; now: string; signature: string }[] = [];
   const campaignBase = unlocked
     ? monsterLibrary.map(t => {
       const stored = dmLibrary.find(m => m.templateId === t.templateId);
@@ -394,11 +420,17 @@ export function EncounterLibraryPanel({
       if (stored.dmEdited) return stored;
       // Stale seed. Report it only when it actually disagrees, so the notice means something.
       if (stored.stats.maxHp !== t.stats.maxHp || String(stored.stats.ac) !== String(t.stats.ac)) {
-        shadowedCampaignTemplates.push({
-          name: t.name,
-          was: `${stored.stats.maxHp} HP / AC ${stored.stats.ac}`,
-          now: `${t.stats.maxHp} HP / AC ${t.stats.ac}`,
-        });
+        // The signature carries the numbers, so acknowledging THIS divergence does not silence a
+        // different one later — a fresh correction changes the signature and speaks up again.
+        const signature = `${t.templateId}|${stored.stats.maxHp}/${stored.stats.ac}|${t.stats.maxHp}/${t.stats.ac}`;
+        if (!shadowAck.has(signature)) {
+          shadowedCampaignTemplates.push({
+            name: t.name,
+            was: `${stored.stats.maxHp} HP / AC ${stored.stats.ac}`,
+            now: `${t.stats.maxHp} HP / AC ${t.stats.ac}`,
+            signature,
+          });
+        }
       }
       return t;
     })
@@ -901,8 +933,14 @@ export function EncounterLibraryPanel({
               {s.name}: was {s.was} → {s.now}
             </div>
           ))}
-          <div style={{ color: "#666", marginTop: 2 }}>
-            Nothing you edited was discarded — only copies with no recorded edit. Edit and save one to take it over again.
+          <div style={{ color: "#666", marginTop: 2, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span>Nothing you edited was discarded — only copies with no recorded edit. Edit and save one to take it over again.</span>
+            <button type="button"
+              onClick={() => acknowledgeShadowed(shadowedCampaignTemplates.map(s2 => s2.signature))}
+              title="Stop showing this. The old copies are kept, not deleted — the notice returns only if a later correction moves these numbers again."
+              style={{ fontSize: 10, padding: "2px 8px", background: "#c9a22722", border: "1px solid #c9a22755", borderRadius: 3, color: "#c9a227", cursor: "pointer" }}>
+              Got it
+            </button>
           </div>
         </div>
       )}

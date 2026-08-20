@@ -369,18 +369,36 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                       reaches the total exactly as unchallenged as a silent substitute would.
                       A well-formed stat block should produce NONE of these; they mean
                       something is written wrong or is an inferred action. */}
-                  {roster.assumptions.length > 0 && (
+                  {/* ⚠ "COULD NOT PRICE" WAS WRONG FOR MOST OF WHAT IT LISTED. The heading counted
+                      every assumption, but the two flags mean opposite things:
+
+                        ESTIMATED       — it WAS priced, against a stated basis (an area against
+                                          the four-PC benchmark, say). The number is in the total.
+                        NEEDS DM INPUT  — it genuinely could not be priced and scored ZERO.
+
+                      Reporting "3 things the checker could not price" for a library encounter
+                      whose every number had in fact been computed made shipped content look
+                      broken. Christopher, 2026-08-20: *"there is still 3 things the checker cant
+                      price and this is against the encounter that is from the library."* Two of
+                      those three were priced; the third was a real parser gap, now fixed. */}
+                  {roster.assumptions.length > 0 && (() => {
+                    const blocked = roster.assumptions.filter(a => a.flag === "NEEDS DM INPUT").length;
+                    const estimated = roster.assumptions.length - blocked;
+                    return (
                     <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
-                      <div style={{ fontWeight: 600, marginBottom: 2, color: "#c9a227" }}>
-                        {roster.assumptions.length} thing{roster.assumptions.length === 1 ? "" : "s"} the checker could not price on its own
+                      <div style={{ fontWeight: 600, marginBottom: 2, color: blocked > 0 ? "#e07b39" : "#c9a227" }}>
+                        {blocked > 0 && `${blocked} thing${blocked === 1 ? "" : "s"} the checker could not price — ${blocked === 1 ? "it scores" : "they score"} 0 until you fill ${blocked === 1 ? "it" : "them"} in`}
+                        {blocked > 0 && estimated > 0 && " · "}
+                        {estimated > 0 && `${estimated} priced on a stated assumption`}
                       </div>
                       {roster.assumptions.map((a, i) => (
                         <div key={i} style={{ color: a.flag === "NEEDS DM INPUT" ? "#e07b39" : "#8a8aa0" }}>
-                          [{a.flag}] {a.creature} · {a.field} — {a.detail}
+                          [{a.flag === "NEEDS DM INPUT" ? "NOT PRICED" : "PRICED · assumption"}] {a.creature} · {a.field} — {a.detail}
                         </div>
                       ))}
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {result.specialOutcomeRisks.length > 0 && (
                     <div style={{ ...box, marginBottom: 8, fontSize: 10, color: "#c9a227" }}>

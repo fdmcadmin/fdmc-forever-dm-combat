@@ -17,7 +17,7 @@ import {
   priceForcedMovement, priceFrightened, reachOfFeature, DEFAULT_MELEE_REACH_FT,
 } from "../src/core/encounter-band/reachability";
 import type { ParsedFeature } from "../src/core/encounter-band/featureResolver";
-import { parseReachFt, parseRangeFt, parseForcedMovementFt, parseCreature } from "../src/core/encounter-band/parseCreature";
+import { parseReachFt, parseRangeFt, parseForcedMovementFt, parseCreature, parseSuccessDamage } from "../src/core/encounter-band/parseCreature";
 import { isMultiattackAction, multiattackCountFromText } from "../src/core/monsters/multiattackText";
 
 let passed = 0;
@@ -135,6 +135,16 @@ check("'unless' prerequisite is not an imposition", conditionsImposedBy({ text: 
 check("'immune to' is not an imposition", conditionsImposedBy({ text: "the creature is immune to the frightened condition" }), []);
 check("a real imposition still reads", conditionsImposedBy({ text: "the target is knocked prone" }), ["prone"]);
 check("negation earlier in the sentence does not mask a later imposition", conditionsImposedBy({ text: "the ally isn't incapacitated. On a failed save the target is restrained" }), ["restrained"]);
+
+console.log("\n── Success damage (v7 parser.success_patterns: Half damage / No damage / printed alternate)");
+check("'half on success' → half the fail damage", parseSuccessDamage("27 (6d8) psychic on failure, half on success.", "6d8"), "13.5");
+check("'half as much damage' → half", parseSuccessDamage("takes half as much damage on a success", "4d6"), "7");
+// The Thought Harrower's Mind Hook prints exactly this, and it was reported as unreadable.
+check("'success: no effect' → 0 (Mind Hook)", parseSuccessDamage("Failure: 7 (2d6) psychic and moved 10 ft.; success: no effect.", "2d6"), "0");
+check("'the save negates' → 0", parseSuccessDamage("A successful save negates.", "3d6"), "0");
+check("'no damage' → 0", parseSuccessDamage("takes no damage on a success", "3d6"), "0");
+// ⚠ Silence is still silence. Half is NEVER assumed — plenty of saves are all-or-nothing.
+check("a save that says nothing stays unreadable", parseSuccessDamage("On a failed save the target takes 18 (4d8) fire.", "4d8"), undefined);
 
 console.log("\n── Multiattack (contract: auto=YES, 'resolve the printed legal sequence')");
 check("'makes three slam attacks' → 3", multiattackCountFromText("The brute makes three slam attacks."), 3);
