@@ -14,8 +14,16 @@ import type { BondStageGate } from "../../../core/types/bond";
 
 /** Milestone ids this campaign raises. Opaque to the engine. */
 export const TBC_MILESTONE = {
-  /** Act 3, Fight 10 — the Veil-Torn Dragon is dead. */
-  act3BossDefeated: "tbc:act3-f10-boss-defeated",
+  /**
+   * Act 3, Fight 10 — The Center. Both bodies down: Thought Harrower and Grief Colossus.
+   *
+   * ⚠ NOT the Veil-Torn Dragon. That is FIGHT 9, "Gate III", and it gates the party to LEVEL 9;
+   * Fight 10 "The Center" is the Act Boss they then fight AT level 9. An earlier version of this
+   * file named a fight called `act3-f10-veil-torn-dragon`, which conflated the two and matched no
+   * encounter in the library at all — so the milestone could never have fired.
+   * Source: `Broken_Chain_Act3_Encounters_Current_Rosters_Only_v3_15.docx` (RULE 1).
+   */
+  act3BossDefeated: "tbc:act3-e10-the-center-defeated",
 } as const;
 
 /**
@@ -31,7 +39,7 @@ export const BROKEN_CHAIN_BOND_GATES: readonly BondStageGate[] = [
   {
     stage: 3, // Tempered
     milestoneId: TBC_MILESTONE.act3BossDefeated,
-    label: "Act 3 · Fight 10 — defeat the Veil-Torn Dragon",
+    label: "Act 3 · Fight 10 — The Center (defeat the Thought Harrower and Grief Colossus)",
   },
 ];
 
@@ -43,9 +51,14 @@ export const BROKEN_CHAIN_BOND_GATES: readonly BondStageGate[] = [
  * silent one.
  */
 const MILESTONE_BY_ENCOUNTER: Record<string, string> = {
-  "act3-f10-veil-torn-dragon": TBC_MILESTONE.act3BossDefeated,
-  // Aliases seen in authored encounter data for the same fight.
-  "act3-boss": TBC_MILESTONE.act3BossDefeated,
+  /**
+   * The id the campaign library actually uses — `encounterId` on the Thought Harrower and the
+   * Grief Colossus in `monsterLibrary.ts`, labelled "Act 3 E10 - The Center".
+   *
+   * ⚠ Only ids that EXIST go in here. An earlier version listed `act3-f10-veil-torn-dragon` and
+   * `act3-boss`; neither appears anywhere in the library, so both were dead entries that made the
+   * table look more thorough than it was while the milestone could never fire.
+   */
   "act3-e10-the-center": TBC_MILESTONE.act3BossDefeated,
 };
 
