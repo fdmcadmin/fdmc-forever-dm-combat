@@ -525,6 +525,13 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           </span>
           <SmallBtn color="#7b68ee" onClick={() => setSets([...sets, { id: `set${sets.length + 1}`, label: "New set", pick: 1 }])}>+ Set</SmallBtn>
         </div>
+        {sets.some(s => s.namesBody) && (
+          <label style={{ display: "block", fontSize: 10, color: "#888", marginBottom: 6 }}>
+            Body name format <span style={{ color: "#666" }}>— {"{pick}"} is the chosen option, {"{name}"} this template</span>
+            <input value={draft.bodyNameFormat ?? ""} placeholder="{pick} Mirror" style={inputStyle}
+              onChange={e => setDraft(d => ({ ...d, bodyNameFormat: e.target.value || undefined }))} />
+          </label>
+        )}
         {sets.length === 0 && (
           <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: 0 }}>
             No sets — every action below is simply on the creature. Add one to make a pool.
@@ -542,6 +549,12 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 <input value={s.label} style={inputStyle}
                   onChange={e => setSets(sets.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
               </div>
+              <label style={{ width: 58, alignSelf: "flex-end", display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "#9d8cff", cursor: "pointer", paddingBottom: 5 }}
+                title="This set names the body. An Earth Mirror is called that because it took the Earth package — the name is derived from the pick, never typed.">
+                <input type="checkbox" checked={Boolean(s.namesBody)}
+                  onChange={e => setSets(sets.map((x, j) => j === i ? { ...x, namesBody: e.target.checked || undefined } : x))} />
+                Names
+              </label>
               <div style={{ width: 70 }}>
                 <span style={labelStyle}>Pick</span>
                 <input type="number" min={1} value={s.pick} style={inputStyle}

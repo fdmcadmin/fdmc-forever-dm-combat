@@ -143,7 +143,9 @@ export function materializeTemplateBody(
   },
 ): MainMonsterTemplate {
   const built = buildBodyFromTemplate(template, body.actionPicks ?? {}, {
-    name: body.name || template.name,
+    // The naming set wins over a stored name: the name is a CONSEQUENCE of the element pick,
+    // so an old label left behind by an earlier choice must not survive the change.
+    name: bodyNameFor(template, body.actionPicks, body.name),
     templateIdSuffix: body.id,
   });
   return {
@@ -156,4 +158,28 @@ export function materializeTemplateBody(
       }
       : {}),
   };
+}
+
+/**
+ * The name a body carries, derived from the set marked `namesBody`.
+ *
+ * *"it should be X mirror where X is the element it is chosen in the templet."* The name is a
+ * consequence of a choice already made, so it is computed rather than typed — a DM cannot end up
+ * with an "Earth Mirror" carrying the Ice package.
+ *
+ * Falls back to the body's own name (then the template's) when nothing names it: an ordinary
+ * template whose bodies are just called what the DM called them still works.
+ */
+export function bodyNameFor(
+  template: MainMonsterTemplate,
+  picks: ActionSetPicks | undefined,
+  fallback?: string,
+): string {
+  const namingSet = (template.actionSets ?? []).find(s => s.namesBody);
+  const pick = namingSet ? (picks?.[namingSet.id] ?? []).find(Boolean) : undefined;
+  if (!namingSet || !pick) return fallback?.trim() || template.name;
+  return (template.bodyNameFormat || "{pick} {name}")
+    .replace(/\{pick\}/g, pick)
+    .replace(/\{name\}/g, template.name)
+    .trim();
 }

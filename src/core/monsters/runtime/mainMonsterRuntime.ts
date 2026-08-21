@@ -155,6 +155,17 @@ export type MonsterActionSet = {
   label: string;
   /** How many of the set's candidates each body takes. */
   pick: number;
+  /**
+   * THIS SET'S PICK NAMES THE BODY.
+   *
+   * Christopher: *"it should be X mirror where X is the element it is chosen in the templet"*.
+   * A mirror is not "Mirror of Thayla" — it is an **Earth Mirror**, named for the element it
+   * was built with. That makes the name a DERIVED fact, so the DM never types it and two
+   * bodies cannot end up mislabelled against their own packages.
+   *
+   * Only the first set marked this way is used. `pick: 1` is the sensible shape for it.
+   */
+  namesBody?: boolean;
   /** Optional note shown at generation. */
   note?: string;
 };
@@ -202,6 +213,16 @@ export type MainMonsterTemplate = {
    * on the creature is simply on it, which is the normal case.
    */
   actionSets?: MonsterActionSet[];
+  /**
+   * How a body built from this template is named, when a set is marked `namesBody`.
+   *
+   * `{pick}` is the chosen candidate's name; `{name}` is the template's. "{pick} Mirror" over a
+   * package called "Earth" gives **Earth Mirror**. Unset falls back to "{pick} {name}".
+   *
+   * Authorable rather than hardcoded (RULE 2) — "Earth Mirror" is this campaign's phrasing, and
+   * another template naming its bodies some other way must not need a code change.
+   */
+  bodyNameFormat?: string;
   stats: {
     kind: MonsterKind;
     ac: number | string;

@@ -23,7 +23,7 @@ import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/cont
 import type { BondTemplate } from "../types/bond";
 import type { TemplateBodyChoice } from "./encounterLibrary";
 import type { MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
-import { actionSetPlan } from "./actionSetPicks";
+import { actionSetPlan, bodyNameFor } from "./actionSetPicks";
 import { ARCHETYPES } from "./creator/monsterCreatorModel";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";
@@ -244,7 +244,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
             </span>
           </span>
           <button type="button"
-            onClick={() => setBodies([...bodies, { id: "b" + Date.now().toString(36), name: "Mirror of " + (bodies.length + 1) }])}
+            onClick={() => setBodies([...bodies, { id: "b" + Date.now().toString(36), name: "" }])}
             style={{ fontSize: 10, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
             + Body
           </button>
@@ -255,14 +255,22 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
           </p>
         )}
         {bodies.map((b, i) => {
+          const derivedName = template ? bodyNameFor(template, b.actionPicks, b.name) : b.name;
           const bondTpl = b.bond ? bondOptions.find(x => x.id === b.bond!.templateId) : undefined;
           const bondStage = b.bond?.stage ?? 2;
           const bondPaths = bondTpl?.stages[bondStage]?.paths ?? [];
           return (
             <div key={b.id} style={{ marginBottom: 6, padding: "6px 7px", background: "#161622", border: "1px solid #262638", borderRadius: 4 }}>
               <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: 4 }}>
-                <input value={b.name} placeholder="Mirror of …" onChange={e => patch(i, { name: e.target.value })}
-                  style={{ flex: 1, fontSize: 11, padding: "2px 5px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff" }} />
+                {/*
+                  THE NAME IS DERIVED, NOT TYPED. A body is an "Earth Mirror" because it took
+                  the Earth package — printing it keeps the label and the package in step, and
+                  removes the one free-text field from an editor whose whole point is that the
+                  DM only makes CHOICES here.
+                */}
+                <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: derivedName === template.name ? "#e0b34a" : "#fff" }}>
+                  {derivedName === template.name ? "— pick below to name it —" : derivedName}
+                </span>
                 <select value={b.archetype ?? ""} onChange={e => patch(i, { archetype: (e.target.value || undefined) as MonsterArchetype | undefined })}
                   title="Reshapes the template's own six scores into this archetype's order. It never invents a score."
                   style={{ width: 118, fontSize: 11, padding: "2px 4px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#aaa" }}>
@@ -346,6 +354,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
             <option key={t.templateId} value={t.templateId}>{t.name}</option>
           ))}
         </select>
+        {!template?.isTemplate && (
         <label style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 3 }}>
           ×
           <input
@@ -357,6 +366,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
             style={{ width: 36, padding: "2px 4px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12, textAlign: "center" }}
           />
         </label>
+        )}
         <button type="button" onClick={() => onEditMonster(entry.templateId)}
           title="Edit this monster's stats"
           style={{ fontSize: 11, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
