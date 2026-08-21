@@ -46,3 +46,29 @@ for (const p of profiles) {
   }
 }
 console.log(`\nprofiles ${profiles.length} · matched ${profiles.length-missing} · AC differs ${acBad} · HP differs ${hpBad} · trait multiplier differs ${tmBad}`);
+
+/**
+ * ⚠ ACTION-CHANNEL PARITY — the check that found the app giving free damage.
+ *
+ * `la` is the workbook's legendary-actions-per-round for a creature, and every profile in the
+ * bundle sets it to 0. Where the app grants a legendary channel anyway, the creature gets an
+ * extra attack EVERY round that the workbook never counted — a legendary action has its own
+ * budget and adds on top, where an action competes for the one Action slot.
+ */
+import { parseCreature as parseForChannels } from "../src/core/encounter-band/parseCreature";
+console.log("\nACTION-CHANNEL PARITY\n" + "─".repeat(84));
+let chan = 0;
+for (const p of profiles) {
+  const t = lib.find(m => norm(m.name) === norm(p.n));
+  if (!t) continue;
+  const parsed = parseForChannels(t);
+  for (const f of parsed.features) {
+    if (f.activationType !== "legendary_action") continue;
+    const wb = (p.f ?? []).find((x: any) => norm(x.n).includes(norm(f.name)) || norm(f.name).includes(norm(x.n)));
+    if (wb && wb.t !== "legendary_action") {
+      chan++;
+      console.log(`  ${p.n.padEnd(22)} "${f.name}" — app: legendary_action (own budget, adds on top)  ·  workbook: ${wb.t} (competes for the Action), la=${p.la}`);
+    }
+  }
+}
+console.log(chan === 0 ? "  every action channel matches the workbook" : `  ${chan} feature(s) priced in a richer channel than the workbook allows`);
