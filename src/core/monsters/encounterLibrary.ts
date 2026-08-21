@@ -6,9 +6,10 @@
  * combat roster (monsterCandidates state in App.tsx).
  */
 
-import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState, MonsterClassification } from "./runtime/mainMonsterRuntime";
+import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState, MonsterClassification, MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
 import { actTagForId } from "../campaign/actTags";
+import { materializeTemplateBody } from "./actionSetPicks";
 import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/partyCurveV2";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,6 +29,52 @@ export type EncounterMonsterEntry = {
    * scaling now comes from `hpForPartySize(base, partySize)` applied to the whole encounter.
    */
   hpVariant?: "standard" | "low" | "high";
+  /**
+   * THE BODIES BUILT FROM A TEMPLATE ENTRY.
+   *
+   * Christopher: *"the bodies arent generated because a DM has to set those in the 'campaign
+   * encounter' so it would save the local copy when they edit the mirror encounter because it
+   * would give them the 5 with the locked stats and only the choices of the templet."*
+   *
+   * So a template entry does NOT spawn anonymous copies. Editing the encounter is where the DM
+   * builds each body — the stats stay locked to the template (a mirror is always AC 15 / 90 HP)
+   * and only the template's own CHOICES are open. The result saves with the encounter, in the
+   * DM's local copy, so the same five mirrors come back next session.
+   *
+   * Absent on an ordinary entry, where `count` alone says how many identical bodies to make.
+   */
+  bodies?: TemplateBodyChoice[];
+};
+
+/**
+ * One body built from a template creature, as authored in the encounter.
+ *
+ * ⚠ CHOICES ONLY. There is deliberately no AC, HP or speed here — those belong to the template
+ * and a per-body override would let two mirrors in one fight disagree about what a mirror is.
+ * What varies between bodies is exactly what the template left open.
+ */
+export type TemplateBodyChoice = {
+  /** Stable id within the entry, so edits and reorders do not swap bodies around. */
+  id: string;
+  /**
+   * What this body is called — "Mirror of Thayla". The mirrors are named for the characters
+   * they stand against, which is what makes the fight read as a mirror match.
+   */
+  name: string;
+  /**
+   * Which PC this body mirrors, when the DM wants the link recorded. Cosmetic and optional.
+   *
+   * ⚠ IT DOES NOT DECIDE THE BOND. Christopher: *"those bonds are not locked to the current
+   * party."* A Mirror of Thayla need not carry Thayla's bond — the DM picks any legal one, and
+   * deriving it from the mirrored character would quietly remove that choice.
+   */
+  mirrorsActorId?: string;
+  /** The archetype this body was built with — reshapes the template's scores. */
+  archetype?: MonsterArchetype;
+  /** Which candidates fill each of the template's action sets, by set id. */
+  actionPicks?: Record<string, (string | null)[]>;
+  /** This body's bond and its permanent path. */
+  bond?: MonsterBond;
 };
 
 export type EncounterDefinition = {
@@ -364,8 +411,26 @@ export function spawnEncounterInstances(
     const template = library.find(t => t.templateId === entry.templateId);
     if (!template) continue;
 
-    for (let i = 0; i < entry.count; i++) {
-      const instance = createEncounterMonsterInstance(template);
+    /**
+     * A TEMPLATE ENTRY FIELDS ITS AUTHORED BODIES, not `count` anonymous copies.
+     *
+     * The DM built these in the encounter editor — each with its own name, archetype, action
+     * picks and bond — so the fight spawns exactly those. `count` still governs an ordinary
+     * entry, where every body genuinely is identical.
+     *
+     * An entry marked as a template with NO bodies authored yet spawns nothing rather than
+     * silently dropping five identical un-chosen mirrors onto the map. The encounter editor is
+     * where that gets fixed, and an empty fight is a visible prompt to go and fix it.
+     */
+    const bodies = entry.bodies ?? [];
+    const perBody: MainMonsterTemplate[] = bodies.length > 0
+      ? bodies.map(b => materializeTemplateBody(template, b))
+      : template.isTemplate
+        ? []
+        : Array.from({ length: entry.count }, () => template);
+
+    for (let i = 0; i < perBody.length; i++) {
+      const instance = createEncounterMonsterInstance(perBody[i]);
 
       // Lever 1 — the party-size HP band, applied to the WHOLE encounter. The multiplier is
       // uniform, so scaling each body is the same total as scaling the sum, but the decision

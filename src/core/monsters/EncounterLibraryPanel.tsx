@@ -20,6 +20,11 @@ import { exportCampaignAuthoring } from "../campaign/authorExport";
 // The panel is the seam where campaign content meets the engine editors — the same place
 // chassisOptions is assembled. The editor itself never imports mod content (RULE 3).
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
+import type { BondTemplate } from "../types/bond";
+import type { TemplateBodyChoice } from "./encounterLibrary";
+import type { MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
+import { actionSetPlan } from "./actionSetPicks";
+import { ARCHETYPES } from "./creator/monsterCreatorModel";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
@@ -205,9 +210,121 @@ type EntryEditorProps = {
   onChange: (entry: EncounterMonsterEntry) => void;
   onRemove: () => void;
   onEditMonster: (templateId: string) => void;
+  /** The campaign's bonds, for a template body's bond pick. */
+  bondOptions?: BondTemplate[];
 };
 
-function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster }: EntryEditorProps) {
+function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster, bondOptions = [] }: EntryEditorProps) {
+  const template = monsterLibrary.find(m => m.templateId === entry.templateId);
+  const plan = template ? actionSetPlan(template) : [];
+  const bodies = entry.bodies ?? [];
+
+  /**
+   * THE BODY BUILDER — where a template becomes the five mirrors.
+   *
+   * Christopher: *"a DM has to set those in the 'campaign encounter'… it would give them the 5
+   * with the locked stats and only the choices of the templet."*
+   *
+   * So the stats are PRINTED, not edited: every mirror is the template's AC and HP, and the only
+   * things open are what the template left open — a name, an archetype, the action-set picks and
+   * a bond. Editing here saves with the encounter into the DM's own copy, so the same roster
+   * comes back next session.
+   */
+  function renderBodies() {
+    if (!template?.isTemplate) return null;
+    const setBodies = (next: TemplateBodyChoice[]) => onChange({ ...entry, bodies: next, count: Math.max(1, next.length) });
+    const patch = (i: number, up: Partial<TemplateBodyChoice>) => setBodies(bodies.map((b, j) => j === i ? { ...b, ...up } : b));
+
+    return (
+      <div style={{ marginTop: 6, padding: "7px 8px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#9d8cff" }}>
+            Bodies <span style={{ color: "#666", fontWeight: 400 }}>
+              — AC {String(template.stats.ac)} · {template.stats.maxHp} HP, locked. One per party member.
+            </span>
+          </span>
+          <button type="button"
+            onClick={() => setBodies([...bodies, { id: "b" + Date.now().toString(36), name: "Mirror of " + (bodies.length + 1) }])}
+            style={{ fontSize: 10, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+            + Body
+          </button>
+        </div>
+        {bodies.length === 0 && (
+          <p style={{ fontSize: 10, color: "#ff9999", fontStyle: "italic", margin: 0 }}>
+            No bodies built — this entry spawns nothing. Add one per party member.
+          </p>
+        )}
+        {bodies.map((b, i) => {
+          const bondTpl = b.bond ? bondOptions.find(x => x.id === b.bond!.templateId) : undefined;
+          const bondStage = b.bond?.stage ?? 2;
+          const bondPaths = bondTpl?.stages[bondStage]?.paths ?? [];
+          return (
+            <div key={b.id} style={{ marginBottom: 6, padding: "6px 7px", background: "#161622", border: "1px solid #262638", borderRadius: 4 }}>
+              <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: 4 }}>
+                <input value={b.name} placeholder="Mirror of …" onChange={e => patch(i, { name: e.target.value })}
+                  style={{ flex: 1, fontSize: 11, padding: "2px 5px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff" }} />
+                <select value={b.archetype ?? ""} onChange={e => patch(i, { archetype: (e.target.value || undefined) as MonsterArchetype | undefined })}
+                  title="Reshapes the template's own six scores into this archetype's order. It never invents a score."
+                  style={{ width: 118, fontSize: 11, padding: "2px 4px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#aaa" }}>
+                  <option value="">archetype…</option>
+                  {ARCHETYPES.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                </select>
+                <button type="button" onClick={() => setBodies(bodies.filter((_, j) => j !== i))}
+                  style={{ fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
+              </div>
+              {plan.map(pl => (
+                <div key={pl.set.id} style={{ display: "flex", gap: 4, alignItems: "center", marginBottom: 3 }}>
+                  <span style={{ fontSize: 10, color: "#777", width: 96, flexShrink: 0 }}>{pl.set.label}</span>
+                  {Array.from({ length: pl.slots }, (_, s) => {
+                    const picks = b.actionPicks ?? {};
+                    const mine = picks[pl.set.id] ?? [];
+                    // A taken option leaves the pool for its siblings — the same ABS-array rule
+                    // the ability spine and the spell slots use. The slot keeps its own pick.
+                    const taken = new Set(mine.filter((n, j) => j !== s && n));
+                    return (
+                      <select key={s} value={mine[s] ?? ""}
+                        onChange={e => {
+                          const next = [...(mine.length ? mine : Array(pl.slots).fill(null))];
+                          next[s] = e.target.value || null;
+                          patch(i, { actionPicks: { ...picks, [pl.set.id]: next } });
+                        }}
+                        style={{ flex: 1, minWidth: 0, fontSize: 10, padding: "2px 3px", borderRadius: 3, border: "1px solid " + (mine[s] ? "#444" : "#5a4a1a"), background: "#111", color: mine[s] ? "#ccc" : "#e0b34a" }}>
+                        <option value="">— pick —</option>
+                        {pl.candidates.filter(c => !taken.has(c.name)).map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                      </select>
+                    );
+                  })}
+                </div>
+              ))}
+              {bondOptions.length > 0 && (
+                <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                  <span style={{ fontSize: 10, color: "#777", width: 96, flexShrink: 0 }}>Bond</span>
+                  <select value={b.bond?.templateId ?? ""}
+                    title="Any legal bond — a mirror's bond is not tied to the character it mirrors."
+                    onChange={e => patch(i, { bond: e.target.value ? { templateId: e.target.value, stage: 2 } : undefined })}
+                    style={{ flex: 1, minWidth: 0, fontSize: 10, padding: "2px 3px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#ccc" }}>
+                    <option value="">— none —</option>
+                    {bondOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </select>
+                  {bondPaths.map((pp, pi) => (
+                    <button key={pp.name} type="button"
+                      onClick={() => patch(i, { bond: { ...(b.bond as MonsterBond), chosenPathIndex: pi as 0 | 1 } })}
+                      style={{
+                        fontSize: 10, padding: "2px 6px", borderRadius: 3, cursor: "pointer", whiteSpace: "nowrap",
+                        background: b.bond?.chosenPathIndex === pi ? "#7b68ee33" : "transparent",
+                        border: "1px solid " + (b.bond?.chosenPathIndex === pi ? "#7b68ee" : "#333"),
+                        color: b.bond?.chosenPathIndex === pi ? "#cfc6ff" : "#888",
+                      }}>{pp.name}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px", background: "#161622", borderRadius: 6, marginBottom: 6, border: "1px solid #2a2a3e" }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -247,6 +364,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster 
         </button>
         <button type="button" onClick={onRemove} style={{ fontSize: 11, padding: "2px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
       </div>
+      {renderBodies()}
       {/* No per-creature HP band here on purpose: the party-size band is a property of the
           FIGHT, set once for the panel. A row-level dial let a boss be scaled for 5 players
           while its adds were scaled for 3, and disagreed with the party size driving DPR. */}
@@ -778,6 +896,7 @@ export function EncounterLibraryPanel({
               key={`${entry.templateId}-${i}`}
               entry={entry}
               monsterLibrary={resolvedLibrary}
+              bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
               onEditMonster={(templateId) => setEditingMonsterTemplateId(templateId)}
               onChange={updated => {
                 const next = [...editDraft.entries];

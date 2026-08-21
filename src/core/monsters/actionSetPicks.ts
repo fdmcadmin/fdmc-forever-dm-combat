@@ -16,8 +16,9 @@
  * in the same place — a template plus a set of choices produces one concrete stat block.
  */
 
-import type { MainMonsterTemplate, MonsterActionSet } from "./runtime/mainMonsterRuntime";
+import type { MainMonsterTemplate, MonsterActionSet, MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
+import { redistributeAbilityEntries } from "./creator/monsterCreatorModel";
 
 /** Which action names fill each set, by set id. `null` = that slot is still empty. */
 export type ActionSetPicks = Record<string, (string | null)[]>;
@@ -111,5 +112,48 @@ export function buildBodyFromTemplate(
     isTemplate: undefined,
     actionSets: undefined,
     actions: (template.actions ?? []).filter(a => !a.setId || chosen.has(a.name)),
+  };
+}
+
+/**
+ * One concrete creature from a template plus a body's authored choices.
+ *
+ * This is where a "Mirror of Thayla" actually becomes a stat block: the template's locked stats
+ * carry through untouched, the archetype reshapes the ability spread, the action pools collapse
+ * to what this body took, and the bond rides along.
+ *
+ * ⚠ STATS ARE NOT NEGOTIABLE HERE. AC, HP and speed come from the template and nothing in a
+ * body's choices can move them — *"it would give them the 5 with the locked stats and only the
+ * choices of the templet."* Every mirror is AC 15 / 90 HP; what differs is archetype, package,
+ * bond, and which actions it took.
+ *
+ * ⚠ THE ARCHETYPE RESHAPES, IT DOES NOT GENERATE. `redistributeAbilityEntries` deals the
+ * template's OWN six scores into the archetype's priority order — the same dealing the creator's
+ * "♻ Reshape" button does, and read off the same Elemental Mirror ABS table. A body never
+ * invents a score the template did not have.
+ */
+export function materializeTemplateBody(
+  template: MainMonsterTemplate,
+  body: {
+    id: string;
+    name: string;
+    archetype?: MonsterArchetype;
+    actionPicks?: ActionSetPicks;
+    bond?: MonsterBond;
+  },
+): MainMonsterTemplate {
+  const built = buildBodyFromTemplate(template, body.actionPicks ?? {}, {
+    name: body.name || template.name,
+    templateIdSuffix: body.id,
+  });
+  return {
+    ...built,
+    ...(body.bond ? { bond: body.bond } : {}),
+    ...(body.archetype
+      ? {
+        abilities: redistributeAbilityEntries(built.abilities, body.archetype),
+        stats: { ...built.stats, archetype: body.archetype },
+      }
+      : {}),
   };
 }
