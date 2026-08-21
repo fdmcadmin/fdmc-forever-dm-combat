@@ -22,7 +22,7 @@
 
 import { spellProfile, type SpellProfile, type SrdVersion } from "./compactImport";
 import { aoeTargetsForParty } from "./parseCreature";
-import { applySwing, combineSwings, conditionEffect, pHitVsProne, withAdvantage, withDisadvantage, type RollSwing } from "./controlPricing";
+import { conditionsImposedBy, applySwing, combineSwings, conditionEffect, pHitVsProne, withAdvantage, withDisadvantage, type RollSwing } from "./controlPricing";
 import { reachOfFeature } from "./reachability";
 import type { SaveAbility } from "./partyDefenceCurve";
 import { damageExpressionAverage } from "./damageExpression";
@@ -215,10 +215,36 @@ export function resolveFeature(
       detail: "Dice appear in the printed text but no damage field was entered, so this scores 0. Enter the damage expression.",
     });
   } else if (feature.attackBonus !== undefined || feature.saveDc !== undefined) {
-    assumptions.push({
-      feature: name, flag: "NEEDS DM INPUT", field: "damage",
-      detail: "The feature has an attack bonus or save DC but no readable damage.",
-    });
+    /**
+     * ⚠ A CONTROL EFFECT IS NOT A DAMAGE EFFECT WITH MISSING DICE.
+     *
+     * This raised "the feature has an attack bonus or save DC but no readable damage" against
+     * every save-forcing ability in the campaign that deals none — Snarlroot's Turn the Root,
+     * the Crone's Blighted Vitality, Hushrunner's Call the Wrong Name, the Veil-Torn Dragon's
+     * Fractured Dream Breath. Seven creatures across the Act 3 sequence reported as unpriceable
+     * when nothing about them is unreadable: they root, halve speed, block opportunity attacks
+     * and suppress healing, and they are supposed to have no damage line.
+     *
+     * The contract is emphatic that this is a category of its own — *"Control is not
+     * automatically unpriceable. Price its direct, deterministic consequence on action uptime,
+     * hit probability, reachability, or sustain."* Calling it a damage gap sends the DM looking
+     * for dice that were never printed, and buries the real question, which is what the control
+     * is worth.
+     */
+    const controls = conditionsImposedBy({ conditions: feature.conditions, text: feature.text });
+    const readsAsControl = controls.length > 0
+      || /\b(?:speed is (?:halved|reduced)|cannot|can'?t|prevent|suppress|halved|rooted|held|blocked|disadvantage)\b/i
+        .test(feature.text ?? "");
+    if (readsAsControl) {
+      notes.push(
+        `Control effect with no damage line${controls.length ? ` (${controls.join(", ")})` : ""} — priced through its consequence, not as damage.`,
+      );
+    } else {
+      assumptions.push({
+        feature: name, flag: "NEEDS DM INPUT", field: "damage",
+        detail: "The feature has an attack bonus or save DC but no readable damage, and its text does not describe a control effect either. Enter the damage, or state what it does.",
+      });
+    }
   }
   return { name, method: "needs_dm_input", rawAverage: 0, castLevel: null,
     delayedAverage: 0, notes, assumptions };
