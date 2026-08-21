@@ -67,19 +67,22 @@ export function bondStageName(stage: BondStageIndex): string {
 }
 
 /**
- * Resolve the live text for a bond at a character level.
- *
  * At stages III+ BOTH paths are reported, because both are live: the chosen one at its upgraded
  * form and the unchosen one held at whatever the ladder says. A card showing only the chosen path
  * would hide half of what the character can still do.
+ *
+ * Resolve a bond AT AN EXPLICIT STAGE.
+ *
+ * This is the shared core. A character reaches its stage by level and campaign gates; a CREATURE
+ * is simply built at one — an Elemental Mirror is authored at Metamorphosis and never advances.
+ * Both end up here so the path/permanence rules cannot drift apart between them.
  */
-export function resolveBond(
+export function resolveBondAtStage(
   template: BondTemplate,
-  assignment: BondAssignment,
-  ctx: BondStageContext | number,
+  chosenPathIndex: 0 | 1 | undefined,
+  stageIndex: BondStageIndex,
+  blockedBy?: BondStageGate,
 ): ResolvedBond {
-  const context: BondStageContext = typeof ctx === "number" ? { level: ctx } : ctx;
-  const { stage: stageIndex, blockedBy } = resolveBondStage(context);
   const stage = template.stages[stageIndex];
   const base = {
     template,
@@ -92,11 +95,9 @@ export function resolveBond(
   if (!stage) return base;
   if (!stage.paths) return { ...base, effect: stage.effect };
 
-  const picked = assignment.chosenPathIndex;
-  if (picked === undefined) {
-    // At Metamorphosis and not yet branched. Nothing upgrades until the choice is made.
-    return { ...base, awaitingPathChoice: true };
-  }
+  const picked = chosenPathIndex;
+  if (picked === undefined) return { ...base, awaitingPathChoice: true };
+
   const other = picked === 0 ? 1 : 0;
   /**
    * ⚠ THE UNCHOSEN PATH'S TEXT LIVES IN THE CHOSEN PATH'S BOX.
@@ -112,6 +113,16 @@ export function resolveBond(
       ? { name: stage.paths[other]?.name ?? "Other path", text: stage.paths[picked].unchosen as string }
       : undefined,
   };
+}
+
+export function resolveBond(
+  template: BondTemplate,
+  assignment: BondAssignment,
+  ctx: BondStageContext | number,
+): ResolvedBond {
+  const context: BondStageContext = typeof ctx === "number" ? { level: ctx } : ctx;
+  const { stage: stageIndex, blockedBy } = resolveBondStage(context);
+  return resolveBondAtStage(template, assignment.chosenPathIndex, stageIndex, blockedBy);
 }
 
 export type BondChoiceResult =

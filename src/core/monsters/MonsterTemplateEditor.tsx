@@ -22,6 +22,9 @@ import React, { useMemo, useState } from "react";
 import type { MainMonsterTemplate, MainMonsterVisibilityState, MonsterArchetype, MonsterClassification } from "./runtime/mainMonsterRuntime";
 import { MONSTER_KINDS } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
+import type { BondTemplate } from "../types/bond";
+import { BOND_STAGE_NAMES } from "../types/bond";
+import { resolveBondAtStage } from "../rules/bondProgress";
 import {
   ABILITY_ORDER,
   ARCHETYPES,
@@ -48,6 +51,12 @@ export type MonsterTemplateEditorProps = {
   template: MainMonsterTemplate;
   /** Library monsters offered as CHASSIS sources (scores + defenses). */
   chassisOptions?: MainMonsterTemplate[];
+  /**
+   * Bonds this campaign offers. A PROP, not an import — the editor is engine and the fourteen
+   * Broken Chain bonds are mod content. A campaign with no bonds passes nothing and the section
+   * does not render.
+   */
+  bondOptions?: BondTemplate[];
   onSave: (updated: MainMonsterTemplate) => void;
   onCancel: () => void;
   /**
@@ -102,7 +111,7 @@ function SmallBtn({ onClick, children, color = "#7b68ee", title }: { onClick: ()
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
-export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, onCancel, onRevertToCampaign }: MonsterTemplateEditorProps) {
+export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptions = [], onSave, onCancel, onRevertToCampaign }: MonsterTemplateEditorProps) {
   const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
   const [step, setStep] = useState<StepId>("identity");
   const [chassisId, setChassisId] = useState<string>("");
@@ -465,7 +474,100 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], onSave, o
               onChange={e => setDraft(d => ({ ...d, visibility: { ...d.visibility, revealedName: e.target.value } }))} placeholder="(defaults to Name)" style={inputStyle} />
           </div>
         </div>
+        {renderCreatureBond()}
       </>
+    );
+  }
+
+  /**
+   * A BOND ON A CREATURE — the Elemental Mirrors' third choice.
+   *
+   * *"The Wood builds one mirror for each adventurer"*, each assembled from an archetype, an
+   * elemental pair, and **one legal inherent Bond and its Metamorphosis path**. Archetype was
+   * already authorable (step 2 reshapes the chassis by it); the bond had no field anywhere, so a
+   * mirror could not be finished in the creator at all — RULE 2.
+   *
+   * The stage is EXPLICIT here, unlike a character's. A PC's stage comes from level (3/6/9/13);
+   * a creature is built at a stage and never advances, so this is the fact rather than a copy of
+   * one. Mirrors are built at Metamorphosis, which is also where the path becomes required.
+   *
+   * Renders nothing when the campaign ships no bonds — this is engine, and a mod without bonds
+   * should not grow an empty control.
+   */
+  function renderCreatureBond() {
+    if (bondOptions.length === 0) return null;
+    const bond = draft.bond;
+    const tpl = bond ? bondOptions.find(b => b.id === bond.templateId) : undefined;
+    const stage = bond?.stage ?? 2;
+    const needsPath = stage >= 2;
+    const resolved = tpl ? resolveBondAtStage(tpl, bond?.chosenPathIndex, stage) : undefined;
+    const pathNames = tpl?.stages[stage]?.paths ?? [];
+
+    const setBond = (next: MainMonsterTemplate["bond"]) => setDraft(d => ({ ...d, bond: next }));
+
+    return (
+      <div style={{ marginTop: 10, padding: "8px 10px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#9d8cff", marginBottom: 6 }}>
+          Bond <span style={{ color: "#666", fontWeight: 400 }}>— a creature that carries one, like an Elemental Mirror</span>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <div style={{ flex: 1 }}>
+            <span style={labelStyle}>Bond</span>
+            <select value={bond?.templateId ?? ""} style={inputStyle}
+              onChange={e => setBond(e.target.value
+                // Changing the bond CLEARS the path — a path index means nothing against a
+                // different bond's two options, and silently keeping it would pick one at random.
+                ? { templateId: e.target.value, stage: (bond?.stage ?? 2) as 0 | 1 | 2 | 3 | 4 }
+                : undefined)}>
+              <option value="">— none —</option>
+              {bondOptions.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </div>
+          {bond && (
+            <div style={{ width: 132 }}>
+              <span style={labelStyle}>Stage</span>
+              <select value={stage} style={inputStyle}
+                onChange={e => {
+                  const s = Number(e.target.value) as 0 | 1 | 2 | 3 | 4;
+                  // Dropping below Metamorphosis drops the path with it — there is no path to
+                  // hold at Instinct or Realized, and keeping a stale one would resurface if the
+                  // stage went back up.
+                  setBond({ ...bond, stage: s, ...(s >= 2 ? {} : { chosenPathIndex: undefined }) });
+                }}>
+                {BOND_STAGE_NAMES.map((n, i) => <option key={n} value={i}>{`${i + 1} · ${n}`}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+        {bond && needsPath && (
+          <div style={{ marginTop: 6 }}>
+            <span style={labelStyle}>Path <span style={{ color: "#666" }}>— permanent for this creature</span></span>
+            <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
+              {pathNames.map((p, i) => (
+                <button key={p.name} type="button"
+                  onClick={() => setBond({ ...bond, chosenPathIndex: i as 0 | 1 })}
+                  style={{
+                    flex: 1, fontSize: 11, padding: "4px 8px", borderRadius: 3, cursor: "pointer", textAlign: "left",
+                    background: bond.chosenPathIndex === i ? "#7b68ee33" : "transparent",
+                    border: `1px solid ${bond.chosenPathIndex === i ? "#7b68ee" : "#333"}`,
+                    color: bond.chosenPathIndex === i ? "#cfc6ff" : "#999",
+                  }}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {resolved && (
+          <p style={{ fontSize: 10, color: resolved.awaitingPathChoice ? "#ff9999" : "#777", margin: "6px 0 0" }}>
+            {resolved.awaitingPathChoice
+              ? `${resolved.stageName} needs a path — the creature has no bond effect until one is chosen.`
+              : resolved.chosen
+                ? `${resolved.stageName} · ${resolved.chosen.name}: ${resolved.chosen.text}`
+                : `${resolved.stageName}: ${resolved.effect ?? ""}`}
+          </p>
+        )}
+      </div>
     );
   }
 

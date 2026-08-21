@@ -117,6 +117,21 @@ export type MonsterArchetype =
   | "mystic"       // WIS — predator, divine/nature mystic
   | "commander";   // CHA — presence, leader, fear
 
+/**
+ * A bond on a CREATURE rather than a character.
+ *
+ * Same templates, same paths, same permanence — the difference is only that a creature does not
+ * level, so its stage is authored instead of derived. See `core/types/bond.ts` for the ladder.
+ */
+export type MonsterBond = {
+  /** Which bond, by `BondTemplate.id`. */
+  templateId: string;
+  /** 0=Instinct … 4=Unbroken. Mirrors are built at 2 (Metamorphosis). */
+  stage: 0 | 1 | 2 | 3 | 4;
+  /** The permanent path index, required from Metamorphosis up. */
+  chosenPathIndex?: 0 | 1;
+};
+
 export type MainMonsterTemplate = {
   templateId: string;
   name: string;
@@ -133,6 +148,20 @@ export type MainMonsterTemplate = {
    * Never author this in the bundled library; it is written by the editor on save.
    */
   dmEdited?: { at: string };
+  /**
+   * A BOND CARRIED BY A CREATURE.
+   *
+   * The Elemental Mirrors are built from three choices, and the third is *"one legal inherent
+   * Bond and its Metamorphosis path"* — every mirror mirrors a player, bond included. The
+   * archetype (choice 1) and the elemental package (choice 2) were already expressible here;
+   * the bond was not, so a mirror could not be finished in the creator at all.
+   *
+   * ⚠ A CREATURE'S STAGE IS EXPLICIT, unlike a character's. A PC's bond stage is derived from
+   * level (3/6/9/13) because a PC levels; a mirror is BUILT at a stage and never advances, so
+   * storing one here is the fact rather than a duplicate of one. Mirrors are built at
+   * Metamorphosis, which is also the first stage that needs `chosenPathIndex`.
+   */
+  bond?: MonsterBond;
   stats: {
     kind: MonsterKind;
     ac: number | string;

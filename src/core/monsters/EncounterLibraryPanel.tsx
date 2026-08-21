@@ -17,6 +17,9 @@ import {
 import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/partyCurveV2";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { exportCampaignAuthoring } from "../campaign/authorExport";
+// The panel is the seam where campaign content meets the engine editors — the same place
+// chassisOptions is assembled. The editor itself never imports mod content (RULE 3).
+import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
 import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
@@ -678,6 +681,7 @@ export function EncounterLibraryPanel({
         <MonsterTemplateEditor
           template={template}
           chassisOptions={resolvedLibrary.filter(t => t.templateId !== template.templateId)}
+          bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
           onSave={handleSaveMonsterTemplate}
           onCancel={() => setEditingMonsterTemplateId(null)}
           /* The exit belongs HERE too, not only in the library list — this is where a DM is
