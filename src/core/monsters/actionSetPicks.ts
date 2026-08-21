@@ -145,6 +145,41 @@ export function buildBodyFromTemplate(
 }
 
 /**
+ * Every value the body's chosen options supply, flattened into one lookup.
+ *
+ * Later sets win on a name collision, which is only reachable if a DM names two sets' variables
+ * the same — an unusual enough choice that a rule beats a crash.
+ */
+export function optionVarsFor(template: MainMonsterTemplate, picks: ActionSetPicks | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const set of template.actionSets ?? []) {
+    const chosen = (picks?.[set.id] ?? []).filter(Boolean) as string[];
+    for (const name of chosen) Object.assign(out, set.optionVars?.[name] ?? {});
+  }
+  return out;
+}
+
+/**
+ * Substitute `{name}` tokens in one action's text fields.
+ *
+ * ⚠ AN UNKNOWN TOKEN IS LEFT ALONE. Blanking it would turn "2d6 {primry}" into "2d6" — damage
+ * with no type, which reads as correct and is not. Left in place, the typo is visible on the card.
+ */
+function substituteVars<T extends Record<string, unknown>>(action: T, vars: Record<string, string>): T {
+  if (Object.keys(vars).length === 0) return action;
+  const fix = (s: unknown) =>
+    typeof s === "string" ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
+  return {
+    ...action,
+    name: fix((action as { name?: unknown }).name),
+    damage: fix((action as { damage?: unknown }).damage),
+    roll: fix((action as { roll?: unknown }).roll),
+    save: fix((action as { save?: unknown }).save),
+    text: fix((action as { text?: unknown }).text),
+  } as T;
+}
+
+/**
  * One concrete creature from a template plus a body's authored choices.
  *
  * This is where a "Mirror of Thayla" actually becomes a stat block: the template's locked stats
@@ -177,8 +212,15 @@ export function materializeTemplateBody(
     name: bodyNameFor(template, body.actionPicks, body.name),
     templateIdSuffix: body.id,
   });
+  /**
+   * The element decides the Claws' damage type and the Guard's immunities, so the substitution
+   * runs over EVERY action the body kept — the always-on ones especially, since those are exactly
+   * the actions that cannot be authored per element without authoring six of each.
+   */
+  const vars = optionVarsFor(template, body.actionPicks);
   return {
     ...built,
+    actions: (built.actions ?? []).map(a => substituteVars(a, vars)),
     ...(body.bond ? { bond: body.bond } : {}),
     ...(body.archetype
       ? {

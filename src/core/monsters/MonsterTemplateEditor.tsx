@@ -57,7 +57,17 @@ export type MonsterTemplateEditorProps = {
    * does not render.
    */
   bondOptions?: BondTemplate[];
-  onSave: (updated: MainMonsterTemplate) => void;
+  /** Save target. `owner` says WHICH library — campaign content, or the DM's own. */
+  onSave: (updated: MainMonsterTemplate, owner?: "campaign" | "dm") => void;
+  /**
+   * Show the campaign save target.
+   *
+   * The mod AUTHOR builds campaign creatures; an ordinary DM building their own monsters never
+   * sees it and never has to think about the distinction. Without this, every creature built in
+   * the app landed in "My Library" whatever the intent, and authoring a new act meant editing
+   * campaign source by hand.
+   */
+  canSaveToCampaign?: boolean;
   onCancel: () => void;
   /**
    * Drop the DM's saved copy and go back to the shipped campaign creature.
@@ -111,7 +121,7 @@ function SmallBtn({ onClick, children, color = "#7b68ee", title }: { onClick: ()
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
-export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptions = [], onSave, onCancel, onRevertToCampaign }: MonsterTemplateEditorProps) {
+export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptions = [], onSave, onCancel, onRevertToCampaign, canSaveToCampaign = false }: MonsterTemplateEditorProps) {
   const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
   const [step, setStep] = useState<StepId>("identity");
   const [chassisId, setChassisId] = useState<string>("");
@@ -136,9 +146,19 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
    * action is editable from two places and the DM cannot tell which they are looking at —
    * so a slot-costed spell leaves the Actions list the moment it becomes one.
    */
-  const standardActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && typeof a.spellSlotLevel !== "number"), [draft.actions]);
+  /**
+   * ⚠ A SPELL IS A SPELL BY KIND, not by whether it spends a slot.
+   *
+   * Christopher: *"the claw and bolt are the actions, the 18 are all spells that need to be set
+   * because set is what determines the spells section."* The Elemental Mirror's eighteen are
+   * 1/day, at-will and 3/day — none of them slot-costed — so filtering step 7 on spellSlotLevel
+   * left every one of them in the ACTIONS list beside Claws and Bolt, which is exactly the
+   * confusion this split exists to prevent.
+   */
+  const isSpellRow = (a: MonsterReaderAction) => a.kind === "spell" || typeof a.spellSlotLevel === "number";
+  const standardActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && !isSpellRow(a)), [draft.actions]);
   const legendaryActions = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !!a.legendaryCost), [draft.actions]);
-  const slotSpells = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && typeof a.spellSlotLevel === "number"), [draft.actions]);
+  const slotSpells = useMemo(() => draft.actions.map((a, i) => ({ a, i })).filter(({ a }) => !a.legendaryCost && isSpellRow(a)), [draft.actions]);
 
   /**
    * Pick a calibrated defensive trait. The multiplier is READ from the workbook rule, never
@@ -557,6 +577,28 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
     // Count OPTIONS, not actions: six element packages of three spells are six choices, not
     // eighteen, and reporting eighteen would tell the DM a "pick 1" set was well stocked when
     // it is exactly as stocked as the packages are.
+    /** The distinct option names authored into a set, in first-seen order. */
+    const optionsIn = (id: string) => {
+      const seen: string[] = [];
+      for (const a of draft.actions) {
+        if (a.setId !== id) continue;
+        const key = a.setOption?.trim() || a.name;
+        if (key && !seen.includes(key)) seen.push(key);
+      }
+      return seen;
+    };
+    // "primary=earth, secondary=radiant" <-> { primary: "earth", secondary: "radiant" }
+    const varsToText = (v?: Record<string, string>) =>
+      Object.entries(v ?? {}).map(([k, val]) => `${k}=${val}`).join(", ");
+    const textToVars = (s: string) => {
+      const out: Record<string, string> = {};
+      for (const part of s.split(",")) {
+        const [k, ...rest] = part.split("=");
+        const key = k.trim();
+        if (key && rest.length) out[key] = rest.join("=").trim();
+      }
+      return out;
+    };
     const countIn = (id: string) =>
       new Set(draft.actions.filter(a => a.setId === id).map(a => a.setOption?.trim() || a.name)).size;
     return (
@@ -585,7 +627,8 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           // slots sit empty forever and block generation. Say so here, not at spawn time.
           const short = s.pick > have && have > 0;
           return (
-            <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 5 }}>
+            <React.Fragment key={s.id}>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 5 }}>
               <div style={{ flex: 1 }}>
                 <span style={labelStyle}>Set name</span>
                 <input value={s.label} style={inputStyle}
@@ -621,6 +664,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 }}
                 style={{ fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
             </div>
+              {/*
+                PER-OPTION VALUES. An option supplies facts, not just actions: the element decides
+                the Claws' damage type and the Guard's immunities. Authoring six Claws and six
+                Guards would be twelve chances to get one wrong — so one Claws reads "2d6 {primary}"
+                and each option says what {primary} is.
+              */}
+              {optionsIn(s.id).length > 0 && (
+                <div style={{ marginBottom: 8, paddingLeft: 8, borderLeft: "2px solid #2a2a3e" }}>
+                  {optionsIn(s.id).map(opt => (
+                    <div key={opt} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 3 }}>
+                      <span style={{ fontSize: 10, color: "#9d8cff", width: 96, flexShrink: 0 }}>{opt}</span>
+                      <input
+                        value={varsToText(s.optionVars?.[opt])}
+                        placeholder="primary=earth, secondary=radiant"
+                        title="Values this option supplies. Any action may use them as {primary} in its damage, save, text or name."
+                        onChange={e => setSets(sets.map((x, j) => j === i
+                          ? { ...x, optionVars: { ...(x.optionVars ?? {}), [opt]: textToVars(e.target.value) } }
+                          : x))}
+                        style={{ ...inputStyle, fontSize: 10 }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
       </div>
@@ -1082,7 +1149,10 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           one — everything else is an attack or a trait and belongs in step 4.
         */}
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
-          <SmallBtn color="#9d8cff" onClick={() => addListItem("actions", { name: "", kind: "spell", spellSlotLevel: 1, slotCandidate: true })}>+ Add spell</SmallBtn>
+          {/* A new spell costs NO slot by default. Forcing spellSlotLevel:1 made every spell a
+              slot caster, which is wrong for the at-will / 1-per-day / 3-per-day shape most
+              authored casters actually use — set the slot only when the spell really spends one. */}
+          <SmallBtn color="#9d8cff" onClick={() => addListItem("actions", { name: "", kind: "spell" })}>+ Add spell</SmallBtn>
         </div>
         {slotSpells.map(({ a, i }) => actionRow("actions", a, i, { spell: true }))}
         {slotSpells.length === 0 && (
@@ -1196,7 +1266,16 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 500 }}>{draft.name || "New Monster"}</span>
-          <span title="Monsters you create are saved to your personal My Library" style={{ fontSize: 9, padding: "1px 7px", borderRadius: 8, background: "#16291b", border: "1px solid #2f7d3f", color: "#7be08a", textTransform: "uppercase", letterSpacing: 1 }}>My Library</span>
+          {/*
+            The badge names the store this creature will land in. It said "My Library"
+            unconditionally, which was true only because there was nowhere else to save.
+          */}
+          {canSaveToCampaign ? (
+            <span title="Save targets: My Library keeps it private; Campaign makes it module content that ships through the author export."
+              style={{ fontSize: 9, padding: "1px 7px", borderRadius: 8, background: "#1a1630", border: "1px solid #4b3f8f", color: "#9d8cff", textTransform: "uppercase", letterSpacing: 1 }}>Campaign or My Library</span>
+          ) : (
+            <span title="Monsters you create are saved to your personal My Library" style={{ fontSize: 9, padding: "1px 7px", borderRadius: 8, background: "#16291b", border: "1px solid #2f7d3f", color: "#7be08a", textTransform: "uppercase", letterSpacing: 1 }}>My Library</span>
+          )}
         </span>
         <div style={{ display: "flex", gap: 6 }}>
           <button type="button" disabled={blockers.length > 0}
@@ -1208,6 +1287,25 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                      cursor: blockers.length ? "not-allowed" : "pointer" }}>
             ✓ Save to My Library
           </button>
+          {/*
+            SAVE TO CAMPAIGN — the route by which a DM authors module content.
+
+            Without this, every creature built in the app was "My Library" whatever the intent, and
+            authoring a new act meant editing campaign source by hand. Same blockers as the private
+            save: campaign content is held to the same completeness bar, not a looser one.
+          */}
+          {canSaveToCampaign && (
+            <button type="button" disabled={blockers.length > 0}
+              title={blockers.length ? blockers.join("  ") : "Save as CAMPAIGN content — ships with the module through the author export, rather than staying in your personal library."}
+              onClick={() => { if (blockers.length === 0) onSave(draft, "campaign"); }}
+              style={{ fontSize: 11, padding: "3px 12px", borderRadius: 3, fontWeight: 700,
+                       background: blockers.length ? "#2a2a3e" : "#7b68ee",
+                       border: "none",
+                       color: blockers.length ? "#666" : "#0d0a1f",
+                       cursor: blockers.length ? "not-allowed" : "pointer" }}>
+              ✓ Save to Campaign
+            </button>
+          )}
           {/* ⚠ THE WAY OUT OF AN OVERRIDE. Only rendered for a campaign creature that actually
               has one. Reverting is NOT deleting: the campaign template shares this templateId,
               so it takes the slot back and every encounter using it keeps working. */}

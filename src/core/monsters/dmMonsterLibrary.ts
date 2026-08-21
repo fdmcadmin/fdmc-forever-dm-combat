@@ -14,41 +14,85 @@ import type { MonsterReaderAction } from "./MonsterJconScanner";
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
 const MONSTER_LIBRARY_KEY = "fdmc.dm.monsterLibrary.v1";
+/**
+ * CAMPAIGN-AUTHORED CREATURES — the mod author's own store.
+ *
+ * Christopher: *"i am only building this creature for my library which defeats the purpose of the
+ * campaign creation on creatures, right now i am unable to create a creature for the campaign
+ * without you doing it and that is a limitation for if i wanted to do any for the act 4."*
+ *
+ * He is right, and it was a hard stop. Encounters have had a campaign/DM target since 0.6; monster
+ * templates never did — `upsertMonsterTemplate` wrote to ONE key, so every creature a DM built was
+ * "My Library" whatever they intended. Authoring Act 4 was impossible without me editing source.
+ *
+ * The two stores are separate for the same reason the equipment ones are: a campaign creature is
+ * content that SHIPS (via the author export), while a DM's own creature is theirs alone.
+ */
+const CAMPAIGN_MONSTER_LIBRARY_KEY = "fdmc.campaign.monsterLibrary.v1";
+
+export type MonsterLibraryOwner = "campaign" | "dm";
+
+function monsterKeyFor(owner: MonsterLibraryOwner): string {
+  return owner === "campaign" ? CAMPAIGN_MONSTER_LIBRARY_KEY : MONSTER_LIBRARY_KEY;
+}
 const MONSTER_STAGED_KEY = "fdmc.dm.monsterStaged.v1";
 
 // ─── Library operations ───────────────────────────────────────────────────────
 
-export function loadMonsterLibrary(): MainMonsterTemplate[] {
-  try {
-    const raw = window.localStorage.getItem(MONSTER_LIBRARY_KEY);
-    return raw ? JSON.parse(raw) as MainMonsterTemplate[] : [];
-  } catch {
-    return [];
+/**
+ * Load a monster store. No argument = BOTH, campaign first, DM winning on a shared id — the same
+ * resolution `loadEquipmentLibrary()` uses, so an author editing their own campaign creature sees
+ * their edit rather than two rows.
+ */
+export function loadMonsterLibrary(owner?: MonsterLibraryOwner): MainMonsterTemplate[] {
+  if (owner) {
+    try {
+      const raw = window.localStorage.getItem(monsterKeyFor(owner));
+      return raw ? JSON.parse(raw) as MainMonsterTemplate[] : [];
+    } catch {
+      return [];
+    }
   }
+  const campaign = loadMonsterLibrary("campaign");
+  const dm = loadMonsterLibrary("dm");
+  const dmIds = new Set(dm.map(t => t.templateId));
+  return [...campaign.filter(t => !dmIds.has(t.templateId)), ...dm];
 }
 
-export function saveMonsterLibrary(library: MainMonsterTemplate[]): void {
+export function saveMonsterLibrary(library: MainMonsterTemplate[], owner: MonsterLibraryOwner = "dm"): void {
   try {
-    window.localStorage.setItem(MONSTER_LIBRARY_KEY, JSON.stringify(library));
+    window.localStorage.setItem(monsterKeyFor(owner), JSON.stringify(library));
   } catch {
     // localStorage unavailable
   }
 }
 
-export function upsertMonsterTemplate(template: MainMonsterTemplate): void {
-  const library = loadMonsterLibrary();
+export function upsertMonsterTemplate(template: MainMonsterTemplate, owner: MonsterLibraryOwner = "dm"): void {
+  const library = loadMonsterLibrary(owner);
   const idx = library.findIndex(t => t.templateId === template.templateId);
   if (idx === -1) {
     library.push(template);
   } else {
     library[idx] = template;
   }
-  saveMonsterLibrary(library);
+  saveMonsterLibrary(library, owner);
+  /**
+   * Saving to one store REMOVES the id from the other. A creature promoted from My Library to the
+   * campaign must not leave a stale twin behind — the resolver has the DM copy winning by id, so
+   * the leftover would shadow the campaign version and every later edit would appear to do nothing.
+   */
+  const other: MonsterLibraryOwner = owner === "campaign" ? "dm" : "campaign";
+  const otherLib = loadMonsterLibrary(other);
+  const pruned = otherLib.filter(t => t.templateId !== template.templateId);
+  if (pruned.length !== otherLib.length) saveMonsterLibrary(pruned, other);
 }
 
 export function deleteMonsterTemplate(templateId: string): void {
-  const library = loadMonsterLibrary().filter(t => t.templateId !== templateId);
-  saveMonsterLibrary(library);
+  for (const owner of ["dm", "campaign"] as MonsterLibraryOwner[]) {
+    const lib = loadMonsterLibrary(owner);
+    const next = lib.filter(t => t.templateId !== templateId);
+    if (next.length !== lib.length) saveMonsterLibrary(next, owner);
+  }
 }
 
 // ─── Export / Import ─────────────────────────────────────────────────────────

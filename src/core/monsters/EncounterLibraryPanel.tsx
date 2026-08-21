@@ -639,7 +639,7 @@ export function EncounterLibraryPanel({
     });
   }
 
-  function handleSaveMonsterTemplate(updated: MainMonsterTemplate) {
+  function handleSaveMonsterTemplate(updated: MainMonsterTemplate, owner: "campaign" | "dm" = "dm") {
     /**
      * Stamp a DELIBERATE edit. Only a marked copy of a campaign creature outranks the shipped
      * template — see `campaignBase` above. Without the stamp an old stored copy shadowed
@@ -648,8 +648,13 @@ export function EncounterLibraryPanel({
     const stamped: MainMonsterTemplate = isCampaignTemplate(updated.templateId)
       ? { ...updated, dmEdited: { at: new Date().toISOString() } }
       : updated;
-    // Save to DM localStorage library
-    upsertMonsterTemplate(stamped);
+    /**
+     * ⚠ A CAMPAIGN SAVE IS NOT A DM EDIT, so it carries no `dmEdited` stamp. That marker exists to
+     * let a DM's private copy outrank shipped campaign data; stamping the campaign store with it
+     * would make authored content look like an override of itself and survive re-seeds it should
+     * not survive.
+     */
+    upsertMonsterTemplate(owner === "campaign" ? updated : stamped, owner);
     // Refresh My Library from localStorage so the created/edited monster persists across reloads.
     setDmLibrary(loadMonsterLibrary());
     // Update local override so the encounter editor sees it immediately
@@ -832,6 +837,7 @@ export function EncounterLibraryPanel({
           chassisOptions={resolvedLibrary.filter(t => t.templateId !== template.templateId)}
           bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
           onSave={handleSaveMonsterTemplate}
+          canSaveToCampaign={unlocked}
           onCancel={() => setEditingMonsterTemplateId(null)}
           /* The exit belongs HERE too, not only in the library list — this is where a DM is
              looking when they decide their edit was a mistake. Passed only for a campaign

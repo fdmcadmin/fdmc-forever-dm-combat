@@ -166,6 +166,30 @@ export type MonsterActionSet = {
    * Only the first set marked this way is used. `pick: 1` is the sensible shape for it.
    */
   namesBody?: boolean;
+  /**
+   * VALUES EACH OPTION CARRIES, keyed by option name.
+   *
+   * Christopher: *"each claw or bolt needs to do the damage type that the element is set"* and
+   * *"i can build the elemental guard but again it would need to pull from the element that those
+   * are (ice/necrotic, etc)"*.
+   *
+   * An option is not only a bundle of actions — it also SUPPLIES FACTS that always-on actions
+   * need. The Elemental Mirror's Claws and Bolt are one attack each whose damage TYPE is whatever
+   * element the body was built with, and Elemental Guard's immunities are that element's pair.
+   * Authoring six Claws and six Elemental Guards would be six chances to get one wrong.
+   *
+   * So an option declares named values, and any action may reference them as `{name}` in its
+   * damage, save, text or its own name. `materializeTemplateBody` substitutes them for the body's
+   * chosen options.
+   *
+   *   optionVars: { Earth: { primary: "earth", secondary: "radiant" } }
+   *   Claws damage: "2d6 {primary}"          -> "2d6 earth"
+   *   Elemental Guard: "immune to {primary} and {secondary} damage"
+   *
+   * A token with no value is left ALONE rather than blanked, so a typo reads as "{primry}" on the
+   * card instead of silently deleting the damage type.
+   */
+  optionVars?: Record<string, Record<string, string>>;
   /** Optional note shown at generation. */
   note?: string;
 };

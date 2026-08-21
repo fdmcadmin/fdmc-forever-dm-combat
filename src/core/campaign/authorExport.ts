@@ -101,9 +101,21 @@ function stripLocalInstantiation(item: EquipmentItem): EquipmentItem {
  * would end up published as campaign content.
  */
 export function collectCampaignAuthoring(): CampaignAuthoringPayload {
-  // A bundled creature is only "authored over" when the DM deliberately saved it; an unmarked
-  // stored copy is a stale seed, and publishing one would re-ship an old creature as new work.
-  const monsters = loadMonsterLibrary().filter(t => t.dmEdited || t.templateId.startsWith("custom-"));
+  /**
+   * Everything in the CAMPAIGN store is authored campaign content by definition — the author put
+   * it there deliberately, which is the whole point of the store existing.
+   *
+   * From the DM store, only two things qualify: a bundled creature the DM deliberately saved
+   * (`dmEdited`), and their own creations. An unmarked stored copy is a stale seed, and
+   * publishing one would re-ship an old creature as new work.
+   */
+  const campaignAuthored = loadMonsterLibrary("campaign");
+  const campaignIds = new Set(campaignAuthored.map(t => t.templateId));
+  const monsters = [
+    ...campaignAuthored,
+    ...loadMonsterLibrary("dm").filter(t =>
+      !campaignIds.has(t.templateId) && (t.dmEdited || t.templateId.startsWith("custom-"))),
+  ];
   // Equipment has no such marker: the DM store only ever holds items that were unlocked and
   // changed, or created outright. Both are authoring.
   const equipment = loadEquipmentLibrary("dm").map(stripLocalInstantiation);
