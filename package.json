@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.7.10.56",
+  "version": "0.7.10.57",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -22,7 +22,8 @@
     "validate:control": "npx tsx scripts/validate-control-pricing.ts",
     "validate:invariants": "npx tsx scripts/validate-encounter-invariants.ts",
     "validate:act3": "npx tsx scripts/validate-act3-sequence.ts",
-    "validate:segments": "npx tsx scripts/validate-act3-segments.ts"
+    "validate:segments": "npx tsx scripts/validate-act3-segments.ts",
+    "validate:parity": "npx tsx scripts/validate-workbook-parity.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

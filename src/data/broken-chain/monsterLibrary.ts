@@ -881,10 +881,15 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       size: "Medium", classification: "elite", archetype: "tactician",
       spellSlots: [{ level: 1, max: 4 }, { level: 2, max: 3 }, { level: 3, max: 2 }],
       defenses: [
-        { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Two casters each raise one body as a 33%-HP frost-thrall; the formation's own revival value, ~+30% HP across the fight." },
-        { name: "Frost Ward (reaction)", ehpMultiplier: 1.14, note: "+5 AC on a hit, once per round per body — a spent reaction turns roughly one landed attack per round into a miss." },
-        { name: "Control denial (Whiteout / Bind in Ice / Glacial Freeze)", ehpMultiplier: 1.26, note: "Heavy obscurement, paralysis, restraints and an outright countered spell cost the party attacking turns." },
-      ],
+      /**
+       * ⚠ WORKBOOK VALUE. This creature carried three hand-written multipliers — 1.30, 1.14 and
+       * 1.26 — whose product was ×1.867 against the workbook's own ×1.436, a 30% over-count. None
+       * of those three numbers appears in the 58 calibrated trait rules; they were invented.
+       * RULE ZERO-B: nothing in the app beats the workbook.
+       */
+      { name: "Workbook profile tm (Raise the Frozen · Frost Ward · control denial)", ehpMultiplier: 1.436,
+        note: "v7 campaign_profiles tm for this creature. Do not decompose into invented per-trait numbers." },
+    ],
     },
     abilities: [
       /**
@@ -954,10 +959,15 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "undead", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "bruiser",
       defenses: [
-        { name: "Frozen Resurrection", ehpMultiplier: 1.30, note: "Raises one destroyed ally per fight as a 40%-HP husk; matched to the formation's shared revival value." },
-        { name: "Unbroken Rank", ehpMultiplier: 1.14, note: "Half-speed riders and formation discipline cost the party positioning turns." },
-        { name: "Control denial (formation)", ehpMultiplier: 1.26, note: "Shares the line's Whiteout / Bind in Ice / Glacial Freeze denial." },
-      ],
+      /**
+       * ⚠ WORKBOOK VALUE. This creature carried three hand-written multipliers — 1.30, 1.14 and
+       * 1.26 — whose product was ×1.867 against the workbook's own ×1.436, a 30% over-count. None
+       * of those three numbers appears in the 58 calibrated trait rules; they were invented.
+       * RULE ZERO-B: nothing in the app beats the workbook.
+       */
+      { name: "Workbook profile tm (Frozen Resurrection · Unbroken Rank · control denial)", ehpMultiplier: 1.436,
+        note: "v7 campaign_profiles tm for this creature. Do not decompose into invented per-trait numbers." },
+    ],
     },
     abilities: [
       formatAbility("STR", 16, 3),
@@ -1059,10 +1069,15 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       size: "Medium", classification: "elite", archetype: "commander",
       spellSlots: [{ level: 1, max: 3 }, { level: 2, max: 2 }, { level: 3, max: 2 }, { level: 4, max: 1 }],
       defenses: [
-        { name: "Raise the Frozen", ehpMultiplier: 1.30, note: "Second caster of the line; raises one body per fight as a 33%-HP frost-thrall." },
-        { name: "Frost Ward (reaction)", ehpMultiplier: 1.14, note: "+5 AC on a hit, once per round — turns roughly one landed attack per round into a miss." },
-        { name: "Whiteout / Grasping Rime / Frost-Weave Pull", ehpMultiplier: 1.26, note: "The line's densest denial: heavy obscurement, restraints and forced repositioning cost the party attacking turns." },
-      ],
+      /**
+       * ⚠ WORKBOOK VALUE. This creature carried three hand-written multipliers — 1.30, 1.14 and
+       * 1.26 — whose product was ×1.867 against the workbook's own ×1.436, a 30% over-count. None
+       * of those three numbers appears in the 58 calibrated trait rules; they were invented.
+       * RULE ZERO-B: nothing in the app beats the workbook.
+       */
+      { name: "Workbook profile tm (Raise the Frozen · Frost Ward · Whiteout / Grasping Rime)", ehpMultiplier: 1.436,
+        note: "v7 campaign_profiles tm for this creature. Do not decompose into invented per-trait numbers." },
+    ],
     },
     abilities: [
       formatAbility("STR", 10, 0),
@@ -1759,12 +1774,15 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fey", ac: 17, maxHp: 82, speed: "30 ft.",
       defenses: [
-        // ⚠ NO DEFENSIVE MULTIPLIER, BY INSTRUCTION. The encounter page: "Conditional defense
-        // from Take the Blow, forced movement, and Host state changes should be priced through
-        // the workbook runtime trace rather than hidden as raw HP." Courtesy/Discourtesy are
-        // movement economy, not survivability, so nothing here inflates effective HP.
-        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: Host state changes are priced by the runtime trace, never as raw HP." },
-      ],
+      /**
+       * ⚠ THE APP CREDITED NOTHING AND THE WORKBOOK CREDITS ×1.108. "No effective-HP trait" was
+       * asserted here; the profile carries `persistent_aura_or_dot`, and Perfect Host's advantage
+       * on saves against charm and fear is a real defence. Under-counting is as much a divergence
+       * as over-counting.
+       */
+      { name: "Workbook profile tm (Perfect Host · persistent aura)", ehpMultiplier: 1.108348,
+        note: "v7 campaign_profiles tm for this creature." },
+    ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "commander",
       skills: [{ label: "Insight", modifier: 5 }, { label: "Persuasion", modifier: 8 }],
