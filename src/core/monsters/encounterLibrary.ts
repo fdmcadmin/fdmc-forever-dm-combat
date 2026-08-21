@@ -432,10 +432,19 @@ export function spawnEncounterInstances(
     for (let i = 0; i < perBody.length; i++) {
       const instance = createEncounterMonsterInstance(perBody[i]);
 
-      // Lever 1 — the party-size HP band, applied to the WHOLE encounter. The multiplier is
-      // uniform, so scaling each body is the same total as scaling the sum, but the decision
-      // is now made once for the fight instead of once per row.
-      const scaled = hpForPartySize(instance.maxHp, partySize);
+      /**
+       * Lever 1 — the party-size HP band, applied to the WHOLE encounter. The multiplier is
+       * uniform, so scaling each body is the same total as scaling the sum, but the decision
+       * is made once for the fight instead of once per row.
+       *
+       * ⚠ A TEMPLATE ENTRY IS THE ONE EXCEPTION, and it is stated as one. The Mirrors doc:
+       * *"This is the sole body-count exception. Each mirror remains at 90 HP; use one mirror
+       * per PC."* Party size is ALREADY expressed as how many bodies the DM authored, so
+       * scaling their HP too would apply the same lever twice — three mirrors at 67 HP for a
+       * 3-player party instead of three at 90.
+       */
+      const scaledHp = bodies.length > 0 ? instance.maxHp : hpForPartySize(instance.maxHp, partySize);
+      const scaled = scaledHp;
       if (scaled !== instance.maxHp) {
         instance.currentHp = scaled;
         instance.maxHp = scaled;
