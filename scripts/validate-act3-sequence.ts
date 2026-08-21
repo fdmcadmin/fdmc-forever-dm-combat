@@ -124,10 +124,19 @@ if (notes.length === 0) console.log("  none — every creature priced from its a
 else notes.forEach(n => console.log("  " + n));
 
 console.log(`
-⚠ FEYWILD GIFTS AND CONVERGENCE ARE NOT APPLIED AS SEPARATE INPUTS.
-  The Broken Chain curve carries the campaign's projected loot overlay, but v7 keeps selected
-  Convergence as a SEPARATE per-encounter input — burst added to round 1, sustain credit to
-  sustain — and the Gift waves (2 after A3-06, all 4 after A3-09) the same way. The app has no
-  input for either, so F4-F10 are priced WITHOUT the rewards their entry state says the party is
-  carrying. That understates the party from A3-04 onward and is the largest open item in this
-  validation. It is reported, not guessed.`);
+✓ FEYWILD GIFTS AND CONVERGENCE ARE IN THE CURVE, at the campaign's own gates.
+  v7 party_curve.generalized_broken_chain_progression.gift_rule: "The existing validated gear
+  curve already includes the generalized +2 Gift chassis and average rider for 2 bearers at
+  level 8 and all 4 bearers from level 9." The Broken Chain mode says the same: "Gift counts and
+  Convergence maturity come from the authored drop checkpoint for the selected level; the user
+  never selects loot for the checker."
+
+  generalizedGiftCount is 2 at L8 and 4 at L9 — exactly matching the reward ledger (2 Gifts after
+  A3-06, all 4 after A3-09). So F7-F10 ARE priced with the rewards their entry state says the
+  party carries, through the level-indexed curve.
+
+  ⚠ An earlier version of this script warned the opposite, calling this the run's largest open
+  item. That was wrong: I read an app-side comment about OPTIONAL hand-selected Convergence as a
+  statement that the baseline was missing, and never checked the bundle. Christopher: "the
+  workbook has the gifts and convergence built into the loot distribution at the gates they get
+  them." It does.`);

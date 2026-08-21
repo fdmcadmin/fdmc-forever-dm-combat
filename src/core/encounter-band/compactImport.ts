@@ -1,10 +1,23 @@
 /**
- * The v3 compact import — the app's single bundled checker asset.
+ * The v7 runtime bundle — the app's single bundled checker asset.
  *
- * Source: `encounter_checker_compact_import_v3.json`, schema
- * `fdmc.encounter-checker-compact-import.v3` 3.0.0, decoded from the Embedded App Payload of
- * `broken_chain_encounter_checker_app_ready_v3.xlsx` and SHA-256 verified (260,359 bytes)
- * against that sheet's own manifest before it was copied in.
+ * Source: `encounter_checker_runtime_package_v7_pricing_ac_save.json`, schema version 6.3.2,
+ * from the v7 pricing/AC-save bundle Christopher supplied.
+ *
+ * ⚠ v7 IS RULE ONE. Christopher, 2026-08-20: *"purge any verson that is not v7 … v7 is the new
+ * rule, Rule 1."* There is now exactly one checker asset in the app and it is this one.
+ *
+ * The v3 compact import it replaced (`encounter_checker_compact_import_v3.json`, 260,359 bytes)
+ * is DELETED, not merely unreferenced — a superseded bundle sitting in the tree is the next
+ * session's plausible-looking source. v7 is a strict superset: identical contract shape, the same
+ * 58 calibrated trait rules, the same expected-monster-AC and AC-contribution tables, the same
+ * spell profiles, the same 51 campaign profiles and the same parser rules, verified section by
+ * section before the delete. Four sections DIFFER and the app had been reading the stale side of
+ * every one: `party_curve`, `campaign_semantics`, `campaign_presets` and `effect_families`.
+ *
+ * ⚠ AND `whole_body_attrition` WAS IN v3 TOO. The rule the engine broke until 0.7.10.52 had been
+ * sitting in the bundled asset the whole time — this was never a case of the workbook moving ahead
+ * of the app. The app simply did not implement a rule it already shipped.
  *
  * ⚠ ONE IMPORT, NOT TWENTY-FOUR TABS. The workbook stays the audit source and the
  * implementation contract; the app bundles only this. Its own `purpose` field states the
@@ -14,7 +27,7 @@
  * carries no stat-block prose. A DM builds their own creatures; this prices them.
  */
 
-import raw from "../../data/checker/encounter_checker_compact_import_v3.json";
+import raw from "../../data/checker/v7-runtime.json";
 
 // ─── Shapes (only the parts the app consumes are typed) ───────────────────────
 
