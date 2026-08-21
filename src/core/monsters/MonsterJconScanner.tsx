@@ -47,6 +47,17 @@ export type MonsterReaderAction = {
    */
   slotCandidate?: boolean;
   /**
+   * This action is a CANDIDATE in a named action set — see `MainMonsterTemplate.actionSets`.
+   *
+   * The set states how many of its candidates a body takes. This is the general form of
+   * `slotCandidate`: that one pools by spell-slot level because the ruleset counts slots for
+   * you, while a set is for pools the ruleset does not count — a mirror's two attacks out of
+   * five, an elemental package, a chosen reaction.
+   *
+   * An action with no `setId` is simply on the creature, which is the normal case.
+   */
+  setId?: string;
+  /**
    * The action cannot be used under this encounter's default conditions, so the damage model
    * must not count it (Christopher, 2026-08-14: *"a recharge is always available action unless
    * the creature can't use it — the pale stalker is a example"*).

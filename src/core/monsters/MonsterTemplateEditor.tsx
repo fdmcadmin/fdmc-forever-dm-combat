@@ -19,7 +19,7 @@
  */
 
 import React, { useMemo, useState } from "react";
-import type { MainMonsterTemplate, MainMonsterVisibilityState, MonsterArchetype, MonsterClassification } from "./runtime/mainMonsterRuntime";
+import type { MainMonsterTemplate, MainMonsterVisibilityState, MonsterArchetype, MonsterClassification, MonsterActionSet } from "./runtime/mainMonsterRuntime";
 import { MONSTER_KINDS } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
 import type { BondTemplate } from "../types/bond";
@@ -351,6 +351,17 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 placeholder="2d6" style={inputStyle} />
             </div>
           )}
+          {(draft.actionSets?.length ?? 0) > 0 && !opts.legendary && list === "actions" && (
+            <div style={{ width: 96 }}>
+              <span style={labelStyle}>Set</span>
+              <select value={a.setId ?? ""} style={inputStyle}
+                title="Put this action in a pool. Each body picks the set's stated number from its candidates, and a picked action leaves the pool for the others."
+                onChange={e => updateListItem(list, realIdx, { setId: e.target.value || undefined })}>
+                <option value="">— always on —</option>
+                {(draft.actionSets ?? []).map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
+            </div>
+          )}
           {!opts.legendary && !opts.reaction && !opts.spell && list === "actions" && (
             <div style={{ width: 70 }}>
               <span style={labelStyle}>Recharge</span>
@@ -474,8 +485,90 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               onChange={e => setDraft(d => ({ ...d, visibility: { ...d.visibility, revealedName: e.target.value } }))} placeholder="(defaults to Name)" style={inputStyle} />
           </div>
         </div>
+        {/*
+          A TEMPLATE CREATURE. Christopher: *"ensure that the create a templet creature is a DM
+          possible, and the way it needs to be handled is the DM say this is a one of them"*.
+          A template is never dropped on the map raw — bodies are generated from it, one per
+          adventurer, each differing by its own picks. RULE 2: a DM builds this, not the source.
+        */}
+        <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 12, color: "#9d8cff", cursor: "pointer" }}
+          title="A template is not used as a stat block itself — one body is built from it per party member, each taking its own picks from the action sets in step 4.">
+          <input type="checkbox" checked={Boolean(draft.isTemplate)}
+            onChange={e => setDraft(d => ({ ...d, isTemplate: e.target.checked || undefined }))} />
+          This is a TEMPLATE — build one of these per party member
+        </label>
         {renderCreatureBond()}
       </>
+    );
+  }
+
+  /**
+   * ACTION SETS — a pool of options and how many of them each body takes.
+   *
+   * *"on veritable actions like the spells there needs to be a how many of these types of actions
+   * are able to be chosen for this action set."* This is the ABS-array pattern applied to
+   * actions: the template lists every option, a body takes `pick` of them, and a taken option
+   * leaves the pool so two bodies differ.
+   *
+   * Distinct from spell slots on purpose. A slot-costed spell pools by LEVEL because the ruleset
+   * counts slots; a set is for pools nothing counts — a mirror's two attacks out of five.
+   */
+  function renderActionSets() {
+    const sets = draft.actionSets ?? [];
+    const setSets = (next: MonsterActionSet[]) => setDraft(d => ({ ...d, actionSets: next.length ? next : undefined }));
+    const countIn = (id: string) => draft.actions.filter(a => a.setId === id).length;
+    return (
+      <div style={{ marginBottom: 12, padding: "8px 10px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#9d8cff" }}>
+            Action sets <span style={{ color: "#666", fontWeight: 400 }}>— pools each body picks from</span>
+          </span>
+          <SmallBtn color="#7b68ee" onClick={() => setSets([...sets, { id: `set${sets.length + 1}`, label: "New set", pick: 1 }])}>+ Set</SmallBtn>
+        </div>
+        {sets.length === 0 && (
+          <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: 0 }}>
+            No sets — every action below is simply on the creature. Add one to make a pool.
+          </p>
+        )}
+        {sets.map((s, i) => {
+          const have = countIn(s.id);
+          // Asking for more than exists can never be filled: picks are distinct, so the extra
+          // slots sit empty forever and block generation. Say so here, not at spawn time.
+          const short = s.pick > have && have > 0;
+          return (
+            <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 5 }}>
+              <div style={{ flex: 1 }}>
+                <span style={labelStyle}>Set name</span>
+                <input value={s.label} style={inputStyle}
+                  onChange={e => setSets(sets.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
+              </div>
+              <div style={{ width: 70 }}>
+                <span style={labelStyle}>Pick</span>
+                <input type="number" min={1} value={s.pick} style={inputStyle}
+                  onChange={e => setSets(sets.map((x, j) => j === i ? { ...x, pick: Math.max(1, Number(e.target.value) || 1) } : x))} />
+              </div>
+              <span style={{ flex: 1, fontSize: 10, color: short ? "#ff9999" : "#666", paddingBottom: 5 }}>
+                {have === 0
+                  ? "no actions in this set yet — tag them below"
+                  : short
+                    ? `only ${have} candidate${have === 1 ? "" : "s"} for ${s.pick} picks — add ${s.pick - have} more`
+                    : `${have} candidates → each body picks ${s.pick}`}
+              </span>
+              <button type="button"
+                onClick={() => {
+                  // Untag the actions too, or they keep pointing at a set that no longer exists
+                  // and quietly vanish from every generated body.
+                  setDraft(d => ({
+                    ...d,
+                    actionSets: sets.filter((_, j) => j !== i).length ? sets.filter((_, j) => j !== i) : undefined,
+                    actions: d.actions.map(a => a.setId === s.id ? { ...a, setId: undefined } : a),
+                  }));
+                }}
+                style={{ fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
+            </div>
+          );
+        })}
+      </div>
     );
   }
 
@@ -816,6 +909,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             want. A spell or recharge ability IS the whole action and ends the turn's attacks.
           </p>
         </div>
+        {renderActionSets()}
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <SmallBtn color="#ff6b5e" onClick={() => addListItem("actions", { name: "", kind: "action" })}>+ Add action</SmallBtn>
         </div>

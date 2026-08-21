@@ -132,6 +132,33 @@ export type MonsterBond = {
   chosenPathIndex?: 0 | 1;
 };
 
+/**
+ * AN ACTION SET — a pool of candidate actions and how many of them a body gets.
+ *
+ * Christopher: *"on veritable actions like the spells there needs to be a how many of these
+ * types of actions are able to be chosen for this action set."*
+ *
+ * This is the ABS-array pattern applied to actions rather than ability scores: the template
+ * carries every option, each body takes `pick` of them, and a taken option leaves the pool so
+ * two bodies in the same set differ. Hale and the Unmarked Ranger are authored this way — every
+ * spell they COULD have is written down, and which ones they walk in with is decided per body.
+ *
+ * ⚠ THIS GENERALISES THE SPELL-SLOT POOL, it does not replace it. A slot-costed spell already
+ * pools by LEVEL (`spellSlotLevel` + `slotCandidate`), because "3 level-1 slots" is a count the
+ * ruleset states. An action set is for everything the ruleset does NOT count for you — a
+ * mirror's two attacks out of five, an elemental package, a chosen reaction.
+ */
+export type MonsterActionSet = {
+  /** Stable key. Actions join a set by writing this into `setId`. */
+  id: string;
+  /** What the DM sees: "Elemental package", "Mirror attacks", "Chosen reactions". */
+  label: string;
+  /** How many of the set's candidates each body takes. */
+  pick: number;
+  /** Optional note shown at generation. */
+  note?: string;
+};
+
 export type MainMonsterTemplate = {
   templateId: string;
   name: string;
@@ -162,6 +189,19 @@ export type MainMonsterTemplate = {
    * Metamorphosis, which is also the first stage that needs `chosenPathIndex`.
    */
   bond?: MonsterBond;
+  /**
+   * THIS CREATURE IS A TEMPLATE — bodies are BUILT from it, one per party member.
+   *
+   * *"The Wood builds one mirror for each adventurer."* A template is not a stat block you drop
+   * on the map; it is the shape each body is generated from, and every body differs by its own
+   * archetype, bond and action-set picks. Marking it says the creature is never used raw.
+   */
+  isTemplate?: boolean;
+  /**
+   * Pools of candidate actions and how many of each a body takes. Empty/absent = every action
+   * on the creature is simply on it, which is the normal case.
+   */
+  actionSets?: MonsterActionSet[];
   stats: {
     kind: MonsterKind;
     ac: number | string;
