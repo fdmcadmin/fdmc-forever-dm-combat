@@ -115,6 +115,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
   const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
   const [step, setStep] = useState<StepId>("identity");
   const [chassisId, setChassisId] = useState<string>("");
+  const [scoreArray, setScoreArray] = useState<string>("");
   const [refBand, setRefBand] = useState<CreatorBandId>("mid");
   const [refPressure, setRefPressure] = useState<CreatorPressureId>("standard");
 
@@ -252,6 +253,24 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
     }));
   }
 
+  /**
+   * Deal a typed array into the six abilities.
+   *
+   * Six numbers or nothing happens — a partial array would silently leave some scores from a
+   * previous creature in place, which is exactly the half-corrected state this control exists
+   * to remove. AC, HP and speed are deliberately untouched: the array answers "what are its
+   * scores", not "what creature is this".
+   */
+  function applyScoreArray() {
+    const nums = (scoreArray.match(/\d+/g) ?? []).map(Number);
+    if (nums.length !== 6) return;
+    const dealt = ABILITY_ORDER.map((label, i) => formatAbilityEntry(label, nums[i]));
+    setDraft(d => ({
+      ...d,
+      abilities: d.stats.archetype ? redistributeAbilityEntries(dealt, d.stats.archetype) : dealt,
+    }));
+  }
+
   function reshapeByArchetype() {
     if (!draft.stats.archetype) return;
     setDraft(d => ({ ...d, abilities: redistributeAbilityEntries(d.abilities, d.stats.archetype as MonsterArchetype) }));
@@ -360,6 +379,25 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 <option value="">— always on —</option>
                 {(draft.actionSets ?? []).map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
+            </div>
+          )}
+          {/*
+            THE OPTION — which package this action belongs to.
+            
+            An option is often a BUNDLE. The Elemental Mirror's element pick is one of six
+            packages and each carries three spells: eighteen actions, six choices. Actions
+            sharing a set AND an option are taken or left together, so picking "Earth" brings
+            all three Earth spells.
+            
+            Blank means the action is its own option, named for itself — the right shape for
+            "two attacks out of five", where every candidate is a single action.
+          */}
+          {a.setId && !opts.legendary && list === "actions" && (
+            <div style={{ width: 92 }}>
+              <span style={labelStyle}>Option</span>
+              <input value={a.setOption ?? ""} style={inputStyle} placeholder={a.name || "(own)"}
+                title="Group several actions into ONE choice by giving them the same option name — an element package carrying three spells. Blank = this action is its own option."
+                onChange={e => updateListItem(list, realIdx, { setOption: e.target.value || undefined })} />
             </div>
           )}
           {!opts.legendary && !opts.reaction && !opts.spell && list === "actions" && (
@@ -516,7 +554,11 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
   function renderActionSets() {
     const sets = draft.actionSets ?? [];
     const setSets = (next: MonsterActionSet[]) => setDraft(d => ({ ...d, actionSets: next.length ? next : undefined }));
-    const countIn = (id: string) => draft.actions.filter(a => a.setId === id).length;
+    // Count OPTIONS, not actions: six element packages of three spells are six choices, not
+    // eighteen, and reporting eighteen would tell the DM a "pick 1" set was well stocked when
+    // it is exactly as stocked as the packages are.
+    const countIn = (id: string) =>
+      new Set(draft.actions.filter(a => a.setId === id).map(a => a.setOption?.trim() || a.name)).size;
     return (
       <div style={{ marginBottom: 12, padding: "8px 10px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
@@ -699,6 +741,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           <SmallBtn color="#f0c040" onClick={reshapeByArchetype}
             title={draft.stats.archetype ? `Redistribute the current six scores into the ${archetypeInfo(draft.stats.archetype).label} shape` : "Pick an archetype in step 1 first"}>
             ♻ Reshape by {draft.stats.archetype ? archetypeInfo(draft.stats.archetype).label : "archetype"}
+          </SmallBtn>
+        </div>
+        {/*
+          A SCORE ARRAY — scores WITHOUT a donor creature.
+          
+          Christopher: *"abilities is what load the ABS, so i need to choose a chassis and the
+          ghul doesnt give the correct abs count."* He is right, and the chassis was the only way
+          in. A creature with its OWN published array — the Elemental Mirror is 18/16/14/12/12/10
+          for every archetype, dealt differently — had to borrow an unrelated stat block and then
+          have all six numbers corrected by hand, and loading a chassis also overwrites AC, HP and
+          speed, so it stomps the very stats the card fixes.
+          
+          RULE 2: a DM authoring their own creature should not need a donor. Type the array, deal
+          it by archetype. Nothing else on the draft is touched.
+        */}
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 8 }}>
+          <div style={{ flex: 1 }}>
+            <span style={labelStyle}>Score array <span style={{ color: "#666" }}>— six numbers, dealt by archetype. Never touches AC/HP/speed.</span></span>
+            <input value={scoreArray} onChange={e => setScoreArray(e.target.value)}
+              placeholder="18, 16, 14, 12, 12, 10" style={inputStyle} />
+          </div>
+          <SmallBtn color="#34c759" onClick={applyScoreArray}
+            title="Deal these six numbers into the archetype's priority order. With no archetype set they land in STR-DEX-CON-INT-WIS-CHA order.">
+            ⬇ Deal array
           </SmallBtn>
         </div>
         {/* CR sits with the abilities because it is what turns a proficiency TICK into a save

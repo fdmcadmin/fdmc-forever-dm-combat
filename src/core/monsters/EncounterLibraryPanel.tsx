@@ -255,6 +255,23 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
           </p>
         )}
         {bodies.map((b, i) => {
+          /**
+           * ⚠ NO DUPLICATES ACROSS THE ROSTER — the same ABS-array rule, one level up.
+           *
+           * Within a body a taken option leaves that body's pool. Across the roster a taken
+           * option leaves EVERY other body's pool, because the encounter doc says so:
+           * *"Choose one unused archetype"* and *"Do not duplicate an elemental package in the
+           * roster"*, which MASTER extends to the bond as the third of the three choices.
+           *
+           * So a mirror party is genuinely a party — six archetypes, six packages, distinct
+           * bonds — rather than the same body printed four times. This body still sees its own
+           * current pick, or its selection would look invalid.
+           */
+          const others = bodies.filter((_, j) => j !== i);
+          const takenArchetypes = new Set(others.map(o => o.archetype).filter(Boolean));
+          const takenBonds = new Set(others.map(o => o.bond?.templateId).filter(Boolean));
+          const takenInSet = (setId: string) =>
+            new Set(others.flatMap(o => (o.actionPicks?.[setId] ?? []).filter(Boolean) as string[]));
           const derivedName = template ? bodyNameFor(template, b.actionPicks, b.name) : b.name;
           const bondTpl = b.bond ? bondOptions.find(x => x.id === b.bond!.templateId) : undefined;
           const bondStage = b.bond?.stage ?? 2;
@@ -275,7 +292,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
                   title="Reshapes the template's own six scores into this archetype's order. It never invents a score."
                   style={{ width: 118, fontSize: 11, padding: "2px 4px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#aaa" }}>
                   <option value="">archetype…</option>
-                  {ARCHETYPES.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                  {ARCHETYPES.filter(a => a.id === b.archetype || !takenArchetypes.has(a.id)).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
                 </select>
                 <button type="button" onClick={() => setBodies(bodies.filter((_, j) => j !== i))}
                   style={{ fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
@@ -288,7 +305,11 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
                     const mine = picks[pl.set.id] ?? [];
                     // A taken option leaves the pool for its siblings — the same ABS-array rule
                     // the ability spine and the spell slots use. The slot keeps its own pick.
-                    const taken = new Set(mine.filter((n, j) => j !== s && n));
+                    // This body's other slots, plus every other body in the roster.
+                    const taken = new Set([
+                      ...mine.filter((n, j) => j !== s && n) as string[],
+                      ...takenInSet(pl.set.id),
+                    ]);
                     return (
                       <select key={s} value={mine[s] ?? ""}
                         onChange={e => {
@@ -312,7 +333,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
                     onChange={e => patch(i, { bond: e.target.value ? { templateId: e.target.value, stage: 2 } : undefined })}
                     style={{ flex: 1, minWidth: 0, fontSize: 10, padding: "2px 3px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#ccc" }}>
                     <option value="">— none —</option>
-                    {bondOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                    {bondOptions.filter(x => x.id === b.bond?.templateId || !takenBonds.has(x.id)).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
                   </select>
                   {bondPaths.map((pp, pi) => (
                     <button key={pp.name} type="button"

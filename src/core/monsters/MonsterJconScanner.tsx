@@ -58,6 +58,20 @@ export type MonsterReaderAction = {
    */
   setId?: string;
   /**
+   * WHICH OPTION OF THE SET THIS ACTION BELONGS TO — the package, not the action.
+   *
+   * An option is frequently a BUNDLE. The Elemental Mirror's element pick is one of six
+   * packages, and each package carries three spells (a 1/day signature, an at-will, and a 3/day
+   * lesser) — eighteen actions, six choices. Without this, picking "Earth" would take one spell
+   * and leave the other two behind, and the DM would have to author six actions that each
+   * described three.
+   *
+   * Actions sharing a `setId` + `setOption` are taken or left TOGETHER. Absent, the action is
+   * its own option and its name is the label — which is the right shape for a set of single
+   * actions, like "two attacks out of five".
+   */
+  setOption?: string;
+  /**
    * The action cannot be used under this encounter's default conditions, so the damage model
    * must not count it (Christopher, 2026-08-14: *"a recharge is always available action unless
    * the creature can't use it — the pale stalker is a example"*).

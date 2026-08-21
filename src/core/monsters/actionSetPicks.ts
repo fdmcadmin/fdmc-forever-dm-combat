@@ -23,19 +23,46 @@ import { redistributeAbilityEntries } from "./creator/monsterCreatorModel";
 /** Which action names fill each set, by set id. `null` = that slot is still empty. */
 export type ActionSetPicks = Record<string, (string | null)[]>;
 
+/**
+ * One choosable option in a set — a LABEL and the actions it brings.
+ *
+ * An option is often a bundle: the Elemental Mirror's six element packages carry three spells
+ * each, so eighteen actions present as six choices. Actions sharing `setId` + `setOption` are
+ * one option; an action with no `setOption` is an option of its own, named for itself.
+ */
+export type ActionSetOption = {
+  /** What the DM picks, and what names the body when the set is `namesBody`. */
+  name: string;
+  /** Every action taken when this option is chosen. */
+  actions: MonsterReaderAction[];
+};
+
 export type ActionSetPlan = {
   set: MonsterActionSet;
-  /** Every action authored as a candidate for this set. */
-  candidates: MonsterReaderAction[];
+  /** Every OPTION authored for this set — bundles counted once, not per action. */
+  candidates: ActionSetOption[];
   /** How many the body takes — the set's `pick`, capped at what actually exists. */
   slots: number;
   /** True when the set asks for more than it offers, which the DM should fix. */
   short: boolean;
 };
 
-/** Every action tagged into a named set. */
-export function actionSetCandidates(template: MainMonsterTemplate, setId: string): MonsterReaderAction[] {
-  return (template.actions ?? []).filter(a => a.setId === setId);
+/**
+ * The OPTIONS in a set, in authored order.
+ *
+ * ⚠ COUNT OPTIONS, NOT ACTIONS. A set of six element packages holding three spells each offers
+ * SIX choices; counting the eighteen actions would tell the DM they had eighteen options and
+ * would let "pick 1" take a single spell out of a package.
+ */
+export function actionSetCandidates(template: MainMonsterTemplate, setId: string): ActionSetOption[] {
+  const inSet = (template.actions ?? []).filter(a => a.setId === setId);
+  const byOption = new Map<string, MonsterReaderAction[]>();
+  for (const a of inSet) {
+    const key = a.setOption?.trim() || a.name;
+    const list = byOption.get(key);
+    if (list) list.push(a); else byOption.set(key, [a]);
+  }
+  return [...byOption.entries()].map(([name, actions]) => ({ name, actions }));
 }
 
 /**
@@ -75,7 +102,7 @@ export function emptyActionSetPicks(plan: ActionSetPlan[]): ActionSetPicks {
  * slots in the same set. The slot's own current pick stays listed, or re-choosing it would look
  * like an invalid selection.
  */
-export function availableInSet(plan: ActionSetPlan, slotIndex: number, picks: ActionSetPicks): MonsterReaderAction[] {
+export function availableInSet(plan: ActionSetPlan, slotIndex: number, picks: ActionSetPicks): ActionSetOption[] {
   const taken = new Set((picks[plan.set.id] ?? []).filter((name, i) => i !== slotIndex && name));
   return plan.candidates.filter(c => !taken.has(c.name));
 }
@@ -111,7 +138,9 @@ export function buildBodyFromTemplate(
     // A generated body is a concrete creature, never itself a template to build more from.
     isTemplate: undefined,
     actionSets: undefined,
-    actions: (template.actions ?? []).filter(a => !a.setId || chosen.has(a.name)),
+    // An action survives when ITS OPTION was chosen — so a picked package brings all three of
+    // its spells, not just the one whose name happened to match.
+    actions: (template.actions ?? []).filter(a => !a.setId || chosen.has(a.setOption?.trim() || a.name)),
   };
 }
 
