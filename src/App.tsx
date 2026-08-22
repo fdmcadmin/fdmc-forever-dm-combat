@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import appManifest from "../public/manifest.json";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
@@ -808,7 +809,7 @@ export default function App() {
   // were never opened in this browser. Idempotent — guarded by the seed-version key.
   // The repair runs BEFORE the seeders: it drops rows a previous build left behind, and seeding
   // on top of them would just re-resolve to the stale copies.
-  useMemo(() => { repairEquipmentLibraries(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
+  useMemo(() => { repairEquipmentLibraries(); migrateEncounterNames(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
   // All runtime hooks that need actor IDs/HP defaults receive the real seeded actors this way.

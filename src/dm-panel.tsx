@@ -14,6 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 
@@ -169,7 +170,7 @@ function DmPanelApp() {
   // ── Seed campaign equipment library on first DM panel open ────────────────
   // The repair runs BEFORE the seeders: it drops rows a previous build left behind, and seeding
   // on top of them would just re-resolve to the stale copies.
-  useMemo(() => { repairEquipmentLibraries(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
+  useMemo(() => { repairEquipmentLibraries(); migrateEncounterNames(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
 
   // ── Token panel: monster roster from localStorage ─────────────────────────
   const [tokenPanelMonsters] = useState(() => loadMonsterRoster());
