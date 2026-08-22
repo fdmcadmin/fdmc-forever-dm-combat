@@ -40,37 +40,40 @@ export function BondSummary({ actor, actionState }: BondSummaryProps) {
       gates: BROKEN_CHAIN_BOND_GATES,
       milestones: actor.moduleData?.milestones ?? [],
     });
+    /**
+     * COMPACT, LIKE THE BOND TAB.
+     *
+     * Christopher: *"i dont like the massive character box it created."* The first version was a
+     * full panel with a heading block, both paths as paragraphs and a turn-flow line — taller than
+     * the character sheet it sat on. The bond TAB already had the right shape: a title, a cost tag,
+     * and the detail folded away until asked for. This matches that.
+     *
+     * The unchosen path is NOT shown here. It is real and it matters, but it belongs behind the
+     * details fold rather than doubling the height of every card that carries a bond.
+     */
+    const line = resolved.blockedBy
+      ? `Held at ${resolved.stageName} — ${resolved.blockedBy.label} first.`
+      : resolved.awaitingPathChoice
+        ? `${resolved.stageName} reached — choose the permanent path.`
+        : resolved.chosen
+          ? `${resolved.chosen.name}. ${resolved.chosen.text}`
+          : (resolved.effect ?? "");
+    const warn = Boolean(resolved.blockedBy || resolved.awaitingPathChoice);
     return (
-      <section className="bond-summary" aria-label="Bond summary">
-        <div className="bond-summary-header">
-          <div>
-            <p className="eyebrow">Bond · {resolved.numeral} {resolved.stageName}</p>
-            <h3>{template.name}</h3>
-          </div>
+      <section className="bond-summary" aria-label="Bond summary"
+        style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #2a2a3e", background: "#12101f" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, letterSpacing: 1, color: "#9d8cff", textTransform: "uppercase" }}>
+            Bond · {resolved.numeral} {resolved.stageName}
+          </span>
+          <strong style={{ fontSize: 12 }}>{template.name}</strong>
         </div>
-        {/* A held-back bond says WHY. "not yet earned" is a different thing from "broken". */}
-        {resolved.blockedBy && (
-          <p style={{ fontSize: 11, color: "#e9a66a" }}>
-            Held at {resolved.stageName} — {resolved.blockedBy.label} first.
-          </p>
+        {line && (
+          <p style={{ margin: "3px 0 0", fontSize: 11, lineHeight: 1.35, color: warn ? "#e9a66a" : "#aab" }}>{line}</p>
         )}
-        {resolved.awaitingPathChoice && (
-          <p style={{ fontSize: 11, color: "#e9a66a" }}>
-            {resolved.stageName} reached — the permanent path has not been chosen yet.
-          </p>
-        )}
-        {resolved.effect && <p>{resolved.effect}</p>}
-        {resolved.chosen && (
-          <p><strong>{resolved.chosen.name}.</strong> {resolved.chosen.text}</p>
-        )}
-        {resolved.unchosen && (
-          <p style={{ opacity: 0.75 }}><strong>{resolved.unchosen.name}.</strong> {resolved.unchosen.text}</p>
-        )}
-        {template.onYourTurn && <p className="bond-summary-flow">{template.onYourTurn}</p>}
       </section>
     );
   }
-
   const bond = actor.moduleData?.bond;
 
   if (!bond) {

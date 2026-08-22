@@ -27,12 +27,19 @@
 
 import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
+import type { EncounterDefinition } from "../../core/monsters/encounterLibrary";
 
 /** Creatures authored in-app. Replaces a bundled creature by templateId, or adds a new one. */
 export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [];
 
 /** Equipment authored in-app — including unpicked Gift chassis. Replaces or adds by id. */
 export const AUTHORED_EQUIPMENT: EquipmentItem[] = [];
+
+/**
+ * Encounters authored in-app — the fights, their act tag and ORDER, and the bodies built from
+ * any template creature they field. Replaces a bundled encounter by id, or adds a new one.
+ */
+export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [];
 
 /** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
 export const AUTHORED_DIGEST = "";

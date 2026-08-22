@@ -381,77 +381,6 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
         way to change it is to clear the bond entirely, which costs the character their progress
         and is what makes the choice mean something.
       */}
-      {bondOptions.length > 0 && draft.kind !== "companion" && (() => {
-        const tpl = bondOptions.find(b => b.id === draft.bondTemplateId);
-        const level = characterLevel ?? 1;
-        const stage = bondStageForLevel(level);
-        const atMeta = stage >= BOND_METAMORPHOSIS_STAGE;
-        const paths = tpl?.stages[Math.max(stage, BOND_METAMORPHOSIS_STAGE)]?.paths ?? [];
-        const locked = draft.bondPathIndex === "0" || draft.bondPathIndex === "1";
-        const resolved = tpl
-          ? resolveBond(tpl, { templateId: tpl.id, ...(locked ? { chosenPathIndex: Number(draft.bondPathIndex) as 0 | 1 } : {}) }, level)
-          : undefined;
-        return (
-          <div style={{ marginTop: 10, padding: "8px 10px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#9d8cff", marginBottom: 6 }}>
-              Bond <span style={{ color: "#666", fontWeight: 400 }}>
-                — stage comes from level (3 · 6 · 9 · 13). At level {level} this is {BOND_STAGE_NAMES[stage]}.
-              </span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <label style={labelStyle}>
-                Bond
-                <select value={draft.bondTemplateId} style={{ ...inputStyle, marginTop: 2 }}
-                  onChange={e => onChange({ ...draft, bondTemplateId: e.target.value, bondPathIndex: "", bondCompanionId: "" })}>
-                  <option value="">— none —</option>
-                  {bondOptions.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </label>
-              {tpl?.actor === "companion" && (
-                <label style={labelStyle}>
-                  Bonded companion <span style={{ color: "#666" }}>— it performs the bond</span>
-                  <select value={draft.bondCompanionId} style={{ ...inputStyle, marginTop: 2 }}
-                    onChange={e => onChange({ ...draft, bondCompanionId: e.target.value })}>
-                    <option value="">— choose —</option>
-                    {ownerOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
-                </label>
-              )}
-            </div>
-            {tpl && atMeta && (
-              <div style={{ marginTop: 6 }}>
-                <span style={{ ...labelStyle, display: "block" }}>
-                  Path <span style={{ color: locked ? "#e9a66a" : "#666" }}>
-                    {locked ? "— permanent. Clear the bond to change it." : "— permanent once chosen."}
-                  </span>
-                </span>
-                <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
-                  {paths.map((pp, pi) => (
-                    <button key={pp.name} type="button" disabled={locked && Number(draft.bondPathIndex) !== pi}
-                      onClick={() => { if (!locked) onChange({ ...draft, bondPathIndex: String(pi) }); }}
-                      style={{
-                        flex: 1, fontSize: 11, padding: "4px 8px", borderRadius: 3, textAlign: "left",
-                        cursor: locked ? "default" : "pointer",
-                        background: draft.bondPathIndex === String(pi) ? "#7b68ee33" : "transparent",
-                        border: `1px solid ${draft.bondPathIndex === String(pi) ? "#7b68ee" : "#333"}`,
-                        color: draft.bondPathIndex === String(pi) ? "#cfc6ff" : locked ? "#444" : "#999",
-                      }}>{pp.name}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {resolved && (
-              <p style={{ fontSize: 10, color: resolved.awaitingPathChoice ? "#e9a66a" : "#777", margin: "6px 0 0" }}>
-                {resolved.awaitingPathChoice
-                  ? `${resolved.stageName} reached — choose the permanent path.`
-                  : resolved.chosen
-                    ? `${resolved.stageName} · ${resolved.chosen.name}: ${resolved.chosen.text}`
-                    : `${resolved.stageName}: ${resolved.effect ?? ""}`}
-              </p>
-            )}
-          </div>
-        );
-      })()}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={labelStyle}>Name <input type="text" value={draft.name} onChange={e => set("name", e.target.value)} style={inputStyle} /></label>
@@ -703,6 +632,73 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
         <input type="text" value={draft.classFeatureNote} onChange={e => set("classFeatureNote", e.target.value)}
           placeholder="Anything the sheet cannot derive" style={inputStyle} />
       </label>
+
+      {/*
+        THE BOND — one row, at the END of the profile.
+        
+        Christopher: *"i dont like the massive character box it created, the choice just needs to
+        match how the current bonds are in the bond tab."* It was a tall panel sitting ABOVE Name,
+        so an optional field pushed the required ones off screen. It is now a single row in the
+        same shape the bond TAB already uses: the bond, then its two paths as side-by-side
+        choices, and one line of resolved text.
+      */}
+      {bondOptions.length > 0 && draft.kind !== "companion" && (() => {
+        const tpl = bondOptions.find(b => b.id === draft.bondTemplateId);
+        const level = characterLevel ?? 1;
+        const stage = bondStageForLevel(level);
+        const atMeta = stage >= BOND_METAMORPHOSIS_STAGE;
+        const locked = draft.bondPathIndex === "0" || draft.bondPathIndex === "1";
+        const paths = tpl?.stages[Math.max(stage, BOND_METAMORPHOSIS_STAGE)]?.paths ?? [];
+        const resolved = tpl
+          ? resolveBond(tpl, { templateId: tpl.id, ...(locked ? { chosenPathIndex: Number(draft.bondPathIndex) as 0 | 1 } : {}) }, level)
+          : undefined;
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "end" }}>
+            <label style={labelStyle}>
+              Bond <span style={{ color: "#666" }}>— {BOND_STAGE_NAMES[stage]} at level {level}</span>
+              <select value={draft.bondTemplateId} style={inputStyle}
+                onChange={e => onChange({ ...draft, bondTemplateId: e.target.value, bondPathIndex: "", bondCompanionId: "" })}>
+                <option value="">— none —</option>
+                {bondOptions.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </label>
+            {tpl?.actor === "companion" ? (
+              <label style={labelStyle}>
+                Bonded companion
+                <select value={draft.bondCompanionId} style={inputStyle}
+                  onChange={e => onChange({ ...draft, bondCompanionId: e.target.value })}>
+                  <option value="">— choose —</option>
+                  {ownerOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </label>
+            ) : tpl && atMeta ? (
+              <label style={labelStyle}>
+                Path <span style={{ color: locked ? "#e9a66a" : "#666" }}>{locked ? "— permanent" : "— permanent once chosen"}</span>
+                <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
+                  {paths.map((pp, pi) => (
+                    <button key={pp.name} type="button" disabled={locked && Number(draft.bondPathIndex) !== pi}
+                      onClick={() => { if (!locked) onChange({ ...draft, bondPathIndex: String(pi) }); }}
+                      style={{
+                        flex: 1, fontSize: 11, padding: "5px 8px", borderRadius: 3,
+                        cursor: locked ? "default" : "pointer",
+                        background: draft.bondPathIndex === String(pi) ? "#7b68ee33" : "transparent",
+                        border: `1px solid ${draft.bondPathIndex === String(pi) ? "#7b68ee" : "#333"}`,
+                        color: draft.bondPathIndex === String(pi) ? "#cfc6ff" : locked ? "#444" : "#999",
+                      }}>{pp.name}</button>
+                  ))}
+                </div>
+              </label>
+            ) : <span />}
+            {resolved && (resolved.chosen || resolved.awaitingPathChoice) && (
+              <span style={{ gridColumn: "span 2", fontSize: 10, color: resolved.awaitingPathChoice ? "#e9a66a" : "#777" }}>
+                {resolved.awaitingPathChoice
+                  ? `${resolved.stageName} reached — choose the permanent path.`
+                  : `${resolved.chosen!.name}: ${resolved.chosen!.text}`}
+              </span>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

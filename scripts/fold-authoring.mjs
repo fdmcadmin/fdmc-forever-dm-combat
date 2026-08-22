@@ -20,8 +20,8 @@ const SCHEMA = "fdmc.campaign-authoring.v1";
 const OUT = resolve("src/data/broken-chain/authored.generated.ts");
 
 /** Must match campaignDigest() in src/core/campaign/authorExport.ts exactly. */
-function campaignDigest(monsters, equipment) {
-  const canonical = JSON.stringify({ monsters, equipment }, (_k, v) => {
+function campaignDigest(monsters, equipment, encounters = []) {
+  const canonical = JSON.stringify({ monsters, equipment, encounters }, (_k, v) => {
     if (v && typeof v === "object" && !Array.isArray(v)) {
       return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)));
     }
@@ -58,10 +58,13 @@ if (payload.schema !== SCHEMA) {
 
 const monsters = Array.isArray(payload.monsters) ? payload.monsters : [];
 const equipment = Array.isArray(payload.equipment) ? payload.equipment : [];
+// Older exports predate encounters. Absent is legal and folds to an empty array rather than
+// failing — a file made before the field existed is not a corrupt file.
+const encounters = Array.isArray(payload.encounters) ? payload.encounters : [];
 
 // The export states its own digest. A mismatch means the file was edited between export and
 // fold — refuse rather than publish something the app never produced.
-const digest = campaignDigest(monsters, equipment);
+const digest = campaignDigest(monsters, equipment, encounters);
 if (payload.digest && payload.digest !== digest) {
   console.error("Digest mismatch — this file was modified after it was exported.");
   console.error(`  stated:   ${payload.digest}`);
@@ -74,20 +77,48 @@ if (payload.digest && payload.digest !== digest) {
 // would silently vanish into the merge rather than replacing or appending anything.
 const badMonsters = monsters.filter(m => !m?.templateId);
 const badItems = equipment.filter(i => !i?.id);
-if (badMonsters.length || badItems.length) {
-  console.error(`Unmergeable entries: ${badMonsters.length} creature(s) with no templateId, ${badItems.length} item(s) with no id.`);
+const badEncounters = encounters.filter(e => !e?.id);
+if (badMonsters.length || badItems.length || badEncounters.length) {
+  console.error(`Unmergeable entries: ${badMonsters.length} creature(s) with no templateId, ${badItems.length} item(s) with no id, ${badEncounters.length} encounter(s) with no id.`);
   process.exit(1);
+}
+
+/**
+ * ⚠ AN ENCOUNTER MUST NOT REFERENCE A CREATURE THAT IS NOT SHIPPING.
+ *
+ * A fight whose entries point at a templateId found neither in this export nor in the bundled
+ * library spawns nothing and looks like a broken encounter to every DM who receives it. Warn
+ * rather than refuse: the creature may legitimately be a bundled one this export did not touch.
+ */
+const shippingIds = new Set(monsters.map(m => m.templateId));
+const dangling = [];
+for (const e of encounters) {
+  for (const entry of e.entries ?? []) {
+    if (entry.templateId && !shippingIds.has(entry.templateId)) dangling.push(`${e.name} -> ${entry.templateId}`);
+  }
+}
+if (dangling.length) {
+  console.warn("NOTE: these encounter entries reference creatures not in this export —");
+  console.warn("      fine if they are bundled already, a broken fight if they are not:");
+  for (const d of dangling) console.warn(`        ${d}`);
 }
 
 const header = readFileSync(OUT, "utf8").split("import type { MainMonsterTemplate }")[0];
 const body = `import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
+import type { EncounterDefinition } from "../../core/monsters/encounterLibrary";
 
 /** Creatures authored in-app. Replaces a bundled creature by templateId, or adds a new one. */
 export const AUTHORED_MONSTERS: MainMonsterTemplate[] = ${JSON.stringify(monsters, null, 2)};
 
 /** Equipment authored in-app — including unpicked Gift chassis. Replaces or adds by id. */
 export const AUTHORED_EQUIPMENT: EquipmentItem[] = ${JSON.stringify(equipment, null, 2)};
+
+/**
+ * Encounters authored in-app — the fights, their act tag and ORDER, and the bodies built from
+ * any template creature they field. Replaces a bundled encounter by id, or adds a new one.
+ */
+export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = ${JSON.stringify(encounters, null, 2)};
 
 /** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
 export const AUTHORED_DIGEST = ${JSON.stringify(digest)};
@@ -112,6 +143,6 @@ export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) =>
 `;
 
 writeFileSync(OUT, header + body);
-console.log(`Folded ${monsters.length} creature(s) and ${equipment.length} item(s) into authored.generated.ts`);
+console.log(`Folded ${monsters.length} creature(s), ${encounters.length} encounter(s) and ${equipment.length} item(s) into authored.generated.ts`);
 console.log(`  digest ${digest}`);
 console.log("Next: npx tsc -b && npm run build, then commit and push.");

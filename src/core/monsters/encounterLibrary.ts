@@ -12,6 +12,7 @@ import { actTagForId } from "../campaign/actTags";
 import { materializeTemplateBody } from "./actionSetPicks";
 import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
 import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/partyCurveV2";
+import { AUTHORED_ENCOUNTERS, AUTHORED_DIGEST } from "../../data/broken-chain/authored.generated";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,7 +129,15 @@ const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
 // Bumped 2026-08-14: Act 1 rebuilt to the Archetype Pass v4 doc (HP/AC/tiers), the Mosshide
 // Cub added, and authored roster COUNTS moved into the seed. A DM's own edits to campaign rows
 // are re-seeded by design — the doc is the truth document and the app data was code-built.
-const ENCOUNTER_LIBRARY_SEED_VERSION = "0.7.8.7-act1-archetype-pass-v4";
+/**
+ * ⚠ THE AUTHORED DIGEST IS PART OF THE SEED VERSION.
+ *
+ * The seed early-returns when the stored version matches, so folding new authored encounters
+ * would otherwise land in the build and never reach a browser that had already seeded — the
+ * author would push a fight and see nothing change. Folding changes the digest, which changes
+ * this string, which re-seeds. No manual bump, no "why is my encounter missing".
+ */
+const ENCOUNTER_LIBRARY_SEED_VERSION = `0.7.8.7-act1-archetype-pass-v4+${AUTHORED_DIGEST || "none"}`;
 
 /**
  * TARGET tier per campaign fight (Christopher, 2026-07-17) — the round band each Act 2
@@ -382,10 +391,24 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
     });
   }
 
+  /**
+   * AUTHORED ENCOUNTERS REPLACE THE DERIVED ONES.
+   *
+   * The loop above INFERS a fight from the creatures tagged into it: one entry per template, the
+   * authored roster count, nothing else. That is a reasonable default and it is not what a DM
+   * built — it has no act ORDER, no loot pool, and critically no BODIES for a template creature.
+   * An authored encounter carries all of that, so where both exist the authored one wins.
+   */
+  const authoredById = new Map(AUTHORED_ENCOUNTERS.map(e => [e.id, { ...e, owner: "campaign" as const }]));
+  const seededWithAuthored = seeded.map(e => authoredById.get(e.id) ?? e);
+  for (const [id, e] of authoredById) {
+    if (!seededWithAuthored.some(x => x.id === id)) seededWithAuthored.push(e);
+  }
+
   // Merge with existing CAMPAIGN encounters only (preserve user edits to campaign
   // rows). DM-owned encounters live in their own key — copying them in here writes
   // dm-* ids into the campaign key, which duplicates them across both libraries.
-  const merged = [...seeded];
+  const merged = [...seededWithAuthored];
   for (const existingCampaign of loadEncounterLibrary("campaign")) {
     if (!merged.find(e => e.id === existingCampaign.id)) merged.push(existingCampaign);
   }

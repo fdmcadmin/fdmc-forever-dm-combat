@@ -37,6 +37,7 @@
  */
 
 import { loadMonsterLibrary } from "../monsters/dmMonsterLibrary";
+import { loadEncounterLibrary, type EncounterDefinition } from "../monsters/encounterLibrary";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { AUTHORED_DIGEST } from "../../data/broken-chain/authored.generated";
@@ -49,6 +50,16 @@ export type CampaignAuthoringPayload = {
   digest: string;
   monsters: MainMonsterTemplate[];
   equipment: EquipmentItem[];
+  /**
+   * THE FIGHTS THEMSELVES — and everything that only exists on an encounter.
+   *
+   * Christopher asked whether an export ordered the Act 1 fort and the Act 3 mirrors correctly.
+   * It could not: encounters were not in the payload at all. That meant the ORDER of an act, its
+   * act tag, its target classification, its loot pool and — worst — the BODIES a DM builds from
+   * a template creature were all unshippable. A Mirror authored as a template could travel; the
+   * five mirrors built from it could not.
+   */
+  encounters: EncounterDefinition[];
 };
 
 /**
@@ -59,8 +70,8 @@ export type CampaignAuthoringPayload = {
  * what provenance needs. Forgery resistance requires a signature, which requires a private key,
  * which requires a server.
  */
-export function campaignDigest(monsters: unknown[], equipment: unknown[]): string {
-  const canonical = JSON.stringify({ monsters, equipment }, (_k, v) => {
+export function campaignDigest(monsters: unknown[], equipment: unknown[], encounters: unknown[] = []): string {
+  const canonical = JSON.stringify({ monsters, equipment, encounters }, (_k, v) => {
     if (v && typeof v === "object" && !Array.isArray(v)) {
       return Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)));
     }
@@ -119,21 +130,35 @@ export function collectCampaignAuthoring(): CampaignAuthoringPayload {
   // Equipment has no such marker: the DM store only ever holds items that were unlocked and
   // changed, or created outright. Both are authoring.
   const equipment = loadEquipmentLibrary("dm").map(stripLocalInstantiation);
+  /**
+   * Campaign-owned encounters are authored content by definition. A DM's own fights stay theirs,
+   * exactly as their own creatures do.
+   */
+  const encounters = loadEncounterLibrary("campaign")
+    // Sorted the way an act reads, so a folded file is diffable and the order is the AUTHORED
+    // order rather than whatever localStorage happened to hold.
+    .slice()
+    .sort((a, b) =>
+      (a.actTag ?? "").localeCompare(b.actTag ?? "")
+      || (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
+      || a.name.localeCompare(b.name));
+
   return {
     schema: AUTHOR_EXPORT_SCHEMA,
     exportedAt: new Date().toISOString(),
-    digest: campaignDigest(monsters, equipment),
+    digest: campaignDigest(monsters, equipment, encounters),
     monsters,
     equipment,
+    encounters,
   };
 }
 
 /** Download the payload as the file `scripts/fold-authoring.mjs` consumes. */
 export function exportCampaignAuthoring(): { ok: boolean; message: string } {
   const payload = collectCampaignAuthoring();
-  const total = payload.monsters.length + payload.equipment.length;
+  const total = payload.monsters.length + payload.equipment.length + payload.encounters.length;
   if (total === 0) {
-    return { ok: false, message: "Nothing authored on this machine yet — no edited campaign creatures and no custom equipment." };
+    return { ok: false, message: "Nothing authored on this machine yet — no campaign creatures, encounters or custom equipment." };
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -144,7 +169,7 @@ export function exportCampaignAuthoring(): { ok: boolean; message: string } {
   URL.revokeObjectURL(url);
   return {
     ok: true,
-    message: `Exported ${payload.monsters.length} creature${payload.monsters.length === 1 ? "" : "s"} and ${payload.equipment.length} item${payload.equipment.length === 1 ? "" : "s"}. Fold it into the build with: node scripts/fold-authoring.mjs <file>`,
+    message: `Exported ${payload.monsters.length} creature(s), ${payload.encounters.length} encounter(s) and ${payload.equipment.length} item(s). Fold it into the build with: node scripts/fold-authoring.mjs <file>`,
   };
 }
 
@@ -154,7 +179,7 @@ export function exportCampaignAuthoring(): { ok: boolean; message: string } {
  * Answers the provenance question only — see the header. A mismatch means the generated file
  * was edited by hand after the fold, which is exactly the case the file warns against.
  */
-export function verifyCampaignProvenance(monsters: unknown[], equipment: unknown[]): boolean {
+export function verifyCampaignProvenance(monsters: unknown[], equipment: unknown[], encounters: unknown[] = []): boolean {
   if (!AUTHORED_DIGEST) return true; // nothing authored yet — nothing to verify against
-  return campaignDigest(monsters, equipment) === AUTHORED_DIGEST;
+  return campaignDigest(monsters, equipment, encounters) === AUTHORED_DIGEST;
 }
