@@ -127,9 +127,21 @@ export function collectCampaignAuthoring(): CampaignAuthoringPayload {
     ...loadMonsterLibrary("dm").filter(t =>
       !campaignIds.has(t.templateId) && (t.dmEdited || t.templateId.startsWith("custom-"))),
   ];
-  // Equipment has no such marker: the DM store only ever holds items that were unlocked and
-  // changed, or created outright. Both are authoring.
-  const equipment = loadEquipmentLibrary("dm").map(stripLocalInstantiation);
+  /**
+   * ⚠ BOTH EQUIPMENT STORES. This read the DM store ONLY, which was right until "→ Campaign" and
+   * the pool builder gave items somewhere else to live — after which promoting an item to the
+   * campaign library REMOVED it from the export. An author could file eight Gifts correctly and
+   * ship none of them.
+   *
+   * Campaign items are authored content by definition. From the DM store the same two things
+   * qualify as before: a deliberate edit, or the DM own creation.
+   */
+  const campaignEquipment = loadEquipmentLibrary("campaign");
+  const campaignItemIds = new Set(campaignEquipment.map(i => i.id));
+  const equipment = [
+    ...campaignEquipment,
+    ...loadEquipmentLibrary("dm").filter(i => !campaignItemIds.has(i.id)),
+  ].map(stripLocalInstantiation);
   /**
    * Campaign-owned encounters are authored content by definition. A DM's own fights stay theirs,
    * exactly as their own creatures do.

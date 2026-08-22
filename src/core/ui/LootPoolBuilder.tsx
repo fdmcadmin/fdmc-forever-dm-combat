@@ -39,11 +39,38 @@ type LootPoolBuilderProps = {
 
 const input = { width: "100%", padding: "4px 7px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 12 } as const;
 
+/**
+ * ⚠ TWO GROUPS ARE NOT POOLS. "Convergence — Completed" is every item with
+ * `convergence.role === "output"`, and "2024 Weapon Bases" is every mundane weapon with no act
+ * and no encounter. Neither is a `sourceEncounter`, so tagging one does nothing — which is
+ * exactly why adding to Convergence Completed appeared impossible.
+ *
+ * Selecting this pool name writes the ROLE instead of a tag.
+ */
+export const CONVERGENCE_POOL = "Convergence — Completed";
+
 /** Every pool name an item currently claims — primary plus extras. */
 function poolsOf(item: EquipmentItem): string[] {
   return [item.sourceEncounter, ...(item.sourceEncounters ?? [])]
     .map(s => s?.trim())
     .filter((s): s is string => Boolean(s));
+}
+
+/**
+ * What an item's row should SAY it belongs to.
+ *
+ * "untagged" was shown for anything with no `sourceEncounter`, which made every convergence
+ * output and every base weapon look unfiled when they are filed — just by role rather than by
+ * pool. A row that lies about being untagged invites a DM to "fix" it by tagging it, which is
+ * how a base weapon ends up in an act.
+ */
+function groupLabelOf(item: EquipmentItem): string {
+  if (item.convergence?.role === "output") return CONVERGENCE_POOL;
+  if (item.convergence?.role === "input") return `Convergence input${item.convergence.actLabel ? " · " + item.convergence.actLabel : ""}`;
+  const pools = poolsOf(item);
+  if (pools.length) return pools[0];
+  if (item.type === "weapon" && !item.act?.trim()) return "2024 weapon base";
+  return "untagged";
 }
 
 export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPoolBuilderProps) {
@@ -89,7 +116,9 @@ export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPool
 
   /** Items already in this pool — ticked on open so the panel shows the pool as it stands. */
   const inPool = useMemo(
-    () => new Set(all.filter(({ item }) => poolName && poolsOf(item).includes(poolName)).map(({ item }) => item.id)),
+    () => new Set(all.filter(({ item }) => poolName && (poolName === CONVERGENCE_POOL
+      ? item.convergence?.role === "output"
+      : poolsOf(item).includes(poolName))).map(({ item }) => item.id)),
     [all, poolName],
   );
 
@@ -106,7 +135,14 @@ export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPool
     for (const { item, owner } of all) {
       if (!picked.has(item.id)) continue;
 
-      const next: EquipmentItem = asExtra
+      /**
+       * The convergence group is membership by ROLE. Writing `sourceEncounter` here would file the
+       * item under a literal pool called "Convergence — Completed" that the library never reads,
+       * and the item would still not appear in the group the DM was aiming at.
+       */
+      const next: EquipmentItem = poolName === CONVERGENCE_POOL
+        ? { ...item, convergence: { ...(item.convergence ?? {}), role: "output", enabled: true } }
+        : asExtra
         ? {
           ...item,
           // An extra membership never disturbs the primary — that is what makes it a CHOICE item.
@@ -150,7 +186,7 @@ export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPool
             placeholder="Act 3 - Gate II: The Mirrors" style={input} />
           {/* Picking beats typing: a pool is matched by string, so a typo silently makes a new one. */}
           <datalist id="fdmc-pool-names">
-            {[...new Set([...encounterNames, ...all.flatMap(({ item }) => poolsOf(item))])].sort().map(n => <option key={n} value={n} />)}
+            {[...new Set([CONVERGENCE_POOL, ...encounterNames, ...all.flatMap(({ item }) => poolsOf(item))])].sort().map(n => <option key={n} value={n} />)}
           </datalist>
         </label>
         <label style={{ fontSize: 11, color: "#888" }}>
@@ -167,7 +203,8 @@ export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPool
         </label>
         <label style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
           title="Add this pool ALONGSIDE the item's existing one, instead of replacing it — a choice item offered at two gates belongs to both.">
-          <input type="checkbox" checked={asExtra} onChange={e => setAsExtra(e.target.checked)} />
+          <input type="checkbox" checked={asExtra} onChange={e => setAsExtra(e.target.checked)}
+            disabled={poolName === CONVERGENCE_POOL} />
           add as an extra pool (choice item)
         </label>
       </div>
@@ -193,7 +230,7 @@ export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPool
                 {owner === "campaign" ? "campaign" : "my library"}
               </span>
               <span style={{ fontSize: 9, color: "#555", width: 130, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {poolsOf(item)[0] ?? "untagged"}
+                {groupLabelOf(item)}
               </span>
             </label>
           );
