@@ -24,6 +24,21 @@
  *
  * A UI that merely hid the choice would leave the mechanism reachable. Here a caller cannot
  * express the illegal move, which is the only kind of rule that survives a refactor.
+ *
+ * ── ⏸ FROZEN: GENERATING THE BOND TAB ACTIONS ────────────────────────────────────────────────
+ * Christopher: *"it still needs clickable action buttons like the current bond do, if it can
+ * create the bond actions that is fine, if it cant then that can be frozen atm."*
+ *
+ * It CAN be generated — `resolveBond` already returns the stage text and both paths, and the dice
+ * are extractable from that text. It is frozen because generating it TODAY would DUPLICATE what
+ * is already there: a character carrying Warden Instinct already has an authored "BOND — HOW IT
+ * WORKS" header plus "Rallying Surge" and "Fortify" as bond-economy actions. Adding generated
+ * twins gives every bonded character two of everything.
+ *
+ * The real change is a MIGRATION — the assignment becomes the source and the authored rows are
+ * replaced, not joined — and that is a decision about existing party data, not a rendering task.
+ * Until then the authored bond tab stays the clickable surface and the assignment drives the
+ * summary strip, which is why they are deliberately independent.
  */
 
 import {

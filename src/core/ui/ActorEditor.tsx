@@ -334,7 +334,7 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = [], characterLevel }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number }) {
+function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = [], characterLevel, canAssignBond = false }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean }) {
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     onChange({ ...draft, [key]: value });
   }
@@ -654,13 +654,29 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
           : undefined;
         return (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "end" }}>
+            {/*
+              ⚠ ONLY THE GM SWAPS THE BOND. Christopher: *"only is GM seat gets to see that just
+              like the creating a convergence item"* and *"the level editor doesnt get to see the
+              bond dropdown to swap the bonds."*
+
+              A bond is granted, not shopped for. The level-up flow is player-facing, so it shows
+              the bond READ-ONLY — the player still needs to see what they carry, and at
+              Metamorphosis they still make the one choice the ladder asks of them. What they
+              cannot do is change which of the fourteen they have.
+            */}
             <label style={labelStyle}>
               Bond <span style={{ color: "#666" }}>— {BOND_STAGE_NAMES[stage]} at level {level}</span>
-              <select value={draft.bondTemplateId} style={inputStyle}
-                onChange={e => onChange({ ...draft, bondTemplateId: e.target.value, bondPathIndex: "", bondCompanionId: "" })}>
-                <option value="">— none —</option>
-                {bondOptions.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+              {canAssignBond ? (
+                <select value={draft.bondTemplateId} style={inputStyle}
+                  onChange={e => onChange({ ...draft, bondTemplateId: e.target.value, bondPathIndex: "", bondCompanionId: "" })}>
+                  <option value="">— none —</option>
+                  {bondOptions.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              ) : (
+                <div style={{ ...inputStyle, color: tpl ? "#cfc6ff" : "#666", display: "flex", alignItems: "center" }}>
+                  {tpl?.name ?? "— none — the DM grants bonds"}
+                </div>
+              )}
             </label>
             {tpl?.actor === "companion" ? (
               <label style={labelStyle}>
@@ -974,7 +990,8 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
         {activeTab === "profile" && (
           <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0}
             bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
-            characterLevel={actor.level ?? 1} />
+            characterLevel={actor.level ?? 1}
+            canAssignBond={!proposeMode} />
         )}
         {activeTab === "combat" && (
           <CombatActionsTab
