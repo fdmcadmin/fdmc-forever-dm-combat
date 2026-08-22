@@ -50,6 +50,11 @@ export function monsterProficiency(cr: number | undefined): number {
  *
  * Ties break by the printed ability order (STR, DEX, CON, INT, WIS, CHA), so a creature with two
  * 16s always resolves the same way rather than depending on object key order.
+ *
+ * ✅ RULED, DO NOT RE-RAISE. This makes a Guardian mirror +7/+4 where the Elemental Mirror card
+ * prints +6/+3 — the card uses its STR 16 rather than its CON 18, and every other archetype
+ * matches. Christopher, 2026-08-22: *"its fine for the guardian to be +7."* One readable rule
+ * beats a per-archetype exception table, and the card is the stale side of the disagreement.
  */
 export function monsterMainAbility(template: MainMonsterTemplate): AbilityLabel {
   const scores = scoresFromTemplate(template.abilities ?? []);
