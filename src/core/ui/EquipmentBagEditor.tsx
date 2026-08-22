@@ -262,6 +262,18 @@ export type EquipmentItem = {
   session?: string;
   /** Source encounter name */
   sourceEncounter?: string;
+  /**
+   * ADDITIONAL pools this item can drop from — a CHOICE item, not a set one.
+   *
+   * Christopher: *"they need to be able to be given in either gate 2 and gate 3 of act 3 since
+   * it s choice item not a set item."* A Feywild Gift is offered at a gate; which gate the party
+   * reaches it at is the table's business, and the same Gift has to be reachable from both.
+   *
+   * `sourceEncounter` stays the PRIMARY pool — it is what the item reports as its origin and what
+   * every existing item already uses. These are extra memberships on top of it, so nothing that
+   * reads the single field breaks and an item with no extras behaves exactly as before.
+   */
+  sourceEncounters?: string[];
   /** Source type: "boss-loot" | "merchant" | "dm-reward" | "sendoff" */
   sourceType?: string;
   /** Full mechanics rules text (DM + player read) */

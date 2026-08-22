@@ -11,6 +11,7 @@ import { parseActField, parseSessionField } from "../campaign/actTags";
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/convergenceInbox";
 import { SELECTABLE_ITEM_TYPES, itemTypeAllows } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
+import { matchingForms } from "../constants/chassis";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
 import { ItemMechanicsFields } from "./ItemMechanicsFields";
@@ -176,10 +177,30 @@ function seatNumber(seatId: string): number {
 
 function groupByEncounter(items: EquipmentItem[]): EquipmentGroup[] {
   const groups = new Map<string, { items: EquipmentItem[]; act: number; session: number }>();
+  /**
+   * ⚠ AN ITEM MAY APPEAR IN SEVERAL POOLS. A choice item — a Feywild Gift offered at either Gate
+   * II or Gate III — is ONE item that both pools can hand out. Listing it only under its primary
+   * encounter would hide it from the DM running the other gate, which is precisely the fight
+   * where they need to see it.
+   *
+   * The loop is over (item, pool) pairs rather than items. Base weapons and convergence outputs
+   * keep their own single buckets — neither is a drop.
+   */
+  const pairs: { it: EquipmentItem; key: string }[] = [];
   for (const it of items) {
     const base = isBaseWeapon(it);
     const conv = !base && isConvergenceOutput(it);
-    const key = base ? BASE_WEAPON_KEY : conv ? CONVERGENCE_KEY : (it.sourceEncounter?.trim() || UNGROUPED_KEY);
+    if (base) { pairs.push({ it, key: BASE_WEAPON_KEY }); continue; }
+    if (conv) { pairs.push({ it, key: CONVERGENCE_KEY }); continue; }
+    const primary = it.sourceEncounter?.trim();
+    const extra = (it.sourceEncounters ?? []).map(s => s.trim()).filter(Boolean);
+    const keys = [...new Set([primary, ...extra].filter(Boolean))] as string[];
+    if (keys.length === 0) { pairs.push({ it, key: UNGROUPED_KEY }); continue; }
+    for (const key of keys) pairs.push({ it, key });
+  }
+  for (const { it, key } of pairs) {
+    const base = isBaseWeapon(it);
+    const conv = !base && isConvergenceOutput(it);
     if (!groups.has(key)) {
       groups.set(key, {
         items: [],
@@ -321,6 +342,27 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
             placeholder="e.g. Act 1" style={input} />
         </label>
       </div>
+      {/*
+        ALSO DROPS FROM — a CHOICE item, offered at more than one fight.
+
+        *"they need to be able to be given in either gate 2 and gate 3 of act 3 since it s choice
+        item not a set item."* The field above is the item's PRIMARY origin; these are extra pools
+        it also appears in, so a DM running either gate sees the same Gift on their list.
+
+        Comma-separated because an encounter is identified by its NAME here, and a free-text list
+        keeps this working for a DM whose encounters this app has never heard of.
+      */}
+      <label style={{ fontSize: 12 }}>
+        Also drops from <span style={{ color: "#7b68ee" }}>— a choice item offered at more than one fight</span>
+        <input type="text"
+          value={(draft.sourceEncounters ?? []).join(", ")}
+          onChange={e => {
+            const list = e.target.value.split(",").map(s => s.trim()).filter(Boolean);
+            set("sourceEncounters", list.length ? list : undefined);
+          }}
+          placeholder="Act 3 - Gate III: The Veil-Torn Dragon"
+          style={input} />
+      </label>
       {/* ── What it DOES ──────────────────────────────────────────────────────
           MECHANICS is the block the card actually shows a player: itemToAction uses
           `mechanicsText || description`, so an item with mechanics never displays its
@@ -958,11 +1000,33 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     });
   }
 
-  function handleSaveItem(item: EquipmentItem) {
-    const lib = loadEquipmentLibrary("dm");
+  /**
+   * Save an edited item back to the store it CAME FROM.
+   *
+   * Christopher: *"why I cant edit the existing loot pool from the equipment library and move them
+   * to the correct acts."* Because every save went to the DM store — editing a campaign item made
+   * a private shadow of it, and the next re-seed threw that shadow away. 82 bundled items are
+   * locked, so re-filing an act meant unlocking each one and losing the edit on the next bump.
+   *
+   * An item that lives in the campaign store now saves back to the campaign store, which is what
+   * "editing the loot pool" has to mean for the person who authored it.
+   */
+  function handleSaveItem(item: EquipmentItem, owner?: "campaign" | "dm") {
+    const target: "campaign" | "dm" = owner
+      ?? (loadEquipmentLibrary("campaign").some(i => i.id === item.id) ? "campaign" : "dm");
+    const lib = loadEquipmentLibrary(target);
     const idx = lib.findIndex(i => i.id === item.id);
     if (idx === -1) lib.push(item); else lib[idx] = item;
-    saveEquipmentLibrary(lib, "dm");
+    saveEquipmentLibrary(lib, target);
+    /**
+     * Saving to one store drops the id from the other. A DM shadow left behind would WIN by id
+     * in `loadEquipmentLibrary()` and every later campaign edit would appear to do nothing —
+     * the exact failure the monster stores hit.
+     */
+    const other: "campaign" | "dm" = target === "campaign" ? "dm" : "campaign";
+    const otherLib = loadEquipmentLibrary(other);
+    const pruned = otherLib.filter(i => i.id !== item.id);
+    if (pruned.length !== otherLib.length) saveEquipmentLibrary(pruned, other);
     refreshLibrary();
     setEditingItem(null);
   }
@@ -1412,10 +1476,45 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {lootOffer.items.map(item => (
             <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#161622", borderRadius: 6, border: "1px solid #2a3a2a" }}>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: 12, fontWeight: 500 }}>{item.name}</span>
                 <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>{item.category ?? item.type}</span>
                 {item.tier && <span style={{ fontSize: 10, color: "#7b68ee66", marginLeft: 4 }}>{item.tier}</span>}
+                {/*
+                  ⚠ THE CHASSIS FORM IS PICKED HERE, AT HAND-OVER.
+
+                  Christopher: *"make sure the Choice is a pickable option when it is attached or
+                  sent to a player."* A Gift is authored as a SHAPE — "a one-handed melee weapon" —
+                  and becomes a specific weapon only when it is given. The picker existed solely in
+                  the item editor, so a Gift sent from a loot table arrived with no form at all and
+                  no way to choose one: an adaptive item that could not adapt.
+
+                  The pick lands on the COPY being sent, never on the library entry. That is the
+                  whole reason the entry stays generic — two players can hold the same Gift in
+                  different shapes.
+                */}
+                {item.chassis && (
+                  <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 10, color: item.chassis.formId ? "#7b68ee" : "#e0b34a" }}>
+                      {item.chassis.formId ? "form" : "pick a form"}
+                    </span>
+                    <select
+                      value={item.chassis.formId ?? ""}
+                      onChange={e => setLootOffer(o => o ? {
+                        ...o,
+                        items: o.items.map(i => i.id === item.id
+                          ? { ...i, chassis: { ...i.chassis!, formId: e.target.value || undefined } }
+                          : i),
+                      } : null)}
+                      style={{ fontSize: 10, padding: "1px 4px", borderRadius: 3, background: "#111", color: "#ccc",
+                               border: `1px solid ${item.chassis.formId ? "#444" : "#5a4a1a"}` }}>
+                      <option value="">— choose —</option>
+                      {matchingForms(item.chassis).map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               <button type="button"
                 onClick={() => setLootOffer(o => o ? { ...o, items: o.items.filter(i => i.id !== item.id) } : null)}
@@ -1517,7 +1616,14 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
         </label>
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={() => void handleSendLootOffer()} disabled={lootOffer.items.length === 0}
+          {lootOffer.items.some(i => i.chassis && !i.chassis.formId) && (
+            <p style={{ fontSize: 11, color: "#e0b34a", margin: "0 0 6px", flexBasis: "100%" }}>
+              Pick a form for every adaptive Gift first — one sent without a form arrives as a shape
+              the player cannot use.
+            </p>
+          )}
+          <button type="button" onClick={() => void handleSendLootOffer()}
+            disabled={lootOffer.items.length === 0 || lootOffer.items.some(i => i.chassis && !i.chassis.formId)}
             style={{ flex: 1, padding: "8px", background: lootOffer.items.length > 0 ? "#7b68ee" : "#333", color: "#fff", border: "none", borderRadius: 6, cursor: lootOffer.items.length > 0 ? "pointer" : "default", fontWeight: 500 }}>
             ▶ Send Loot Offer ({lootOffer.items.length} items)
           </button>
@@ -1826,6 +1932,22 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
                   </button>
                 )}
               </>
+            )}
+            {/*
+              ✎ EDIT CAMPAIGN — the author edits the real item, in place.
+
+              Unlocking is still here and still does what it did: it makes a DM's PRIVATE copy of
+              a campaign item, which is the right tool for a DM who wants their own version. It is
+              the wrong tool for the person who wrote the campaign, because the copy is discarded
+              on the next re-seed. Editing in place is how a loot pool gets re-filed.
+            */}
+            {item.isLocked && (
+              <button type="button"
+                onClick={() => setEditingItem({ ...item, isLocked: false })}
+                title="Edit this campaign item IN PLACE — act, encounter, mechanics. Saves to the campaign library, not to a private copy."
+                style={{ fontSize: 10, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+                ✎ Campaign
+              </button>
             )}
             {item.isLocked ? (
               /* TODO: remove at 0.9.0 alpha lock */
