@@ -10,6 +10,7 @@ import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisi
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
 import { actTagForId } from "../campaign/actTags";
 import { materializeTemplateBody } from "./actionSetPicks";
+import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
 import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/partyCurveV2";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -427,7 +428,12 @@ export function spawnEncounterInstances(
       ? bodies.map(b => materializeTemplateBody(template, b))
       : template.isTemplate
         ? []
-        : Array.from({ length: entry.count }, () => template);
+        // An ORDINARY creature resolves its own @vars too. Template bodies already did it in
+        // materializeTemplateBody, after their archetype reshape.
+        : Array.from({ length: entry.count }, () => ({
+          ...template,
+          actions: (template.actions ?? []).map(a => resolveMonsterActionFormulas(a, template)),
+        }));
 
     for (let i = 0; i < perBody.length; i++) {
       const instance = createEncounterMonsterInstance(perBody[i]);

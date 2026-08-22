@@ -2280,6 +2280,106 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     visibility: { defaultState: "hp-bar", hiddenName: "Veil-Torn Dragon", revealedName: "Veil-Torn Dragon" },
   },
   {
+    /**
+     * THE ELEMENTAL MIRROR — a TEMPLATE creature, not a stat block to drop on the map.
+     *
+     * *"The Wood builds one mirror for each adventurer."* Body count equals party size (3/4/5) and
+     * every mirror keeps a flat 90 HP — the one encounter in the campaign where party scaling moves
+     * the number of bodies instead of the HP of each.
+     *
+     * Each body is finished in the ENCOUNTER editor from three choices, exactly as the card says:
+     *   1. an unused ARCHETYPE  — reshapes the six scores below; sets attack and spell lines
+     *   2. an unused ELEMENT package — names the body and supplies {primary} / {secondary}
+     *   3. one legal BOND at its Metamorphosis path
+     * No duplicates across the roster; the editor enforces that by removing taken options.
+     *
+     * Sources: the Elemental Mirror statblock card, Act 3 encounters v3.15 Fight 6, and the
+     * Signature Spell Packages sheet. The ABS array is 18/16/14/12/12/10 for every archetype —
+     * one multiset dealt into each archetype's spine, which is why the reshape reproduces the
+     * card's published rows exactly.
+     */
+    templateId: "broken-chain:act3:elemental-mirror:v1",
+    name: "Elemental Mirror",
+    encounterId: "act3-e6-gate-ii-the-mirrors",
+    encounterLabel: "Act 3 E6 - Gate II: The Mirrors",
+    isTemplate: true,
+    bodyNameFormat: "{pick} Mirror",
+    stats: {
+      kind: "aberration", ac: 15, maxHp: 90, speed: "30 ft.",
+      attacksPerTurn: 2,
+      size: "Medium", classification: "elite", cr: 7,
+    },
+    /**
+     * The ABS array. Left in printed order — a body's chosen archetype deals these same six
+     * numbers into its own spine, so no archetype is baked in here.
+     */
+    abilities: [
+      { label: "STR", value: "18 (+4)" },
+      { label: "DEX", value: "16 (+3)" },
+      { label: "CON", value: "14 (+2)" },
+      { label: "INT", value: "12 (+1)" },
+      { label: "WIS", value: "12 (+1)" },
+      { label: "CHA", value: "10 (+0)" },
+    ],
+    actionSets: [
+      {
+        id: "element",
+        label: "Element package",
+        pick: 1,
+        namesBody: true,
+        note: "Primary locks its paired secondary. Do not duplicate a package across the roster.",
+        optionVars: {
+        "Ice": { primary: "ice", secondary: "necrotic", pair: "Ice/Necrotic", group: "Defensive-solid" },
+        "Earth": { primary: "earth", secondary: "radiant", pair: "Earth/Radiant", group: "Defensive-solid" },
+        "Nature": { primary: "nature", secondary: "poison", pair: "Nature/Poison", group: "Defensive-solid" },
+        "Fire": { primary: "fire", secondary: "lightning", pair: "Fire/Lightning", group: "Offensive-fluid" },
+        "Water": { primary: "water", secondary: "acid", pair: "Water/Acid", group: "Offensive-fluid" },
+        "Air": { primary: "air", secondary: "force", pair: "Air/Force", group: "Offensive-fluid" },
+        },
+      },
+    ],
+    traits: [
+      { name: "Elemental Guard", kind: "trait", text: "The mirror is immune to {primary} and {secondary} damage. The active immunity changes every turn and is always described aloud before damage is committed, so players can route damage around it." },
+      { name: "Constructed Answer", kind: "trait", text: "The mirror is built from an archetype, an element package and one bond at its Metamorphosis path. It is close enough to a party's roles to be insulting, and never an exact copy." },
+      { name: "Signature Limit", kind: "trait", text: "Roster-limited: at most one 1/day signature effect per round across the whole mirror encounter, and at most one Offensive and one Defensive mirror may use a signature in any one round." },
+    ],
+    actions: [
+      /**
+       * ⚠ ONE Claw and ONE Bolt, not six of each. The damage TYPE comes from the element package
+       * the body took ({primary}), and the to-hit and damage modifier come from the creature's own
+       * scores after the archetype reshape — @MAIN is its highest stat, @PROF comes from CR.
+       */
+      { name: "Claw", kind: "attack", roll: "1d20+@MAIN+@PROF", damage: "2d6+@MAIN {primary}", text: "Melee Weapon Attack, reach 5 ft. The archetype sets the modifier; the element sets the damage type." },
+      { name: "Bolt", kind: "attack", roll: "1d20+@MAIN+@PROF", damage: "2d6+@MAIN {primary}", text: "Ranged Spell Attack, range 60 ft. The archetype sets the modifier; the element sets the damage type." },
+      { name: "Gravefrost Reflections", kind: "reaction", setId: "element", setOption: "Ice", uses: 1, damage: "2d6", save: "WIS DC @DC", text: "1/Day, Reaction when the mirror is targeted by an attack. Three ice-and-shadow reflections appear for up to 1 minute. While a reflection remains, when an attack would hit the mirror, roll a d20; on a 6 or higher the attack destroys a reflection instead. A reflection uses the mirror's AC. When the last reflection is destroyed, the creature that destroyed it takes 2d6 cold or necrotic damage (mirror's choice) and must succeed on a Wisdom saving throw or be frightened of the mirror until the end of its next turn." },
+      { name: "Ray of Frost", kind: "spell", setId: "element", setOption: "Ice", text: "At-will. The Ice/Necrotic package's cantrip. Spell attack and save DC come from the mirror's chosen archetype." },
+      { name: "Misty Step", kind: "spell", setId: "element", setOption: "Ice", uses: 3, text: "Lesser spell (3/day). An established spell, listed by name only." },
+      { name: "Sunstone Aegis", kind: "action", setId: "element", setOption: "Earth", uses: 1, save: "CON DC @DC", text: "1/Day, Action. Luminous stone closes around the mirror until the start of its next turn, granting +2 AC. The first time each creature targets the mirror with an attack during the effect, that creature makes a Constitution saving throw before the attack. On a failed save, it is blinded until the end of the current turn. A creature makes this save only once per casting." },
+      { name: "Mold Earth", kind: "spell", setId: "element", setOption: "Earth", text: "At-will. The Earth/Radiant package's cantrip. Spell attack and save DC come from the mirror's chosen archetype." },
+      { name: "Guiding Bolt", kind: "spell", setId: "element", setOption: "Earth", uses: 3, text: "Lesser spell (3/day). An established spell, listed by name only." },
+      { name: "Venomroot Bloom", kind: "action", setId: "element", setOption: "Nature", uses: 1, save: "CON DC @DC", text: "1/Day, Action. Choose a point within 60 feet. Poisonous roots erupt in a 20-foot-radius area until the start of the mirror's next turn. The area is difficult terrain for creatures other than the mirror. A creature that enters the area for the first time on a turn or starts its turn there makes a Constitution saving throw. On a failed save, its speed becomes 0 and it is poisoned until the start of its next turn. On a success, its speed is halved until the start of its next turn." },
+      { name: "Thorn Whip", kind: "spell", setId: "element", setOption: "Nature", text: "At-will. The Nature/Poison package's cantrip. Spell attack and save DC come from the mirror's chosen archetype." },
+      { name: "Ray of Sickness", kind: "spell", setId: "element", setOption: "Nature", uses: 3, text: "Lesser spell (3/day). An established spell, listed by name only." },
+      { name: "Stormcharged Fireball", kind: "action", setId: "element", setOption: "Fire", uses: 1, damage: "3d6 {primary} + 3d6 {secondary}", save: "DEX DC @DC", text: "1/Day, Action. Choose a point within 90 feet. A 15-foot-radius sphere erupts with fire threaded by lightning. Each creature in the area makes a Dexterity saving throw, taking 3d6 fire plus 3d6 lightning damage on a failed save, or half as much on a success." },
+      { name: "Fire Bolt", kind: "spell", setId: "element", setOption: "Fire", text: "At-will. The Fire/Lightning package's cantrip. Spell attack and save DC come from the mirror's chosen archetype." },
+      { name: "Thunderwave", kind: "spell", setId: "element", setOption: "Fire", uses: 3, text: "Lesser spell (3/day). An established spell, listed by name only." },
+      { name: "Caustic Tide", kind: "action", setId: "element", setOption: "Water", uses: 1, damage: "2d8 bludgeoning + 2d8 {secondary}", save: "DEX DC @DC", text: "1/Day, Action. A 30-foot-long, 10-foot-wide wave surges from the mirror. Creatures in the wave make a Dexterity saving throw, taking 2d8 bludgeoning plus 2d8 acid damage and falling prone on a failed save. On a success, a creature takes half damage and does not fall prone." },
+      { name: "Shape Water", kind: "spell", setId: "element", setOption: "Water", text: "At-will. The Water/Acid package's cantrip. Spell attack and save DC come from the mirror's chosen archetype." },
+      { name: "Grease", kind: "spell", setId: "element", setOption: "Water", uses: 3, text: "Lesser spell (3/day). An established spell, listed by name only." },
+      { name: "Gravitic Squall", kind: "action", setId: "element", setOption: "Air", uses: 1, damage: "2d8 thunder + 2d8 {secondary}", save: "STR DC @DC", text: "1/Day, Action. A 30-foot cone of compressed air and force tears outward. Creatures in the cone make a Strength saving throw, taking 2d8 thunder plus 2d8 force damage on a failed save, and the mirror pushes or pulls each failed target 15 feet. On a success, a creature takes half damage and is not moved." },
+      { name: "Gust", kind: "spell", setId: "element", setOption: "Air", text: "At-will. The Air/Force package's cantrip. Spell attack and save DC come from the mirror's chosen archetype." },
+      { name: "Vortex Warp", kind: "spell", setId: "element", setOption: "Air", uses: 3, text: "Lesser spell (3/day). An established spell, listed by name only." },
+    ],
+    reactions: [],
+    resources: [],
+    notes: [
+      "Elemental Guard must remain deterministic and readable. The active immunity changes every turn; players should be able to route damage around it.",
+      "Use different prime archetypes so the fight reads as a party-shaped system rather than identical attackers. At 3 players use three, at 4 use four, at 5 use five.",
+      "Party-size scaling is the MIRROR EXCEPTION: each mirror stays at 90 HP and AC 15, and the encounter scales only by matching the number of mirrors to the number of PCs.",
+    ],
+    visibility: { defaultState: "hp-bar", hiddenName: "Mirror", revealedName: "Elemental Mirror" },
+  },
+  {
     templateId: "broken-chain:act3:thought-harrower:v1",
     name: "Thought Harrower",
     encounterId: "act3-e10-the-center",

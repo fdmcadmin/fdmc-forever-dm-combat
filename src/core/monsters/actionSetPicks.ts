@@ -19,6 +19,7 @@
 import type { MainMonsterTemplate, MonsterActionSet, MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
 import { redistributeAbilityEntries } from "./creator/monsterCreatorModel";
+import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
 
 /** Which action names fill each set, by set id. `null` = that slot is still empty. */
 export type ActionSetPicks = Record<string, (string | null)[]>;
@@ -218,9 +219,34 @@ export function materializeTemplateBody(
    * the actions that cannot be authored per element without authoring six of each.
    */
   const vars = optionVarsFor(template, body.actionPicks);
+  /**
+   * ⚠ RESOLVE @VARS AGAINST THE FINISHED BODY, NOT THE TEMPLATE.
+   *
+   * The archetype reshapes the ability scores, so a Guardian body and a Bruiser body built from
+   * one template have DIFFERENT highest stats and therefore different @MAIN. Resolving before the
+   * reshape would give every body the template array’s modifiers and quietly hand them all the
+   * same attack bonus — the exact silent-wrong-number failure this resolver exists to end.
+   */
+  const reshaped: MainMonsterTemplate = {
+    ...built,
+    ...(body.archetype
+      ? { abilities: redistributeAbilityEntries(built.abilities, body.archetype), stats: { ...built.stats, archetype: body.archetype } }
+      : {}),
+  };
+  /**
+   * ⚠ TRAITS AND REACTIONS TOO, not just actions.
+   *
+   * Elemental Guard is a TRAIT — "immune to {primary} and {secondary} damage" — and it is the
+   * first thing a mirror needs the element for. Substituting only over `actions` left the one
+   * feature the element package exists to drive still printing its own placeholders.
+   */
+  const finish = <T extends { roll?: string; damage?: string; save?: string }>(list: T[] | undefined) =>
+    (list ?? []).map(a => resolveMonsterActionFormulas(substituteVars(a, vars), reshaped));
   return {
     ...built,
-    actions: (built.actions ?? []).map(a => substituteVars(a, vars)),
+    actions: finish(built.actions),
+    traits: finish(built.traits),
+    reactions: finish(built.reactions),
     ...(body.bond ? { bond: body.bond } : {}),
     ...(body.archetype
       ? {
