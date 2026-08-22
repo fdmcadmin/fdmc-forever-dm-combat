@@ -12,6 +12,7 @@ import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/conve
 import { SELECTABLE_ITEM_TYPES, itemTypeAllows } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { matchingForms } from "../constants/chassis";
+import { LootPoolBuilder } from "./LootPoolBuilder";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
 import { ItemMechanicsFields } from "./ItemMechanicsFields";
@@ -925,6 +926,7 @@ type EquipmentLibraryStandaloneProps = {
 
 export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot, onDeliverLootBundle, onSendGold, autoCreate = false, presetEncounter, createSignal, hideCreate = false }: EquipmentLibraryStandaloneProps) {
   const [campaignLib, setCampaignLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("campaign"));
+  const [poolBuilderOpen, setPoolBuilderOpen] = useState(false);
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
   const [editingItem, setEditingItem] = useState<EquipmentItem | null | "new">(autoCreate ? "new" : null);
   // Which encounter/merchant groups are expanded (default: all collapsed).
@@ -1958,6 +1960,23 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
               </button>
             ) : (
               <>
+                {/*
+                  → CAMPAIGN. An item authored in My Library shows under its own act heading and
+                  never appears in the CAMPAIGN loot — which reads as "it did not save", because
+                  from the DM's side nothing about it looks unsaved. Moving it is one click.
+                */}
+                <button type="button"
+                  onClick={() => {
+                    const dm = loadEquipmentLibrary("dm").filter(i => i.id !== item.id);
+                    const camp = loadEquipmentLibrary("campaign").filter(i => i.id !== item.id);
+                    saveEquipmentLibrary([...camp, item], "campaign");
+                    saveEquipmentLibrary(dm, "dm");
+                    refreshLibrary();
+                  }}
+                  title="Move this item into the CAMPAIGN library so it sits with the campaign loot and ships through the author export."
+                  style={{ fontSize: 10, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+                  → Campaign
+                </button>
                 <button type="button" onClick={() => setEditingItem(item)}
                   style={{ fontSize: 11, padding: "2px 7px", background: "#7b68ee22", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
                   Edit
@@ -2258,6 +2277,31 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             })}
           </div>
         )}
+        {/*
+          🎁 LOOT POOL — build a pool and tick what goes in it.
+
+          The per-item route was four steps deep and had to be repeated once per item: find it,
+          open it, type the pool name, save. Eight Gifts meant typing one string eight times, and
+          a pool IS its name, so every retype is a chance to split the pool in two.
+        */}
+        <button type="button" onClick={() => setPoolBuilderOpen(o => !o)}
+          style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", marginBottom: 8,
+            padding: "7px 10px", background: "#12101f", border: "1px solid #4b3f8f",
+            borderLeft: "3px solid #7b68ee", borderRadius: 6, color: "#9d8cff",
+            cursor: "pointer", textAlign: "left", fontSize: 12, fontWeight: 600 }}>
+          🎁 Loot pool
+          <span style={{ fontWeight: 400, fontSize: 10, color: "#6a5f8a" }}>
+            name a pool, tick the items, tag and promote in one go
+          </span>
+        </button>
+        {poolBuilderOpen && (
+          <LootPoolBuilder
+            encounterNames={[...new Set([...campaignLib, ...dmLib].map(i => i.sourceEncounter?.trim()).filter((s): s is string => Boolean(s)))]}
+            onChanged={refreshLibrary}
+            onClose={() => setPoolBuilderOpen(false)}
+          />
+        )}
+
         {/* My Library — always visible, no password needed, grouped by encounter/merchant */}
         <p style={{ margin: "0 0 6px", fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1 }}>
           My Library ({filteredDm.length})

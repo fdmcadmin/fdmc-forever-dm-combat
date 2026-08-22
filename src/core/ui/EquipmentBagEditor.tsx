@@ -20,7 +20,6 @@ import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoL
 import { ItemMechanicsFields } from "./ItemMechanicsFields";
 import { ARMOR_TYPES, EFFECT_KINDS, ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, outcomeModeForEffectKind, type ArmorTypeId, type EffectKind, type ItemType } from "../constants/itemTypeCapabilities";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
-import { BASE_FOCUSES } from "../constants/baseFocuses";
 import { composeChassisAttack, findForm, isVersatileForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
@@ -415,7 +414,7 @@ const BASE_WEAPON_SEED_KEY = "fdmc.equipment.baseWeapons.seedVersion";
 // v2 is a REPAIR bump, not a content change: the 0.6.5.4 campaign re-seed wiped the base
 // weapons out of the shared campaign library, and this key's own guard meant they were
 // never restored. Bumping re-runs the (id-preserving) weapon seed for anyone affected.
-const BASE_WEAPON_SEED_VERSION = "2024-phb-v2-restore+focuses-2024";
+const BASE_WEAPON_SEED_VERSION = "2024-phb-v2-restore";
 
 /**
  * Put the mundane 2024 weapons in the library.
@@ -428,42 +427,11 @@ const BASE_WEAPON_SEED_VERSION = "2024-phb-v2-restore+focuses-2024";
  * editing one writes an unlocked override under the same id (see `upsertItem`) rather than
  * mutating the shared base. Never overwrites an existing id.
  */
-/**
- * The mundane 2024 FOCUSES, seeded exactly as the weapons are.
- *
- * A focus carries no attack line — it is not a weapon. `isSpellFocus` is what makes it a focus,
- * and the bonuses stay blank because a mundane orb grants none; a magical one is a campaign item
- * that states its own.
- */
-function seedFocusItems(byId: Map<string, EquipmentItem>): number {
-  let added = 0;
-  for (const f of BASE_FOCUSES) {
-    if (byId.has(f.id)) continue;
-    byId.set(f.id, {
-      id: f.id,
-      name: f.name,
-      type: "gear",
-      description: f.description,
-      isUsable: false,
-      category: f.category,
-      tags: f.tags,
-      isSpellFocus: true,
-      isLocked: true,
-    });
-    added++;
-  }
-  return added;
-}
-
 export function seedBaseWeapons(): void {
   if (window.localStorage.getItem(BASE_WEAPON_SEED_KEY) === BASE_WEAPON_SEED_VERSION) return;
 
   const existing = loadEquipmentLibrary("campaign");
   const byId = new Map(existing.map(i => [i.id, i]));
-
-  // Focuses ride the SAME seed key as the weapons: they are one 2024 base set, and splitting
-  // them across two keys is what let the armour bump wipe the weapons and not restore them.
-  seedFocusItems(byId);
 
   for (const w of BASE_WEAPONS) {
     if (byId.has(w.id)) continue;
