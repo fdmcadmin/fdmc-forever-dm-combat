@@ -36,7 +36,6 @@ import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
-import { BROKEN_CHAIN_ACT_RUNS } from "./modules/the-broken-chain/content/actRuns";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
 import {
@@ -862,7 +861,8 @@ function DmPanelApp() {
         */}
         {panelId === "balance" && (
           <div style={{ padding: "10px 14px", overflowY: "auto" }}>
-            <ActRunPanel steps={BROKEN_CHAIN_ACT_RUNS} />
+            {/* A run references the DM's OWN encounters. Nothing about a run is bundled. */}
+            <ActRunPanel encounters={loadEncounterLibrary()} />
             <EncounterDifficultyPanel
               encounters={loadEncounterLibrary()}
               monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
