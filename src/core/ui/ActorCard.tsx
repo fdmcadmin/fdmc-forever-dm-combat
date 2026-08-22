@@ -5103,7 +5103,7 @@ export function ActorCard({
               const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage ?? "rider");
               return (
                 <button key={action.id} type="button" disabled={spent}
-                  onClick={() => claimTurnRider(action.id, rider.label ?? action.label, rider)}
+                  onClick={() => claimTurnRider(action.id, rider.label?.trim() || action.label, rider)}
                   title={spent
                     ? `${action.label} — already used this turn. Comes back when your turn starts.`
                     : `${action.label} — ${rider.kind === "extraAttack"
@@ -5118,7 +5118,9 @@ export function ActorCard({
                     color: spent ? "#555" : "#e07b39",
                   }}>
                   <strong style={{ fontWeight: 700 }}>{spent ? "○" : "◆"}</strong>
-                  {rider.label ?? action.label}
+                  {/* A blank rider label inherits the item name — the Gifts leave it blank on
+                      purpose, because the effect is named by the weapon it rides. */}
+                  {rider.label?.trim() || action.label}
                   <span style={{ opacity: 0.75 }}>{what}</span>
                 </button>
               );
