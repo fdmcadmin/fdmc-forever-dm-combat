@@ -24,6 +24,7 @@ import { estimateCreature } from "./creatureEstimator";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { partyDefenceAt } from "./partyDefenceCurve";
+import { auditCoverage, mechanicsOf, type CoverageReport } from "./coverageGate";
 import type { PartyEquipmentMode } from "./partyCurveV2";
 
 const box: React.CSSProperties = {
@@ -82,6 +83,28 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
       desiredCr,
     });
   }, [template, refBand, refMode, desiredCr]);
+
+  /**
+   * THE COVERAGE GATE, on the panel that hands out the number.
+   *
+   * Creature Estimator r34: *"Resolver coverage — READY only when every parsed mechanic maps to a
+   * workbook primitive."* r22: *"Any unmapped mechanic returns NEEDS PRICING PRIMITIVE. Do not drop
+   * it, estimate by CR/tier, or create a creature-specific price."*
+   *
+   * ⚠ THE ESTIMATE IS STILL SHOWN WHEN THIS BLOCKS, and it must be — hiding it would just send the
+   * DM to guess. What must never happen is showing it as though nothing were missing, because a CR
+   * derived from a partly-read stat block looks exactly like one derived from a fully-read stat
+   * block. The gate names the sentences it could not resolve, so the workbook edit that fixes them
+   * can be written without coming back here.
+   */
+  const coverage = useMemo<CoverageReport | null>(() => {
+    if (!template) return null;
+    try {
+      return auditCoverage(mechanicsOf({
+        traits: template.traits, actions: template.actions, reactions: template.reactions,
+      } as Parameters<typeof mechanicsOf>[0]));
+    } catch { return null; }
+  }, [template]);
 
   const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
   const defence = partyDefenceAt(band.referenceLevel, refMode);
@@ -147,6 +170,46 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
 
           {template && estimate && (
             <>
+              {/* THE RESOLVER GATE, above the number it qualifies. A DM who reads the CR and
+                  scrolls away must have already passed this line. */}
+              {coverage && (
+                <div style={{
+                  marginTop: 8, padding: "5px 8px", borderRadius: 4, fontSize: 10, lineHeight: 1.5,
+                  background: coverage.ok ? "#122016" : "#241612",
+                  border: `1px solid ${coverage.ok ? "#2c4a33" : "#6a3226"}`,
+                }}>
+                  <strong style={{ color: coverage.ok ? "#7be08a" : "#ff8a5c", letterSpacing: 0.4 }}>
+                    {coverage.ok ? "RESOLVER COVERAGE: READY" : "NEEDS PRICING PRIMITIVE"}
+                  </strong>
+                  <span style={{ color: "#888" }}>
+                    {" — "}{coverage.packets.length} damage packet{coverage.packets.length === 1 ? "" : "s"}
+                    {", "}{coverage.covered.length} primitive{coverage.covered.length === 1 ? "" : "s"}
+                    {coverage.parameters.length > 0 && `, ${coverage.parameters.length} trigger/frequency input${coverage.parameters.length === 1 ? "" : "s"}`}
+                    {coverage.unpriced.length > 0 && `, ${coverage.unpriced.length} with no combat price`}
+                    {"."}
+                  </span>
+                  {!coverage.ok && (
+                    <div style={{ marginTop: 4 }}>
+                      <div style={{ color: "#c0a0a0", marginBottom: 3 }}>
+                        These sentences reach no workbook resolver. The estimate below is priced
+                        without them — add a generic resolver to the workbook, then rerun.
+                      </div>
+                      {coverage.blocked.slice(0, 6).map((b, i) => (
+                        <div key={i} style={{ color: "#a08b7a", paddingLeft: 8, borderLeft: "2px solid #4a2c22", marginBottom: 2 }}>
+                          <span style={{ color: "#7a6a5a" }}>{b.source.channel} · {b.source.name}: </span>
+                          {b.source.text}
+                        </div>
+                      ))}
+                      {coverage.blocked.length > 6 && (
+                        <div style={{ color: "#7a6a5a", paddingLeft: 8 }}>
+                          …and {coverage.blocked.length - 6} more.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
                 <span>EHP multiplier <strong style={{ color: "#dfe4ff" }}>×{estimate.ehpMultiplier.toFixed(3)}</strong></span>
                 <span>effective AC <strong style={{ color: "#dfe4ff" }}>{estimate.effectiveAc}</strong></span>

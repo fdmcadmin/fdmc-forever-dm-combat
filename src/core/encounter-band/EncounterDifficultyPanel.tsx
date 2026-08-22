@@ -22,9 +22,10 @@ import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import {
-  simulateEncounter, resolvePartyProfile,
+  simulateEncounter, resolvePartyProfile, effectiveHpPerBody,
   type DamageAllocation, type EncounterResult,
 } from "./checkerV2";
+import { aggregateAudit, auditDivergence, type AggregateAudit } from "./aggregateAudit";
 import {
   GENERIC_CHECKER_LEVELS, isProjectedLevel, partySizeHpMultiplier,
   type PartyEquipmentMode,
@@ -137,6 +138,50 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       return null;
     }
   }, [roster, profile, allocation, targetSafetyMargin]);
+
+  /**
+   * THE WORKBOOK'S OWN READING OF THE SAME ROSTER.
+   *
+   * ⚠ THE PANEL USED TO SHOW ONE MODEL AND CALL IT THE ANSWER. `simulateEncounter` is the body
+   * trace the Runtime Contract requires for final behaviour — it removes a body's output the round
+   * that body dies, and drops party output as PCs go down. The visible Encounter Checker in the
+   * workbook does neither; it runs flat.
+   *
+   * The two therefore disagree, always in the same direction: with more than one body the trace
+   * reads SOFTER. Six pikemen at level 6 come out 3 PCs down on the aggregate and 1 on the trace.
+   * Showing only the trace meant the panel quietly promised a gentler fight than the workbook did,
+   * with nothing on screen to say a second opinion existed.
+   *
+   * Christopher: *"at no point does the app tell us something is faster or slower then the workbook
+   * does."* So both are computed, and the divergence is stated rather than resolved.
+   */
+  const aggregate = useMemo<AggregateAudit | null>(() => {
+    if (roster.roster.length === 0 || !profile) return null;
+    try {
+      return aggregateAudit({
+        level: partyLevel,
+        partySize: profile.size,
+        mode: equipmentMode,
+        groups: roster.roster.map(g => ({
+          name: g.name,
+          quantity: g.quantity,
+          // The sheet expects group EHP already priced and already party-size scaled, which is
+          // exactly what the checker's own per-body helper produces.
+          groupEhp: g.quantity * effectiveHpPerBody(g, profile.size),
+          round1DprPerBody: g.dpr?.round1 ?? 0,
+          round2PlusDprPerBody: g.dpr?.round2 ?? g.dpr?.round1 ?? 0,
+        })),
+        targetSafetyMargin,
+      });
+    } catch { return null; }
+  }, [roster, profile, partyLevel, equipmentMode, targetSafetyMargin]);
+
+  const divergence = useMemo(
+    () => (aggregate && result
+      ? auditDivergence(aggregate, { completionRound: result.completionRound, downsAtCompletion: result.downsAtCompletion })
+      : null),
+    [aggregate, result],
+  );
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
@@ -361,6 +406,29 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                         {" ("}{((result.balanceAdjustment.percentChange ?? 0) * 100).toFixed(0)}%
                         {", "}{(result.balanceAdjustment.baseFourPcHpChange ?? 0).toFixed(0)} at the 4P base{")"}
                       </span>
+                    </div>
+                  )}
+
+                  {/* THE WORKBOOK'S AGGREGATE AUDIT, side by side with the body trace. It is
+                      shown whether or not the two agree: a DM who only ever sees them when they
+                      differ has no way to know the check was run the rest of the time. */}
+                  {aggregate && (
+                    <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
+                      <div style={{ color: "#7bb0e0", marginBottom: 3, letterSpacing: 0.4 }}>
+                        WORKBOOK AGGREGATE AUDIT
+                        <span style={{ color: "#555", letterSpacing: 0 }}> · flat DPR, no bodies removed</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4, color: "#999" }}>
+                        <span>ends <strong style={{ color: "#ddd" }}>R{String(aggregate.completionRound)}</strong></span>
+                        <span>fatal <strong style={{ color: typeof aggregate.fatalRound === "number" ? "#ff4444" : "#7be08a" }}>{String(aggregate.fatalRound)}</strong></span>
+                        <span>down <strong style={{ color: "#ddd" }}>{String(aggregate.projectedDowns)}</strong></span>
+                        <span>standing <strong style={{ color: "#ddd" }}>{aggregate.standingAtCompletion}</strong></span>
+                      </div>
+                      {divergence && !divergence.agrees && (
+                        <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px solid #2a2a3e", color: "#e0b070", lineHeight: 1.45 }}>
+                          {divergence.note}
+                        </div>
+                      )}
                     </div>
                   )}
 
