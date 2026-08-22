@@ -1,3 +1,4 @@
+import type { BondAssignment } from "./bond";
 import type { TabActionMap, TabId } from "./tabs";
 
 export type ActorKind = "player" | "companion" | "npc" | "monster" | "boss";
@@ -148,7 +149,28 @@ export type BrokenChainModuleData = {
   act: number;
   theme: string;
   statBlockStatus: "placeholder" | "confirmed";
+  /**
+   * @deprecated The pre-v13 bond: one flat `currentEffect` string with no stages and no paths.
+   * Read only as a fallback so an actor imported before the ladder existed still shows something.
+   * New assignments go to `bondAssignment`.
+   */
   bond?: BondModuleData;
+  /**
+   * THE CHARACTER'S v13 BOND — which of the fourteen, and the permanent path once chosen.
+   *
+   * The stage is NOT stored: it is `bondStageForLevel(character level)` gated by campaign
+   * milestones, because bonds scale on level like cantrips (3/6/9/13) and a stored stage would
+   * be a second source of truth. See `core/rules/bondProgress.ts`.
+   */
+  bondAssignment?: BondAssignment;
+  /**
+   * Campaign milestones this party has earned — the ids raised when a gated encounter ends.
+   *
+   * Held per actor for now because that is where module data lives; every character in one party
+   * carries the same set. A party-level store is the right home eventually, and moving it is a
+   * data migration rather than a rule change.
+   */
+  milestones?: string[];
   strDrain?: DrainTracker;
   lifeDrain?: DrainTracker;
   ownerId?: string;

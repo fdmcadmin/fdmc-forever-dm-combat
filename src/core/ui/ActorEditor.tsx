@@ -1,3 +1,9 @@
+import type { BondTemplate } from "../types/bond";
+import { BOND_METAMORPHOSIS_STAGE, BOND_STAGE_NAMES, bondStageForLevel } from "../types/bond";
+import { resolveBond } from "../rules/bondProgress";
+// The fourteen bonds are MOD content; the editor is engine. They arrive here the same way the
+// monster editor gets them — assembled at the seam, never imported by the control itself.
+import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
 import { useState } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
@@ -156,6 +162,15 @@ type ProfileDraft = {
   kind: ActorKind;
   /** When kind === "companion": the owner PC's actor id (combat tracker groups under it). */
   ownerId: string;
+  /** Which of the campaign's bonds this character carries. "" = none. */
+  bondTemplateId: string;
+  /**
+   * The permanent path index, once Metamorphosis has been reached. Kept as a string so the
+   * select can express "not yet chosen" without a sentinel number.
+   */
+  bondPathIndex: string;
+  /** For a companion-performed bond (Pack): which companion actually acts. */
+  bondCompanionId: string;
   name: string;
   subtitle: string;
   race: string;
@@ -191,6 +206,10 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
   return {
     kind: actor.kind,
     ownerId: actor.moduleData?.ownerId ?? "",
+    bondTemplateId: actor.moduleData?.bondAssignment?.templateId ?? "",
+    bondPathIndex: actor.moduleData?.bondAssignment?.chosenPathIndex === undefined
+      ? "" : String(actor.moduleData.bondAssignment.chosenPathIndex),
+    bondCompanionId: actor.moduleData?.bondAssignment?.companionActorId ?? "",
     name: actor.name,
     subtitle: actor.subtitle,
     race: actor.race ?? "",
@@ -315,7 +334,7 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean }) {
+function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = [], characterLevel }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number }) {
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     onChange({ ...draft, [key]: value });
   }
@@ -350,6 +369,89 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells }: { draft: Profi
           <span style={{ gridColumn: "span 2", fontSize: 11, color: "#e9a66a" }}>Pick an owner so this companion is grouped under that PC in the combat tracker.</span>
         )}
       </div>
+
+      {/*
+        THE CHARACTER'S BOND.
+
+        The stage is NOT set here and deliberately has no control: bonds scale on LEVEL (3/6/9/13)
+        like cantrips, so it is derived and printed. What a DM sets is WHICH bond, and — once the
+        character has reached Metamorphosis — the one permanent path.
+
+        ⚠ The path select disables itself once chosen. v13: "Metamorphosis is permanent." The only
+        way to change it is to clear the bond entirely, which costs the character their progress
+        and is what makes the choice mean something.
+      */}
+      {bondOptions.length > 0 && draft.kind !== "companion" && (() => {
+        const tpl = bondOptions.find(b => b.id === draft.bondTemplateId);
+        const level = characterLevel ?? 1;
+        const stage = bondStageForLevel(level);
+        const atMeta = stage >= BOND_METAMORPHOSIS_STAGE;
+        const paths = tpl?.stages[Math.max(stage, BOND_METAMORPHOSIS_STAGE)]?.paths ?? [];
+        const locked = draft.bondPathIndex === "0" || draft.bondPathIndex === "1";
+        const resolved = tpl
+          ? resolveBond(tpl, { templateId: tpl.id, ...(locked ? { chosenPathIndex: Number(draft.bondPathIndex) as 0 | 1 } : {}) }, level)
+          : undefined;
+        return (
+          <div style={{ marginTop: 10, padding: "8px 10px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#9d8cff", marginBottom: 6 }}>
+              Bond <span style={{ color: "#666", fontWeight: 400 }}>
+                — stage comes from level (3 · 6 · 9 · 13). At level {level} this is {BOND_STAGE_NAMES[stage]}.
+              </span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <label style={labelStyle}>
+                Bond
+                <select value={draft.bondTemplateId} style={{ ...inputStyle, marginTop: 2 }}
+                  onChange={e => onChange({ ...draft, bondTemplateId: e.target.value, bondPathIndex: "", bondCompanionId: "" })}>
+                  <option value="">— none —</option>
+                  {bondOptions.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </label>
+              {tpl?.actor === "companion" && (
+                <label style={labelStyle}>
+                  Bonded companion <span style={{ color: "#666" }}>— it performs the bond</span>
+                  <select value={draft.bondCompanionId} style={{ ...inputStyle, marginTop: 2 }}
+                    onChange={e => onChange({ ...draft, bondCompanionId: e.target.value })}>
+                    <option value="">— choose —</option>
+                    {ownerOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
+            {tpl && atMeta && (
+              <div style={{ marginTop: 6 }}>
+                <span style={{ ...labelStyle, display: "block" }}>
+                  Path <span style={{ color: locked ? "#e9a66a" : "#666" }}>
+                    {locked ? "— permanent. Clear the bond to change it." : "— permanent once chosen."}
+                  </span>
+                </span>
+                <div style={{ display: "flex", gap: 6, marginTop: 3 }}>
+                  {paths.map((pp, pi) => (
+                    <button key={pp.name} type="button" disabled={locked && Number(draft.bondPathIndex) !== pi}
+                      onClick={() => { if (!locked) onChange({ ...draft, bondPathIndex: String(pi) }); }}
+                      style={{
+                        flex: 1, fontSize: 11, padding: "4px 8px", borderRadius: 3, textAlign: "left",
+                        cursor: locked ? "default" : "pointer",
+                        background: draft.bondPathIndex === String(pi) ? "#7b68ee33" : "transparent",
+                        border: `1px solid ${draft.bondPathIndex === String(pi) ? "#7b68ee" : "#333"}`,
+                        color: draft.bondPathIndex === String(pi) ? "#cfc6ff" : locked ? "#444" : "#999",
+                      }}>{pp.name}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {resolved && (
+              <p style={{ fontSize: 10, color: resolved.awaitingPathChoice ? "#e9a66a" : "#777", margin: "6px 0 0" }}>
+                {resolved.awaitingPathChoice
+                  ? `${resolved.stageName} reached — choose the permanent path.`
+                  : resolved.chosen
+                    ? `${resolved.stageName} · ${resolved.chosen.name}: ${resolved.chosen.text}`
+                    : `${resolved.stageName}: ${resolved.effect ?? ""}`}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={labelStyle}>Name <input type="text" value={draft.name} onChange={e => set("name", e.target.value)} style={inputStyle} /></label>
@@ -654,6 +756,30 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       // Switched away from companion — drop ownerId, keep any other module data.
       edited.moduleData = { ...actor.moduleData, ownerId: undefined };
     }
+    /**
+     * THE BOND ASSIGNMENT.
+     *
+     * ⚠ Clearing the bond clears the PATH with it, and that is the ONLY way a path ever changes.
+     * v13: "Metamorphosis is permanent." Removing and re-granting is the DM's deliberate act and
+     * costs the character their progress — which is exactly what makes it a real decision.
+     */
+    {
+      const prev = actor.moduleData?.bondAssignment;
+      const templateId = profileDraft.bondTemplateId.trim();
+      const pathRaw = profileDraft.bondPathIndex.trim();
+      const nextBond = templateId
+        ? {
+          templateId,
+          ...(pathRaw === "0" || pathRaw === "1" ? { chosenPathIndex: Number(pathRaw) as 0 | 1 } : {}),
+          ...(profileDraft.bondCompanionId.trim() ? { companionActorId: profileDraft.bondCompanionId.trim() } : {}),
+          ...(prev?.note ? { note: prev.note } : {}),
+        }
+        : undefined;
+      const base = edited.moduleData ?? actor.moduleData;
+      if (nextBond || base) {
+        edited.moduleData = { act: 1, theme: "the-broken-chain", statBlockStatus: "confirmed", ...(base ?? {}), bondAssignment: nextBond };
+      }
+    }
     return edited;
   }
 
@@ -850,7 +976,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       {/* Tab content */}
       <div style={{ flex: 1, overflow: "auto", padding: 14 }}>
         {activeTab === "profile" && (
-          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0} />
+          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0}
+            bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
+            characterLevel={actor.level ?? 1} />
         )}
         {activeTab === "combat" && (
           <CombatActionsTab
