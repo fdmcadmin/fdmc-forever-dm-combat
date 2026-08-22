@@ -12,6 +12,7 @@
  */
 
 import { BASE_WEAPONS, type BaseWeaponSeed } from "./baseWeapons";
+import { BASE_FOCUSES, matchingFocuses, type BaseFocusSeed } from "./baseFocuses";
 
 export type ChassisAbility = "STR" | "DEX" | "any";
 
@@ -54,6 +55,17 @@ export function isVersatileForm(form: BaseWeaponSeed): boolean {
   return form.tags.includes("versatile") && versatileDamageDie(form) !== null;
 }
 
+/**
+ * A chassis form — a base weapon OR a base focus.
+ *
+ * A Gift authored as a *Spellcasting Focus* previously matched nothing, because `matchingForms`
+ * searched a table of weapons and "Arcane Focus" is not a weapon category. Both tables follow the
+ * same seed shape on purpose (see `baseFocuses.ts`), so one filter reads both.
+ */
+export type ChassisForm =
+  | (BaseWeaponSeed & { kind?: "weapon" })
+  | (BaseFocusSeed & { kind: "focus"; attack?: undefined; damage?: undefined; crit?: undefined });
+
 /** Every base weapon a chassis will accept. */
 export function matchingForms(spec: ChassisSpec | undefined): BaseWeaponSeed[] {
   if (!spec) return [];
@@ -68,6 +80,27 @@ export function matchingForms(spec: ChassisSpec | undefined): BaseWeaponSeed[] {
 
 export function findForm(formId: string | undefined): BaseWeaponSeed | undefined {
   return formId ? BASE_WEAPONS.find(w => w.id === formId) : undefined;
+}
+
+/**
+ * Every form a chassis accepts, weapons and focuses together.
+ *
+ * ⚠ A FOCUS THAT IS ALSO A WEAPON resolves to its weapon for rolling. A Staff is an Arcane Focus
+ * AND a quarterstaff, which is exactly what a "battle focus" Gift is built on — filtering it as a
+ * focus must not cost it its attack line.
+ */
+export function matchingChassisForms(spec: ChassisSpec | undefined): ChassisForm[] {
+  if (!spec) return [];
+  const weapons = matchingForms(spec).map(w => ({ ...w, kind: "weapon" as const }));
+  const focuses = matchingFocuses(spec).map(f => ({ ...f, kind: "focus" as const }));
+  return [...weapons, ...focuses];
+}
+
+/** The weapon a form rolls with — itself for a weapon, its `weaponFormId` for a battle focus. */
+export function weaponForForm(form: ChassisForm | undefined): BaseWeaponSeed | undefined {
+  if (!form) return undefined;
+  if (form.kind === "focus") return findForm((form as BaseFocusSeed).weaponFormId);
+  return form as BaseWeaponSeed;
 }
 
 /**
