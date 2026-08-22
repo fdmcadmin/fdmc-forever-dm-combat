@@ -929,12 +929,20 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
 const ITEM_TYPES: EquipmentItem["type"][] = SELECTABLE_ITEM_TYPES;
 
 type ItemFormProps = {
+  /**
+   * Weapons LAST WORD may bind to — the ACTOR's, not the library's.
+   *
+   * *"It binds to one equipped weapon."* Which weapon is a fact about one character's bag, so the
+   * list has to come from the bag. The library cannot answer it: it has no idea who is carrying
+   * what, and offering every weapon that exists would let a Gift bind to something nobody owns.
+   */
+  bindTargets?: { id: string; name: string }[];
   initial?: EquipmentItem;
   onSave: (item: EquipmentItem) => void;
   onCancel: () => void;
 };
 
-function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
+function ItemForm({ initial, onSave, onCancel, bindTargets = [] }: ItemFormProps) {
   const [draft, setDraft] = useState<EquipmentItem>(() => initial ?? {
     id: `item-${Date.now().toString(36)}`,
     name: "",
@@ -1054,7 +1062,49 @@ function ItemForm({ initial, onSave, onCancel }: ItemFormProps) {
       {/* ADAPTIVE sits at the top and REPLACES the weapon/armour fields — see the library
           form for the reasoning. Both editors carry it, because a field in only one of them
           is a field the DM cannot reach from half the app. */}
-      <ChassisFields draft={draft} set={set} />
+      {/* The library is passed in so First Word can preview the focuses it would match. */}
+      <ChassisFields draft={draft} set={set} libraryItems={loadEquipmentLibrary()} />
+
+      {/*
+        LAST WORD — bind this Gift to one weapon the character already carries.
+
+        *"It binds to one equipped weapon and makes that weapon the Gift's spellcasting focus…
+        Do not create a new base weapon… Do not duplicate the weapon."*
+
+        So this is a REFERENCE, and it is deliberately not a chassis: a chassis picks a FORM from a
+        table, this points at a specific item in this bag. The bound weapon keeps its damage die,
+        ability, category, mastery and its own magic bonus — Last Word only layers its focus
+        bonuses on top.
+      */}
+      {!draft.chassis && (
+        <div style={{ background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 6, padding: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8, color: "#9d8cff" }}
+            title="Bind this Gift to a weapon the character is carrying. That weapon becomes the Gift's spellcasting focus and keeps everything it already has.">
+            <input type="checkbox" checked={Boolean(draft.bindsToItemId)}
+              onChange={e => set("bindsToItemId", e.target.checked ? (bindTargets[0]?.id ?? "") : undefined)}
+              disabled={bindTargets.length === 0} />
+            Binds to an equipped weapon — that weapon becomes this Gift's focus
+          </label>
+          {bindTargets.length === 0 ? (
+            <div style={{ fontSize: 10, color: "#e0b34a" }}>
+              No weapons in this bag to bind to. Equip one first — a bind names a specific weapon,
+              so there is nothing to point at yet.
+            </div>
+          ) : draft.bindsToItemId !== undefined && (
+            <>
+              <select value={draft.bindsToItemId ?? ""} onChange={e => set("bindsToItemId", e.target.value || undefined)}
+                style={{ width: "100%", padding: "3px 6px", fontSize: 12, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
+                <option value="">— choose a weapon —</option>
+                {bindTargets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+              <div style={{ fontSize: 10, color: "#777" }}>
+                The bound weapon is not copied or changed. Its attack, damage, mastery and any magic
+                bonus stay exactly as they are; this Gift adds only the focus bonuses below.
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {isWeapon && !draft.chassis && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1695,6 +1745,15 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
     return (
       <ItemForm
         initial={editingItem}
+        /*
+         * The bind list is the ACTOR’s equipped weapons, minus the Gift being edited.
+         * `equippedActions` is what this bag actually holds, which is the only honest answer to
+         * "which weapon" — the library has no idea who carries what.
+         */
+        bindTargets={equippedActions
+          .filter(a => a.metadata?.itemType === "weapon" || a.metadata?.attack)
+          .filter(a => a.id !== editingItem?.id)
+          .map(a => ({ id: a.id.replace(/^equip-/, ""), name: a.label }))}
         // Three destinations, not two: this actor's own copy, an existing library item, or
         // a brand-new one. editingAttached is what distinguishes the first.
         onSave={editingAttached ? handleSaveAttachedItem : editingItem ? handleSaveLibraryItem : handleCreateItem}

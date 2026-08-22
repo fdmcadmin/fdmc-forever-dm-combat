@@ -310,7 +310,8 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           A chassis is not a variation on a fixed item — it IS the item, and its numbers come
           from whichever form the wielder picks. Showing both at once read as though you were
           filling in a specific weapon and then adding options to it, which is backwards. */}
-      <ChassisFields draft={draft} set={set} />
+      {/* The library is passed in so First Word can preview the focuses it would match. */}
+      <ChassisFields draft={draft} set={set} libraryItems={loadEquipmentLibrary()} />
 
       {isWeapon && !draft.chassis && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>

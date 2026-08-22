@@ -13,7 +13,7 @@
  */
 
 import { BASE_WEAPONS } from "../constants/baseWeapons";
-import { matchingForms, type ChassisSpec } from "../constants/chassis";
+import { matchingForms, matchingFocusItems, type ChassisSpec } from "../constants/chassis";
 import { WEAPON_CATEGORIES } from "../constants/weaponMastery";
 import type { EquipmentItem, ItemRider } from "./EquipmentBagEditor";
 
@@ -23,6 +23,14 @@ const ALL_TAGS = Array.from(new Set(BASE_WEAPONS.flatMap(w => w.tags))).sort();
 type Props = {
   draft: EquipmentItem;
   set: <K extends keyof EquipmentItem>(key: K, value: EquipmentItem[K]) => void;
+  /**
+   * The library, for FIRST WORD's live preview of matching focuses.
+   *
+   * Passed in rather than loaded here: this component is shared by both item editors and each
+   * already holds the list it cares about, and a shared control that reads storage on its own
+   * behaves differently depending on which editor mounted it.
+   */
+  libraryItems?: EquipmentItem[];
 };
 
 const box: React.CSSProperties = {
@@ -36,7 +44,7 @@ const chip = (on: boolean): React.CSSProperties => ({
   color: on ? "#9d8cff" : "#777",
 });
 
-export function ChassisFields({ draft, set }: Props) {
+export function ChassisFields({ draft, set, libraryItems = [] }: Props) {
   const spec = draft.chassis;
   const on = Boolean(spec);
 
@@ -63,6 +71,54 @@ export function ChassisFields({ draft, set }: Props) {
             base weapon becomes a legal form, so one entry replaces one Gift per weapon.
           </div>
 
+          {/*
+            FIRST WORD — an adaptive SPELLCASTING FOCUS.
+
+            *"Add only the filter support needed for an adaptive item to select existing
+            equipment-library forms that are spellcasting focuses… Do not create separate First
+            Word entries for wand, staff, etc."*
+
+            So this switches the form pool from BASE_WEAPONS to the focuses the library already
+            holds. The weapon filters below are hidden while it is on, because category, ability
+            and weapon tags describe a weapon and would silently narrow a pool they cannot read.
+          */}
+          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8, color: "#9d8cff" }}
+            title="The form must be a spellcasting focus the library already has — Rootknot Staff, Staring-Knot Wand, and so on. Nothing new is created.">
+            <input type="checkbox" checked={Boolean(spec?.requireSpellFocus)}
+              onChange={e => patch({
+                requireSpellFocus: e.target.checked || undefined,
+                // Weapon-shaped constraints mean nothing to a focus pool; clearing them stops a
+                // leftover "Melee Two-Handed" from filtering a list that has no categories.
+                ...(e.target.checked ? { categories: undefined, ability: undefined, anyOfTags: undefined, requireTags: undefined } : {}),
+              })} />
+            Spellcasting focus — the form is a focus, not a weapon
+          </label>
+
+          {spec?.requireSpellFocus && (() => {
+            const hands = (spec.requireTags ?? []).filter(x => x === "one-handed" || x === "two-handed");
+            const matches = matchingFocusItems(spec, libraryItems);
+            return (
+              <div style={{ paddingLeft: 8, borderLeft: "2px solid #4b3f8f" }}>
+                <div style={{ fontSize: 11, color: "#aaa", marginBottom: 3 }}>
+                  Hand use <span style={{ color: "#555" }}>(either, if none selected)</span>
+                </div>
+                <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                  {(["one-handed", "two-handed"] as const).map(h => (
+                    <button key={h} type="button" style={chip(hands.includes(h))}
+                      onClick={() => patch({ requireTags: toggleIn(spec.requireTags, h) })}>{h}</button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, color: matches.length ? "#4caf50" : "#e0b34a" }}>
+                  {matches.length
+                    ? `${matches.length} focus form${matches.length === 1 ? "" : "s"}: ${matches.map(f => f.name).join(", ")}`
+                    : "No focus in the library matches — an item needs isSpellFocus ticked to be a legal form."}
+                </div>
+              </div>
+            );
+          })()}
+
+          {!spec?.requireSpellFocus && (
+          <>
           <div>
             <div style={{ fontSize: 11, color: "#aaa", marginBottom: 3 }}>Categories <span style={{ color: "#555" }}>(any, if none selected)</span></div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -118,6 +174,8 @@ export function ChassisFields({ draft, set }: Props) {
               {forms.map(f => f.name).join(" · ") || "—"}
             </div>
           </div>
+          </>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, borderTop: "1px solid #2a2a3e", paddingTop: 7 }}>
             <label style={{ fontSize: 12 }}>Magic bonus
@@ -126,7 +184,7 @@ export function ChassisFields({ draft, set }: Props) {
                 title="Added to BOTH attack and damage. Authored, never inferred from the name."
                 style={{ width: "100%", padding: "3px 6px", fontSize: 12, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
             </label>
-            <label style={{ fontSize: 12 }}>Pre-set form <span style={{ color: "#555", fontSize: 10 }}>(optional)</span>
+            <label style={{ fontSize: 12, opacity: spec?.requireSpellFocus ? 0.4 : 1 }}>Pre-set form <span style={{ color: "#555", fontSize: 10 }}>{spec?.requireSpellFocus ? "(focus chosen on attach)" : "(optional)"}</span>
               <select value={spec?.formId ?? ""} onChange={e => patch({ formId: e.target.value || undefined })}
                 title="Leave blank to let the form be chosen when the item is attached."
                 style={{ width: "100%", padding: "3px 6px", fontSize: 12, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
