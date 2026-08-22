@@ -79,7 +79,7 @@ import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { isObrReady, obrSend } from "./core/utils/obrReady";
-import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
 import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui/openLootOffer";
 import { FDMC_ACCENTS } from "./core/constants/theme";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
@@ -806,7 +806,9 @@ export default function App() {
   // Seed the campaign equipment library here too (not only in the DM panel) so the
   // actor editor's "From Library" has Broken Chain gear to attach even when DM tools
   // were never opened in this browser. Idempotent — guarded by the seed-version key.
-  useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
+  // The repair runs BEFORE the seeders: it drops rows a previous build left behind, and seeding
+  // on top of them would just re-resolve to the stale copies.
+  useMemo(() => { repairEquipmentLibraries(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
   // All runtime hooks that need actor IDs/HP defaults receive the real seeded actors this way.

@@ -77,7 +77,7 @@ import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import type { Actor } from "./core/types/actor";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
-import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";
@@ -167,7 +167,9 @@ function DmPanelApp() {
   const createParam = useMemo(() => new URLSearchParams(window.location.search).get("create"), []);
 
   // ── Seed campaign equipment library on first DM panel open ────────────────
-  useMemo(() => { seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
+  // The repair runs BEFORE the seeders: it drops rows a previous build left behind, and seeding
+  // on top of them would just re-resolve to the stale copies.
+  useMemo(() => { repairEquipmentLibraries(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
 
   // ── Token panel: monster roster from localStorage ─────────────────────────
   const [tokenPanelMonsters] = useState(() => loadMonsterRoster());

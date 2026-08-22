@@ -25,8 +25,29 @@ export type ChassisSpec = {
   /** Tags the form must have AT LEAST ONE of. "Finesse or Light Melee" needs this, and it is
    *  why an AND-only filter was not enough. */
   anyOfTags?: string[];
+  /**
+   * FIRST WORD — the form must be a SPELLCASTING FOCUS.
+   *
+   * Its legal forms are items the equipment library ALREADY has (Rootknot Staff, Staring-Knot
+   * Wand, Icebound Reliquary…), identified by `isSpellFocus`. The spec is explicit that this is
+   * a filter and nothing more: *"Add only the filter support needed for an adaptive item to select
+   * existing equipment-library forms that are spellcasting focuses… Do not create separate First
+   * Word entries for wand, staff, etc."*
+   *
+   * ⚠ THIS FILTERS ITEMS, NOT BASE_WEAPONS. `matchingForms` searches the base weapon table and
+   * cannot answer it — a focus is not in that table and must not be put there. See
+   * `matchingFocusItems`, which takes the library as an argument because constants must not
+   * reach into storage.
+   */
+  requireSpellFocus?: boolean;
   /** The chosen form's base-weapon id. Set on the ACTOR's copy, not on the library item. */
   formId?: string;
+  /**
+   * The chosen focus ITEM's id, when `requireSpellFocus` is set. Distinct from `formId` because
+   * they point at different things: a form is a row in the base weapon table, a focus item is a
+   * real item in a library.
+   */
+  focusItemId?: string;
 };
 
 /** How a versatile form is currently held. Absent = one-handed. */
@@ -120,4 +141,31 @@ export function offHandBlocker(
   const worn = equipment.filter(a => a.metadata?.equipped !== false);
   const shield = worn.find(a => a.metadata?.slot === "shield");
   return shield ? shield.label : null;
+}
+
+/**
+ * FIRST WORD's legal forms: every spellcasting focus the library holds, narrowed by hand use.
+ *
+ * ⚠ TAKES THE LIBRARY AS AN ARGUMENT. This module is constants — reaching into localStorage from
+ * here would make a pure table depend on browser state, and the same filter has to run in the DM
+ * panel, the bag editor and the card, each of which already holds the list it cares about.
+ *
+ * The spec: *"Allowed hand use = one-handed or two-handed"*. Nothing here invents a hand tag — an
+ * item that does not declare one is offered either way, because a focus with no stated grip is
+ * not a focus that can only be held wrong.
+ */
+export function matchingFocusItems<T extends { isSpellFocus?: boolean; tags?: string[]; type?: string }>(
+  spec: ChassisSpec | undefined,
+  items: T[],
+): T[] {
+  if (!spec?.requireSpellFocus) return [];
+  const wanted = (spec.requireTags ?? []).filter(t => t === "one-handed" || t === "two-handed");
+  return items.filter(i => {
+    if (!i.isSpellFocus) return false;
+    if (wanted.length === 0) return true;
+    const tags = i.tags ?? [];
+    // An item that states no grip is legal for either — see the note above.
+    if (!tags.includes("one-handed") && !tags.includes("two-handed")) return true;
+    return wanted.some(w => tags.includes(w));
+  });
 }

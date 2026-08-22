@@ -204,6 +204,22 @@ export type EquipmentItem = {
    *  through it; the bonus fields above are only the item's OWN extra on top. */
   isSpellFocus?: boolean;
   /**
+   * LAST WORD — this Gift BINDS to one equipped weapon and makes that weapon its focus.
+   *
+   * *"It binds to one equipped weapon and makes that weapon the Gift's spellcasting focus… Do not
+   * create a new base weapon. Do not replace the bound weapon's damage die, ability, category,
+   * mastery, or existing magic bonus. Do not duplicate the weapon."*
+   *
+   * ⚠ THIS IS A REFERENCE, NOT A COPY, and that is the whole point. `chassis.formId` names a row
+   * in the base weapon table; this names a SPECIFIC ITEM IN A SPECIFIC BAG. Copying the weapon
+   * would give the character two of it and let the copy drift from the original the first time
+   * either was edited.
+   *
+   * The bound weapon keeps everything it has. Last Word contributes only its own focus bonuses,
+   * layered on top — see `resolveBoundFocus`.
+   */
+  bindsToItemId?: string;
+  /**
    * WHAT THE CAMPAIGN ITEM LOOKED LIKE WHEN THE DM UNLOCKED IT.
    *
    * Unlocking copies a bundled item into the DM store, where it WINS by id. That copy is a
@@ -427,6 +443,69 @@ const BASE_WEAPON_SEED_VERSION = "2024-phb-v2-restore";
  * editing one writes an unlocked override under the same id (see `upsertItem`) rather than
  * mutating the shared base. Never overwrites an existing id.
  */
+/**
+ * ONE-TIME REPAIR — undo two things that are already in people's libraries.
+ *
+ * Removing code never removes DATA. Both of these shipped, landed in localStorage, and stay there
+ * until something takes them out:
+ *
+ * 1. THE SEEDED FOCUS ITEMS. 0.7.22 seeded twelve mundane focuses into the campaign library. They
+ *    carry `type: "gear"` with no act and no encounter, so they failed the base-weapon test, fell
+ *    through to Unsorted, and piled up at the bottom of every loot list. The seeding is gone; the
+ *    rows are not, so they are named by id prefix and dropped.
+ *
+ * 2. STALE UNLOCK SHADOWS. Unlocking a campaign item copies it into the DM store, where it WINS by
+ *    id. A copy nobody then edited is pure duplication — it shows twice in any view that lists both
+ *    stores, and it silently outranks the campaign item it shadows. A shadow whose content still
+ *    matches its unlock fingerprint was never edited, so dropping it loses nothing and restores the
+ *    campaign row. An EDITED shadow is real work and is kept, exactly as `seedCampaignEquipmentLibrary`
+ *    already decides.
+ */
+const EQUIPMENT_REPAIR_KEY = "fdmc.equipment.repair.v1";
+const EQUIPMENT_REPAIR_VERSION = "0.7.24-drop-seeded-focuses-and-clean-shadows";
+
+export function repairEquipmentLibraries(): { focuses: number; shadows: number } {
+  const done = { focuses: 0, shadows: 0 };
+  try {
+    if (window.localStorage.getItem(EQUIPMENT_REPAIR_KEY) === EQUIPMENT_REPAIR_VERSION) return done;
+  } catch { return done; }
+
+  // 1 — the seeded focuses, from both stores.
+  for (const owner of ["campaign", "dm"] as const) {
+    const lib = loadEquipmentLibrary(owner);
+    const kept = lib.filter(i => !i.id.startsWith("focus-"));
+    if (kept.length !== lib.length) {
+      done.focuses += lib.length - kept.length;
+      saveEquipmentLibrary(kept, owner);
+    }
+  }
+
+  // 2 — DM shadows of campaign items that were never actually edited.
+  const campaign = loadEquipmentLibrary("campaign");
+  const byId = new Map(campaign.map(i => [i.id, i]));
+  const dm = loadEquipmentLibrary("dm");
+  const keep = dm.filter(shadow => {
+    const original = byId.get(shadow.id);
+    if (!original) return true;                       // genuinely the DM's own item
+    if (!shadow.unlockSnapshot) {
+      /**
+       * No fingerprint — it predates the marker. Compare against the campaign row instead: if the
+       * two are identical apart from the lock flag, nothing was changed and the shadow is noise.
+       * Anything else is treated as work and kept.
+       */
+      return fingerprintEquipmentItem(shadow) !== fingerprintEquipmentItem(original);
+    }
+    return shadow.unlockSnapshot !== fingerprintEquipmentItem(shadow);
+  });
+  if (keep.length !== dm.length) {
+    done.shadows = dm.length - keep.length;
+    saveEquipmentLibrary(keep, "dm");
+  }
+
+  try { window.localStorage.setItem(EQUIPMENT_REPAIR_KEY, EQUIPMENT_REPAIR_VERSION); } catch { /* ok */ }
+  return done;
+}
+
 export function seedBaseWeapons(): void {
   if (window.localStorage.getItem(BASE_WEAPON_SEED_KEY) === BASE_WEAPON_SEED_VERSION) return;
 
@@ -1729,4 +1808,50 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       )}
     </div>
   );
+}
+
+/**
+ * LAST WORD resolution — what the bound weapon becomes.
+ *
+ * Returns the BOUND WEAPON, unchanged except that it now counts as a spellcasting focus and
+ * carries the Gift's focus bonuses. Nothing is copied and nothing of the weapon's own is
+ * overwritten: *"If the bound weapon is already magical, preserve its existing data and apply
+ * only the bonuses explicitly granted by Last Word."*
+ *
+ * A bind pointing at a weapon that is no longer in the bag returns undefined rather than a
+ * half-resolved item, so the card can say the binding is broken instead of quietly casting
+ * through nothing.
+ */
+export function resolveBoundFocus(
+  gift: EquipmentItem,
+  bag: EquipmentItem[],
+): { weapon: EquipmentItem; focus: EquipmentItem } | undefined {
+  if (!gift.bindsToItemId) return undefined;
+  const weapon = bag.find(i => i.id === gift.bindsToItemId);
+  if (!weapon) return undefined;
+  /**
+   * ⚠ ADDITIVE, NOT REPLACING. The weapon's attack, damage, crit, category, mastery and its own
+   * magic bonus all carry through untouched; only the focus flags are layered on. Spreading the
+   * Gift over the weapon instead would silently swap a +1 Rimecleaver for the Gift's own numbers.
+   */
+  const focus: EquipmentItem = {
+    ...weapon,
+    isSpellFocus: true,
+    spellFocusAttack: gift.spellFocusAttack ?? weapon.spellFocusAttack,
+    spellFocusDamage: gift.spellFocusDamage ?? weapon.spellFocusDamage,
+    spellFocusSaveDc: gift.spellFocusSaveDc ?? weapon.spellFocusSaveDc,
+  };
+  return { weapon, focus };
+}
+
+/**
+ * Weapons Last Word may bind to.
+ *
+ * ⚠ EQUIPPED-NESS IS NOT AN ITEM FACT. A library item has no equipped state — that lives on the
+ * ACTOR, as `metadata.equipped` on the equipment action. So this returns every weapon in the
+ * list it is given, and the caller passes the equipped set when it has one. Filtering a field
+ * that does not exist here would have silently returned everything anyway.
+ */
+export function bindableWeapons(gift: EquipmentItem, bag: EquipmentItem[]): EquipmentItem[] {
+  return bag.filter(i => i.id !== gift.id && i.type === "weapon");
 }

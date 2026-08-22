@@ -49,14 +49,21 @@ function poolsOf(item: EquipmentItem): string[] {
 export function LootPoolBuilder({ encounterNames, onChanged, onClose }: LootPoolBuilderProps) {
   const campaign = useMemo(() => loadEquipmentLibrary("campaign"), []);
   const dm = useMemo(() => loadEquipmentLibrary("dm"), []);
-  /** Both stores, with where each item lives, because that is the thing being fixed. */
-  const all = useMemo(
-    () => [
-      ...campaign.map(i => ({ item: i, owner: "campaign" as const })),
-      ...dm.map(i => ({ item: i, owner: "dm" as const })),
-    ],
-    [campaign, dm],
-  );
+  /**
+   * Both stores, RESOLVED TO ONE ROW PER ID.
+   *
+   * ⚠ An id can exist in BOTH stores — unlocking a campaign item leaves a DM copy that wins by id.
+   * Listing the stores end to end showed those twice ("Bonemarch Plate · campaign" directly above
+   * "Bonemarch Plate · my library"), which is not a pool problem: it is the duplicate itself,
+   * finally visible. The DM copy is what the app actually resolves, so that is the row shown, and
+   * `repairEquipmentLibraries` drops the un-edited ones outright.
+   */
+  const all = useMemo(() => {
+    const byId = new Map<string, { item: EquipmentItem; owner: "campaign" | "dm" }>();
+    for (const i of campaign) byId.set(i.id, { item: i, owner: "campaign" });
+    for (const i of dm) byId.set(i.id, { item: i, owner: "dm" });   // DM wins by id, as elsewhere
+    return [...byId.values()];
+  }, [campaign, dm]);
 
   const [pool, setPool] = useState("");
   const [filter, setFilter] = useState("");
