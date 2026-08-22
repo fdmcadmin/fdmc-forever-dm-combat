@@ -1,3 +1,4 @@
+import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
@@ -29,8 +30,6 @@ import { readEncounterLog, clearEncounterLog, type EncounterLogEntry } from "../
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "../export/encounterLogExport";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
-import { EncounterDifficultyPanel } from "../encounter-band/EncounterDifficultyPanel";
-import { CreatureEstimatorPanel } from "../encounter-band/CreatureEstimatorPanel";
 import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
 
 /** One table, one party — persisted so every encounter loads scaled to it. */
@@ -1386,12 +1385,43 @@ export function EncounterLibraryPanel({
 
             return (
               <>
-                {/* P9.5 — party-size / level difficulty band check (homebrew guide) */}
-                <EncounterDifficultyPanel encounters={encounters} monsterLibrary={resolvedLibrary} />
-                {/* The estimator rates ONE creature; the checker rates a whole encounter. Two
-                    measuring tools, side by side — and neither sits inside the creator, where a
-                    grade on half-typed numbers reads as instruction rather than measurement. */}
-                <CreatureEstimatorPanel monsterLibrary={resolvedLibrary} />
+                {/*
+                  ⚖ ENCOUNTER BALANCE — its own window now.
+
+                  Christopher: *"i think the checker, estimator and this deserves its own DM window
+                  that can be pulled from a button on the monster library with how advanced it has
+                  come."* Both panels rendered inline here and had grown large enough to push the
+                  monster list they measure off the screen.
+
+                  They are UNCHANGED and still mounted — just in `?panel=balance`, alongside the
+                  new Act Run tab. A button, not a deletion.
+                */}
+                <button type="button"
+                  onClick={() => {
+                    const u = new URL(window.location.href);
+                    u.searchParams.set("panel", "balance");
+                    if (OBR.isAvailable) {
+                      void OBR.popover.open({
+                        id: "fdm-dm-balance",
+                        url: `/dm-panel.html?panel=balance`,
+                        width: 760, height: 900,
+                      }).catch(() => { window.location.href = u.toString(); });
+                    } else {
+                      window.location.href = u.toString();
+                    }
+                  }}
+                  title="Open the Encounter Balance window — the act run, the encounter checker and the creature estimator together, with room to read them."
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8, width: "100%", marginBottom: 8,
+                    padding: "7px 10px", background: "#1a1018", border: "1px solid #6e2a2a",
+                    borderLeft: "3px solid #ff6b5e", borderRadius: 6, color: "#ff9b90",
+                    cursor: "pointer", textAlign: "left", fontSize: 12, fontWeight: 600,
+                  }}>
+                  ⚖ Encounter Balance
+                  <span style={{ fontWeight: 400, fontSize: 10, color: "#8a6a6a" }}>
+                    act run · encounter checker · creature estimator
+                  </span>
+                </button>
 
                 {/* My Library — always visible, no password needed */}
                 <p style={{ margin: "0 0 6px", fontSize: 10, color: "#4caf50", textTransform: "uppercase", letterSpacing: 1 }}>

@@ -33,6 +33,11 @@ function broadcastLibraryUpdate() {
 import { ActorEditor } from "./core/ui/ActorEditor";
 import { SeatAssignmentPanel } from "./core/seats/SeatAssignmentPanel";
 import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
+import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
+import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
+import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
+import { BROKEN_CHAIN_ACT_RUNS } from "./modules/the-broken-chain/content/actRuns";
+import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
 import {
   loadActorLibrary,
@@ -45,7 +50,7 @@ import {
 } from "./core/seats/dmActorLibrary";
 import { seedBrokenChainParty, type SeedResult } from "./core/seats/seedBrokenChainParty";
 import { exportActorLibrary, importActorLibrary, type ImportResult } from "./core/seats/actorLibraryExport";
-import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
+
 import { useDmSeatSystem } from "./core/seats/useSeatSystem";
 import {
   normalizeFdmcRoomLiveState,
@@ -86,7 +91,7 @@ import "./styles.css";
 
 // ─── Panel type ───────────────────────────────────────────────────────────────
 
-type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals";
+type PanelId = "editActors" | "seats" | "monsters" | "equipment" | "tokens" | "maintenance" | "library" | "seatTokens" | "approvals" | "balance";
 
 const PANEL_TITLES: Record<PanelId, string> = {
   editActors: "Party Characters",
@@ -98,6 +103,15 @@ const PANEL_TITLES: Record<PanelId, string> = {
   library: "Library",
   seatTokens: "Seats & Tokens",
   approvals: "DM Approvals",
+  /**
+   * The three measuring tools in one window.
+   *
+   * Christopher: *"i think the checker, estimator and this deserves its own DM window that can be
+   * pulled from a button on the monster library with how advanced it has come."* They had grown
+   * into two full panels stacked above the monster list, pushing the library itself off screen —
+   * measurement crowding out the thing being measured.
+   */
+  balance: "Encounter Balance",
 };
 
 // Per-panel accent color — drives the header stripe + title so each DM tool reads
@@ -113,6 +127,7 @@ const PANEL_ACCENT: Record<PanelId, string> = {
   library: FDMC_ACCENTS.use,          // library → blue
   seatTokens: FDMC_ACCENTS.seats,     // seats & tokens → green
   approvals: FDMC_ACCENTS.approval,   // approvals → amber
+  balance: FDMC_ACCENTS.monster,      // balance tools → GM red, same family as monsters
 };
 
 // Library sub-tab accents (Party Characters / Monsters / Equipment).
@@ -126,7 +141,7 @@ const SEATTOK_TAB_ACCENT: Record<"seats" | "tokens", string> = {
 
 function getPanelFromUrl(): PanelId {
   const param = new URLSearchParams(window.location.search).get("panel");
-  const valid: PanelId[] = ["editActors", "seats", "monsters", "equipment", "tokens", "maintenance", "library", "seatTokens", "approvals"];
+  const valid: PanelId[] = ["editActors", "seats", "monsters", "equipment", "tokens", "maintenance", "library", "seatTokens", "approvals", "balance"];
   return valid.includes(param as PanelId) ? (param as PanelId) : "editActors";
 }
 
@@ -833,6 +848,28 @@ function DmPanelApp() {
         )}
 
         {/* ── Monsters & Encounters ── */}
+        {/*
+          ENCOUNTER BALANCE — the three measuring tools in one window.
+
+          The estimator rates ONE creature, the checker rates a whole ENCOUNTER, and the act run
+          sequences a whole ACT with its rests. They answer three different questions at three
+          different scales, and they were stacked on top of the monster library where the two
+          large ones pushed the list they measure off the screen.
+
+          ⚠ Nothing here re-implements any of them. The checker and estimator components are the
+          same ones, unchanged — *"dont change anything from the corrected estimator and checker"*.
+          This panel only gives them room.
+        */}
+        {panelId === "balance" && (
+          <div style={{ padding: "10px 14px", overflowY: "auto" }}>
+            <ActRunPanel steps={BROKEN_CHAIN_ACT_RUNS} />
+            <EncounterDifficultyPanel
+              encounters={loadEncounterLibrary()}
+              monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
+            />
+            <CreatureEstimatorPanel monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY} />
+          </div>
+        )}
         {panelId === "monsters" && (
           <EncounterLibraryPanel
             monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}

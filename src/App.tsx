@@ -2393,7 +2393,7 @@ export default function App() {
     const t = window.setInterval(refresh, 4000);
     return () => window.clearInterval(t);
   }, [isDmMode]);
-  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens", "fdm-dm-approvals"] as const;
+  const DM_PANEL_IDS = ["fdm-dm-editActors", "fdm-dm-seats", "fdm-dm-monsters", "fdm-dm-equipment", "fdm-dm-maintenance", "fdm-dm-library", "fdm-dm-seatTokens", "fdm-dm-tokens", "fdm-dm-approvals", "fdm-dm-balance"] as const;
 
   const closeAllDmPanels = useCallback(async () => {
     if (!OBR.isAvailable) { setOpenPanel(null); return; }
