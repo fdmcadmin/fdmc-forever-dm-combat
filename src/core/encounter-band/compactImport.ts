@@ -104,22 +104,6 @@ export type CampaignFeature = {
   rr: boolean;
 };
 
-export type CampaignProfile = {
-  id: string;
-  /** Creature name. */
-  n: string;
-  ac: number;
-  hp: number;
-  cr: number | null;
-  /** Legendary action budget. */
-  la: number;
-  /** THE calibrated trait multiplier — the product the workbook computed for this creature. */
-  tm: number;
-  /** Trait stack groups this creature claims. */
-  tt: string[];
-  /** Features. */
-  f: CampaignFeature[];
-};
 
 export type CompactImport = {
   schema: string;
@@ -143,7 +127,6 @@ export type CompactImport = {
   full_caster_slots: Array<Record<string, number>>;
   effect_families: EffectFamily[];
   srd_index: SrdIndexEntry[];
-  campaign_profiles: CampaignProfile[];
   campaign_presets: Array<Record<string, unknown>>;
   source_policy: Record<string, unknown>;
 };
@@ -220,15 +203,4 @@ export function stackGroups(): string[] {
 export function srdIdentify(name: string): SrdIndexEntry | undefined {
   const key = name.trim().toLowerCase();
   return COMPACT.srd_index.find(e => e.n.toLowerCase() === key);
-}
-
-/**
- * The workbook's own record for a campaign creature, by name.
- *
- * Returns undefined for a DM's homebrew, which is the normal case — the checker then prices
- * the entered creature. It is only campaign creatures the workbook has already measured.
- */
-export function campaignProfile(name: string): CampaignProfile | undefined {
-  const key = name.trim().toLowerCase();
-  return COMPACT.campaign_profiles.find(p => p.n.trim().toLowerCase() === key);
 }

@@ -24,7 +24,7 @@
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
-import { spellProfile, campaignProfile, type CampaignProfile } from "./compactImport";
+import { spellProfile } from "./compactImport";
 import { conditionsImposedBy } from "./controlPricing";
 import { isMultiattackAction, multiattackCountFromText } from "../monsters/multiattackText";
 import { parseSaveAbility } from "./partyDefenceCurve";
@@ -444,223 +444,33 @@ export function parseCreature(template: MainMonsterTemplate): ParsedCreature {
   return { name, ac, maxHp: template.stats.maxHp, attacksPerTurn, features, assumptions };
 }
 
-// ─── The workbook's own reading of a campaign creature ────────────────────────
-//
-// Christopher, 2026-08-16: *"anything that disagrees with the workbook is now legacy."*
-//
-// 51 Broken Chain creatures ship in the bundle already parsed BY THE WORKBOOK — AC, HP,
-// calibrated trait multiplier, and each feature's channel, attack roll, save, averaged damage,
-// recharge and use limit. When a creature has a profile, that profile is what the checker
-// prices. The app's authored copy is not a second opinion; where the two differ, the difference
-// is reported and the workbook's number is the one used.
-
-/** A field where the app's authored creature and the workbook's record disagree. */
-export type ProfileDisagreement = {
-  field: string;
-  app: string;
-  workbook: string;
-};
-
-export type WorkbookCreature = {
-  parsed: ParsedCreature;
-  profile: CampaignProfile;
-  /** THE calibrated trait product for this creature — supersedes any app-side trait pricing. */
-  traitMultiplier: number;
-  traitStackGroups: string[];
-  disagreements: ProfileDisagreement[];
-};
-
 /**
- * A feature whose printed name says it takes the place of a routine attack — the workbook
- * prints "Grab (replaces one Claw)" exactly that way. It competes for ONE Multiattack slot;
- * it is not an extra attack, and counting it as one inflates the routine.
+ * A feature whose printed name says it takes the place of a routine attack — a card prints
+ * "Grab (replaces one Claw)" exactly that way. It competes for ONE Multiattack slot; it is not an
+ * extra attack, and counting it as one inflates the routine.
+ *
+ * Survived the snapshot removal because `parseCreature` uses it too — it reads the printed NAME,
+ * which is authored data, and never touched the cached profile.
  */
 export function replacesRoutineSlot(name: string | undefined): boolean {
-  return /\b(?:replaces|instead of|in place of)\b/i.test(name ?? "");
+  return /(?:replaces|instead of|in place of)/i.test(name ?? "");
 }
 
 /**
- * "STR DC 12" → 12, via the same reader the app path uses.
+ * ⚠ THE CAMPAIGN SNAPSHOT IS GONE, AND IT IS NOT COMING BACK.
  *
- * ⚠ `printedText` IS THE APP'S ACTION TEXT, and it matters. The v7 profiles carry the numbers —
- * damage, attack, save, recharge — but NOT the action prose, so on their own they can say nothing
- * about "half on a success" or "30-ft. cone". The workbook being silent on those is not the
- * workbook contradicting the block; it simply does not record them. So the app's own text is read
- * for exactly the two things the profile cannot express, and for nothing else.
+ * `workbookCreature()` used to live here. It read a frozen copy of every campaign creature out of
+ * `data/checker/v7-runtime.json` — ac, hp, trait multiplier and the whole feature list — and the
+ * encounter checker preferred it over the authored library entry. Editing a creature changed
+ * nothing the checker reported, and Velvet Host was priced with a kit that had been superseded
+ * two document versions earlier.
+ *
+ * Christopher: *"there is only ever one source of truth for a specific file"*, and then, when the
+ * function was left in place unused: *"again there should be no dead snapshot, snapshots is how
+ * this issue becomes a problem in the future."*
+ *
+ * Both the function and the 51 `campaign_profiles` it read are deleted. Do not reintroduce a
+ * cached creature table. If a drift audit is ever wanted, diff the library against the DOCUMENT —
+ * the thing that is actually authoritative — not against a copy of the library.
  */
-function featureFromProfile(
-  f: CampaignProfile["f"][number],
-  printedText?: string,
-): ParsedFeature {
-  const channel = f.t === "bonus_action" ? "bonus_action"
-    : f.t === "reaction" ? "reaction"
-      : f.t === "trait" ? "trait"
-        : "action";
-  // The workbook has already averaged the damage; hand it over pre-averaged so the resolver
-  // reads the number it computed rather than re-rolling the expression.
-  const [average] = f.d[0] ?? [];
-  return {
-    name: f.n,
-    activationType: channel,
-    damage: average !== undefined ? `${average} (${f.d[0]?.[1] ?? ""})` : undefined,
-    attackBonus: parseAttackBonus(f.a ?? undefined),
-    saveDc: parseSaveDc(f.s ?? undefined),
-    saveAbility: parseSaveAbility(f.s ?? printedText),
-    // The profile carries no geometry, so reach/range/conditions come from the printed text.
-    reachFt: parseReachFt(printedText),
-    rangeFt: parseRangeFt(printedText),
-    conditions: conditionsImposedBy({ text: printedText }),
-    forcedMovementFt: parseForcedMovementFt(printedText),
-    targets: parseTargets(f.n) ?? parseTargets(printedText),
-    // The profile records the FAIL damage only. Half-on-a-success and the shape of an area live
-    // in the printed text, so they are read from there — the two things the profile cannot hold.
-    successDamage: parseSuccessDamage(printedText, f.d[0]?.[1]),
-    isArea: (parseTargets(f.n) ?? parseTargets(printedText)) === undefined && isAreaEffect(printedText),
-    recharge: f.r ? `${f.r[0]}-${f.r[1]}` : undefined,
-    uses: f.u?.uses,
-    spellSlotLevel: f.c ?? undefined,
-    spellName: detectSpell(f.n, undefined),
-    replacesRoutineSlot: replacesRoutineSlot(f.n),
-    text: printedText,
-  };
-}
 
-/**
- * Read a campaign creature from the workbook, and report where the app disagrees with it.
- *
- * Returns undefined when the workbook has no record — a DM's own creature, which is the normal
- * case and takes the `parseCreature` path instead.
- *
- * `attacksPerTurn` still comes from the app: the profiles publish no Multiattack size, so it is
- * the one combat field the app supplies rather than overrides.
- */
-/**
- * ⚠ NO LONGER ON THE PRICING PATH. NOTHING CALLS THIS.
- *
- * Until 0.7.32 the encounter checker read every campaign creature through here, so the 6.3.2
- * snapshot in `data/checker/v7-runtime.json` decided a creature's AC, HP, trait multiplier and
- * whole feature list, and the authored library entry was decoration. Christopher: *"there is only
- * ever one source of truth for a specific file."* `rosterFromTemplates` now parses the library
- * entry, every time.
- *
- * Kept, not deleted, because the disagreement reporting below is the bones of a useful DRIFT
- * AUDIT — "what does the old snapshot say that the library does not" is a real question, and it
- * was how Velvet Host's superseded kit was found. It must never go back on the pricing path.
- */
-export function workbookCreature(template: MainMonsterTemplate): WorkbookCreature | undefined {
-  const profile = campaignProfile(template.name);
-  if (!profile) return undefined;
-
-  const disagreements: ProfileDisagreement[] = [];
-  const appAc = typeof template.stats.ac === "number"
-    ? template.stats.ac : Number.parseInt(String(template.stats.ac), 10);
-  if (Number.isFinite(appAc) && appAc !== profile.ac) {
-    disagreements.push({ field: "AC", app: String(appAc), workbook: String(profile.ac) });
-  }
-  if (template.stats.maxHp !== profile.hp) {
-    disagreements.push({ field: "HP", app: String(template.stats.maxHp), workbook: String(profile.hp) });
-  }
-
-  const appTraitProduct = (template.stats.defenses ?? [])
-    .reduce((p, d) => p * (d.ehpMultiplier || 1), 1);
-  if (Math.abs(appTraitProduct - profile.tm) > 0.005) {
-    disagreements.push({
-      field: "trait multiplier",
-      app: `×${appTraitProduct.toFixed(3)}`,
-      workbook: `×${profile.tm.toFixed(3)}`,
-    });
-  }
-
-  const assumptions: FeatureAssumption[] = [];
-  /**
-   * ⚠ THE PROFILE CARRIES NO ATTACK COUNT, BUT THE BLOCK DOES. A profile publishes
-   * `id, n, ac, hp, cr, la, tm, tt, f` — no Multiattack size, in v3 or v7. That is a fact about
-   * the PROFILE, and the old note here stopped there and defaulted to one attack.
-   *
-   * It should never have. v7 prices Multiattack auto=YES from *"the printed legal sequence"*, and
-   * the printed sequence is on the app-side action text, which this path also has. Reading the
-   * profile's silence as "unknowable" discarded a fact sitting in the same template.
-   */
-  const profileMultiattack = (template.actions as RawAction[] | undefined)
-    ?.find(a => isMultiattackAction(a.name, a.text));
-  const profileComponents = (template.actions as RawAction[] | undefined)
-    ?.filter(a => a !== profileMultiattack && a.name)
-    .map(a => a.name as string) ?? [];
-  const profileSequence = profileMultiattack
-    ? multiattackCountFromText(profileMultiattack.text ?? profileMultiattack.name, profileComponents)
-    : undefined;
-  const attacksPerTurn = template.stats.attacksPerTurn ?? profileSequence ?? 1;
-
-  /**
-   * ⚠ "THE WORKBOOK PROFILE" IS NOT A THING THE CURRENT WORKBOOK HAS, and this text told the DM it
-   * was. Christopher: *"it says workbook profile, there is no workbook profile."* He is right.
-   *
-   * v7.7 ships standalone and says so three times — Encounter Checker: *"No campaign monster roster
-   * is preloaded."* Creature Estimator: *"No campaign monster profile."* B9: *"v7 standalone / no
-   * campaign monster profiles."* What `campaignProfile()` reads is `data/checker/v7-runtime.json`,
-   * an APP-SIDE SNAPSHOT carried over from the 6.3.2 bundle. Naming it "the workbook profile" in
-   * DM-facing text credits the current workbook with data it does not publish.
-   *
-   * ⚠ AND THE SNAPSHOT'S SILENCE WAS BEING REPORTED AS THE BLOCK'S. The old branch fired for every
-   * creature with no Multiattack — 50 of the campaign's 54, since only 4 have one — and said
-   * neither source "gives a Multiattack size", as though something were missing. Nothing is: a 5e
-   * block without Multiattack makes ONE attack with its Action. That is the ruleset answering, not
-   * the app guessing, and an assumption list with an entry against almost every creature is a list
-   * a DM learns to skip.
-   *
-   * The parseCreature path above already drew these distinctions; this path had not been brought
-   * along. The three branches now match it exactly. The budget itself is unchanged — this moves no
-   * number, only what the panel claims about where the number came from.
-   */
-  const profileHasAttacks = (profile.f ?? []).some(f => f.a !== null && f.a !== undefined);
-  // Same rule as the DM path above: warn only when the read actually failed.
-  if (!template.stats.attacksPerTurn && profileSequence === undefined
-      && profileHasAttacks && profileMultiattack) {
-    assumptions.push({ feature: profile.n, flag: "NEEDS DM INPUT", field: "action_cost",
-      detail: "This creature has a Multiattack but its sequence could not be read, so the Action budget is one attack per turn — almost certainly too few. Enter Attacks per turn." });
-  }
-
-  /**
-   * WHAT THE WORKBOOK DOES NOT PUBLISH, THE APP SUPPLIES — and a null is not a contradiction.
-   *
-   * The profiles carry no gating concept at all: whether a feature is usable in THIS encounter
-   * is authoring the workbook never saw. Same for a recharge or use limit it recorded as null
-   * while the entered block prints one. Neither is the workbook being overruled; it is silent
-   * there, and silence is not an answer to override.
-   *
-   * Without this the Lesser Wendigo threw a gated Rend and a gated bonus-action Claw, both of
-   * which its encounter says it cannot use.
-   */
-  const appActions = (template.actions ?? []) as RawAction[];
-  const features = profile.f.map(f => {
-    const app = appActions.find(a => (a?.name ?? "").trim().toLowerCase() === f.n.trim().toLowerCase());
-    const parsed = featureFromProfile(f, app?.text);
-    if (!app) return parsed;
-    if (app.gated) {
-      parsed.gated = true;
-      assumptions.push({ feature: f.n, flag: "ESTIMATED", field: "timing",
-        detail: `"${f.n}" is authored as unavailable under this encounter's conditions and is not counted. The workbook profile records no gating either way.` });
-    }
-    if (!parsed.recharge && app.recharge) {
-      parsed.recharge = parseRecharge(app.recharge, app.name);
-      assumptions.push({ feature: f.n, flag: "ESTIMATED", field: "timing",
-        detail: `Recharge ${parsed.recharge} comes from the entered stat block; the workbook profile records none for "${f.n}".` });
-    }
-    return parsed;
-  });
-
-  return {
-    parsed: {
-      name: profile.n,
-      ac: profile.ac,
-      maxHp: profile.hp,
-      attacksPerTurn,
-      features,
-      assumptions,
-    },
-    profile,
-    traitMultiplier: profile.tm,
-    traitStackGroups: profile.tt,
-    disagreements,
-  };
-}

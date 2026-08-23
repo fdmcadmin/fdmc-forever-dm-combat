@@ -888,7 +888,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * RULE ZERO-B: nothing in the app beats the workbook.
        */
       { name: "Workbook profile tm (Raise the Frozen · Frost Ward · control denial)", ehpMultiplier: 1.436,
-        note: "v7 campaign_profiles tm for this creature. Do not decompose into invented per-trait numbers." },
+        note: "Calibrated whole-kit multiplier, authored here. Do not decompose into invented per-trait numbers." },
     ],
     },
     abilities: [
@@ -966,7 +966,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * RULE ZERO-B: nothing in the app beats the workbook.
        */
       { name: "Workbook profile tm (Frozen Resurrection · Unbroken Rank · control denial)", ehpMultiplier: 1.436,
-        note: "v7 campaign_profiles tm for this creature. Do not decompose into invented per-trait numbers." },
+        note: "Calibrated whole-kit multiplier, authored here. Do not decompose into invented per-trait numbers." },
     ],
     },
     abilities: [
@@ -1076,7 +1076,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * RULE ZERO-B: nothing in the app beats the workbook.
        */
       { name: "Workbook profile tm (Raise the Frozen · Frost Ward · Whiteout / Grasping Rime)", ehpMultiplier: 1.436,
-        note: "v7 campaign_profiles tm for this creature. Do not decompose into invented per-trait numbers." },
+        note: "Calibrated whole-kit multiplier, authored here. Do not decompose into invented per-trait numbers." },
     ],
     },
     abilities: [
@@ -1791,7 +1791,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * as over-counting.
        */
       { name: "Workbook profile tm (Perfect Host · persistent aura)", ehpMultiplier: 1.108348,
-        note: "v7 campaign_profiles tm for this creature." },
+        note: "Calibrated whole-kit multiplier, authored here." },
     ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "commander",
