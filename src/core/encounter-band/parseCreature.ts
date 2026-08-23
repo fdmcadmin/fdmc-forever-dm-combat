@@ -564,12 +564,39 @@ export function workbookCreature(template: MainMonsterTemplate): WorkbookCreatur
     ? multiattackCountFromText(profileMultiattack.text ?? profileMultiattack.name, profileComponents)
     : undefined;
   const attacksPerTurn = template.stats.attacksPerTurn ?? profileSequence ?? 1;
+
+  /**
+   * ⚠ "THE WORKBOOK PROFILE" IS NOT A THING THE CURRENT WORKBOOK HAS, and this text told the DM it
+   * was. Christopher: *"it says workbook profile, there is no workbook profile."* He is right.
+   *
+   * v7.7 ships standalone and says so three times — Encounter Checker: *"No campaign monster roster
+   * is preloaded."* Creature Estimator: *"No campaign monster profile."* B9: *"v7 standalone / no
+   * campaign monster profiles."* What `campaignProfile()` reads is `data/checker/v7-runtime.json`,
+   * an APP-SIDE SNAPSHOT carried over from the 6.3.2 bundle. Naming it "the workbook profile" in
+   * DM-facing text credits the current workbook with data it does not publish.
+   *
+   * ⚠ AND THE SNAPSHOT'S SILENCE WAS BEING REPORTED AS THE BLOCK'S. The old branch fired for every
+   * creature with no Multiattack — 50 of the campaign's 54, since only 4 have one — and said
+   * neither source "gives a Multiattack size", as though something were missing. Nothing is: a 5e
+   * block without Multiattack makes ONE attack with its Action. That is the ruleset answering, not
+   * the app guessing, and an assumption list with an entry against almost every creature is a list
+   * a DM learns to skip.
+   *
+   * The parseCreature path above already drew these distinctions; this path had not been brought
+   * along. The three branches now match it exactly. The budget itself is unchanged — this moves no
+   * number, only what the panel claims about where the number came from.
+   */
+  const profileHasAttacks = (profile.f ?? []).some(f => f.a !== null && f.a !== undefined);
   if (!template.stats.attacksPerTurn && profileSequence !== undefined) {
+    // Read, not assumed — recorded so the trace shows where the budget came from.
     assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
-      detail: `The workbook profile publishes no Multiattack size, so the Action budget of ${profileSequence} was read from the block's printed sequence.` });
-  } else if (!template.stats.attacksPerTurn) {
+      detail: `Action budget of ${profileSequence} read from the printed Multiattack sequence. Set Attacks per turn to make it a stated fact.` });
+  } else if (!template.stats.attacksPerTurn && profileHasAttacks && profileMultiattack) {
+    assumptions.push({ feature: profile.n, flag: "NEEDS DM INPUT", field: "action_cost",
+      detail: "This creature has a Multiattack but its sequence could not be read, so the Action budget is one attack per turn — almost certainly too few. Enter Attacks per turn." });
+  } else if (!template.stats.attacksPerTurn && profileHasAttacks) {
     assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
-      detail: "Neither the workbook profile nor the printed text gives a Multiattack size, so the Action budget is one attack per turn." });
+      detail: "No Multiattack printed, so the Action budget is one attack per turn." });
   }
 
   /**
