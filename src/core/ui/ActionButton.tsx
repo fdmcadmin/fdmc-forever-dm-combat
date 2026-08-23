@@ -34,6 +34,8 @@ type ActionButtonProps = {
    */
   chosenDamageType?: string;
   onChooseDamageType?: (type: string | undefined) => void;
+  /** The category, when the tile is not already inside a container that names it. */
+  categoryCaption?: string;
 };
 
 const summaryRowLabels = new Set([
@@ -109,6 +111,7 @@ export function ActionButton({
   castLevelPicker,
   chosenDamageType,
   onChooseDamageType,
+  categoryCaption,
 }: ActionButtonProps) {
   const swapMessage = formatSwapMessage(willSwapCosts, action.label);
   const rows = metadataRows(action, resolveFormula);
@@ -187,6 +190,7 @@ export function ActionButton({
           onUnready(action);
         }}
       >
+        {categoryCaption && <span className="action-category-caption">{categoryCaption}</span>}
         <span className="action-label-row compact-action-title-row">
           <span className="action-label">
             {action.label}

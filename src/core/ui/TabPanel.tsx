@@ -368,6 +368,29 @@ export function TabPanel({
   const compact = isCompactUtilityTab(activeTab);
   const groupedActions = useMemo(() => groupActions(actions), [actions]);
   const collapsibleCategories = isCollapsibleCategoryTab(activeTab);
+  /**
+   * ⚠ ONE GRID, NOT ONE GRID PER CATEGORY — on the tabs whose categories are LABELS.
+   *
+   * Christopher: *"the actions are still forced to a single action per row."* The three-per-row
+   * cap was working; nothing ever reached it. Main and Bonus render a heading per category and a
+   * SEPARATE grid under each, and on a real sheet those categories are singletons — Attacks(1),
+   * Shield Master(1), Melee One-Handed(1), Class Rider(1). Four grids of one tile each is four
+   * full-width rows however wide the panel is, and no cap can help: the grid it applies to only
+   * ever had one thing in it.
+   *
+   * So on a non-collapsible tab every action goes into ONE grid and the category rides the TILE
+   * as a small caption. That is the doc's own layout (§5.1 is a flat run of action cards, with no
+   * headings between them) and it loses nothing — the category is still on screen, attached to
+   * the action it describes rather than to a heading above a row of one.
+   *
+   * The COLLAPSIBLE tabs keep their per-category grids. There the category is a real container a
+   * DM opens and closes — Cantrips, L1 Spells, a bond's two choices — and it routinely holds
+   * enough actions to fill a row on its own.
+   */
+  const renderGroups = useMemo(
+    () => (collapsibleCategories ? groupedActions : [{ category: null, actions }]),
+    [collapsibleCategories, groupedActions, actions],
+  );
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   /**
    * The element a caster picked for THIS cast, keyed by readied key.
@@ -403,7 +426,7 @@ export function TabPanel({
   return (
     <section className="tab-panel" aria-label={`${activeTab} tab panel`}>
       <p className="placeholder-note">{tabNotes[activeTab]}</p>
-      {groupedActions.map((group) => {
+      {renderGroups.map((group) => {
         const key = categoryKey(group.category);
         const expanded = !collapsibleCategories || Boolean(openCategories[key]);
         const categoryLabel = group.category ?? "General";
@@ -445,6 +468,9 @@ export function TabPanel({
                   return (
                     <ActionButton
                       action={action}
+                      /* The heading moved onto the tile — see renderGroups. Only where the tile
+                         is not already sitting under a category container that says the same. */
+                      categoryCaption={collapsibleCategories ? undefined : action.category}
                       resolveFormula={resolveFormula}
                       readied={readied}
                       resolved={resolved}

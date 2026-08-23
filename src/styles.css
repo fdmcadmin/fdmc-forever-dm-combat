@@ -6835,3 +6835,142 @@ body,
     grid-template-columns: 1fr;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PLAYSHEET PANEL PASS - SECOND ROUND (0.7.34.2)
+   Two things seen on a real sheet that the first round did not reach.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* -- The category caption ---------------------------------------------------
+   The heading moved onto the tile. See TabPanel.renderGroups for why: a heading
+   above a grid of ONE tile is a full-width row no cap can shrink, and on a real
+   sheet every Main-tab category is a singleton. */
+.action-category-caption {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.57rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: #8a7a52;
+}
+
+/* -- The status band, second pass -------------------------------------------
+   "the top seems like too much blank space between boxes" and "buttons like the
+   hp tools and the checks are wide buttons" are ONE fault seen from two sides.
+
+   `.hp-field` was a two-column grid - [HP | Temp] beside a tools column - and the
+   tools column's max was `auto`, meaning MAX-CONTENT. The Checks strip is a long
+   horizontal run (Checks / Disadv / Normal / Adv / + Additive), so its max-content
+   is around 400px and the column took most of the row: hence the very wide buttons.
+   The HP and Temp boxes got what was left AND stretched to the tools column's full
+   height, so each showed ~60px of content inside a ~180px box: hence the blank space.
+
+   The band is now ONE grid, with the controls as a full-width strip UNDERNEATH the
+   readouts rather than a column beside them:
+
+     [HP | TEMP]        [AC . SPEED . WALLET . PURSE]
+     [HP Tools] [Checks] [Disadv|Normal|Adv] [+ Additive]
+
+   Every control is content-width, every box hugs its content, nothing stretches.
+   `display: contents` on `.hp-field` hoists its children into that grid; it paints
+   nothing of its own, so there is no box to lose. The drawers still anchor to
+   `.hp-tools-column`, which keeps its `position: relative`. */
+.focused-actor-window-body .selected-defense-row,
+.selected-defense-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+  gap: 8px 10px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.focused-actor-window-body .hp-field,
+.hp-field {
+  display: contents;
+}
+
+.focused-actor-window-body .hp-display-stack,
+.hp-display-stack {
+  grid-column: auto;
+  grid-row: auto;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.focused-actor-window-body .ac-speed-box,
+.ac-speed-box {
+  grid-column: auto;
+  grid-row: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The interaction strip: full width, one row, controls sized to their own text. */
+.focused-actor-window-body .hp-tools-column,
+.hp-tools-column {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.focused-actor-window-body .hp-tools-toggle,
+.hp-tools-toggle,
+.focused-actor-window-body .abs-check-toggle,
+.abs-check-toggle {
+  width: auto;
+  min-height: 30px;
+  padding: 5px 15px;
+  border-radius: 999px;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.focused-actor-window-body .abs-check-panel,
+.abs-check-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+
+/* The HP and Temp readouts sit side by side and match each other's height, which is
+   the one place stretching is wanted - they are a pair. */
+.hp-core-box {
+  flex: 1 1 126px;
+  min-width: 0;
+}
+
+.temp-hp-box {
+  flex: 0 1 78px;
+  min-width: 0;
+}
+
+/* The Checks toggle carried `flex: 1 0 100%` from when `.abs-check-panel` was a vertical
+   stack — a 100% BASIS, which is why it stayed 358px wide after `width: auto` applied. The
+   panel is a horizontal strip now, so the toggle sits on the line with the roll-mode and
+   additive controls. The drawer and the additive menu keep their full-width basis: they are
+   panels that open BELOW the strip and must still break to their own line. */
+.abs-check-panel > .abs-check-toggle {
+  flex: 0 0 auto;
+}
+
+/* ORDER, not explicit placement — the DOM puts the tools column between the readouts.
+   `.hp-tools-column` is a child of `.hp-field`, so with `display: contents` it lands in the
+   grid BEFORE `.ac-speed-box` and auto-placement pushed the AC row down to a third line.
+   Grid auto-placement uses order-modified document order, so one `order` per item fixes the
+   sequence without hard-coding a column number that an auto-fit track count would break. */
+.hp-display-stack { order: 1; }
+.ac-speed-box { order: 2; }
+.hp-tools-column { order: 3; }
