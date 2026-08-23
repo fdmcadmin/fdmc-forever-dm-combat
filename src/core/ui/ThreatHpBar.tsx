@@ -78,6 +78,21 @@ type ThreatHpBarProps = {
   isDown?: boolean;
 };
 
+/**
+ * ⚠ THE BAR IS SHORT, AND THAT IS THE POINT (playsheet pass, doc §12).
+ *
+ * *"The current Encounter Roster and Player View health bars are longer than necessary... The
+ * health bar only needs enough width to communicate ratio/state. It should not span almost the
+ * full width of every side-panel card."* A bar that stretches to whatever the card gives it makes
+ * every side column look padded out and steals width the centre sheet needs.
+ *
+ * Capped here rather than at each of the three call sites, so the roster, the DM's player-view
+ * pane and the players' own tracker cannot drift apart on it. A boss bar is allowed a little more
+ * room because it carries a frame and a glow inside the same height.
+ */
+const COMPACT_BAR_WIDTH = 116;
+const HEAVY_BAR_WIDTH = 148;
+
 export function ThreatHpBar({ ratio, tier, isDown }: ThreatHpBarProps) {
   const pct = Math.max(0, Math.min(100, ratio * 100));
   const heavy = isHeavyTier(tier) && !isDown;
@@ -87,7 +102,7 @@ export function ThreatHpBar({ ratio, tier, isDown }: ThreatHpBarProps) {
   if (!heavy) {
     // Compact: 3px, no frame, no glow. This is the default for every ordinary creature.
     return (
-      <div style={{ height: 3, background: "#1c1c2c", borderRadius: 2, overflow: "hidden" }}>
+      <div style={{ height: 3, width: "100%", maxWidth: COMPACT_BAR_WIDTH, background: "#1c1c2c", borderRadius: 2, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", background: fill, transition: "width 0.25s" }} />
       </div>
     );
@@ -99,6 +114,8 @@ export function ThreatHpBar({ ratio, tier, isDown }: ThreatHpBarProps) {
     <div
       style={{
         height: 8,
+        width: "100%",
+        maxWidth: HEAVY_BAR_WIDTH,
         background: "#14141f",
         borderRadius: 4,
         overflow: "hidden",

@@ -1,6 +1,6 @@
 // Generate the Broken Chain bond template module from the extracted v13 JSON.
-const fs = require("fs");
-const bonds = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+import { readFileSync, writeFileSync } from "node:fs";
+const bonds = JSON.parse(readFileSync(process.argv[2], "utf8"));
 
 const id = (name) => name.replace(/\s*Instinct$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const q = (s) => JSON.stringify(s ?? "");
@@ -77,7 +77,7 @@ ${stages},
   }`;
 }).join(",\n");
 
-fs.writeFileSync(process.argv[3], header + body + "\n];\n");
+writeFileSync(process.argv[3], header + body + "\n];\n");
 const companions = bonds.filter(b => /companion/i.test(b.role) || /your companion/i.test(JSON.stringify(b.stages)));
 console.log(`wrote ${bonds.length} templates`);
 console.log(`companion-actor bonds: ${companions.map(b => b.name).join(", ") || "(none)"}`);

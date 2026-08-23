@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { actionCostLabels } from "../types/actionEconomy";
 import type { ActionCost } from "../types/actionEconomy";
 import { isInertAction, isFreeEconomy, resolveOutcomeMode } from "../types/tabs";
+import { effectKindLabel } from "../constants/itemTypeCapabilities";
 import type { ActorAction } from "../types/tabs";
 
 type ActionButtonProps = {
@@ -35,7 +36,12 @@ type ActionButtonProps = {
   onChooseDamageType?: (type: string | undefined) => void;
 };
 
-const summaryRowLabels = new Set(["Charges", "Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost", "Spell Level", "Concentration"]);
+const summaryRowLabels = new Set([
+  "Charges", "Attack", "Damage", "Crit", "Crit Range", "Save", "Range", "Slot Cost",
+  "Spell Level", "Concentration",
+  // The dice row renames itself when the action says what its dice ARE — see effectKindLabel.
+  "Healing", "Temp HP", "Reduction",
+]);
 
 function formatSwapMessage(willSwapCosts: ActionCost[], actionLabel: string) {
   if (willSwapCosts.length === 0) {
@@ -62,7 +68,8 @@ function metadataRows(action: ActorAction, resolveFormula?: (formula: string) =>
     // First so the count reads before the dice on a charged item.
     ["Charges", metadata.chargeReadout],
     ["Attack", r(metadata.attack)],
-    ["Damage", metadata.damage ? `${r(metadata.damage)}${metadata.damageType ? ` ${metadata.damageType}` : ""}` : metadata.damage],
+    // Damage / Healing / Temp HP / Reduction — one row, named by what the dice actually do.
+    [effectKindLabel(metadata.effectKind) ?? "Damage", metadata.damage ? `${r(metadata.damage)}${metadata.damageType ? ` ${metadata.damageType}` : ""}` : metadata.damage],
     ["Crit", r(metadata.crit)],
     ["Crit Range", metadata.critThreshold ? `${metadata.critThreshold}-20` : undefined],
     ["Save", r(metadata.saveDc)],

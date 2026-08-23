@@ -1,6 +1,6 @@
 import type { BondTemplate } from "../types/bond";
 import { BOND_METAMORPHOSIS_STAGE, BOND_STAGE_NAMES, bondStageForLevel } from "../types/bond";
-import { resolveBond } from "../rules/bondProgress";
+import { chooseBondPath, resolveBond } from "../rules/bondProgress";
 // The fourteen bonds are MOD content; the editor is engine. They arrive here the same way the
 // monster editor gets them — assembled at the seam, never imported by the control itself.
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
@@ -335,6 +335,9 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
 ];
 
 function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = [], characterLevel, canAssignBond = false }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean }) {
+  /** Why the last path click was refused, in `chooseBondPath`'s own words. */
+  const [bondPathRefusal, setBondPathRefusal] = useState<string | null>(null);
+
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     onChange({ ...draft, [key]: value });
   }
@@ -693,7 +696,26 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
                 <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
                   {paths.map((pp, pi) => (
                     <button key={pp.name} type="button" disabled={locked && Number(draft.bondPathIndex) !== pi}
-                      onClick={() => { if (!locked) onChange({ ...draft, bondPathIndex: String(pi) }); }}
+                      /**
+                       * ⚠ THE PERMANENCE RULE HAS ONE HOME, AND IT IS NOT THIS BUTTON.
+                       *
+                       * `chooseBondPath` refuses when a path is already set and when the character
+                       * has not reached Metamorphosis, and it says WHY in words the DM can act on.
+                       * A disabled button re-states the same rule in a second place, and two copies
+                       * of one rule drift — RULE 0. The button still greys out, but what actually
+                       * decides is the call.
+                       */
+                      onClick={() => {
+                        if (!tpl) return;
+                        const attempt = chooseBondPath(
+                          { templateId: tpl.id, ...(locked ? { chosenPathIndex: Number(draft.bondPathIndex) as 0 | 1 } : {}) },
+                          pi as 0 | 1,
+                          level,
+                        );
+                        if (!attempt.ok) { setBondPathRefusal(attempt.reason); return; }
+                        setBondPathRefusal(null);
+                        onChange({ ...draft, bondPathIndex: String(attempt.assignment.chosenPathIndex) });
+                      }}
                       style={{
                         flex: 1, fontSize: 11, padding: "5px 8px", borderRadius: 3,
                         cursor: locked ? "default" : "pointer",
@@ -705,6 +727,9 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
                 </div>
               </label>
             ) : <span />}
+            {bondPathRefusal && (
+              <span style={{ gridColumn: "span 2", fontSize: 10, color: "#e9a66a", lineHeight: 1.4 }}>{bondPathRefusal}</span>
+            )}
             {resolved && (resolved.chosen || resolved.awaitingPathChoice) && (
               <span style={{ gridColumn: "span 2", fontSize: 10, color: resolved.awaitingPathChoice ? "#e9a66a" : "#777" }}>
                 {resolved.awaitingPathChoice

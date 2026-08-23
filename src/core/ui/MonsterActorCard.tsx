@@ -29,7 +29,7 @@
  *   - Traits are reference, never action buttons
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import { splitTypedDamage, damageTypeVisual } from "../constants/damageTypeVisuals";
 import {
@@ -43,6 +43,8 @@ import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction,
 import { CLASSIFICATION_LABEL } from "../monsters/runtime/mainMonsterRuntime";
 import { CriticalFailureReference } from "./CriticalFailureReference";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
+// The roster's tier vocabulary, reused so a boss reads the same colour on the card as in the list.
+import { isHeavyTier, tierAccent, tierMark } from "./ThreatHpBar";
 import { applyAdvantage, appendBonusDie, abilityCheckFormula, parseAbilityModifier, type RollMode } from "../dice/diceFormula";
 import { tabAccent } from "./tabVisuals";
 
@@ -56,7 +58,16 @@ const SECTION_ACCENT = {
   reactions: "#7b68ee",
   legendary: tabAccent("bond"),
   resources: tabAccent("resources"),
-  traits:    tabAccent("features"),
+  /**
+   * ⚠ TRAITS ARE THE ONE ACCENT THAT LEAVES THE PC PALETTE, and the doc says why (§11):
+   * *"Traits are important reference material but should not compete visually with combat
+   * actions."* They were carrying the features tab's green — the brightest colour on the card —
+   * so the section a DM reads least shouted loudest. Muted bronze is the doc's own recommendation
+   * (§7) and it is the only one of its list that fixes a stated problem rather than renaming a
+   * colour that already works. Everything above stays on the character sheet's tab palette so a
+   * monster's Actions / Bonus / Spells read in the same language as a PC's.
+   */
+  traits:    "#9a7b4f",
 } as const;
 import { rollFormulaLocally } from "../dice/localRoller";
 
@@ -210,17 +221,28 @@ function classifyActions(all: MonsterReaderAction[]) {
 
 // ─── Stat box ─────────────────────────────────────────────────────────────────
 
+/**
+ * ONE LINE, NOT TWO (playsheet pass, doc §6.3).
+ *
+ * *"Shrink the current wide AC / HP State / Speed / State boxes... The goal is less unused space,
+ * not fewer functions."* Label above value spent a whole stacked box on four short readouts. The
+ * label now sits beside the number in a small uppercase caption, which is the playsheets' own
+ * grammar and about 12px shorter per band.
+ */
 function StatBox({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div style={{
-      flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "3px 4px", background: "#111", borderRadius: 4,
+      flex: 1, display: "flex", alignItems: "baseline", justifyContent: "center", gap: 5,
+      padding: "3px 6px", background: "#111", borderRadius: 4,
       border: "1px solid #2a2a3e", minWidth: 0,
     }}>
-      <span style={{ fontSize: 8, color: "#555", textTransform: "uppercase", letterSpacing: 1, lineHeight: 1.2 }}>
+      <span style={{ fontSize: 8, color: "#555", textTransform: "uppercase", letterSpacing: 1, lineHeight: 1.2, flexShrink: 0 }}>
         {label}
       </span>
-      <span style={{ fontSize: 12, fontWeight: 600, color: color ?? "#ccc", lineHeight: 1.25 }}>{value}</span>
+      <span style={{
+        fontSize: 12, fontWeight: 700, color: color ?? "#ccc", lineHeight: 1.25,
+        minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>{value}</span>
     </div>
   );
 }
@@ -423,7 +445,6 @@ function ActionCard({
       padding: "7px 10px", borderRadius: 4,
       background: bgColor,
       border: `1px solid ${borderColor}`,
-      marginBottom: 4,
       opacity: isUsed ? 0.5 : 1,
     }}>
       {/* Action header */}
@@ -643,6 +664,58 @@ function SectionLabel({ text, count, collapsible, open, onToggle, accent, budget
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * ─── Action tile grid ────────────────────────────────────────────────────────
+ *
+ * UP TO THREE PER ROW, AND NEVER FORCED (playsheet pass, doc §9). Monster actions used to stack
+ * one per row at any width, so a wide monster popout ran a single column of tiles down a page of
+ * empty space while the DM scrolled past everything the creature could not currently do.
+ *
+ * `minmax(max(230px, (100% - 2*gap)/3), 1fr)` does the whole rule in one line: the floor stops a
+ * tile getting unreadable, and the 1/3-of-container term caps the count at three however wide the
+ * panel gets. Wide → 3, moderate → 2, narrow → 1, with no breakpoints to keep in sync with the
+ * shell. *"Do not force three columns if it makes the cards unreadable."*
+ *
+ * Reactions run through it too - section 15 makes Player and Monster actions one tile family, and
+ * a reaction is an action tile with its own economy colour. Traits do NOT: they are prose a DM
+ * reads in order, and a grid turns a list you scan into a block you have to search.
+ */
+function ActionTileGrid({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="monster-action-tile-grid"
+      style={{
+        display: "grid",
+        /**
+         * ⚠ THE FLOOR IS 320px AND IT IS DOING REAL WORK, not guarding a minimum.
+         *
+         * A monster tile carries more than a PC tile does — attack, save, typed damage chips, a
+         * recharge badge, a control and up to 140 characters of rules text — so a narrow column
+         * wraps that text over three or four lines and a row of three ends up TALLER than the
+         * same three stacked. Measured on the Elemental Mirror at 940px: three columns of 299px
+         * came to 358px of tiles, two columns of 455px came to 284px. The tiles were not more
+         * readable and the panel was not shorter.
+         *
+         * So three-per-row happens when each column can be at least 320px, which is a genuinely
+         * wide monster popout, and two-per-row carries the middle. This is the doc's own rule
+         * rather than a compromise on it: *"Do not force three columns if it makes the cards
+         * unreadable"*, *"1 column for long/complex entries"*.
+         */
+        gridTemplateColumns: "repeat(auto-fit, minmax(max(320px, (100% - 12px) / 3), 1fr))",
+        // Column gap only: each tile already carries its own bottom margin, and doubling up
+        // reopens exactly the vertical space this pass is here to reclaim.
+        columnGap: 6,
+        rowGap: 4,
+        // `start`, not `stretch`: a short tile beside a long one must not grow to match it, or
+        // the grid hands back the vertical space it was added to reclaim.
+        alignItems: "start",
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -1132,12 +1205,15 @@ export function MonsterActorCard({
       {/* 1. Header — GM/monster red identity so it never reads as a party card */}
       <div style={{ padding: "5px 12px", borderBottom: "1px solid #1a1a2e", background: withAlpha(MONSTER_COLOR, 0.08), display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ minWidth: 0 }}>
-          <h3 style={{ margin: 0, fontSize: 14, color: "#fff", lineHeight: 1.2 }}>{publicName}</h3>
+          {/* DISPLAY TYPOGRAPHY, not another form label (playsheet pass, doc §3): the creature's
+              name is the one thing on this panel that should read as authored. Weight and
+              tracking do the work — no new font family, and the header grows by ~2px. */}
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 750, letterSpacing: 0.2, color: "#fff", lineHeight: 1.15 }}>{publicName}</h3>
           {/* Identity line: creature type • role • tier. The encounter doc's Act/Session
               line is deliberately NOT here — that is encounter detail, and the panel is
               under a size lock. Only renders when the template actually carries the data. */}
           {(monster.kind || monster.archetype || monster.classification) && (
-            <span style={{ fontSize: 9.5, color: "#6a6a80", letterSpacing: 0.2 }}>
+            <span style={{ fontSize: 9.5, color: "#6a6a80", letterSpacing: 0.6, textTransform: "uppercase" }}>
               {[
                 monster.kind === "unspecified" ? undefined : monster.kind,
                 monster.archetype,
@@ -1162,9 +1238,26 @@ export function MonsterActorCard({
               👁 Reveal
             </button>
           )}
-          <span style={{ fontSize: 10, color: MONSTER_COLOR, background: withAlpha(MONSTER_COLOR, 0.14), border: `1px solid ${withAlpha(MONSTER_COLOR, 0.4)}`, padding: "2px 7px", borderRadius: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            {monster.kind ?? "monster"}
-          </span>
+          {/* ⚠ THE BOSS BADGE REPLACES THE KIND PILL (playsheet pass, doc §6.1).
+              *"Avoid a large row of classification chips. A Boss badge may remain because it has
+              strong operational value."* The kind was printed twice — once here as a pill and
+              once in the identity line below the name — and the pill was the copy that told the
+              DM nothing they were not already reading. What the header genuinely needs to shout
+              is that this creature is a boss, which the roster's own tier accent already names. */}
+          {isHeavyTier(monster.classification) ? (
+            <span
+              title={CLASSIFICATION_LABEL[monster.classification!]}
+              style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase",
+                color: tierAccent(monster.classification),
+                background: withAlpha(tierAccent(monster.classification) ?? MONSTER_COLOR, 0.14),
+                border: `1px solid ${withAlpha(tierAccent(monster.classification) ?? MONSTER_COLOR, 0.5)}`,
+                padding: "2px 7px", borderRadius: 3,
+              }}
+            >
+              {tierMark(monster.classification)} {CLASSIFICATION_LABEL[monster.classification!]}
+            </span>
+          ) : null}
           {monster.visibilityState && monster.visibilityState !== "full" && (
             <span style={{ fontSize: 9, color: "#555", background: "#0d0d14", border: "1px solid #2a2a2a", padding: "1px 5px", borderRadius: 3 }}>
               {monster.visibilityState}
@@ -1181,15 +1274,16 @@ export function MonsterActorCard({
         <StatBox label="State"    value={monster.status?.trim() || "—"} />
       </div>
 
-      {/* HP bar + exact HP + quick controls */}
+      {/* HP bar + exact HP + quick controls — the bar rides IN the readout row rather than owning
+          a rule above it (doc §6.3 / §12: enough width to show the ratio, not the whole card). */}
       <div style={{ padding: "4px 12px 8px" }}>
-        <div style={{ height: 3, background: "#1a1a2e", borderRadius: 2, overflow: "hidden", marginBottom: 5 }}>
-          <div style={{ height: "100%", width: `${hpRatio * 100}%`, background: conditionColor(condition), borderRadius: 2 }} />
-        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 12, color: conditionColor(condition), fontVariantNumeric: "tabular-nums", minWidth: 60 }}>
             {currentHp}/{displayMaxHp} HP
           </span>
+          <div style={{ height: 4, width: "100%", maxWidth: 116, background: "#1a1a2e", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ height: "100%", width: `${hpRatio * 100}%`, background: conditionColor(condition), borderRadius: 2 }} />
+          </div>
           {monster.tempHp > 0 && (
             <span style={{ fontSize: 10, color: "#4caf50" }}>+{monster.tempHp} temp</span>
           )}
@@ -1386,9 +1480,12 @@ export function MonsterActorCard({
                 // it actually differs — otherwise it is just the modifier restated.
                 const saveDiffers = ab.save !== ab.modifier;
                 return (
+                  /* SIX ACROSS, playsheet pass (doc §10): the DM reads the spread as a line, the
+                     way a statblock prints it, instead of two rows of three. `flex: 1 1 0` lets
+                     all six share the width evenly and still wrap on a narrow popout. */
                   <div key={ab.label}
                     style={{
-                      flex: "1 1 30%", minWidth: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
+                      flex: "1 1 0", minWidth: 46, display: "flex", flexDirection: "column", alignItems: "center", gap: 0,
                       padding: "3px 2px", background: "#111", border: "1px solid #2a2a3e", borderRadius: 4,
                     }}>
                     <span style={{ fontSize: 10, color: "#999", fontWeight: 600, letterSpacing: 0.5 }}>{ab.label}</span>
@@ -1414,12 +1511,16 @@ export function MonsterActorCard({
           )}
           {skillChecks.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+              {/* A SKILL IS A NAME AND A NUMBER, so it is a chip and not a tile (doc §10:
+                  *"Avoid large empty tiles when only one number is present."*). A creature with
+                  two skills used to get two third-width boxes with a blank row underneath. */}
               {skillChecks.map((sk) => (
                 <button key={sk.label} type="button" onClick={() => handleAbilityCheck(sk.label, sk.modifier)}
                   title={`Roll ${sk.label} (${sk.ability}) check${rollMode === "normal" ? "" : ` with ${rollMode === "adv" ? "advantage" : "disadvantage"}`}`}
                   style={{
-                    flex: "1 1 30%", minWidth: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-                    padding: "4px 2px", background: "#0d0d14", border: "1px solid #232336", borderRadius: 4, cursor: "pointer",
+                    display: "inline-flex", alignItems: "baseline", gap: 5,
+                    padding: "2px 8px", background: "#0d0d14", border: "1px solid #232336",
+                    borderRadius: 10, cursor: "pointer",
                   }}>
                   <span style={{ fontSize: 9, color: "#888", fontWeight: 600, letterSpacing: 0.3 }}>{sk.label}</span>
                   <span style={{ fontSize: 11, color: "#7b68ee", fontVariantNumeric: "tabular-nums" }}>
@@ -1465,7 +1566,7 @@ export function MonsterActorCard({
             <SectionLabel text={legendaryPerRound ? `Legendary (${legendaryLeft}/${legendaryPerRound})` : "Legendary"}
               count={legendary.length} accent={SECTION_ACCENT.legendary}
               collapsible open={legendaryOpen} onToggle={() => setLegendaryOpen(o => !o)} />
-            {legendaryOpen && legendary.map(a => {
+            {legendaryOpen && <ActionTileGrid>{legendary.map(a => {
               const cost = a.legendaryCost ?? 1;
               const unaffordable = legendaryPerRound > 0 && cost > legendaryLeft;
               return (
@@ -1481,7 +1582,7 @@ export function MonsterActorCard({
                   onStepUsed={() => undefined} onStepReset={() => undefined}
                 />
               );
-            })}
+            })}</ActionTileGrid>}
           </>
         )}
 
@@ -1489,7 +1590,7 @@ export function MonsterActorCard({
         {mainActions.length > 0 && (
           <>
             <SectionLabel text="Actions" count={mainActions.length} accent={SECTION_ACCENT.actions} budget={actionsMax} />
-            {mainActions.map(a => (
+            <ActionTileGrid>{mainActions.map(a => (
               // Main actions share the turn's action budget: usable until the budget is spent,
               // or until this specific action is out of slots. Not gated per-action.
               <ActionCard key={a.name} action={a}
@@ -1509,7 +1610,7 @@ export function MonsterActorCard({
                   if (success) setDischargedActionIds(prev => { const next = new Set(prev); next.delete(slugify(action.name)); return next; });
                 }}
               />
-            ))}
+            ))}</ActionTileGrid>
           </>
         )}
 
@@ -1519,7 +1620,7 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Spells" count={spells.length} accent={SECTION_ACCENT.spells}
               collapsible open={spellsOpen} onToggle={() => setSpellsOpen(o => !o)} />
-            {spellsOpen && spells.map(a => (
+            {spellsOpen && <ActionTileGrid>{spells.map(a => (
               <ActionCard key={a.name} action={a}
                 isUsed={economy.stepsUsed >= actionsMax
                   || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
@@ -1531,7 +1632,7 @@ export function MonsterActorCard({
                 onCommit={handleCommit} onClearRoll={handleClearRoll}
                 onStepUsed={() => undefined} onStepReset={() => undefined}
               />
-            ))}
+            ))}</ActionTileGrid>}
           </>
         )}
 
@@ -1540,7 +1641,7 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Bonus Actions" count={bonusActions.length} accent={SECTION_ACCENT.bonus}
               collapsible open={bonusOpen} onToggle={() => setBonusOpen(o => !o)} />
-            {bonusOpen && bonusActions.map(a => (
+            {bonusOpen && <ActionTileGrid>{bonusActions.map(a => (
               <ActionCard key={a.name} action={a}
                 isUsed={economy.bonusUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
@@ -1551,7 +1652,7 @@ export function MonsterActorCard({
                 onCommit={handleCommit} onClearRoll={handleClearRoll}
                 onStepUsed={() => undefined} onStepReset={() => undefined}
               />
-            ))}
+            ))}</ActionTileGrid>}
           </>
         )}
 
@@ -1560,7 +1661,7 @@ export function MonsterActorCard({
           <>
             <SectionLabel text="Reactions" count={reactions.length} accent={SECTION_ACCENT.reactions}
               collapsible open={reactionsOpen} onToggle={() => setReactionsOpen(o => !o)} />
-            {reactionsOpen && reactions.map(a => (
+            {reactionsOpen && <ActionTileGrid>{reactions.map(a => (
               <ActionCard key={a.name} action={a} isReaction
                 isUsed={economy.reactionUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
@@ -1571,7 +1672,7 @@ export function MonsterActorCard({
                 onCommit={handleCommit} onClearRoll={handleClearRoll}
                 onStepUsed={() => undefined} onStepReset={() => undefined}
               />
-            ))}
+            ))}</ActionTileGrid>}
           </>
         )}
 

@@ -1,6 +1,8 @@
 import { type ReactNode, useState } from "react";
 import { effectiveMaxHp, type HitPoints } from "../types/actor";
 import { getHpStatus } from "./hpStatus";
+// The roster's HP colour ramp, reused rather than re-picked — one ramp, one meaning of "hurt".
+import { hpRatioColor } from "../ui/ThreatHpBar";
 
 type HitPointBadgeProps = {
   hp: HitPoints;
@@ -70,6 +72,18 @@ export function HitPointBadge({
               </span>
             )}
             {status === "down" && <span className="hp-skull" title="0 HP">KO</span>}
+          </div>
+          {/* SHORT BAR, playsheet pass (doc §4.2): the numbers stay prominent and the bar only
+              has to communicate the ratio. Same ramp as the encounter roster, so "yellow" means
+              the same thing on a PC card and on a creature. */}
+          <div className="hp-bar" aria-hidden>
+            <div
+              className="hp-bar-fill"
+              style={{
+                width: `${Math.max(0, Math.min(100, (hp.current / Math.max(1, shownMax)) * 100))}%`,
+                background: hpRatioColor(hp.current / Math.max(1, shownMax)),
+              }}
+            />
           </div>
         </div>
 

@@ -165,6 +165,17 @@ export function rollLabelForEffectKind(kind: string | undefined): string | undef
 }
 
 /**
+ * The CHIP text, for the same reason the button text exists.
+ *
+ * The roll button already refuses to call a heal "damage"; the summary chip beside it did not,
+ * so a Warden's Rallying Surge — a heal — showed "DAMAGE 1d8+3" on the front of its tile. One
+ * word, on the surface that is read most.
+ */
+export function effectKindLabel(kind: string | undefined): string | undefined {
+  return EFFECT_KINDS.find(k => k.id === kind)?.label;
+}
+
+/**
  * Is this item a T4 SINGULAR — the tempered top of the Convergence ladder?
  *
  * *"one T4 Singular bound per creature"* (A3/T4 packet), and Christopher: *"it still takes a

@@ -357,6 +357,15 @@ export type MainEncounterMonsterInstance = MonsterCombatCandidate & {
   status: string;
   visibilityState: MainMonsterVisibilityState;
   templateRef: string;
+  /**
+   * WHICH FIGHT THIS BODY BELONGS TO, carried down from its template.
+   *
+   * The template has always had `encounterId`; the instance dropped it, so at the end of a fight
+   * nothing on the roster could say which encounter had just been won. That is the one fact
+   * `bondMilestoneForEncounter` needs, and it is why the Act 3 → Tempered gate had to be set by
+   * hand. Optional, because a DM-built one-off creature belongs to no authored encounter.
+   */
+  encounterId?: string;
   /** Challenge Rating — the source of this creature's proficiency bonus for saves. */
   cr?: number;
 };
@@ -634,6 +643,8 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     revealedName: template.visibility.revealedName,
     isNameRevealed: false,
     templateRef: template.templateId,
+    // The fight this body belongs to. Only set when the template names one — see the field.
+    ...(template.encounterId ? { encounterId: template.encounterId } : {}),
     name: displayName,
     kind: template.stats.kind,
     hp: `${template.stats.maxHp}/${template.stats.maxHp}`,

@@ -479,6 +479,16 @@ export function spawnEncounterInstances(
         instance.maxHp = scaled;
       }
 
+      /**
+       * THE FIGHT THAT SPAWNED IT WINS over the fight its template is tagged into.
+       *
+       * They are the same id for every seeded encounter, and deliberately NOT for an authored
+       * one that fields a creature from elsewhere — v3.21 reassigns Fight 7 to creatures the
+       * library tags into other fights. What ends when combat ends is the encounter the DM
+       * loaded, so that is the id a milestone must read.
+       */
+      if (encounter.id) instance.encounterId = encounter.id;
+
       instance.visibilityState = entry.startingVisibility;
       instance.isNameRevealed = entry.startingVisibility === "full";
       if (entry.hiddenNameOverride) instance.hiddenName = entry.hiddenNameOverride;

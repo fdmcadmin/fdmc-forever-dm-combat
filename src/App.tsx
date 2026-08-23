@@ -138,6 +138,7 @@ import { fullHeal } from "./core/types/actor";
 import { wipePartyLocalData, buildClearedActorLiveState } from "./core/seats/wipePartyData";
 import { takeSnapshot, mirrorWallets } from "./core/state/autoBackup";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
+import { bondMilestoneForEncounter } from "./modules/the-broken-chain/content/bondGates";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "./core/export/encounterLogExport";
@@ -2248,7 +2249,76 @@ export default function App() {
   }
   handleNextTurnRef.current = handleNextTurn; // always keep ref current — safe to assign during render
 
+  /**
+   * A FIGHT THAT ENDS WITH EVERY BODY DOWN RAISES ITS MILESTONE.
+   *
+   * `bondMilestoneForEncounter` shipped with zero callers, which is why the Act 3 → Tempered
+   * gate had to be set by hand: the party could kill The Center and every bond would still read
+   * "Held at Metamorphosis" until someone edited six sheets.
+   *
+   * ⚠ WINNING IS THE CALLER'S QUESTION, and the gate file says so. The test here is that every
+   * body carrying that encounter's id is at 0 HP — a wipe leaves creatures standing and raises
+   * nothing, which is exactly right. Two bodies means BOTH: The Center needs the Thought Harrower
+   * and the Grief Colossus down, and killing one of them advances nobody.
+   *
+   * Milestones are permanent campaign progress, so they are written to the actor LIBRARY rather
+   * than to a per-session override, and only for characters — a companion carries no bond of its
+   * own (a companion-performed bond lives on its owner's sheet).
+   */
+  function raiseEarnedBondMilestones() {
+    const roster = monsterCandidates as MainEncounterMonsterInstance[];
+    const byEncounter = new Map<string, MainEncounterMonsterInstance[]>();
+    for (const body of roster) {
+      if (!body?.encounterId) continue;
+      const list = byEncounter.get(body.encounterId) ?? [];
+      list.push(body);
+      byEncounter.set(body.encounterId, list);
+    }
+
+    const earned: string[] = [];
+    for (const [encounterId, bodies] of byEncounter) {
+      if (bodies.length === 0 || !bodies.every(b => (b.currentHp ?? 0) <= 0)) continue;
+      const milestone = bondMilestoneForEncounter(encounterId);
+      if (milestone) earned.push(milestone);
+    }
+    if (earned.length === 0) return;
+
+    let freshLib = actorLibrary;
+    const advanced: string[] = [];
+    for (const actor of Object.values(actorLibrary)) {
+      if (actor.kind !== "player") continue;
+      const held = actor.moduleData?.milestones ?? [];
+      const missing = earned.filter(id => !held.includes(id));
+      if (missing.length === 0) continue;
+      const updated: Actor = {
+        ...actor,
+        moduleData: {
+          act: 1,
+          theme: "the-broken-chain",
+          statBlockStatus: "confirmed",
+          ...(actor.moduleData ?? {}),
+          milestones: [...held, ...missing],
+        },
+      };
+      upsertActorInLibrary(updated);
+      freshLib = { ...freshLib, [updated.id]: updated };
+      advanced.push(updated.name);
+    }
+    if (advanced.length === 0) return;
+
+    setActorLibrary(freshLib);
+    pushActorsToAllSeats({ freshLibrary: freshLib });
+    addEntry({
+      actorName: "System",
+      actionName: "Bond Milestone",
+      tabId: "system",
+      message: `Milestone earned — ${advanced.join(", ")} can now advance past the gated bond stage.`,
+    });
+  }
+
   function handleEndCombat() {
+    // Before the roster is anything other than what the table just fought.
+    raiseEarnedBondMilestones();
     const next = patchCombat(roomLiveState, { phase: "setup", activeActorId: null, round: 1 });
     void commitRoomState(next);
     // Tell every card to drop armed effects + end active rage (toggles auto-clear at fight end).

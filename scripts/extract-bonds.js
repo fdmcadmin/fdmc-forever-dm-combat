@@ -10,9 +10,9 @@
 //   · Tactician and Breaker use class="mode flex-fill" and class="quote flex-line" — TWO
 //     classes — so an exact class="mode" match returned undefined for exactly those two.
 //     Every class match here is word-boundary within the attribute.
-const fs = require("fs");
+import { readFileSync, writeFileSync } from "node:fs";
 
-const src = fs.readFileSync(process.argv[2], "utf8");
+const src = readFileSync(process.argv[2], "utf8");
 
 const clean = (s) =>
   s.replace(/<[^>]+>/g, "")
@@ -126,7 +126,7 @@ for (const b of bonds) {
   }
 }
 
-fs.writeFileSync(process.argv[3], JSON.stringify(bonds, null, 2));
+writeFileSync(process.argv[3], JSON.stringify(bonds, null, 2));
 console.log(`bonds: ${bonds.length}\n`);
 for (const b of bonds) {
   const p = b.stages.filter(s => s.paths);

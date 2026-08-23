@@ -25,6 +25,9 @@ import {
   nextLevelPreset,
   type LevelPreset,
 } from "../state/levelPresets";
+import { bondLevelUpFlag } from "../rules/bondProgress";
+import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
+import { BROKEN_CHAIN_BOND_GATES } from "../../modules/the-broken-chain/content/bondGates";
 
 type LevelUpWorkspaceProps = {
   actor: Actor;
@@ -52,6 +55,63 @@ async function broadcastLevelUpRequest(actor: Actor, seatId: string, proposed: A
   } catch {
     return false;
   }
+}
+
+/**
+ * WHAT THE BOND DOES AT THIS LEVEL — the flag `bondLevelUpFlag` was written for.
+ *
+ * Christopher: *"when a player gets to that lvl for the level up editor it should flag and
+ * 'choosing' the meta and then the tempered and unbroken are set in that."* Three outcomes, and
+ * the banner only appears when there is one:
+ *
+ *   · a stage that simply overrides the previous text — announced, nothing to decide
+ *   · METAMORPHOSIS — a permanent choice that must be made, and cannot be revisited
+ *   · a level crossed while a campaign milestone holds the bond back — say why it did not move,
+ *     because a player who levelled expects the bond to and would otherwise read it as a bug
+ *
+ * The bond itself stays read-only here (0.7.19.1 — only the GM swaps which of the fourteen a
+ * character carries). The one thing the ladder asks of the PLAYER is the path, and that control
+ * lives in the editor's profile tab; this banner is what tells them to go and use it.
+ */
+function BondLevelUpBanner({ actor, toLevel }: { actor: Actor; toLevel: number }) {
+  const assignment = actor.moduleData?.bondAssignment;
+  const template = assignment ? BROKEN_CHAIN_BOND_TEMPLATES.find(b => b.id === assignment.templateId) : undefined;
+  if (!assignment || !template) return null;
+
+  const flag = bondLevelUpFlag(template, assignment, actor.level ?? 1, toLevel, {
+    milestones: actor.moduleData?.milestones ?? [],
+    gates: BROKEN_CHAIN_BOND_GATES,
+  });
+  if (!flag) return null;
+
+  const accent = flag.requiresChoice ? "#e07bff" : "#7b68ee";
+  return (
+    <div style={{
+      background: "#150f1f", border: `1px solid ${accent}55`, borderLeft: `3px solid ${accent}`,
+      borderRadius: 6, padding: "9px 12px",
+    }}>
+      <p style={{ margin: 0, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: accent }}>
+        Bond · {flag.stageName}
+      </p>
+      <p style={{ margin: "3px 0 0", fontSize: 12, color: "#ddd", lineHeight: 1.4 }}>{flag.message}</p>
+      {flag.requiresChoice && flag.options && (
+        <>
+          <p style={{ margin: "6px 0 4px", fontSize: 11, color: "#9a9ab0" }}>
+            Pick it on the Profile tab of the editor below. Metamorphosis is permanent — the only
+            way to change it is for the DM to remove the bond, which starts it over at Instinct.
+          </p>
+          <div style={{ display: "grid", gap: 5 }}>
+            {flag.options.map(option => (
+              <div key={option.index} style={{ background: "#0f0f18", border: "1px solid #2a2a3e", borderRadius: 5, padding: "6px 9px" }}>
+                <strong style={{ fontSize: 12, color: "#cfc6ff" }}>{option.name}</strong>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#8a8a9a", lineHeight: 1.35 }}>{option.text}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function LevelUpWorkspace({ actor, seatId, seatColor, onClose }: LevelUpWorkspaceProps) {
@@ -122,6 +182,11 @@ export function LevelUpWorkspace({ actor, seatId, seatColor, onClose }: LevelUpW
               : "Make your changes, then submit them to the DM for approval."}
           </p>
         </div>
+        {/* The bond flag rides the editor too — the path is chosen on the Profile tab, and a
+            player who scrolled straight past the list view would otherwise never be told. */}
+        <div style={{ padding: "8px 14px 0", flexShrink: 0 }}>
+          <BondLevelUpBanner actor={actor} toLevel={editorActor.level ?? actor.level} />
+        </div>
         <div style={{ flex: 1, overflow: "hidden" }}>
           <ActorEditor
             actor={editorActor}
@@ -151,6 +216,10 @@ export function LevelUpWorkspace({ actor, seatId, seatColor, onClose }: LevelUpW
       </div>
 
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* What the bond does at the level being stepped to — announced before the step, not
+            discovered afterwards. Falls back to the next level when no preset exists yet. */}
+        <BondLevelUpBanner actor={actor} toLevel={nextStep?.level ?? (actor.level ?? 1) + 1} />
+
         {/* Step-up call to action */}
         <div style={{ background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 8, padding: 14 }}>
           <p style={{ margin: "0 0 8px", fontSize: 12, color: "#aaa", fontWeight: 600 }}>Step up</p>

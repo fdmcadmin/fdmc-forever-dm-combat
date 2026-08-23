@@ -38,6 +38,11 @@ import {
   type MasteryProperty,
 } from "../rules/weaponMastery";
 import { characterLevel, classLevels, castingAbilityForClass } from "../rules/multiclass";
+import { withGeneratedBondActions } from "../rules/bondActions";
+// The fourteen bonds and this campaign's stage gates are MOD content. They reach the engine's
+// card the same way they already reach BondSummary and the actor editor — see RULE 3.
+import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
+import { BROKEN_CHAIN_BOND_GATES } from "../../modules/the-broken-chain/content/bondGates";
 import { coinsToCopper, type Coins } from "../currency/currency";
 import { ActionEconomyPanel } from "./ActionEconomyPanel";
 import { ActorNotesPanel } from "./ActorNotesPanel";
@@ -820,7 +825,7 @@ function isEligibleRageAction(action?: ActorAction | null, candidate?: ReadiedRo
 }
 
 export function ActorCard({
-  actor,
+  actor: authoredActor,
   hp,
   actionState,
   actorNotes,
@@ -881,6 +886,27 @@ export function ActorCard({
   onLongRest,
   onLog,
 }: ActorCardProps) {
+  /**
+   * THE BOND LADDER IS THE BOND TAB, and it is applied ONCE, here.
+   *
+   * A character carrying a `bondAssignment` gets its live stage rendered as clickable
+   * bond-economy rows in place of the authored ladder rows (`withGeneratedBondActions`).
+   * Everything below this line — the tab list, `getActionForReadiedKey`, the rider derivation,
+   * the log — reads `actor`, so all of them see the same bond tab. Applying it per-surface is
+   * how a row ends up clickable in one place and unresolvable in another.
+   *
+   * Nothing is written back: the authored rows are still on the record and return the moment
+   * the assignment is cleared.
+   */
+  const actor = useMemo(
+    () => withGeneratedBondActions(
+      authoredActor,
+      BROKEN_CHAIN_BOND_TEMPLATES,
+      BROKEN_CHAIN_BOND_GATES,
+      (companionId) => partyMembers?.find((m) => m.id === companionId)?.name,
+    ),
+    [authoredActor, partyMembers],
+  );
   const [activeTab, setActiveTab] = useState<TabId>("main");
   // Shared worn-state, synced like readied actions rather than pushed like a document.
   const { equippedByActorId, setEquipped } = useEquippedState();
@@ -2704,6 +2730,18 @@ export function ActorCard({
         )}
         {absCheckOpen && (
           <div className="abs-check-drawer">
+            {/* THE SCORES, WHERE THEY ARE ROLLED. Moved off the main card by the playsheet pass:
+                Checks is the authoritative surface for STR-CHA, modifiers and saves, so the six
+                boxes open with the buttons that use them rather than sitting under the header on
+                every card whether or not anyone is looking at them.
+                A monster's proficiency bonus comes from its CR, a PC's from its level — same
+                stepped table, different source. Passing `level` for both priced every creature's
+                saves as if it were level 1. */}
+            <AbilityScoreRow
+              abilityScores={actor.abilityScores}
+              derivedStats={deriveActorStats(actor, undefined, status)}
+              level={actor.cr ?? actor.level}
+            />
             <div>
               <span className="stat-label">Ability Check</span>
               <div className="abs-check-button-grid">
@@ -4825,10 +4863,12 @@ export function ActorCard({
           </div>
         </div>
 
-        {/* A monster's proficiency bonus comes from its CR, a PC's from its level — same stepped
-            table, different source. Passing `level` for both priced every creature's saves as if
-            it were level 1. */}
-        <AbilityScoreRow abilityScores={actor.abilityScores} derivedStats={deriveActorStats(actor, undefined, status)} level={actor.cr ?? actor.level} />
+        {/* ⚠ THE SIX ABILITY BOXES MOVED INTO CHECKS (playsheet pass, doc §4.3).
+            *"Do not keep the six ability-score boxes permanently displayed on the main Actor card
+            if the Checks surface already provides ability checks and saving throws."* They now
+            open with the Checks drawer, directly above the buttons that roll them — the numbers
+            and the rolls in one place — and the main card keeps its space for combat state.
+            Nothing was removed: same component, same derived stats, one surface along. */}
         {renderCompactDebuffSummary()}
         {renderAttackUsePanel()}
       </header>

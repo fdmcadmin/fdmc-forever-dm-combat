@@ -6533,3 +6533,305 @@ body,
   font-weight: 400;
   opacity: 0.85;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PLAYSHEET PANEL PASS
+   Source: fdmc-actor-monster-playsheet-panel-visual-alignment-v0.1 (RULE 1 - that
+   document is the truth for this work).
+
+   THE HARD BOUNDARY IS FOOTPRINT. "The redesign must occupy the same total screen
+   footprint as the current panel or less." Every rule below either takes space back
+   or is free - grouping, borders, typography, card grids, short HP bars, tighter
+   stat bands, section hierarchy. Nothing here makes the panel bigger, and a rule
+   that would does not belong in this block.
+
+   Appended last on purpose: this file is a cascade of build passes and the newest
+   one wins, which is how every previous pass layered onto the one before it.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* -- The page frame ---------------------------------------------------------
+   Thin authored framing rather than a large generic box: a hairline in the card's
+   own gold, one inset highlight, and a soft drop so the sheet reads as a printed
+   page instead of a form. Costs no layout space at all. The seat colour still owns
+   the left edge - it is set inline and wins there. */
+.actor-card {
+  border: 1px solid rgba(215, 179, 106, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 12px 30px rgba(0, 0, 0, 0.34);
+}
+
+/* -- Identity: display type, one level up from the UI ------------------------
+   Doc section 3: two levels of typography - display for names and section titles,
+   functional for everything that is a control. No new font family is loaded; the
+   separation is weight, size and tracking, which is free and works offline. */
+.selected-actor-header .eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: #8a7a52;
+}
+
+.actor-card h2 {
+  font-weight: 850;
+  letter-spacing: -0.012em;
+  line-height: 1.04;
+}
+
+/* The class / multiclass / level line: identity, so it keeps sentence case and takes
+   the card's gold rather than reading as another muted form value. */
+.actor-subtitle {
+  color: #c3b58a;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
+.selected-actor-header .actor-title-row {
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(215, 179, 106, 0.14);
+}
+
+/* -- The primary status band ------------------------------------------------
+   Doc section 4.2: "The current large HP and Temp HP boxes consume too much
+   vertical space. Replace them with one authored status band." HP, Temp HP, AC,
+   Speed, Wallet and Purse now sit on ONE line at panel width and wrap to two when
+   narrow.
+
+   Flex rather than breakpoints: the actor card renders in the Owlbear panel, in a
+   popout and in the combat window at three different widths, and a media query
+   keyed to the VIEWPORT cannot see which of the three it is in.
+
+   HP TOOLS STAYS. "Do not remove HP Tools. The visual strip is display/state; HP
+   Tools remains the interaction surface." It keeps its column, and the Checks
+   drawer keeps hanging off it. */
+.focused-actor-window-body .selected-defense-row,
+.selected-defense-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.focused-actor-window-body .hp-field,
+.hp-field {
+  flex: 1 1 300px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, auto);
+  gap: 8px;
+  min-width: 0;
+}
+
+.focused-actor-window-body .hp-display-stack,
+.hp-display-stack {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.hp-core-box {
+  flex: 1 1 128px;
+  min-width: 0;
+}
+
+.temp-hp-box {
+  flex: 0 1 82px;
+  min-width: 0;
+}
+
+.focused-actor-window-body .ac-speed-box,
+.ac-speed-box {
+  flex: 1 1 250px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Every readout in the band is label-beside-value, not label-over-value. Six
+   stacked captions is what made the old row tall. */
+.ac-speed-box > div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ac-speed-box .stat-label,
+.hp-core-box .stat-label,
+.temp-hp-box .stat-label {
+  display: inline;
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: #7f8496;
+  flex-shrink: 0;
+}
+
+.ac-speed-box .stat-value,
+.hp-core-box .stat-value {
+  display: inline;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.temp-hp-box strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-subrow {
+  border-top: 0;
+  padding-top: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 8px;
+}
+
+.hp-core-box,
+.temp-hp-box,
+.compact-defense-box {
+  min-height: 0;
+  padding: 7px 9px;
+  border-radius: 10px;
+}
+
+.hp-main-line {
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+/* The short bar. Doc section 4.2 keeps the numbers prominent; the bar only carries
+   the ratio, so it is 3px and never asks for a row of its own. */
+.hp-bar {
+  height: 3px;
+  margin-top: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.25s;
+}
+
+/* -- Ability scores now live in Checks --------------------------------------
+   Doc section 4.3. The six boxes are no longer on the main card; they open with the
+   Checks drawer, directly above the buttons that roll them. Three across matches the
+   check and save grids already in that drawer, and the drawer widens to carry it. */
+.focused-actor-window-body .abs-check-drawer,
+.abs-check-drawer {
+  width: min(368px, calc(100vw - 32px));
+}
+
+.abs-check-drawer .ability-score-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.abs-check-drawer .ability-score-box {
+  padding: 6px 4px;
+  border-radius: 10px;
+}
+
+.abs-check-drawer .ability-score {
+  font-size: 0.95rem;
+  margin-top: 1px;
+}
+
+/* -- The navigation ribbon --------------------------------------------------
+   Doc section 4.5: "Visually treat them as an authored navigation ribbon rather than
+   generic pill controls. The current category colors may remain." The per-tab accent
+   already rides an inline underline and text tint from TabBar; the gold pill fought
+   it - accent-coloured text on a gold fill - and made every tab the same shape
+   whatever it held. Same height, less noise. */
+.tab-bar {
+  gap: 2px;
+  padding: 5px 10px 0;
+  border-top: 1px solid rgba(215, 179, 106, 0.12);
+  border-bottom: 1px solid rgba(215, 179, 106, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent);
+}
+
+.tab-button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 6px 9px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa0b4;
+}
+
+.tab-button:hover {
+  border: 0;
+  color: #f4efe4;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Colour and underline come from the tab's own accent, set inline by TabBar. */
+.tab-button.active {
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* -- Section titles ---------------------------------------------------------
+   Small uppercase headings (doc section 3) so a category reads as a section of a
+   sheet rather than another button in the stack. */
+.action-category-heading,
+.action-category-toggle > span:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.action-category-toggle {
+  min-height: 32px;
+}
+
+.tab-panel .placeholder-note {
+  margin: 4px 0 6px;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  opacity: 0.7;
+}
+
+/* -- Action tiles: up to three per row, never forced ------------------------
+   Doc sections 5.1 and 9. minmax(max(158px, (100% - 16px) / 3), 1fr) is the whole
+   rule: the 158px floor stops a tile becoming unreadable, and the one-third-of-
+   container term caps the count at three however wide the panel gets. Wide -> 3,
+   moderate -> 2, narrow -> 1, with no breakpoint to keep in sync with the shell -
+   which matters because the same grid renders in the panel, the popout and the
+   combat window. "Do not force three columns if it makes the cards unreadable." */
+.active-action-grid,
+.compact-action-grid.active-action-grid,
+.action-grid,
+.pinned-grid {
+  grid-template-columns: repeat(auto-fit, minmax(max(158px, (100% - 16px) / 3), 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+/* A reference list is read top to bottom, not scanned as tiles - one column. */
+.reference-action-list {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 560px) {
+  .active-action-grid,
+  .compact-action-grid.active-action-grid,
+  .action-grid,
+  .pinned-grid {
+    grid-template-columns: 1fr;
+  }
+}

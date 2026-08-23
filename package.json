@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.7.33",
+  "version": "0.7.34",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -19,6 +19,7 @@
     "assemble:dev": "node ./scripts/dev-host-required.mjs --assemble",
     "stage:candidate:dev:main": "node ./scripts/build-dev-main.mjs && node ./scripts/stage-dev-main.mjs",
     "promote:dev:main": "node ./scripts/promote-dev-main.mjs",
+    "check:bonds": "npx tsx scripts/check-bond-actions.ts",
     "validate:control": "npx tsx scripts/validate-control-pricing.ts",
     "validate:invariants": "npx tsx scripts/validate-encounter-invariants.ts",
     "validate:act3": "npx tsx scripts/validate-act3-sequence.ts",
