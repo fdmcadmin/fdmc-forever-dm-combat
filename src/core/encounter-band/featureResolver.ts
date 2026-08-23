@@ -219,7 +219,7 @@ export function resolveFeature(
      * ⚠ A CONTROL EFFECT IS NOT A DAMAGE EFFECT WITH MISSING DICE.
      *
      * This raised "the feature has an attack bonus or save DC but no readable damage" against
-     * every save-forcing ability in the campaign that deals none — Snarlroot's Turn the Root,
+     * every save-forcing ability in the campaign that deals none — Snarlroot's Sweeping Growth,
      * the Crone's Blighted Vitality, Hushrunner's Call the Wrong Name, the Veil-Torn Dragon's
      * Fractured Dream Breath. Seven creatures across the Act 3 sequence reported as unpriceable
      * when nothing about them is unreadable: they root, halve speed, block opportunity attacks

@@ -534,6 +534,19 @@ function featureFromProfile(
  * `attacksPerTurn` still comes from the app: the profiles publish no Multiattack size, so it is
  * the one combat field the app supplies rather than overrides.
  */
+/**
+ * ⚠ NO LONGER ON THE PRICING PATH. NOTHING CALLS THIS.
+ *
+ * Until 0.7.32 the encounter checker read every campaign creature through here, so the 6.3.2
+ * snapshot in `data/checker/v7-runtime.json` decided a creature's AC, HP, trait multiplier and
+ * whole feature list, and the authored library entry was decoration. Christopher: *"there is only
+ * ever one source of truth for a specific file."* `rosterFromTemplates` now parses the library
+ * entry, every time.
+ *
+ * Kept, not deleted, because the disagreement reporting below is the bones of a useful DRIFT
+ * AUDIT — "what does the old snapshot say that the library does not" is a real question, and it
+ * was how Velvet Host's superseded kit was found. It must never go back on the pricing path.
+ */
 export function workbookCreature(template: MainMonsterTemplate): WorkbookCreature | undefined {
   const profile = campaignProfile(template.name);
   if (!profile) return undefined;

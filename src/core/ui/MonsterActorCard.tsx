@@ -605,7 +605,7 @@ function SectionLabel({ text, count, collapsible, open, onToggle, accent, budget
    *
    * Those two being one badge is what made the Hollow Warden read as one spear attack (one
    * action listed, two per turn) and the Larkskein as two Glass-Thorns (two actions listed,
-   * one per turn — and the second is Summer Fold, not an attack at all). The pip row said
+   * one per turn — and the second is Folded Distance, not an attack at all). The pip row said
    * "2 LEFT" and "ACTION" correctly the whole time; the badge above it disagreed.
    */
   budget?: number;

@@ -1363,8 +1363,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Deep-Footed", kind: "trait", text: "While touching natural ground, Snarlroot has advantage on saves against being knocked prone or moved against its will." },
     ],
     actions: [
-      { name: "Rootclub", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (1d12 + 4) bludgeoning." },
-      { name: "Turn the Root (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "Choose one creature on natural ground within 20 ft. It makes a DC 15 Strength save. On a failure, roots carry it up to 15 ft. along the ground to an unoccupied space and it cannot take reactions until the start of its next turn. On a success, it can be moved up to 5 ft. only." },
+      { name: "Knotted Club", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (1d12 + 4) bludgeoning." },
+      { name: "Sweeping Growth (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "Choose one creature on natural ground within 20 ft. It makes a DC 15 Strength save. On a failure, roots carry it up to 15 ft. along the ground to an unoccupied space and it cannot take reactions until the start of its next turn. On a success, it can be moved up to 5 ft. only." },
     ],
     reactions: [
     ],
@@ -1401,7 +1401,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Name the Threshold", kind: "action", economyCost: "bonus", text: "Bonus Action: choose a 15-ft. line of natural ground within 15 ft. Until the start of the Warden’s next turn, the line is visibly braced by roots and bent branches. The Warden can use Bar the Way when a hostile creature crosses that line." },
-      { name: "Branch Spear", kind: "attack", roll: "1d20 + 6", damage: "1d10 + 3", text: "Melee Weapon Attack: +6 to hit, reach 10 ft.; Hit: 8 (1d10 + 3) piercing." },
+      { name: "Long Spear", kind: "attack", roll: "1d20 + 6", damage: "1d10 + 3", text: "Melee Weapon Attack: +6 to hit, reach 10 ft.; Hit: 8 (1d10 + 3) piercing." },
     ],
     reactions: [
       { name: "Bar the Way", kind: "reaction", save: "STR DC 15", text: "When a hostile creature crosses the named threshold, move up to 10 ft. without provoking. If the Warden ends within reach, the creature makes a DC 15 Strength save. On a failure, its speed becomes 0 for the rest of the turn. On a success, its remaining speed is reduced by 10 ft." },
@@ -1439,7 +1439,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Glass-Thorn", kind: "attack", roll: "1d20 + 8", damage: "2d10 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 16 (2d10 + 5) piercing." },
-      { name: "Summer Fold (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Choose a 15-ft.-radius area within 60 ft. Until the start of Larkskein’s next turn, creatures treat every 10 ft. moved inside the area as 5 ft. when moving toward the center and 15 ft. when moving away. No creature loses an action or is forcibly moved." },
+      { name: "Folded Distance (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Choose a 15-ft.-radius area within 60 ft. Until the start of Larkskein’s next turn, creatures treat every 10 ft. moved inside the area as 5 ft. when moving toward the center and 15 ft. when moving away. No creature loses an action or is forcibly moved." },
     ],
     reactions: [
     ],
@@ -1476,7 +1476,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Snap to the Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
-      { name: "Quillblade", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
+      { name: "Razor Quill", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
       { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
     reactions: [
@@ -1511,11 +1511,11 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Breakroot", kind: "trait", text: "The first 10 ft. of natural difficult terrain Marrowstalk enters on a turn costs no extra movement. The spaces it crosses become scarred until the start of its next turn; natural difficult terrain in those spaces is suppressed, and a hostile creature entering a scarred space spends 5 extra ft. of movement." },
-      { name: "Marrow Grip", kind: "trait", text: "A creature hit by Marrow Hook has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack." },
+      { name: "Marrow Grip", kind: "trait", text: "A creature hit by Hooking Claw has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack." },
     ],
     actions: [
-      { name: "Marrow Hook", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing." },
-      { name: "Body Break (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", damage: "4d8", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
+      { name: "Hooking Claw", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing." },
+      { name: "Crushing Cast (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", damage: "4d8", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
     ],
     reactions: [
     ],
@@ -1533,7 +1533,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 17, maxHp: 46, speed: "30 ft.",
       defenses: [
-        { name: "Break the Survey", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Spends a stake to impose disadvantage on one attack; two stakes." },
+        { name: "Shatter the Stake", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Spends a stake to impose disadvantage on one attack; two stakes." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
@@ -1552,11 +1552,11 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Survey Stake", kind: "action", economyCost: "bonus", text: "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover." },
-      { name: "Shard Bolt", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
-      { name: "Survey Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
+      { name: "Crystal Bolt", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
+      { name: "Refracted Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
     ],
     reactions: [
-      { name: "Break the Survey", kind: "reaction", text: "When Shardbound is targeted by an attack, it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once per round." },
+      { name: "Shatter the Stake", kind: "reaction", text: "When Shardbound is targeted by an attack, it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once per round." },
     ],
     resources: [],
     notes: [
@@ -1712,7 +1712,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Unyielding Bearing", kind: "trait", text: "The Regent has advantage on saving throws against being knocked prone." },
     ],
     actions: [
-      { name: "Briar Talon", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 14 (2d8 + 5) slashing. Multiattack: two Briar Talon attacks." },
+      { name: "Thorn Talon", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 14 (2d8 + 5) slashing. Multiattack: two Thorn Talon attacks." },
       { name: "Invitation Withdrawn (Recharge 5-6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Each enemy of the Regent's choice within 15 ft. makes a DC 16 Strength save. On a failure, a creature takes 18 (4d8) slashing damage, is pushed 15 ft. directly away from the Regent, and cannot take reactions until the start of its next turn. On a success, it takes half damage and is pushed 5 ft. This action REPLACES the Regent's Multiattack." },
     ],
     reactions: [
@@ -1735,7 +1735,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
         // ⚠ TAKE THE BLOW IS NOT AN EHP MULTIPLIER, BY INSTRUCTION. It reduces an ALLY's damage
         // by 8 and costs the Bulwark 4 unpreventable damage — it moves damage rather than
         // removing it, and the encounter page says to price it in the runtime trace.
-        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: Take the Blow is priced by the runtime trace. It redirects damage to the guardian; it does not add effective HP to the roster." },
+        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: Interpose is priced by the runtime trace. It redirects damage to the guardian; it does not add effective HP to the roster." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "strong", archetype: "guardian",
@@ -1754,10 +1754,10 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Interposing Bulk", kind: "trait", text: "A hostile creature moving through the Bulwark's reach toward a creature on the opposite side of the Bulwark treats that movement as difficult terrain." },
     ],
     actions: [
-      { name: "Bulwark Fist", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Bulwark Fist attacks." },
+      { name: "Heavy Fist", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Fist attacks." },
     ],
     reactions: [
-      { name: "Take the Blow", kind: "reaction", text: "When another creature within 10 ft. of the Bulwark is hit by an attack, the Bulwark can move up to 5 ft. toward that creature without provoking opportunity attacks. If it ends within 5 ft. of that creature, reduce the triggering damage by 8. The Bulwark then takes 4 damage that cannot be reduced or prevented. Once per round." },
+      { name: "Interpose", kind: "reaction", text: "When another creature within 10 ft. of the Bulwark is hit by an attack, the Bulwark can move up to 5 ft. toward that creature without provoking opportunity attacks. If it ends within 5 ft. of that creature, reduce the triggering damage by 8. The Bulwark then takes 4 damage that cannot be reduced or prevented. Once per round." },
     ],
     resources: [],
     notes: [
@@ -1817,7 +1817,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     actions: [
       // ⚠ BOTH ARE HOSTILE-ONLY. The Host contributes NO attack DPR while neutral — the
       // encounter page prices its opening trace at 0 and its hostile trace at ~19 DPR.
-      { name: "Velvet Rebuke (Hostile Only)", kind: "attack", roll: "1d20 + 8", damage: "1d8 + 5", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 9 (1d8 + 5) psychic. Hostile only — the Host makes no attack while neutral." },
+      { name: "Withering Word (Hostile Only)", kind: "attack", roll: "1d20 + 8", damage: "1d8 + 5", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 9 (1d8 + 5) psychic. Hostile only — the Host makes no attack while neutral." },
     ],
     reactions: [
     ],
@@ -1932,7 +1932,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Scar Slip", kind: "action", economyCost: "bonus", text: "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation." },
-      { name: "Slick Claw", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
+      { name: "Raking Claw", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
       { name: "Warping Cut (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round." },
     ],
     reactions: [

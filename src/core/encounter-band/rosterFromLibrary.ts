@@ -25,7 +25,7 @@
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, traitRule } from "./compactImport";
-import { parseCreature, workbookCreature } from "./parseCreature";
+import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import type { PartyDefence } from "./damageExpression";
 import type { RosterGroup, SustainFactor } from "./checkerV2";
@@ -135,11 +135,30 @@ export type RosterBuild = { roster: RosterGroup[]; assumptions: RosterAssumption
  * contract applies `partySizeHpMultiplier` inside `effectiveHpPerBody`, and scaling here as
  * well would apply it twice.
  *
- * TWO PATHS, and the first one wins wherever it applies:
- *  · A CAMPAIGN CREATURE the workbook has measured is read from its workbook profile. Every
- *    field the app disagrees on is reported and overridden.
- *  · A DM'S OWN CREATURE is parsed from what they entered, which is the case the whole
- *    row 10 / row 13 machinery exists for.
+ * ⚠ ONE PATH. EVERY CREATURE IS READ FROM THE LIBRARY ENTRY THE DM CAN SEE AND EDIT.
+ *
+ * There used to be two, and the campaign one won: a creature with an entry in
+ * `data/checker/v7-runtime.json` was priced from that snapshot's ac, hp, trait multiplier and
+ * FEATURE LIST, not from its authored block. The block was decoration.
+ *
+ * Christopher: *"the encounter checker needs to read the library that is listed and then pull
+ * those encounter, not a snapshot, if i go in a change every library entry to have 1 additional
+ * monster and the encounter checker still show what was there before instead of what is there now
+ * then isnt not working correctly, also rule 1 should have decided on how 2 shources of truth are
+ * handled because there is only ever one source of truth for a specific file."*
+ *
+ * Both halves are right, and the second decides the first. RULE 1 does not describe a precedence
+ * order between two truths — it says a file IS the truth. A frozen copy of that file is not a
+ * second source of truth, it is a stale one, and the only thing precedence bought was the ability
+ * to be confidently wrong: an edit to a library entry changed nothing the checker reported.
+ *
+ * It was not hypothetical. Velvet Host's snapshot entry held a completely superseded kit —
+ * "Declare the Courtesy", "Wrong Invitation" — where its block prints the v3.21 one built on
+ * Even-Handed Hospitality. The checker had been pricing a creature that no longer existed.
+ *
+ * ⚠ WHAT THE SNAPSHOT STILL PROVIDES, AND WHAT IT NO LONGER DOES. `v7-runtime.json` remains the
+ * source for the party curve, spell profiles, effect families and the rest of the pricing law —
+ * that is workbook law and belongs there. It is no longer consulted for what a creature IS.
  */
 export function rosterFromTemplates(
   entries: RosterEntryInput[], partyLevel: number, target: PartyDefence,
@@ -147,15 +166,8 @@ export function rosterFromTemplates(
   const assumptions: RosterAssumption[] = [];
 
   const roster = entries.map(({ template, quantity }) => {
-    const fromWorkbook = workbookCreature(template);
-    const parsed = fromWorkbook ? fromWorkbook.parsed : parseCreature(template);
-
-    if (fromWorkbook) {
-      for (const d of fromWorkbook.disagreements) {
-        assumptions.push({ creature: parsed.name, flag: "ESTIMATED", field: d.field.toLowerCase(),
-          detail: `The app has ${d.field} ${d.app}; the workbook has ${d.workbook}. The workbook's value is used — it is the measured one.` });
-      }
-    }
+    // The library entry, every time. Nothing overrides what the DM can see.
+    const parsed = parseCreature(template);
 
     const trace = traceCreature(parsed, target, 4);
     for (const a of trace.assumptions) {
@@ -176,20 +188,14 @@ export function rosterFromTemplates(
     }
 
     /**
-     * THE WORKBOOK'S TRAIT MULTIPLIER IS THE TRAIT MULTIPLIER. `tm` is the product it computed
-     * for this exact creature across its own calibration run — a single factor carrying the
-     * creature's whole defensive kit. It is not combined with the app's itemised pricing;
-     * it REPLACES it, and any difference has already been reported above.
+     * Itemised from the block's own defences, for every creature.
+     *
+     * The snapshot's calibrated `tm` used to replace this wholesale. Dropping it costs nothing
+     * measurable: across all 51 profiled creatures the block's defence product and the snapshot's
+     * `tm` agree to within 0.005, so this is the same number arrived at from the readable source
+     * instead of a precomputed one.
      */
-    const traitFactors: SustainFactor[] = fromWorkbook
-      ? (fromWorkbook.traitMultiplier === 1 ? [] : [{
-        stackGroup: fromWorkbook.traitStackGroups[0] ?? "workbook_calibrated",
-        label: fromWorkbook.traitStackGroups.length
-          ? `Workbook calibration (${fromWorkbook.traitStackGroups.join(", ")})`
-          : "Workbook calibration",
-        contribution: fromWorkbook.traitMultiplier - 1,
-      }])
-      : traitFactorsFor(template, assumptions);
+    const traitFactors: SustainFactor[] = traitFactorsFor(template, assumptions);
 
     return {
       id: template.templateId,
