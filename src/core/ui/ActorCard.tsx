@@ -2659,14 +2659,14 @@ export function ActorCard({
           ] as { id: RollMode; label: string; color: string }[]).map((m) => {
             const active = rollMode === m.id;
             return (
-              <button key={m.id} type="button" onClick={() => setRollMode(m.id)}
+              /* The PC twin of the monster card's roll-mode strip, flattened the same way and for
+                 the same reason: two of these three are always the wrong answer, and boxing all
+                 three made a setting look like three controls. Only the chosen one is a box. */
+              <button key={m.id} type="button" className="fdmc-ghost-btn" onClick={() => setRollMode(m.id)}
                 title={`Roll mode: ${m.label} (applies to your next attack / check)`}
-                style={{
-                  fontSize: 10, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
-                  background: active ? `${m.color}2e` : "transparent",
-                  border: `1px solid ${active ? m.color : "#3a3a52"}`,
-                  color: active ? m.color : "#777", fontWeight: active ? 600 : 400,
-                }}>
+                style={active ? {
+                  background: `${m.color}2e`, borderColor: m.color, color: m.color, fontWeight: 600,
+                } : undefined}>
                 {m.label}
               </button>
             );

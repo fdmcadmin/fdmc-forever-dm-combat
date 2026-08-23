@@ -115,7 +115,15 @@ export function getSeatColor(seatId: string | null | undefined): string {
  * overwhelming the dark UI.
  */
 export function withAlpha(hex: string, alpha: number): string {
-  const clean = hex.replace("#", "");
+  /**
+   * ⚠ A SHORTHAND HEX USED TO COME BACK OPAQUE. `#888` is three characters, failed the length
+   * check, and was returned UNCHANGED — so a call asking for a 16% tint rendered a solid fill and
+   * nothing threw. The monster card's active "Normal" roll-mode button was a block of flat grey
+   * for exactly this reason. Expand the shorthand instead: the failure mode of a silent
+   * passthrough is a colour that is wrong in a way only a screenshot catches.
+   */
+  const raw = hex.replace("#", "");
+  const clean = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
   if (clean.length !== 6) return hex;
   const r = Number.parseInt(clean.slice(0, 2), 16);
   const g = Number.parseInt(clean.slice(2, 4), 16);

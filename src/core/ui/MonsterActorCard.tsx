@@ -29,7 +29,7 @@
  *   - Traits are reference, never action buttons
  */
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import { splitTypedDamage, damageTypeVisual } from "../constants/damageTypeVisuals";
 import {
@@ -222,29 +222,57 @@ function classifyActions(all: MonsterReaderAction[]) {
 // ─── Stat box ─────────────────────────────────────────────────────────────────
 
 /**
- * ONE LINE, NOT TWO (playsheet pass, doc §6.3).
+ * A READOUT, NOT A BOX (playsheet pass, doc §6.3).
  *
  * *"Shrink the current wide AC / HP State / Speed / State boxes... The goal is less unused space,
- * not fewer functions."* Label above value spent a whole stacked box on four short readouts. The
- * label now sits beside the number in a small uppercase caption, which is the playsheets' own
- * grammar and about 12px shorter per band.
+ * not fewer functions."* Label above value spent a whole stacked box on four short readouts, so
+ * the label moved beside the value — the playsheets' own grammar.
+ *
+ * ⚠ THEN THE BOX ITSELF WENT. Christopher: *"ac/hp/speed/state being on a black background"*, and
+ * *"there is still too many grey on black boxes"*. Four `#111` panels with `#2a2a3e` borders sat
+ * on a `#0d0d14` card, so the creature's four most-read numbers were framed as four separate
+ * objects rather than as one line of a statblock. They are dividers now: same information, same
+ * row, no chrome. A printed statblock does not put a box round AC either.
  */
-function StatBox({ label, value, color }: { label: string; value: string; color?: string }) {
+function StatBox({ label, value, color, last }: { label: string; value: string; color?: string; last?: boolean }) {
   return (
     <div style={{
-      flex: 1, display: "flex", alignItems: "baseline", justifyContent: "center", gap: 5,
-      padding: "3px 6px", background: "#111", borderRadius: 4,
-      border: "1px solid #2a2a3e", minWidth: 0,
+      display: "flex", alignItems: "baseline", gap: 5, minWidth: 0,
+      paddingRight: last ? 0 : 10, marginRight: last ? 0 : 10,
+      borderRight: last ? undefined : "1px solid rgba(255, 255, 255, 0.07)",
     }}>
-      <span style={{ fontSize: 8, color: "#555", textTransform: "uppercase", letterSpacing: 1, lineHeight: 1.2, flexShrink: 0 }}>
+      <span style={{ fontSize: 8, color: "#5a5a6a", textTransform: "uppercase", letterSpacing: 1, lineHeight: 1.2, flexShrink: 0 }}>
         {label}
       </span>
       <span style={{
-        fontSize: 12, fontWeight: 700, color: color ?? "#ccc", lineHeight: 1.25,
+        fontSize: 12.5, fontWeight: 700, color: color ?? "#ccc", lineHeight: 1.25,
         minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>{value}</span>
     </div>
   );
+}
+
+/**
+ * ⚠ A CONTROL THAT IS NOT DOING ANYTHING SHOULD NOT LOOK LIKE A BOX.
+ *
+ * Christopher: *"there is still too many grey on black boxes like the additive/reset/unchosen
+ * dis&advantage."* Every one of those carried a 1px grey border and a dark fill whether or not it
+ * was active, so a row of four idle controls read as four objects competing with the creature's
+ * actual state — and the two that WERE meaningful (a readied additive, the active roll mode) had
+ * to shout over them.
+ *
+ * Inactive is now text on the card's own ground; the border and fill arrive when the control is ON
+ * — which is exactly when they carry information. Hover lives in `.fdmc-ghost-btn` in styles.css,
+ * because an inline style cannot express `:hover`.
+ */
+function ghostStyle(active: boolean, accent = "#7b68ee"): CSSProperties | undefined {
+  if (!active) return undefined;
+  return {
+    background: withAlpha(accent, 0.16),
+    borderColor: withAlpha(accent, 0.55),
+    color: accent,
+    fontWeight: 600,
+  };
 }
 
 const ordinal = (n: number) => `${n}${["th", "st", "nd", "rd"][(n % 100 - n % 10 === 10 ? 0 : n % 10)] ?? "th"}`;
@@ -1266,18 +1294,65 @@ export function MonsterActorCard({
         </div>
       </div>
 
-      {/* 2. Stat boxes */}
-      <div style={{ display: "flex", gap: 4, padding: "8px 12px 4px" }}>
-        <StatBox label="AC"       value={String(monster.ac ?? "—")} />
-        <StatBox label="HP State" value={condition} color={conditionColor(condition)} />
-        <StatBox label="Speed"    value={monster.speed ?? "—"} />
-        <StatBox label="State"    value={monster.status?.trim() || "—"} />
-      </div>
+      {/*
+        ── THE COMMAND BAND ──────────────────────────────────────────────────────────────────
+        Christopher: *"why does the monster window still have so much white space when we could
+        shift things up like the economy blips and move the additive and reset turn into the same
+        row as the hp."*
 
-      {/* HP bar + exact HP + quick controls — the bar rides IN the readout row rather than owning
-          a rule above it (doc §6.3 / §12: enough width to show the ratio, not the whole card). */}
-      <div style={{ padding: "4px 12px 8px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        FIVE STACKED ROWS BECAME TWO. Stat boxes, HP, additive, the economy blips and the Nat 1
+        button each owned a full-width row with its own padding, and four of the five held one
+        short strip of controls with the rest of the row empty. That empty width IS the white
+        space — nothing was mis-sized, everything was simply on its own line.
+
+          row 1   AC · HP · SPEED · STATE ........................ actions ● bonus ● reaction ● slots
+          row 2   173/173 HP [bar] [5] [+] [-] .......... + Additive · Reset Turn · Nat 1 tables
+
+        The blips move up beside the readouts because they are read together — what the creature
+        IS and what it has left this turn. The turn controls join the HP line because that is the
+        row a DM's hand is already on.
+      */}
+      <div style={{ padding: "7px 12px 8px", display: "grid", gap: 6 }}>
+
+        {/* Row 1 — what the creature is, and what it has left. */}
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: 6 }}>
+          <StatBox label="AC"    value={String(monster.ac ?? "—")} />
+          <StatBox label="HP"    value={condition} color={conditionColor(condition)} />
+          <StatBox label="Speed" value={monster.speed ?? "—"} />
+          <StatBox label="State" value={monster.status?.trim() || "—"} last />
+          <div style={{ flex: 1, minWidth: 16 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <ActionBudget max={actionsMax} used={economy.stepsUsed}
+              onSet={(n) => { const next = { ...economy, stepsUsed: n, actionUsed: n >= actionsMax }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
+            {hasBonusActions && (
+              <EconomyDot label="Bonus" used={economy.bonusUsed} onClick={() => { const next = { ...economy, bonusUsed: !economy.bonusUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
+            )}
+            <EconomyDot label="Reaction" used={economy.reactionUsed} onClick={() => { const next = { ...economy, reactionUsed: !economy.reactionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
+            {/* Spell slots — DM-local, persist across turns until a long rest / fight end */}
+            {spellSlots.map(s => {
+              const left = slotRemaining(s.level) ?? 0;
+              return (
+                <div key={s.level} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    {Array.from({ length: s.max }).map((_, i) => {
+                      const spent = i >= left;
+                      return (
+                        <button key={i} type="button"
+                          onClick={() => setSlotsUsedByLevel(prev => ({ ...prev, [s.level]: spent ? i : i + 1 }))}
+                          title={`${ordinal(s.level)}-level slot ${i + 1} of ${s.max} — ${spent ? "spent, click to restore" : "available, click to spend"}`}
+                          style={{ width: 9, height: 9, borderRadius: 2, background: spent ? "#2a2a2a" : "#57c07a", border: "none", padding: 0, cursor: "pointer" }} />
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{ordinal(s.level)} · {left}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Row 2 — HP, its bar, its adjusters, and the turn controls that ride with them. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, color: conditionColor(condition), fontVariantNumeric: "tabular-nums", minWidth: 60 }}>
             {currentHp}/{displayMaxHp} HP
           </span>
@@ -1287,7 +1362,6 @@ export function MonsterActorCard({
           {monster.tempHp > 0 && (
             <span style={{ fontSize: 10, color: "#4caf50" }}>+{monster.tempHp} temp</span>
           )}
-          <div style={{ flex: 1 }} />
           <input
             type="number" min={1} value={hpInput}
             onChange={e => setHpInput(e.target.value)}
@@ -1303,7 +1377,72 @@ export function MonsterActorCard({
             style={{ fontSize: 11, padding: "1px 8px", background: "#3a1a1a", border: "1px solid #5a1a1a44", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
             −
           </button>
+
+          <div style={{ flex: 1, minWidth: 8 }} />
+
+          {/* The readied additive reads as state, so it keeps its chip. */}
+          {pendingAdditive && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#7b68ee", 0.15), border: "1px solid #7b68ee55", color: "#9d8cff" }}>
+              roll +1{pendingAdditive}
+              <button type="button" onClick={() => setPendingAdditive(null)} title="Clear roll additive"
+                style={{ background: "transparent", border: "none", color: "#9d8cff", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
+                ✕
+              </button>
+            </span>
+          )}
+          {pendingDamageDie && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#e07b39", 0.15), border: "1px solid #e07b3955", color: "#e9a66a" }}>
+              dmg +1{pendingDamageDie}
+              <button type="button" onClick={() => setPendingDamageDie(null)} title="Clear damage additive"
+                style={{ background: "transparent", border: "none", color: "#e9a66a", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
+                ✕
+              </button>
+            </span>
+          )}
+          <button type="button" className="fdmc-ghost-btn" onClick={() => setAdditiveOpen(o => !o)}
+            title="Flag a one-off bonus die onto the next roll and/or next damage roll"
+            style={ghostStyle(additiveOpen)}>
+            + Additive
+          </button>
+          <button type="button" className="fdmc-ghost-btn"
+            title="Clear the action budget, bonus and reaction. Spell slots and recharges persist."
+            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}>
+            Reset Turn
+          </button>
+          {/* ⚀ THE NAT 1 TABLES, ON THE MONSTER CARD — where a monster's Nat 1 actually happens.
+              The overlay was reachable only from a PC's card, so the DM running the monsters had
+              no way to look either table up, which is precisely backwards: a monster's Nat 1 is
+              the one that is table-facing. Both tables, always, no roll required. */}
+          <button type="button" className="fdmc-ghost-btn"
+            onClick={() => setShowCritFailTables(true)}
+            title="Natural 1 failure tables — both the first and second tables">
+            ⚀ Nat 1 tables
+          </button>
         </div>
+
+        {/* The additive picker opens under the row that launched it, full width. */}
+        {additiveOpen && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "5px 7px", border: "1px solid #2a2a3e", borderRadius: 5, background: "#13131f" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 9, color: "#9d8cff" }}>To roll</span>
+              {ADDITIVE_DICE.map((die) => (
+                <button key={die} type="button" onClick={() => { setPendingAdditive(die); setAdditiveOpen(false); }}
+                  style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#9d8cff" }}>
+                  +1{die}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 9, color: "#e9a66a" }}>To damage</span>
+              {DAMAGE_ADDITIVE_DICE.map((die) => (
+                <button key={die} type="button" onClick={() => { setPendingDamageDie(die); setAdditiveOpen(false); }}
+                  style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#e9a66a" }}>
+                  +1{die}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* PACING DIAL — rescale the whole bar, DM-only.
             The alternative is lying: quietly dealing less than the PC rolled, or healing the
@@ -1344,105 +1483,6 @@ export function MonsterActorCard({
 
       <div style={{ padding: "0 12px 12px" }}>
 
-        {/* Additive bonus — one-off +1dX onto the next d20 roll and/or the next damage roll */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0", flexWrap: "wrap" }}>
-          <button type="button" onClick={() => setAdditiveOpen(o => !o)}
-            title="Flag a one-off bonus die onto the next roll and/or next damage roll"
-            style={{ fontSize: 9, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
-              background: additiveOpen ? withAlpha("#7b68ee", 0.18) : "transparent",
-              border: `1px solid ${additiveOpen ? "#7b68ee" : "#2a2a2a"}`, color: additiveOpen ? "#9d8cff" : "#666" }}>
-            + Additive
-          </button>
-          {pendingAdditive && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#7b68ee", 0.15), border: "1px solid #7b68ee55", color: "#9d8cff" }}>
-              roll +1{pendingAdditive}
-              <button type="button" onClick={() => setPendingAdditive(null)} title="Clear roll additive"
-                style={{ background: "transparent", border: "none", color: "#9d8cff", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
-                ✕
-              </button>
-            </span>
-          )}
-          {pendingDamageDie && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, padding: "2px 4px 2px 8px", borderRadius: 10, background: withAlpha("#e07b39", 0.15), border: "1px solid #e07b3955", color: "#e9a66a" }}>
-              dmg +1{pendingDamageDie}
-              <button type="button" onClick={() => setPendingDamageDie(null)} title="Clear damage additive"
-                style={{ background: "transparent", border: "none", color: "#e9a66a", cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0 }}>
-                ✕
-              </button>
-            </span>
-          )}
-          {additiveOpen && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "5px 7px", border: "1px solid #2a2a3e", borderRadius: 5, background: "#13131f" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 9, color: "#9d8cff", minWidth: 58 }}>To roll</span>
-                {ADDITIVE_DICE.map((die) => (
-                  <button key={die} type="button" onClick={() => { setPendingAdditive(die); setAdditiveOpen(false); }}
-                    style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#9d8cff" }}>
-                    +1{die}
-                  </button>
-                ))}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 9, color: "#e9a66a", minWidth: 58 }}>To damage</span>
-                {DAMAGE_ADDITIVE_DICE.map((die) => (
-                  <button key={die} type="button" onClick={() => { setPendingDamageDie(die); setAdditiveOpen(false); }}
-                    style={{ fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer", background: "#111", border: "1px solid #2a2a3e", color: "#e9a66a" }}>
-                    +1{die}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 3. Economy row — clickable dot toggles */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 8, padding: "5px 0", borderBottom: "1px solid #1a1a2e" }}>
-          <ActionBudget max={actionsMax} used={economy.stepsUsed}
-            onSet={(n) => { const next = { ...economy, stepsUsed: n, actionUsed: n >= actionsMax }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
-          {hasBonusActions && (
-            <EconomyDot label="Bonus"  used={economy.bonusUsed}    onClick={() => { const next = { ...economy, bonusUsed: !economy.bonusUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
-          )}
-          <EconomyDot label="Reaction" used={economy.reactionUsed} onClick={() => { const next = { ...economy, reactionUsed: !economy.reactionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
-          {/* Spell slots — DM-local, persist across turns until a long rest / fight end */}
-          {spellSlots.map(s => {
-            const left = slotRemaining(s.level) ?? 0;
-            return (
-              <div key={s.level} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <div style={{ display: "flex", gap: 3 }}>
-                  {Array.from({ length: s.max }).map((_, i) => {
-                    const spent = i >= left;
-                    return (
-                      <button key={i} type="button"
-                        onClick={() => setSlotsUsedByLevel(prev => ({ ...prev, [s.level]: spent ? i : i + 1 }))}
-                        title={`${ordinal(s.level)}-level slot ${i + 1} of ${s.max} — ${spent ? "spent, click to restore" : "available, click to spend"}`}
-                        style={{ width: 9, height: 9, borderRadius: 2, background: spent ? "#2a2a2a" : "#57c07a", border: "none", padding: 0, cursor: "pointer" }} />
-                    );
-                  })}
-                </div>
-                <span style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{ordinal(s.level)} · {left}</span>
-              </div>
-            );
-          })}
-          {/* Quick turn reset — clears the action budget + bonus/reaction, NOT spell slots */}
-          <button type="button"
-            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}
-            style={{ marginLeft: "auto", fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 3, color: "#444", cursor: "pointer" }}>
-            Reset Turn
-          </button>
-        </div>
-
-        {/* ⚀ THE NAT 1 TABLES, ON THE MONSTER CARD — where a monster's Nat 1 actually happens.
-            The overlay was reachable only from a PC's card, so the DM running the monsters had no
-            way to look either table up, which is precisely backwards: a monster's Nat 1 is the
-            one that is table-facing. Both tables, always, no roll required. */}
-        <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 0 4px" }}>
-          <button type="button"
-            onClick={() => setShowCritFailTables(true)}
-            title="Natural 1 failure tables — both the first and second tables"
-            style={{ fontSize: 9, padding: "1px 7px", background: "transparent", border: "1px solid #3a3a52", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>
-            ⚀ Nat 1 tables
-          </button>
-        </div>
         <CriticalFailureReference open={showCritFailTables} onClose={() => setShowCritFailTables(false)} />
 
         {/* 3b. Ability checks & saves + advantage/disadvantage mode */}
@@ -1452,20 +1492,17 @@ export function MonsterActorCard({
             <div style={{ display: "flex", gap: 2, marginLeft: "auto" }}>
               {([
                 { id: "disadv", label: "Disadv", color: "#ff5840" },
-                { id: "normal", label: "Normal", color: "#888" },
+                { id: "normal", label: "Normal", color: "#9a9ab0" },
                 { id: "adv", label: "Adv", color: "#4bb469" },
               ] as { id: RollMode; label: string; color: string }[]).map((m) => {
                 const active = rollMode === m.id;
                 return (
-                  <button key={m.id} type="button" onClick={() => setRollMode(m.id)}
+                  /* Only the CHOSEN mode is a box. Two of these three are always wrong, and
+                     framing all three identically made the row read as three objects instead of
+                     one setting with one answer — see ghostStyle. */
+                  <button key={m.id} type="button" className="fdmc-ghost-btn" onClick={() => setRollMode(m.id)}
                     title={`Roll mode: ${m.label}`}
-                    style={{
-                      fontSize: 9, padding: "2px 7px", borderRadius: 3, cursor: "pointer",
-                      background: active ? withAlpha(m.color, 0.18) : "transparent",
-                      border: `1px solid ${active ? m.color : "#2a2a2a"}`,
-                      color: active ? m.color : "#555",
-                      fontWeight: active ? 600 : 400,
-                    }}>
+                    style={ghostStyle(active, m.color)}>
                     {m.label}
                   </button>
                 );

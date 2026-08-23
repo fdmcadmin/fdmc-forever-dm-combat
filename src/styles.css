@@ -6974,3 +6974,39 @@ body,
 .hp-display-stack { order: 1; }
 .ac-speed-box { order: 2; }
 .hp-tools-column { order: 3; }
+
+/* -- Ghost controls ---------------------------------------------------------
+   "there is still too many grey on black boxes like the additive/reset/unchosen
+   dis&advantage." Every one of those carried a 1px grey border and a dark fill
+   whether or not it was active, so a row of idle controls read as a row of objects
+   competing with the state the card actually wants to show.
+
+   Inactive is text on the card's own ground. The border and fill arrive on hover
+   (here) or when the control is ON (inline, from ghostStyle - it needs the control's
+   own accent, which CSS cannot know). Inline wins over these, which is the right way
+   round: the active state is the specific case. */
+.fdmc-ghost-btn {
+  font-size: 9px;
+  line-height: 1.35;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #6a6a80;
+  white-space: nowrap;
+}
+
+.fdmc-ghost-btn:hover,
+.fdmc-ghost-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #cfd3dd;
+  outline: none;
+}
+
+/* The PC card's roll-mode strip is a touch larger than the monster card's. */
+.abs-check-rollmode .fdmc-ghost-btn {
+  font-size: 10px;
+  padding: 2px 9px;
+}
