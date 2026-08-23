@@ -3047,13 +3047,25 @@ export default function App() {
       const { w: vw, h: vh } = await getUsableViewport();
       const width = Math.min(1240, Math.max(680, vw - 48));
       const height = Math.min(880, Math.max(420, vh - 48));
+      /**
+       * SHIFTED RIGHT BY A QUARTER OF THE FREE SPACE, not by a quarter of anything fixed.
+       *
+       * Christopher: *"the DM window can we shift its orientation right by about 25%."* Centred
+       * is `free / 2`; a quarter further right is `free * 0.75`, where `free` is whatever the
+       * viewport has left over after the window. Expressing it as a FRACTION OF THE SLACK is
+       * what makes it safe: the result can never exceed `free`, so the window cannot run off the
+       * right edge or push its own Close button out of reach — the exact failure the sizing
+       * comment above this one was written about. On a screen with no slack it degrades to
+       * flush-left on its own, with no special case.
+       */
+      const combatLeft = Math.max(8, Math.floor((vw - width) * 0.75));
       await OBR.popover.open({
         id: "fdm-combat",
         url: url.toString(),
         width,
         height,
         anchorReference: "POSITION",
-        anchorPosition: { left: Math.max(8, Math.floor((vw - width) / 2)), top: 16 },
+        anchorPosition: { left: combatLeft, top: 16 },
         anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
         transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
         disableClickAway: true,
@@ -3956,11 +3968,28 @@ export default function App() {
             const popoutSeatColor = seatColorById[actorId];
             if (popoutSeatColor) popoverUrl.searchParams.set("seatColor", popoutSeatColor);
             await OBR.popover.close("fdm-actor-card").catch(() => undefined);
-            const cardLeft = Math.max(500 + 32, Math.min(window.screen.width - 500 - 16, window.screen.width - 540));
+            /**
+             * THE CARD WINDOW IS 10% WIDER, AND ITS RIGHT EDGE HAS NOT MOVED.
+             *
+             * Christopher: *"can we make the actor card about 10% wider, i feel like it would
+             * require less scrolling this way, i still want it to be in the same locked
+             * location."* Width buys rows: the action grid caps at three tiles per row and its
+             * floor is 158px, so 550px is where a third column stops being cramped — the same
+             * six actions come out in two rows instead of three, which is the scrolling.
+             *
+             * ⚠ THE POSITION IS DERIVED FROM THE WIDTH, not typed beside it. The old code had
+             * 500 written three times in one expression and a 540 that was silently `500 + 40`;
+             * widening it by hand would have moved the window right along with the growth and
+             * broken the "same locked location" half of the request. Anchored on the RIGHT edge
+             * so the card grows leftward, into the map, away from the screen edge it is parked
+             * against.
+             */
+            const CARD_W = 550;
+            const cardLeft = Math.max(CARD_W + 32, Math.min(window.screen.width - CARD_W - 16, window.screen.width - CARD_W - 40));
             await OBR.popover.open({
               id: "fdm-actor-card",
               url: popoverUrl.toString(),
-              width: 500,
+              width: CARD_W,
               height: 640,
               anchorReference: "POSITION",
               anchorPosition: { left: cardLeft, top: 24 },
