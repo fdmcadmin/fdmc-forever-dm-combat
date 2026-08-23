@@ -1,5 +1,4 @@
 import type { HitPoints } from "../types/actor";
-import type { MonsterVisibilityMode } from "../types/monsterTypes";
 import { type Coins, type CoinType, normalizeCoins, coinsFromGold, addCoin, coinsToCopper, copperToCoins } from "../currency/currency";
 
 // ─── Seat types ───────────────────────────────────────────────────────────────

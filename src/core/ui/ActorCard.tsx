@@ -53,8 +53,7 @@ import { CommittedRollPanel, type ReadiedRollCandidate } from "./CommittedRollPa
 import { getRerollSources } from "../state/rerollSources";
 import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
-import { initiativeRollFormula } from "../state/initiative";
-import { resolveFormulaVars, formulaHasVars, getProficiencyBonus } from "../state/resolveFormulaVars";
+import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
 import { useEquippedState, applyEquippedOverlay } from "../state/useEquippedState";
@@ -337,7 +336,7 @@ function isActorCardSessionSyncMessage(data: unknown): data is { type: "replace"
   return message.type === "replace" && Boolean(message.snapshot && typeof message.snapshot === "object");
 }
 
-function createSessionCounters(actor: Actor): Partial<Record<SessionCounterId, SessionCounter>> {
+function createSessionCounters(_actor: Actor): Partial<Record<SessionCounterId, SessionCounter>> {
   return {};
 }
 
@@ -1983,67 +1982,6 @@ export function ActorCard({
     };
   }
 
-  async function handleInitiative() {
-    const formula = initiativeRollFormula(actor);
-    const requestId = createDiceRequestId("fdm-init", actor.id);
-
-    setInitiativeByActorId((current) => ({
-      ...current,
-      [actor.id]: {
-        requestId,
-        formula,
-        status: "pending",
-      },
-    }));
-
-    onLog({
-      actorName: actor.name,
-      actionName: "Initiative",
-      tabId: "system",
-      message: `${actor.name} rolls Initiative (${formula}). Sending to Dice+ when available; manual fallback remains available.`,
-    });
-
-    const request: DiceBridgeRollRequest = {
-      protocol: "forever-dm-combat.roll.request.v1",
-      requestId,
-      source: "Forever DM Combat",
-      actorId: actor.id,
-      actorName: actor.name,
-      actionId: "initiative",
-      actionName: "Initiative",
-      formula: labeledDiceFormula(formula, `${actor.name} Initiative`),
-      outcomeMode: "ability-check",
-      sentAt: new Date().toISOString(),
-    };
-
-    const sent = await onSendDicePlusRequest(request);
-
-    if (!sent) {
-      setInitiativeByActorId((current) => ({
-        ...current,
-        [actor.id]: {
-          requestId,
-          formula,
-          status: "manual",
-        },
-      }));
-      onLog({
-        actorName: actor.name,
-        actionName: "Manual Initiative",
-        tabId: "system",
-        message: `${actor.name} should roll Initiative manually: ${formula}.`,
-      });
-      return;
-    }
-
-    onLog({
-      actorName: actor.name,
-      actionName: "Dice+ Initiative",
-      tabId: "system",
-      message: `${actor.name} sent Initiative (${formula}) to Dice+.`,
-    });
-  }
-
   function handleAdjustStatusTracker(trackerId: StatusTrackerId, delta: number) {
     const tracker = status[trackerId];
 
@@ -2242,18 +2180,6 @@ export function ActorCard({
         ...current,
         [actor.id]: nextEffects,
       };
-    });
-  }
-
-  function clearAllArmedEffectsForActor() {
-    setArmedEffectsByActorId((current) => {
-      if (!current[actor.id]?.length) {
-        return current;
-      }
-
-      const next = { ...current };
-      delete next[actor.id];
-      return next;
     });
   }
 
@@ -4363,28 +4289,6 @@ export function ActorCard({
       tabId: "system",
       message: `${actor.name} sent ${committedRoll.actionLabel} (${request.formula}) to the generic Owlbear dice bridge.`,
     });
-  }
-
-  async function handleSendDicePlusRequest() {
-    const request = buildDiceBridgeRequest();
-
-    if (!committedRoll || !request) {
-      return;
-    }
-
-    const sent = await onSendDicePlusRequest(request);
-
-    if (!sent) {
-      onLog({
-        actorName: actor.name,
-        actionName: "Dice+",
-        tabId: "system",
-        message: `${actor.name} tried to send ${committedRoll.actionLabel} to Dice+, but Dice+ was not ready or did not respond.`,
-      });
-      return;
-    }
-
-    onMarkCommittedRollBridgeSent();
   }
 
   function formatCommittedRollTableResult() {

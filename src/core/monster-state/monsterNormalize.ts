@@ -130,10 +130,6 @@ function normalizeAbilities(raw: Record<string, unknown>, issues: MonsterValidat
   return abilities;
 }
 
-function actionNameFrom(rawAction: Record<string, unknown>, fallback: string) {
-  return asString(rawAction.name ?? rawAction.label ?? rawAction.title) ?? fallback;
-}
-
 function looksLikeRollableKind(kind: string) {
   const value = kind.toLowerCase();
   return value.includes("attack") || value.includes("spell") || value.includes("save") || value.includes("check");

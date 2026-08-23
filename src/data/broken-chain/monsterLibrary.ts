@@ -1,4 +1,3 @@
-import type { MonsterReaderAction } from "../../core/monsters/MonsterJconScanner";
 import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
 import { AUTHORED_MONSTERS, mergeAuthored } from "./authored.generated";
 
@@ -16,13 +15,6 @@ function formatAbility(label: string, score: number, modifier: number, save?: nu
   return { label, value: `${score} (${signed})`, ...(typeof save === "number" ? { save } : {}) };
 }
 
-function saveText(save: string | undefined, dc: number | undefined) {
-  if (save && typeof dc === "number") {
-    return `${save} DC ${dc}`;
-  }
-  return save;
-}
-
 function appendParts(...parts: Array<string | undefined>) {
   return parts.filter(Boolean).join("\n");
 }
@@ -35,7 +27,6 @@ const act1SwampLabel = "Act 1 — Swamp Ambush";
 const act1BossLabel = "Act 1 Boss";
 const act2S1E1Label = "Act 2 S1 E1 - Hollow Pack";
 const act2S1E2Label = "Act 2 S1 E2 - Frozen Hollow";
-const act2S2E1Label = "Act 2 S2 E1 - Corrupted Hunters";
 const act2S2E2Label = "Act 2 S2 E2 - Last Directive";
 const fortCervanBandLabel = "The Fort — Cervan's Band";
 

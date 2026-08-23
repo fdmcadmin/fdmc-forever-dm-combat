@@ -10,9 +10,7 @@
  */
 
 import type { Actor } from "../types/actor";
-import type { EquipmentItem } from "../ui/EquipmentBagEditor";
 import { loadEquipmentLibrary } from "../ui/EquipmentBagEditor";
-import { loadActorLibrary } from "../seats/dmActorLibrary";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

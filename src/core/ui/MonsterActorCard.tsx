@@ -774,7 +774,6 @@ export function MonsterActorCard({
   // one-off additive die that rides the NEXT damage roll, then clears
   const [pendingDamageDie, setPendingDamageDie] = useState<string | null>(null);
   const [additiveOpen, setAdditiveOpen] = useState(false);
-  const [usedActionIds, setUsedActionIds] = useState<Set<string>>(() => new Set());
   // rechargedActionIds — actions with recharge that have been USED this turn and not yet recharged
   const [dischargedActionIds, setDischargedActionIds] = useState<Set<string>>(() => new Set());
   const [showCritFailTables, setShowCritFailTables] = useState(false);
@@ -809,7 +808,6 @@ export function MonsterActorCard({
       const msg = event.data as { type?: string; instanceId?: string } | undefined;
       if (msg?.instanceId === monster.instanceId) {
         setEconomy({ actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 });
-        setUsedActionIds(new Set());
         setCommittedRoll(null);
         // Legendary points come back at the start of the creature's own turn.
         setLegendaryUsed(0);
@@ -1053,7 +1051,6 @@ export function MonsterActorCard({
     }
     // Final commit
     const result = committedRoll.damageResult ?? committedRoll.result;
-    setUsedActionIds(prev => new Set([...prev, committedRoll.actionId]));
     // Spend the action budget. One attack costs one step; a SPELL ACTION costs the whole
     // turn's actions, so casting ends the attacks rather than leaving a swing on the table.
     if (actionCounter && economy.stepsUsed < actionCounter.total) {
@@ -1406,7 +1403,7 @@ export function MonsterActorCard({
           </button>
           <button type="button" className="fdmc-ghost-btn"
             title="Clear the action budget, bonus and reaction. Spell slots and recharges persist."
-            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setUsedActionIds(new Set()); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}>
+            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}>
             Reset Turn
           </button>
           {/* ⚀ THE NAT 1 TABLES, ON THE MONSTER CARD — where a monster's Nat 1 actually happens.

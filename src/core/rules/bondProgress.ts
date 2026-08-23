@@ -230,7 +230,6 @@ export function bondLevelUpFlag(
     }
     return null;
   }
-  const before = beforeR.stage;
   const after = afterR.stage;
   const stage = template.stages[after];
   const name = bondStageName(after);

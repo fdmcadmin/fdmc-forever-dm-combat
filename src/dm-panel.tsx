@@ -56,7 +56,6 @@ import {
   normalizeFdmcRoomLiveState,
   createEmptyRoomLiveState,
   patchActorHp,
-  patchActorGold,
   grantActorCoin,
   patchActorCoins,
   getActorCoins,
@@ -78,7 +77,7 @@ import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import type { Actor } from "./core/types/actor";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
-import { loadEquipmentLibrary, saveEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";

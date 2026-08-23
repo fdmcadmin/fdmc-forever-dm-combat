@@ -606,7 +606,6 @@ export function simulateEncounter(opts: {
   const prepared = prepareRoster(roster, partySize);
   const encounterEhp = prepared.reduce((sum, group) => sum + group.groupEhp, 0);
   const maxRounds = Number(settings.maxRounds ?? 20);
-  const completionRoundMonsterFraction = clamp(Number(settings.completionRoundMonsterFraction ?? 0.5), 0, 1);
   const damageAllocation: DamageAllocation =
     settings.damageAllocation === "spread_evenly" ? "spread_evenly" : "focus_fire";
   // EQUAL pools. Not an authored per-PC share.

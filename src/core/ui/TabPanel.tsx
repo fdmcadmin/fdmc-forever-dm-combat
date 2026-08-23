@@ -267,7 +267,7 @@ function rollButtonLabelForMode(mode: CommittedRollOutcomeMode, action?: ActorAc
   return "Roll";
 }
 
-function createCandidate(action: ActorAction, activeTab: TabId, costs: ActionCost[], readiedKey: string, chosenDamageType?: string): ReadiedRollCandidate {
+function createCandidate(action: ActorAction, _activeTab: TabId, costs: ActionCost[], readiedKey: string, chosenDamageType?: string): ReadiedRollCandidate {
   const outcomeMode = inferOutcomeMode(action);
 
   return {

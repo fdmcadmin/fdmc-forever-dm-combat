@@ -9,7 +9,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import OBR, { type Item } from "@owlbear-rodeo/sdk";
 import {
-  FDMC_TOKEN_BINDING_KEY,
   type FdmcTokenBinding,
   readTokenBinding,
   writeTokenBinding,

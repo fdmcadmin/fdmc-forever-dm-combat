@@ -17,7 +17,7 @@ import { saveActorLibrary } from "./dmActorLibrary";
 
 // ─── Action validation — fix any broken roll paths ────────────────────────────
 
-function validateAndFixAction(action: ActorAction, actorName: string): { action: ActorAction; issues: string[] } {
+function validateAndFixAction(action: ActorAction, _actorName: string): { action: ActorAction; issues: string[] } {
   const issues: string[] = [];
   const fixed = { ...action };
 

@@ -16,7 +16,7 @@ import { LootPoolBuilder } from "./LootPoolBuilder";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
 import { ItemMechanicsFields } from "./ItemMechanicsFields";
-import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, itemToAction, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult, fingerprintEquipmentItem } from "./EquipmentBagEditor";
+import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, importEquipmentLibrary, SLOT_LABEL, SLOT_CAPACITY, type EquipmentItem, type EquipmentImportResult, fingerprintEquipmentItem } from "./EquipmentBagEditor";
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
-import type { FdmcRoomLiveState, FdmcRecentEventSlot } from "../table-state/fdmcRoomLiveState";
+import type { FdmcRoomLiveState } from "../table-state/fdmcRoomLiveState";
 import {
   normalizeFdmcRoomLiveState,
   createEmptyRoomLiveState,

@@ -293,7 +293,7 @@ type RawAction = {
 function parseSection(
   entries: readonly RawAction[] | undefined,
   section: "traits" | "actions" | "reactions" | "legendary" | "lair",
-  creature: string,
+  _creature: string,
   assumptions: FeatureAssumption[],
 ): ParsedFeature[] {
   const out: ParsedFeature[] = [];

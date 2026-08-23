@@ -29,6 +29,12 @@ Thumbs.db
 # TypeScript cache
 *.tsbuildinfo
 
+# Emitted by "tsc -b" from tsconfig.node.json (composite, so it emits). Vite itself reads
+# vite.config.ts, so these are build output that used to be tracked - and they reappeared as a
+# dirty working tree after every single build.
+vite.config.js
+vite.config.d.ts
+
 # Local dev scripts
 push.bat
 

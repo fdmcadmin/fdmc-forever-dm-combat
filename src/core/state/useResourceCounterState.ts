@@ -150,7 +150,7 @@ export function useResourceCounterState(actors: Actor[]) {
     return stateRef.current[actorId]?.[resourceActionId] ?? 0;
   }, []);
 
-  const getMax = useCallback((actorId: string, resourceAction: ActorAction): number => {
+  const getMax = useCallback((_actorId: string, resourceAction: ActorAction): number => {
     return getMaxFromAction(resourceAction);
   }, []);
 

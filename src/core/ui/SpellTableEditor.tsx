@@ -13,7 +13,7 @@ import { readDamageTypeChoice } from "../rules/damageTypeChoice";
 import { FormulaInput } from "./FormulaInput";
 import { SaveDcComposer } from "./SaveDcComposer";
 import type { ActorAction } from "../types/tabs";
-import { formatSpellLevel, type SpellActionLevel } from "../types/spellSlots";
+import { type SpellActionLevel } from "../types/spellSlots";
 
 // ─── Row type ─────────────────────────────────────────────────────────────────
 

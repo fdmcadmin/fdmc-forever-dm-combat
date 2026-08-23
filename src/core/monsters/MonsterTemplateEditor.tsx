@@ -42,7 +42,6 @@ import {
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
-import { parseCreature } from "../encounter-band/parseCreature";
 import { TRAIT_RULES, traitRule } from "../encounter-band/compactImport";
 
 // ─── Props ────────────────────────────────────────────────────────────────────

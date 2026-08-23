@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { actionCostLabels } from "../types/actionEconomy";
 import type { ActionCost } from "../types/actionEconomy";
-import { isInertAction, isFreeEconomy, resolveOutcomeMode } from "../types/tabs";
+import { isInertAction } from "../types/tabs";
 import { effectKindLabel } from "../constants/itemTypeCapabilities";
 import type { ActorAction } from "../types/tabs";
 
@@ -141,7 +141,6 @@ export function ActionButton({
    * `utility` is deliberately NOT here. It is clickable — the click IS the action — it just
    * never rolls.
    */
-  const mode = resolveOutcomeMode(action);
   /**
    * ⚠ AN ACTION THAT SPENDS SOMETHING CAN NEVER BE INERT.
    *

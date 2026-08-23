@@ -58,15 +58,6 @@ function hpColor(current: number, max: number): string {
   return "#4caf50";
 }
 
-function HpBar({ current, max }: { current: number; max: number }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0;
-  return (
-    <div style={{ height: 6, background: "#1c1c2c", borderRadius: 3, overflow: "hidden" }}>
-      <div style={{ width: `${pct}%`, height: "100%", background: hpColor(current, max), transition: "width 0.25s" }} />
-    </div>
-  );
-}
-
 function PlayerTrackerApp() {
   const [partyRoster, setPartyRoster] = useState<Combatant[]>([]);
   const [monsters, setMonsters] = useState<OverlayMonster[]>([]);

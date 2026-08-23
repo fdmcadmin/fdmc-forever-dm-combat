@@ -3,8 +3,6 @@ import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { ActorEditor } from "./ActorEditor";
-import { ActorEditorActionTab } from "./ActorEditorActionTab";
-import type { ActorAction } from "../types/tabs";
 
 // ─── Broadcast types ──────────────────────────────────────────────────────────
 

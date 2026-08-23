@@ -17,10 +17,8 @@ const ACTION_TAB_HEADING: Partial<Record<TabId, string>> = {
   feats: "Feats",
   notes: "Notes",
 };
-import type { ActionCost } from "../types/actionEconomy";
 import { actionFromEditorDraft, archiveActionFromTab, replaceActionInTab } from "./pcActionAdapters";
 import type { PcActionDraft, PcRollMode, PcActionCost, PcCastingClass } from "./pcActionTypes";
-import { slugifyForActionId } from "./pcActionTypes";
 
 // ─── Outcome mode UI label ────────────────────────────────────────────────────
 
@@ -686,7 +684,6 @@ export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels,
   // Shift held when the Move dropdown was opened -> copy instead of move.
   const [moveAsCopy, setMoveAsCopy] = useState(false);
 
-  const editingAction = editingId ? actions.find(a => a.id === editingId) : undefined;
 
   function handleSaveEdit(updated: ActorAction) {
     onChange(replaceActionInTab(actions, updated));

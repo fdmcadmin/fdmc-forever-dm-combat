@@ -196,7 +196,6 @@ export function deriveActorStats(
   };
 
   let baseAC = actor.stats.ac;
-  let acOverridden = false;
   const acModifiedBy: string[] = [];
   let acBonus = 0;
   let hpMaxBonus = 0;
@@ -287,7 +286,6 @@ export function deriveActorStats(
   }
   if (bestArmor) {
     baseAC = bestArmor.base;
-    acOverridden = true;
     acDexBonus = bestArmor.dex;
     acModifiedBy.push(
       bestArmor.dex !== 0

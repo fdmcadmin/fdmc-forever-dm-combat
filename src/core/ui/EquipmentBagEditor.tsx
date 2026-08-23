@@ -18,9 +18,9 @@ import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
 import { WEAPON_CATEGORIES, WEAPON_MASTERIES, WEAPON_MASTERY_NAMES, masteryInfoLine, type WeaponMasteryName } from "../constants/weaponMastery";
 import { ItemMechanicsFields } from "./ItemMechanicsFields";
-import { ARMOR_TYPES, EFFECT_KINDS, ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, outcomeModeForEffectKind, type ArmorTypeId, type EffectKind, type ItemType } from "../constants/itemTypeCapabilities";
+import { ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, outcomeModeForEffectKind, type ArmorTypeId, type EffectKind, type ItemType } from "../constants/itemTypeCapabilities";
 import { BASE_WEAPONS } from "../constants/baseWeapons";
-import { composeChassisAttack, findForm, isVersatileForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
+import { composeChassisAttack, findForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
@@ -760,7 +760,6 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
   const hasSave = Boolean(item.saveDc) && !isWeapon;
   // Consumables with charges but no attack dice: usable from equipment tab (e.g. Elixir, Potion)
   const isConsumable = Boolean(item.charges) && !isWeapon;
-  const isPassive = item.type === "passive";
 
   return {
     id: `equip-${item.id}`,

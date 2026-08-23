@@ -79,7 +79,7 @@ import { ActorSelector } from "./core/ui/ActorSelector";
 import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast } from "./core/ui/MonsterActorCard";
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
-import { isObrReady, obrSend } from "./core/utils/obrReady";
+import { obrSend } from "./core/utils/obrReady";
 import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
 import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui/openLootOffer";
 import { FDMC_ACCENTS } from "./core/constants/theme";
@@ -88,7 +88,7 @@ import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
 import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
-import { resolveActor, buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
+import { resolveActor } from "./core/table-state/actorHydrationBoundary";
 import { SeatAssignmentPanel } from "./core/seats/SeatAssignmentPanel";
 import { useDmSeatSystem, usePlayerSeatSystem } from "./core/seats/useSeatSystem";
 import {
@@ -103,7 +103,6 @@ import {
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
 import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
-import { MonsterRuntimeSetupSlot } from "./core/monsters/runtime/MonsterRuntimeSetupSlot";
 import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { type MainEncounterMonsterInstance } from "./core/monsters/runtime/mainMonsterRuntime";
 import {
@@ -117,7 +116,6 @@ import {
   subscribeFdmcRoomStateKey,
 } from "./core/table-state/roomStateBridge";
 import {
-  deregisterMonsterInstance,
   patchMonsterInitiative,
   patchMonsterHp,
   pushRecentEvent,
@@ -140,7 +138,7 @@ import { takeSnapshot, mirrorWallets } from "./core/state/autoBackup";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { bondMilestoneForEncounter } from "./modules/the-broken-chain/content/bondGates";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
-import { appendLogEntry, clearEncounterLog, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
+import { appendLogEntry, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "./core/export/encounterLogExport";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -939,8 +937,6 @@ export default function App() {
 
   // ── Resource counters (spell slots, class features) ───────────────────────
   const {
-    getRemaining,
-    decrementResource,
     counters,
     consumeSpellSlot,
     consumeNamedResource,
@@ -1670,10 +1666,6 @@ export default function App() {
     });
   }
 
-  function addMonsterInstance(monster: MainEncounterMonsterInstance) {
-    addMonsterInstances([monster]);
-  }
-
   function updateMonsterInstance(
     instanceId: string,
     patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "tempHp" | "status" | "visibilityState" | "hiddenName" | "isNameRevealed">>
@@ -1718,18 +1710,6 @@ export default function App() {
         }
       }
     }
-  }
-
-  function removeMonsterInstance(instanceId: string) {
-    setMonsterCandidates(c => {
-      const next = c.filter(m => (m as MainEncounterMonsterInstance).instanceId !== instanceId);
-      saveMonsterRoster(next as MainEncounterMonsterInstance[]);
-      broadcastMonsterRoster(next as MainEncounterMonsterInstance[]);
-      return next;
-    });
-    if (activeMonsterInstanceId === instanceId) setActiveMonsterInstanceId("");
-    const nextState = deregisterMonsterInstance(roomLiveState, instanceId);
-    void commitRoomState(nextState);
   }
 
   // ── Monster economy state — received via OBR broadcast from MonsterActorCard ──
@@ -2029,18 +2009,6 @@ export default function App() {
   }
 
   // P7/P8: log roll result to encounter log + ring buffer
-  function logRollResult(actorId: string, actorName: string, actionName: string, val: number, type: "roll-attack" | "roll-damage", round: number) {
-    if (!isDmMode) return;
-    const code = makeActionCode(actorName, actionName);
-    appendLogEntry({
-      id: makeLogId(), timestamp: new Date().toLocaleTimeString(), round,
-      type, code, actorId, actorName, val, message: `${actorName} — ${actionName}: ${val}`,
-    });
-    if (OBR.isAvailable) {
-      const next = pushRecentEvent(roomLiveState, { actorId, type, code, val, round });
-      void commitRoomState(next);
-    }
-  }
   // Track which actor's OBR popover is currently open for toggle behavior
   const [openActorPopoverId, setOpenActorPopoverId] = useState<string | null>(null);
 
@@ -2672,7 +2640,6 @@ export default function App() {
   )) {
     const availableSeats = Object.values(roomLiveState.seats).sort((a, b) => a.seatId.localeCompare(b.seatId));
     const boundSeatIds = new Set(Object.values(roomLiveState.seatBindings).map(b => b.seatId));
-    const openSeats = availableSeats.filter(s => !boundSeatIds.has(s.seatId));
     // Auto-claim if exactly one seat is open
     // Auto-claim removed — players always choose their own seat
 
