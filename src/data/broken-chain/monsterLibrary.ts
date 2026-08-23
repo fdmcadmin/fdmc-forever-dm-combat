@@ -1772,6 +1772,16 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e4-the-hollow-feast",
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
+      /**
+       * ⚠ AC 17 / HP 82 IS CORRECT — DO NOT "FIX" IT TO 16 / 75.
+       *
+       * v3.14 prints AC 16 / HP 75 and I briefly changed this to match it. That was wrong: v3.21
+       * is the current document, its card prints AC 17 / HP 82, and its Fight 4 scaling table
+       * agrees — Velvet Host 62 / 82 / 103 for 3P / 4P / 5P. The older doc was superseded.
+       *
+       * Recorded here because the drift is a trap: anyone diffing this library against a v3.14 copy
+       * will find exactly one mismatch and be tempted to correct the right value into the wrong one.
+       */
       kind: "fey", ac: 17, maxHp: 82, speed: "30 ft.",
       defenses: [
       /**
@@ -2473,5 +2483,25 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
  * the author edited in the app replaces its bundled twin by templateId; a brand new one is
  * appended. Nothing above this line is ever rewritten by a tool.
  */
+/**
+ * ⚠ FIGHT 7 AND FIGHT 8 ARE FROZEN — VOID FOR CHANGES, NOT REMOVED.
+ *
+ * Christopher: *"i said void the E7 and E8"*, then, when I filtered them out of the shipped
+ * library: *"void changes on them not remove them."*
+ *
+ * So The Last Court and The Occupied Acre stay exactly as they are and stay in the app. What is
+ * void is EDITING them: they are excluded from every reconciliation pass against the encounter
+ * documents, and no version check applies to their six creatures — Walking Court, Hushrunner,
+ * Brandwing, Siege Saint, Ashstep, Rift Scribe.
+ *
+ * That matters because v3.21 reassigns Fight 7 outright: its roster there is Blackbough Reeve ·
+ * Gloam Harrow · Brandwing, where this library holds Walking Court · Hushrunner · Brandwing. Under
+ * any normal pass that reads as drift to correct. It is not. Leave it.
+ */
+export const VOIDED_FOR_CHANGES = new Set([
+  "act3-e7-the-last-court",       // Walking Court · Hushrunner · Brandwing
+  "act3-e8-the-occupied-acre",    // Siege Saint · Ashstep · Rift Scribe
+]);
+
 export const BROKEN_CHAIN_MONSTER_LIBRARY: MainMonsterTemplate[] =
   mergeAuthored(BUNDLED_MONSTER_LIBRARY, AUTHORED_MONSTERS, t => t.templateId);

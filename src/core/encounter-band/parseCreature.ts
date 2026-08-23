@@ -416,16 +416,29 @@ export function parseCreature(template: MainMonsterTemplate): ParsedCreature {
     : undefined;
   const attacksPerTurn = template.stats.attacksPerTurn ?? printedSequence ?? 1;
   const hasRoutineAttacks = features.some(f => f.activationType === "action" && f.attackBonus !== undefined);
-  if (!template.stats.attacksPerTurn && printedSequence !== undefined) {
-    // Read, not assumed — recorded so the trace shows where the budget came from.
-    assumptions.push({ feature: name, flag: "ESTIMATED", field: "action_cost",
-      detail: `Action budget of ${printedSequence} read from the printed Multiattack sequence. Set Attacks per turn to make it a stated fact.` });
-  } else if (!template.stats.attacksPerTurn && hasRoutineAttacks && multiattackAction) {
+  /**
+   * ⚠ THE AUDIT IS A WARNING CHANNEL, NOT A RECEIPT.
+   *
+   * Christopher: *"why do i need to see that no multiattack printed if it has no multiattack […]
+   * the only time the checker should says anything under the aggr audit is if something is reading
+   * wrong, the fact that is says something under the audit is suppose to be a warning not a
+   * verification that something is correct."*
+   *
+   * Two of the three branches here were receipts. "No Multiattack printed, so the Action budget is
+   * one attack per turn" states the RULESET — a 5e block without Multiattack makes one attack with
+   * its Action — and "read from the printed Multiattack sequence" states a SUCCESSFUL READ. Neither
+   * is a thing going wrong, and between them they put a line under nearly every encounter. A panel
+   * that always has something in it is a panel nobody reads, which costs exactly the warnings it
+   * was built to surface.
+   *
+   * What remains is the only case where the app is actually stuck: the block prints a Multiattack
+   * and its size could not be read, so the budget silently falls back to one and is almost
+   * certainly too low. That is worth interrupting a DM for. Nothing else here is.
+   */
+  if (!template.stats.attacksPerTurn && printedSequence === undefined
+      && hasRoutineAttacks && multiattackAction) {
     assumptions.push({ feature: name, flag: "NEEDS DM INPUT", field: "action_cost",
       detail: "This creature has a Multiattack but its sequence could not be read, so the Action budget is one attack per turn — almost certainly too few. Enter Attacks per turn." });
-  } else if (!template.stats.attacksPerTurn && hasRoutineAttacks) {
-    assumptions.push({ feature: name, flag: "ESTIMATED", field: "action_cost",
-      detail: "No Multiattack printed, so the Action budget is one attack per turn." });
   }
 
   return { name, ac, maxHp: template.stats.maxHp, attacksPerTurn, features, assumptions };
@@ -587,16 +600,11 @@ export function workbookCreature(template: MainMonsterTemplate): WorkbookCreatur
    * number, only what the panel claims about where the number came from.
    */
   const profileHasAttacks = (profile.f ?? []).some(f => f.a !== null && f.a !== undefined);
-  if (!template.stats.attacksPerTurn && profileSequence !== undefined) {
-    // Read, not assumed — recorded so the trace shows where the budget came from.
-    assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
-      detail: `Action budget of ${profileSequence} read from the printed Multiattack sequence. Set Attacks per turn to make it a stated fact.` });
-  } else if (!template.stats.attacksPerTurn && profileHasAttacks && profileMultiattack) {
+  // Same rule as the DM path above: warn only when the read actually failed.
+  if (!template.stats.attacksPerTurn && profileSequence === undefined
+      && profileHasAttacks && profileMultiattack) {
     assumptions.push({ feature: profile.n, flag: "NEEDS DM INPUT", field: "action_cost",
       detail: "This creature has a Multiattack but its sequence could not be read, so the Action budget is one attack per turn — almost certainly too few. Enter Attacks per turn." });
-  } else if (!template.stats.attacksPerTurn && profileHasAttacks) {
-    assumptions.push({ feature: profile.n, flag: "ESTIMATED", field: "action_cost",
-      detail: "No Multiattack printed, so the Action budget is one attack per turn." });
   }
 
   /**
