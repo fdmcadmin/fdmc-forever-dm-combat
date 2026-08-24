@@ -38,6 +38,7 @@ import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
+import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
 import {
   loadActorLibrary,
@@ -866,11 +867,15 @@ function DmPanelApp() {
           <div style={{ padding: "10px 14px", overflowY: "auto" }}>
             {/* A run references the DM's OWN encounters. Nothing about a run is bundled. */}
             <ActRunPanel encounters={loadEncounterLibrary()} />
+            {/* ⚠ THE CHECKER PRICES THE LIBRARY AS IT ACTUALLY IS, not as it shipped. Both of
+                these were handed the bundled constant, so a creature the DM had edited was still
+                priced at its shipped stats — the same fault 0.7.32 fixed a layer down.
+                `resolveMonsterLibrary` is the one place the precedence rule lives. */}
             <EncounterDifficultyPanel
               encounters={loadEncounterLibrary()}
-              monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
+              monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library}
             />
-            <CreatureEstimatorPanel monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY} />
+            <CreatureEstimatorPanel monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library} />
           </div>
         )}
         {panelId === "monsters" && (

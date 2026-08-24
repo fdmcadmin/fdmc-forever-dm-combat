@@ -16,7 +16,7 @@ import {
   type EncounterMonsterEntry,
 } from "./encounterLibrary";
 import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/partyCurveV2";
-import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
+import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, resolveMonsterLibrary, isCampaignTemplateId, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { exportCampaignAuthoring } from "../campaign/authorExport";
 // The panel is the seam where campaign content meets the engine editors — the same place
 // chassisOptions is assembled. The editor itself never imports mod content (RULE 3).
@@ -609,81 +609,28 @@ export function EncounterLibraryPanel({
     } catch { return []; }
   });
 
-  // ── Monster library resolution — fixes (a) DM creations persisting and (b) campaign gating ──
+  // ── Monster library resolution ───────────────────────────────────────────────
   // `monsterLibrary` prop is the bundled CAMPAIGN library (BROKEN_CHAIN_MONSTER_LIBRARY).
-  // "My Library" = the DM's own creations from localStorage (templateIds that AREN'T campaign) —
-  // always available. Campaign monsters are only surfaced when the module is unlocked, with any
-  // DM edits applied on top. In-session overrides give immediate visibility on create/edit.
-  const campaignIds = new Set(monsterLibrary.map(m => m.templateId));
-  // A monster is campaign content if its id is in the bundled library OR uses the reserved
-  // `broken-chain:` namespace (covers stale localStorage copies saved by older builds). DM
-  // creations use `custom-...` ids, so they are never caught here.
-  const isCampaignTemplate = (id: string) => campaignIds.has(id) || id.startsWith("broken-chain:");
-  const myMonsters = dmLibrary.filter(m => !isCampaignTemplate(m.templateId));
+  // "My Library" = the DM's own creations (templateIds that AREN'T campaign) — always available.
+  // Campaign monsters surface only when the module is unlocked, with any DM edits applied on top.
+  // In-session overrides give immediate visibility on create/edit.
   /**
-   * ⚠ A STORED COPY OF A CAMPAIGN CREATURE ONLY WINS IF THE DM ACTUALLY EDITED IT.
+   * ⚠ THE PRECEDENCE RULE MOVED OUT OF THIS COMPONENT (0.7.36.1). It used to live here and only
+   * here, which is exactly why the encounter checker and the creature estimator went on pricing
+   * SHIPPED creatures while this panel showed the edited ones — a rule trapped in a component is a
+   * rule only that component obeys. `resolveMonsterLibrary` in `dmMonsterLibrary.ts` is now the
+   * single implementation.
    *
-   * This line used to be `dmLibrary.find(...) ?? t` — any localStorage entry with a matching
-   * templateId silently replaced the shipped template, forever and invisibly. The campaign
-   * library is authored content that gets CORRECTED (0.7.8.16 repriced all 24 Act 3 creatures),
-   * and a copy saved by an older build shadowed every one of those corrections.
-   *
-   * Christopher, 2026-08-17: *"i did not edit any of the creatures we created for act 3, why
-   * would i change something."* He is right — his Hollow Warden showed 78 HP / AC 18 where the
-   * library has shipped 76 / 16 since the day it was written, and NO code path computes 78.
-   * It was a stale stored copy outranking the real one.
-   *
-   * So a stored campaign copy now has to carry `dmEdited`, which `handleSaveMonsterTemplate`
-   * stamps on save. An unmarked copy is a stale seed and the shipped template wins — which
-   * heals existing data with no action from the DM, because nothing wrote that marker before.
+   * What stays here is what is genuinely UI: the unlock gate, the acknowledge filter on stale-seed
+   * notices, and the in-session override layer.
    */
-  const shadowedCampaignTemplates: { name: string; was: string; now: string; signature: string }[] = [];
-  /**
-   * ⚠ AN OVERRIDE NEEDED A WAY OUT THAT IS NOT DELETION. Christopher, 2026-08-20: *"there is no
-   * way for me to remove overrides without deleting the creatures and encounter from my library."*
-   *
-   * Editing a campaign creature stamps `dmEdited`, and a stamped copy outranks the shipped
-   * template permanently — correct, because his edit must never be silently overwritten by a
-   * later correction. But the only exit was Delete, which is the wrong tool twice over: it is
-   * only offered on My Monsters, and deleting a CAMPAIGN creature reads as destroying content
-   * the encounters depend on.
-   *
-   * Reverting is safe and is not deletion. The shipped template has the SAME templateId, so
-   * dropping the stored copy restores the campaign version in place and every encounter
-   * referencing it keeps resolving. Nothing leaves the library.
-   */
-  const overriddenCampaignTemplates: { id: string; name: string; mine: string; campaign: string; at?: string }[] = [];
-  const campaignBase = unlocked
-    ? monsterLibrary.map(t => {
-      const stored = dmLibrary.find(m => m.templateId === t.templateId);
-      if (!stored) return t;
-      if (stored.dmEdited) {
-        overriddenCampaignTemplates.push({
-          id: t.templateId,
-          name: t.name,
-          mine: `${stored.stats.maxHp} HP / AC ${stored.stats.ac}`,
-          campaign: `${t.stats.maxHp} HP / AC ${t.stats.ac}`,
-          at: stored.dmEdited.at,
-        });
-        return stored;
-      }
-      // Stale seed. Report it only when it actually disagrees, so the notice means something.
-      if (stored.stats.maxHp !== t.stats.maxHp || String(stored.stats.ac) !== String(t.stats.ac)) {
-        // The signature carries the numbers, so acknowledging THIS divergence does not silence a
-        // different one later — a fresh correction changes the signature and speaks up again.
-        const signature = `${t.templateId}|${stored.stats.maxHp}/${stored.stats.ac}|${t.stats.maxHp}/${t.stats.ac}`;
-        if (!shadowAck.has(signature)) {
-          shadowedCampaignTemplates.push({
-            name: t.name,
-            was: `${stored.stats.maxHp} HP / AC ${stored.stats.ac}`,
-            now: `${t.stats.maxHp} HP / AC ${t.stats.ac}`,
-            signature,
-          });
-        }
-      }
-      return t;
-    })
-    : [];
+  const isCampaignTemplate = (id: string) => isCampaignTemplateId(id, monsterLibrary);
+  const resolution = resolveMonsterLibrary(monsterLibrary, { stored: dmLibrary, includeCampaign: unlocked });
+  const overriddenCampaignTemplates = resolution.overridden;
+  // A notice the DM has already acknowledged stays gone until the numbers move again.
+  const shadowedCampaignTemplates = resolution.shadowed.filter(r => !shadowAck.has(r.signature));
+  const myMonsters = resolution.library.filter(t => !isCampaignTemplate(t.templateId));
+  const campaignBase = resolution.library.filter(t => isCampaignTemplate(t.templateId));
   const baseLibrary = [...myMonsters, ...campaignBase];
   const resolvedLibrary = [
     ...baseLibrary.map(t => monsterOverrides[t.templateId] ?? t),

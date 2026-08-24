@@ -88,6 +88,88 @@ export function upsertMonsterTemplate(template: MainMonsterTemplate, owner: Mons
   if (pruned.length !== otherLib.length) saveMonsterLibrary(pruned, other);
 }
 
+// ─── Library resolution — the one place the precedence rule lives ────────────
+
+/**
+ * WHICH VERSION OF A CREATURE IS THE REAL ONE.
+ *
+ * ⚠ THIS RULE USED TO LIVE INSIDE A COMPONENT, so only that component obeyed it. The encounter
+ * checker and the creature estimator were handed `BROKEN_CHAIN_MONSTER_LIBRARY` — the bundled
+ * constant — which meant a DM could edit a creature and then watch the checker price the SHIPPED
+ * one. That is the same fault 0.7.32 answered a layer down: *"if i go in a change every library
+ * entry [...] and the encounter checker still show what was there before instead of what is there
+ * now then isnt not working correctly."*
+ *
+ * The precedence, in one place, for every caller:
+ *
+ *   1. The DM's OWN creations always appear — their ids are never campaign ids.
+ *   2. A campaign creature is the SHIPPED template, unless a stored copy carries `dmEdited`.
+ *   3. An unmarked stored copy is a STALE SEED and loses. It is reported, never silently applied:
+ *      the campaign library gets corrected (0.7.8.16 repriced 24 Act 3 creatures) and a copy saved
+ *      by an older build would otherwise shadow every one of those corrections forever.
+ *
+ * Rule 3 is why this returns REPORTS as well as a list. The panel renders them as banners; the
+ * checker ignores them. One merge, two consumers, no second implementation to drift.
+ */
+export type MonsterLibraryResolution = {
+  /** The creatures as they actually are: DM creations, then campaign with edits applied. */
+  library: MainMonsterTemplate[];
+  /** Campaign creatures the DM deliberately edited — the stored copy IS in `library`. */
+  overridden: { id: string; name: string; mine: string; campaign: string; at?: string }[];
+  /** Unmarked stored copies that disagree with the shipped template and were ignored. */
+  shadowed: { id: string; name: string; was: string; now: string; signature: string }[];
+};
+
+/** A creature belongs to the campaign if the bundle ships it, or it uses the reserved namespace. */
+export function isCampaignTemplateId(id: string, bundled: MainMonsterTemplate[]): boolean {
+  return bundled.some(t => t.templateId === id) || id.startsWith("broken-chain:");
+}
+
+export function resolveMonsterLibrary(
+  bundled: MainMonsterTemplate[],
+  opts: {
+    /** Defaults to the stored library. Passed explicitly by callers that already hold it. */
+    stored?: MainMonsterTemplate[];
+    /** Campaign content is gated on the module unlock in the UI. Defaults to included. */
+    includeCampaign?: boolean;
+  } = {},
+): MonsterLibraryResolution {
+  const stored = opts.stored ?? loadMonsterLibrary();
+  const includeCampaign = opts.includeCampaign ?? true;
+  const isCampaign = (id: string) => isCampaignTemplateId(id, bundled);
+
+  const overridden: MonsterLibraryResolution["overridden"] = [];
+  const shadowed: MonsterLibraryResolution["shadowed"] = [];
+  const shape = (t: MainMonsterTemplate) => `${t.stats.maxHp} HP / AC ${t.stats.ac}`;
+
+  const mine = stored.filter(t => !isCampaign(t.templateId));
+  const campaign = includeCampaign
+    ? bundled.map(t => {
+      const copy = stored.find(m => m.templateId === t.templateId);
+      if (!copy) return t;
+      if (copy.dmEdited) {
+        overridden.push({ id: t.templateId, name: t.name, mine: shape(copy), campaign: shape(t), at: copy.dmEdited.at });
+        return copy;
+      }
+      // Report a stale seed only when it actually disagrees, so the notice means something.
+      if (copy.stats.maxHp !== t.stats.maxHp || String(copy.stats.ac) !== String(t.stats.ac)) {
+        shadowed.push({
+          id: t.templateId,
+          name: t.name,
+          was: shape(copy),
+          now: shape(t),
+          // The signature carries the numbers, so acknowledging THIS divergence does not silence
+          // a different one later — a fresh correction changes it and speaks up again.
+          signature: `${t.templateId}|${copy.stats.maxHp}/${copy.stats.ac}|${t.stats.maxHp}/${t.stats.ac}`,
+        });
+      }
+      return t;
+    })
+    : [];
+
+  return { library: [...mine, ...campaign], overridden, shadowed };
+}
+
 export function deleteMonsterTemplate(templateId: string): void {
   for (const owner of ["dm", "campaign"] as MonsterLibraryOwner[]) {
     const lib = loadMonsterLibrary(owner);

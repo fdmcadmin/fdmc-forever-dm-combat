@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.7.36",
+  "version": "0.7.36.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -22,6 +22,7 @@
     "check:bonds": "npx tsx scripts/check-bond-actions.ts",
     "check:storage": "npx tsx scripts/probe-storage-fallback.ts",
     "check:slots": "npx tsx scripts/check-spell-slot-picks.ts",
+    "check:monsters": "npx tsx scripts/check-monster-resolution.ts",
     "validate:control": "npx tsx scripts/validate-control-pricing.ts",
     "validate:invariants": "npx tsx scripts/validate-encounter-invariants.ts",
     "validate:segments": "npx tsx scripts/validate-act3-segments.ts"
