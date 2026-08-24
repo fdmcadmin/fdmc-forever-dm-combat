@@ -106,7 +106,6 @@ type ActorCardProps = {
   onStartCommittedRoll: (input: StartCommittedRollInput) => void;
   onSetCommittedRollResult: (result: string) => void;
   onChooseCommittedRollOutcome: (outcome: CommittedRollOutcome) => void;
-  onChooseCommittedRollDamage: (damageChoice: CommittedRollDamageChoice) => void;
   onClearCommittedRoll: () => void;
   onMarkCommittedRollBridgeSent: () => void;
   diceBridgeStatus: DiceBridgeStatus;
@@ -848,7 +847,6 @@ export function ActorCard({
   onStartCommittedRoll,
   onSetCommittedRollResult,
   onChooseCommittedRollOutcome,
-  onChooseCommittedRollDamage,
   onClearCommittedRoll,
   onMarkCommittedRollBridgeSent,
   diceBridgeStatus,

@@ -734,6 +734,7 @@ export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels,
               onSave={handleSaveEdit}
               onCancel={() => setEditingId(null)}
               resourceLabels={resourceLabels}
+              classRows={classRows}
             />
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
@@ -780,6 +781,7 @@ export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels,
           onSave={handleAddNew}
           onCancel={() => setAddingNew(false)}
           resourceLabels={resourceLabels}
+          classRows={classRows}
         />
       )}
 
@@ -826,9 +828,11 @@ type CombatActionsTabProps = {
   bonusActions: ActorAction[];
   onChange: (next: { main: ActorAction[]; bonus: ActorAction[] }) => void;
   resourceLabels?: string[];
+  /** The character's classes, so a multiclass sheet can say which one casts each action. */
+  classRows?: { name: string; level: number }[];
 };
 
-export function CombatActionsTab({ mainActions, bonusActions, onChange, resourceLabels }: CombatActionsTabProps) {
+export function CombatActionsTab({ mainActions, bonusActions, onChange, resourceLabels, classRows }: CombatActionsTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
 
@@ -914,6 +918,7 @@ export function CombatActionsTab({ mainActions, bonusActions, onChange, resource
                 onSave={handleSaveEdit}
                 onCancel={() => setEditingId(null)}
                 resourceLabels={resourceLabels}
+                classRows={classRows}
               />
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", background: "#161622", borderRadius: 6, border: "1px solid #2a2a3e" }}>
@@ -939,6 +944,7 @@ export function CombatActionsTab({ mainActions, bonusActions, onChange, resource
           onSave={handleAddNew}
           onCancel={() => setAddingNew(false)}
           resourceLabels={resourceLabels}
+          classRows={classRows}
         />
       )}
 

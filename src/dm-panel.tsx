@@ -226,7 +226,7 @@ function DmPanelApp() {
   const [convergenceApprovalReq, setConvergenceApprovalReq] = useState<ConvergenceRequest | null>(null);
 
   // Cross-window sync: when another DM panel popover approves/clears a request,
-  // it writes the updated list to safeStorage(). The storage event fires in all
+  // it writes the updated list to localStorage. The storage event fires in all
   // other same-origin tabs/popovers — we re-read and sync React state so the
   // badge disappears everywhere, not just in the window that did the approval.
   useEffect(() => {

@@ -1024,6 +1024,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             bonusActions={tabsDraft.bonus ?? []}
             onChange={({ main, bonus }) => setTabsDraft(d => ({ ...d, main, bonus }))}
             resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)}
+            classRows={editorClassRows}
           />
         )}
         {activeTab === "features" && (

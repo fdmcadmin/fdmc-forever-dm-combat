@@ -4,7 +4,6 @@ import type { Coins } from "../currency/currency";
 import type { ImportResult } from "../seats/actorLibraryExport";
 import { useMemo, useState } from "react";
 import type { FdmcTableBinding } from "../table-state/sharedTableState";
-import { safeStorage } from "../utils/safeStorage";
 
 export type FdmcRoomMaintenanceScanEntry = {
   key: string;
@@ -127,7 +126,7 @@ export function FdmcRoomMaintenancePanel({
     setSeatPurgeStatus(null);
     try {
       await onPurgeSeatMetadata();
-      setSeatPurgeStatus("Seat metadata cleared — all seat bindings and seat config removed from room metadata and safeStorage().");
+      setSeatPurgeStatus("Seat metadata cleared — all seat bindings and seat config removed from room metadata and localStorage.");
     } catch (e) {
       setSeatPurgeStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -286,7 +285,7 @@ export function FdmcRoomMaintenancePanel({
         <div>
           <h4>2b. Purge All Seat Metadata</h4>
           <p className="subtle">
-            Clears all seat definitions and player bindings from OBR room metadata and DM safeStorage(). All players are returned to the seat picker. Does not touch actors or combat state.
+            Clears all seat definitions and player bindings from OBR room metadata and DM localStorage. All players are returned to the seat picker. Does not touch actors or combat state.
           </p>
         </div>
         <button

@@ -911,7 +911,6 @@ export default function App() {
     startCommittedRoll,
     setCommittedRollResult,
     chooseCommittedRollOutcome,
-    chooseCommittedRollDamage,
     mergeIntoCommittedRoll,
     markCommittedRollBridgeSent,
     clearCommittedRoll,
@@ -4240,7 +4239,6 @@ export default function App() {
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actorToShow.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actorToShow.id, outcome)}
-        onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(actorToShow.id, choice)}
         onMarkCommittedRollBridgeSent={() => markCommittedRollBridgeSent(actorToShow.id)}
         onClearCommittedRoll={() => clearCommittedRoll(actorToShow.id)}
         onSendDiceBridgeRequest={sendRollRequest}
@@ -4610,7 +4608,6 @@ export default function App() {
                 }}
                 onSetCommittedRollResult={(result) => setCommittedRollResult(focusedActorId, result)}
                 onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(focusedActorId, outcome)}
-                onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(focusedActorId, choice)}
                 onMarkCommittedRollBridgeSent={() => markCommittedRollBridgeSent(focusedActorId)}
                 onClearCommittedRoll={() => clearCommittedRoll(focusedActorId)}
                 onSendDiceBridgeRequest={sendRollRequest}

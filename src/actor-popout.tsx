@@ -213,7 +213,7 @@ function ActorPopout() {
   }, [baseActor, roomLiveState]);
 
   const { getActionState, readyActionCosts, unreadyActionKey, resetActorTurn } = useActionEconomyState(actorList);
-  const { getCommittedRoll, startCommittedRoll, setCommittedRollResult, chooseCommittedRollOutcome, chooseCommittedRollDamage, markCommittedRollBridgeSent, clearCommittedRoll } = useCommittedRollState(actorList);
+  const { getCommittedRoll, startCommittedRoll, setCommittedRollResult, chooseCommittedRollOutcome, markCommittedRollBridgeSent, clearCommittedRoll } = useCommittedRollState(actorList);
   const { getActorConcentration, setActorConcentration, clearActorConcentration } = useActorConcentrationState(actorList);
   const { getActorNotes, addActorNote, deleteActorNote } = useActorNotesState(actorList);
   // resetActorTracker / resetActorStatuses are deliberately NOT taken: they write this seat's
@@ -368,7 +368,6 @@ function ActorPopout() {
         }}
         onSetCommittedRollResult={(result) => setCommittedRollResult(actor.id, result)}
         onChooseCommittedRollOutcome={(outcome) => chooseCommittedRollOutcome(actor.id, outcome)}
-        onChooseCommittedRollDamage={(choice) => chooseCommittedRollDamage(actor.id, choice)}
         onMarkCommittedRollBridgeSent={() => markCommittedRollBridgeSent(actor.id)}
         onClearCommittedRoll={() => clearCommittedRoll(actor.id)}
         onSendDiceBridgeRequest={sendRollRequest}

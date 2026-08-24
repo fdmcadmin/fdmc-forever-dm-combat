@@ -1,4 +1,3 @@
-import { safeStorage } from "../utils/safeStorage";
 /**
  * FDMC OBR broadcast channel names.
  *
@@ -15,9 +14,9 @@ import { safeStorage } from "../utils/safeStorage";
  * across `App.tsx` and `dm-panel.tsx`.
  */
 export const FDMC_CHANNELS = {
-  /** DM library changed → other DM windows reload from safeStorage(). */
+  /** DM library changed → other DM windows reload from localStorage. */
   dmLibraryUpdated: "forever-dm-combat:dm-library-updated:v1",
-  /** Monster popover → main DM window: pull the staged encounter from safeStorage(). */
+  /** Monster popover → main DM window: pull the staged encounter from localStorage. */
   encounterLoadRequest: "forever-dm-combat:encounter-load-request:v1",
   /** DM → players: player-safe monster roster snapshot. */
   monsterRoster: "forever-dm-combat:monster-roster:v1",

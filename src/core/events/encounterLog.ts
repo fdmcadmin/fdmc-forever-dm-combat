@@ -110,7 +110,7 @@ const ENCOUNTER_LOG_KEY = "fdmc.dm.encounterLog.v1";
  *                  rolls and system markers  ->  ~2,050
  *
  * 2500 clears that with headroom while staying bounded, so a runaway loop cannot fill
- * safeStorage(). At roughly 220 bytes an entry that is ~550KB against a ~5MB budget.
+ * localStorage. At roughly 220 bytes an entry that is ~550KB against a ~5MB budget.
  */
 const ENCOUNTER_LOG_MAX = 2500;
 

@@ -8,7 +8,7 @@ import { safeStorage } from "../utils/safeStorage";
  * items into nothing — and opening the Library afterwards showed an empty list, because there
  * was nothing left to hear. The player sits on "Awaiting DM Approval" indefinitely.
  *
- * Level-up requests already avoided this by writing themselves to safeStorage(). This is the
+ * Level-up requests already avoided this by writing themselves to localStorage. This is the
  * same idea, made explicit and shared: the MAIN app window — the one that is always open —
  * records every request here, and any DM surface reads the inbox rather than racing to catch
  * a broadcast it may not be alive for.

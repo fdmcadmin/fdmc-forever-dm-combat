@@ -70,7 +70,7 @@ export function clearActorOverride(actorId: string): void {
  * and the bundled files are the fallback only.
  */
 export function seedLibraryFromBundled(bundledActors: Actor[]): Record<string, Actor> {
-  // If no bundled actors provided, just load whatever exists in safeStorage().
+  // If no bundled actors provided, just load whatever exists in localStorage.
   // This is the correct state when actors are built through the UI.
   if (bundledActors.length === 0) {
     return loadActorLibrary();

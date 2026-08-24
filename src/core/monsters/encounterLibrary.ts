@@ -177,7 +177,7 @@ const ENCOUNTER_LIBRARY_SEED_VERSION = `0.7.8.7-act1-archetype-pass-v4+${AUTHORE
  * The seed used to write `count: 1` for every template, so a freshly seeded library
  * understated every multi-body fight until a DM fixed it by hand. The counts are authored
  * data (the Act 1 Archetype Pass v4 and Act 2 4P Baseline encounter tables), so they belong
- * in the seed rather than in one browser's safeStorage().
+ * in the seed rather than in one browser's localStorage.
  *
  * Act 1 totals these reproduce at 4P: Thornfang Pack 26+2×11 = 48 · Greenwood Raider Band
  * 2×16 = 32 · Mosshide Owlbear 59+2×5 = 69 · Threadbare Spider Nest 4×26 = 104 · Swamp Ambush

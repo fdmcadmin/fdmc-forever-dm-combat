@@ -2,7 +2,7 @@
  * Actor Library Export / Import
  *
  * Export: downloads fdmc.dm.actorLibrary.v1 + overrides as a private JSON file.
- * Import: reads that file back and writes to safeStorage().
+ * Import: reads that file back and writes to localStorage.
  *
  * The bundle never contains actor data. The DM keeps their own backup file.
  * Any device, any session: import the file and the full party is ready.
@@ -13,7 +13,6 @@ import type { ActorOverrideMap } from "../table-state/actorHydrationBoundary";
 import { loadActorLibrary, loadActorOverrides, saveActorLibrary, saveActorOverride } from "./dmActorLibrary";
 import { loadEquipmentLibrary, saveEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import type { Coins } from "../currency/currency";
-import { safeStorage } from "../utils/safeStorage";
 
 // ─── Export format ────────────────────────────────────────────────────────────
 
