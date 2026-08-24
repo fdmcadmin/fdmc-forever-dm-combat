@@ -962,8 +962,24 @@ export function MonsterActorCard({
       phase: attackFormula ? "pending" : "held",
     };
     setCommittedRoll(roll);
-    // Mark economy slot and broadcast. Main actions draw on the action budget: an ATTACK
-    // spends one, any other main action spends the whole budget (a cast is the turn's action).
+    /**
+     * ⚠ AN ATTACK IS SPENT WHEN IT RESOLVES, NOT WHEN THE DICE ARE THROWN.
+     *
+     * Christopher: *"something is consuming the monster action on roll not commit."* This branch
+     * spent a step here, and `handleCommit` spends one again on Apply — so a single Fist took BOTH
+     * of the Grief Colossus's 2/turn: "1 LEFT" while the attack was still held at nat 16, "0 LEFT"
+     * after the damage was applied. Two implementations of one rule, and per RULE 0 the second one
+     * is always the one that is wrong.
+     *
+     * Resolution is the correct moment and it already has both of its exits covered:
+     * `handleCommit` spends on a hit, `handleClearRoll` spends on a miss. A roll thrown and then
+     * abandoned costs nothing, which is right — nothing happened at the table either.
+     *
+     * A NON-ATTACK main action still spends the whole budget here, because a cast IS the turn's
+     * action from the moment it is used; there is no hit/miss for it to resolve into.
+     * (`handleCommit`'s own guard is `stepsUsed < total`, so it correctly does nothing after this.)
+     * Reactions and bonus actions are unchanged: neither draws on the action budget.
+     */
     const isBonus = (action as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() === "bonus";
     setEconomy(e => {
       let next: InstanceEconomy;
@@ -972,8 +988,8 @@ export function MonsterActorCard({
       } else if (isBonus) {
         next = { ...e, bonusUsed: true };
       } else if (action.kind === "attack") {
-        const steps = Math.min(actionsMax, e.stepsUsed + 1);
-        next = { ...e, stepsUsed: steps, actionUsed: steps >= actionsMax };
+        // Spent on resolve — see handleCommit / handleClearRoll.
+        next = e;
       } else {
         next = { ...e, stepsUsed: actionsMax, actionUsed: true };
       }
@@ -1051,14 +1067,27 @@ export function MonsterActorCard({
     }
     // Final commit
     const result = committedRoll.damageResult ?? committedRoll.result;
-    // Spend the action budget. One attack costs one step; a SPELL ACTION costs the whole
-    // turn's actions, so casting ends the attacks rather than leaving a swing on the table.
-    if (actionCounter && economy.stepsUsed < actionCounter.total) {
-      const spendsEverything = (actionCounter.fullActionNames ?? []).includes(committedRoll.actionName);
-      setEconomy(e => ({
-        ...e,
-        stepsUsed: spendsEverything ? actionCounter.total : Math.min(e.stepsUsed + 1, actionCounter.total),
-      }));
+    /**
+     * Spend the action budget. One attack costs one step; a SPELL ACTION costs the whole turn's
+     * actions, so casting ends the attacks rather than leaving a swing on the table.
+     *
+     * ⚠ THE BUDGET IS `actionsMax`, NOT `actionCounter.total`. `deriveMonsterActionCounter`
+     * returns UNDEFINED for any creature that does not have `attacksPerTurn > 1` — it exists to
+     * label multiattack steps, not to hold the budget. Guarding on it meant every SINGLE-attack
+     * creature skipped this branch entirely, which went unnoticed only because the roll-time
+     * spend above was covering for it. Remove that one without fixing this one and a Fist never
+     * marks its action used at all.
+     */
+    if (economy.stepsUsed < actionsMax) {
+      const spendsEverything = (actionCounter?.fullActionNames ?? []).includes(committedRoll.actionName);
+      setEconomy(e => {
+        const steps = spendsEverything ? actionsMax : Math.min(e.stepsUsed + 1, actionsMax);
+        // Broadcast here too: this is now where the action is spent, so the shared economy
+        // strip and any other open window learn about it from this moment, not the roll.
+        const next = { ...e, stepsUsed: steps, actionUsed: steps >= actionsMax };
+        broadcastMonsterEconomy(monster.instanceId, next);
+        return next;
+      });
     }
     addLog(`${publicName} ${committedRoll.actionName}: ${result || "used"}.`);
     onActionCommit?.(committedRoll.actionName);
@@ -1066,10 +1095,19 @@ export function MonsterActorCard({
   }
 
   function handleClearRoll() {
-    // Miss during multiattack — auto-advance step so next sub-attack is available
+    /**
+     * A MISS IS A RESOLVED ATTACK — it spends its step. Same budget as the hit path above, and
+     * for the same reason: `actionCounter` is undefined on a single-attack creature, so guarding
+     * on it meant a missed Fist cost nothing.
+     */
     if (committedRoll?.actionId && committedRoll.actionId !== "multiattack"
-        && actionCounter && economy.stepsUsed < actionCounter.total) {
-      setEconomy(e => ({ ...e, stepsUsed: Math.min(e.stepsUsed + 1, actionCounter.total) }));
+        && economy.stepsUsed < actionsMax) {
+      setEconomy(e => {
+        const steps = Math.min(e.stepsUsed + 1, actionsMax);
+        const next = { ...e, stepsUsed: steps, actionUsed: steps >= actionsMax };
+        broadcastMonsterEconomy(monster.instanceId, next);
+        return next;
+      });
     }
     addLog(`${publicName} roll cleared.`);
     setCommittedRoll(null);
