@@ -3937,23 +3937,25 @@ export default function App() {
             if (popoutSeatColor) popoverUrl.searchParams.set("seatColor", popoutSeatColor);
             await OBR.popover.close("fdm-actor-card").catch(() => undefined);
             /**
-             * ⚠ THE CARD WINDOW SCALES WITH THE SCREEN. IT USED TO BE A CONSTANT.
+             * ⚠ WIDTH IS FIXED AT 550 ON PURPOSE. DO NOT MAKE IT A SHARE OF THE VIEWPORT AGAIN.
              *
-             * Christopher: *"the view for all of these is the same using a 3840x2160 and using a
-             * 1920x1080, why did the PC windows not work the same way as the monster."* Because
-             * the combat window has always sized itself off the viewport — `min(1240, vw - 48)` —
-             * and this one was the literal `500`, then the literal `550`. A bigger monitor bought
-             * the DM more monster card and the player nothing at all.
+             * 0.7.34.3 scaled this window off the viewport (`min(760, vw * 0.34)` by `vh - 48`) to
+             * answer *"why did the PC windows not work the same way as the monster."* On a real
+             * 1080p table that produced roughly 580×750 against the 550×640 that had just been
+             * approved — Christopher: *"the actor card is good but the size of it nearly doubled
+             * if not tripled."* The CONTENT was right; the window had eaten the map.
              *
-             * Same shape as the combat window now: a share of the real viewport, floored so it
-             * never gets narrower than the width the action grid needs for three tiles, and capped
-             * so it does not become a full-screen sheet on a 4K display. 0.34 lands ~550px at
-             * 1600 CSS px, which is where this was before — so a 1080p table sees no change and a
-             * larger one finally sees the room it has.
+             * 550 is the number that was asked for and verified: it is where the action grid gets
+             * its third tile per row (six actions in two rows instead of three). Wider buys
+             * nothing — the grid caps at three columns by design — so extra width is pure cost.
+             *
+             * HEIGHT is the only axis that still scales, gently and hard-capped, because height is
+             * where the scrolling actually is. `vh - 220` leaves room for the OBR toolbar and the
+             * dice tray rather than filling the screen.
              *
              * ⚠ MEASURE THE VIEWPORT, NOT THE MONITOR. `window.screen.width` is the physical
              * panel: it ignores browser chrome, ignores a window that is not maximised, and on
-             * Windows at 125/150% scaling reports numbers that match neither. That is what pushed
+             * Windows at 125/150% scaling reports numbers matching neither. That is what pushed
              * the combat window off the map once already — see `getUsableViewport`.
              *
              * ⚠ THE POSITION IS DERIVED FROM THE WIDTH, not typed beside it. The original had
@@ -3962,8 +3964,8 @@ export default function App() {
              * the RIGHT edge: the card grows leftward into the map and stays parked where it was.
              */
             const { w: vw, h: vh } = await getUsableViewport();
-            const CARD_W = Math.min(760, Math.max(520, Math.round(vw * 0.34)));
-            const CARD_H = Math.min(1000, Math.max(560, vh - 48));
+            const CARD_W = 550;
+            const CARD_H = Math.min(720, Math.max(560, vh - 220));
             const cardLeft = Math.max(8, vw - CARD_W - 40);
             await OBR.popover.open({
               id: "fdm-actor-card",
