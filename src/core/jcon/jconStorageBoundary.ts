@@ -1,5 +1,6 @@
 import type { ActorAction } from "../types/tabs";
 import type { MonsterCombatCandidate } from "../monsters/MonsterJconScanner";
+import { safeStorage } from "../utils/safeStorage";
 
 export const FDMC_JCON_STORAGE_BOUNDARY_VERSION = "0.5.3.4b";
 
@@ -164,7 +165,7 @@ function readArrayLengthFromLocalStorage(key: string): number | "missing" | "inv
   }
 
   try {
-    const raw = window.localStorage.getItem(key);
+    const raw = safeStorage().getItem(key);
     if (!raw) {
       return "missing";
     }

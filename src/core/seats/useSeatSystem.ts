@@ -28,6 +28,7 @@ import { resolveActorsForSeat } from "./dmActorLibrary";
 import { registerSeatColors } from "./seatColors";
 import { cacheActors, loadCachedActors } from "./playerActorCache";
 import type { ActorOverrideMap } from "../table-state/actorHydrationBoundary";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Seat storage (DM localStorage) ──────────────────────────────────────────
 
@@ -35,7 +36,7 @@ const DM_SEAT_CONFIG_KEY = "fdmc.dm.seatConfig.v1";
 
 function loadSeatConfig(): Record<string, FdmcSeat> {
   try {
-    const raw = window.localStorage.getItem(DM_SEAT_CONFIG_KEY);
+    const raw = safeStorage().getItem(DM_SEAT_CONFIG_KEY);
     return raw ? JSON.parse(raw) as Record<string, FdmcSeat> : {};
   } catch {
     return {};
@@ -44,7 +45,7 @@ function loadSeatConfig(): Record<string, FdmcSeat> {
 
 function saveSeatConfig(seats: Record<string, FdmcSeat>): void {
   try {
-    window.localStorage.setItem(DM_SEAT_CONFIG_KEY, JSON.stringify(seats));
+    safeStorage().setItem(DM_SEAT_CONFIG_KEY, JSON.stringify(seats));
   } catch {
     // localStorage unavailable
   }
@@ -55,23 +56,23 @@ function saveSeatConfig(seats: Record<string, FdmcSeat>): void {
 const VIEWER_KEY_CACHE = "fdmc.viewer.seatKey.v1";
 
 async function getViewerSeatKey(): Promise<string> {
-  const cached = window.localStorage.getItem(VIEWER_KEY_CACHE);
+  const cached = safeStorage().getItem(VIEWER_KEY_CACHE);
   if (cached) return cached;
 
   if (!OBR.isAvailable) {
     const fallback = `vk-local-${Date.now().toString(36)}`;
-    window.localStorage.setItem(VIEWER_KEY_CACHE, fallback);
+    safeStorage().setItem(VIEWER_KEY_CACHE, fallback);
     return fallback;
   }
 
   try {
     const rawId = await OBR.player.getId();
     const key = hashViewerId(rawId);
-    window.localStorage.setItem(VIEWER_KEY_CACHE, key);
+    safeStorage().setItem(VIEWER_KEY_CACHE, key);
     return key;
   } catch {
     const fallback = `vk-err-${Date.now().toString(36)}`;
-    window.localStorage.setItem(VIEWER_KEY_CACHE, fallback);
+    safeStorage().setItem(VIEWER_KEY_CACHE, fallback);
     return fallback;
   }
 }
@@ -331,9 +332,25 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
 
   // Derive viewer seat key on mount — also restore viewer choice if they previously chose it
   useEffect(() => {
-    void getViewerSeatKey().then(setViewerSeatKey);
+    /**
+     * ⚠ A REJECTED PROMISE HERE STRANDED THE PLAYER ON "syncing…" FOREVER.
+     *
+     * `getViewerSeatKey` read `window.localStorage` on its very first line, outside any try. Under
+     * Firefox's Enhanced Tracking Protection that access THROWS — FDMC runs inside OBR's iframe, so
+     * Firefox treats the origin as third-party — and `void promise.then(...)` with no `.catch()`
+     * swallowed it. `viewerSeatKey` stayed null, which is the early-return guard in BOTH the
+     * auto-claim effect and `manualClaim`, so the seat sat at "claiming" and clicking a seat did
+     * nothing at all. The card looked like it was validating and never finished.
+     *
+     * The storage call now goes through `safeStorage()`, and the key itself falls back to a
+     * generated one rather than nothing, so a seat can always be claimed even if every store is
+     * blocked.
+     */
+    void getViewerSeatKey()
+      .then(setViewerSeatKey)
+      .catch(() => setViewerSeatKey(`vk-fallback-${Date.now().toString(36)}`));
     try {
-      const lastChoice = window.localStorage.getItem("fdmc.player.seatChoice.v1");
+      const lastChoice = safeStorage().getItem("fdmc.player.seatChoice.v1");
       if (lastChoice === "viewer") {
         setSeatStatus("viewer");
         setClaimedSeatId("viewer");
@@ -406,7 +423,7 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     if (seat?.seatMode === "viewer") {
       setSeatStatus("viewer");
       setClaimedSeatId("viewer");
-      try { window.localStorage.setItem("fdmc.player.seatChoice.v1", "viewer"); } catch { /* ok */ }
+      try { safeStorage().setItem("fdmc.player.seatChoice.v1", "viewer"); } catch { /* ok */ }
       return;
     }
 
@@ -432,7 +449,7 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     setSeatStatus("viewer");
     setClaimedSeatId("viewer");
     // Store viewer preference so refresh restores it
-    try { window.localStorage.setItem("fdmc.player.seatChoice.v1", "viewer"); } catch { /* ok */ }
+    try { safeStorage().setItem("fdmc.player.seatChoice.v1", "viewer"); } catch { /* ok */ }
   }, []);
 
   // Release current seat — returns to seat picker without page reload
@@ -442,7 +459,7 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     setIsBrowsing(true);
     setClaimedSeatId(null);
     setSeatStatus("no-seat");
-    try { window.localStorage.removeItem("fdmc.player.seatChoice.v1"); } catch { /* ok */ }
+    try { safeStorage().removeItem("fdmc.player.seatChoice.v1"); } catch { /* ok */ }
   }, []);
 
   const requestActorData = useCallback((): void => {

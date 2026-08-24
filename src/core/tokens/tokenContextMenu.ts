@@ -15,6 +15,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import { writeTokenBinding, lockToken, unlockToken, clearTokenBinding, type FdmcTokenBinding } from "./tokenBinding";
 import { getSeatColorIndex } from "../seats/seatColors";
 import type { FdmcSeat } from "../seats/seatTypes";
+import { safeStorage } from "../utils/safeStorage";
 
 const GM_LOCK_ID = "fdmc.tokenmenu.gmlock.v1";
 const CLEAR_ID = "fdmc.tokenmenu.clear.v1";
@@ -65,9 +66,9 @@ export const TOKEN_MENU_STATUS_KEY = "fdmc.tokenMenu.status.v1";
 export const TOKEN_MENU_ERROR_KEY = "fdmc.tokenMenu.error.v1";
 function setMenuStatus(status: "ready" | "unavailable", error?: string): void {
   try {
-    window.localStorage.setItem(TOKEN_MENU_STATUS_KEY, status);
-    if (status === "ready" || !error) window.localStorage.removeItem(TOKEN_MENU_ERROR_KEY);
-    else window.localStorage.setItem(TOKEN_MENU_ERROR_KEY, error);
+    safeStorage().setItem(TOKEN_MENU_STATUS_KEY, status);
+    if (status === "ready" || !error) safeStorage().removeItem(TOKEN_MENU_ERROR_KEY);
+    else safeStorage().setItem(TOKEN_MENU_ERROR_KEY, error);
   } catch { /* localStorage unavailable */ }
 }
 

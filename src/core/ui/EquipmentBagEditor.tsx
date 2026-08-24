@@ -22,6 +22,7 @@ import { ITEM_TYPE_BLURB, SELECTABLE_ITEM_TYPES, itemTypeAllows, outcomeModeForE
 import { BASE_WEAPONS } from "../constants/baseWeapons";
 import { composeChassisAttack, findForm, type ChassisSpec, type WeaponGrip } from "../constants/chassis";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Equipment library (dual localStorage) ───────────────────────────────────
 
@@ -342,7 +343,7 @@ export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[]
     // REPAIRED ON READ. Years of the round-trip guessing the type left live libraries full
     // of armour and wands filed as gear; this heals them wherever they load rather than needing
     // a hand-edit each. It only ever promotes OUT of the catch-all, from stated fields.
-    try { return (JSON.parse(window.localStorage.getItem(key) ?? "[]") as EquipmentItem[]).map(repairItemType); } catch { return []; }
+    try { return (JSON.parse(safeStorage().getItem(key) ?? "[]") as EquipmentItem[]).map(repairItemType); } catch { return []; }
   }
   // Both combined — DM items override campaign items with same ID (so edits to campaign items persist)
   const campaign = loadEquipmentLibrary("campaign");
@@ -353,7 +354,7 @@ export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[]
 
 export function saveEquipmentLibrary(library: EquipmentItem[], owner: "campaign" | "dm" = "dm"): void {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : DM_EQUIPMENT_KEY;
-  try { window.localStorage.setItem(key, JSON.stringify(library)); } catch { /* ok */ }
+  try { safeStorage().setItem(key, JSON.stringify(library)); } catch { /* ok */ }
 }
 
 /**
@@ -379,7 +380,7 @@ export function fingerprintEquipmentItem(item: EquipmentItem): string {
 }
 
 export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds: string[] = []): void {
-  if (window.localStorage.getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
+  if (safeStorage().getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
   const byId = new Map(loadEquipmentLibrary("campaign").map(i => [i.id, i]));
   // Merging alone can only ever add. Items the campaign module dropped have to be named
   // explicitly or they stay in the library forever.
@@ -422,7 +423,7 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds:
   });
   if (keep.length !== dm.length) saveEquipmentLibrary(keep, "dm");
 
-  window.localStorage.setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
+  safeStorage().setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
 }
 
 /** Seed version for the base weapon set — bump to re-seed after editing BASE_WEAPONS. */
@@ -467,7 +468,7 @@ const EQUIPMENT_REPAIR_VERSION = "0.7.24-drop-seeded-focuses-and-clean-shadows";
 export function repairEquipmentLibraries(): { focuses: number; shadows: number } {
   const done = { focuses: 0, shadows: 0 };
   try {
-    if (window.localStorage.getItem(EQUIPMENT_REPAIR_KEY) === EQUIPMENT_REPAIR_VERSION) return done;
+    if (safeStorage().getItem(EQUIPMENT_REPAIR_KEY) === EQUIPMENT_REPAIR_VERSION) return done;
   } catch { return done; }
 
   // 1 — the seeded focuses, from both stores.
@@ -502,12 +503,12 @@ export function repairEquipmentLibraries(): { focuses: number; shadows: number }
     saveEquipmentLibrary(keep, "dm");
   }
 
-  try { window.localStorage.setItem(EQUIPMENT_REPAIR_KEY, EQUIPMENT_REPAIR_VERSION); } catch { /* ok */ }
+  try { safeStorage().setItem(EQUIPMENT_REPAIR_KEY, EQUIPMENT_REPAIR_VERSION); } catch { /* ok */ }
   return done;
 }
 
 export function seedBaseWeapons(): void {
-  if (window.localStorage.getItem(BASE_WEAPON_SEED_KEY) === BASE_WEAPON_SEED_VERSION) return;
+  if (safeStorage().getItem(BASE_WEAPON_SEED_KEY) === BASE_WEAPON_SEED_VERSION) return;
 
   const existing = loadEquipmentLibrary("campaign");
   const byId = new Map(existing.map(i => [i.id, i]));
@@ -532,7 +533,7 @@ export function seedBaseWeapons(): void {
   }
 
   saveEquipmentLibrary(Array.from(byId.values()), "campaign");
-  window.localStorage.setItem(BASE_WEAPON_SEED_KEY, BASE_WEAPON_SEED_VERSION);
+  safeStorage().setItem(BASE_WEAPON_SEED_KEY, BASE_WEAPON_SEED_VERSION);
 }
 
 function upsertItem(item: EquipmentItem): void {

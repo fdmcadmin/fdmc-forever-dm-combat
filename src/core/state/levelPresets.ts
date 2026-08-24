@@ -11,6 +11,7 @@
  */
 
 import type { Actor } from "../types/actor";
+import { safeStorage } from "../utils/safeStorage";
 
 const STORAGE_KEY = "fdmc.level.presets.v1";
 
@@ -20,7 +21,7 @@ export type LevelPreset = { level: number; actor: Actor };
 
 function readAll(): PresetMap {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = safeStorage().getItem(STORAGE_KEY);
     const parsed = raw ? (JSON.parse(raw) as PresetMap) : {};
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
@@ -30,7 +31,7 @@ function readAll(): PresetMap {
 
 function writeAll(map: PresetMap): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    safeStorage().setItem(STORAGE_KEY, JSON.stringify(map));
   } catch {
     // localStorage unavailable — presets are a convenience, never fatal.
   }

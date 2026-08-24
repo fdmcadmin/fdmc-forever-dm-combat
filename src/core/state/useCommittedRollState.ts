@@ -10,6 +10,7 @@ import type {
   CommittedRollState,
   StartCommittedRollInput,
 } from "../types/committedRoll";
+import { safeStorage } from "../utils/safeStorage";
 
 const COMMITTED_ROLL_STORAGE_KEY = "fdm:committed-roll-state:v1";
 const COMMITTED_ROLL_CHANNEL = "forever-dm-combat:committed-roll-state:v1";
@@ -39,7 +40,7 @@ function readStoredCommittedRolls(): CommittedRollMap | null {
   }
 
   try {
-    const raw = window.localStorage.getItem(COMMITTED_ROLL_STORAGE_KEY);
+    const raw = safeStorage().getItem(COMMITTED_ROLL_STORAGE_KEY);
     return raw ? JSON.parse(raw) as CommittedRollMap : null;
   } catch {
     return null;
@@ -52,7 +53,7 @@ function persistCommittedRolls(state: CommittedRollMap) {
   }
 
   try {
-    window.localStorage.setItem(COMMITTED_ROLL_STORAGE_KEY, JSON.stringify(state));
+    safeStorage().setItem(COMMITTED_ROLL_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Keep in-memory roll state usable if browser storage is unavailable.
   }

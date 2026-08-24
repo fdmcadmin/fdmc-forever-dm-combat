@@ -2,6 +2,7 @@ import type { Actor } from "../types/actor";
 import { resolveActor, buildActorLibraryFromBundled, type ActorOverrideMap } from "../table-state/actorHydrationBoundary";
 import { createEmptyRoomLiveState, type FdmcRoomLiveState } from "../table-state/fdmcRoomLiveState";
 import type { FdmcSeat } from "./seatTypes";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ const ACTOR_LIBRARY_SEED_VERSION_KEY = "fdmc.dm.actorLibrary.seedVersion";
 
 export function loadActorLibrary(): Record<string, Actor> {
   try {
-    const raw = window.localStorage.getItem(ACTOR_LIBRARY_KEY);
+    const raw = safeStorage().getItem(ACTOR_LIBRARY_KEY);
     return raw ? JSON.parse(raw) as Record<string, Actor> : {};
   } catch {
     return {};
@@ -24,7 +25,7 @@ export function loadActorLibrary(): Record<string, Actor> {
 
 export function saveActorLibrary(library: Record<string, Actor>): void {
   try {
-    window.localStorage.setItem(ACTOR_LIBRARY_KEY, JSON.stringify(library));
+    safeStorage().setItem(ACTOR_LIBRARY_KEY, JSON.stringify(library));
   } catch {
     // localStorage unavailable — in-memory only
   }
@@ -34,7 +35,7 @@ export function saveActorLibrary(library: Record<string, Actor>): void {
 
 export function loadActorOverrides(): ActorOverrideMap {
   try {
-    const raw = window.localStorage.getItem(ACTOR_OVERRIDES_KEY);
+    const raw = safeStorage().getItem(ACTOR_OVERRIDES_KEY);
     return raw ? JSON.parse(raw) as ActorOverrideMap : {};
   } catch {
     return {};
@@ -45,7 +46,7 @@ export function saveActorOverride(actorId: string, override: Partial<Actor>): vo
   const overrides = loadActorOverrides();
   overrides[actorId] = { ...overrides[actorId], ...override };
   try {
-    window.localStorage.setItem(ACTOR_OVERRIDES_KEY, JSON.stringify(overrides));
+    safeStorage().setItem(ACTOR_OVERRIDES_KEY, JSON.stringify(overrides));
   } catch {
     // localStorage unavailable
   }
@@ -55,7 +56,7 @@ export function clearActorOverride(actorId: string): void {
   const overrides = loadActorOverrides();
   delete overrides[actorId];
   try {
-    window.localStorage.setItem(ACTOR_OVERRIDES_KEY, JSON.stringify(overrides));
+    safeStorage().setItem(ACTOR_OVERRIDES_KEY, JSON.stringify(overrides));
   } catch {
     // localStorage unavailable
   }
@@ -69,14 +70,14 @@ export function clearActorOverride(actorId: string): void {
  * and the bundled files are the fallback only.
  */
 export function seedLibraryFromBundled(bundledActors: Actor[]): Record<string, Actor> {
-  // If no bundled actors provided, just load whatever exists in localStorage.
+  // If no bundled actors provided, just load whatever exists in safeStorage().
   // This is the correct state when actors are built through the UI.
   if (bundledActors.length === 0) {
     return loadActorLibrary();
   }
 
   // Re-seed if library is empty OR if the bundled actor version has changed
-  const storedVersion = window.localStorage.getItem(ACTOR_LIBRARY_SEED_VERSION_KEY);
+  const storedVersion = safeStorage().getItem(ACTOR_LIBRARY_SEED_VERSION_KEY);
   const existing = loadActorLibrary();
   const needsReseed = Object.keys(existing).length === 0 || storedVersion !== ACTOR_LIBRARY_SEED_VERSION;
 
@@ -86,9 +87,9 @@ export function seedLibraryFromBundled(bundledActors: Actor[]): Record<string, A
   saveActorLibrary(seeded);
   // Clear stale overrides only when reseeding to a new actor version
   if (storedVersion !== ACTOR_LIBRARY_SEED_VERSION) {
-    try { window.localStorage.removeItem(ACTOR_OVERRIDES_KEY); } catch { /* ok */ }
+    try { safeStorage().removeItem(ACTOR_OVERRIDES_KEY); } catch { /* ok */ }
   }
-  try { window.localStorage.setItem(ACTOR_LIBRARY_SEED_VERSION_KEY, ACTOR_LIBRARY_SEED_VERSION); } catch { /* ok */ }
+  try { safeStorage().setItem(ACTOR_LIBRARY_SEED_VERSION_KEY, ACTOR_LIBRARY_SEED_VERSION); } catch { /* ok */ }
   return seeded;
 }
 

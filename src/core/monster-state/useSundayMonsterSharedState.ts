@@ -8,6 +8,7 @@ import {
   type SundayMonsterRuntimeState,
 } from "./SundayMonsterStateContract";
 import { makeSundayMonsterRuntimeState } from "./theBrokenChainSundayMonsters";
+import { safeStorage } from "../utils/safeStorage";
 
 type SundayMonsterStateSyncMessage = {
   type: "fdmc:sunday:monster-runtime:update";
@@ -48,7 +49,7 @@ function readLocalFallback() {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = window.localStorage.getItem(SUNDAY_MONSTER_STATE_METADATA_KEY);
+    const raw = safeStorage().getItem(SUNDAY_MONSTER_STATE_METADATA_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
     return isSundayMonsterState(parsed) ? normalizeSundayMonsterState(parsed) : null;
   } catch {
@@ -60,7 +61,7 @@ function writeLocalFallback(state: SundayMonsterRuntimeState) {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(SUNDAY_MONSTER_STATE_METADATA_KEY, JSON.stringify(state));
+    safeStorage().setItem(SUNDAY_MONSTER_STATE_METADATA_KEY, JSON.stringify(state));
   } catch {
     // Keep the React view usable if browser storage is blocked.
   }

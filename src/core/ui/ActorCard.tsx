@@ -57,6 +57,7 @@ import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
 import { useEquippedState, applyEquippedOverlay } from "../state/useEquippedState";
+import { safeStorage } from "../utils/safeStorage";
 import { loadEquipmentLibrary } from "./EquipmentBagEditor";
 import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
@@ -307,7 +308,7 @@ function readActorCardSessionSnapshot(): ActorCardSessionSnapshot {
   }
 
   try {
-    const raw = window.localStorage.getItem(ACTOR_CARD_SESSION_STORAGE_KEY);
+    const raw = safeStorage().getItem(ACTOR_CARD_SESSION_STORAGE_KEY);
     return raw ? JSON.parse(raw) as ActorCardSessionSnapshot : {};
   } catch {
     return {};
@@ -320,7 +321,7 @@ function writeActorCardSessionSnapshot(snapshot: ActorCardSessionSnapshot) {
   }
 
   try {
-    window.localStorage.setItem(ACTOR_CARD_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+    safeStorage().setItem(ACTOR_CARD_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
   } catch {
     // Keep in-memory actor-card session state usable if storage is unavailable.
   }
@@ -924,7 +925,7 @@ export function ActorCard({
   const [showCritFailTables, setShowCritFailTables] = useState(false);
   /** DM opt-in: may a player roll a MONSTER's Nat 1 d6. Persisted — asked once, not per fight. */
   const [letSeatRollNat1, setLetSeatRollNat1] = useState<boolean>(() => {
-    try { return window.localStorage.getItem(SEAT_ROLLS_NAT1_KEY) === "1"; } catch { return false; }
+    try { return safeStorage().getItem(SEAT_ROLLS_NAT1_KEY) === "1"; } catch { return false; }
   });
   const [debuffNote, setDebuffNote] = useState("");
   // one-off additive bonus die (Bless/Guidance/Coach grant) that rides the NEXT d20 roll, then clears
@@ -1316,14 +1317,14 @@ export function ActorCard({
   const masteryKey = `fdmc.card.masteries.${actor.id}`;
   const [masteryChoices, setMasteryChoices] = useState<MasteryProperty[]>(() => {
     try {
-      return normalizeMasteryChoices(JSON.parse(window.localStorage.getItem(masteryKey) ?? "[]"), 8);
+      return normalizeMasteryChoices(JSON.parse(safeStorage().getItem(masteryKey) ?? "[]"), 8);
     } catch { return []; }
   });
   function toggleMastery(p: MasteryProperty) {
     setMasteryChoices(prev => {
       const next = prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p];
       const capped = normalizeMasteryChoices(next, masteryLimit);
-      try { window.localStorage.setItem(masteryKey, JSON.stringify(capped)); } catch { /* private mode */ }
+      try { safeStorage().setItem(masteryKey, JSON.stringify(capped)); } catch { /* private mode */ }
       return capped;
     });
   }
@@ -1338,7 +1339,7 @@ export function ActorCard({
   const pinnedPoolsKey = `fdmc.card.pinnedPools.${actor.id}`;
   const [pinnedPools, setPinnedPools] = useState<Set<string>>(() => {
     try {
-      const raw = window.localStorage.getItem(pinnedPoolsKey);
+      const raw = safeStorage().getItem(pinnedPoolsKey);
       return new Set(raw ? (JSON.parse(raw) as string[]) : []);
     } catch { return new Set(); }
   });
@@ -1346,7 +1347,7 @@ export function ActorCard({
     setPinnedPools(prev => {
       const next = new Set(prev);
       if (next.has(resourceId)) next.delete(resourceId); else next.add(resourceId);
-      try { window.localStorage.setItem(pinnedPoolsKey, JSON.stringify([...next])); } catch { /* private mode */ }
+      try { safeStorage().setItem(pinnedPoolsKey, JSON.stringify([...next])); } catch { /* private mode */ }
       return next;
     });
   }
@@ -4849,7 +4850,7 @@ export function ActorCard({
         onToggleSeatRollsMonsterNat1={(on) => {
           setLetSeatRollNat1(on);
           // Persisted so the DM answers this once rather than every fight.
-          try { window.localStorage.setItem(SEAT_ROLLS_NAT1_KEY, on ? "1" : "0"); } catch { /* ok */ }
+          try { safeStorage().setItem(SEAT_ROLLS_NAT1_KEY, on ? "1" : "0"); } catch { /* ok */ }
         }}
         onAskSeatToRollNat1={(seatName) => {
           /**

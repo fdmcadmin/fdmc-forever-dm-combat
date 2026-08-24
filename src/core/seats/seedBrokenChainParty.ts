@@ -14,6 +14,7 @@ import type { ActorAction } from "../types/tabs";
 import type { EquipmentItem } from "../ui/EquipmentBagEditor";
 import { loadEquipmentLibrary, saveEquipmentLibrary } from "../ui/EquipmentBagEditor";
 import { saveActorLibrary } from "./dmActorLibrary";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Action validation — fix any broken roll paths ────────────────────────────
 
@@ -113,13 +114,13 @@ export type CampaignBagItem = {
 
 export function loadCampaignBag(): CampaignBagItem[] {
   try {
-    const raw = window.localStorage.getItem(CAMPAIGN_BAG_KEY);
+    const raw = safeStorage().getItem(CAMPAIGN_BAG_KEY);
     return raw ? JSON.parse(raw) as CampaignBagItem[] : [];
   } catch { return []; }
 }
 
 export function saveCampaignBag(bag: CampaignBagItem[]): void {
-  try { window.localStorage.setItem(CAMPAIGN_BAG_KEY, JSON.stringify(bag)); } catch { /* ok */ }
+  try { safeStorage().setItem(CAMPAIGN_BAG_KEY, JSON.stringify(bag)); } catch { /* ok */ }
 }
 
 export function addItemToCampaignBag(item: EquipmentItem, fromActor?: string): void {

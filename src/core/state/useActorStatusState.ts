@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Actor, DrainTracker } from "../types/actor";
 import type { ActorStatusTrackerMap, ActorStatusTrackerState, StatusTrackerId } from "../types/status";
+import { safeStorage } from "../utils/safeStorage";
 
 const ACTOR_STATUS_STORAGE_KEY = "fdm:actor-status-state:v1";
 
@@ -49,7 +50,7 @@ function readStoredStatus(): ActorStatusTrackerMap | null {
   }
 
   try {
-    const raw = window.localStorage.getItem(ACTOR_STATUS_STORAGE_KEY);
+    const raw = safeStorage().getItem(ACTOR_STATUS_STORAGE_KEY);
     return raw ? JSON.parse(raw) as ActorStatusTrackerMap : null;
   } catch {
     return null;
@@ -62,7 +63,7 @@ function persistStatus(state: ActorStatusTrackerMap) {
   }
 
   try {
-    window.localStorage.setItem(ACTOR_STATUS_STORAGE_KEY, JSON.stringify(state));
+    safeStorage().setItem(ACTOR_STATUS_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Keep in-memory status usable if storage is unavailable.
   }

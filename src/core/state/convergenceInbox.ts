@@ -1,3 +1,4 @@
+import { safeStorage } from "../utils/safeStorage";
 /**
  * The convergence inbox — a durable home for forge requests.
  *
@@ -7,7 +8,7 @@
  * items into nothing — and opening the Library afterwards showed an empty list, because there
  * was nothing left to hear. The player sits on "Awaiting DM Approval" indefinitely.
  *
- * Level-up requests already avoided this by writing themselves to localStorage. This is the
+ * Level-up requests already avoided this by writing themselves to safeStorage(). This is the
  * same idea, made explicit and shared: the MAIN app window — the one that is always open —
  * records every request here, and any DM surface reads the inbox rather than racing to catch
  * a broadcast it may not be alive for.
@@ -45,7 +46,7 @@ function isUsable(value: unknown): value is ConvergenceInboxEntry {
 
 export function loadConvergenceInbox(): ConvergenceInboxEntry[] {
   try {
-    const raw = window.localStorage.getItem(CONVERGENCE_INBOX_KEY);
+    const raw = safeStorage().getItem(CONVERGENCE_INBOX_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter(isUsable) : [];
   } catch {
@@ -54,7 +55,7 @@ export function loadConvergenceInbox(): ConvergenceInboxEntry[] {
 }
 
 function save(list: ConvergenceInboxEntry[]): void {
-  try { window.localStorage.setItem(CONVERGENCE_INBOX_KEY, JSON.stringify(list)); } catch { /* private mode */ }
+  try { safeStorage().setItem(CONVERGENCE_INBOX_KEY, JSON.stringify(list)); } catch { /* private mode */ }
 }
 
 /**

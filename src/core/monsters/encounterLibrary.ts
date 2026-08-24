@@ -10,9 +10,11 @@ import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisi
 import { createEncounterMonsterInstance } from "./runtime/mainMonsterRuntime";
 import { actTagForId } from "../campaign/actTags";
 import { materializeTemplateBody } from "./actionSetPicks";
+import { applySlotPicks, type SlotPicks } from "./spellSlotPicks";
 import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
 import { hpForPartySize, BASELINE_PARTY_SIZE } from "../encounter-band/partyCurveV2";
 import { AUTHORED_ENCOUNTERS, AUTHORED_DIGEST } from "../../data/broken-chain/authored.generated";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +48,23 @@ export type EncounterMonsterEntry = {
    * Absent on an ordinary entry, where `count` alone says how many identical bodies to make.
    */
   bodies?: TemplateBodyChoice[];
+  /**
+   * WHICH SPELLS THIS CREATURE BROUGHT, filled per slot at the moment the fight is built.
+   *
+   * Christopher: *"i build all the spells hale and the UR have just like a character, then we make
+   * the generater have a picker for each of the slots at X Level."* The library entry stays
+   * generic — every spell marked `slotCandidate` in the creature editor is a spell it COULD
+   * prepare — and the encounter records which ones it actually did.
+   *
+   * ⚠ ON THE ENTRY, NOT ON EACH BODY. The pool is a property of the CREATURE as this fight fields
+   * it; three Hales in one encounter are the same Hale, and per-body picks would let them
+   * disagree about what a Hale prepared. It is the same shape as the party-size band, which is
+   * also a fact about the fight rather than about each figure in it.
+   *
+   * Absent on every creature that has no candidates, which is almost all of them — a fixed spell
+   * list needs no decision and must not raise an empty picker (`needsSlotPicks`).
+   */
+  spellPicks?: SlotPicks;
 };
 
 /**
@@ -158,7 +177,7 @@ const ENCOUNTER_LIBRARY_SEED_VERSION = `0.7.8.7-act1-archetype-pass-v4+${AUTHORE
  * The seed used to write `count: 1` for every template, so a freshly seeded library
  * understated every multi-body fight until a DM fixed it by hand. The counts are authored
  * data (the Act 1 Archetype Pass v4 and Act 2 4P Baseline encounter tables), so they belong
- * in the seed rather than in one browser's localStorage.
+ * in the seed rather than in one browser's safeStorage().
  *
  * Act 1 totals these reproduce at 4P: Thornfang Pack 26+2×11 = 48 · Greenwood Raider Band
  * 2×16 = 32 · Mosshide Owlbear 59+2×5 = 69 · Threadbare Spider Nest 4×26 = 104 · Swamp Ambush
@@ -220,7 +239,7 @@ function keyForOwner(owner: EncounterLibraryOwner): string {
 export function loadEncounterLibrary(owner?: EncounterLibraryOwner): EncounterDefinition[] {
   if (owner) {
     try {
-      const raw = window.localStorage.getItem(keyForOwner(owner));
+      const raw = safeStorage().getItem(keyForOwner(owner));
       const items = raw ? JSON.parse(raw) as EncounterDefinition[] : [];
       return items.map(e => ({ ...e, owner }));
     } catch {
@@ -232,7 +251,7 @@ export function loadEncounterLibrary(owner?: EncounterLibraryOwner): EncounterDe
   const dm = loadEncounterLibrary("dm");
   // Migrate legacy key if needed
   try {
-    const legacy = window.localStorage.getItem(ENCOUNTER_LIBRARY_KEY);
+    const legacy = safeStorage().getItem(ENCOUNTER_LIBRARY_KEY);
     if (legacy) {
       const items = JSON.parse(legacy) as EncounterDefinition[];
       // Migrate to campaign library
@@ -243,7 +262,7 @@ export function loadEncounterLibrary(owner?: EncounterLibraryOwner): EncounterDe
         }
       }
       saveEncounterLibrary(campaignLib, "campaign");
-      window.localStorage.removeItem(ENCOUNTER_LIBRARY_KEY);
+      safeStorage().removeItem(ENCOUNTER_LIBRARY_KEY);
     }
   } catch { /* ok */ }
   return [...campaign, ...dm];
@@ -251,7 +270,7 @@ export function loadEncounterLibrary(owner?: EncounterLibraryOwner): EncounterDe
 
 export function saveEncounterLibrary(library: EncounterDefinition[], owner: EncounterLibraryOwner): void {
   try {
-    window.localStorage.setItem(keyForOwner(owner), JSON.stringify(library));
+    safeStorage().setItem(keyForOwner(owner), JSON.stringify(library));
   } catch {
     // localStorage unavailable
   }
@@ -269,7 +288,7 @@ export function upsertEncounter(encounter: EncounterDefinition, owner?: Encounte
 
 export function loadUnusedEncounters(): EncounterDefinition[] {
   try {
-    const raw = window.localStorage.getItem(UNUSED_LIBRARY_KEY);
+    const raw = safeStorage().getItem(UNUSED_LIBRARY_KEY);
     return raw ? JSON.parse(raw) as EncounterDefinition[] : [];
   } catch {
     return [];
@@ -278,7 +297,7 @@ export function loadUnusedEncounters(): EncounterDefinition[] {
 
 function saveUnusedEncounters(library: EncounterDefinition[]): void {
   try {
-    window.localStorage.setItem(UNUSED_LIBRARY_KEY, JSON.stringify(library));
+    safeStorage().setItem(UNUSED_LIBRARY_KEY, JSON.stringify(library));
   } catch { /* ok */ }
 }
 
@@ -334,7 +353,7 @@ export function permanentlyDeleteEncounter(id: string): void {
  */
 function cleanCampaignLibraryPollution(): void {
   try {
-    const raw = window.localStorage.getItem(CAMPAIGN_LIBRARY_KEY);
+    const raw = safeStorage().getItem(CAMPAIGN_LIBRARY_KEY);
     if (!raw) return;
     const items = JSON.parse(raw) as EncounterDefinition[];
     const cleaned = items.filter(
@@ -355,7 +374,7 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
   // a previously polluted campaign key would keep duplicating DM encounters.
   cleanCampaignLibraryPollution();
 
-  const stored = window.localStorage.getItem(ENCOUNTER_LIBRARY_SEED_KEY);
+  const stored = safeStorage().getItem(ENCOUNTER_LIBRARY_SEED_KEY);
   const existing = loadEncounterLibrary();
 
   if (stored === ENCOUNTER_LIBRARY_SEED_VERSION && existing.length > 0) {
@@ -414,7 +433,7 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
   }
 
   saveEncounterLibrary(merged, "campaign");
-  try { window.localStorage.setItem(ENCOUNTER_LIBRARY_SEED_KEY, ENCOUNTER_LIBRARY_SEED_VERSION); } catch { /* ok */ }
+  try { safeStorage().setItem(ENCOUNTER_LIBRARY_SEED_KEY, ENCOUNTER_LIBRARY_SEED_VERSION); } catch { /* ok */ }
   return merged;
 }
 
@@ -446,16 +465,29 @@ export function spawnEncounterInstances(
      * silently dropping five identical un-chosen mirrors onto the map. The encounter editor is
      * where that gets fixed, and an empty fight is a visible prompt to go and fix it.
      */
+    /**
+     * ⚠ THE SPELL POOL COLLAPSES BEFORE ANYTHING ELSE READS THE TEMPLATE.
+     *
+     * A creature authored with `slotCandidate` spells carries every spell it COULD prepare. What
+     * this fight fields is the DM's pick, so the pool is resolved here, once, and both spawn paths
+     * below build from the collapsed copy. Doing it later would leave un-prepared spells in the
+     * action list for the estimator to price and for the card to offer.
+     *
+     * `applySlotPicks` returns a COPY — the library entry stays generic, so the next encounter can
+     * field the same creature with different spells.
+     */
+    const source = entry.spellPicks ? applySlotPicks(template, entry.spellPicks) : template;
+
     const bodies = entry.bodies ?? [];
     const perBody: MainMonsterTemplate[] = bodies.length > 0
-      ? bodies.map(b => materializeTemplateBody(template, b))
-      : template.isTemplate
+      ? bodies.map(b => materializeTemplateBody(source, b))
+      : source.isTemplate
         ? []
         // An ORDINARY creature resolves its own @vars too. Template bodies already did it in
         // materializeTemplateBody, after their archetype reshape.
         : Array.from({ length: entry.count }, () => ({
-          ...template,
-          actions: (template.actions ?? []).map(a => resolveMonsterActionFormulas(a, template)),
+          ...source,
+          actions: (source.actions ?? []).map(a => resolveMonsterActionFormulas(a, source)),
         }));
 
     for (let i = 0; i < perBody.length; i++) {

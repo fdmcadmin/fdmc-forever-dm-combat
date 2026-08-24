@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { safeStorage } from "../utils/safeStorage";
 
 const MODULE_UNLOCK_HASH = "YnJva2VuY2hhaW4="; // btoa("brokenchain") — base64 of the unlock code
 const MODULE_LOCK_KEY = "fdmc.module.unlocked.v1";
@@ -32,7 +33,7 @@ const UNLOCK_TOKEN = btoa(`fdmc-unlock:${MODULE_UNLOCK_HASH}:granted`);
 
 export function isModuleUnlocked(): boolean {
   try {
-    return window.localStorage.getItem(MODULE_LOCK_KEY) === UNLOCK_TOKEN;
+    return safeStorage().getItem(MODULE_LOCK_KEY) === UNLOCK_TOKEN;
   } catch {
     return false;
   }
@@ -40,14 +41,14 @@ export function isModuleUnlocked(): boolean {
 
 export function unlockModule(code: string): boolean {
   if (btoa(code.trim()) === MODULE_UNLOCK_HASH) {
-    try { window.localStorage.setItem(MODULE_LOCK_KEY, UNLOCK_TOKEN); } catch { /* ok */ }
+    try { safeStorage().setItem(MODULE_LOCK_KEY, UNLOCK_TOKEN); } catch { /* ok */ }
     return true;
   }
   return false;
 }
 
 export function lockModule(): void {
-  try { window.localStorage.removeItem(MODULE_LOCK_KEY); } catch { /* ok */ }
+  try { safeStorage().removeItem(MODULE_LOCK_KEY); } catch { /* ok */ }
 }
 
 /**

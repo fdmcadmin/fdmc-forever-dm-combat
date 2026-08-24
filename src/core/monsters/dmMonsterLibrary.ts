@@ -10,6 +10,7 @@ import type { MainMonsterTemplate } from "./runtime/mainMonsterRuntime";
 import { MONSTER_KINDS, type MonsterKind } from "./runtime/mainMonsterRuntime";
 import type { NormalizedMonsterActor, MonsterAction as NMonsterAction } from "../types/monsterTypes";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ const MONSTER_STAGED_KEY = "fdmc.dm.monsterStaged.v1";
 export function loadMonsterLibrary(owner?: MonsterLibraryOwner): MainMonsterTemplate[] {
   if (owner) {
     try {
-      const raw = window.localStorage.getItem(monsterKeyFor(owner));
+      const raw = safeStorage().getItem(monsterKeyFor(owner));
       return raw ? JSON.parse(raw) as MainMonsterTemplate[] : [];
     } catch {
       return [];
@@ -61,7 +62,7 @@ export function loadMonsterLibrary(owner?: MonsterLibraryOwner): MainMonsterTemp
 
 export function saveMonsterLibrary(library: MainMonsterTemplate[], owner: MonsterLibraryOwner = "dm"): void {
   try {
-    window.localStorage.setItem(monsterKeyFor(owner), JSON.stringify(library));
+    safeStorage().setItem(monsterKeyFor(owner), JSON.stringify(library));
   } catch {
     // localStorage unavailable
   }
@@ -144,7 +145,7 @@ export async function importMonsterLibrary(file: File): Promise<MonsterImportRes
 
 export function loadStagedMonsters(): MainMonsterTemplate[] {
   try {
-    const raw = window.localStorage.getItem(MONSTER_STAGED_KEY);
+    const raw = safeStorage().getItem(MONSTER_STAGED_KEY);
     return raw ? JSON.parse(raw) as MainMonsterTemplate[] : [];
   } catch {
     return [];
@@ -153,7 +154,7 @@ export function loadStagedMonsters(): MainMonsterTemplate[] {
 
 export function saveStagedMonsters(staged: MainMonsterTemplate[]): void {
   try {
-    window.localStorage.setItem(MONSTER_STAGED_KEY, JSON.stringify(staged));
+    safeStorage().setItem(MONSTER_STAGED_KEY, JSON.stringify(staged));
   } catch {
     // localStorage unavailable
   }

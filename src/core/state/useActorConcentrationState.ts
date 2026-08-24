@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Actor } from "../types/actor";
 import type { TabId } from "../types/tabs";
+import { safeStorage } from "../utils/safeStorage";
 
 const CONCENTRATION_STORAGE_KEY = "fdm:concentration-state:v1";
 
@@ -26,7 +27,7 @@ function readStoredConcentration(): ActorConcentrationMap | null {
   }
 
   try {
-    const raw = window.localStorage.getItem(CONCENTRATION_STORAGE_KEY);
+    const raw = safeStorage().getItem(CONCENTRATION_STORAGE_KEY);
     return raw ? JSON.parse(raw) as ActorConcentrationMap : null;
   } catch {
     return null;
@@ -39,7 +40,7 @@ function persistConcentration(state: ActorConcentrationMap) {
   }
 
   try {
-    window.localStorage.setItem(CONCENTRATION_STORAGE_KEY, JSON.stringify(state));
+    safeStorage().setItem(CONCENTRATION_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Keep in-memory concentration usable if storage is unavailable.
   }

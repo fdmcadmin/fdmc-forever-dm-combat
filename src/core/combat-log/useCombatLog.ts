@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { AddCombatLogEntryInput, CombatLogEntry } from "../types/combatLog";
+import { safeStorage } from "../utils/safeStorage";
 
 function createTimestamp() {
   return new Date().toLocaleTimeString([], {
@@ -60,7 +61,7 @@ function readSharedEntries(): CombatLogEntry[] {
   }
 
   try {
-    const raw = window.localStorage.getItem(SHARED_COMBAT_LOG_STORAGE_KEY);
+    const raw = safeStorage().getItem(SHARED_COMBAT_LOG_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
 
     if (!Array.isArray(parsed)) {
@@ -81,7 +82,7 @@ function writeSharedEntries(entries: CombatLogEntry[]) {
   }
 
   try {
-    window.localStorage.setItem(
+    safeStorage().setItem(
       SHARED_COMBAT_LOG_STORAGE_KEY,
       JSON.stringify(entries.slice(0, MAX_SHARED_LOG_ENTRIES))
     );

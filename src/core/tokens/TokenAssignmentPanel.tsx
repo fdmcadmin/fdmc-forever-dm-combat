@@ -22,6 +22,7 @@ import type { FdmcSeat } from "../seats/seatTypes";
 import { getSeatColor, withAlpha, MONSTER_COLOR } from "../seats/seatColors";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { TOKEN_MENU_STATUS_KEY, TOKEN_MENU_ERROR_KEY } from "./tokenContextMenu";
+import { safeStorage } from "../utils/safeStorage";
 
 type TokenAssignmentPanelProps = {
   tableId: string;
@@ -65,8 +66,8 @@ export function TokenAssignmentPanel({ tableId, seats, activeMonsters }: TokenAs
     if (!OBR.isAvailable) return;
     const check = () => {
       try {
-        setMenuOk(window.localStorage.getItem(TOKEN_MENU_STATUS_KEY) === "ready");
-        setMenuError(window.localStorage.getItem(TOKEN_MENU_ERROR_KEY) || null);
+        setMenuOk(safeStorage().getItem(TOKEN_MENU_STATUS_KEY) === "ready");
+        setMenuError(safeStorage().getItem(TOKEN_MENU_ERROR_KEY) || null);
       }
       catch { setMenuOk(true); setMenuError(null); }
     };

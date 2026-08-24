@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
+import { safeStorage } from "../utils/safeStorage";
 
 const EQUIPPED_CHANNEL = "forever-dm-combat:equipped-state:v1";
 const EQUIPPED_STORAGE_KEY = "fdmc.equipped.state.v1";
@@ -28,7 +29,7 @@ export type EquippedMap = Record<string, Record<string, boolean>>;
 
 function readStored(): EquippedMap {
   try {
-    const raw = window.localStorage.getItem(EQUIPPED_STORAGE_KEY);
+    const raw = safeStorage().getItem(EQUIPPED_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === "object" ? parsed as EquippedMap : {};
   } catch {
@@ -37,7 +38,7 @@ function readStored(): EquippedMap {
 }
 
 function persist(state: EquippedMap): void {
-  try { window.localStorage.setItem(EQUIPPED_STORAGE_KEY, JSON.stringify(state)); } catch { /* private mode */ }
+  try { safeStorage().setItem(EQUIPPED_STORAGE_KEY, JSON.stringify(state)); } catch { /* private mode */ }
 }
 
 function isSyncMessage(msg: unknown): msg is { type: "replace"; state: EquippedMap } {

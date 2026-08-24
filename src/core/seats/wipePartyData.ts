@@ -1,3 +1,4 @@
+import { safeStorage } from "../utils/safeStorage";
 /**
  * Party-character wipe — a clean slate for re-importing the party.
  *
@@ -51,14 +52,14 @@ export function wipePartyLocalData(): PartyWipeReport {
   let actorIds: string[] = [];
 
   try {
-    const raw = window.localStorage.getItem("fdmc.dm.actorLibrary.v1");
+    const raw = safeStorage().getItem("fdmc.dm.actorLibrary.v1");
     if (raw) actorIds = Object.keys(JSON.parse(raw) as Record<string, unknown>);
   } catch { /* unreadable library — still wipe it below */ }
 
   for (const key of PARTY_LOCAL_KEYS) {
     try {
-      if (window.localStorage.getItem(key) !== null) {
-        window.localStorage.removeItem(key);
+      if (safeStorage().getItem(key) !== null) {
+        safeStorage().removeItem(key);
         cleared.push(key);
       }
     } catch { /* storage unavailable — nothing to clear */ }

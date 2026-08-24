@@ -1,3 +1,4 @@
+import { safeStorage } from "../utils/safeStorage";
 /**
  * pendingDrafts — DM-local "create library" staging (P-ROLL3b).
  *
@@ -31,7 +32,7 @@ const KEYS: Record<PendingDraftKind, string> = {
 
 export function loadPendingDrafts<TPayload = unknown>(kind: PendingDraftKind): PendingDraft<TPayload>[] {
   try {
-    const raw = window.localStorage.getItem(KEYS[kind]);
+    const raw = safeStorage().getItem(KEYS[kind]);
     const items = raw ? (JSON.parse(raw) as PendingDraft<TPayload>[]) : [];
     return Array.isArray(items) ? items : [];
   } catch {
@@ -41,7 +42,7 @@ export function loadPendingDrafts<TPayload = unknown>(kind: PendingDraftKind): P
 
 function writePendingDrafts(kind: PendingDraftKind, drafts: PendingDraft[]): void {
   try {
-    window.localStorage.setItem(KEYS[kind], JSON.stringify(drafts));
+    safeStorage().setItem(KEYS[kind], JSON.stringify(drafts));
   } catch {
     // localStorage unavailable — drafts are a convenience, never fatal
   }

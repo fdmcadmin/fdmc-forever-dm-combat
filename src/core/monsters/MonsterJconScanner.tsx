@@ -9,6 +9,7 @@ import OBR, { type Item, type Metadata } from "@owlbear-rodeo/sdk";
 // Type-only, so it is erased at compile — mainMonsterRuntime already type-imports from
 // this file, and neither side gains a runtime dependency on the other.
 import type { MonsterClassification, MonsterKind } from "./runtime/mainMonsterRuntime";
+import { safeStorage } from "../utils/safeStorage";
 
 type JconScanStatus =
   | "idle"
@@ -269,7 +270,7 @@ function readSavedMonsterDatabase(): SavedMonsterDatabaseRecord[] {
   }
 
   try {
-    const raw = window.localStorage.getItem(MONSTER_DATABASE_STORAGE_KEY);
+    const raw = safeStorage().getItem(MONSTER_DATABASE_STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) {
       return [];
@@ -299,7 +300,7 @@ function writeSavedMonsterDatabase(records: SavedMonsterDatabaseRecord[]) {
     return;
   }
 
-  window.localStorage.setItem(MONSTER_DATABASE_STORAGE_KEY, JSON.stringify(records.slice(0, 50)));
+  safeStorage().setItem(MONSTER_DATABASE_STORAGE_KEY, JSON.stringify(records.slice(0, 50)));
 }
 
 function isMonsterReaderAction(value: unknown): value is MonsterReaderAction {
@@ -373,7 +374,7 @@ function readSessionMonsterCombatCandidates(): MonsterCombatCandidate[] {
   }
 
   try {
-    const raw = window.localStorage.getItem(FDMC_SESSION_MONSTER_CANDIDATES_KEY);
+    const raw = safeStorage().getItem(FDMC_SESSION_MONSTER_CANDIDATES_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) {
       return [];
@@ -404,7 +405,7 @@ function writeSessionMonsterCombatCandidates(candidates: MonsterCombatCandidate[
     return;
   }
 
-  window.localStorage.setItem(FDMC_SESSION_MONSTER_CANDIDATES_KEY, JSON.stringify(compactMonsterCombatCandidates(candidates)));
+  safeStorage().setItem(FDMC_SESSION_MONSTER_CANDIDATES_KEY, JSON.stringify(compactMonsterCombatCandidates(candidates)));
 }
 
 async function writePublicMonsterSnapshotsToRoom(candidates: MonsterCombatCandidate[]): Promise<string> {

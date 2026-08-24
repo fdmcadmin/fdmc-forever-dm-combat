@@ -1,3 +1,4 @@
+import { safeStorage } from "../utils/safeStorage";
 /**
  * GM settings — the table's own choices, kept apart from campaign data.
  *
@@ -38,7 +39,7 @@ const DEFAULTS: GmSettings = { ruleset: "dnd-5e-2024" };
 
 export function loadGmSettings(): GmSettings {
   try {
-    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    const raw = safeStorage().getItem(SETTINGS_KEY);
     if (!raw) return DEFAULTS;
     const parsed = JSON.parse(raw) as Partial<GmSettings>;
     const known = RULESET_OPTIONS.some(o => o.id === parsed.ruleset && o.available);
@@ -47,5 +48,5 @@ export function loadGmSettings(): GmSettings {
 }
 
 export function saveGmSettings(settings: GmSettings): void {
-  try { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* quota */ }
+  try { safeStorage().setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* quota */ }
 }

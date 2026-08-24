@@ -23,6 +23,7 @@ import { exportCampaignAuthoring } from "../campaign/authorExport";
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
 import type { BondTemplate } from "../types/bond";
 import type { TemplateBodyChoice } from "./encounterLibrary";
+import { availableFor, emptyPicks, needsSlotPicks, slotPlan, unfilledSlots, type SlotPicks } from "./spellSlotPicks";
 import type { MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
 import { actionSetPlan, bodyNameFor } from "./actionSetPicks";
 import { ARCHETYPES } from "./creator/monsterCreatorModel";
@@ -31,6 +32,7 @@ import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloa
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
+import { safeStorage } from "../utils/safeStorage";
 
 /** One table, one party — persisted so every encounter loads scaled to it. */
 const SHADOW_ACK_KEY = "fdmc.dm.monsterShadowAck.v1";
@@ -187,6 +189,12 @@ export function buildBandedMonster(band: MonsterBand): MainMonsterTemplate {
   };
 }
 
+/** "1st" / "2nd" / "3rd" — spell levels read as ordinals on a statblock, not as bare numbers. */
+function ordinalLevel(n: number): string {
+  const suffix = ["th", "st", "nd", "rd"][(n % 100) - (n % 10) === 10 ? 0 : n % 10] ?? "th";
+  return `${n}${suffix}`;
+}
+
 // ─── Visibility options ───────────────────────────────────────────────────────
 
 const visibilityOptions: { value: MainMonsterVisibilityState; label: string }[] = [
@@ -217,6 +225,68 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
   const template = monsterLibrary.find(m => m.templateId === entry.templateId);
   const plan = template ? actionSetPlan(template) : [];
   const bodies = entry.bodies ?? [];
+
+  /**
+   * THE SPELL SLOT PICKER — where a creature's spell POOL becomes the spells it prepared.
+   *
+   * Christopher: *"i build all the spells hale and the UR have just like a character, then we make
+   * the generater have a picker for each of the slots at X Level."* The creature editor is where a
+   * spell is marked a candidate; this is where the DM says which ones this fight gets.
+   *
+   * ⚠ ABS-ARRAY SEMANTICS, the same rule the action sets and the ability spine use:
+   * *"it would be like the ABS array in dnd beyond, when you pick it you cant see it."* A spell
+   * taken by one slot leaves the pool for its siblings at that level, so three L1 slots drawn from
+   * six candidates give three DIFFERENT spells. `availableFor` owns that rule — the picker only
+   * renders what it returns.
+   *
+   * Renders for nobody else: `needsSlotPicks` is false unless the creature actually has candidates,
+   * so a fixed spell list raises no empty control.
+   */
+  function renderSpellPicks() {
+    if (!template || !needsSlotPicks(template)) return null;
+    const slotLevels = slotPlan(template);
+    const picks: SlotPicks = entry.spellPicks ?? emptyPicks(slotLevels);
+    const missing = unfilledSlots(slotLevels, picks);
+
+    return (
+      <div style={{ marginTop: 6, padding: "7px 8px", background: "#101a18", border: "1px solid #2a3e3a", borderRadius: 4 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 5 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#57c07a" }}>Prepared spells</span>
+          <span style={{ fontSize: 10, color: "#666" }}>
+            — this creature's pool, one pick per slot. Unpicked candidates do not come to the fight.
+          </span>
+        </div>
+        {slotLevels.map(level => (
+          <div key={level.level} style={{ display: "flex", gap: 4, alignItems: "center", marginBottom: 3 }}>
+            <span style={{ fontSize: 10, color: "#777", width: 96, flexShrink: 0 }}>
+              {ordinalLevel(level.level)} · {level.slots} slot{level.slots === 1 ? "" : "s"}
+            </span>
+            {Array.from({ length: level.slots }, (_, s) => {
+              const mine = picks[level.level] ?? [];
+              const options = availableFor(level, s, picks);
+              return (
+                <select key={s} value={mine[s] ?? ""}
+                  onChange={e => {
+                    const next = [...(mine.length ? mine : Array(level.slots).fill(null))];
+                    next[s] = e.target.value || null;
+                    onChange({ ...entry, spellPicks: { ...picks, [level.level]: next } });
+                  }}
+                  style={{ flex: 1, minWidth: 0, fontSize: 10, padding: "2px 3px", borderRadius: 3, border: "1px solid " + (mine[s] ? "#444" : "#5a4a1a"), background: "#111", color: mine[s] ? "#ccc" : "#e0b34a" }}>
+                  <option value="">— pick —</option>
+                  {options.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </select>
+              );
+            })}
+          </div>
+        ))}
+        {missing.length > 0 && (
+          <p style={{ fontSize: 10, color: "#e0b34a", fontStyle: "italic", margin: "3px 0 0" }}>
+            {missing.length} slot{missing.length === 1 ? "" : "s"} still empty ({missing.join(", ")}) — this creature spawns without them.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   /**
    * THE BODY BUILDER — where a template becomes the five mirrors.
@@ -395,6 +465,7 @@ function EntryEditor({ entry, monsterLibrary, onChange, onRemove, onEditMonster,
         <button type="button" onClick={onRemove} style={{ fontSize: 11, padding: "2px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
       </div>
       {renderBodies()}
+      {renderSpellPicks()}
       {/* No per-creature HP band here on purpose: the party-size band is a property of the
           FIGHT, set once for the panel. A row-level dial let a boss be scaled for 5 players
           while its adds were scaled for 3, and disagreed with the party size driving DPR. */}
@@ -494,7 +565,7 @@ export function EncounterLibraryPanel({
    */
   const [partySize, setPartySize] = useState<number>(() => {
     try {
-      const raw = window.localStorage.getItem(PARTY_SIZE_KEY);
+      const raw = safeStorage().getItem(PARTY_SIZE_KEY);
       const parsed = raw ? Number.parseInt(raw, 10) : NaN;
       return SUPPORTED_PARTY_SIZES.includes(parsed as never) ? parsed : BASELINE_PARTY_SIZE;
     } catch { return BASELINE_PARTY_SIZE; }
@@ -514,7 +585,7 @@ export function EncounterLibraryPanel({
    */
   const [shadowAck, setShadowAck] = useState<Set<string>>(() => {
     try {
-      const raw = window.localStorage.getItem(SHADOW_ACK_KEY);
+      const raw = safeStorage().getItem(SHADOW_ACK_KEY);
       return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
     } catch { return new Set<string>(); }
   });
@@ -522,18 +593,18 @@ export function EncounterLibraryPanel({
   function acknowledgeShadowed(signatures: string[]) {
     const next = new Set([...shadowAck, ...signatures]);
     setShadowAck(next);
-    try { window.localStorage.setItem(SHADOW_ACK_KEY, JSON.stringify([...next])); } catch { /* ok */ }
+    try { safeStorage().setItem(SHADOW_ACK_KEY, JSON.stringify([...next])); } catch { /* ok */ }
   }
 
   function changePartySize(next: number) {
     setPartySize(next);
-    try { window.localStorage.setItem(PARTY_SIZE_KEY, String(next)); } catch { /* ok */ }
+    try { safeStorage().setItem(PARTY_SIZE_KEY, String(next)); } catch { /* ok */ }
   }
 
   // Staged queue — instances ready to push to combat, persisted in localStorage
   const [staged, setStaged] = useState<StagedEntry[]>(() => {
     try {
-      const raw = window.localStorage.getItem("fdmc.dm.encounterStagedQueue.v1");
+      const raw = safeStorage().getItem("fdmc.dm.encounterStagedQueue.v1");
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
@@ -665,7 +736,7 @@ export function EncounterLibraryPanel({
 
   function persistStaged(next: StagedEntry[]) {
     setStaged(next);
-    try { window.localStorage.setItem("fdmc.dm.encounterStagedQueue.v1", JSON.stringify(next)); } catch { /* ok */ }
+    try { safeStorage().setItem("fdmc.dm.encounterStagedQueue.v1", JSON.stringify(next)); } catch { /* ok */ }
   }
 
   function stageEncounter(encounter: EncounterDefinition) {

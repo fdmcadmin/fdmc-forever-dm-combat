@@ -1,3 +1,4 @@
+import { safeStorage } from "../utils/safeStorage";
 /**
  * P8 — Encounter Log
  * DM-local localStorage log of all combat events in the current encounter.
@@ -109,13 +110,13 @@ const ENCOUNTER_LOG_KEY = "fdmc.dm.encounterLog.v1";
  *                  rolls and system markers  ->  ~2,050
  *
  * 2500 clears that with headroom while staying bounded, so a runaway loop cannot fill
- * localStorage. At roughly 220 bytes an entry that is ~550KB against a ~5MB budget.
+ * safeStorage(). At roughly 220 bytes an entry that is ~550KB against a ~5MB budget.
  */
 const ENCOUNTER_LOG_MAX = 2500;
 
 export function readEncounterLog(): EncounterLogEntry[] {
   try {
-    const raw = window.localStorage.getItem(ENCOUNTER_LOG_KEY);
+    const raw = safeStorage().getItem(ENCOUNTER_LOG_KEY);
     return raw ? JSON.parse(raw) as EncounterLogEntry[] : [];
   } catch { return []; }
 }
@@ -124,12 +125,12 @@ export function appendLogEntry(entry: EncounterLogEntry): void {
   try {
     const existing = readEncounterLog();
     const next = [entry, ...existing].slice(0, ENCOUNTER_LOG_MAX);
-    window.localStorage.setItem(ENCOUNTER_LOG_KEY, JSON.stringify(next));
+    safeStorage().setItem(ENCOUNTER_LOG_KEY, JSON.stringify(next));
   } catch { /* ok */ }
 }
 
 export function clearEncounterLog(): void {
-  try { window.localStorage.removeItem(ENCOUNTER_LOG_KEY); } catch { /* ok */ }
+  try { safeStorage().removeItem(ENCOUNTER_LOG_KEY); } catch { /* ok */ }
 }
 
 export function makeLogId(): string {

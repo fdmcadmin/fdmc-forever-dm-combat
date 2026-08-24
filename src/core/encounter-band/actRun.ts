@@ -1,3 +1,4 @@
+import { safeStorage } from "../utils/safeStorage";
 /**
  * ACT RUN — a sequence of fights the DM composes, with the rests between them.
  *
@@ -211,11 +212,11 @@ export function normalizeRun(steps: ActRunStep[]): ActRunStep[] {
 const ACT_RUN_KEY = "fdmc.dm.actRuns.v1";
 
 export function loadActRuns(): ActRun[] {
-  try { return JSON.parse(window.localStorage.getItem(ACT_RUN_KEY) ?? "[]") as ActRun[]; } catch { return []; }
+  try { return JSON.parse(safeStorage().getItem(ACT_RUN_KEY) ?? "[]") as ActRun[]; } catch { return []; }
 }
 
 export function saveActRuns(runs: ActRun[]): void {
-  try { window.localStorage.setItem(ACT_RUN_KEY, JSON.stringify(runs)); } catch { /* ok */ }
+  try { safeStorage().setItem(ACT_RUN_KEY, JSON.stringify(runs)); } catch { /* ok */ }
 }
 
 export function newActRun(name = "New run"): ActRun {

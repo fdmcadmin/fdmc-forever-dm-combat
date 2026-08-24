@@ -16,6 +16,7 @@ import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
 import type { ActorAction } from "../types/tabs";
 import { chargeBearingActions, itemChargeKey } from "./itemCharges";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ function getMaxFromAction(action: ActorAction): number {
 
 function readStored(): ResourceCounterMap {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = safeStorage().getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) as ResourceCounterMap : {};
   } catch {
     return {};
@@ -55,7 +56,7 @@ function readStored(): ResourceCounterMap {
 
 function persist(state: ResourceCounterMap) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    safeStorage().setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // ok
   }

@@ -20,6 +20,7 @@
 
 import { buildExportPayload, applyExportPayload, type ImportResult } from "../seats/actorLibraryExport";
 import type { Coins } from "../currency/currency";
+import { safeStorage } from "../utils/safeStorage";
 
 /** Deliberately absent from PARTY_LOCAL_KEYS in wipePartyData.ts — a wipe must not eat the backups. */
 const SNAPSHOT_KEY = "fdmc.backup.snapshots.v1";
@@ -63,7 +64,7 @@ const DEFAULT_SETTINGS: BackupSettings = { mode: "session", intervalMinutes: 30 
 
 export function loadBackupSettings(): BackupSettings {
   try {
-    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    const raw = safeStorage().getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<BackupSettings>;
     return {
@@ -75,12 +76,12 @@ export function loadBackupSettings(): BackupSettings {
 }
 
 export function saveBackupSettings(settings: BackupSettings): void {
-  try { window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* quota */ }
+  try { safeStorage().setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* quota */ }
 }
 
 export function loadSnapshots(): BackupSnapshot[] {
   try {
-    const raw = window.localStorage.getItem(SNAPSHOT_KEY);
+    const raw = safeStorage().getItem(SNAPSHOT_KEY);
     const list = raw ? JSON.parse(raw) as BackupSnapshot[] : [];
     return Array.isArray(list) ? list : [];
   } catch { return []; }
@@ -145,10 +146,10 @@ export function takeSnapshot(
   };
   const next = [snapshot, ...loadSnapshots()].slice(0, MAX_SNAPSHOTS);
   try {
-    window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
+    safeStorage().setItem(SNAPSHOT_KEY, JSON.stringify(next));
   } catch {
     // Over quota — keep the two most recent rather than losing the ring entirely.
-    try { window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next.slice(0, 2))); } catch { return null; }
+    try { safeStorage().setItem(SNAPSHOT_KEY, JSON.stringify(next.slice(0, 2))); } catch { return null; }
   }
   return snapshot;
 }
@@ -183,13 +184,13 @@ export function downloadSnapshot(id: string): boolean {
 
 export function deleteSnapshot(id: string): void {
   try {
-    window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(loadSnapshots().filter(s => s.id !== id)));
+    safeStorage().setItem(SNAPSHOT_KEY, JSON.stringify(loadSnapshots().filter(s => s.id !== id)));
   } catch { /* quota */ }
 }
 
 /** Rough size of the ring, so the DM can see what it costs before turning the interval up. */
 export function snapshotBytes(): number {
-  try { return (window.localStorage.getItem(SNAPSHOT_KEY) ?? "").length; } catch { return 0; }
+  try { return (safeStorage().getItem(SNAPSHOT_KEY) ?? "").length; } catch { return 0; }
 }
 
 // ─── Wallet mirror ────────────────────────────────────────────────────────────
@@ -217,19 +218,19 @@ export function mirrorWallets(wallets: Record<string, Coins>): void {
       Object.entries(wallets).filter(([, c]) => Object.values(c).some(v => (v ?? 0) > 0)),
     );
     if (Object.keys(held).length === 0) return;   // never overwrite a good mirror with nothing
-    const prev = window.localStorage.getItem(WALLET_MIRROR_KEY);
+    const prev = safeStorage().getItem(WALLET_MIRROR_KEY);
     const next: WalletMirror = { savedAt: new Date().toISOString(), wallets: held };
     if (prev) {
       const parsed = JSON.parse(prev) as WalletMirror;
       if (JSON.stringify(parsed.wallets) === JSON.stringify(held)) return;
     }
-    window.localStorage.setItem(WALLET_MIRROR_KEY, JSON.stringify(next));
+    safeStorage().setItem(WALLET_MIRROR_KEY, JSON.stringify(next));
   } catch { /* quota or bad JSON — the ring is still the backstop */ }
 }
 
 export function loadWalletMirror(): WalletMirror | null {
   try {
-    const raw = window.localStorage.getItem(WALLET_MIRROR_KEY);
+    const raw = safeStorage().getItem(WALLET_MIRROR_KEY);
     return raw ? JSON.parse(raw) as WalletMirror : null;
   } catch { return null; }
 }

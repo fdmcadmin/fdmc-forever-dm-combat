@@ -68,6 +68,7 @@ import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
 import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
 import { offHandBlocker } from "./core/constants/chassis";
+import { safeStorage } from "./core/utils/safeStorage";
 import { initiativeRollFormula, getActorInitiativeModifier } from "./core/state/initiative";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
@@ -470,9 +471,9 @@ export default function App() {
     if (!isDmMode || !OBR.isAvailable) return;
     return OBR.broadcast.onMessage(ENCOUNTER_LOAD_CHANNEL, () => {
       try {
-        const raw = window.localStorage.getItem(ENCOUNTER_LOAD_QUEUE_KEY);
+        const raw = safeStorage().getItem(ENCOUNTER_LOAD_QUEUE_KEY);
         const instances: MainEncounterMonsterInstance[] = raw ? JSON.parse(raw) as MainEncounterMonsterInstance[] : [];
-        window.localStorage.removeItem(ENCOUNTER_LOAD_QUEUE_KEY);
+        safeStorage().removeItem(ENCOUNTER_LOAD_QUEUE_KEY);
         addMonsterInstances(instances);
       } catch { /* ok */ }
     });
@@ -488,7 +489,7 @@ export default function App() {
         setLevelUpRequests(current => {
           const filtered = current.filter(r => r.actorId !== msg.actorId);
           const next = [...filtered, msg];
-          try { localStorage.setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
+          try { safeStorage().setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
           return next;
         });
       }
@@ -734,7 +735,7 @@ export default function App() {
     pushActorsToAllSeats({ freshOverrides });
     setLevelUpRequests(current => {
       const next = current.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
+      try { safeStorage().setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
 
@@ -754,7 +755,7 @@ export default function App() {
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
     setLevelUpRequests(current => {
       const next = current.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
+      try { safeStorage().setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
     if (OBR.isAvailable) {

@@ -15,19 +15,69 @@
 
 let _storage: Storage | null = null;
 
-export function safeStorage(): Storage {
-  if (_storage) return _storage;
+/**
+ * ⚠ THE LAST RESORT MUST NOT THROW EITHER.
+ *
+ * The original fallback returned `window.sessionStorage` without probing it. In a fully sandboxed
+ * iframe BOTH stores throw on access, so the "safe" wrapper threw from the line that was supposed
+ * to be the safety net — and every caller that had trusted it to be safe went down with it. An
+ * in-memory Storage keeps the app running for the session; nothing persists, which is the correct
+ * outcome when the browser has said no twice.
+ */
+function memoryStorage(): Storage {
+  const map = new Map<string, string>();
+  return {
+    get length() { return map.size; },
+    key: (i: number) => [...map.keys()][i] ?? null,
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => { map.set(k, String(v)); },
+    removeItem: (k: string) => { map.delete(k); },
+    clear: () => { map.clear(); },
+  } as Storage;
+}
+
+/** Probe a store by writing to it. Availability is not "the object exists" — it is "a write works". */
+function usable(store: Storage | undefined): store is Storage {
+  if (!store) return false;
   try {
     const testKey = "__fdmc_storage_test__";
-    window.localStorage.setItem(testKey, "1");
-    window.localStorage.removeItem(testKey);
-    _storage = window.localStorage;
+    store.setItem(testKey, "1");
+    store.removeItem(testKey);
+    return true;
   } catch {
-    // Firefox ETP or sandboxed iframe — fall back to sessionStorage
-    console.warn("[FDMC] localStorage blocked (Firefox ETP or sandbox). Using sessionStorage fallback. Data will not persist across browser restarts.");
-    _storage = window.sessionStorage;
+    return false;
+  }
+}
+
+export function safeStorage(): Storage {
+  if (_storage) return _storage;
+
+  let local: Storage | undefined;
+  let session: Storage | undefined;
+  // Reading the PROPERTY throws under Firefox ETP, before any method is called.
+  try { local = window.localStorage; } catch { /* blocked */ }
+  try { session = window.sessionStorage; } catch { /* blocked */ }
+
+  if (usable(local)) {
+    _storage = local;
+  } else if (usable(session)) {
+    // Firefox ETP or a sandboxed iframe. sessionStorage is still permitted in strict iframe
+    // contexts, and same-origin frames in one tab share it — so cross-window sync survives.
+    console.warn("[FDMC] localStorage is blocked (Firefox Enhanced Tracking Protection, or a sandboxed iframe). Falling back to sessionStorage: the app works normally, but DM libraries and seat choices will not survive closing the browser.");
+    _storage = session;
+  } else {
+    console.warn("[FDMC] Both localStorage and sessionStorage are blocked. Running with in-memory storage: nothing will be saved, but the app will run.");
+    _storage = memoryStorage();
   }
   return _storage;
+}
+
+/** Which store is in use — for the diagnostic banner, and for tests. */
+export function storageMode(): "local" | "session" | "memory" {
+  const store = safeStorage();
+  try { if (store === window.localStorage) return "local"; } catch { /* blocked */ }
+  try { if (store === window.sessionStorage) return "session"; } catch { /* blocked */ }
+  return "memory";
 }
 
 /** Convenience wrappers */

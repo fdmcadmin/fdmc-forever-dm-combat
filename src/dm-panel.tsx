@@ -83,6 +83,7 @@ import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequ
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";
 import { LevelUpApprovalPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
+import { safeStorage } from "./core/utils/safeStorage";
 import { buildActorSeatColorMap, withAlpha } from "./core/seats/seatColors";
 import { TokenAssignmentPanel } from "./core/tokens/TokenAssignmentPanel";
 import { loadMonsterRoster } from "./core/monsters/runtime/monsterRosterStorage";
@@ -217,7 +218,7 @@ function DmPanelApp() {
 
   const [levelUpRequests, setLevelUpRequests] = useState<LevelUpRequest[]>(() => {
     try {
-      const stored = localStorage.getItem(LEVEL_UP_STORAGE_KEY);
+      const stored = safeStorage().getItem(LEVEL_UP_STORAGE_KEY);
       return stored ? (JSON.parse(stored) as LevelUpRequest[]) : [];
     } catch { return []; }
   });
@@ -225,7 +226,7 @@ function DmPanelApp() {
   const [convergenceApprovalReq, setConvergenceApprovalReq] = useState<ConvergenceRequest | null>(null);
 
   // Cross-window sync: when another DM panel popover approves/clears a request,
-  // it writes the updated list to localStorage. The storage event fires in all
+  // it writes the updated list to safeStorage(). The storage event fires in all
   // other same-origin tabs/popovers — we re-read and sync React state so the
   // badge disappears everywhere, not just in the window that did the approval.
   useEffect(() => {
@@ -248,7 +249,7 @@ function DmPanelApp() {
         setLevelUpRequests(prev => {
           const filtered = prev.filter(r => r.actorId !== msg.actorId);
           const next = [...filtered, msg];
-          try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+          try { safeStorage().setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
           return next;
         });
       }
@@ -304,7 +305,7 @@ function DmPanelApp() {
     broadcastLibraryUpdate();
     setLevelUpRequests(prev => {
       const next = prev.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try { safeStorage().setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
     if (OBR.isAvailable) {
@@ -320,7 +321,7 @@ function DmPanelApp() {
   function handleLevelUpReject(request: LevelUpRequest, reason: string) {
     setLevelUpRequests(prev => {
       const next = prev.filter(r => r.actorId !== request.actorId);
-      try { localStorage.setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try { safeStorage().setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
     if (OBR.isAvailable) {
@@ -888,8 +889,8 @@ function DmPanelApp() {
             onLoadEncounter={(instances) => {
               // Write instances to localStorage queue — App.tsx reads on broadcast
               try {
-                const existing = JSON.parse(window.localStorage.getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
-                window.localStorage.setItem(
+                const existing = JSON.parse(safeStorage().getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
+                safeStorage().setItem(
                   FDMC_STORAGE_KEYS.encounterLoadQueue,
                   JSON.stringify([...existing, ...instances])
                 );
@@ -1188,8 +1189,8 @@ function DmPanelApp() {
                   onCreateLootForEncounter={handleCreateLootForEncounter}
                   onLoadEncounter={(instances) => {
                     try {
-                      const existing = JSON.parse(window.localStorage.getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
-                      window.localStorage.setItem(FDMC_STORAGE_KEYS.encounterLoadQueue, JSON.stringify([...existing, ...instances]));
+                      const existing = JSON.parse(safeStorage().getItem(FDMC_STORAGE_KEYS.encounterLoadQueue) ?? "[]") as unknown[];
+                      safeStorage().setItem(FDMC_STORAGE_KEYS.encounterLoadQueue, JSON.stringify([...existing, ...instances]));
                     } catch { /* ok */ }
                     if (OBR.isAvailable) {
                       void OBR.broadcast.sendMessage(FDMC_CHANNELS.encounterLoadRequest, { type: "fdmc:encounter-load-request" }, { destination: "LOCAL" }).catch(() => undefined);

@@ -4,6 +4,7 @@ import type { Actor } from "../types/actor";
 import { slotsOf } from "../types/actionEconomy";
 import type { ActionCost, EconomySlot, ActorActionEconomyMap, ActorActionEconomyState } from "../types/actionEconomy";
 import { emptyActionEconomyState } from "../types/actionEconomy";
+import { safeStorage } from "../utils/safeStorage";
 
 const ACTION_STATE_STORAGE_KEY = "fdm:action-economy-state:v1";
 const ACTION_STATE_CHANNEL = "forever-dm-combat:action-economy-state:v1";
@@ -36,7 +37,7 @@ function readStoredState(): ActorActionEconomyMap | null {
   }
 
   try {
-    const raw = window.localStorage.getItem(ACTION_STATE_STORAGE_KEY);
+    const raw = safeStorage().getItem(ACTION_STATE_STORAGE_KEY);
     return raw ? JSON.parse(raw) as ActorActionEconomyMap : null;
   } catch {
     return null;
@@ -49,7 +50,7 @@ function persistState(state: ActorActionEconomyMap) {
   }
 
   try {
-    window.localStorage.setItem(ACTION_STATE_STORAGE_KEY, JSON.stringify(state));
+    safeStorage().setItem(ACTION_STATE_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Keep in-memory state usable if storage is unavailable.
   }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Actor } from "../types/actor";
+import { safeStorage } from "../utils/safeStorage";
 
 export type ActorNoteVisibility = "player" | "dm";
 
@@ -43,7 +44,7 @@ function readStoredNotes(): ActorNotesMap | null {
 
   for (const key of keysToTry) {
     try {
-      const raw = window.localStorage.getItem(key);
+      const raw = safeStorage().getItem(key);
       if (!raw) {
         continue;
       }
@@ -82,7 +83,7 @@ export function useActorNotesState(actors: Actor[]) {
       return;
     }
 
-    window.localStorage.setItem(storageKey, JSON.stringify(notesByActorId));
+    safeStorage().setItem(storageKey, JSON.stringify(notesByActorId));
   }, [notesByActorId]);
 
   const getActorNotes = useCallback(

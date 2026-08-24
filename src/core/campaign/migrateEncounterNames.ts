@@ -16,6 +16,7 @@
 import { loadEncounterLibrary, saveEncounterLibrary } from "../monsters/encounterLibrary";
 import { loadEquipmentLibrary, saveEquipmentLibrary } from "../ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_ENCOUNTER_RENAMES } from "../../modules/the-broken-chain/content/encounterRenames";
+import { safeStorage } from "../utils/safeStorage";
 
 const RENAME_KEY = "fdmc.encounterNames.migration.v1";
 const RENAME_VERSION = "0.7.27-acts1-3-named-scenes";
@@ -25,7 +26,7 @@ export type RenameReport = { encounters: number; items: number; pools: string[] 
 export function migrateEncounterNames(force = false): RenameReport {
   const report: RenameReport = { encounters: 0, items: 0, pools: [] };
   try {
-    if (!force && window.localStorage.getItem(RENAME_KEY) === RENAME_VERSION) return report;
+    if (!force && safeStorage().getItem(RENAME_KEY) === RENAME_VERSION) return report;
   } catch { return report; }
 
   /**
@@ -81,6 +82,6 @@ export function migrateEncounterNames(force = false): RenameReport {
     if (changed) saveEquipmentLibrary(next, owner);
   }
 
-  try { window.localStorage.setItem(RENAME_KEY, RENAME_VERSION); } catch { /* ok */ }
+  try { safeStorage().setItem(RENAME_KEY, RENAME_VERSION); } catch { /* ok */ }
   return report;
 }

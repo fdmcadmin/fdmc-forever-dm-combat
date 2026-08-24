@@ -25,6 +25,7 @@
 import { obrSend } from "../utils/obrReady";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import type { EquipmentItem } from "./EquipmentBagEditor";
+import { safeStorage } from "../utils/safeStorage";
 
 export type LootRecipient = { seatId: string; label: string };
 
@@ -73,7 +74,7 @@ const OPEN_LOOT_OFFER_KEY = "fdmc.dm.openLootOffer.v1";
 
 export function loadOpenLootOffer(): OpenLootOffer | null {
   try {
-    const raw = window.localStorage.getItem(OPEN_LOOT_OFFER_KEY);
+    const raw = safeStorage().getItem(OPEN_LOOT_OFFER_KEY);
     return raw ? JSON.parse(raw) as OpenLootOffer : null;
   } catch {
     return null;
@@ -91,8 +92,8 @@ export const OPEN_LOOT_OFFER_CHANGED = "fdmc:open-loot-offer-changed";
 
 export function saveOpenLootOffer(offer: OpenLootOffer | null): void {
   try {
-    if (offer) window.localStorage.setItem(OPEN_LOOT_OFFER_KEY, JSON.stringify(offer));
-    else window.localStorage.removeItem(OPEN_LOOT_OFFER_KEY);
+    if (offer) safeStorage().setItem(OPEN_LOOT_OFFER_KEY, JSON.stringify(offer));
+    else safeStorage().removeItem(OPEN_LOOT_OFFER_KEY);
   } catch { /* storage unavailable — the offer just won't be stock-limited */ }
   try { window.dispatchEvent(new CustomEvent(OPEN_LOOT_OFFER_CHANGED)); } catch { /* no DOM */ }
 }

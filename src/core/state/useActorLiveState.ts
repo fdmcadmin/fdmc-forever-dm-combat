@@ -26,6 +26,7 @@ import {
   publishFdmcRoomStateKey,
   subscribeFdmcRoomStateKey,
 } from "../table-state/roomStateBridge";
+import { safeStorage } from "../utils/safeStorage";
 
 // ─── Local storage fallback ───────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ const LOCAL_KEY = "fdmc.actor.liveState.v1";
 
 function readLocalFallback(): FdmcRoomLiveState | null {
   try {
-    const raw = window.localStorage.getItem(LOCAL_KEY);
+    const raw = safeStorage().getItem(LOCAL_KEY);
     return raw ? normalizeFdmcRoomLiveState(JSON.parse(raw)) ?? null : null;
   } catch {
     return null;
@@ -42,7 +43,7 @@ function readLocalFallback(): FdmcRoomLiveState | null {
 
 function writeLocalFallback(state: FdmcRoomLiveState) {
   try {
-    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+    safeStorage().setItem(LOCAL_KEY, JSON.stringify(state));
   } catch {
     // keep going if storage blocked
   }
