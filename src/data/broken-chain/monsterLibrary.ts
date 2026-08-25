@@ -297,7 +297,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "unspecified", ac: 13, maxHp: 100, attacksPerTurn: 2, speed: "50 ft", classification: "act-boss",
       defenses: [
-        { name: "Phantom Step", ehpMultiplier: 1.18, note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
+        { name: "Phantom Step", ehpMultiplier: 1.18, provenance: "uncalibrated", note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
       ],
     },
     abilities: [
@@ -365,7 +365,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "beast", ac: 13, maxHp: 75, speed: "50 ft", classification: "strong",
       defenses: [
-        { name: "Ambush + Apex Unleashed", ehpMultiplier: 1.40, note: "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics." },
+        { name: "Ambush + Apex Unleashed", ehpMultiplier: 1.40, provenance: "uncalibrated", note: "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics." },
       ],
     },
     abilities: [
@@ -401,7 +401,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "beast", ac: 12, maxHp: 26, speed: "40 ft", classification: "normal",
       defenses: [
-        { name: "Pack coordination", ehpMultiplier: 1.40, note: "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet." },
+        { name: "Pack coordination", ehpMultiplier: 1.40, provenance: "uncalibrated", note: "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet." },
       ],
     },
     abilities: [
@@ -431,7 +431,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 12, maxHp: 42, speed: "20 ft", classification: "normal",
       defenses: [
-        { name: "Hollow Fortitude", ehpMultiplier: 1.45, note: "DC 5 + damage CON save at 0 HP drops it to 1 instead (radiant or a crit bypasses), so kills must be confirmed. Carries the Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics." },
+        { name: "Hollow Fortitude", ehpMultiplier: 1.45, provenance: "uncalibrated", note: "DC 5 + damage CON save at 0 HP drops it to 1 instead (radiant or a crit bypasses), so kills must be confirmed. Carries the Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics." },
       ],
     },
     abilities: [
@@ -497,7 +497,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 13, maxHp: 36, speed: "30 ft", classification: "normal",
       defenses: [
-        { name: "Cold Aura + paralysis", ehpMultiplier: 1.45, note: "Aura saves compound with the Hunter's drain and paralysis removes whole PC turns. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
+        { name: "Cold Aura + paralysis", ehpMultiplier: 1.45, provenance: "uncalibrated", note: "Aura saves compound with the Hunter's drain and paralysis removes whole PC turns. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
       ],
     },
     abilities: [
@@ -534,7 +534,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 14, maxHp: 82, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
-        { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1.45, note: "Halves nonmagical weapon damage and drains STR (cap 6), softening every later hit. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
+        { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1.45, provenance: "uncalibrated", note: "Halves nonmagical weapon damage and drains STR (cap 6), softening every later hit. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
       ],
     },
     abilities: [
@@ -575,7 +575,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft", classification: "elite",
       defenses: [
-        { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
+        { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, provenance: "uncalibrated", note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
       ],
     },
     abilities: [
@@ -610,7 +610,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)", classification: "normal",
       defenses: [
-        { name: "Patrol screen", ehpMultiplier: 1.64, note: "Three Lights tracked separately; magical vs nonmagical matters per attacker. Shares the Last Directive formation value. PROVISIONAL — analytic-derived, no MC lane yet." },
+        { name: "Patrol screen", ehpMultiplier: 1.64, provenance: "uncalibrated", note: "Three Lights tracked separately; magical vs nonmagical matters per attacker. Shares the Last Directive formation value. PROVISIONAL — analytic-derived, no MC lane yet." },
       ],
     },
     abilities: [
@@ -771,7 +771,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "undead", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
       size: "Large", archetype: "skirmisher",
       defenses: [
-        { name: "Two fronts + Grab", ehpMultiplier: 1.21, note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
+        { name: "Two fronts + Grab", ehpMultiplier: 1.21, provenance: "uncalibrated", note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
       ],
     },
     abilities: [
@@ -878,7 +878,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * of those three numbers appears in the 58 calibrated trait rules; they were invented.
        * RULE ZERO-B: nothing in the app beats the workbook.
        */
-      { name: "Workbook profile tm (Raise the Frozen · Frost Ward · control denial)", ehpMultiplier: 1.436,
+      { name: "Workbook profile tm (Raise the Frozen · Frost Ward · control denial)", ehpMultiplier: 1.436, provenance: "workbook-profile",
         note: "Calibrated whole-kit multiplier, authored here. Do not decompose into invented per-trait numbers." },
     ],
     },
@@ -956,7 +956,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * of those three numbers appears in the 58 calibrated trait rules; they were invented.
        * RULE ZERO-B: nothing in the app beats the workbook.
        */
-      { name: "Workbook profile tm (Frozen Resurrection · Unbroken Rank · control denial)", ehpMultiplier: 1.436,
+      { name: "Workbook profile tm (Frozen Resurrection · Unbroken Rank · control denial)", ehpMultiplier: 1.436, provenance: "workbook-profile",
         note: "Calibrated whole-kit multiplier, authored here. Do not decompose into invented per-trait numbers." },
     ],
     },
@@ -1066,7 +1066,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * of those three numbers appears in the 58 calibrated trait rules; they were invented.
        * RULE ZERO-B: nothing in the app beats the workbook.
        */
-      { name: "Workbook profile tm (Raise the Frozen · Frost Ward · Whiteout / Grasping Rime)", ehpMultiplier: 1.436,
+      { name: "Workbook profile tm (Raise the Frozen · Frost Ward · Whiteout / Grasping Rime)", ehpMultiplier: 1.436, provenance: "workbook-profile",
         note: "Calibrated whole-kit multiplier, authored here. Do not decompose into invented per-trait numbers." },
     ],
     },
@@ -1122,8 +1122,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "undead", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
       size: "Large", classification: "elite", archetype: "guardian",
       defenses: [
-        { name: "Wrapped in the Pale", ehpMultiplier: 1.32, note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
-        { name: "Shadow Shift", ehpMultiplier: 1.16, note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
+        { name: "Wrapped in the Pale", ehpMultiplier: 1.32, provenance: "uncalibrated", note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
+        { name: "Shadow Shift", ehpMultiplier: 1.16, provenance: "uncalibrated", note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
       ],
     },
     abilities: [
@@ -1183,8 +1183,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // description; publication needs a real type (Christopher, 2026-07-25).
       size: "Medium", classification: "elite", archetype: "skirmisher",
       defenses: [
-        { name: "Reknit in the Cold", ehpMultiplier: 1.40, note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
-        { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },
+        { name: "Reknit in the Cold", ehpMultiplier: 1.40, provenance: "uncalibrated", note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
+        { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, provenance: "uncalibrated", note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },
       ],
     },
     abilities: [
@@ -1267,8 +1267,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       damageUptime: 0.86, // aura spacing + Hungering Leap repositioning, per the workbook calibration
       size: "Large", archetype: "bruiser",
       defenses: [
-        { name: "Bone Armor (resistance phase)", ehpMultiplier: 1.3, note: "Back half of the bar only. Resistance to all damage except fire/radiant, with a 0.25 bypass share, gives a 0.625 weighted pass fraction: the armored 65 raw costs 104. Across the whole bar that is (65 unarmored + 104 armored) / 130 = 1.30." },
-        { name: "Bone Armor regeneration", ehpMultiplier: 1.3976, note: "2d10+3 (avg 14) at the start of each turn while armor is active, expected 3 ticks = 42 healing, which costs 42 / 0.625 = 67.2 of party output. Composes onto the 169 above: 236.2 / 169 = 1.3976, giving 236.2 total personal EHP (= 130 x 1.817)." },
+        { name: "Bone Armor (resistance phase)", ehpMultiplier: 1.3, provenance: "derived", note: "Back half of the bar only. Resistance to all damage except fire/radiant, with a 0.25 bypass share, gives a 0.625 weighted pass fraction: the armored 65 raw costs 104. Across the whole bar that is (65 unarmored + 104 armored) / 130 = 1.30." },
+        { name: "Bone Armor regeneration", ehpMultiplier: 1.3976, provenance: "derived", note: "2d10+3 (avg 14) at the start of each turn while armor is active, expected 3 ticks = 42 healing, which costs 42 / 0.625 = 67.2 of party output. Composes onto the 169 above: 236.2 / 169 = 1.3976, giving 236.2 total personal EHP (= 130 x 1.817)." },
         { name: "Wrong Cold + Hungering Leap tempo", ehpMultiplier: 1.0, note: "Aura spacing and Leap repositioning are an UPTIME tax on the party (0.86 in the workbook), not extra HP. Counted on the damage clock via pcEffectiveDamage, never here — folding it in would double-charge it." },
       ],
     },
@@ -1373,7 +1373,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fey", ac: 16, maxHp: 76, speed: "40 ft.",
       defenses: [
-        { name: "Bark-Ribbed", ehpMultiplier: 1.028819, note: "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). Reduces B/P/S by 3, first time each round." },
+        { name: "Bark-Ribbed", ehpMultiplier: 1.028819, provenance: "interpolated", note: "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). Reduces B/P/S by 3, first time each round." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "guardian",
@@ -1608,7 +1608,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "fiend", ac: 12, maxHp: 97, speed: "50 ft.",
       defenses: [
         { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
-        { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
+        { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "mid-boss", archetype: "bruiser",
@@ -1782,7 +1782,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * on saves against charm and fear is a real defence. Under-counting is as much a divergence
        * as over-counting.
        */
-      { name: "Workbook profile tm (Perfect Host · persistent aura)", ehpMultiplier: 1.108348,
+      { name: "Workbook profile tm (Perfect Host · persistent aura)", ehpMultiplier: 1.108348, provenance: "workbook-profile",
         note: "Calibrated whole-kit multiplier, authored here." },
     ],
       attacksPerTurn: 2,
@@ -1867,7 +1867,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fey", ac: 14, maxHp: 105, speed: "40 ft.",
       defenses: [
-        { name: "Rooted Turn", ehpMultiplier: 1.056615, note: "Workbook: temporary AC, interpolated to +2 AC for 1 round (+0.056615)." },
+        { name: "Rooted Turn", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round (+0.056615)." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "guardian",

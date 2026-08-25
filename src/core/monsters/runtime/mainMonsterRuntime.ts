@@ -39,6 +39,28 @@ export type MonsterDefense = {
    * case the assumption notice is FOR.
    */
   rule?: string;
+  /**
+   * WHERE THIS MULTIPLIER CAME FROM, when it did not come from a calibrated rule.
+   *
+   * ⚠ THIS IS THE COVERAGE GATE'S FIELD. `CLEANUP-V4-PLAN.md` retired `validate:parity` — the
+   * diff that once caught Frozen Sentinel, Rime Wight and Frost-Weaver carrying three invented
+   * multipliers whose product was x1.867 against the workbook's x1.436 — and named its
+   * replacement: *"the coverage gate now constrains WHERE a multiplier may come from (58
+   * calibrated rules, `unpriced` when the workbook is silent), which is a stronger guarantee
+   * than a diff."* That gate is `check:traits`, and this is what it reads.
+   *
+   * A defence whose multiplier is not 1.0 must carry EITHER a `rule` that resolves to one of the
+   * 58 and matches it, OR one of these. A bare number with neither is what the gate rejects.
+   *
+   *   "workbook-profile"  the workbook's own per-creature tm column, not a trait rule
+   *   "interpolated"      between two published rows, with the interpolation stated in the note
+   *   "derived"           computed from the block, with the arithmetic shown in the note
+   *   "uncalibrated"      hand-authored, pre-workbook, awaiting recalibration — a DECLARED debt
+   *
+   * "uncalibrated" is not an escape hatch. It is a signature: it says a person looked at this
+   * number and knowingly left it, and the gate counts and prints every one of them on each run.
+   */
+  provenance?: "workbook-profile" | "interpolated" | "derived" | "uncalibrated";
   /** Why it is worth that — the arithmetic, so a future session can re-check it. */
   note?: string;
 };

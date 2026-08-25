@@ -84,24 +84,38 @@ if (badMonsters.length || badItems.length || badEncounters.length) {
 }
 
 /**
- * ⚠ AN ENCOUNTER MUST NOT REFERENCE A CREATURE THAT IS NOT SHIPPING.
+ * ⚠ AN ENCOUNTER MUST NOT REFERENCE A CREATURE THAT IS NOT SHIPPING. THIS IS AN ERROR NOW.
  *
- * A fight whose entries point at a templateId found neither in this export nor in the bundled
- * library spawns nothing and looks like a broken encounter to every DM who receives it. Warn
- * rather than refuse: the creature may legitimately be a bundled one this export did not touch.
+ * It used to warn, because it compared only against the export and so could not tell a bundled
+ * creature from a deleted one: *"fine if they are bundled already, a broken fight if they are
+ * not."* It can tell — the bundled library is a file on disk — and the difference between those
+ * two cases is the difference between nothing and a silently empty gate.
+ *
+ * The failure is not hypothetical. An export taken BEFORE a seed rebuild still names the old
+ * creatures: the 2026-08-25 export's Last Court points at `walking-court` and `hushrunner`,
+ * which v3.23 replaced. `AUTHORED_ENCOUNTERS` wins over the seed by id, and the checker filters
+ * entries whose template is missing, so folding that export would have replaced two rebuilt
+ * Act 3 fights with EMPTY ones. No crash, no error, no bodies.
  */
-const shippingIds = new Set(monsters.map(m => m.templateId));
+const bundledSource = readFileSync(resolve("src/data/broken-chain/monsterLibrary.ts"), "utf8");
+const bundledIds = new Set([...bundledSource.matchAll(/templateId: "([^"]+)"/g)].map(m => m[1]));
+const shippingIds = new Set([...monsters.map(m => m.templateId), ...bundledIds]);
 const dangling = [];
 for (const e of encounters) {
   for (const entry of e.entries ?? []) {
-    if (entry.templateId && !shippingIds.has(entry.templateId)) dangling.push(`${e.name} -> ${entry.templateId}`);
+    if (entry.templateId && !shippingIds.has(entry.templateId)) {
+      dangling.push(`${e.name || e.id} -> ${entry.templateId}`);
+    }
   }
 }
 if (dangling.length) {
-  console.warn("NOTE: these encounter entries reference creatures not in this export —");
-  console.warn("      fine if they are bundled already, a broken fight if they are not:");
-  for (const d of dangling) console.warn(`        ${d}`);
+  console.error(`REFUSING TO FOLD: ${dangling.length} encounter entr${dangling.length === 1 ? "y" : "ies"} name a creature that is in neither this export nor the bundled library.`);
+  console.error("Folding this would ship those fights EMPTY, because an authored encounter replaces the seeded one by id.");
+  for (const d of dangling) console.error(`    ${d}`);
+  console.error("\nThe usual cause is an export taken before a seed rebuild. Re-export from the app against the current build.");
+  process.exit(1);
 }
+console.log(`Encounter references check out: ${bundledIds.size} bundled creature id(s) known.`);
 
 const header = readFileSync(OUT, "utf8").split("import type { MainMonsterTemplate }")[0];
 const body = `import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
