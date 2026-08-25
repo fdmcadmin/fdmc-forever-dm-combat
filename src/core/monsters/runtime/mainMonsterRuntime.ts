@@ -19,6 +19,26 @@ export type MonsterDefense = {
   name: string;
   /** Effective-HP multiplier. 1.40 = "this trait is worth 40% more HP". */
   ehpMultiplier: number;
+  /**
+   * WHICH CALIBRATED RULE THIS TRAIT IS, by the workbook's own label.
+   *
+   * ⚠ A TRAIT'S NAME IS ITS FLAVOUR, NOT ITS PRICE. The Grief Colossus's "Body Between" IS the
+   * workbook's "Fixed prevention - 12/round" — same effect, same ×1.232313, different word. The
+   * checker matched `traitRule()` on the DISPLAY name, so every campaign creature whose author gave
+   * a trait a campaign name was reported as *"not a calibrated rule; its authored multiplier is
+   * used as entered"* — an assumption notice on a figure that came straight out of the 58 rules.
+   * Christopher: *"we have enough data that there should be no 'stated' or 'assumption' for any
+   * campaign monster."* He was right; nothing was ever being guessed.
+   *
+   * This is RULE 2's shape, which MASTER already states for exactly this field: **the author PICKS
+   * the rule; the multiplier is DERIVED from it.** Set this and the trait prices as calibrated and
+   * inherits the rule's stack group — which is also what stops two differently-named traits that
+   * are the same effect from stacking.
+   *
+   * Absent on a creature a DM built from scratch with a hand-typed multiplier, and that is the one
+   * case the assumption notice is FOR.
+   */
+  rule?: string;
   /** Why it is worth that — the arithmetic, so a future session can re-check it. */
   note?: string;
 };

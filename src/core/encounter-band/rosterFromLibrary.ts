@@ -95,7 +95,15 @@ export function traitFactorsFor(
 
   for (const d of defenses) {
     const contribution = (d.ehpMultiplier || 1) - 1;
-    const rule = traitRule(d.name);
+    /**
+     * ⚠ THE RULE THE TRAIT DECLARES, THEN ITS NAME AS A FALLBACK.
+     *
+     * A campaign trait carries a campaign NAME — the Grief Colossus's "Body Between" IS the
+     * workbook's "Fixed prevention - 12/round", same effect and same ×1.232313. Matching on the
+     * display name found nothing, so every one of them was reported as an authored assumption on a
+     * figure that came straight out of the 58 calibrated rules. See `MonsterDefense.rule`.
+     */
+    const rule = traitRule(d.rule ?? d.name);
     if (contribution === 0) {
       out.push({ creature: name, flag: "ESTIMATED", field: "trait",
         detail: `"${d.name}" is assessed at 1.0 — no effective-HP contribution.` });

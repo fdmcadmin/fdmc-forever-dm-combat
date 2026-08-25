@@ -479,9 +479,21 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                     </div>
                   )}
 
+                  {/* ⚠ THIS LINE USED TO CALL A PUBLISHED FIGURE A GUESS. It said "your entry, not a
+                      workbook figure" unconditionally — including in the default case, where both
+                      numbers come from `partyDefenceCurve`, transcribed verbatim from the v7 pricing
+                      reference and reconciled across all 280 cells. Christopher: *"why would the
+                      checker not already know where the standard party ac is when the referenced
+                      file already has that in."* It does know; the sentence was lying about it.
+                      It now says which of the two it actually used, and only claims an entry when
+                      the DM has genuinely overridden one. */}
                   <div style={{ fontSize: 9, color: "#666", marginBottom: 6 }}>
                     Survivor counts are model projections under {allocation === "focus_fire" ? "focus fire" : "even spread"}, not observed outcomes.
-                    {" "}Every attack was resolved against AC {targetAc} and every save against a +{targetSave} bonus — your entry, not a workbook figure.
+                    {" "}Every attack was resolved against AC {Number(targetAc.toFixed(2))}{acOverride === null ? "" : " (your override)"}
+                    {" "}and every save against a +{Number(targetSave.toFixed(2))}{saveOverride === null ? "" : " (your override)"} bonus
+                    {acOverride === null && saveOverride === null
+                      ? ` — the published ${equipmentMode === "brokenChain" ? "Broken Chain" : "Standard"} party curve at level ${partyLevel}, not an assumption.`
+                      : " — an override you entered, replacing the published curve."}
                   </div>
 
                   <details>

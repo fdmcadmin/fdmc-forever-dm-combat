@@ -1524,7 +1524,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 17, maxHp: 46, speed: "30 ft.",
       defenses: [
-        { name: "Shatter the Stake", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Spends a stake to impose disadvantage on one attack; two stakes." },
+        { name: "Shatter the Stake", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "Workbook: First attack each round at disadvantage (+0.047749). Spends a stake to impose disadvantage on one attack; two stakes." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
@@ -1563,7 +1563,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fey", ac: 16, maxHp: 119, speed: "30 ft., swim 30 ft.",
       defenses: [
-        { name: "Control spellcasting", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). Entangle, Web and Hold Person cost the party attacking turns; this is a CLOCK tax, not resistance." },
+        { name: "Control spellcasting", ehpMultiplier: 1.108348, rule: "Opposing damage uptime -10%", note: "Workbook: Opposing damage uptime -10% (+0.108348). Entangle, Web and Hold Person cost the party attacking turns; this is a CLOCK tax, not resistance." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "mid-boss", archetype: "mystic",
@@ -1606,7 +1606,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 12, maxHp: 97, speed: "50 ft.",
       defenses: [
-        { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
+        { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
         { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
       ],
       attacksPerTurn: 2,
@@ -1647,7 +1647,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fey", ac: 15, maxHp: 75, speed: "30 ft., climb 20 ft.",
       defenses: [
-        { name: "Offered Shelter", ehpMultiplier: 1.049548, note: "Workbook: Half cover vs ranged attacks (+0.049548). Two 5-ft circles granting half cover." },
+        { name: "Offered Shelter", ehpMultiplier: 1.049548, rule: "Half cover vs ranged attacks", note: "Workbook: Half cover vs ranged attacks (+0.049548). Two 5-ft circles granting half cover." },
       ],
       size: "Small", classification: "elite", archetype: "tactician",
       skills: [{ label: "Nature", modifier: 8 }],
@@ -1942,7 +1942,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 16, maxHp: 56, speed: "30 ft.",
       defenses: [
-        { name: "Claimed Line", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). Costs the first crosser each round 10 extra ft or stops it." },
+        { name: "Claimed Line", ehpMultiplier: 1.108348, rule: "Opposing damage uptime -10%", note: "Workbook: Opposing damage uptime -10% (+0.108348). Costs the first crosser each round 10 extra ft or stops it." },
       ],
       size: "Medium", classification: "elite", archetype: "tactician",
       skills: [{ label: "Arcana", modifier: 8 }],
@@ -2017,7 +2017,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fey", ac: 18, maxHp: 52, speed: "40 ft.",
       defenses: [
-        { name: "False Familiarity", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Hushrunner's applies only to opportunity attacks, so this is the generous end of its true value." },
+        { name: "False Familiarity", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "Workbook: First attack each round at disadvantage (+0.047749). Hushrunner's applies only to opportunity attacks, so this is the generous end of its true value." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
@@ -2093,7 +2093,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 15, maxHp: 104, speed: "35 ft.",
       defenses: [
-        { name: "First Claim", ehpMultiplier: 1.049548, note: "Workbook: Half cover vs ranged attacks (+0.049548). Two claim posts granting half cover." },
+        { name: "First Claim", ehpMultiplier: 1.049548, rule: "Half cover vs ranged attacks", note: "Workbook: Half cover vs ranged attacks (+0.049548). Two claim posts granting half cover." },
       ],
       attacksPerTurn: 2,
       size: "Huge", classification: "elite", archetype: "guardian",
@@ -2169,7 +2169,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 16, maxHp: 50, speed: "30 ft.",
       defenses: [
-        { name: "Boundary Script", ehpMultiplier: 1.108348, note: "Workbook: Opposing damage uptime -10% (+0.108348). A 20-ft line that taxes the first hostile crossing." },
+        { name: "Boundary Script", ehpMultiplier: 1.108348, rule: "Opposing damage uptime -10%", note: "Workbook: Opposing damage uptime -10% (+0.108348). A 20-ft line that taxes the first hostile crossing." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
@@ -2207,7 +2207,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "dragon", ac: 17, maxHp: 39, speed: "30 ft., glide 30 ft.",
       defenses: [
-        { name: "Moon-Slick Scales", ehpMultiplier: 1.047749, note: "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round." },
+        { name: "Moon-Slick Scales", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round." },
       ],
       size: "Small", classification: "mid-boss", archetype: "skirmisher",
       skills: [{ label: "Perception", modifier: 5 }],
@@ -2244,7 +2244,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "dragon", ac: 18, maxHp: 195, speed: "40 ft.; Broken Lift only",
       defenses: [
-        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
+        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
       ],
       attacksPerTurn: 3,
       size: "Huge", classification: "mid-boss", archetype: "commander",
@@ -2388,7 +2388,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "aberration", ac: 17, maxHp: 173, speed: "30 ft.",
       defenses: [
-        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
+        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "act-boss", archetype: "tactician",
@@ -2432,8 +2432,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "aberration", ac: 18, maxHp: 230, speed: "35 ft.",
       defenses: [
-        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
-        { name: "Body Between", ehpMultiplier: 1.232313, note: "Workbook: Fixed prevention - 12/round (+0.232313), exact. Reduces the triggering damage by 12 once per round." },
+        { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
+        { name: "Body Between", ehpMultiplier: 1.232313, rule: "Fixed prevention - 12/round", note: "Workbook: Fixed prevention - 12/round (+0.232313), exact. Reduces the triggering damage by 12 once per round." },
       ],
       attacksPerTurn: 2,
       size: "Huge", classification: "act-boss", archetype: "guardian",
