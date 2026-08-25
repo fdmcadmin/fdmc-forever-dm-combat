@@ -89,6 +89,21 @@ export type ActRun = {
   bcState?: string;
   /** Ally-overlay condition, evaluated per step. */
   vsEntity?: boolean;
+  /** Party size the run is priced for. The checker's own input, not a per-fight fact. */
+  partySize?: number;
+  /**
+   * ⚠ WHAT A SHORT REST GIVES BACK IS A DM INPUT, BECAUSE THE WORKBOOK DOES NOT PUBLISH ONE.
+   *
+   * A LONG rest is defined — it resets the party — and the run applies that itself. A SHORT rest
+   * is not: v7 carries no party-level short-rest recovery anywhere (the only `short_rest` keys in
+   * the bundle are item and creature uses). RULE 1A: *"what the workbook does not publish, the app
+   * does not invent."* A plausible-looking constant here would silently move the arrival state of
+   * every fight after it, which is exactly the failure that got the pre-workbook model deleted.
+   *
+   * So the DM says what a short rest is worth at their table, as a fraction of full sustain, and
+   * the run prints it beside the result. 0 = a short rest restores nothing the checker models.
+   */
+  shortRestRecovery?: number;
   steps: ActRunStep[];
 };
 
@@ -159,6 +174,34 @@ export function resolveActRun(steps: ActRunStep[], choices: Record<string, RestC
 
       return { ...step, restTaken: taken, assumedRisky, restNote };
     });
+}
+
+/**
+ * HOW SPENT THE PARTY IS WHEN IT WALKS INTO THE NEXT FIGHT.
+ *
+ * This is the whole reason a run is more than a list. A fight priced fresh and the same fight
+ * priced third-in-a-block are different fights, and `customSustain` is the contract's OWN input
+ * for saying so — the difficulty panel already takes it as `arrivingSpent`. The run computes it
+ * instead of asking, because the sequence is exactly what a run knows.
+ *
+ * ⚠ THIS FUNCTION PRICES NOTHING. `fightCost` comes from the checker's own output — the sustain a
+ * fight actually consumed, as a fraction of the party's full pool. All that happens here is
+ * carrying it forward and applying the rest, which is act-run business and nothing else's.
+ *
+ *   Long  → 0. A long rest resets the party; that much v7 does define.
+ *   Short → give back what the DM says a short rest is worth (default 0). See `shortRestRecovery`.
+ *   None  → carry it all.
+ */
+export function nextArrivalSpent(
+  spentBefore: number,
+  fightCost: number,
+  restTaken: RestType | "None",
+  shortRestRecovery = 0,
+): number {
+  const after = Math.min(1, Math.max(0, spentBefore + Math.max(0, fightCost)));
+  if (restTaken === "Long") return 0;
+  if (restTaken === "Short") return Math.min(1, Math.max(0, after - Math.max(0, shortRestRecovery)));
+  return after;
 }
 
 /**
