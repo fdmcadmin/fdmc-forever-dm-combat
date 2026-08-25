@@ -70,6 +70,7 @@ jobs:
           npm run check:actrun
           npm run check:traits
           npm run check:reader
+          npm run check:healing
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
       # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the

@@ -33,6 +33,7 @@ import {
 } from "./partyCurveV2";
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
+import { partyHealingFromActors } from "./partyHealingFromActors";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
 const MODES: { id: PartyEquipmentMode; label: string; blurb: string }[] = [
@@ -57,9 +58,15 @@ const label: React.CSSProperties = {
   letterSpacing: 1, marginBottom: 3,
 };
 
-export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
+export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = [] }: {
   encounters: EncounterDefinition[];
   monsterLibrary: MainMonsterTemplate[];
+  /**
+   * The party as the app currently holds it. Optional so any other caller still works, but
+   * supplying it is what closes v9’s class-healing blocker: an abstract 128-party profile can
+   * never know somebody is a Paladin, and these actors say so.
+   */
+  actors?: unknown[];
 }) {
   const [open, setOpen] = useState(false);
   const [encounterId, setEncounterId] = useState<string>("");
@@ -90,6 +97,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   const curveModeLabel = equipmentMode === "brokenChain" ? "Broken Chain" : "WotC standard";
   /** Share of the party's sustain already spent when this fight starts. 0 = fresh. */
   const [arrivingSpent, setArrivingSpent] = useState<number>(0);
+
+  /** Same-encounter healing pools the published sustain does not contain. See the readout below. */
+  const partyHealing = useMemo(() => partyHealingFromActors(actors as never[]), [actors]);
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
 
@@ -376,6 +386,28 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
                         {profile.dpr.round3.toFixed(0)}/{profile.dpr.round4Plus.toFixed(0)} DPR
                         {" · sustain "}{profile.sustain.toFixed(0)}
                       </div>
+                      {/*
+                        ⚠ UNDER SUSTAIN, NOT INSIDE IT — and that is the whole point.
+
+                        The party curve is the 128-party field, and v9's methods sheet flags what
+                        that field could not do: *"Class healing — no invented healing or revival
+                        package was assigned to abstract parties. Class/subclass identities absent
+                        from 128 source profiles."* So `sustain` has a hole exactly the size of
+                        what this party can heal, and every clock reading has been high by it.
+
+                        Folding it into `sustain` would move every reading at once and quietly
+                        change what the 35-45% gate band means, since that band was calibrated
+                        against a sustain figure that excluded this. So it sits beneath the
+                        published number where both can be read, and the band stays arguable.
+                      */}
+                      {partyHealing.total > 0 && (
+                        <div style={{ fontSize: 10, color: "#6a8a6a", marginTop: 2 }}>
+                          {"+ healing "}<strong style={{ color: "#7fbf7f" }}>{partyHealing.total}</strong>
+                          {" HP not in that sustain — "}
+                          {partyHealing.sources.map(s => `${s.actor} ${s.label} ${s.amount}`).join(" · ")}
+                          {". Same-encounter pools only; hit dice are short-rest recovery and already counted."}
+                        </div>
+                      )}
                     </div>
                   </div>
 

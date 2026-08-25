@@ -877,6 +877,7 @@ function DmPanelApp() {
             <EncounterDifficultyPanel
               encounters={loadEncounterLibrary()}
               monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library}
+              actors={actors}
             />
             <CreatureEstimatorPanel monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library} />
           </div>
