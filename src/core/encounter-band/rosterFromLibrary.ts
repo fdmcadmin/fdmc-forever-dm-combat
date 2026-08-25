@@ -128,9 +128,23 @@ export function traitFactorsFor(
       continue;
     }
     claimed.set(stackGroup, d.name);
-    if (!rule) {
+    /**
+     * ⚠ A DECLARED PROVENANCE IS AN ANSWER; ONLY `uncalibrated` IS STILL A QUESTION.
+     *
+     * Christopher: *"make sure that anything uncalibrated gets it and if something still is
+     * unreadable (unlikely) then the app says so when estimating the monster."*
+     *
+     * `workbook-profile`, `interpolated` and `derived` all say where the number came from and
+     * show their working — reporting them as assumptions is the same noise as reporting a
+     * decided 1.0 was. `uncalibrated` is the one that has NOT been answered, so it says so, by
+     * name, every time the creature is priced.
+     */
+    if (!rule && d.provenance === "uncalibrated") {
       out.push({ creature: name, flag: "ESTIMATED", field: "trait",
-        detail: `"${d.name}" is not a calibrated rule; its authored ×${(1 + contribution).toFixed(3)} is used as entered and its stack group is its own name.` });
+        detail: `"${d.name}" carries a hand-authored ×${(1 + contribution).toFixed(3)} that predates the workbook and has never been recalibrated against the 58 rules. It is used as entered and its stack group is its own name.` });
+    } else if (!rule && !d.provenance) {
+      out.push({ creature: name, flag: "NEEDS DM INPUT", field: "trait",
+        detail: `"${d.name}" is not a calibrated rule and declares no provenance, so there is nothing to say where its ×${(1 + contribution).toFixed(3)} came from. Give it a rule that resolves, or declare the source.` });
     }
     factors.push({ stackGroup, label: d.name, contribution });
   }

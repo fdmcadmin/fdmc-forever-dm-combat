@@ -2178,7 +2178,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 18, maxHp: 90, speed: "40 ft.",
       defenses: [
-        { name: "Blur", ehpMultiplier: 1, note: "UNPRICED PENDING A DECISION, and the one place in this packet where 1.0 is certainly WRONG. Attack rolls against the Reaver have disadvantage, permanently and against every attack. The workbook's nearest published rows are All attacks at disadvantage - 1 round (+0.129416) and Concealment until first attack hits each round (+0.113260); both are bounded, and Blur is neither. Extrapolating past a published row is what RULE 1A forbids, so it prices at 1.0 and says so loudly rather than carrying an invented number." },
+        { name: "Blur", ehpMultiplier: 1.227798, provenance: "derived", note: "DERIVED from two published sources, not estimated. Attack rolls against the Reaver have disadvantage, permanently and against every attack. v9 Pricing Resolver row 21 publishes the math: base p=clamp((21+AB-AC)/20,.05,.95), disadvantage=p^2. The AC increase equivalent to turning p into p-squared is dAC=20p(1-p), which is remarkably flat across every plausible hit chance - 5.00 at p=0.50, 4.95 at p=0.55, 4.80 at p=0.60 - so permanent disadvantage IS +5 AC. Priced through the app-s own AC_CONTRIBUTION bands and their published combining rule: +3 (0.140100) + +2 (0.087698) = 0.227798. Cross-check: the calibrated All attacks at disadvantage - 1 round row is +0.129416, so permanent reads 1.76x a single round, which is the right order for a three-to-four round fight." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",

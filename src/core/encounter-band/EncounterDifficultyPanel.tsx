@@ -98,8 +98,43 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   /** Share of the party's sustain already spent when this fight starts. 0 = fresh. */
   const [arrivingSpent, setArrivingSpent] = useState<number>(0);
 
-  /** Same-encounter healing pools the published sustain does not contain. See the readout below. */
-  const partyHealing = useMemo(() => partyHealingFromActors(actors as never[]), [actors]);
+  /**
+   * ⚠ THE PARTY IS THE ACTORS. There is no built-in party and there must not be one —
+   * `brokenChainActors` is deliberately empty, and everything below reads the DM's own library.
+   *
+   * Christopher: *"if someone puts 6 on the party size but has 4 actors in the data then the
+   * response is add more actors due to unable to read enough actors, if 4 and the party is 5 then
+   * it should be check which actors you want to use for this party."*
+   *
+   * Party size is a curve input — it picks the HP band and scales the DPR — so it is not merely
+   * decorative when it disagrees with the roster. Too FEW actors means the checker is pricing a
+   * party that does not exist; too MANY means it is guessing which of them showed up.
+   */
+  const players = useMemo(
+    () => (actors as Array<{ id?: string; name?: string; kind?: string }>).filter(a => a?.kind === "player"),
+    [actors],
+  );
+  /** Which of the DM's actors are in THIS party. All of them, until there are more than fit. */
+  const [chosenActorIds, setChosenActorIds] = useState<string[] | null>(null);
+  const chosen = useMemo(() => {
+    if (chosenActorIds === null) return players;
+    return players.filter(a => chosenActorIds.includes(a.id ?? ""));
+  }, [players, chosenActorIds]);
+
+  const rosterFit: { level: "ok" | "short" | "over"; message: string } =
+    players.length === 0
+      ? { level: "short", message: "No player actors in the library, so nothing about this party can be read — sustain, healing and composition are all coming from the generic curve alone." }
+      : players.length < partySize
+        ? { level: "short", message: `Add more actors — only ${players.length} readable against a ${partySize}-player party. The curve is being asked for a party that is not in the data.` }
+        : players.length > partySize
+          ? { level: "over", message: `${players.length} actors for a ${partySize}-player party — check which ones you want to use.` }
+          : { level: "ok", message: `${players.length} actors, matching the ${partySize}-player curve.` };
+
+  /**
+   * Same-encounter healing pools the published sustain does not contain — read from the CHOSEN
+   * actors, so a six-actor library priced as a four-player party contributes four actors' pools.
+   */
+  const partyHealing = useMemo(() => partyHealingFromActors(chosen as never[]), [chosen]);
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
 
@@ -271,6 +306,39 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                         title={`HP multiplier ×${partySizeHpMultiplier(s)}`}>{s}P</button>
                     ))}
                   </div>
+                  {/* What the actors say about that number — see `rosterFit`. */}
+                  <div style={{ fontSize: 10, marginTop: 3, color: rosterFit.level === "ok" ? "#6a8a6a" : rosterFit.level === "short" ? "#e07b39" : "#c9a227" }}>
+                    {rosterFit.message}
+                  </div>
+                  {/*
+                    More actors than the party size: the DM says which ones are in this fight,
+                    rather than the checker silently taking the first N. The choice feeds the
+                    healing readout, so picking a party without its paladins shows immediately.
+                  */}
+                  {rosterFit.level === "over" && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                      {players.map(a => {
+                        const id = a.id ?? "";
+                        const on = chosenActorIds === null || chosenActorIds.includes(id);
+                        return (
+                          <button key={id} type="button"
+                            onClick={() => {
+                              const base = chosenActorIds ?? players.map(p => p.id ?? "");
+                              setChosenActorIds(on ? base.filter(x => x !== id) : [...base, id]);
+                            }}
+                            style={{ ...chip(on), fontSize: 9 }}
+                            title={on ? "In this party — click to leave out" : "Left out — click to include"}>
+                            {on ? "✓ " : ""}{a.name ?? "unnamed"}
+                          </button>
+                        );
+                      })}
+                      {chosen.length !== partySize && (
+                        <span style={{ fontSize: 10, color: "#c9a227", alignSelf: "center" }}>
+                          {chosen.length} chosen against a {partySize}-player curve.
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={label}>Party level</label>
