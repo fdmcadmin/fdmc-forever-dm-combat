@@ -105,8 +105,17 @@ export function traitFactorsFor(
      */
     const rule = traitRule(d.rule ?? d.name);
     if (contribution === 0) {
-      out.push({ creature: name, flag: "ESTIMATED", field: "trait",
-        detail: `"${d.name}" is assessed at 1.0 — no effective-HP contribution.` });
+      /**
+       * ⚠ A DELIBERATE 1.0 IS AN ANSWER, NOT A GAP. The Wendigo Wight's "Wrong Cold + Hungering
+       * Leap tempo" is authored at exactly 1.0 with its reason written out — the tempo tax is
+       * counted on the damage clock via uptime, and folding it in here would double-charge it.
+       * Reporting that as an assumption told the DM the checker was guessing at a number someone
+       * had already decided. A 1.0 with NO note still reports: that one really is unassessed.
+       */
+      if (!d.note) {
+        out.push({ creature: name, flag: "ESTIMATED", field: "trait",
+          detail: `"${d.name}" is assessed at 1.0 with no stated reason — no effective-HP contribution.` });
+      }
       continue;
     }
     const stackGroup = rule?.stack_group ?? d.name;
