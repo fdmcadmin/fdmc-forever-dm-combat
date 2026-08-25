@@ -3412,7 +3412,7 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
 export const AUTHORED_DIGEST = "fnv1a-df3737ee-92974";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-25T23:36:21.845Z";
+export const AUTHORED_AT = "2026-08-25T23:47:31.268Z";
 
 /**
  * Merge authored content over a bundled list by id.
