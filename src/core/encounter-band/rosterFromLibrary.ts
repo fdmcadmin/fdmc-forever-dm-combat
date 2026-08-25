@@ -24,6 +24,8 @@
  */
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
+import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
+import { materializeTemplateBody } from "../monsters/actionSetPicks";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, traitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
@@ -142,7 +144,25 @@ export function traitFactorsFor(
   return factors;
 }
 
-export type RosterEntryInput = { template: MainMonsterTemplate; quantity: number };
+export type RosterEntryInput = {
+  template: MainMonsterTemplate;
+  quantity: number;
+  /**
+   * The DM's per-body choices, for a TEMPLATE creature. Supplying these prices what the fight
+   * actually fields instead of the unfinished template.
+   *
+   * ⚠ WITHOUT THESE, A TEMPLATE PRICES AS EVERY CHOICE AT ONCE. The Elemental Mirror's block
+   * carries every element package's actions and its damage reads `2d6+@MAIN {primary}` with the
+   * variables unresolved — so the parser found no attack bonus, treated every attack as
+   * AUTOMATIC, and then scheduled the largest spell in the whole pool. Gate II's boss priced at
+   * 42 automatic damage a round off "Stormcharged Fireball", an ability the mirror in front of
+   * the party may not even have.
+   *
+   * Christopher: *"when creating the mirrors it would price all 14 bonds when it should only
+   * price the bonds and the spells that have been added to those mirrors via the element."*
+   */
+  bodies?: TemplateBodyChoice[];
+};
 export type RosterBuild = { roster: RosterGroup[]; assumptions: RosterAssumption[] };
 
 /**
@@ -182,7 +202,27 @@ export function rosterFromTemplates(
 ): RosterBuild {
   const assumptions: RosterAssumption[] = [];
 
-  const roster = entries.map(({ template, quantity }) => {
+  /**
+   * ⚠ A TEMPLATE WITH AUTHORED BODIES IS PRICED AS THOSE BODIES, ONE ROW EACH.
+   *
+   * `materializeTemplateBody` already collapses the action pools to what a body actually took and
+   * resolves its formula variables — it is what the map spawn has always used. The checker was
+   * the only surface still reading the bare template, so it priced choices nobody made.
+   *
+   * Each body becomes its own roster row because they are not interchangeable: two mirrors differ
+   * in archetype, element package and bond, which is exactly what the fight is about.
+   */
+  const expanded: Array<RosterEntryInput & { fromAuthoredBody?: boolean }> = entries.flatMap(entry => {
+    const bodies = entry.bodies ?? [];
+    if (bodies.length === 0) return [entry];
+    return bodies.map(body => ({
+      template: materializeTemplateBody(entry.template, body),
+      quantity: 1,
+      fromAuthoredBody: true,
+    }));
+  });
+
+  const roster = expanded.map(({ template, quantity, fromAuthoredBody }) => {
     // The library entry, every time. Nothing overrides what the DM can see.
     const parsed = parseCreature(template);
 
@@ -220,7 +260,14 @@ export function rosterFromTemplates(
      * stored `count` is a placeholder. Priced from the placeholder instead, Gate II read 82.7
      * EHP against its authored 331.0 at 4P: a gate at a quarter of its real size.
      */
-    const perPc = Boolean(template.stats.oneBodyPerPc);
+    /**
+     * ⚠ AUTHORED BODIES ARE THE COUNT, AND THEY BEAT `oneBodyPerPc`.
+     *
+     * The Mirror derives its count from party size precisely BECAUSE the bodies are usually not
+     * authored. Once the DM has built them, they ARE the roster — and applying the per-PC rule on
+     * top would multiply again, turning four authored mirrors into sixteen at 4P.
+     */
+    const perPc = Boolean(template.stats.oneBodyPerPc) && !fromAuthoredBody;
     const bodies = perPc ? Math.max(1, Math.round(target.partySize ?? 4)) : quantity;
 
     return {

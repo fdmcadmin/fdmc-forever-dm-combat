@@ -21,6 +21,7 @@
 import { useMemo, useState } from "react";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
+import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import {
   simulateEncounter, resolvePartyProfile, effectiveHpPerBody,
   type DamageAllocation, type EncounterResult,
@@ -98,8 +99,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
       .map(entry => ({
         template: monsterLibrary.find(m => m.templateId === entry.templateId),
         quantity: Math.max(1, entry.count),
+        // The DM's per-body choices for a template creature — the archetype, element package and
+        // bond each body actually took. Without them the checker prices the unfinished template,
+        // which carries every choice at once. See `RosterEntryInput.bodies`.
+        bodies: entry.bodies,
       }))
-      .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
+      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number; bodies?: TemplateBodyChoice[] }>;
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
     const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves });
