@@ -28,7 +28,7 @@ export type AbilityLabel = (typeof ABILITY_ORDER)[number];
  * do the same arithmetic — two private copies of "score over 10, halved" is how the two
  * lanes quietly drift apart. Swapping the ruleset has to move both at once.
  */
-import { abilityModifier, savingThrowModifier, inferSaveProficiency } from "../../rules/dnd5e";
+import { abilityModifier, savingThrowModifier, inferSaveProficiency, proficiencyBonus } from "../../rules/dnd5e";
 export { abilityModifier };
 
 export function formatAbilityEntry(label: string, score: number): { label: string; value: string } {
@@ -221,9 +221,28 @@ export function chassisFromTemplate(t: MainMonsterTemplate): ChassisPayload {
  * Christopher, 2026-08-20: *"the player side has this in exisitance why would the creature side
  * not also have this."* No reason — the field was on the type and nothing ever set it.
  */
+/**
+ * A creature's proficiency bonus: the PRINTED figure when the block states one, otherwise the one
+ * its CR implies.
+ *
+ * ⚠ PRINTED BEATS DERIVED. Every creature in the Act 3 v3.23 packet prints "Proficiency Bonus:
+ * +3" or "+4" and states no CR at all, so deriving from `cr` there derives from something the
+ * block never said — and backing a CR out of a bonus invents a number, because +3 spans CR 5-8.
+ *
+ * One function, so the editor, the card and the checker cannot disagree about what a creature's
+ * bonus is.
+ */
+export function creatureProficiencyBonus(
+  stats: { cr?: number; proficiencyBonus?: number } | undefined,
+): number {
+  if (typeof stats?.proficiencyBonus === "number") return stats.proficiencyBonus;
+  // CR feeds the same stepped table as level. An unstated CR is treated as the bottom of it.
+  return proficiencyBonus(Math.max(1, Math.floor(stats?.cr ?? 1)));
+}
+
 export function creatureSaveModifier(
   entry: { value: string; save?: number; saveProficient?: boolean } | undefined,
-  cr: number | undefined,
+  stats: { cr?: number; proficiencyBonus?: number } | undefined,
 ): number {
   if (!entry) return 0;
   if (typeof entry.save === "number") return entry.save;
@@ -231,8 +250,7 @@ export function creatureSaveModifier(
   return savingThrowModifier({
     modifier,
     saveProficient: entry.saveProficient,
-    // CR feeds the same stepped table as level. An unstated CR is treated as the bottom of it.
-    level: Math.max(1, Math.floor(cr ?? 1)),
+    explicitBonus: creatureProficiencyBonus(stats),
   });
 }
 
@@ -274,12 +292,12 @@ export function creatureSaveDisplay(
 /** All six of a creature's save modifiers, keyed the way the checker asks for them. */
 export function creatureSaves(
   abilities: { label: string; value: string; save?: number; saveProficient?: boolean }[],
-  cr: number | undefined,
+  stats: { cr?: number; proficiencyBonus?: number } | undefined,
 ): Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number> {
   const out = {} as Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
   for (const label of ABILITY_ORDER) {
     const entry = abilities.find(a => a.label.toUpperCase().startsWith(label));
-    out[label.toLowerCase() as keyof typeof out] = creatureSaveModifier(entry, cr);
+    out[label.toLowerCase() as keyof typeof out] = creatureSaveModifier(entry, stats);
   }
   return out;
 }

@@ -33,10 +33,22 @@ export function savingThrowModifier(opts: {
   modifier: number;
   saveProficient?: boolean;
   explicit?: number;
-  level: number;
+  /** A character's level, when the bonus follows from it. Ignored if `explicitBonus` is given. */
+  level?: number;
+  /**
+   * The proficiency bonus itself, when it is PRINTED rather than derived.
+   *
+   * A monster stat block states its bonus directly and frequently states no CR, so there is
+   * nothing to derive from — see `creatureProficiencyBonus`. A character always has a level, so
+   * the player side keeps passing that.
+   */
+  explicitBonus?: number;
 }): number {
   if (typeof opts.explicit === "number") return opts.explicit;
-  return opts.modifier + (opts.saveProficient ? proficiencyBonus(opts.level) : 0);
+  const pb = typeof opts.explicitBonus === "number"
+    ? opts.explicitBonus
+    : proficiencyBonus(Math.max(1, Math.floor(opts.level ?? 1)));
+  return opts.modifier + (opts.saveProficient ? pb : 0);
 }
 
 /**

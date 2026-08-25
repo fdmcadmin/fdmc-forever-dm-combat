@@ -370,6 +370,21 @@ export type MainMonsterTemplate = {
      * +2, 5–8 → +3, 9–12 → +4 …), so `proficiencyBonus` is reused rather than reimplemented.
      */
     cr?: number;
+    /**
+     * The PRINTED proficiency bonus, when the block states one.
+     *
+     * ⚠ READ BEFORE `cr`, because the blocks print this and often print no CR at all. Every
+     * creature in the Act 3 v3.23 packet carries "Proficiency Bonus: +3" or "+4" on its face and
+     * no challenge rating, so deriving from `cr` there means deriving from something the block
+     * never said — and backing a specific CR out of a bonus invents a number, since +3 spans the
+     * whole CR 5-8 band.
+     *
+     * This is what makes a library creature behave like a hand-authored one. Christopher: *"this
+     * is why they need to be hand authored for all creatures in the library so it isnt locked."*
+     * With a bonus in hand a save is a TICK that follows the score; without one every save is a
+     * typed number that goes stale the moment a score changes, invisibly.
+     */
+    proficiencyBonus?: number;
     /** Legendary actions per round (Monster Gate A6). Actions carrying a
      *  `legendaryCost` spend from this pool; unset = no legendary actions. */
     legendaryPerRound?: number;

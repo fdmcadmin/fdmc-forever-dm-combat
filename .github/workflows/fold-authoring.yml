@@ -77,14 +77,16 @@ jobs:
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
       # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the
       # same commit as the content that caused it, which is where it is readable.
-      - name: re-record the baseline
-        run: npm run baseline:accept
+      - name: re-record the baseline and the saves
+        run: |
+          npm run baseline:accept
+          npx tsx scripts/check-monster-saves.ts --record
 
       - name: commit the folded result
         run: |
           git config user.name "fdmc-author-bot"
           git config user.email "noreply@anthropic.com"
-          git add src/data/broken-chain/authored.generated.ts scripts/baseline.json
+          git add src/data/broken-chain/authored.generated.ts scripts/baseline.json scripts/monster-saves.json
           if git diff --cached --quiet; then
             echo "nothing to commit — the fold produced no change"
             exit 0
@@ -113,7 +115,7 @@ jobs:
           git fetch origin main --depth=50
           CHANGED=$(git diff --name-only origin/main...HEAD)
           echo "changed files:"; echo "$CHANGED" | sed 's/^/    /'
-          OUTSIDE=$(echo "$CHANGED" | grep -vE '^(authoring/|src/data/broken-chain/authored\.generated\.ts$|scripts/baseline\.json$)' || true)
+          OUTSIDE=$(echo "$CHANGED" | grep -vE '^(authoring/|src/data/broken-chain/authored\.generated\.ts$|scripts/(baseline|monster-saves)\.json$)' || true)
           if [ -z "$OUTSIDE" ]; then
             echo "routine=true" >> "$GITHUB_OUTPUT"
             echo "ROUTINE — authored content and its generated artifacts only."

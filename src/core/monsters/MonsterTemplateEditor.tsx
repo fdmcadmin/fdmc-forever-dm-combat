@@ -276,6 +276,17 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
    * Stores the FLAG, never a computed number — the modifier follows the score and the CR on its
    * own, exactly as it does on a player sheet. An explicit `save` still overrides it.
    */
+  /**
+   * Tick or untick a save proficiency.
+   *
+   * ⚠ TICKING CLEARS THE AUTHORED NUMBER, and it has to. `creatureSaveDisplay` prefers an
+   * explicit `save` over anything derived, so leaving one behind made the tick cosmetic: the box
+   * changed and the number did not. Ticking means "derive this from the score and the proficiency
+   * bonus", so the override it replaces must go.
+   *
+   * The override is not lost silently — it is shown in its own field beside the tick, and typing
+   * it back in restores it. See `setSaveExplicit`.
+   */
   function setSaveProficient(label: string, proficient: boolean) {
     setDraft(d => {
       const entries = ABILITY_ORDER.map(l => {
@@ -285,6 +296,38 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
         const next = { ...current };
         if (proficient) next.saveProficient = true;
         else delete next.saveProficient;
+        delete next.save;
+        return next;
+      });
+      return { ...d, abilities: entries };
+    });
+  }
+
+  /**
+   * Pin an explicit save, or clear it back to the derived one.
+   *
+   * ⚠ THIS IS THE CONTROL THAT WAS MISSING, and its absence was a trap. The tick used to be
+   * DISABLED whenever a save matched neither the bare modifier nor modifier + proficiency — which
+   * is exactly when a DM needs to change it. Christopher, on the Veil-Torn Dragon: *"i cant
+   * override it because the con box only opens if the cr is 9 but then the cha and wis turn off."*
+   *
+   * He was right, and no CR could have fixed it: CON +5/save 9 implies a proficiency bonus of 4,
+   * while WIS +5/save 8 and CHA +6/save 9 both imply 3. One creature, two bonuses, so every CR
+   * left something locked. The tick is never disabled now, and this field is how a genuinely
+   * bespoke save is set or removed. Blank means derived.
+   */
+  function setSaveExplicit(label: string, raw: string) {
+    setDraft(d => {
+      const entries = ABILITY_ORDER.map(l => {
+        const current: MainMonsterTemplate["abilities"][number] =
+          d.abilities.find(a => a.label.toUpperCase().startsWith(l)) ?? formatAbilityEntry(l, 10);
+        if (l !== label) return current;
+        const next = { ...current };
+        const value = Number.parseInt(raw, 10);
+        // A save of 0 is meaningful — CHA 10 with no proficiency — so test for a finite number
+        // rather than truthiness, and treat a blank field as "no override" rather than zero.
+        if (Number.isFinite(value)) next.save = value;
+        else delete next.save;
         return next;
       });
       return { ...d, abilities: entries };
@@ -900,16 +943,36 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 <div style={{ fontSize: 10, color: "#888", textAlign: "center", marginTop: 2 }}>
                   {(() => { const m = Math.floor((scores[label] - 10) / 2); return `${m >= 0 ? "+" : ""}${m}`; })()}
                 </div>
+                {/*
+                  ⚠ NEVER DISABLED. This tick used to be locked whenever a save matched neither
+                  the bare modifier nor modifier + proficiency — which is precisely when a DM
+                  needs it. Christopher, on the Veil-Torn Dragon: *"i cant override it because the
+                  con box only opens if the cr is 9 but then the cha and wis turn off."*
+
+                  No CR could have unlocked all three: CON +5/save 9 implies a proficiency bonus
+                  of 4, while WIS +5/save 8 and CHA +6/save 9 both imply 3. One creature, two
+                  bonuses. The control has to be editable regardless of whether the data currently
+                  makes sense, or a creature can be authored into a state it cannot leave.
+                */}
                 <label
                   style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3, marginTop: 3,
                     fontSize: 9, color: proficient ? "#34c759" : "#667", cursor: "pointer" }}
-                  title={explicit
-                    ? `This creature has an authored save of ${save >= 0 ? "+" : ""}${save}, which is neither its bare modifier nor modifier + proficiency. It is kept exactly as authored.`
-                    : `Proficient in ${label} saves — adds the proficiency bonus. Save becomes ${save >= 0 ? "+" : ""}${save}.`}>
-                  <input type="checkbox" checked={proficient} disabled={explicit}
+                  title={`Proficient in ${label} saves — adds the proficiency bonus. Ticking clears any pinned value below.`}>
+                  <input type="checkbox" checked={proficient}
                     onChange={e => setSaveProficient(label, e.target.checked)} style={{ margin: 0 }} />
-                  save {save >= 0 ? "+" : ""}{save}{explicit ? "*" : ""}
+                  save {save >= 0 ? "+" : ""}{save}
                 </label>
+                {/* Blank = derived from the score and the tick. A number pins it. */}
+                <input
+                  type="number"
+                  value={typeof entry?.save === "number" ? String(entry.save) : ""}
+                  placeholder="—"
+                  onChange={e => setSaveExplicit(label, e.target.value)}
+                  style={{ ...inputStyle, textAlign: "center", marginTop: 2, fontSize: 10, padding: "2px 4px",
+                    borderColor: explicit ? "#e07b39" : "#444", color: explicit ? "#e07b39" : "#888" }}
+                  title={explicit
+                    ? `Pinned at ${save >= 0 ? "+" : ""}${save}, which is neither the bare modifier nor modifier + proficiency. Clear the box to derive it instead.`
+                    : "Pin a bespoke save here. Leave blank to derive it from the score and the proficiency tick."} />
               </div>
             );
           })}
