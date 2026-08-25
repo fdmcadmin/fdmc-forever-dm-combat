@@ -1,0 +1,90 @@
+# AUTHOR BUTTON → REPO, without a download and without a hand-off.
+#
+# Christopher: *"the reason i dont want a download and a hand to you is because if small changes
+# like moving hp, moving ac, or even creating each creature for act 4 then handing them to you is
+# what burns usage."*
+#
+# Exactly right, and none of that work needs a person. The extension writes ONE file —
+# `authoring/current.json`, the same payload the download produced — and this workflow does what
+# a hand-off used to:
+#
+#   1. fold it into `src/data/broken-chain/authored.generated.ts`
+#   2. run every gate against the folded result
+#   3. commit the generated file back, but ONLY if the gates passed
+#
+# ⚠ THE GATES ARE THE POINT, NOT THE COMMIT. A fold that builds green is a fold that is safe to
+# ship; a fold that is not gets left on the branch with a red run and nothing is written back.
+# `fold-authoring` already refuses outright when an encounter names a creature that is in neither
+# the payload nor the bundled library — the case that would have shipped two rebuilt Act 3 fights
+# EMPTY — so that failure surfaces here as a failed step rather than a silent gap in play.
+#
+# ⚠ IT NEVER COMMITS TO MAIN DIRECTLY. The write goes to the branch the payload arrived on. What
+# reaches main is a merge, gated by `gates.yml`.
+
+name: fold-authoring
+
+on:
+  push:
+    paths:
+      - "authoring/*.json"
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: "Path to the authoring payload"
+        required: false
+        default: "authoring/current.json"
+
+permissions:
+  contents: write
+
+jobs:
+  fold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The commit-back step needs the branch, not a detached HEAD.
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: fold the authoring payload
+        run: node scripts/fold-authoring.mjs "${{ github.event.inputs.payload || 'authoring/current.json' }}"
+
+      # Everything below is the same gate set as gates.yml, run against the FOLDED tree. If the
+      # DM's authoring breaks a check, this is where it stops.
+      - name: build
+        run: npm run build
+
+      - name: checks
+        run: |
+          npm run check:bonds
+          npm run check:storage
+          npm run check:slots
+          npm run check:monsters
+          npm run check:actrun
+          npm run check:traits
+          npm run check:reader
+
+      # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
+      # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the
+      # same commit as the content that caused it, which is where it is readable.
+      - name: re-record the baseline
+        run: npm run baseline:accept
+
+      - name: commit the folded result
+        run: |
+          git config user.name "fdmc-author-bot"
+          git config user.email "noreply@anthropic.com"
+          git add src/data/broken-chain/authored.generated.ts scripts/baseline.json
+          if git diff --cached --quiet; then
+            echo "nothing to commit — the fold produced no change"
+            exit 0
+          fi
+          git commit -m "fold authoring $(date -u +%Y-%m-%dT%H:%MZ) — gates green"
+          git push origin HEAD:${{ github.ref_name }}

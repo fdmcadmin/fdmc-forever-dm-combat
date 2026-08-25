@@ -18,6 +18,7 @@ import {
 import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/partyCurveV2";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, resolveMonsterLibrary, isCampaignTemplateId, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
 import { exportCampaignAuthoring } from "../campaign/authorExport";
+import { publishCampaignAuthoring, hasPublishToken, savePublishToken, savePublishConfig, loadPublishConfig } from "../campaign/publishToGitHub";
 // The panel is the seam where campaign content meets the engine editors — the same place
 // chassisOptions is assembled. The editor itself never imports mod content (RULE 3).
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
@@ -558,6 +559,11 @@ export function EncounterLibraryPanel({
   const [activeTab, setActiveTab] = useState<"library" | "staged">("library");
   const [saveTargetDraft, setSaveTargetDraft] = useState<"campaign" | "dm">("dm");
   const [authorExportMsg, setAuthorExportMsg] = useState<string | null>(null);
+  /** Publishing is a network round-trip, so the button says so rather than looking inert. */
+  const [publishing, setPublishing] = useState(false);
+  const [publishSettingsOpen, setPublishSettingsOpen] = useState(false);
+  const [tokenDraft, setTokenDraft] = useState("");
+  const [branchDraft, setBranchDraft] = useState(() => loadPublishConfig().branch);
   /**
    * The party actually at the table — Lever 1, and the ONLY thing that may change about a
    * locked encounter. Set once for the panel rather than per encounter or per creature: one
@@ -1116,11 +1122,42 @@ export function EncounterLibraryPanel({
             belongs to one browser: authoring a whole act that way loses the act. Gated on the
             module unlock because it publishes CAMPAIGN content, not a DM's own creations.
           */}
+          {/*
+            ⚠ PUBLISH IS THE PRIMARY ROUTE NOW; THE DOWNLOAD IS THE FALLBACK.
+
+            Christopher: *"the reason i dont want a download and a hand to you is because if small
+            changes like moving hp, moving ac, or even creating each creature for act 4 then
+            handing them to you is what burns usage."* Routine authoring should not cost a
+            session, so the button writes to the repo and CI does what the hand-off used to.
+
+            The download stays because it is the answer when the token is missing, GitHub is
+            unreachable, or the DM simply wants the file — and because a publish path with no
+            offline fallback is one outage away from losing an act.
+          */}
+          {unlocked && (
+            <button type="button"
+              disabled={publishing}
+              onClick={() => {
+                if (!hasPublishToken()) {
+                  setAuthorExportMsg("No GitHub token saved yet — add a fine-grained token (Contents: read and write, this repository only) in the publish settings, or use ↓ Author to download the file instead.");
+                  return;
+                }
+                setPublishing(true);
+                setAuthorExportMsg("Publishing to GitHub…");
+                void publishCampaignAuthoring()
+                  .then(r => setAuthorExportMsg(r.ok ? `${r.message} ${r.url ?? ""}`.trim() : r.message))
+                  .finally(() => setPublishing(false));
+              }}
+              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", color: "#7b68ee", border: "1px solid #7b68ee55", borderRadius: 3, cursor: publishing ? "wait" : "pointer", opacity: publishing ? 0.6 : 1 }}
+              title="Publish everything authored on this machine straight to the repo. CI folds it, runs every gate, and commits the result — nothing merges until the gates pass. No download, no hand-off.">
+              {publishing ? "⋯ Publishing" : "↑ Publish"}
+            </button>
+          )}
           {unlocked && (
             <button type="button"
               onClick={() => setAuthorExportMsg(exportCampaignAuthoring().message)}
-              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", color: "#7b68ee", border: "1px solid #7b68ee55", borderRadius: 3, cursor: "pointer" }}
-              title="Export everything authored on this machine — edited campaign creatures and custom equipment, including unpicked Gift chassis — for folding into the build with scripts/fold-authoring.mjs. Local picks (a chassis's chosen weapon form) are stripped: the template ships, the pick does not.">
+              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee11", color: "#7b68ee99", border: "1px solid #7b68ee33", borderRadius: 3, cursor: "pointer" }}
+              title="Download the same payload as a file, for folding by hand with scripts/fold-authoring.mjs. The fallback for when publishing is unavailable. Local picks (a chassis's chosen weapon form) are stripped: the template ships, the pick does not.">
               ↓ Author
             </button>
           )}
@@ -1223,7 +1260,53 @@ export function EncounterLibraryPanel({
       {authorExportMsg && (
         <div style={{ padding: "5px 14px", background: "#12101f", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#9d8cff", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <span style={{ flex: 1, minWidth: 0 }}>{authorExportMsg}</span>
+          <button type="button" onClick={() => setPublishSettingsOpen(v => !v)} style={{ background: "transparent", border: "1px solid #2a2a3e", borderRadius: 3, color: "#7b68ee", cursor: "pointer", fontSize: 10, padding: "2px 6px" }}>
+            {publishSettingsOpen ? "hide settings" : "publish settings"}
+          </button>
           <button type="button" onClick={() => setAuthorExportMsg(null)} style={{ background: "transparent", border: "none", color: "#555", cursor: "pointer", fontSize: 11 }}>×</button>
+        </div>
+      )}
+      {/*
+        ⚠ THE TOKEN LIVES IN THIS BROWSER AND NOWHERE ELSE. It is never bundled, never committed,
+        and never sent anywhere but api.github.com as an Authorization header.
+
+        It is still readable by anyone who can open devtools on this page — that is true of any
+        credential a browser holds, and pretending otherwise would be worse than saying it. So the
+        exposure is bounded rather than hidden: use a FINE-GRAINED token, scoped to this ONE
+        repository, with `Contents: read and write` and nothing else, and give it an expiry. A
+        classic token, or a fine-grained one scoped to all repositories, hands whoever reads it
+        the run of the account.
+      */}
+      {unlocked && publishSettingsOpen && (
+        <div style={{ padding: "8px 14px", background: "#0e0d18", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#8a8aa0", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ minWidth: 84 }}>GitHub token</span>
+            <input
+              type="password"
+              placeholder={hasPublishToken() ? "saved — type to replace" : "github_pat_…"}
+              value={tokenDraft}
+              onChange={e => setTokenDraft(e.target.value)}
+              style={{ flex: 1, minWidth: 200, background: "#07070c", border: "1px solid #2a2a3e", borderRadius: 3, color: "#dfe4ff", fontSize: 11, padding: "3px 6px" }} />
+            <button type="button"
+              onClick={() => { savePublishToken(tokenDraft); setTokenDraft(""); setAuthorExportMsg(tokenDraft ? "Token saved to this browser." : "Token cleared."); }}
+              style={{ fontSize: 10, padding: "3px 8px", background: "#2a3a2a", color: "#4caf50", border: "1px solid #2a6e2a55", borderRadius: 3, cursor: "pointer" }}>
+              Save
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ minWidth: 84 }}>Branch</span>
+            <input
+              value={branchDraft}
+              onChange={e => { setBranchDraft(e.target.value); savePublishConfig({ branch: e.target.value.trim() || "authoring" }); }}
+              style={{ width: 160, background: "#07070c", border: "1px solid #2a2a3e", borderRadius: 3, color: "#dfe4ff", fontSize: 11, padding: "3px 6px" }} />
+            <span style={{ color: "#666" }}>
+              never main — CI folds the payload, runs every gate, and only then commits. What reaches main is a merge.
+            </span>
+          </div>
+          <div style={{ color: "#666", lineHeight: 1.5 }}>
+            Use a <strong style={{ color: "#8a8aa0" }}>fine-grained</strong> token scoped to this one repository with <strong style={{ color: "#8a8aa0" }}>Contents: read and write</strong>, and give it an expiry.
+            Anyone with devtools access to this page can read it, so do not use a classic token or one scoped to all repositories.
+          </div>
         </div>
       )}
 
