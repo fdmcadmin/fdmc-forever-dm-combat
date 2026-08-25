@@ -214,10 +214,20 @@ export function rosterFromTemplates(
      */
     const traitFactors: SustainFactor[] = traitFactorsFor(template, assumptions);
 
+    /**
+     * ⚠ ONE BODY PER PC OVERRIDES THE AUTHORED COUNT. The Mirrors are the campaign's sole
+     * body-count exception — *"use one mirror per PC"* — so party size IS the count and the
+     * stored `count` is a placeholder. Priced from the placeholder instead, Gate II read 82.7
+     * EHP against its authored 331.0 at 4P: a gate at a quarter of its real size.
+     */
+    const perPc = Boolean(template.stats.oneBodyPerPc);
+    const bodies = perPc ? Math.max(1, Math.round(target.partySize ?? 4)) : quantity;
+
     return {
       id: template.templateId,
       name: parsed.name,
-      quantity,
+      quantity: bodies,
+      flatHpPerBody: perPc,
       baseHp: parsed.maxHp,
       acMultiplier: acMultiplierFor(parsed.ac, partyLevel, parsed.name, assumptions),
       traitFactors,

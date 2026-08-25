@@ -303,6 +303,24 @@ export type MainMonsterTemplate = {
     /** Party damage uptime against this creature (tempo tax). 1.0 = attacks freely. */
     damageUptime?: number;
     /**
+     * ONE BODY PER PC, AT FLAT HP — the campaign's single body-count exception.
+     *
+     * The Mirrors doc: *"This is the sole body-count exception. Each mirror remains at 90 HP;
+     * use one mirror per PC."* Party size is expressed as HOW MANY bodies, so the party-size HP
+     * band must NOT also apply — three mirrors at 67 HP for a 3-player party is the same lever
+     * pulled twice.
+     *
+     * ⚠ THE COUNT IS DERIVED, NOT AUTHORED. RULE 2: one control per fact. Party size is the
+     * control; the number of bodies follows from it, so an authored `count` on the encounter
+     * entry is a placeholder and is ignored for these.
+     *
+     * The map-spawn path has honoured this since it was written (`spawnEncounterInstances`
+     * exempts template entries from `hpForPartySize`). The CHECKER did not: it read `count: 1`
+     * and then applied the HP band on top, pricing Gate II at exactly a quarter of its authored
+     * size at every party count — 82.7 EHP against 331.0 at 4P.
+     */
+    oneBodyPerPc?: boolean;
+    /**
      * How big a threat this creature is — drives what the fight should COST in
      * characters (see `EXPECTED_LETHALITY` in `encounter-band/encounterChecker.ts`).
      * Separate from `kind`, which is only what the thing IS (creature vs NPC) and

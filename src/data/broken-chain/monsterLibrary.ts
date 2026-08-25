@@ -2309,6 +2309,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "aberration", ac: 15, maxHp: 90, speed: "30 ft.",
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", cr: 7,
+      // "The Wood builds one mirror for each adventurer." Flat 90 HP each; the count follows
+      // party size and the party-size HP band does not apply. See `oneBodyPerPc`.
+      oneBodyPerPc: true,
     },
     /**
      * The ABS array. Left in printed order — a body's chosen archetype deals these same six

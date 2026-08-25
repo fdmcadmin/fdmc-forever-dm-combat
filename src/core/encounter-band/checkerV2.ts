@@ -357,6 +357,12 @@ export type RosterGroup = {
   traitFactors?: SustainFactor[];
   /** Fallback when factors are not itemised. */
   ehpAdjustment?: number;
+  /**
+   * Party size is already expressed as this group's BODY COUNT, so the party-size HP band must
+   * not apply on top. The campaign's sole case is the Elemental Mirror — see
+   * `MonsterStats.oneBodyPerPc`.
+   */
+  flatHpPerBody?: boolean;
   dpr: Partial<RoundProfile>;
   /** Share of its own turns this group actually acts. Applies to DPR, not HP. */
   dprUptime?: number;
@@ -387,7 +393,9 @@ export function effectiveHpPerBody(group: RosterGroup, partySize: number): numbe
     * (1 + traitAdjustment)
     / damagePassFraction
     / damageUptime
-    * partySizeHpMultiplier(partySize);
+    // The band scales HP with party size. A group whose BODY COUNT already tracks party size has
+    // had that lever pulled once; pulling it again gives three mirrors at 67 HP for a 3P party.
+    * (group.flatHpPerBody ? 1 : partySizeHpMultiplier(partySize));
 }
 
 export type PreparedGroup = RosterGroup & {

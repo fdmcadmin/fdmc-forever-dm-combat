@@ -8,6 +8,9 @@
  */
 import { resolveMonsterLibrary, isCampaignTemplateId } from "../src/core/monsters/dmMonsterLibrary";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
+import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
+import { effectiveHpPerBody } from "../src/core/encounter-band/checkerV2";
+import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 
 const tpl = (templateId: string, name: string, maxHp: number, ac: number, extra: Partial<MainMonsterTemplate> = {}) => ({
   templateId, name,
@@ -59,6 +62,26 @@ eq("bundled id IS campaign", isCampaignTemplateId("broken-chain:warden", bundled
 const r5 = resolveMonsterLibrary(bundled, { stored: [mine, edited], includeCampaign: false });
 eq("locked hides campaign", hpOf(r5, "broken-chain:warden"), undefined);
 eq("locked keeps DM creations", hpOf(r5, "custom-goblin"), 22);
+
+// 6. ONE BODY PER PC — the campaign's sole body-count exception.
+//    "The Wood builds one mirror for each adventurer." Party size sets HOW MANY bodies, each
+//    keeps a flat 90 HP, and the party-size HP band must NOT also apply. Priced from its stored
+//    `count: 1` with the band on top, Gate II read 82.7 EHP against its authored 331.0 at 4P —
+//    a gate at exactly a quarter of its real size, at every party count.
+{
+  const mirror = BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Elemental Mirror");
+  eq("the Mirror declares one body per PC", Boolean(mirror?.stats.oneBodyPerPc), true);
+  const perBody: number[] = [];
+  for (const size of [3, 4, 5]) {
+    const built = rosterFromTemplates([{ template: mirror!, quantity: 1 }], 8,
+      { ac: 16, saveBonus: 2.6, partySize: size } as never);
+    const group = built.roster[0];
+    eq(`${size}P fields ${size} mirrors, not the stored count`, group.quantity, size);
+    perBody.push(Number(effectiveHpPerBody(group, size).toFixed(4)));
+  }
+  // The band would give 0.75 / 1.0 / 1.25 here. One value across all three proves it is off.
+  eq("every mirror is the same EHP at every party size", new Set(perBody).size, 1);
+}
 
 console.log(problems.length ? `\nFAILED: ${problems.join(", ")}` : "\nALL PASS");
 process.exit(problems.length ? 1 : 0);
