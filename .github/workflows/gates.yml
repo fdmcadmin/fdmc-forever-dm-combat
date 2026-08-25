@@ -69,6 +69,9 @@ jobs:
       - name: check party healing
         run: npm run check:healing
 
+      - name: check party fit
+        run: npm run check:partyfit
+
       # Fails on any published number that moved. Not a bug report — read the diff.
       - name: check baseline
         run: npm run check:baseline
