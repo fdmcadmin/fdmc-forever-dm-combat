@@ -2318,6 +2318,9 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "aberration", ac: 15, maxHp: 90, speed: "30 ft.",
       attacksPerTurn: 2,
+      defenses: [
+        { name: "Elemental Guard", ehpMultiplier: 1.075916, rule: "Telegraphed alternating immunity/resistance", note: "Workbook: Telegraphed alternating immunity/resistance (+0.075916), exact. Read from the trait text by traitClassifier on \"immunity that rotates each turn\" - the mirror had NO defences at all, so a Gate boss priced at flat 90 raw HP with its signature ability worth zero." },
+      ],
       size: "Medium", classification: "elite", cr: 7,
       // "The Wood builds one mirror for each adventurer." Flat 90 HP each; the count follows
       // party size and the party-size HP band does not apply. See `oneBodyPerPc`.

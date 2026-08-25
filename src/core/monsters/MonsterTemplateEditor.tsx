@@ -42,7 +42,9 @@ import {
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
-import { TRAIT_RULES, traitRule } from "../encounter-band/compactImport";
+import { TRAIT_RULES, traitRule, EXPECTED_MONSTER_AC } from "../encounter-band/compactImport";
+import { classifyTraits } from "../encounter-band/traitClassifier";
+import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -184,6 +186,34 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
   }
   function removeDefense(idx: number) {
     setDraft(d => ({ ...d, stats: { ...d.stats, defenses: (d.stats.defenses ?? []).filter((_, i) => i !== idx) } }));
+  }
+
+  /**
+   * Read the traits and reactions already written, and add the calibrated rules they name.
+   *
+   * ⚠ IT ADDS, IT NEVER OVERWRITES. A defence the author already chose stays exactly as chosen —
+   * this only fills in what is missing, and skips any stack group already claimed so it cannot
+   * double-count an effect that is already priced.
+   *
+   * ⚠ EVERY ADDITION CARRIES THE PHRASE IT MATCHED ON, in the note, because that is the whole
+   * difference between reading and guessing. The author can see what it read and delete it.
+   */
+  function readDefensesFromTraits() {
+    setDraft(d => {
+      const existing = d.stats.defenses ?? [];
+      const claimed = new Set(existing.map(x => traitRule(x.name)?.stack_group ?? x.name).filter(Boolean));
+      const found = classifyTraits({ traits: d.traits ?? [], reactions: d.reactions ?? [] });
+      const additions = found
+        .filter(m => !claimed.has(m.rule.stack_group ?? m.label) && !existing.some(x => x.name === m.label))
+        .map(m => ({
+          name: m.label,
+          ehpMultiplier: m.rule.multiplier ?? 1,
+          note: `Read from "${m.traitName}" (${m.from}) on "${m.evidence}".`
+            + (m.rule.multiplier == null ? " The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight." : ""),
+        }));
+      if (additions.length === 0) return d;
+      return { ...d, stats: { ...d.stats, defenses: [...existing, ...additions] } };
+    });
   }
 
   /** Skills — per-creature, because two creatures at the same CR are not good at the same things. */
@@ -1012,6 +1042,11 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           })}
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
             <SmallBtn color="#34c759" onClick={() => addDefense()}>+ Defensive trait</SmallBtn>
+            {/* ⚠ THE TRAITS ARE ALREADY WRITTEN. Asking the author to find the matching rule in a
+                list of 58 is asking for the same fact twice — Christopher: *"the parser should be
+                able to read something like Elemental guard and do the assigned defense to it."*
+                It proposes with the phrase it matched on, never silently: see `traitClassifier`. */}
+            <SmallBtn color="#4a9eff" onClick={() => readDefensesFromTraits()}>Read from traits</SmallBtn>
             <span style={{ fontSize: 11, color: "#99a" }}>
               Combined <strong style={{ color: "#dfe4ff" }}>
                 ×{(draft.stats.defenses ?? []).reduce((p, d) => p * (traitRule(d.name)?.multiplier ?? 1), 1).toFixed(3)}
@@ -1020,6 +1055,40 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               </strong>
             </span>
           </div>
+
+          {/* ── WHAT THIS CREATURE'S AC IS WORTH ────────────────────────────────────────────
+              Christopher: *"since we set the CR of a creature and the ac shouldnt the defense be
+              able to see the standard ac of a creature vs the set and say + or - defenses."*
+
+              It should, and the checker has always done exactly this — `acMultiplierFor` prices
+              AC as its own multiplier on effective HP against the expected AC for the band. It
+              was just never shown where the number is being typed, so the author set an AC and
+              found out what it cost somewhere else. Same function, no second implementation. */}
+          {(() => {
+            const level = band.referenceLevel;
+            const expected = EXPECTED_MONSTER_AC[level];
+            // AC is authored as a free field, so it arrives as a string on a half-typed entry.
+            const ac = Number(draft.stats.ac);
+            if (expected === undefined || !Number.isFinite(ac)) return null;
+            const delta = Math.round(ac - expected);
+            const mult = acMultiplierFor(ac, level, draft.name || "creature", []);
+            const traitProduct = (draft.stats.defenses ?? []).reduce((p, d) => p * (traitRule(d.name)?.multiplier ?? 1), 1);
+            const tone = delta === 0 ? "#99a" : delta > 0 ? "#34c759" : "#e07b39";
+            return (
+              <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #23233a", fontSize: 11, color: "#99a" }}>
+                AC <strong style={{ color: "#dfe4ff" }}>{ac}</strong> against the expected{" "}
+                <strong style={{ color: "#dfe4ff" }}>{expected}</strong> at {band.label.toLowerCase()} —{" "}
+                <strong style={{ color: tone }}>
+                  {delta === 0 ? "on the curve" : `${delta > 0 ? "+" : ""}${delta} AC`}
+                </strong>
+                {delta !== 0 && <> , worth <strong style={{ color: tone }}>×{mult.toFixed(3)}</strong> on its own</>}
+                {". "}
+                With its traits that is effective HP{" "}
+                <strong style={{ color: "#dfe4ff" }}>{Math.round(draft.stats.maxHp * traitProduct * mult)}</strong>
+                {" "}from {draft.stats.maxHp} raw.
+              </div>
+            );
+          })()}
         </div>
 
         {/* The creature estimator used to sit here. It MEASURES a creature rather than helping
