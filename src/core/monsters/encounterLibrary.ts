@@ -199,6 +199,16 @@ const ENCOUNTER_ROSTER: Record<string, Record<string, number>> = {
   "act2-s1-e1-hollow-pack": { "broken-chain:act2-s1:pack-hunter:v1": 2 },
   "act2-s2-e2-last-directive": { "broken-chain:act2-s2:grave-light:v1": 3 },
   "act2-s3-village-defense": { "broken-chain:act2:lesser-wendigo:v1": 2 },
+  /**
+   * Act 3 — the ONLY multi-body count in the act. Verified against the campaign authoring export
+   * of 2026-08-25 (digest fnv1a-03c7c9fe-82581): all 24 encounters, every entry, every count and
+   * every classification agree with this seed apart from this one line. Christopher: *"the only
+   * change to body count that the library needed was 2 wyrmlings every thing else was correct."*
+   *
+   * It matters more than one body suggests — Gate III is 253 EHP with one wyrmling and 294 with
+   * two, and round-1 incoming goes 76 -> 108.
+   */
+  "act3-e9-gate-iii-veil-torn-dragon": { "broken-chain:act3:veil-torn-wyrmling:v1": 2 },
 };
 
 const ENCOUNTER_CLASSIFICATION: Record<string, MonsterClassification> = {

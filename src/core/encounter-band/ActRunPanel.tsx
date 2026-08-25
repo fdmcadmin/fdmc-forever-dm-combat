@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { SHORT_REST_RECOVERY } from "./partyResourceCurve";
 import {
   resolveActRun,
   restBlocks,
@@ -88,7 +89,7 @@ export function ActRunPanel({ encounters, monsterLibrary }: ActRunPanelProps) {
    */
   const priced = useMemo(() => {
     const partySize = Math.max(1, run?.partySize ?? 4);
-    const recovery = Math.max(0, Math.min(1, run?.shortRestRecovery ?? 0));
+    const recovery = Math.max(0, Math.min(1, run?.shortRestRecovery ?? SHORT_REST_RECOVERY));
     let spent = 0;
     return resolved.map(step => {
       const encounter = encounters.find(e => e.id === step.encounterId);
@@ -372,7 +373,7 @@ export function ActRunPanel({ encounters, monsterLibrary }: ActRunPanelProps) {
                 {/* The one number the workbook does not publish, printed where it is used. */}
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 10, color: "#8a8a9a" }}>
                   A short rest returns
-                  <input type="number" min={0} max={100} value={Math.round((run.shortRestRecovery ?? 0) * 100)}
+                  <input type="number" min={0} max={100} value={Math.round((run.shortRestRecovery ?? SHORT_REST_RECOVERY) * 100)}
                     onChange={e => patchRun(run.id, { shortRestRecovery: Math.max(0, Math.min(100, Number(e.target.value) || 0)) / 100 })}
                     style={{ ...input, width: 46, textAlign: "center" }} />
                   % of sustain

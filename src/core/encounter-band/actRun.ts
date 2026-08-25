@@ -1,4 +1,5 @@
 import { safeStorage } from "../utils/safeStorage";
+import { SHORT_REST_RECOVERY } from "./partyResourceCurve";
 /**
  * ACT RUN — a sequence of fights the DM composes, with the rests between them.
  *
@@ -92,16 +93,18 @@ export type ActRun = {
   /** Party size the run is priced for. The checker's own input, not a per-fight fact. */
   partySize?: number;
   /**
-   * ⚠ WHAT A SHORT REST GIVES BACK IS A DM INPUT, BECAUSE THE WORKBOOK DOES NOT PUBLISH ONE.
+   * ⚠ NOW PUBLISHED, SO NOW READ. This used to be a pure DM input with a default of 0, because
+   * v7 carried no party-level short-rest recovery anywhere and RULE 1A forbids inventing one — a
+   * plausible-looking constant here silently moves the arrival state of every fight after it.
    *
-   * A LONG rest is defined — it resets the party — and the run applies that itself. A SHORT rest
-   * is not: v7 carries no party-level short-rest recovery anywhere (the only `short_rest` keys in
-   * the bundle are item and creature uses). RULE 1A: *"what the workbook does not publish, the app
-   * does not invent."* A plausible-looking constant here would silently move the arrival state of
-   * every fight after it, which is exactly the failure that got the pre-workbook model deleted.
+   * The L7-L9 party resource reference publishes it directly: `shortRestRecovery` on all 384
+   * sampled parties, median 0.255401. So the default is the published median and the DM input
+   * stays as an OVERRIDE — the same call the party AC/save curve got when v7 started publishing
+   * its table. The spread is wide (p10 0.07, p90 0.40) because it tracks how much of a party's
+   * kit refreshes on a short rest, which is a real table-by-table fact worth overriding.
    *
-   * So the DM says what a short rest is worth at their table, as a fraction of full sustain, and
-   * the run prints it beside the result. 0 = a short rest restores nothing the checker models.
+   * See `partyResourceCurve.SHORT_REST_RECOVERY`. A fraction of FULL sustain, not of what is
+   * spent — `nextArrivalSpent` subtracts it from the spent share.
    */
   shortRestRecovery?: number;
   steps: ActRunStep[];
@@ -189,14 +192,14 @@ export function resolveActRun(steps: ActRunStep[], choices: Record<string, RestC
  * carrying it forward and applying the rest, which is act-run business and nothing else's.
  *
  *   Long  → 0. A long rest resets the party; that much v7 does define.
- *   Short → give back what the DM says a short rest is worth (default 0). See `shortRestRecovery`.
+ *   Short → give back the published short-rest recovery, or the DM's override. See `shortRestRecovery`.
  *   None  → carry it all.
  */
 export function nextArrivalSpent(
   spentBefore: number,
   fightCost: number,
   restTaken: RestType | "None",
-  shortRestRecovery = 0,
+  shortRestRecovery = SHORT_REST_RECOVERY,
 ): number {
   const after = Math.min(1, Math.max(0, spentBefore + Math.max(0, fightCost)));
   if (restTaken === "Long") return 0;

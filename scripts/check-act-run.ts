@@ -8,6 +8,7 @@
  * this proves the default gives back nothing rather than a plausible-looking constant.
  */
 import { nextArrivalSpent, resolveActRun, restBlocks, runLevelGates, normalizeRun, type ActRunStep } from "../src/core/encounter-band/actRun";
+import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
 
 const problems: string[] = [];
 /** Numbers compare with a tolerance — 0.4 + 0.2 is 0.6000000000000001 in binary floating point,
@@ -25,7 +26,11 @@ console.log("act run — sustain carry:");
 eq("fresh party, no rest, carries the cost", nextArrivalSpent(0, 0.3, "None"), 0.3);
 eq("costs accumulate across a block", nextArrivalSpent(0.3, 0.25, "None"), 0.55);
 eq("LONG rest resets to zero", nextArrivalSpent(0.8, 0.15, "Long"), 0);
-eq("SHORT rest returns NOTHING by default", nextArrivalSpent(0.4, 0.2, "Short"), 0.6);
+// The default was 0 while nothing was published. The L7-L9 party resource reference publishes
+// shortRestRecovery on all 384 sampled parties, so the default is now that median and the DM
+// value is an override.
+eq("SHORT rest returns the PUBLISHED median by default", nextArrivalSpent(0.4, 0.2, "Short"), 0.6 - SHORT_REST_RECOVERY);
+eq("...and that median is the transcribed figure", SHORT_REST_RECOVERY, 0.255401);
 eq("SHORT rest returns what the DM says", nextArrivalSpent(0.4, 0.2, "Short", 0.25), Math.min(1, 0.6 - 0.25));
 eq("a short rest cannot over-recover below zero", nextArrivalSpent(0.1, 0.05, "Short", 0.9), 0);
 eq("spent never exceeds a full pool", nextArrivalSpent(0.9, 0.9, "None"), 1);

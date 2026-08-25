@@ -29,6 +29,7 @@ import {
   partyCurveRow,
   type PartyEquipmentMode,
 } from "./partyCurveV2";
+import { depleteRoundValue } from "./partyResourceCurve";
 
 export { partySizeHpMultiplier };
 
@@ -163,11 +164,20 @@ export function resolvePartyProfile(opts: {
   convergence?: ConvergenceItem[];
   customDpr?: RoundProfile | null;
   customSustain?: number | null;
+  /**
+   * Share of the party's resources already gone when this fight starts. 0 = fresh, 1 = empty.
+   *
+   * ⚠ THIS MOVES DAMAGE AS WELL AS SUSTAIN. It used to be the caller's job and the caller only
+   * ever scaled sustain, so a party 60% down opened with a full nova — *"a healer who spends
+   * half a fight burning through L3 spell slots cant go into the next fight buring the same lvl
+   * 3 spell slots."* Both halves are resolved here now so there is one implementation of it.
+   */
+  arrivingSpent?: number;
   /** Defaults to the bundled v2 curve. Present so a caller (or a test) can supply its own. */
   partyCurve?: { curve: Array<{ level: number } & Record<string, unknown>> } | null;
 }): PartyProfile {
   const { level, size, equipmentMode = "wotcStandard", convergence = [],
-    customDpr = null, customSustain = null, partyCurve = null } = opts;
+    customDpr = null, customSustain = null, arrivingSpent = 0, partyCurve = null } = opts;
   const row = (partyCurve
     ? partyCurve.curve.find(candidate => Number(candidate.level) === Number(level))
     : partyCurveRow(level)) as
@@ -183,14 +193,24 @@ export function resolvePartyProfile(opts: {
     ? convergence.reduce((sum, item) => sum + Number(item.round1Burst ?? 0), 0) : 0;
   const convergenceSustain = campaignEnabled
     ? convergence.reduce((sum, item) => sum + Number(item.sustainCredit ?? 0), 0) : 0;
+  /**
+   * The wotcStandard row is the DEPLETABLE base at every mode — see `depleteRoundValue`. In
+   * wotcStandard the two rows are the same object, so the gift delta is zero and this is a plain
+   * scale.
+   */
+  const base = row.wotcStandard;
+  const spent = Math.min(1, Math.max(0, Number(arrivingSpent) || 0));
+  const deplete = (key: "round1" | "round2" | "round3" | "round4Plus"): number =>
+    depleteRoundValue(base[key] * scale, source[key] * scale, spent);
   const dpr: RoundProfile = customDpr ?? {
     // Convergence burst lands on ROUND 1 ONLY.
-    round1: source.round1 * scale + convergenceBurst,
-    round2: source.round2 * scale,
-    round3: source.round3 * scale,
-    round4Plus: source.round4Plus * scale,
+    round1: deplete("round1") + convergenceBurst,
+    round2: deplete("round2"),
+    round3: deplete("round3"),
+    round4Plus: deplete("round4Plus"),
   };
-  const sustain = customSustain ?? source.sustain * scale + convergenceSustain;
+  const sustain = customSustain
+    ?? (source.sustain * scale + convergenceSustain) * (1 - spent);
   const evidence = String(row.evidence ?? "");
   return {
     size, level, equipmentMode: modeKey,

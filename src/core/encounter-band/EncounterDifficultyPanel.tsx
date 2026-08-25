@@ -112,16 +112,18 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary }: {
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
    * after the two encounters before it, which is exactly why a 35-45% gate still sends a party
-   * to a rest. `customSustain` is the contract's OWN input for this; nothing here models
-   * depletion, it just hands the checker the sustain the party actually walks in with.
+   * to a rest.
+   *
+   * ⚠ DAMAGE MOVES WITH IT, NOT JUST SUSTAIN. This used to hand the checker a reduced
+   * `customSustain` and leave the round profile at its fresh figures, so an arriving-spent party
+   * opened with the same nova it would have thrown fresh and only fell over sooner. Both halves
+   * now resolve inside `resolvePartyProfile` off the published fresh/expended reference — see
+   * `partyResourceCurve`.
    */
   const profile = useMemo(() => {
     try {
-      const full = resolvePartyProfile({ level: partyLevel, size: partySize, equipmentMode });
-      if (arrivingSpent <= 0) return full;
       return resolvePartyProfile({
-        level: partyLevel, size: partySize, equipmentMode,
-        customSustain: full.sustain * (1 - arrivingSpent),
+        level: partyLevel, size: partySize, equipmentMode, arrivingSpent,
       });
     } catch { return null; }
   }, [partyLevel, partySize, equipmentMode, arrivingSpent]);
