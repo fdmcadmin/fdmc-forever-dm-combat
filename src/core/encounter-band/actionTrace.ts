@@ -183,8 +183,28 @@ export function traceCreature(
      * ONE slot — the weakest — and only if it is worth more than what it displaces.
      */
     const slots: Budgeted[] = [];
-    for (let i = 0; i < creature.attacksPerTurn && routine.length > 0; i++) {
-      slots.push(routine[Math.min(i, routine.length - 1)]);
+    /**
+     * ⚠ AN AUTHORED SPLIT WINS. When any routine attack states `routineSlots`, the block has
+     * told us the split and the convention below does not apply. The Breaker: *"four attacks:
+     * two Grasping Limb attacks and two Heavy Blow attacks."* Read as the convention that is
+     * one Heavy Blow and three Grasping Limbs — the WEAKER attack three times, which is neither
+     * what the block says nor what the creature would pick.
+     */
+    const declared = routine.filter(b => (b.feature.routineSlots ?? 0) > 0);
+    if (declared.length > 0) {
+      for (const b of declared) {
+        for (let i = 0; i < (b.feature.routineSlots ?? 0) && slots.length < creature.attacksPerTurn; i++) {
+          slots.push(b);
+        }
+      }
+      // An under-declared split still fills its remaining slots the ordinary way.
+      for (let i = slots.length; i < creature.attacksPerTurn && routine.length > 0; i++) {
+        slots.push(routine[Math.min(i, routine.length - 1)]);
+      }
+    } else {
+      for (let i = 0; i < creature.attacksPerTurn && routine.length > 0; i++) {
+        slots.push(routine[Math.min(i, routine.length - 1)]);
+      }
     }
     const bestReplacer = replacers[0];
     if (bestReplacer && slots.length > 0) {

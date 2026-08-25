@@ -94,6 +94,18 @@ export type MonsterReaderAction = {
    */
   targets?: number;
   /**
+   * How many Multiattack slots this attack takes, when the block STATES the split.
+   *
+   * ⚠ AUTHOR IT ONLY WHEN THE BLOCK SAYS SO. Left blank, the routine keeps the D&D convention:
+   * the distinct attacks in descending order, then the last repeated to fill — which is exactly
+   * a dragon's bite-claw-claw, and right for nearly every block.
+   *
+   * The Breaker is the first that says otherwise: *"four attacks: two Grasping Limb attacks and
+   * two Heavy Blow attacks."* Under the convention that reads as one Heavy Blow and three
+   * Grasping Limbs, the WEAKER attack three times.
+   */
+  routineSlots?: number;
+  /**
    * What a SUCCESSFUL save still takes. v7 `parser.success_patterns`: half / none / a printed
    * alternate.
    *

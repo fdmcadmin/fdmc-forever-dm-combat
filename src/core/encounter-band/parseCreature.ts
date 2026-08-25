@@ -286,6 +286,8 @@ type RawAction = {
   legendaryCost?: number; economyCost?: string; gated?: boolean;
   /** Authored in the monster editor — these outrank anything parsed from the action text. */
   targets?: number; onSave?: string; successDamage?: string; uses?: number;
+  /** Authored Multiattack split. Unset keeps the convention — see `routineSlots`. */
+  routineSlots?: number;
   /** The action's printed reach/range, one field — see MonsterReaderAction.range. */
   range?: string; conditions?: string[];
 };
@@ -335,6 +337,8 @@ function parseSection(
       recharge: parseRecharge(a.recharge, name),
       uses: parseUses(name, a.text),
       replacesRoutineSlot: replacesRoutineSlot(name),
+      // Authored only. Unset keeps the bite-claw-claw convention — see `routineSlots`.
+      routineSlots: a.routineSlots,
       spellSlotLevel: a.spellSlotLevel,
       spellName: detectSpell(name, a.text),
       gated: a.gated,

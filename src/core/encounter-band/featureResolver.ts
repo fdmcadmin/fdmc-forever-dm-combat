@@ -104,6 +104,20 @@ export type ParsedFeature = {
   gated?: boolean;
   /** Printed as taking the place of a routine attack — competes for ONE Multiattack slot. */
   replacesRoutineSlot?: boolean;
+  /**
+   * How many Multiattack slots this attack takes, when the block STATES a split.
+   *
+   * ⚠ ONLY WHEN IT IS AUTHORED. Left unset, the routine keeps the D&D convention the trace has
+   * always used: the distinct attacks in descending order, then the last one repeated to fill —
+   * which is exactly the Veil-Torn Dragon's bite-claw-claw. That convention is right for most
+   * blocks and must not change.
+   *
+   * The Breaker is the first block that says otherwise: *"the Breaker makes four attacks: two
+   * Grasping Limb attacks and two Heavy Blow attacks."* Under the convention that reads as one
+   * Heavy Blow and three Grasping Limbs — the weaker attack three times, which is neither what
+   * the block says nor what the creature would choose.
+   */
+  routineSlots?: number;
   text?: string;
 };
 
