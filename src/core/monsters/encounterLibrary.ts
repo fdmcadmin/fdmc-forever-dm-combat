@@ -376,6 +376,61 @@ function cleanCampaignLibraryPollution(): void {
 }
 
 /**
+ * A STORED CAMPAIGN FIGHT CAN OUTLIVE THE CREATURES IT WAS BUILT FROM. Repair it in place.
+ *
+ * This is why the author button failed. A browser seeded before the v3.23 rebuild still holds
+ * The Last Court pointing at `walking-court` and `hushrunner`, and The Occupied Acre pointing at
+ * `siege-saint`, `ashstep` and `rift-scribe` — five creatures the rebuild replaced. Nothing ever
+ * revisited those rows, so the export carried them, and `fold-authoring` refused it: folding
+ * would have shipped two rebuilt Act 3 fights EMPTY, because an authored encounter replaces the
+ * seeded one by id.
+ *
+ * The refusal was right. The stale data was the fault, and the DM could not fix it by
+ * re-exporting because re-exporting produced the same dead references.
+ *
+ * ⚠ SURGICAL, NOT A RE-SEED. Bumping the seed version would also repair this — and would reset
+ * every campaign encounter the DM had edited, because all of them exist in the seed and the merge
+ * prefers the seeded row. So this touches ONLY entries whose creature is gone: it drops those and
+ * adds whatever the seed now says belongs to that fight. Counts, visibility and bodies on entries
+ * that still resolve are left exactly as authored.
+ *
+ * DM-owned encounters are not touched at all. They live in their own key, their creatures are the
+ * DM's own, and a missing one there is a question for the DM rather than a stale seed.
+ */
+function repairDanglingCampaignEntries(templates: MainMonsterTemplate[]): void {
+  try {
+    const known = new Set(templates.map(t => t.templateId));
+    const campaign = loadEncounterLibrary("campaign");
+    if (campaign.length === 0) return;
+
+    // What the current templates say each fight should contain.
+    const seededFor = new Map<string, EncounterMonsterEntry[]>();
+    for (const t of templates) {
+      if (!t.encounterId) continue;
+      const list = seededFor.get(t.encounterId) ?? [];
+      list.push({
+        templateId: t.templateId,
+        count: ENCOUNTER_ROSTER[t.encounterId]?.[t.templateId] ?? 1,
+        startingVisibility: t.visibility.defaultState,
+        hiddenNameOverride: t.visibility.hiddenName,
+      });
+      seededFor.set(t.encounterId, list);
+    }
+
+    let repaired = 0;
+    const fixed = campaign.map(encounter => {
+      const live = encounter.entries.filter(e => known.has(e.templateId));
+      if (live.length === encounter.entries.length) return encounter;
+      const replacements = (seededFor.get(encounter.id) ?? [])
+        .filter(s => !live.some(e => e.templateId === s.templateId));
+      repaired++;
+      return { ...encounter, entries: [...live, ...replacements] };
+    });
+    if (repaired > 0) saveEncounterLibrary(fixed, "campaign");
+  } catch { /* a browser that cannot read its own library has a bigger problem than this */ }
+}
+
+/**
  * Seeds the encounter library from the bundled monster library on first boot.
  * Groups templates by encounterId.
  */
@@ -383,6 +438,10 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
   // Repair already-polluted browsers BEFORE the early-return path below, otherwise
   // a previously polluted campaign key would keep duplicating DM encounters.
   cleanCampaignLibraryPollution();
+
+  // A stored campaign fight can outlive the creatures it was built from. Repair before the
+  // early return, or a browser seeded pre-rebuild never sees the fix.
+  repairDanglingCampaignEntries(templates);
 
   const stored = safeStorage().getItem(ENCOUNTER_LIBRARY_SEED_KEY);
   const existing = loadEncounterLibrary();

@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.7.43.2",
+  "version": "0.7.43.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -34,7 +34,8 @@
     "check:traits": "npx tsx scripts/check-trait-coverage.ts",
     "check:reader": "npx tsx scripts/check-trait-reader.ts",
     "check:healing": "npx tsx scripts/check-party-healing.ts",
-    "check:partyfit": "npx tsx scripts/check-party-fit.ts"
+    "check:partyfit": "npx tsx scripts/check-party-fit.ts",
+    "check:encrepair": "npx tsx scripts/check-encounter-repair.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",
