@@ -114,14 +114,16 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d8 + @MAIN",
-        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each."
+        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each.",
+        "routineSlots": 2
       },
       {
         "name": "Spoiling Cut",
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d8 + @MAIN",
-        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses."
+        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
+        "routineSlots": 2
       }
     ],
     "reactions": [],
@@ -693,7 +695,16 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 +@ATK",
         "damage": "1d10+@MAIN slashing + 2d6 fire",
-        "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks."
+        "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks.",
+        "riders": [
+          {
+            "name": "Scent the Expense",
+            "damage": "4d4",
+            "cadence": "once-per-turn",
+            "chance": 1,
+            "note": "marked target"
+          }
+        ]
       }
     ],
     "reactions": [],
@@ -1663,14 +1674,15 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + 10",
         "damage": "3d10+6",
-        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic."
+        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
+        "routineSlots": 2
       },
       {
         "name": "Unmake Distance (Recharge 5–6)",
         "kind": "action",
         "save": "INT DC 18",
         "recharge": "5-6",
-        "damage": "6d8",
+        "damage": "6d8+@MAIN",
         "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
       },
       {
@@ -1796,14 +1808,16 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d10+@STR piercing + 2d6 radiant",
-        "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage"
+        "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage",
+        "routineSlots": 2
       },
       {
         "name": "Claw",
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d6 + @STR",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing."
+        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing.",
+        "routineSlots": 1
       },
       {
         "name": "Veilstorm Breath",
@@ -1924,7 +1938,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + 7",
         "damage": "2d6 + 4 piercing + 1d6 radiant",
-        "text": "Hit: 9 (2d6 + 2) piercing damage."
+        "text": "Hit: 9 (2d6 + 2) piercing damage.",
+        "routineSlots": 1
       },
       {
         "name": "Veil Breath",
@@ -1941,7 +1956,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "action",
         "roll": "1d20+@ATK",
         "damage": "2d6+@STR",
-        "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage."
+        "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
+        "save": "1"
       },
       {
         "name": "Tail",
@@ -1949,7 +1965,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
         "roll": "1d20@ATK",
         "damage": "2d6@STR",
-        "save": "STR"
+        "save": "STR",
+        "routineSlots": 1
       }
     ],
     "reactions": [],
@@ -5218,10 +5235,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-5ccd6220-92385";
+export const AUTHORED_DIGEST = "fnv1a-b3fb77ec-110542";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T19:13:19.226Z";
+export const AUTHORED_AT = "2026-08-26T19:47:54.891Z";
 
 /**
  * Merge authored content over a bundled list by id.
