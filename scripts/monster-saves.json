@@ -49,8 +49,8 @@
  "Breaker": "str9 dex2 con8 int1 wis7 cha3",
  "Demonic Reaver": "str0 dex8 con1 int3 wis8 cha2",
  "Veil-Torn Wyrmling": "str2 dex7 con2 int2 wis2 cha6",
- "Veil-Torn Dragon": "str3 dex3 con9 int5 wis9 cha10",
+ "Veil-Torn Dragon": "str5 dex4 con9 int4 wis8 cha9",
  "Elemental Mirror": "str4 dex3 con2 int1 wis1 cha0",
  "Thought Harrower": "str2 dex1 con3 int10 wis8 cha4",
- "Grief Colossus": "str10 dex0 con10 int0 wis2 cha0"
+ "Grief Colossus": "str8 dex3 con10 int-1 wis1 cha1"
 }
