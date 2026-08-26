@@ -2504,38 +2504,6 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "isLocked": true
   },
   {
-    "id": "item-mt4owsbd",
-    "name": "Gift of the Realmkeeper  ",
-    "type": "weapon",
-    "description": "Warm living wood settles into a reliable one-handed form. Amber-yellow magic gathers first at the grip and hand protection, then runs outward through the grain as if the weapon was grown to keep something standing",
-    "isUsable": true,
-    "sourceEncounter": "A3 Gate II: Open Clearing",
-    "chassis": {
-      "categories": [
-        "Melee One-Handed"
-      ],
-      "ability": "STR"
-    },
-    "grantsProficiency": true,
-    "pbToDamage": true,
-    "chassisBonus": 2,
-    "act": "Act 3",
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
-    "attunementRequired": true,
-    "riders": [
-      {
-        "id": "rider-mt4p4w5d",
-        "label": "",
-        "cadence": "perTurn",
-        "formula": "1d6",
-        "damageType": "Healing"
-      }
-    ],
-    "sourceEncounters": [
-      "A3 Gate III: Veilscar Hollow"
-    ]
-  },
-  {
     "id": "tbc-branchcall-marker",
     "name": "Branchcall Marker",
     "type": "magic",
@@ -2717,6 +2685,293 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A3"
     },
     "isLocked": true
+  },
+  {
+    "id": "item-mt4owsbd",
+    "name": "Gift of the Realmkeeper  ",
+    "type": "weapon",
+    "description": "Warm living wood settles into a reliable one-handed form. Amber-yellow magic gathers first at the grip and hand protection, then runs outward through the grain as if the weapon was grown to keep something standing",
+    "isUsable": true,
+    "sourceEncounter": "A3 Gate II: Open Clearing",
+    "chassis": {
+      "categories": [
+        "Melee One-Handed"
+      ],
+      "ability": "STR"
+    },
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "act": "Act 3",
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "attunementRequired": true,
+    "riders": [
+      {
+        "id": "rider-mt4p4w5d",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d6",
+        "damageType": "Healing"
+      }
+    ],
+    "sourceEncounters": [
+      "A3 Gate III: Veilscar Hollow"
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-last-measure",
+    "name": "Gift of the Last Measure",
+    "chassis": {
+      "categories": [
+        "Melee Two-Handed"
+      ],
+      "ability": "STR"
+    },
+    "description": "Heartwood the colour of a late bonfire, heavy in the hands and heavier at the end of the swing. The grain runs the wrong way down the haft, as though the tree grew around the blow it was meant to strike.",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-last-measure",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d8",
+        "damageType": "Force"
+      }
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-long-watch",
+    "name": "Gift of the Long Watch",
+    "chassis": {
+      "categories": [
+        "Ranged Two-Handed",
+        "Ranged One-Handed"
+      ],
+      "ability": "DEX"
+    },
+    "description": "Pale limbwood strung with something finer than gut. It draws quietly, and the sound it makes on release arrives a moment after the shot does.",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-long-watch",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d6",
+        "damageType": "Radiant"
+      }
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-open-hand",
+    "name": "Gift of the Open Hand",
+    "chassis": {
+      "categories": [
+        "Melee One-Handed"
+      ],
+      "ability": "STR",
+      "requireTags": [
+        "thrown"
+      ]
+    },
+    "description": "Balanced for leaving the hand. Amber sap beads along the throwing edge and never quite falls, and the weapon is always warmer coming back than it was going out.",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-open-hand",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d6",
+        "damageType": "Force"
+      }
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-quiet-step",
+    "name": "Gift of the Quiet Step",
+    "chassis": {
+      "categories": [
+        "Melee One-Handed"
+      ],
+      "ability": "DEX",
+      "anyOfTags": [
+        "finesse",
+        "light"
+      ]
+    },
+    "description": "Thin, dark, and nearly weightless. Held still it is difficult to look directly at; moving, it is difficult to look away from.",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-quiet-step",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d6",
+        "damageType": "Psychic"
+      }
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-standing-line",
+    "name": "Gift of the Standing Line",
+    "chassis": {
+      "categories": [
+        "Melee Two-Handed"
+      ],
+      "ability": "STR",
+      "requireTags": [
+        "reach"
+      ]
+    },
+    "description": "A long shaft of grey-green wood that has clearly been used as a fence post and clearly objected. It settles into a guard position on its own if the wielder stops thinking about it.",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-standing-line",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d8",
+        "damageType": "Cold"
+      }
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-deep-root",
+    "name": "Gift of the Deep Root",
+    "chassis": {
+      "requireTags": [
+        "two-handed"
+      ]
+    },
+    "description": "A two-handed stave still carrying a knot of the tree it was taken from. Spells cast through it arrive a half-beat late and noticeably louder.",
+    "isSpellFocus": true,
+    "spellFocusAttack": "+1",
+    "spellFocusDamage": "+1",
+    "spellFocusSaveDc": "+1",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-deep-root",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d8",
+        "damageType": "Necrotic"
+      }
+    ]
+  },
+  {
+    "id": "tbc-gift-of-the-turning-season",
+    "name": "Gift of the Turning Season",
+    "chassis": {
+      "requireTags": [
+        "one-handed"
+      ]
+    },
+    "description": "A short focus meant to be held in the off hand while the other is busy. The wood changes colour with the season it is carried through, and remembers every one it has seen.",
+    "isSpellFocus": true,
+    "spellFocusAttack": "+1",
+    "spellFocusDamage": "+1",
+    "spellFocusSaveDc": "+1",
+    "type": "weapon",
+    "isUsable": true,
+    "act": "Act 3",
+    "sourceEncounter": "Act 3 - Gate II: The Mirrors",
+    "sourceEncounters": [
+      "Act 3 - Gate III: The Veil-Torn Dragon",
+      "A3 Gate III: Veilscar Hollow",
+      "A3 Gate II: Open Clearing"
+    ],
+    "grantsProficiency": true,
+    "pbToDamage": true,
+    "chassisBonus": 2,
+    "attunementRequired": true,
+    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "riders": [
+      {
+        "id": "rider-gift-of-the-turning-season",
+        "label": "",
+        "cadence": "perTurn",
+        "formula": "1d6",
+        "damageType": "Lightning"
+      }
+    ]
   },
   {
     "id": "tbc-rimestone-pauldron",
@@ -3458,10 +3713,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
 ];
 
 /** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
-export const AUTHORED_DIGEST = "fnv1a-3cd0104d-93391";
+export const AUTHORED_DIGEST = "fnv1a-1f5c0c67-100968";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T04:56:48.645Z";
+export const AUTHORED_AT = "2026-08-26T05:09:49.998Z";
 
 /**
  * Merge authored content over a bundled list by id.
