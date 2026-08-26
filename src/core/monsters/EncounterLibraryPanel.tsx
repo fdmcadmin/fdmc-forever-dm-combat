@@ -1,3 +1,4 @@
+import appManifest from "../../../public/manifest.json";
 import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
@@ -34,6 +35,9 @@ import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEdit
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
 import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
 import { safeStorage } from "../utils/safeStorage";
+
+/** The build THIS WINDOW is running — the thing a stored copy is actually compared against. */
+const APP_VERSION = appManifest.version;
 
 /** One table, one party — persisted so every encounter loads scaled to it. */
 const PARTY_SIZE_KEY = "fdmc.dm.encounterPartySize.v1";
@@ -1242,27 +1246,27 @@ export function EncounterLibraryPanel({
         <div style={{ padding: "6px 14px", background: "#0f1412", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#4caf50" }}>
           <button type="button" onClick={() => setOverridesOpen(o => !o)}
             style={{ background: "transparent", border: "none", padding: 0, color: "#4caf50", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
-            {overridesOpen ? "▼" : "▶"} {overriddenCampaignTemplates.length} creature{overriddenCampaignTemplates.length === 1 ? " has" : "s have"} changes not in the published build
+            {overridesOpen ? "▼" : "▶"} {overriddenCampaignTemplates.length} creature{overriddenCampaignTemplates.length === 1 ? " has" : "s have"} changes not in THIS build ({APP_VERSION})
           </button>
           {overridesOpen && (
             <>
               {overriddenCampaignTemplates.map(o => (
                 <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
                   <span style={{ color: "#8a8aa0" }}>
-                    {o.name}: yours {o.mine} · published {o.campaign}
+                    {o.name}: yours {o.mine} · this build {o.campaign}
                     {o.at && <span style={{ color: "#555" }}> · edited {new Date(o.at).toLocaleDateString()}</span>}
                   </span>
                   {o.mine !== o.campaign && (
                     <button type="button" onClick={() => revertCampaignOverride(o.id)}
                       title="Go back to the campaign version. This is NOT a delete — the campaign creature takes the same slot and every encounter using it keeps working."
                       style={{ fontSize: 10, padding: "1px 7px", background: "#4caf5022", border: "1px solid #4caf5055", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>
-                      ↩ Discard, use published
+                      ↩ Discard, use this build's
                     </button>
                   )}
                 </div>
               ))}
               <div style={{ color: "#666", marginTop: 3 }}>
-These are what the next publish will carry. Discarding removes your saved copy only — the creature stays in the library and every encounter using it keeps working.
+⚠ "This build" is the app running in THIS WINDOW, not what is on GitHub. A publish you have already made does not change it until the fold redeploys AND this window reloads — so a creature can be published and still listed here. Discarding falls back to this window's copy, which is why it can hand you back something older than what you published.
               </div>
             </>
           )}
