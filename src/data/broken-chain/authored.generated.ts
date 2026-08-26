@@ -940,9 +940,10 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
         },
         {
-          "name": "Fixed prevention - 12/round",
-          "ehpMultiplier": 1.2323134514052565,
-          "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
+          "name": "Damage transfer / redirection",
+          "ehpMultiplier": 1,
+          "note": "Priced by a formula that needs encounter inputs, so there is no single effective-HP multiplier for it.",
+          "rule": "Damage transfer / redirection"
         }
       ],
       "attacksPerTurn": 2,
@@ -1694,16 +1695,16 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@INT+@PB",
         "damage": "4d8+@INT",
-        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
+        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (4d8 +6) psychic.",
         "routineSlots": 2
       },
       {
         "name": "Unmake Distance (Recharge 5–6)",
         "kind": "action",
-        "save": "",
+        "save": "INT",
         "recharge": "5-6",
         "damage": "8d6+@INT",
-        "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8+@Main) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
+        "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (8d6+6) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
       },
       {
         "name": "Mind Hook",
@@ -1931,7 +1932,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Bite",
         "kind": "attack",
-        "roll": "1d20 + 7",
+        "roll": "1d20 +@STR+@PB",
         "damage": "2d6+@STR",
         "text": "Hit: 9 (2d6 + 2) piercing damage.",
         "routineSlots": 1
@@ -1949,7 +1950,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Claw",
         "kind": "action",
-        "roll": "1d20+@ATK",
+        "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR+1d6",
         "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
         "save": "",
@@ -1959,9 +1960,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Tail",
         "kind": "action",
         "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
-        "roll": "1d20+@ATK",
+        "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR",
-        "save": "STR",
+        "save": "",
         "routineSlots": 1
       }
     ],
@@ -5234,10 +5235,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-405d29c8-105127";
+export const AUTHORED_DIGEST = "fnv1a-24b5b397-105194";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T23:22:58.955Z";
+export const AUTHORED_AT = "2026-08-26T23:31:38.930Z";
 
 /**
  * Merge authored content over a bundled list by id.
