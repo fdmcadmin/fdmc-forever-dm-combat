@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.7.58.1",
+  "version": "0.7.59.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -46,7 +46,8 @@
     "check:multiattack": "npx tsx scripts/check-multiattack.ts",
     "check:reactions": "npx tsx scripts/check-reaction-economy.ts",
     "check:activation": "npx tsx scripts/check-item-activation.ts",
-    "check:summons": "npx tsx scripts/check-summons.ts"
+    "check:summons": "npx tsx scripts/check-summons.ts",
+    "check:timed": "npx tsx scripts/check-timed-bodies.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

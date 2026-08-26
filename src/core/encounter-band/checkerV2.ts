@@ -366,6 +366,37 @@ export type RosterGroup = {
   dpr: Partial<RoundProfile>;
   /** Share of its own turns this group actually acts. Applies to DPR, not HP. */
   dprUptime?: number;
+  /**
+   * ── A TIMED BODY — the workbook's `child_entities` model ──────────────────────────────────
+   *
+   * The round this group ARRIVES. 1, or unset, means it is there when the fight starts. A summon
+   * called on round 2 is `arrivesRound: 3` — the round its body first acts.
+   *
+   * ⚠ THE WORKBOOK ASKS FOR EXACTLY THIS, in the anti-double-count column shared by all five
+   * `child_entities` primitives: *"Add each created body as a timed roster entry with its own HP,
+   * initiative/action schedule, duration."* Every word of that is a field, and `arrivesRound` is
+   * the one the simulation could not express: `encounterEhp` was a single total summed before the
+   * first round, so a body that arrives later had nowhere to arrive.
+   *
+   * Christopher: *"the lair builds off of it as a start of combat summon"* — that case is
+   * `arrivesRound: 1`, which is why the opening summon needs no special handling.
+   */
+  arrivesRound?: number;
+  /**
+   * The last round this group is present. Unset = until it drops.
+   *
+   * ⚠ `temporary_body_duration`: *"Body/action value only for authored active rounds."* The
+   * Covenant bond-creature "lasts 2 turns", so called on round 2 it is `arrivesRound: 3,
+   * expiresAfterRound: 4`. Its damage counts for two rounds and its HP is never something the
+   * party has to chew through — it leaves on its own.
+   */
+  expiresAfterRound?: number;
+  /**
+   * ⚠ `split_body`: *"Replace parent with authored bodies; never duplicate parent HP."* A group
+   * marked this way does not ADD its HP to the encounter — it inherits what its parent had left.
+   * Counting both is the double-count that primitive exists to forbid.
+   */
+  replacesParent?: boolean;
   outcomeEvents?: OutcomeEvent[];
 };
 
@@ -471,10 +502,48 @@ export function livingBodies(group: PreparedGroup, cumulativePartyDamage: number
  * against an explicit workbook rule. RULE ZERO-B: where the app and the workbook disagree, the
  * workbook wins and the app is the thing that changes.
  */
+/**
+ * Is this group on the field in this round?
+ *
+ * ⚠ A BODY THAT HAS NOT ARRIVED DEALS NO DAMAGE AND HAS NO HP TO CHEW THROUGH, and a body whose
+ * duration is up stops being either. Both halves matter: crediting a summon's damage from round 1
+ * hands the fight output it never had, and leaving an expired body's HP in the pool makes the
+ * party chase something that walked away.
+ */
+export function groupPresentIn(group: { arrivesRound?: number; expiresAfterRound?: number }, round: number): boolean {
+  const arrives = Number(group.arrivesRound ?? 1);
+  if (round < arrives) return false;
+  const expires = group.expiresAfterRound;
+  return typeof expires !== "number" || round <= expires;
+}
+
+/**
+ * The encounter's effective HP as of a given round — everything that has ARRIVED by then.
+ *
+ * ⚠ THIS WAS A CONSTANT, AND THAT IS WHAT MADE A TIMED BODY INEXPRESSIBLE. `encounterEhp` was
+ * summed once before round 1, so a summon arriving on round 3 either counted from the start (the
+ * party chipping at something not yet on the field) or not at all.
+ *
+ * ⚠ AN EXPIRED BODY'S HP STAYS COUNTED ONCE IT HAS ARRIVED. A body that leaves after two rounds
+ * still had to be dealt with while it was there, and the party's damage into it is spent either
+ * way — removing its HP from the pool retroactively would hand that damage back.
+ *
+ * ⚠ AND A `split_body` ADDS NOTHING. *"Replace parent with authored bodies; never duplicate
+ * parent HP."* Its pool is the parent's, already counted.
+ */
+export function encounterEhpAt(roster: PreparedGroup[], round: number): number {
+  return roster.reduce((sum, group) => {
+    if (group.replacesParent) return sum;
+    return round >= Number(group.arrivesRound ?? 1) ? sum + group.groupEhp : sum;
+  }, 0);
+}
+
 export function encounterDprAt(
   roster: PreparedGroup[], cumulativePartyDamage: number, round: number,
 ): number {
   return roster.reduce((total, group) => {
+    // A body not on the field this round contributes nothing — see `groupPresentIn`.
+    if (!groupPresentIn(group, round)) return total;
     const alive = livingBodies(group, cumulativePartyDamage);
     const bodyDpr = roundValue(group.dpr, round);
     return total + alive * bodyDpr * group.dprUptime;
@@ -632,7 +701,17 @@ export function simulateEncounter(opts: {
     throw new RangeError("party.size must be a positive integer and party.sustain must be positive");
   }
   const prepared = prepareRoster(roster, partySize);
-  const encounterEhp = prepared.reduce((sum, group) => sum + group.groupEhp, 0);
+  /**
+   * ⚠ THE ENCOUNTER'S TOTAL, ONCE EVERYTHING HAS ARRIVED. This is the figure the report quotes,
+   * the PCER divides by, and the HP-change guidance scales — all of which are questions about the
+   * whole fight, so all of which want the full pool.
+   *
+   * The SIMULATION uses `encounterEhpAt(round)` instead, because "has the party finished?" is a
+   * question about what is on the field right now. With no timed bodies the two are identical,
+   * which is every encounter in the campaign today.
+   */
+  const encounterEhp = prepared.reduce(
+    (sum, group) => (group.replacesParent ? sum : sum + group.groupEhp), 0);
   const maxRounds = Number(settings.maxRounds ?? 20);
   const damageAllocation: DamageAllocation =
     settings.damageAllocation === "spread_evenly" ? "spread_evenly" : "focus_fire";
@@ -675,8 +754,19 @@ export function simulateEncounter(opts: {
     const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential;
     const partyDamageBefore = cumulativePartyDamage;
     cumulativePartyDamage += partyDamage;
-    const completesNow = completionRound === null && encounterEhp > 0
-      && cumulativePartyDamage + EPSILON >= encounterEhp;
+    /**
+     * ⚠ AGAINST WHAT IS ON THE FIELD, NOT THE WHOLE FIGHT. A party cannot finish an encounter it
+     * has not met yet: with a summon arriving on round 3, clearing rounds 1–2 is not a clear.
+     * Comparing against the full total would also do the opposite harm — a fight would read as
+     * unfinished while the party stands over the last body, because HP that has not arrived is
+     * still counted against them.
+     *
+     * Identical to `encounterEhp` for a fight with no timed bodies, which is every encounter in
+     * the campaign today.
+     */
+    const ehpOnField = encounterEhpAt(prepared, round);
+    const completesNow = completionRound === null && ehpOnField > 0
+      && cumulativePartyDamage + EPSILON >= ehpOnField;
     const monsterDprStart = encounterDprAt(prepared, partyDamageBefore, round);
     const monsterDprEnd = encounterDprAt(prepared, cumulativePartyDamage, round);
     /**
@@ -713,7 +803,8 @@ export function simulateEncounter(opts: {
           : standing === 0 ? "PARTY_DOWN" : "ONGOING";
     rounds.push({
       round, partyPotential, pcsStart, partyDamage, cumulativePartyDamage,
-      monsterEhpLeft: Math.max(0, encounterEhp - cumulativePartyDamage),
+      // What is left of what has ARRIVED — the number a DM reads mid-fight.
+      monsterEhpLeft: Math.max(0, ehpOnField - cumulativePartyDamage),
       monsterDprStart, monsterDprEnd, monsterDamage, cumulativeMonsterDamage,
       downs, damagedButStanding, standing, completesNow, fatalNow, status,
     });

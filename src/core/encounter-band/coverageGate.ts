@@ -344,10 +344,40 @@ function isQualifier(s: string): boolean {
 
 const TEXT_ROUTES: { re: RegExp; primitive: string }[] = [
   { re: /\brecharge\s*\d(\s*[-–]\s*\d)?\b|\brecharges? (after|on a)\b/i, primitive: "recharge_action" },
+  /**
+   * ⚠ THE SLASH FORM IS THE ONE PEOPLE ACTUALLY TYPE. This matched "once per turn" and not
+   * "1/Turn", so the Breaker's Cast Aside — whose entire text IS "1/Turn." — reported as a
+   * sentence reaching no workbook resolver. It is a frequency, the most ordinary one there is,
+   * and `limited_use_action` has priced it the whole time.
+   */
+  { re: /\b\d+\s*\/\s*(turn|round|day|fight|encounter|short rest|long rest|lr|sr)\b/i, primitive: "limited_use_action" },
   { re: /\b(once|twice|\d+ times?) per (fight|encounter|day|short rest|long rest|turn|round)\b|\busable (once|twice|\d+ times?)\b|\b\d+ uses?\b/i, primitive: "limited_use_action" },
   { re: /\bmultiattack\b|\bmakes (two|three|four) .*attacks\b/i, primitive: "multiattack_sequence" },
   { re: /\blegendary action/i, primitive: "legendary_action_pool" },
   { re: /\blair action/i, primitive: "lair_action" },
+  /**
+   * ── THREE ROUTES TO PRIMITIVES v10 ADDED, WHICH THE APP HAD NO WAY TO REACH ────────────────
+   *
+   * Christopher: *"why are things like these still listed"*, over three NEEDS PRICING PRIMITIVE
+   * banners. The primitives arrived with the v10 regeneration — the app's table was 90 against
+   * the workbook's 101 — but a primitive nothing routes to is a primitive the gate cannot use.
+   *
+   * Each of these is named for the sentence that needed it, because the workbook added them
+   * under "current campaign coverage" and these are the creatures they were added FOR.
+   */
+  // Demonic Reaver · Scent the Expense — "expends a limited-use resource [...] becomes the
+  // Reaver's quarry, replacing any previous quarry". v10: "Assign/replace the marked target on
+  // the authored resource-spend trigger."
+  { re: /\bexpends? (a|an|any) [^.]{0,40}?(resource|slot|charge|use)\b[^.]{0,80}?\b(quarry|mark(ed)?|target)\b/i,
+    primitive: "resource_triggered_target_mark" },
+  // Demonic Reaver · "While moving toward its quarry, the Reaver's movement is doubled."
+  // v10: "Apply speed bonus/multiplier only while moving toward the qualified target."
+  { re: /\b(while|when) moving toward\b[^.]{0,60}?\b(speed|movement)\b/i,
+    primitive: "conditional_speed_toward_mark" },
+  // Demon Knight · Commanding Presence — "the Knight can react before targets are designated".
+  // v10: "Schedule linked control in the free/automatic channel when its trigger succeeds."
+  { re: /\bcan react before\b|\bbefore targets are (designated|chosen|selected)\b/i,
+    primitive: "free_triggered_control_effect" },
   { re: /\bdrops? to 1 (hit point|HP)\b/i, primitive: "drop_to_one_or_revive" },
   { re: /\bdifficult terrain\b/i, primitive: "difficult_terrain" },
   { re: /\btemporary hit points\b|\btemp HP\b/i, primitive: "temporary_hp" },

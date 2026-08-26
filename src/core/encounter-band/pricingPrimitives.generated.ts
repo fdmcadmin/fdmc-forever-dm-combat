@@ -3,7 +3,7 @@
  *
  * ⚠ GENERATED from `broken_chain_encounter_checker_v7_7_claude_app_contract.xlsx` by
  * `scripts/gen-primitives.js`. Do not hand-edit: RULE 1A makes the workbook the authority for the
- * checker and the estimator, and a hand-maintained copy of 90 primitives drifts from it on the
+ * checker and the estimator, and a hand-maintained copy of 101 primitives drifts from it on the
  * first edit. A drifted copy is worse than none, because the app would then report a price the
  * workbook never gave. Anything this file should contain belongs in the generator's template.
  *
@@ -22,7 +22,7 @@
  */
 
 /** What kind of budget a primitive draws on. */
-export type PrimitiveChannel = "offense" | "sustain" | "control_reachability" | "roster_state" | "defense";
+export type PrimitiveChannel = "offense" | "sustain" | "control_reachability" | "roster_state" | "defense" | "validation";
 
 export type PricingPrimitive = {
   id: string;
@@ -1032,6 +1032,127 @@ export const PRICING_PRIMITIVES: PricingPrimitive[] = [
     "guard": "Do not reduce a living body's DPR linearly with HP. Do not keep dead bodies contributing. Explicit death-persistent effects are exceptions.",
     "status": "ADDED",
     "source": "runtime contract"
+  },
+  {
+    "id": "event_filtered_attack_disadvantage",
+    "channel": "defense",
+    "family": "attack_disadvantage_or_forced_reroll",
+    "model": "event_probability",
+    "priced": "Recompute hit/crit probability only for the authored attack-event filter.",
+    "inputs": "event filter; target; duration/frequency; baseline attack mix",
+    "guard": "Never apply outside the filter.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "attack_roll_modifier_event",
+    "channel": "offense",
+    "family": "advantage_pack_tactics_sneak_or_conditional_damage",
+    "model": "event_probability",
+    "priced": "Add the authored flat modifier to specified attack events before hit/crit probability.",
+    "inputs": "modifier; event filter; duration/frequency; attack bonus; target AC",
+    "guard": "No flat DPR substitution.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "resource_triggered_target_mark",
+    "channel": "roster_state",
+    "family": "persistent_mark_or_stack",
+    "model": "stateful_stack_resolution",
+    "priced": "Assign/replace the marked target on the authored resource-spend trigger.",
+    "inputs": "resource trigger; visibility/range; replacement; expiry",
+    "guard": "Mark itself has no damage value.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "conditional_speed_toward_mark",
+    "channel": "control_reachability",
+    "family": "grapple_restrain_prone_slow_or_forced_movement",
+    "model": "reachability",
+    "priced": "Apply speed bonus/multiplier only while moving toward the qualified target.",
+    "inputs": "marked target; speed change; direction condition; terrain",
+    "guard": "No unrestricted extra movement.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "free_triggered_control_effect",
+    "channel": "control_reachability",
+    "family": "bonus_reaction_legendary_lair_or_mythic_action",
+    "model": "separate_action_budget",
+    "priced": "Schedule linked control in the free/automatic channel when its trigger succeeds.",
+    "inputs": "trigger; frequency; linked primitive; target legality",
+    "guard": "Consumes no normal Action unless authored.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "ally_damage_prevention_with_self_cost",
+    "channel": "sustain",
+    "family": "damage_absorption_or_conversion",
+    "model": "linked_pools",
+    "priced": "Prevent ally damage, then apply authored self-damage to protector; net encounter sustain is prevention minus self-cost.",
+    "inputs": "reaction trigger; prevention; self-damage; range; frequency",
+    "guard": "Team sustain, not personal HP.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "save_gated_support_effect",
+    "channel": "offense",
+    "family": "advantage_pack_tactics_sneak_or_conditional_damage",
+    "model": "condition_probability",
+    "priced": "Multiply linked support effect by failed-save probability, then price linked primitive.",
+    "inputs": "save DC/ability; targets; duration; linked effect",
+    "guard": "No invented damage.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "retaliation_from_incoming_hit",
+    "channel": "offense",
+    "family": "retaliation_reflection_or_death_burst",
+    "model": "trigger_probability",
+    "priced": "Expected eligible incoming hits × retaliation EV, filtered by range/type/attacker.",
+    "inputs": "incoming hits; eligible share; retaliation damage; filters",
+    "guard": "Separate from self-turn DPR.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "single_element_resistance_fallback",
+    "channel": "sustain",
+    "family": "damage_resistance_immunity_vulnerability",
+    "model": "party_damage_profile",
+    "priced": "Weight selected party's actual matching damage share; no fixed blanket multiplier by default.",
+    "inputs": "damage type; party share; bypass rules",
+    "guard": "Never assume ~50% exposure from one resistance.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "mixed_delivery_round_sequence",
+    "channel": "offense",
+    "family": "multiattack_or_action_sequence",
+    "model": "action_budget",
+    "priced": "Price each attack-roll, save, automatic, legendary, bonus, reaction, and recharge packet with its own delivery math.",
+    "inputs": "round schedule; per-packet AB/DC/save; damage; targets; recharge",
+    "guard": "Never apply one attack bonus or DC to the whole creature.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
+  },
+  {
+    "id": "authored_field_text_conflict",
+    "channel": "validation",
+    "family": "parser_contract",
+    "model": "hard_gate",
+    "priced": "If structured fields and printed text disagree on core combat values, block publication until corrected.",
+    "inputs": "structured fields; printed text; conflict category",
+    "guard": "Prevents silent stale-text pricing.",
+    "status": "ADDED",
+    "source": "generic pricing coverage"
   }
 ];
 
