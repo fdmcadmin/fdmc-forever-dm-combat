@@ -127,7 +127,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d10 + @STR piercing + 2d6 radiant",
-        "text": "Melee Weapon Attack: +9 to hit, reach 10 ft.; Hit: 16 (2d10 + 5) piercing plus 7 (2d6) radiant."
+        "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage"
       },
       {
         "name": "Claw",
@@ -137,19 +137,13 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "text": "Melee Weapon Attack: +9 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing."
       },
       {
-        "name": "Fractured Dream Breath (Recharge 5–6)",
+        "name": "Veilstorm Breath",
         "kind": "action",
-        "save": "CON",
+        "save": "DEX",
         "recharge": "5-6",
-        "text": "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends."
-      },
-      {
-        "name": "Moonfall Breath (Recharge 5–6)",
-        "kind": "action",
-        "save": "DEX DC 17",
-        "recharge": "5-6",
-        "damage": "8d8+@MAIN",
-        "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge."
+        "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) lightning damage on failure, half on success. ",
+        "range": "90 FT, 10 FT Wide",
+        "damage": "8d8"
       },
       {
         "name": "Tail Sweep",
@@ -308,20 +302,25 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
   },
   {
     "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
-    "name": "Veil-Torn Wyrmling",
+    "name": "Veilbound Drake Guard",
     "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
     "encounterLabel": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     "stats": {
       "kind": "dragon",
-      "ac": 17,
+      "ac": 16,
       "maxHp": 75,
-      "speed": "30 ft., glide 30 ft.",
+      "speed": "30 ft., fly 60 FT",
       "defenses": [
         {
-          "name": "Moon-Slick Scales",
-          "ehpMultiplier": 1.047749,
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
           "rule": "First attack each round at disadvantage",
-          "note": "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round."
+          "note": "profile"
+        },
+        {
+          "name": "First attack each round at disadvantage",
+          "ehpMultiplier": 1.0477493435640757,
+          "note": "Read from \"Moon-Slick Scales\" (trait) on \"first attack each round at disadvantage\"."
         }
       ],
       "size": "Medium",
@@ -329,8 +328,270 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "archetype": "skirmisher",
       "skills": [
         {
-          "label": "Perception",
-          "modifier": 5
+          "label": "Stealth",
+          "modifier": 4
+        }
+      ],
+      "cr": 4,
+      "attacksPerTurn": 3
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "DEX",
+        "value": "15 (+2)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "INT",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "WIS",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CHA",
+        "value": "10 (+0)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Moon-Slick Scales",
+        "kind": "trait",
+        "text": "The first opportunity attack made against the wyrmling each round has disadvantage."
+      },
+      {
+        "name": "Multiattack",
+        "kind": "trait",
+        "text": "Multiattack. The drake makes three attacks: one with its Bite, one with its Claws, and one with its Tail."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Bite",
+        "kind": "attack",
+        "roll": "1d20 + 7",
+        "damage": "2d6 + 4 piercing + 1d6 radiant",
+        "text": "Hit: 9 (2d6 + 2) piercing damage."
+      },
+      {
+        "name": "Veil Breath",
+        "kind": "action",
+        "save": "DEX",
+        "recharge": "6",
+        "damage": "4d6",
+        "text": "The drake exhales corrupted Fey energy in a 20-foot cone. Each creature in that area must make a Dexterity saving throw, taking 14 (4d6) fire on a failed save, or half as much on a successful one.",
+        "onSave": "half",
+        "range": "20 FT cone"
+      },
+      {
+        "name": "Claw",
+        "kind": "action",
+        "roll": "1d20+@ATK",
+        "damage": "2d6+@STR",
+        "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage."
+      },
+      {
+        "name": "Tail",
+        "kind": "action",
+        "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
+        "roll": "1d20@ATK",
+        "damage": "2d6@STR",
+        "save": "STR"
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early"
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Corrupted Guards",
+      "revealedName": "Veilbound Drake Guard"
+    }
+  },
+  {
+    "templateId": "broken-chain:boss:mirage-stalker:v1",
+    "name": "Mirage Stalker",
+    "encounterId": "act1-boss",
+    "encounterLabel": "Act 1 Boss",
+    "stats": {
+      "kind": "unspecified",
+      "ac": 13,
+      "maxHp": 100,
+      "attacksPerTurn": 2,
+      "speed": "50 ft",
+      "classification": "act-boss",
+      "defenses": [
+        {
+          "name": "Phantom Step",
+          "ehpMultiplier": 1.18,
+          "provenance": "uncalibrated",
+          "note": "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight."
+        },
+        {
+          "name": "All attacks at disadvantage - 1 round",
+          "ehpMultiplier": 1.1294156939022204,
+          "note": "Read from \"Phantom Step\" (trait) on \"attack rolls against it have disadvantage\"."
+        },
+        {
+          "name": "Condition immunity",
+          "ehpMultiplier": 1,
+          "note": "Read from \"Condition Immunity - Frightened\" (trait) on \"immune to a condition\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "19 (+4)"
+      },
+      {
+        "label": "DEX",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CON",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "INT",
+        "value": "4 (-3)"
+      },
+      {
+        "label": "WIS",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "CHA",
+        "value": "6 (-2)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Phantom Step",
+        "kind": "trait",
+        "text": "When the Stalker moves, it leaves an afterimage at its departure point. Attack rolls against the Stalker have disadvantage until it takes damage that round. Attacks targeting the afterimage auto-miss and trigger Phantom Lunge. Usable twice per fight total. Does not trigger the round the Stalker takes damage. Recharge roll/control belongs on this trait/resource, not on Phantom Charge."
+      },
+      {
+        "name": "Wrong Geometry",
+        "kind": "trait",
+        "text": "The Stalker does not read as a natural creature. Effects that specifically target beasts do not affect it."
+      },
+      {
+        "name": "Condition Immunity - Frightened",
+        "kind": "trait",
+        "text": "The Stalker is immune to the frightened condition."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Gore",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d8 + @MAIN",
+        "text": "Melee Weapon Attack: +6 to hit, reach 10 ft., one target. Hit: 13 (2d8 + 4) piercing damage. The strike lands a half-second before the creature appears to move."
+      },
+      {
+        "name": "Hooves",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d6 + @MAIN",
+        "text": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage. The hooves connect with a sound that is wrong."
+      },
+      {
+        "name": "Phantom Charge",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d8 + @MAIN",
+        "save": "STR DC 14",
+        "recharge": "4-6",
+        "text": "Recharges after a Multiattack turn. Full Action — replaces Multiattack. Move up to its speed in a straight line and make one Gore attack at any point. If it moved 20+ ft. and hits, DC 14 STR save or the target is knocked prone and pushed 10 ft."
+      },
+      {
+        "name": "Phase Shift (Bonus Action)",
+        "kind": "action",
+        "text": "Flickers up to 15 ft., no opportunity attacks. The afterimage stays in its old space. This does NOT reset Phantom Step's disadvantage — it stacks a stale image on top of the displacement."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Phantom Lunge",
+        "kind": "reaction",
+        "roll": "1d20 + @ATK",
+        "damage": "2d6 + @MAIN",
+        "text": "When a creature within 10 feet misses because of Phantom Step's afterimage, the Stalker can make one Hollow Stamp attack against that creature."
+      }
+    ],
+    "resources": [
+      {
+        "id": "mirage-stalker-phantom-step-uses",
+        "name": "Phantom Step Uses",
+        "current": 2,
+        "max": 2,
+        "reset": "fight",
+        "note": "Two uses per fight total."
+      },
+      {
+        "id": "mirage-stalker-phantom-step-recharge",
+        "name": "Phantom Step Recharge",
+        "current": 0,
+        "max": 1,
+        "reset": "Recharge 5-6",
+        "note": "Roll at the start of the Stalker turn if needed."
+      },
+      {
+        "id": "mirage-stalker-phantom-charge-recharge-note",
+        "name": "Phantom Charge Condition",
+        "current": 1,
+        "max": 1,
+        "reset": "Recharge 5-6",
+        "note": "Requires at least 20 ft. of straight-line movement before the hit rider applies."
+      }
+    ],
+    "notes": [
+      "Act 1 Final Boss. Huge aberration, formerly a giant elk.",
+      "Saving Throws: STR +6, CON +5.",
+      "Skills: Perception +3.",
+      "Condition Immunities: Frightened.",
+      "Senses: Darkvision 60 ft., Passive Perception 13.",
+      "Proficiency Bonus: +2."
+    ],
+    "visibility": {
+      "defaultState": "condition",
+      "hiddenName": "Something Wrong in the Keep",
+      "revealedName": "Mirage Stalker"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T03:40:04.686Z"
+    }
+  },
+  {
+    "templateId": "broken-chain:act2-s1:pack-hunter:v1",
+    "name": "Pack Hunter",
+    "encounterId": "act2-s1-e1-hollow-pack",
+    "encounterLabel": "Act 2 S1 E1 - Hollow Pack",
+    "stats": {
+      "kind": "beast",
+      "ac": 12,
+      "maxHp": 26,
+      "speed": "40 ft",
+      "classification": "normal",
+      "defenses": [
+        {
+          "name": "Pack coordination",
+          "ehpMultiplier": 1.4,
+          "provenance": "uncalibrated",
+          "note": "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet."
         }
       ]
     },
@@ -341,8 +602,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "label": "DEX",
-        "value": "18 (+4)",
-        "save": 7
+        "value": "15 (+2)"
       },
       {
         "label": "CON",
@@ -350,57 +610,158 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "label": "INT",
-        "value": "14 (+2)"
+        "value": "5 (-3)"
       },
       {
         "label": "WIS",
-        "value": "14 (+2)"
+        "value": "12 (+1)"
       },
       {
         "label": "CHA",
-        "value": "16 (+3)",
-        "save": 6
+        "value": "6 (-2)"
       }
     ],
     "traits": [
       {
-        "name": "Moon-Slick Scales",
+        "name": "Pack Tactics",
         "kind": "trait",
-        "text": "The first opportunity attack made against the wyrmling each round has disadvantage."
+        "text": "Advantage on attack rolls against a creature if at least one ally is within 5 feet of it and not incapacitated."
       }
     ],
     "actions": [
       {
-        "name": "Broken Gleam",
-        "kind": "action",
-        "economyCost": "bonus",
-        "text": "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground."
-      },
-      {
         "name": "Bite",
         "kind": "attack",
-        "roll": "1d20 + 7",
-        "damage": "2d6 + 4 piercing + 1d6 radiant",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant."
-      },
-      {
-        "name": "Moonshard Breath (Recharge 5–6)",
-        "kind": "action",
-        "save": "DEX DC 14",
-        "recharge": "5-6",
-        "damage": "4d6",
-        "text": "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success."
+        "roll": "1d20 + @ATK",
+        "damage": "2d4 + @MAIN",
+        "save": "STR DC 12",
+        "text": "Target is knocked prone on a failed Strength save."
       }
     ],
     "reactions": [],
     "resources": [],
     "notes": [
-      "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early. Both wyrmlings use the same standalone block."
+      "Run 2 in Hollow Pack.",
+      "Skills: Perception +3, Stealth +2.",
+      "Senses: Darkvision 30 ft., Passive Perception 13.",
+      "Cornered Howl can be suppressed by Silence and Silencing Round."
     ],
     "visibility": {
       "defaultState": "hp-bar",
-      "hiddenName": "Veil-Torn Wyrmling",
-      "revealedName": "Veil-Torn Wyrmling"
+      "hiddenName": "Corrupted Hunter",
+      "revealedName": "Pack Hunter"
+    }
+  },
+  {
+    "templateId": "broken-chain:act2-s1:pale-stalker:v1",
+    "name": "Pale Stalker",
+    "encounterId": "act2-s1-e1-hollow-pack",
+    "encounterLabel": "Act 2 S1 E1 - Hollow Pack",
+    "stats": {
+      "kind": "beast",
+      "ac": 13,
+      "maxHp": 75,
+      "speed": "50 ft",
+      "classification": "strong",
+      "defenses": [
+        {
+          "name": "Ambush + Apex Unleashed",
+          "ehpMultiplier": 1.4,
+          "provenance": "uncalibrated",
+          "note": "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics."
+        }
+      ],
+      "cr": 2
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "18 (+4)"
+      },
+      {
+        "label": "DEX",
+        "value": "13 (+1)"
+      },
+      {
+        "label": "CON",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "INT",
+        "value": "7 (-2)"
+      },
+      {
+        "label": "WIS",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "CHA",
+        "value": "8 (-1)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Keen Hearing and Smell",
+        "kind": "trait",
+        "text": "Advantage on Wisdom (Perception) checks that rely on hearing or smell."
+      },
+      {
+        "name": "Pack Tactics",
+        "kind": "trait",
+        "text": "Advantage on attack rolls against a creature if at least one ally is within 5 feet of it and not incapacitated."
+      },
+      {
+        "name": "Apex Unleashed",
+        "kind": "trait",
+        "text": "While both Pack Hunters are alive, Cold Breath is locked. When the first Pack Hunter dies, Cold Breath becomes available immediately and Exploit Weakness increases."
+      },
+      {
+        "name": "Exploit Weakness",
+        "kind": "trait",
+        "text": "When attacking a prone target, a target with reduced speed, or a creature damaged by another creature this round, add cold damage on hit."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Bite",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d6 + @MAIN",
+        "save": "STR DC 14",
+        "text": "Target is knocked prone on a failed Strength save."
+      },
+      {
+        "name": "Cold Breath",
+        "kind": "action",
+        "damage": "4d8",
+        "save": "DEX DC 12",
+        "text": "Recharge 5-6; locked while both Pack Hunters are alive. Each creature in a 15-foot cone takes cold damage on a failed save, or half on success."
+      }
+    ],
+    "reactions": [],
+    "resources": [
+      {
+        "id": "pale-stalker-cold-breath-recharge",
+        "name": "Cold Breath",
+        "current": 0,
+        "max": 1,
+        "reset": "Recharge 5-6",
+        "note": "Locked until first Pack Hunter dies."
+      }
+    ],
+    "notes": [
+      "Damage Immunities: Cold.",
+      "Skills: Perception +3, Stealth +3.",
+      "Senses: Darkvision 60 ft., Passive Perception 13.",
+      "Understands Common but does not speak it."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Patient Wolf",
+      "revealedName": "Pale Stalker"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T03:40:57.199Z"
     }
   }
 ];
@@ -3311,6 +3672,21 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
     "order": 6
   },
   {
+    "id": "act3-e6-gate-ii-the-mirrors",
+    "name": "Act 3 E6 - Gate II: The Mirrors",
+    "actTag": "Act 3",
+    "entries": [
+      {
+        "templateId": "broken-chain:act3:elemental-mirror:v1",
+        "count": 1,
+        "startingVisibility": "hp-bar",
+        "hiddenNameOverride": "Mirror"
+      }
+    ],
+    "owner": "campaign",
+    "order": 6
+  },
+  {
     "id": "act3-e7-the-last-court",
     "name": "Act 3 - The Last Court",
     "actTag": "Act 3",
@@ -3409,10 +3785,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
 ];
 
 /** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
-export const AUTHORED_DIGEST = "fnv1a-df3737ee-92974";
+export const AUTHORED_DIGEST = "fnv1a-6056a48c-101122";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-25T23:47:31.268Z";
+export const AUTHORED_AT = "2026-08-26T04:52:11.204Z";
 
 /**
  * Merge authored content over a bundled list by id.
