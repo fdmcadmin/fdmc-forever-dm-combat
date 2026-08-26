@@ -11,6 +11,7 @@
  */
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
 import { classifyTrait, classifyTraits } from "../src/core/encounter-band/traitClassifier";
+import { pricingModelOf, PRICING_MODEL_LABEL, TRAIT_RULES } from "../src/core/encounter-band/compactImport";
 import { auditCoverage, mechanicsOf } from "../src/core/encounter-band/coverageGate";
 
 let agree = 0, disagree = 0, missed = 0;
@@ -41,7 +42,9 @@ for (const t of L) {
     if (authored.has(m.label)) continue;
     const priced = (t.stats.defenses ?? []).some(d => (d.ehpMultiplier ?? 1) !== 1);
     if (priced) continue;
-    console.log(`  ${t.name} · ${m.traitName} (${m.from})  ->  ${m.label} x${m.rule.multiplier?.toFixed(6) ?? "unpriced"}   [${m.evidence}]`);
+    // A rule with no multiplier is priced by a MODEL, not by nothing — see pricingModelOf.
+    const pricedAs = m.rule.multiplier != null ? `x${m.rule.multiplier.toFixed(6)}` : PRICING_MODEL_LABEL[pricingModelOf(m.rule)];
+    console.log(`  ${t.name} · ${m.traitName} (${m.from})  ->  ${m.label} ${pricedAs}   [${m.evidence}]`);
     found++;
   }
 }
@@ -77,6 +80,51 @@ if (report.packets.length !== 2) {
 if (report.blocked.length !== 0) {
   problems.push(`an ordinary app-authored attack was reported as unpriceable: ${report.blocked.map(b => b.source.name).join(", ")}`);
   disagree++;
+}
+
+
+
+/**
+ * ─── A NULL MULTIPLIER IS A MODEL, NOT A GAP ────────────────────────────────────────────────
+ *
+ * ⚠ ONE WORD WAS DOING THE WORK OF FOUR ANSWERS. Eighteen of the fifty-eight calibrated rules
+ * carry no multiplier and the app printed all of them as "unpriced" — which reads as "the
+ * workbook has nothing to say about this" when it says something specific about each.
+ *
+ * Christopher, on the v10 workbook: *"null multiplier + formula/profile/tag_only/no_credit ≠
+ * UNPRICED [...] the app is still using 'does this have a numeric multiplier?' as its definition
+ * of priced, while the workbook's definition is 'does this mechanic have a supported resolution
+ * model?' Those are no longer the same thing."*
+ */
+{
+  const noMultiplier = TRAIT_RULES.filter(r => r.multiplier == null);
+  const byModel = new Map<string, string[]>();
+  for (const r of noMultiplier) {
+    const m = pricingModelOf(r);
+    byModel.set(m, [...(byModel.get(m) ?? []), r.label]);
+  }
+  console.log(`\n${noMultiplier.length} of ${TRAIT_RULES.length} rules carry no multiplier:`);
+  for (const [model, labels] of [...byModel].sort()) {
+    console.log(`  ${PRICING_MODEL_LABEL[model as never].padEnd(18)} ${labels.length}  — ${labels.slice(0, 3).join(", ")}${labels.length > 3 ? ", …" : ""}`);
+  }
+
+  const stillUnpriced = byModel.get("unpriced") ?? [];
+  if (stillUnpriced.length) {
+    problems.push(`${stillUnpriced.length} rule(s) have no multiplier AND no recognised resolution model: ${stillUnpriced.join(", ")}`);
+    disagree++;
+  }
+  // Rejuvenation is the one the workbook prices at a deliberate ZERO, and calling that "unpriced"
+  // was the clearest case of the app disagreeing with the sheet it is built on.
+  const rejuv = TRAIT_RULES.find(r => /rejuvenation/i.test(r.label));
+  if (rejuv && pricingModelOf(rejuv) !== "no_credit") {
+    problems.push(`Rejuvenation reads as "${pricingModelOf(rejuv)}" — the workbook prices it at 0 for the current encounter`);
+    disagree++;
+  }
+  const condImm = TRAIT_RULES.find(r => /condition immunity/i.test(r.label));
+  if (condImm && pricingModelOf(condImm) !== "conditional") {
+    problems.push(`Condition immunity reads as "${pricingModelOf(condImm)}" — it is worth what the party's actual control makes it worth`);
+    disagree++;
+  }
 }
 
 

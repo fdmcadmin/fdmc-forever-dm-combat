@@ -42,7 +42,7 @@ import {
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
-import { TRAIT_RULES, traitRule, EXPECTED_MONSTER_AC } from "../encounter-band/compactImport";
+import { TRAIT_RULES, traitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
 import { classifyTraits } from "../encounter-band/traitClassifier";
 import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
 
@@ -205,7 +205,16 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
            * Picking from this list IS naming the rule, so `rule` is set to the label rather than
            * cleared, and `provenance` goes because a calibrated pick needs none.
            */
-          ? { ...x, name: label, rule: label, provenance: undefined, ehpMultiplier: rule?.multiplier ?? 1, note: rule?.application }
+          /**
+           * ⚠ THE NOTE FOR A RULE WITH NO MULTIPLIER USED TO BE THE BARE WORD "formula".
+           *
+           * `application` is a machine tag, and it became the human-facing reason on every trait
+           * the workbook prices by a model rather than a number — so the coverage gate printed
+           * a 1.0 whose stated reason was the single word "formula". The model has a real
+           * sentence; store that instead, and the stored data explains itself.
+           */
+          ? { ...x, name: label, rule: label, provenance: undefined, ehpMultiplier: rule?.multiplier ?? 1,
+              note: rule && rule.multiplier == null ? PRICING_MODEL_WHY[pricingModelOf(rule)] : rule?.application }
           : x)),
       },
     }));
@@ -1224,17 +1233,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                     <option value="">— pick a calibrated trait —</option>
                     {TRAIT_RULES.map(r => (
                       <option key={r.label} value={r.label}>
-                        {r.label}{r.multiplier == null ? " (unpriced)" : ` — ×${r.multiplier.toFixed(3)}`}
+                        {r.label}{r.multiplier == null ? ` (${PRICING_MODEL_LABEL[pricingModelOf(r)]})` : ` — ×${r.multiplier.toFixed(3)}`}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div style={{ width: 110 }}>
-                  <span style={labelStyle}>EHP × (derived)</span>
-                  <div style={{ ...inputStyle, background: "#0d0d16", color: rule?.multiplier == null ? "#e07b39" : "#dfe4ff", cursor: "default" }}>
-                    {rule?.multiplier == null ? "unpriced" : `×${rule.multiplier.toFixed(3)}`}
-                  </div>
-                </div>
+                {/* ⚠ FOUR DIFFERENT ANSWERS USED TO PRINT AS ONE WORD. Eighteen calibrated rules
+                    carry no multiplier, and "unpriced" reads as "the workbook has nothing to say"
+                    when it has something specific to say about each — see `pricingModelOf`.
+                    Only a rule with no recognised resolution model is a real gap, and only that
+                    one is coloured as a problem. */}
+                {(() => {
+                  const model = rule ? pricingModelOf(rule) : "unpriced";
+                  const isGap = !rule || model === "unpriced";
+                  return (
+                    <div style={{ width: 110 }}>
+                      <span style={labelStyle}>EHP × (derived)</span>
+                      <div title={rule ? PRICING_MODEL_WHY[model] : undefined}
+                        style={{ ...inputStyle, background: "#0d0d16", cursor: "default", fontSize: model === "multiplier" ? undefined : 10,
+                                 color: rule?.multiplier != null ? "#dfe4ff" : isGap ? "#e07b39" : "#8fb8ff" }}>
+                        {rule?.multiplier != null ? `×${rule.multiplier.toFixed(3)}` : PRICING_MODEL_LABEL[model]}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div style={{ flex: 2, minWidth: 120 }}>
                   <span style={labelStyle}>Stack group</span>
                   <div style={{ ...inputStyle, background: "#0d0d16", color: "#888", cursor: "default" }}>

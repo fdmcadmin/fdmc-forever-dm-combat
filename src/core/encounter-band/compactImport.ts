@@ -185,6 +185,67 @@ export const AC_CONTRIBUTION: Record<number, number> =
   Object.fromEntries(Object.entries((SUSTAIN.ac_contribution as Record<string, number>) ?? {})
     .map(([k, v]) => [Number(k), v]));
 
+/**
+ * WHAT A RULE WITH NO MULTIPLIER ACTUALLY IS — and it is not "unpriced".
+ *
+ * ⚠ THE APP USED ONE WORD FOR FOUR DIFFERENT ANSWERS. Eighteen of the fifty-eight calibrated
+ * rules carry no `multiplier`, and the app printed every one of them as "unpriced" — which reads
+ * as "the workbook has nothing to say about this" when the workbook says something specific about
+ * each. The `status` column has carried the real answer the whole time:
+ *
+ *   formula     the model needs ENCOUNTER inputs, so no single ×1.xxx can exist — Parry, damage
+ *               transfer, once-per-round halving, shared HP, temporary HP, save rerolls
+ *   profile     it needs the PARTY's composition — Limited Spell Immunity needs the party's
+ *               affected spell share
+ *   tag_only    worth what the opposing party's actual control makes it worth — Condition Immunity
+ *   no_credit   deliberately ZERO for this encounter — Rejuvenation happens AFTER the fight, so it
+ *               does not make the creature harder to beat in it
+ *
+ * Christopher, on the v10 workbook: *"null multiplier + formula/profile/tag_only/no_credit ≠
+ * UNPRICED [...] the app is still using 'does this have a numeric multiplier?' as its definition
+ * of priced, while the workbook's definition is 'does this mechanic have a supported resolution
+ * model?' Those are no longer the same thing."*
+ *
+ * ⚠ AND ADDING A FIXED MULTIPLIER TO SILENCE THEM WOULD BE THE WRONG FIX — his words, and the
+ * workbook's: v10's Generic Trait Fallback sheet says of a single elemental resistance
+ * "Party-share weighted; no fixed blanket multiplier [...] Do not assume ~50% party damage."
+ *
+ * Only a null multiplier with NO recognised status is genuinely unpriced.
+ */
+export type PricingModel = "multiplier" | "formula" | "profile" | "conditional" | "no_credit" | "unpriced";
+
+const MODEL_BY_STATUS: Record<string, PricingModel> = {
+  formula: "formula",
+  profile: "profile",
+  tag_only: "conditional",
+  no_credit: "no_credit",
+};
+
+export function pricingModelOf(rule: Pick<TraitRule, "multiplier" | "status">): PricingModel {
+  if (rule.multiplier != null) return "multiplier";
+  return MODEL_BY_STATUS[String(rule.status ?? "").trim().toLowerCase()] ?? "unpriced";
+}
+
+/** How that model reads on a card or an editor row. Short, because it sits beside a name. */
+export const PRICING_MODEL_LABEL: Record<PricingModel, string> = {
+  multiplier: "",
+  formula: "Formula",
+  profile: "Party Profile",
+  conditional: "Conditional",
+  no_credit: "0 — Post Encounter",
+  unpriced: "UNPRICED",
+};
+
+/** The one-line reason, for a tooltip — so the label is never just a word. */
+export const PRICING_MODEL_WHY: Record<PricingModel, string> = {
+  multiplier: "",
+  formula: "Priced by a formula that needs encounter inputs, so there is no single effective-HP multiplier for it.",
+  profile: "Priced against this party's actual composition rather than a fixed figure.",
+  conditional: "Worth what the opposing party's actual use of that control makes it worth.",
+  no_credit: "Correctly worth zero for THIS encounter — it happens after the fight, so it does not make the creature harder to beat in it.",
+  unpriced: "No resolution model in the workbook. This one really is a gap.",
+};
+
 /** Find a calibrated rule by its printed label. */
 export function traitRule(label: string): TraitRule | undefined {
   const key = label.trim().toLowerCase();
