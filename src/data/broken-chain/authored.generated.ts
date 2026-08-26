@@ -277,7 +277,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "profile"
         }
       ],
-      "attacksPerTurn": 4,
+      "attacksPerTurn": 5,
       "size": "Large",
       "classification": "elite",
       "archetype": "bruiser",
@@ -356,7 +356,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Cast Aside",
         "kind": "action",
         "economyCost": "free",
-        "text": "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends."
+        "text": "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends.",
+        "routineSlots": 1
       }
     ],
     "reactions": [],
@@ -370,6 +371,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Breaker",
       "revealedName": "Breaker"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T19:47:34.600Z"
     }
   },
   {
@@ -708,15 +712,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       }
     ],
     "reactions": [],
-    "resources": [
-      {
-        "id": "res-mta3zave",
-        "name": "Scent the Expense",
-        "max": 1,
-        "reset": "Turn",
-        "note": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damageWhenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
-      }
-    ],
+    "resources": [],
     "notes": [
       "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it."
     ],
@@ -949,7 +945,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
         }
       ],
-      "attacksPerTurn": 2,
+      "attacksPerTurn": 3,
       "size": "Huge",
       "classification": "act-boss",
       "archetype": "guardian",
@@ -1006,14 +1002,16 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Anchor the Wrong",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
+        "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn.",
+        "routineSlots": 1
       },
       {
         "name": "Fist",
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d10 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning."
+        "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning.",
+        "routineSlots": 2
       },
       {
         "name": "Collapse Space (Recharge 5–6)",
@@ -1599,7 +1597,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
         }
       ],
-      "attacksPerTurn": 2,
+      "attacksPerTurn": 3,
       "size": "Medium",
       "classification": "act-boss",
       "archetype": "tactician",
@@ -1667,7 +1665,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Fracture Seed",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated."
+        "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated.",
+        "routineSlots": 1
       },
       {
         "name": "Rift Lance",
@@ -1711,6 +1710,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Thought Harrower",
       "revealedName": "Thought Harrower"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T19:47:09.237Z"
     }
   },
   {
@@ -5235,10 +5237,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-b3fb77ec-110542";
+export const AUTHORED_DIGEST = "fnv1a-11aaf361-112004";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T19:47:54.891Z";
+export const AUTHORED_AT = "2026-08-26T22:12:19.358Z";
 
 /**
  * Merge authored content over a bundled list by id.
