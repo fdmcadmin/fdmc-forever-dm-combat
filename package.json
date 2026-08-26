@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.7.48.1",
+  "version": "0.7.48.2",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -39,7 +39,8 @@
     "check:saves": "npx tsx scripts/check-monster-saves.ts",
     "check:formulas": "npx tsx scripts/check-monster-formulas.ts",
     "convert:formulas": "npx tsx scripts/convert-monster-formulas.ts",
-    "check:responses": "npx tsx scripts/check-damage-responses.ts"
+    "check:responses": "npx tsx scripts/check-damage-responses.ts",
+    "check:imports": "npx tsx scripts/check-import-shapes.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

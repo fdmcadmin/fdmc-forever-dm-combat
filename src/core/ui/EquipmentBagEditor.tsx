@@ -575,10 +575,22 @@ export type EquipmentImportResult = {
 export async function importEquipmentLibrary(file: File): Promise<EquipmentImportResult> {
   try {
     const text = await file.text();
-    const parsed = JSON.parse(text) as { items?: unknown[]; schema?: string };
-    const items = parsed.items ?? (Array.isArray(parsed) ? parsed : null);
+    /**
+     * ⚠ THE AUTHORING EXPORT CARRIES ITS ITEMS UNDER `equipment`, NOT `items`.
+     *
+     * Three export formats exist and each names its payload differently: the equipment library
+     * writes `items`, the monster library writes `monsters`, and the campaign authoring export
+     * writes all three at once as `monsters` / `equipment` / `encounters`. So the one file a DM
+     * actually has to hand — the author export — imported fine into MONSTERS and was rejected by
+     * EQUIPMENT for no reason except a key name.
+     *
+     * Christopher: *"when i try to import them and upload it they fail."* Reading both keys costs
+     * nothing and lets one file be handed to whichever library needs its slice.
+     */
+    const parsed = JSON.parse(text) as { items?: unknown[]; equipment?: unknown[]; schema?: string };
+    const items = parsed.items ?? parsed.equipment ?? (Array.isArray(parsed) ? parsed : null);
     if (!Array.isArray(items)) {
-      return { ok: false, added: 0, updated: 0, skipped: 0, message: "Invalid file — expected { items: [...] } or a raw array." };
+      return { ok: false, added: 0, updated: 0, skipped: 0, message: "Invalid file — expected { items: [...] }, { equipment: [...] } from a campaign author export, or a raw array." };
     }
     const existing = loadEquipmentLibrary("dm");
     const existingIds = new Set(existing.map(i => i.id));
