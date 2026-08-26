@@ -23,6 +23,7 @@
  */
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
+import { resolveMonsterActionFormulas } from "../monsters/resolveMonsterFormulaVars";
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
 import { spellProfile } from "./compactImport";
 import { conditionsImposedBy } from "./controlPricing";
@@ -48,11 +49,27 @@ export function parseSaveDc(text: string | undefined): number | undefined {
   return m ? Number.parseInt(m[1], 10) : undefined;
 }
 
-/** "1d20 + 7" → 7. The printed attack bonus, never derived from ability scores. */
+/**
+ * "1d20 + 7" → 7. The printed attack bonus, never derived from ability scores.
+ *
+ * ⚠ EVERY FLAT TERM, NOT JUST THE LAST ONE. This read only the trailing `+N`, which was right for
+ * a hand-typed `1d20 + 7` and wrong the moment a formula resolved into more than one term: the
+ * Elemental Mirror's `1d20+@MAIN+@PROF` became `1d20+4+3` and parsed as **+3**, losing four points
+ * of attack bonus silently. Authoring creatures with variables is only usable if the checker can
+ * read what they resolve to.
+ *
+ * A term followed by `d` is a DIE, not a bonus — `1d20 + 5 + 1d4` is +5 with a bless die, and
+ * counting the `1` would be reading the die's count as a modifier.
+ */
 export function parseAttackBonus(roll: string | undefined): number | undefined {
   if (!roll) return undefined;
-  const m = roll.match(/([+-])\s*(\d+)\s*$/);
-  return m ? (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10) : undefined;
+  let total = 0;
+  let found = false;
+  for (const m of roll.matchAll(/([+-])\s*(\d+)(?!\s*d)/gi)) {
+    total += (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10);
+    found = true;
+  }
+  return found ? total : undefined;
 }
 
 /**
@@ -369,7 +386,30 @@ function parseSection(
  * Traits are parsed too — a trait can carry a damaging rider, and the contract's effect
  * families explicitly include auras, retaliation and death bursts, which live in that section.
  */
-export function parseCreature(template: MainMonsterTemplate): ParsedCreature {
+/**
+ * ⚠ FORMULAS ARE RESOLVED BEFORE ANYTHING IS READ.
+ *
+ * Christopher: *"i cant check a encounter if i use the @ATK or @STR, also we had discussed
+ * changing all the actions on creatures to this method."*
+ *
+ * He could not, and the reason was this function reading the RAW strings. `resolveMonsterFormula`
+ * ran in exactly two places — `materializeTemplateBody` and `spawnEncounterInstances` — so an
+ * authored `1d20+@ATK` resolved when the creature was put on the MAP and stayed literal
+ * everywhere else. The checker then found no attack bonus in it, and a feature with damage and no
+ * bonus is treated as AUTOMATIC: the Elemental Mirror priced at 42 undodgeable damage a round
+ * off a formula it never read.
+ *
+ * That made the variables unusable for anything that had to be priced, which is every creature —
+ * so the vocabulary could not be adopted while the checker was blind to it. It resolves here now,
+ * once, at the top of the one function every pricing path goes through.
+ */
+export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature {
+  const template: MainMonsterTemplate = {
+    ...rawTemplate,
+    actions: (rawTemplate.actions ?? []).map(a => resolveMonsterActionFormulas(a, rawTemplate)),
+    reactions: (rawTemplate.reactions ?? []).map(a => resolveMonsterActionFormulas(a, rawTemplate)),
+    traits: (rawTemplate.traits ?? []).map(a => resolveMonsterActionFormulas(a, rawTemplate)),
+  };
   const assumptions: FeatureAssumption[] = [];
   const name = template.name;
   const acRaw = typeof template.stats.ac === "number"

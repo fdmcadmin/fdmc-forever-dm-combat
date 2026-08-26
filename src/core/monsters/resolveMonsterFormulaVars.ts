@@ -34,9 +34,27 @@ import type { MainMonsterTemplate } from "./runtime/mainMonsterRuntime";
 import { abilityModifier } from "../rules/dnd5e";
 import { ABILITY_ORDER, scoresFromTemplate, type AbilityLabel } from "./creator/monsterCreatorModel";
 
-/** Proficiency from Challenge Rating — CR 0–4 = +2, 5–8 = +3, 9–12 = +4, … */
-export function monsterProficiency(cr: number | undefined): number {
-  return Math.floor((Math.max(1, Math.floor(cr ?? 1)) - 1) / 4) + 2;
+/**
+ * A creature's proficiency bonus — the PRINTED figure first, then the one its CR implies.
+ *
+ * ⚠ THIS TOOK A `cr` AND NOTHING ELSE, AND THAT DRIFTED THE MOMENT THE BONUS BECAME A STAT.
+ * A block prints "Proficiency Bonus: +4" and often prints no CR at all, so 25 library creatures
+ * carry `stats.proficiencyBonus` with no `cr` — their SAVES used the recovered +4 while every
+ * `@PB`, `@ATK`, `@SPELL` and `@DC` on the same creature still resolved at the CR-less floor of
+ * +2. One creature, two proficiency bonuses, exactly the drift this codebase keeps warning about.
+ *
+ * It reads the same field the save side reads now, so there is one answer per creature.
+ */
+export function monsterProficiency(
+  stats: { cr?: number; proficiencyBonus?: number } | number | undefined,
+): number {
+  // A bare number is still accepted: this used to take a CR, and a caller passing one is asking
+  // exactly the old question.
+  if (typeof stats === "number" || stats === undefined) {
+    return Math.floor((Math.max(1, Math.floor(stats ?? 1)) - 1) / 4) + 2;
+  }
+  if (typeof stats.proficiencyBonus === "number") return stats.proficiencyBonus;
+  return Math.floor((Math.max(1, Math.floor(stats.cr ?? 1)) - 1) / 4) + 2;
 }
 
 /**
@@ -69,7 +87,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 /** Every variable a creature supplies, ready to substitute. */
 export function monsterFormulaVars(template: MainMonsterTemplate): Record<string, string> {
   const scores = scoresFromTemplate(template.abilities ?? []);
-  const pb = monsterProficiency(template.stats?.cr);
+  const pb = monsterProficiency(template.stats);
   const main = abilityModifier(scores[monsterMainAbility(template)]);
 
   const vars: Record<string, string> = {};

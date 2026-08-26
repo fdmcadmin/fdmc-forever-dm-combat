@@ -73,6 +73,7 @@ jobs:
           npm run check:healing
           npm run check:partyfit
           npm run check:encrepair
+          npm run check:formulas
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
       # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the
