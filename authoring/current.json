@@ -1,223 +1,8 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T13:23:08.880Z",
-  "digest": "fnv1a-d18c774f-97774",
+  "exportedAt": "2026-08-26T19:13:03.222Z",
+  "digest": "fnv1a-5ccd6220-92385",
   "monsters": [
-    {
-      "templateId": "broken-chain:act3:rift-slick:v1",
-      "name": "Rift-Slick",
-      "encounterId": "act3-e5-the-scar-line",
-      "encounterLabel": "Act 3 E5 - The Scar Line",
-      "stats": {
-        "kind": "fiend",
-        "ac": 12,
-        "maxHp": 59,
-        "speed": "40 ft., climb 30 ft.",
-        "defenses": [
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "skirmisher",
-        "skills": [
-          {
-            "label": "Acrobatics",
-            "modifier": 8
-          },
-          {
-            "label": "Stealth",
-            "modifier": 8
-          }
-        ],
-        "proficiencyBonus": 3,
-        "damageResponses": [
-          {
-            "type": "Fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "DEX",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "INT",
-          "value": "16 (+3)",
-          "saveProficient": true
-        },
-        {
-          "label": "WIS",
-          "value": "12 (+1)"
-        },
-        {
-          "label": "CHA",
-          "value": "10 (+0)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Through the Wound",
-          "kind": "trait",
-          "text": "Rift-Slick can move through a space as narrow as 3 inches without squeezing. When it passes through natural cover, roots, or a tree-space, it leaves a 5-ft. scar at the exit until the start of its next turn."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Scar Slip",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation."
-        },
-        {
-          "name": "Raking Claw",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "1d12 + @MAIN",
-          "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing."
-        },
-        {
-          "name": "Warping Cut (Recharge 5–6)",
-          "kind": "action",
-          "save": "DEX DC 16",
-          "recharge": "5-6",
-          "damage": "4d8",
-          "text": "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round."
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A gray Fiend whose body can become too thin for its skeleton and then remember bones afterward. Wherever it squeezes through the Wood, sap hisses from the wound."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Rift-Slick",
-        "revealedName": "Rift-Slick"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:blackbough-reeve:v1",
-      "name": "Blackbough Reeve",
-      "encounterId": "act3-e7-the-last-court",
-      "encounterLabel": "Act 3 E7 - The Last Court",
-      "stats": {
-        "kind": "fey",
-        "ac": 16,
-        "maxHp": 86,
-        "speed": "35 ft.",
-        "defenses": [
-          {
-            "name": "Condition immunity",
-            "ehpMultiplier": 1,
-            "note": "Read from \"Seasoned by Severity\" (trait) on \"immune to a condition\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
-          },
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "bruiser",
-        "skills": [
-          {
-            "label": "Athletics",
-            "modifier": 9
-          }
-        ],
-        "proficiencyBonus": 4,
-        "damageResponses": [
-          {
-            "type": "Fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "DEX",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "INT",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "19 (+4)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Seasoned by Severity",
-          "kind": "trait",
-          "text": "The Reeve has advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Shearing Cut",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "2d8 + @MAIN",
-          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each."
-        },
-        {
-          "name": "Spoiling Cut",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "1d8 + @MAIN",
-          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses."
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A broad-shouldered Fey wrapped in split black bark and hooked thorn. Pale cuts run through the growth like old pruning scars. It carries itself like a keeper who has spent years deciding what the Wood is allowed to keep.",
-        "DM DESIGN READ. The Reeve does not lock movement or force targets into place. It either prunes through raw damage or makes ignoring it expensive. A martial can clear Spoiling Cut by committing an attack to the Reeve, then spend any remaining attacks elsewhere. No recharge ability and no special reaction are part of this block.",
-        "UNPRICED IN EHP. Spoiling Cut takes 5 off every damage instance the target aims at anyone except the Reeve. That is ally-side damage prevention, nearest to the workbook's Fixed prevention - 8/round (+0.141871), but it is conditional, single-target and cleared by attacking the Reeve. Left unpriced pending a calibration decision: v3.23 states the fight's 253 raw HP is the figure BEFORE trait, control, reaction, targeting and Winter's Toll conversion."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Blackbough Reeve",
-        "revealedName": "Blackbough Reeve"
-      }
-    },
     {
       "templateId": "broken-chain:act3:grief-colossus:v1",
       "name": "Grief Colossus",
@@ -226,7 +11,7 @@
       "stats": {
         "kind": "aberration",
         "ac": 18,
-        "maxHp": 230,
+        "maxHp": 207,
         "speed": "35 ft.",
         "defenses": [
           {
@@ -304,7 +89,7 @@
           "kind": "attack",
           "roll": "1d20 + @ATK",
           "damage": "2d10 + @MAIN",
-          "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning."
+          "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning."
         },
         {
           "name": "Collapse Space (Recharge 5–6)",
