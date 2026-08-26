@@ -2270,6 +2270,39 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   },
   {
     templateId: "broken-chain:act3:veil-torn-dragon:v1",
+    /**
+     * ⚠ LIFTED OUT OF `notes`, WHERE IT WAS PARKED DELIBERATELY. The comment above this
+     * library said why: "a lair is a SUMMON at initiative 20 and the summon mechanism is
+     * unbuilt — filing them as ordinary actions would read as things the creature can do on
+     * its own turn, which is precisely what they are not." The summon mechanism exists now.
+     *
+     * Text copied verbatim. `effect` names the v10 workbook primitive that prices each one —
+     * none of them deals damage, which is why a lair must not be priced as DPR.
+     */
+    lair: {
+      initiative: 20,
+      noRepeatConsecutive: true,
+      note: "Gate III. The clearing remembers being somewhere else.",
+      options: [
+        {
+          name: "Ground Remembers Wrong",
+          effect: "forced_movement",
+          save: "STR DC 17",
+          text: "Choose up to three 10-ft. squares of natural ground within 90 ft. Creatures there make a DC 17 Strength save or slide up to 10 ft. to a safe space chosen by the lair.",
+        },
+        {
+          name: "Branches Close",
+          effect: "obscure",
+          text: "A 15-ft.-radius sphere within 90 ft. becomes heavily obscured by overlapping leaves and wrong-angle branches until the next initiative count 20.",
+        },
+        {
+          name: "Borrowed Sky",
+          effect: "forced_movement",
+          save: "STR DC 17",
+          text: "Choose one creature within 90 ft. The lair moves it up to 20 ft. horizontally and 10 ft. vertically, placing it safely on a surface. An unwilling creature can resist with a DC 17 Strength save.",
+        },
+      ],
+    },
     name: "Veil-Torn Dragon",
     encounterId: "act3-e9-gate-iii-veil-torn-dragon",
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
@@ -2421,6 +2454,38 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   },
   {
     templateId: "broken-chain:act3:thought-harrower:v1",
+    /**
+     * ⚠ LIFTED OUT OF `notes`, WHERE IT WAS PARKED DELIBERATELY. The comment above this
+     * library said why: "a lair is a SUMMON at initiative 20 and the summon mechanism is
+     * unbuilt — filing them as ordinary actions would read as things the creature can do on
+     * its own turn, which is precisely what they are not." The summon mechanism exists now.
+     *
+     * Text copied verbatim. `effect` names the v10 workbook primitive that prices each one —
+     * none of them deals damage, which is why a lair must not be priced as DPR.
+     */
+    lair: {
+      initiative: 20,
+      noRepeatConsecutive: true,
+      note: "The Center. Distance stops agreeing with itself.",
+      options: [
+        {
+          name: "Adjacent Elsewhere",
+          effect: "portal",
+          text: "Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn.",
+        },
+        {
+          name: "Memory of Falling",
+          effect: "forced_movement",
+          save: "STR DC 18",
+          text: "Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage.",
+        },
+        {
+          name: "Wrong Angle",
+          effect: "cover",
+          text: "Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides.",
+        },
+      ],
+    },
     name: "Thought Harrower",
     encounterId: "act3-e10-the-center",
     encounterLabel: "Act 3 E10 - The Center",

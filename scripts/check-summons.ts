@@ -23,6 +23,8 @@
  * wrong HP is worse than one that fails, because it prices a fight and says nothing.
  */
 import { materializeSummon, resolveSummonFormula, arithmetic, type SummonSpec, type SummonerContext } from "../src/core/monsters/summon";
+import { legalLairOptions, lairDamagePerRound, unpricedLairOptions } from "../src/core/monsters/lair";
+import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { formatAbilityEntry } from "../src/core/monsters/creator/monsterCreatorModel";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
@@ -189,5 +191,61 @@ eq("a mixed expression is left alone", arithmetic("2d8+1d4"), "2d8+1d4");
     resolveSummonFormula("1d20+@MADEUP", CALL, bare, undefined).includes("@MADEUP"), true);
 }
 
+
+/**
+ * ─── LAIRS — the environment taking a turn ──────────────────────────────────────────────────
+ *
+ * Christopher: *"what about the lair actions on the gate 3 and act 3 final."*
+ *
+ * ⚠ THEY WERE ALREADY WRITTEN, AND PARKED WITH THEIR OWN REASON. Both creatures carried their
+ * lair actions in `notes` under a comment that said exactly why:
+ *
+ *   "a lair is a SUMMON at initiative 20 and the summon mechanism is unbuilt — filing them as
+ *    ordinary actions would read as things the creature can do on its own turn, which is
+ *    precisely what they are not."
+ *
+ * That reasoning was right, and it is the reason a lair is a FIELD rather than three more rows in
+ * `actions`: filed as actions the checker would have scheduled them into the creature's own
+ * budget and handed the Dragon three extra turns' worth of options it never had.
+ */
+{
+  const lairs = BROKEN_CHAIN_MONSTER_LIBRARY.filter(t => t.lair);
+  console.log(`\nLAIRS — ${lairs.length} creature(s) carry one\n`);
+  for (const t of lairs) {
+    const lair = t.lair!;
+    console.log(`  ${t.name}  (initiative ${lair.initiative}, no repeat: ${lair.noRepeatConsecutive})`);
+    for (const o of lair.options) console.log(`     ${o.name.padEnd(24)} ${o.effect ?? "UNPRICED"}${o.save ? ` · ${o.save}` : ""}`);
+  }
+
+  eq("both fights he named carry a lair", lairs.map(t => t.name).sort(), ["Thought Harrower", "Veil-Torn Dragon"]);
+
+  for (const t of lairs) {
+    const lair = t.lair!;
+    eq(`${t.name} lair is on initiative 20`, lair.initiative, 20);
+    eq(`${t.name} lair cannot repeat an option`, lair.noRepeatConsecutive, true);
+    eq(`${t.name} lair has three options`, lair.options.length, 3);
+    /**
+     * ⚠ NOT ONE OF THE SIX DEALS DAMAGE, and a lair priced as DPR would invent damage the fight
+     * does not contain. They move bodies, obscure ground and change cover — which is why v10
+     * added `cover_modifier`, `terrain_portal_or_adjacency_link` and `roll_modifier_zone` under
+     * "current campaign coverage".
+     */
+    eq(`${t.name} lair deals no damage`, lairDamagePerRound(lair, () => 0), 0);
+    eq(`${t.name} lair has nothing the workbook cannot place`, unpricedLairOptions(lair).map(o => o.name), []);
+  }
+
+  // THE NO-REPEAT RULE IS REAL ARITHMETIC, not decoration: with three options and no repeat, a
+  // fight sees them in rotation rather than the best one every round.
+  const dragon = lairs.find(t => t.name === "Veil-Torn Dragon")!.lair!;
+  eq("with nothing used yet, every option is legal", legalLairOptions(dragon, undefined).length, 3);
+  eq("after Branches Close, it cannot repeat", legalLairOptions(dragon, "Branches Close").map(o => o.name),
+    ["Ground Remembers Wrong", "Borrowed Sky"]);
+
+  // A one-option lair cannot alternate with nothing — the rule must not silence it.
+  const single = { initiative: 20, noRepeatConsecutive: true, options: [{ name: "Only", text: "x", effect: "cover" as const }] };
+  eq("a one-option lair still acts", legalLairOptions(single, "Only").length, 1);
+}
+
+
 if (problems.length) { console.error(`\nFAILED — ${problems.length}:\n  ${problems.join("\n  ")}`); process.exit(1); }
-console.log(`\nPASS — all three summons build, and every number the block calls "yours" comes from the summoner.`);
+console.log(`\nPASS — all three summons build, every number the block calls "yours" comes from the summoner, and both lairs act on 20 without repeating.`);

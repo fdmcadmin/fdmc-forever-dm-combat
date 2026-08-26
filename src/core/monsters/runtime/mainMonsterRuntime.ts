@@ -1,3 +1,4 @@
+import type { LairSpec } from "../lair";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "../MonsterJconScanner";
 
 /**
@@ -279,6 +280,17 @@ export type MainMonsterTemplate = {
    * on the creature is simply on it, which is the normal case.
    */
   actionSets?: MonsterActionSet[];
+  /**
+   * THE LAIR THIS CREATURE FIGHTS IN — its options, its cadence, and anything it calls at the
+   * start of combat. See `lair.ts`.
+   *
+   * ⚠ NOT AN ACTION LIST, DELIBERATELY. A lair action is not something the creature does on its
+   * own turn; it is the environment taking a turn on initiative 20. Filing them as ordinary
+   * actions is exactly what the parked note in `monsterLibrary.ts` refused to do, and it was
+   * right — the checker would have scheduled them into the creature's own action budget and
+   * handed a dragon three extra turns' worth of options it never had.
+   */
+  lair?: LairSpec;
   /**
    * How a body built from this template is named, when a set is marked `namesBody`.
    *
