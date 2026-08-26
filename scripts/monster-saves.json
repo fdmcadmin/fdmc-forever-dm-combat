@@ -48,9 +48,9 @@
  "Demon Knight of Punishment": "str4 dex2 con8 int2 wis6 cha3",
  "Breaker": "str9 dex2 con8 int1 wis7 cha3",
  "Demonic Reaver": "str0 dex8 con1 int3 wis8 cha2",
- "Veilbound Drake Guard": "str2 dex4 con3 int0 wis2 cha0",
+ "Veil-Torn Wyrmling": "str2 dex7 con2 int2 wis2 cha6",
  "Veil-Torn Dragon": "str3 dex3 con9 int5 wis8 cha9",
  "Elemental Mirror": "str4 dex3 con2 int1 wis1 cha0",
- "Thought Harrower": "str2 dex1 con3 int10 wis8 cha8",
+ "Thought Harrower": "str2 dex1 con3 int10 wis8 cha4",
  "Grief Colossus": "str10 dex0 con10 int0 wis2 cha0"
 }
