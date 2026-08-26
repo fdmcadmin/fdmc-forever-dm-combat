@@ -916,10 +916,31 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               style={inputStyle}
               title="Challenge Rating. Sets the proficiency bonus used by save proficiencies: CR 0–4 = +2, 5–8 = +3, 9–12 = +4, and so on." />
           </div>
+          {/*
+            ⚠ THE BONUS IS ITS OWN FIELD, because stat blocks print it and often print no CR.
+            Every creature in the Act 3 v3.23 packet carries "Proficiency Bonus: +3" or "+4" and
+            no challenge rating, and backing a CR out of a bonus invents a number — +3 spans the
+            whole CR 5-8 band.
+
+            Without this control the field could not survive a round trip: the library migration
+            gave the Veil-Torn Wyrmling a recovered +3, the DM re-authored it, and the export came
+            back with no bonus at all — so its attacks resolved at the +2 floor again.
+          */}
+          <div style={{ width: 110 }}>
+            <span style={labelStyle}>Prof. bonus</span>
+            <input type="number" min={2} max={9}
+              value={draft.stats.proficiencyBonus ?? ""}
+              placeholder={`+${Math.floor((Math.max(1, Math.floor(draft.stats.cr ?? 1)) - 1) / 4) + 2} from CR`}
+              onChange={e => updateStat("proficiencyBonus", e.target.value === "" ? undefined : Math.max(0, Number(e.target.value)))}
+              style={inputStyle}
+              title="The printed proficiency bonus. Leave blank to derive it from CR. Set it when the block prints a bonus but no challenge rating — it feeds every ticked save and every @PROF, @ATK, @SPELL and @DC on this creature." />
+          </div>
           <span style={{ fontSize: 10, color: "#667", paddingBottom: 4 }}>
-            proficiency bonus <strong style={{ color: "#99a" }}>
-              +{Math.floor((Math.max(1, Math.floor(draft.stats.cr ?? 1)) - 1) / 4) + 2}
-            </strong> — added to every ticked save below
+            using <strong style={{ color: "#99a" }}>
+              +{draft.stats.proficiencyBonus ?? Math.floor((Math.max(1, Math.floor(draft.stats.cr ?? 1)) - 1) / 4) + 2}
+            </strong>
+            {draft.stats.proficiencyBonus === undefined ? " from CR" : " as printed"}
+            {" "}— every ticked save below, and @PROF / @ATK / @SPELL / @DC in this creature's formulas
           </span>
         </div>
         {/* ⚠ SAVE PROFICIENCY, THE SAME WAY THE PLAYER SHEET DOES IT. Christopher, 2026-08-20:

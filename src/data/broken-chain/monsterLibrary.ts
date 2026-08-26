@@ -59,7 +59,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Forest-Strider", kind: "trait", text: "Thickets, briar, and undergrowth are not difficult terrain for the wolf, and it leaves no tracks in the woods." },
     ],
     actions: [
-      { name: "Savage Bite", kind: "attack", roll: "1d20 + 4", damage: "2d4 + 2", save: "STR DC 12", text: "+4 to hit, reach 5 ft., one target. Hit: 7 (2d4 + 2) piercing. DC 12 Strength save or knocked prone." },
+      { name: "Savage Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "STR DC 12", text: "+4 to hit, reach 5 ft., one target. Hit: 7 (2d4 + 2) piercing. DC 12 Strength save or knocked prone." },
     ],
     reactions: [],
     resources: [],
@@ -95,7 +95,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Forest-Strider", kind: "trait", text: "Thickets, briar, and undergrowth are not difficult terrain, and the Packlord leaves no tracks in the woods." },
     ],
     actions: [
-      { name: "Rending Bite", kind: "attack", roll: "1d20 + 5", damage: "2d6 + 3", save: "STR DC 13", text: "+5 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing. DC 13 Strength save or knocked prone." },
+      { name: "Rending Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "STR DC 13", text: "+5 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing. DC 13 Strength save or knocked prone." },
       { name: "Hunting Howl", kind: "action", text: "Bonus Action. Each Thornfang Wolf within 30 feet that can hear the Packlord may immediately move up to its speed toward an enemy without provoking opportunity attacks." },
     ],
     reactions: [],
@@ -169,7 +169,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Follows the Mother", kind: "trait", text: "If Mosshide is driven off rather than killed, any surviving cub follows her out — the fight simply ends." },
     ],
     actions: [
-      { name: "Claw", kind: "attack", roll: "1d20 + 3", damage: "1d4 + 1", text: "+3 to hit, reach 5 ft., one target. Hit: 3 (1d4 + 1) slashing. The only attack it knows, and it barely knows it." },
+      { name: "Claw", kind: "attack", roll: "1d20 + @ATK", damage: "1d4 + @MAIN", text: "+3 to hit, reach 5 ft., one target. Hit: 3 (1d4 + 1) slashing. The only attack it knows, and it barely knows it." },
     ],
     reactions: [],
     resources: [],
@@ -205,8 +205,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Woodwise", kind: "trait", text: "The Reaver ignores difficult terrain from thickets and undergrowth, and has advantage on Dexterity (Stealth) checks made to hide in forest cover." },
     ],
     actions: [
-      { name: "Notched Scimitar", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
-      { name: "Dagger", kind: "attack", roll: "1d20 + 5", damage: "1d4 + 3", text: "+5 to hit, melee or thrown 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing." },
+      { name: "Notched Scimitar", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
+      { name: "Dagger", kind: "attack", roll: "1d20 + @ATK", damage: "1d4 + @MAIN", text: "+5 to hit, melee or thrown 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing." },
       { name: "Cruel Command", kind: "action", text: "Bonus Action. One ally within 30 feet that can hear the Reaver can use its reaction to make one weapon attack." },
     ],
     reactions: [
@@ -244,7 +244,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Far Realm Fingerprint", kind: "trait", text: "The spider is an aberration, not a beast — effects that affect only beasts do not affect it. The first sign of the same wrongness that produced the Mirage Stalker." },
     ],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", save: "CON DC 11", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) piercing. DC 11 Constitution save or take 2 (1d4) poison at the start of its next turn." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", save: "CON DC 11", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) piercing. DC 11 Constitution save or take 2 (1d4) poison at the start of its next turn." },
     ],
     reactions: [],
     resources: [],
@@ -278,8 +278,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Ambush Instinct", kind: "trait", text: "In the first round of combat, the Ambusher has advantage on attack rolls against any creature that hasn't taken a turn yet, and deals an extra 3 (1d6) damage on a hit." },
     ],
     actions: [
-      { name: "Reed Spear", kind: "attack", roll: "1d20 + 3", damage: "1d8 + 2", text: "Melee or thrown. +3 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 6 (1d8 + 2) piercing." },
-      { name: "Net", kind: "attack", roll: "1d20 + 4", text: "Thrown 5/15 ft., one Large or smaller creature. On a hit, the target is Restrained until it frees itself (DC 10 STR check as an action) or the net is destroyed (AC 10, 5 slashing). Only one Ambusher carries a net." },
+      { name: "Reed Spear", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "1d8 + @MAIN", text: "Melee or thrown. +3 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 6 (1d8 + 2) piercing." },
+      { name: "Net", kind: "attack", roll: "1d20 + @ATK", text: "Thrown 5/15 ft., one Large or smaller creature. On a hit, the target is Restrained until it frees itself (DC 10 STR check as an action) or the net is destroyed (AC 10, 5 slashing). Only one Ambusher carries a net." },
     ],
     reactions: [],
     resources: [],
@@ -315,8 +315,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       // Renamed to the authored block (Archetype Pass v4): Multiattack is one Gore + one Hooves.
-      { name: "Gore", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", text: "Melee Weapon Attack: +6 to hit, reach 10 ft., one target. Hit: 13 (2d8 + 4) piercing damage. The strike lands a half-second before the creature appears to move." },
-      { name: "Hooves", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 4", text: "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage. The hooves connect with a sound that is wrong." },
+      { name: "Gore", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "Melee Weapon Attack: +6 to hit, reach 10 ft., one target. Hit: 13 (2d8 + 4) piercing damage. The strike lands a half-second before the creature appears to move." },
+      { name: "Hooves", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", text: "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage. The hooves connect with a sound that is wrong." },
       /**
        * "Phantom Charge (recharges after a Multiattack turn). Full Action — replaces
        * Multiattack." That cadence is strictly ALTERNATING — Charge, Multiattack, Charge — so
@@ -332,11 +332,11 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * "1 down, 1 badly hurt", never lethal). The cadence does not move the meter, because a
        * Charge turn is a Multiattack turn the Stalker does not get.
        */
-      { name: "Phantom Charge", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", save: "STR DC 14", recharge: "4-6", text: "Recharges after a Multiattack turn. Full Action — replaces Multiattack. Move up to its speed in a straight line and make one Gore attack at any point. If it moved 20+ ft. and hits, DC 14 STR save or the target is knocked prone and pushed 10 ft." },
+      { name: "Phantom Charge", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", save: "STR DC 14", recharge: "4-6", text: "Recharges after a Multiattack turn. Full Action — replaces Multiattack. Move up to its speed in a straight line and make one Gore attack at any point. If it moved 20+ ft. and hits, DC 14 STR save or the target is knocked prone and pushed 10 ft." },
       { name: "Phase Shift (Bonus Action)", kind: "action", text: "Flickers up to 15 ft., no opportunity attacks. The afterimage stays in its old space. This does NOT reset Phantom Step's disadvantage — it stacks a stale image on top of the displacement." },
     ],
     reactions: [
-      { name: "Phantom Lunge", kind: "reaction", roll: "1d20 + 6", damage: "2d6 + 4", text: "When a creature within 10 feet misses because of Phantom Step's afterimage, the Stalker can make one Hollow Stamp attack against that creature." },
+      { name: "Phantom Lunge", kind: "reaction", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", text: "When a creature within 10 feet misses because of Phantom Step's afterimage, the Stalker can make one Hollow Stamp attack against that creature." },
     ],
     resources: [
       { id: "mirage-stalker-phantom-step-uses", name: "Phantom Step Uses", current: 2, max: 2, reset: "fight", note: "Two uses per fight total." },
@@ -383,7 +383,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Exploit Weakness", kind: "trait", text: "When attacking a prone target, a target with reduced speed, or a creature damaged by another creature this round, add cold damage on hit." },
     ],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 4", save: "STR DC 14", text: "Target is knocked prone on a failed Strength save." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "STR DC 14", text: "Target is knocked prone on a failed Strength save." },
       { name: "Cold Breath", kind: "action", damage: "4d8", save: "DEX DC 12", text: "Recharge 5-6; locked while both Pack Hunters are alive. Each creature in a 15-foot cone takes cold damage on a failed save, or half on success." },
     ],
     reactions: [],
@@ -414,7 +414,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [{ name: "Pack Tactics", kind: "trait", text: "Advantage on attack rolls against a creature if at least one ally is within 5 feet of it and not incapacitated." }],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + 4", damage: "2d4 + 2", save: "STR DC 12", text: "Target is knocked prone on a failed Strength save." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "STR DC 12", text: "Target is knocked prone on a failed Strength save." },
     ],
     reactions: [],
     resources: [],
@@ -447,7 +447,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Wendigo-Drained", kind: "trait", text: "Does not bleed. Speed reduction on hit does not affect it unless magical." },
     ],
     actions: [
-      { name: "Slam", kind: "attack", roll: "1d20 + 3", damage: "1d6 + 1 bludgeoning + 1d6 cold", text: "+3 to hit. Hit: 4 (1d6 + 1) bludgeoning plus 3 (1d6) cold." },
+      { name: "Slam", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "1d6 + @STR bludgeoning + 1d6 cold", text: "+3 to hit. Hit: 4 (1d6 + 1) bludgeoning plus 3 (1d6) cold." },
     ],
     reactions: [],
     resources: [],
@@ -480,8 +480,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [{ name: "Hungry Dead", kind: "trait", text: "Advantage on attack rolls against any creature that has not yet taken a turn this combat, or that is paralyzed." }],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + 2", damage: "2d6 + 2", text: "One incapacitated target only." },
-      { name: "Claws", kind: "attack", roll: "1d20 + 4", damage: "2d4 + 2", save: "CON DC 10", text: "If target is not undead, it is paralyzed until the end of its next turn on a failed save." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @CON+@PROF", damage: "2d6 + @MAIN", text: "One incapacitated target only." },
+      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "CON DC 10", text: "If target is not undead, it is paralyzed until the end of its next turn on a failed save." },
     ],
     reactions: [],
     resources: [],
@@ -513,8 +513,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Turning Defiance", kind: "trait", text: "If it fails a saving throw against an effect that would turn undead, it may reroll and must use the new result." },
     ],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + 5", damage: "2d8 + 3", text: "+5 to hit. Hit: 12 (2d8 + 3) piercing damage." },
-      { name: "Claws", kind: "attack", roll: "1d20 + 5", damage: "2d6 + 3", save: "CON DC 10", text: "Non-undead target must make the Constitution save or be paralyzed until end of its next turn." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "+5 to hit. Hit: 12 (2d8 + 3) piercing damage." },
+      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "CON DC 10", text: "Non-undead target must make the Constitution save or be paralyzed until end of its next turn." },
     ],
     reactions: [],
     resources: [],
@@ -550,8 +550,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       {
         name: "Corrupted Claw",
         kind: "attack",
-        roll: "1d20 + 4",
-        damage: "2d6 + 2",
+        roll: "1d20 + @STR+@PROF",
+        damage: "2d6 + @STR",
         save: "CON DC 13",
         text: appendParts(
           "+4 to hit. Hit: 9 (2d6 + 2) slashing.",
@@ -591,7 +591,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Mad Certainty", kind: "trait", text: "Immune to Charmed. It genuinely believes it is still doing holy work." },
     ],
     actions: [
-      { name: "Corrupted Smite", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 4", text: "+6 to hit. Hit: 13 (2d8 + 4) necrotic damage." },
+      { name: "Corrupted Smite", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "+6 to hit. Hit: 13 (2d8 + 4) necrotic damage." },
       { name: "Soul Vomit", kind: "action", damage: "6d6", save: "CON DC 13", text: "Recharge 5-6. Each creature in a 15-foot cone takes necrotic damage on a failed save, or half on success. Rattled creatures save at disadvantage." },
     ],
     reactions: [],
@@ -625,7 +625,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Incorporeal Movement", kind: "trait", text: "Can move through creatures and objects as difficult terrain. Nonmagical weapon attacks pass through it and deal no damage. Takes 5 (1d10) force damage if it ends its turn inside an object." },
       { name: "Corrupted Light", kind: "trait", text: "Sheds dim sickly pale-gold light in a 10-foot radius." },
     ],
-    actions: [{ name: "Corrupted Shock", kind: "attack", roll: "1d20 + 4", damage: "1d8", text: "+4 to hit, reach 5 ft., one creature. Hit: 4 (1d8) corrupted radiant damage." }],
+    actions: [{ name: "Corrupted Shock", kind: "attack", roll: "1d20 + @WIS+@PROF", damage: "1d8", text: "+4 to hit, reach 5 ft., one creature. Hit: 4 (1d8) corrupted radiant damage." }],
     reactions: [],
     resources: [],
     notes: ["Run 3 in Last Directive.", "Damage Immunities: Lightning, Poison.", "Condition Immunities: Exhaustion, Grappled, Paralyzed, Poisoned, Prone, Restrained, Unconscious.", "Senses: Darkvision 120 ft., Passive Perception 12."],
@@ -661,7 +661,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Guard the Root", kind: "trait", text: "If combat reaches the inner storehouse, the Thornwarden stops maneuvering and fights only to hold the door." },
     ],
     actions: [
-      { name: "Antler-Crowned Blade", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing." },
+      { name: "Antler-Crowned Blade", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", text: "+5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing." },
       { name: "Collector's Order", kind: "action", text: "Two allied bandits within 30 ft each immediately make one weapon attack." },
     ],
     reactions: [
@@ -702,7 +702,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "No Wall Falls Twice", kind: "trait", text: "While above half HP, allied bandits within 20 ft add +1 to attack rolls." },
     ],
     actions: [
-      { name: "Breaching Scimitar", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
+      { name: "Breaching Scimitar", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing." },
       { name: "Move, Damn You", kind: "action", text: "Bonus Action. One allied bandit within 20 ft moves up to its speed." },
     ],
     reactions: [
@@ -744,7 +744,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Wrong Silhouette", kind: "trait", text: "The first attack each creature makes against it has disadvantage — its true position is a step from where it appears." },
     ],
     actions: [
-      { name: "Gloamknife", kind: "attack", roll: "1d20 + 5", damage: "1d6 + 3 + 1d4", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing plus 2 (1d4) cold — a cold that takes warmth out rather than putting chill in." },
+      { name: "Gloamknife", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN + 1d4", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing plus 2 (1d4) cold — a cold that takes warmth out rather than putting chill in." },
       { name: "Slip Between", kind: "action", text: "Bonus Action. Teleport up to 15 ft between dim light or darkness areas it can see." },
     ],
     reactions: [],
@@ -910,8 +910,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Rimebound Spellcasting (INT, DC 14, +6)", kind: "trait", text: "Cantrips: Rime Touch, Killing Frost. 1st (4 slots): Frost Ward, Rimestep. 2nd (3 slots): Bind in Ice (holds a creature fast, as hold person). 3rd (2 slots): Raise the Frozen." },
     ],
     actions: [
-      { name: "Rime Claw", kind: "attack", roll: "1d20 + 6", damage: "2d6 + 3", text: "+6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) cold. The wound crusts over with black frost." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 6", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +6 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success." },
+      { name: "Rime Claw", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + 3", text: "+6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) cold. The wound crusts over with black frost." },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +6 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success." },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance; it is not a reduced copy of the raised body). One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
       { name: "Rimestep (Bonus Action, 1st slot)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, holding the line." },
     ],
@@ -975,8 +975,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Frostbite Injection", kind: "trait", text: "The first time a target is hit by a Longsword or Rime Bolt on each of the Wight's turns, DC 13 CON or the target's maximum HP falls by the total damage taken until it finishes a long rest. A creature reduced to 0 maximum HP dies and freezes." },
     ],
     actions: [
-      { name: "Longsword", kind: "attack", roll: "1d20 + 5", damage: "1d8 + 3", text: "+5 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 3) slashing. One-handed behind the shield." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 5", damage: "2d8 + 3", text: "+5 to hit, range 30 ft., one target. Hit: 12 (2d8 + 3) cold. This version does not restrain." },
+      { name: "Longsword", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", text: "+5 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 3) slashing. One-handed behind the shield." },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "+5 to hit, range 30 ft., one target. Hit: 12 (2d8 + 3) cold. This version does not restrain." },
       { name: "Frozen Resurrection (1/fight)", kind: "action", text: "If a destroyed ally within 30 ft has lain dead a full turn — it fell on an earlier round and is still down at the start of the Wight's turn — the Wight raises it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — spawn/add it as a new monster instance, not a reduced copy of the raised body). Full form only: once the Wight has itself been raised into a husk, it can no longer do this. A husk cannot raise anything; one revival per body, and the chain ends." },
       { name: "Rimestep (Bonus Action, Recharge 5-6)", kind: "action", recharge: "5-6", text: "Teleport up to 30 ft to a seen space." },
     ],
@@ -1085,7 +1085,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", spellSlotLevel: 4, save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +7 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it." },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + @MAIN + 1d8", save: "STR DC 15", text: "Ranged spell attack, +7 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it." },
       { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", damage: "4d6", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
       { name: "Rimestep (Bonus Action)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
@@ -1150,7 +1150,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Death Burst", kind: "trait", text: "At 0 HP the Drifter comes apart. Every creature within 15 ft makes a DC 15 CON save, taking 21 (6d6) cold on a fail, half on a success. Flat DC, flat radius, every party size — the band moves HP, never abilities. Spread before the killing blow." },
     ],
     actions: [
-      { name: "Frost Slam", kind: "attack", roll: "1d20 + 5", damage: "2d8 + 2", text: "+5 to hit, reach 10 ft., one target. Hit: 11 (2d8 + 2) cold." },
+      { name: "Frost Slam", kind: "attack", roll: "1d20 + 5", damage: "2d8 + @STR", text: "+5 to hit, reach 10 ft., one target. Hit: 11 (2d8 + 2) cold." },
       { name: "Shadow Shift (Bonus Action)", kind: "action", text: "Teleport up to 20 ft between dim light or darkness areas it can see — a flat 20 ft at every party size. Magical effect, so Counterspell can attempt to block it. It never attacks twice from the same position." },
     ],
     reactions: [],
@@ -1210,7 +1210,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Light-Struck", kind: "trait", text: "In bright light, the Cloak has disadvantage on attack rolls and ability checks. A lantern is a weapon against it — and against Reknit in the Cold." },
     ],
     actions: [
-      { name: "Frostshadow Claw", kind: "attack", roll: "1d20 + 6", damage: "3d8 + 4", text: "+6 to hit, reach 5 ft., one target. Hit: 17 (3d8 + 4) psychic — the cold of being unmade, not the cold of weather. It does not bleed you; it thins you." },
+      { name: "Frostshadow Claw", kind: "attack", roll: "1d20 + @ATK", damage: "3d8 + @MAIN", text: "+6 to hit, reach 5 ft., one target. Hit: 17 (3d8 + 4) psychic — the cold of being unmade, not the cold of weather. It does not bleed you; it thins you." },
       { name: "Fold Into the Cold (Bonus Action)", kind: "action", text: "While in dim light or darkness, the Cloak takes the Hide action. The Pale Drifter's Pale Aura sheds dim light in a 20-ft radius — the Drifter IS its cover. Run them together or the Cloak loses half its kit." },
     ],
     reactions: [],
@@ -1288,8 +1288,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Bone Field Raise", kind: "trait", text: "When Bone-Pile Return resolves, one Lesser Wendigo rises from the bone field. Roll initiative for it immediately. It has its own initiative count: if that count has not passed in the current round, it acts this round; otherwise, its first turn is in the next round. The Lesser uses the party-size HP band (34 / 45 / 56 for 3P / 4P / 5P) and is a SEPARATE add pool — its HP is never multiplied by the Wight's own defences." },
     ],
     actions: [
-      { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + 4", save: "STR DC 15", text: "+7 to hit, reach 5 ft. Hit: 15 (2d10 + 4) cold. DC 15 STR save or grappled." },
-      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 8", damage: "3d8 + 4", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
+      { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + @MAIN", save: "STR DC 15", text: "+7 to hit, reach 5 ft. Hit: 15 (2d10 + 4) cold. DC 15 STR save or grappled." },
+      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 8", damage: "3d8 + @MAIN", text: "+7 to hit, one grappled creature. Hit: 17 (3d8 + 4) cold. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
       { name: "Hungering Leap", kind: "action", recharge: "5-6", save: "STR DC 16", damage: "2d6", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
       { name: "Mark Prey (Legendary Action, 1/round)", kind: "action", text: "The Wendigo marks one creature it can see. Until the end of that creature's next turn, the Wendigo has advantage on attacks against it and ignores any bonus to its AC from shields. This is its ONLY legendary action — one per round." },
     ],
@@ -1355,7 +1355,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Deep-Footed", kind: "trait", text: "While touching natural ground, Snarlroot has advantage on saves against being knocked prone or moved against its will." },
     ],
     actions: [
-      { name: "Knotted Club", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (1d12 + 4) bludgeoning." },
+      { name: "Knotted Club", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (1d12 + 4) bludgeoning." },
       { name: "Sweeping Growth (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "Choose one creature on natural ground within 20 ft. It makes a DC 15 Strength save. On a failure, roots carry it up to 15 ft. along the ground to an unoccupied space and it cannot take reactions until the start of its next turn. On a success, it can be moved up to 5 ft. only." },
     ],
     reactions: [
@@ -1394,7 +1394,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Name the Threshold", kind: "action", economyCost: "bonus", text: "Bonus Action: choose a 15-ft. line of natural ground within 15 ft. Until the start of the Warden’s next turn, the line is visibly braced by roots and bent branches. The Warden can use Bar the Way when a hostile creature crosses that line." },
-      { name: "Long Spear", kind: "attack", roll: "1d20 + 6", damage: "1d10 + 3", text: "Melee Weapon Attack: +6 to hit, reach 10 ft.; Hit: 8 (1d10 + 3) piercing." },
+      { name: "Long Spear", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "1d10 + @STR", text: "Melee Weapon Attack: +6 to hit, reach 10 ft.; Hit: 8 (1d10 + 3) piercing." },
     ],
     reactions: [
       { name: "Bar the Way", kind: "reaction", save: "STR DC 15", text: "When a hostile creature crosses the named threshold, move up to 10 ft. without provoking. If the Warden ends within reach, the creature makes a DC 15 Strength save. On a failure, its speed becomes 0 for the rest of the turn. On a success, its remaining speed is reduced by 10 ft." },
@@ -1432,7 +1432,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Pollen Map", kind: "trait", text: "When Larkskein hits a creature, that creature leaves a faint visible trail until the start of Larkskein’s next turn; it cannot benefit from being hidden from Larkskein during that time." },
     ],
     actions: [
-      { name: "Glass-Thorn", kind: "attack", roll: "1d20 + 8", damage: "2d10 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 16 (2d10 + 5) piercing." },
+      { name: "Glass-Thorn", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 16 (2d10 + 5) piercing." },
       { name: "Folded Distance (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Choose a 15-ft.-radius area within 60 ft. Until the start of Larkskein’s next turn, creatures treat every 10 ft. moved inside the area as 5 ft. when moving toward the center and 15 ft. when moving away. No creature loses an action or is forcibly moved." },
     ],
     reactions: [
@@ -1471,7 +1471,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Snap to the Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
-      { name: "Razor Quill", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5 slashing + 1d6", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
+      { name: "Razor Quill", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN slashing + 1d6", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
       { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
     reactions: [
@@ -1510,7 +1510,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Marrow Grip", kind: "trait", text: "A creature hit by Hooking Claw has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack." },
     ],
     actions: [
-      { name: "Hooking Claw", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing." },
+      { name: "Hooking Claw", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", text: "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing." },
       { name: "Crushing Cast (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", damage: "4d8", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
     ],
     reactions: [
@@ -1549,7 +1549,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Survey Stake", kind: "action", economyCost: "bonus", text: "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover." },
-      { name: "Crystal Bolt", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
+      { name: "Crystal Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force." },
       { name: "Refracted Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
     ],
     reactions: [
@@ -1594,7 +1594,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Night-Garden Native", kind: "trait", text: "The Crone ignores difficult terrain created by plants and vegetation, and nonmagical plants do not impede her movement." },
     ],
     actions: [
-      { name: "Claw", kind: "attack", roll: "1d20 + 7", damage: "2d8 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage." },
+      { name: "Claw", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "2d8 + @STR", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage." },
       { name: "Venomous Eruption (1/Day)", kind: "action", save: "WIS DC 17", damage: "6d8", text: "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned." },
       { name: "Blighted Vitality (Recharge 4–6)", kind: "action", save: "CON DC 17", recharge: "4-6", text: "Choose up to two creatures within 60 ft. Each makes a DC 17 Constitution save. On a failure, healing received is halved until the end of the Crone’s second turn after the effect begins. Reapplying the effect does not extend or stack the duration." },
     ],
@@ -1635,8 +1635,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Shadow Shroud (1/Day)", kind: "trait", text: "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not." },
     ],
     actions: [
-      { name: "Horn", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage." },
-      { name: "Hooves", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage." },
+      { name: "Horn", kind: "attack", roll: "1d20 + 8", damage: "2d8 + @MAIN", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage." },
+      { name: "Hooves", kind: "attack", roll: "1d20 + 8", damage: "2d6 + @MAIN", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage." },
     ],
     reactions: [
     ],
@@ -1674,7 +1674,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Set the Table", kind: "action", economyCost: "bonus", text: "Bonus Action: create one new Offered Shelter circle within 30 ft. Maximum two circles at a time." },
-      { name: "Bark Needle", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) piercing." },
+      { name: "Bark Needle", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) piercing." },
       { name: "Close the Bloom (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible 10-ft. area of flowers or natural growth within 60 ft. Creatures there make a DC 16 Dexterity save; 18 (4d8) slashing on failure, half on success, and a creature that fails cannot take reactions until the end of its turn." },
     ],
     reactions: [
@@ -1713,7 +1713,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Unyielding Bearing", kind: "trait", text: "The Regent has advantage on saving throws against being knocked prone." },
     ],
     actions: [
-      { name: "Thorn Talon", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 14 (2d8 + 5) slashing. Multiattack: two Thorn Talon attacks." },
+      { name: "Thorn Talon", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 14 (2d8 + 5) slashing. Multiattack: two Thorn Talon attacks." },
       { name: "Invitation Withdrawn (Recharge 5-6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Each enemy of the Regent's choice within 15 ft. makes a DC 16 Strength save. On a failure, a creature takes 18 (4d8) slashing damage, is pushed 15 ft. directly away from the Regent, and cannot take reactions until the start of its next turn. On a success, it takes half damage and is pushed 5 ft. This action REPLACES the Regent's Multiattack." },
     ],
     reactions: [
@@ -1756,7 +1756,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Interposing Bulk", kind: "trait", text: "A hostile creature moving through the Bulwark's reach toward a creature on the opposite side of the Bulwark treats that movement as difficult terrain." },
     ],
     actions: [
-      { name: "Heavy Fist", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Fist attacks." },
+      { name: "Heavy Fist", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Fist attacks." },
     ],
     reactions: [
       { name: "Interpose", kind: "reaction", text: "When another creature within 10 ft. of the Bulwark is hit by an attack, the Bulwark can move up to 5 ft. toward that creature without provoking opportunity attacks. If it ends within 5 ft. of that creature, reduce the triggering damage by 8. The Bulwark then takes 4 damage that cannot be reduced or prevented. Once per round." },
@@ -1820,7 +1820,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     actions: [
       // ⚠ BOTH ARE HOSTILE-ONLY. The Host contributes NO attack DPR while neutral — the
       // encounter page prices its opening trace at 0 and its hostile trace at ~19 DPR.
-      { name: "Withering Word (Hostile Only)", kind: "attack", roll: "1d20 + 8", damage: "1d8 + 5", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 9 (1d8 + 5) psychic. Hostile only — the Host makes no attack while neutral." },
+      { name: "Withering Word (Hostile Only)", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", text: "Melee or Ranged Spell Attack: +8 to hit, reach 10 ft. or range 60 ft.; Hit: 9 (1d8 + 5) psychic. Hostile only — the Host makes no attack while neutral." },
     ],
     reactions: [
     ],
@@ -1860,7 +1860,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Moonless Swarm", kind: "trait", text: "Mothwake can move through the spaces of other creatures, but cannot end there." },
     ],
     actions: [
-      { name: "Hushwing", kind: "attack", roll: "1d20 + 8", damage: "2d6 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 12 (2d6 + 5) psychic." },
+      { name: "Hushwing", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 12 (2d6 + 5) psychic." },
       { name: "Black Petal Fall (Recharge 5–6)", kind: "action", save: "WIS DC 16", recharge: "5-6", damage: "4d8", text: "20-ft.-radius sphere within 90 ft.; creatures inside make a DC 16 Wisdom save. Failure: 18 (4d8) psychic and the creature cannot gain advantage on attack rolls until the end of its next turn. Success: half damage." },
     ],
     reactions: [
@@ -1899,7 +1899,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Rooted Turn", kind: "action", economyCost: "bonus", text: "Bonus Action: speed becomes 0 until the start of the next turn; AC increases by 2 and it has advantage on saves against forced movement. It cannot use this after moving more than 10 ft. this turn." },
-      { name: "Tusk", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing." },
+      { name: "Tusk", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "2d6 + @STR", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing." },
       { name: "Canopy Rush (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Move up to 30 ft. in a line through natural vegetation. One creature in the path makes a DC 16 Strength save. Failure: 18 (4d8) bludgeoning and pushed up to 15 ft.; success: half damage and no push." },
     ],
     reactions: [
@@ -1938,7 +1938,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Scar Slip", kind: "action", economyCost: "bonus", text: "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation." },
-      { name: "Raking Claw", kind: "attack", roll: "1d20 + 8", damage: "1d12 + 5", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
+      { name: "Raking Claw", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing." },
       { name: "Warping Cut (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round." },
     ],
     reactions: [
@@ -1976,7 +1976,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Drive Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: place one nail in an adjacent solid surface. Maximum two. A nail is an object (AC 13, 8 HP). A straight line up to 20 ft. long between Nail Saint and a nail is a claimed line until the start of the next turn." },
-      { name: "Boundary Spike", kind: "attack", roll: "1d20 + 8", damage: "2d8 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force." },
+      { name: "Boundary Spike", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force." },
       { name: "Hammer the Border (Recharge 5–6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success." },
     ],
     reactions: [
@@ -2014,8 +2014,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Seasoned by Severity", kind: "trait", text: "The Reeve has advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions." },
     ],
     actions: [
-      { name: "Shearing Cut", kind: "attack", roll: "1d20 + 9", damage: "2d8 + 5", text: "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each." },
-      { name: "Spoiling Cut", kind: "attack", roll: "1d20 + 9", damage: "1d8 + 5", text: "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses." },
+      { name: "Shearing Cut", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", text: "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each." },
+      { name: "Spoiling Cut", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", text: "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses." },
     ],
     reactions: [
     ],
@@ -2054,7 +2054,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Fey Mind", kind: "trait", text: "Gloam Harrow has advantage on saving throws against being Charmed, and magic cannot put her to sleep." },
     ],
     actions: [
-      { name: "Winter Needle", kind: "attack", roll: "1d20 + 8", damage: "1d10 + 5", text: "Ranged Spell Attack: +8 to hit, range 90 ft., one target. Hit: 10 (1d10 + 5) cold and psychic damage." },
+      { name: "Winter Needle", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 90 ft., one target. Hit: 10 (1d10 + 5) cold and psychic damage." },
       { name: "Winter’s Toll", kind: "action", text: "Choose a point within 60 ft. Until the start of Harrow’s next turn, a 15-ft.-radius area is steeped in biting Fey glamour. Harrow’s allies in the area gain +3 to attack rolls and saving throws. Hostile creatures in the area take -3 to attack rolls and saving throws. The area ends early if Harrow is incapacitated." },
     ],
     reactions: [
@@ -2095,7 +2095,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Red Script", kind: "action", economyCost: "bonus", damage: "1d8", text: "Bonus Action: choose one creature within 90 ft. Clear Angle: ignore half and three-quarters cover against it, and the first Ember Lance this turn gains +2 to hit. Closing Stroke: the first Ember Lance that hits it this turn deals an extra 4 (1d8) fire damage. Only one Red Script can be active at a time." },
-      { name: "Ember Lance", kind: "attack", roll: "1d20 + 9", damage: "2d10 + 5", text: "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks." },
+      { name: "Ember Lance", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", text: "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks." },
     ],
     reactions: [
       { name: "Cinder Skip", kind: "reaction", text: "When Brandwing is hit by an attack or targeted by a spell, the triggering attack or spell resolves completely. Brandwing then teleports up to 15 ft. to an unoccupied space it can see." },
@@ -2136,7 +2136,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Oppressive Presence", kind: "trait", text: "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions." },
     ],
     actions: [
-      { name: "Iron Grasp", kind: "attack", roll: "1d20 + 8", damage: "1d10 + 4", text: "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time." },
+      { name: "Iron Grasp", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", text: "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time." },
     ],
     reactions: [
       { name: "Commanding Presence", kind: "reaction", text: "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances." },
@@ -2176,8 +2176,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Two-Handed Hold", kind: "trait", text: "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends." },
     ],
     actions: [
-      { name: "Grasping Limb", kind: "attack", roll: "1d20 + 9", damage: "1d6 + 5", routineSlots: 2, text: "Melee Weapon Attack: +9 to hit, reach 10 ft., one Medium or smaller creature. Hit: 8 (1d6 + 5) bludgeoning damage, and the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target." },
-      { name: "Heavy Blow", kind: "attack", roll: "1d20 + 9", damage: "1d8 + 5", routineSlots: 2, text: "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 9 (1d8 + 5) bludgeoning damage." },
+      { name: "Grasping Limb", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", routineSlots: 2, text: "Melee Weapon Attack: +9 to hit, reach 10 ft., one Medium or smaller creature. Hit: 8 (1d6 + 5) bludgeoning damage, and the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target." },
+      { name: "Heavy Blow", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", routineSlots: 2, text: "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 9 (1d8 + 5) bludgeoning damage." },
       { name: "Cast Aside", kind: "action", economyCost: "free", text: "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends." },
     ],
     reactions: [
@@ -2218,7 +2218,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Scent the Expense", kind: "trait", text: "Whenever a hostile creature the Reaver can see within 60 ft. expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class-feature uses, item charges, and similar resources count; recurring once-per-turn riders and other effects that do not consume a limited use do not. At the start of the Reaver’s turn, its current quarry locks until the end of that turn and cannot be replaced during that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage." },
     ],
     actions: [
-      { name: "Rending Talon", kind: "attack", roll: "1d20 + 8", damage: "1d10 + 4 slashing + 2d6 fire", text: "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks." },
+      { name: "Rending Talon", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN slashing + 2d6 fire", text: "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks." },
     ],
     reactions: [
     ],
@@ -2257,7 +2257,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Broken Gleam", kind: "action", economyCost: "bonus", text: "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground." },
-      { name: "Bite", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 4 piercing + 1d6 radiant", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant." },
+      { name: "Bite", kind: "attack", roll: "1d20 + 7", damage: "2d6 + @MAIN piercing + 1d6 radiant", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant." },
       { name: "Moonshard Breath (Recharge 5–6)", kind: "action", save: "DEX DC 14", recharge: "5-6", damage: "4d6", text: "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success." },
     ],
     reactions: [
@@ -2450,7 +2450,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Fracture Seed", kind: "action", economyCost: "bonus", text: "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated." },
-      { name: "Rift Lance", kind: "attack", roll: "1d20 + 10", damage: "2d8 + 6", text: "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (2d8 + 6) psychic." },
+      { name: "Rift Lance", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + 6", text: "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (2d8 + 6) psychic." },
       { name: "Unmake Distance (Recharge 5–6)", kind: "action", save: "INT DC 18", recharge: "5-6", damage: "6d8", text: "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice." },
       { name: "Mind Hook", kind: "action", save: "WIS DC 18", legendaryCost: 1, damage: "2d6", text: "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (2d6) psychic and moved 10 ft. toward the origin; success: no effect." },
     ],
@@ -2494,7 +2494,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Anchor the Wrong", kind: "action", economyCost: "bonus", text: "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn." },
-      { name: "Fist", kind: "attack", roll: "1d20 + 10", damage: "2d10 + 6", text: "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning." },
+      { name: "Fist", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", text: "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning." },
       { name: "Collapse Space (Recharge 5–6)", kind: "action", save: "STR DC 18", recharge: "5-6", damage: "5d8", text: "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone." },
     ],
     reactions: [
