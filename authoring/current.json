@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T07:04:15.129Z",
-  "digest": "fnv1a-cf9eda31-128339",
+  "exportedAt": "2026-08-26T07:07:16.856Z",
+  "digest": "fnv1a-8abc892a-128384",
   "monsters": [
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
@@ -1166,6 +1166,9 @@
         "defaultState": "hp-bar",
         "hiddenName": "Demon Knight of Punishment",
         "revealedName": "Demon Knight of Punishment"
+      },
+      "dmEdited": {
+        "at": "2026-08-26T07:06:12.620Z"
       }
     },
     {
