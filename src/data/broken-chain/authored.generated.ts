@@ -1610,7 +1610,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 17,
-      "maxHp": 153,
+      "maxHp": 150,
       "speed": "30 ft.",
       "defenses": [
         {
@@ -1692,8 +1692,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Rift Lance",
         "kind": "attack",
-        "roll": "1d20+@SPELL",
-        "damage": "3d10+@MAIN",
+        "roll": "1d20+@INT+@PB",
+        "damage": "3d10+@INT",
         "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
         "routineSlots": 2
       },
@@ -1702,7 +1702,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "action",
         "save": "INT",
         "recharge": "5-6",
-        "damage": "6d8+@MAIN",
+        "damage": "6d8+@INT",
         "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8+@Main) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
       },
       {
@@ -1710,8 +1710,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "action",
         "save": "WIS",
         "legendaryCost": 1,
-        "damage": "3d8+6",
-        "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+6) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
+        "damage": "3d8+@INT",
+        "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+@INT) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
         "onSave": "half"
       }
     ],
@@ -1733,7 +1733,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Thought Harrower"
     },
     "dmEdited": {
-      "at": "2026-08-26T22:44:53.061Z"
+      "at": "2026-08-26T22:51:08.955Z"
     }
   },
   {
@@ -1883,15 +1883,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "dragon",
       "ac": 16,
-      "maxHp": 75,
+      "maxHp": 55,
       "speed": "30 ft., fly 60 FT",
       "defenses": [
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "First attack each round at disadvantage",
-          "note": "profile"
-        },
         {
           "name": "First attack each round at disadvantage",
           "ehpMultiplier": 1.0477493435640757,
@@ -1909,12 +1903,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       ],
       "cr": 4,
       "attacksPerTurn": 3,
-      "damageResponses": [
-        {
-          "type": "Fire",
-          "response": "resistant"
-        }
-      ]
+      "damageResponses": []
     },
     "abilities": [
       {
@@ -2004,7 +1993,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Veilbound Drake Guard"
     },
     "dmEdited": {
-      "at": "2026-08-26T22:47:45.545Z"
+      "at": "2026-08-26T23:10:04.573Z"
     }
   }
 ];
@@ -5262,10 +5251,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-aaafcee4-105783";
+export const AUTHORED_DIGEST = "fnv1a-efe80438-105602";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T22:51:57.022Z";
+export const AUTHORED_AT = "2026-08-26T23:13:53.895Z";
 
 /**
  * Merge authored content over a bundled list by id.
