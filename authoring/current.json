@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-25T23:36:06.586Z",
-  "digest": "fnv1a-df3737ee-92974",
+  "exportedAt": "2026-08-26T03:25:08.812Z",
+  "digest": "fnv1a-b550686a-93178",
   "monsters": [
     {
       "templateId": "broken-chain:act3:veil-torn-dragon:v1",
@@ -99,7 +99,7 @@
           "kind": "attack",
           "roll": "1d20 + @ATK",
           "damage": "2d10 + @STR piercing + 2d6 radiant",
-          "text": "Melee Weapon Attack: +9 to hit, reach 10 ft.; Hit: 16 (2d10 + 5) piercing plus 7 (2d6) radiant."
+          "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage"
         },
         {
           "name": "Claw",
@@ -109,19 +109,13 @@
           "text": "Melee Weapon Attack: +9 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing."
         },
         {
-          "name": "Fractured Dream Breath (Recharge 5–6)",
+          "name": "Veilstorm Breath",
           "kind": "action",
-          "save": "CON",
+          "save": "DEX",
           "recharge": "5-6",
-          "text": "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends."
-        },
-        {
-          "name": "Moonfall Breath (Recharge 5–6)",
-          "kind": "action",
-          "save": "DEX DC 17",
-          "recharge": "5-6",
-          "damage": "8d8+@MAIN",
-          "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge."
+          "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) lightning damage on failure, half on success. ",
+          "range": "90 FT, 10 FT Wide",
+          "damage": "8d8"
         },
         {
           "name": "Tail Sweep",
@@ -280,20 +274,25 @@
     },
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
-      "name": "Veil-Torn Wyrmling",
+      "name": "Veilbound Drake Guard",
       "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
       "encounterLabel": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
       "stats": {
         "kind": "dragon",
-        "ac": 17,
+        "ac": 16,
         "maxHp": 75,
-        "speed": "30 ft., glide 30 ft.",
+        "speed": "30 ft., fly 60 FT",
         "defenses": [
           {
-            "name": "Moon-Slick Scales",
-            "ehpMultiplier": 1.047749,
+            "name": "Resistance - ~50% of opposing damage",
+            "ehpMultiplier": 1.3418341811719772,
             "rule": "First attack each round at disadvantage",
-            "note": "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round."
+            "note": "profile"
+          },
+          {
+            "name": "First attack each round at disadvantage",
+            "ehpMultiplier": 1.0477493435640757,
+            "note": "Read from \"Moon-Slick Scales\" (trait) on \"first attack each round at disadvantage\"."
           }
         ],
         "size": "Medium",
@@ -301,10 +300,12 @@
         "archetype": "skirmisher",
         "skills": [
           {
-            "label": "Perception",
-            "modifier": 5
+            "label": "Stealth",
+            "modifier": 4
           }
-        ]
+        ],
+        "cr": 4,
+        "attacksPerTurn": 3
       },
       "abilities": [
         {
@@ -313,16 +314,16 @@
         },
         {
           "label": "DEX",
-          "value": "18 (+4)",
-          "save": 7
+          "value": "15 (+2)",
+          "saveProficient": true
         },
         {
           "label": "CON",
-          "value": "14 (+2)"
+          "value": "16 (+3)"
         },
         {
           "label": "INT",
-          "value": "14 (+2)"
+          "value": "10 (+0)"
         },
         {
           "label": "WIS",
@@ -330,8 +331,7 @@
         },
         {
           "label": "CHA",
-          "value": "16 (+3)",
-          "save": 6
+          "value": "10 (+0)"
         }
       ],
       "traits": [
@@ -339,40 +339,56 @@
           "name": "Moon-Slick Scales",
           "kind": "trait",
           "text": "The first opportunity attack made against the wyrmling each round has disadvantage."
+        },
+        {
+          "name": "Multiattack",
+          "kind": "trait",
+          "text": "Multiattack. The drake makes three attacks: one with its Bite, one with its Claws, and one with its Tail."
         }
       ],
       "actions": [
-        {
-          "name": "Broken Gleam",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground."
-        },
         {
           "name": "Bite",
           "kind": "attack",
           "roll": "1d20 + 7",
           "damage": "2d6 + 4 piercing + 1d6 radiant",
-          "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant."
+          "text": "Hit: 9 (2d6 + 2) piercing damage."
         },
         {
-          "name": "Moonshard Breath (Recharge 5–6)",
+          "name": "Veil Breath",
           "kind": "action",
-          "save": "DEX DC 14",
-          "recharge": "5-6",
+          "save": "DEX",
+          "recharge": "6",
           "damage": "4d6",
-          "text": "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success."
+          "text": "The drake exhales corrupted Fey energy in a 20-foot cone. Each creature in that area must make a Dexterity saving throw, taking 14 (4d6) fire on a failed save, or half as much on a successful one.",
+          "onSave": "half",
+          "range": "20 FT cone"
+        },
+        {
+          "name": "Claw",
+          "kind": "action",
+          "roll": "1d20+@ATK",
+          "damage": "2d6+@STR",
+          "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage."
+        },
+        {
+          "name": "Tail",
+          "kind": "action",
+          "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
+          "roll": "1d20@ATK",
+          "damage": "2d6@STR",
+          "save": "STR"
         }
       ],
       "reactions": [],
       "resources": [],
       "notes": [
-        "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early. Both wyrmlings use the same standalone block."
+        "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early"
       ],
       "visibility": {
         "defaultState": "hp-bar",
-        "hiddenName": "Veil-Torn Wyrmling",
-        "revealedName": "Veil-Torn Wyrmling"
+        "hiddenName": "Corrupted Guards",
+        "revealedName": "Veilbound Drake Guard"
       }
     }
   ],
@@ -3273,6 +3289,21 @@
       ],
       "owner": "campaign",
       "actTag": "Act 3",
+      "order": 6
+    },
+    {
+      "id": "act3-e6-gate-ii-the-mirrors",
+      "name": "Act 3 E6 - Gate II: The Mirrors",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:elemental-mirror:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Mirror"
+        }
+      ],
+      "owner": "campaign",
       "order": 6
     },
     {
