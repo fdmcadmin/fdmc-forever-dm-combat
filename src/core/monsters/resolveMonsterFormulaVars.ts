@@ -100,7 +100,25 @@ export function monsterFormulaVars(template: MainMonsterTemplate): Record<string
   vars.ATK = signed(main + pb);
   vars.ATTACK = signed(main + pb);
   vars.SPELL = signed(main + pb);
+  /**
+   * `@DC` — 8 + @MAIN + @PB, the creature's headline save DC.
+   *
+   * ⚠ @MAIN IS A DEFAULT, NOT A LAW, and one DC per creature is wrong for anything that casts
+   * from more than one place. Christopher: *"dc should derive from 8+X+pb (this being a choice of
+   * the ABS that we choose for that attack)."* So every ability gets its own token and the author
+   * picks per action: `@DCDEX`, `@DCCON`, and so on.
+   *
+   * ⚠ THE ABILITY IN "DEX DC 17" IS THE TARGET'S ROLL, NOT THE SOURCE OF THE DC. A creature's DC
+   * comes from the ability POWERING the effect; the named save is what the party rolls against it.
+   * Deriving `@DC` from the save's own ability would look tidy and would silently move 41 authored
+   * DCs — the Elemental Mirror's Stormcharged Fireball would drop DC 15 to 14 because DEX is what
+   * the party rolls, not what the mirror casts with. That is why this is a per-action CHOICE the
+   * author makes rather than something inferred from the save line.
+   */
   vars.DC = String(8 + main + pb);
+  for (const label of ABILITY_ORDER) {
+    vars[`DC${label}`] = String(8 + abilityModifier(scores[label]) + pb);
+  }
   return vars;
 }
 

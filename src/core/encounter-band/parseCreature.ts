@@ -23,7 +23,7 @@
  */
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
-import { resolveMonsterActionFormulas } from "../monsters/resolveMonsterFormulaVars";
+import { resolveMonsterActionFormulas, resolveMonsterFormula } from "../monsters/resolveMonsterFormulaVars";
 import type { ParsedFeature, FeatureAssumption } from "./featureResolver";
 import { spellProfile } from "./compactImport";
 import { conditionsImposedBy } from "./controlPricing";
@@ -314,6 +314,8 @@ function parseSection(
   section: "traits" | "actions" | "reactions" | "legendary" | "lair",
   _creature: string,
   assumptions: FeatureAssumption[],
+  /** The creature's own 8 + X + proficiency, for a save that names an ability and no number. */
+  derivedSaveDc: number | undefined,
 ): ParsedFeature[] {
   const out: ParsedFeature[] = [];
   for (const a of entries ?? []) {
@@ -330,8 +332,37 @@ function parseSection(
       activationType,
       damage: a.damage,
       attackBonus: parseAttackBonus(a.roll),
-      saveDc: parseSaveDc(a.save ?? a.text),
-      saveAbility: parseSaveAbility(a.save ?? a.text),
+      /**
+       * ⚠ THE FIELD FIRST, THEN THE TEXT — PER FACT, NOT PER SOURCE.
+       *
+       * This read `parseSaveDc(a.save ?? a.text)`. The `??` chooses a SOURCE, so a save field
+       * holding "DEX" — an ability and no number — won outright and the `DC 17` printed two
+       * inches away in the text was never looked at. The feature then had damage, no attack
+       * bonus and no DC, which is the definition of AUTOMATIC: the Veil-Torn Dragon's Veilstorm
+       * Breath and the Drake Guard's Veil Breath both billed full damage with no save at all.
+       *
+       * Christopher: *"this is why i get [the assumption] even though dex save is in those
+       * boxes."* Exactly — the box being filled is what suppressed the fallback.
+       *
+       * Each fact falls back on its own now: a field with an ability but no DC contributes the
+       * ability and lets the text supply the number.
+       */
+      /**
+       * ⚠ AND WHEN IT IS PRINTED NOWHERE, IT IS DERIVED. Christopher: *"i shouldnt need to put dc
+       * 17 in the text it should read from dex and the choice of X ABS+PB."*
+       *
+       * An action that names a save ability HAS a save — the DC is 8 + X + proficiency, and the
+       * only open question is which X. Demanding the number be typed as well made a creature that
+       * says "make a Dexterity saving throw" price as AUTOMATIC, billing full damage with no save
+       * at all, which is the opposite of what the block says.
+       *
+       * X defaults to the creature's main ability and is chosen per action with `@DCSTR`…`@DCCHA`
+       * in the save field. It is NOT taken from the named save: that ability is what the PARTY
+       * rolls, not what powers the effect.
+       */
+      saveDc: parseSaveDc(a.save) ?? parseSaveDc(a.text)
+        ?? ((parseSaveAbility(a.save) ?? parseSaveAbility(a.text)) ? derivedSaveDc : undefined),
+      saveAbility: parseSaveAbility(a.save) ?? parseSaveAbility(a.text),
       /**
        * Reachability inputs, all DERIVED. The DM authors one `range` string exactly as on the PC
        * sheet; whether it reads as a melee reach or a ranged distance is the parser's job, not a
@@ -412,6 +443,14 @@ export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature 
   };
   const assumptions: FeatureAssumption[] = [];
   const name = template.name;
+  /**
+   * The creature's own save DC: 8 + its main ability + its proficiency bonus.
+   *
+   * Used for any action that names a save ability and prints no number. One derivation, read off
+   * the same `monsterProficiency` the formula variables and the save ticks use, so a creature
+   * cannot end up with two different DCs depending on which surface asks.
+   */
+  const derivedSaveDc = Number(resolveMonsterFormula("@DC", rawTemplate)) || undefined;
   const acRaw = typeof template.stats.ac === "number"
     ? template.stats.ac
     : Number.parseInt(String(template.stats.ac), 10);
@@ -426,11 +465,11 @@ export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature 
   };
 
   const features = [
-    ...parseSection(template.traits as RawAction[] | undefined, "traits", name, assumptions),
-    ...parseSection(template.actions as RawAction[] | undefined, "actions", name, assumptions),
-    ...parseSection(t.reactions, "reactions", name, assumptions),
-    ...parseSection(t.legendaryActions, "legendary", name, assumptions),
-    ...parseSection(t.lairActions, "lair", name, assumptions),
+    ...parseSection(template.traits as RawAction[] | undefined, "traits", name, assumptions, derivedSaveDc),
+    ...parseSection(template.actions as RawAction[] | undefined, "actions", name, assumptions, derivedSaveDc),
+    ...parseSection(t.reactions, "reactions", name, assumptions, derivedSaveDc),
+    ...parseSection(t.legendaryActions, "legendary", name, assumptions, derivedSaveDc),
+    ...parseSection(t.lairActions, "lair", name, assumptions, derivedSaveDc),
   ];
 
   /**
