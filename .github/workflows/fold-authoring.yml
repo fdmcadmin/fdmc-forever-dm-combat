@@ -86,6 +86,7 @@ jobs:
           npm run check:savedcs
           npm run check:multiattack
           npm run check:reactions
+          npm run check:activation
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
       # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the

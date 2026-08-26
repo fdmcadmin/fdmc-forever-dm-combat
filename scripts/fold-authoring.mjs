@@ -259,7 +259,34 @@ export const AUTHORED_AT = ${JSON.stringify(foldedAt)};
 export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) => string): T[] {
   if (authored.length === 0) return bundled;
   const overrides = new Map(authored.map(a => [idOf(a), a]));
-  const merged = bundled.map(b => overrides.get(idOf(b)) ?? b);
+  const merged = bundled.map(b => {
+    const over = overrides.get(idOf(b));
+    if (!over) return b;
+    /**
+     * ⚠ FIELD-WISE, NOT WHOLESALE — OR THE SEED CAN NEVER GAIN A FIELD AGAIN.
+     *
+     * This replaced the bundled entry outright. That is fine while the two describe the same
+     * shape, and it silently freezes the library the moment the shape grows: the equipment export
+     * carries ALL 137 items, so every seeded item is also an "authored" one, and an authored copy
+     * taken before a field existed permanently shadowed it.
+     *
+     * The case that surfaced it: an activation field — what using an item costs — was added and written
+     * onto 21 library items, and not one of them reached the app. Every single row was overridden
+     * by its own snapshot from a browser that predated the field.
+     *
+     * A field the authored copy does not MENTION is not a decision to remove it; it is a field
+     * that did not exist when the export was taken. So an authored copy overrides the fields it
+     * actually states, and the seed supplies the rest.
+     *
+     * ⚠ THE COST, STATED: clearing a field back to empty no longer travels through the fold —
+     * the seed's value returns. That is the rarer case and a visible one, and it is a far smaller
+     * price than a library that can never be improved again.
+     */
+    const stated = Object.fromEntries(
+      Object.entries(over as Record<string, unknown>).filter(([, v]) => v !== undefined),
+    );
+    return { ...(b as Record<string, unknown>), ...stated } as T;
+  });
   const bundledIds = new Set(bundled.map(idOf));
   return [...merged, ...authored.filter(a => !bundledIds.has(idOf(a)))];
 }

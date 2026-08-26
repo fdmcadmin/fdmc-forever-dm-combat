@@ -10,6 +10,7 @@
  * The actor's bag = actor.tabs.equipment (ActorAction[]) with actionKind "equipment"
  */
 
+import { economyCostFor, readActivation, ITEM_ACTIVATION_LABEL, type ItemActivation } from "./itemActivation";
 import type { RerollMethod } from "../state/rerollMethod";
 import { useEffect, useRef, useState, useMemo } from "react";
 import type { ActorAction } from "../types/tabs";
@@ -256,6 +257,31 @@ export type EquipmentItem = {
   riders?: ItemRider[];
   /** How a versatile form is currently held. Free to change; see the grip switch on the card. */
   grip?: WeaponGrip;
+  /**
+   * WHAT USING THIS COSTS IN THE ACTION ECONOMY.
+   *
+   * ⚠ THERE WAS NO SUCH FIELD, AND EVERY ITEM PAID THE WRONG PRICE BECAUSE OF IT. An item could
+   * say "charges" and "effect" and never say what spending one costs, so the adapters guessed by
+   * SHAPE rather than by fact:
+   *
+   *   itemToAttackAction  hard-coded `economyCost: ["main"]` — so the Ashwood Brigandine's attack
+   *                       row spent the turn's Action, while its own text says Reaction
+   *   itemToAction        set no economy cost at all — so the Gloamstep Shard and the Hollow
+   *                       Lantern, which cost a Bonus Action, cost nothing
+   *
+   * Christopher: *"what about items with a charge cost, something like the Ashwood Brigandine, the
+   * Repulsion Shield, and then there is bonus action charge items like the Gloamstep Shard and
+   * Hollow Lantern."* Two different prices, and the app could express neither.
+   *
+   * ⚠ IT IS SEPARATE FROM `charges`, because they are different currencies. A Repulsion Shield
+   * costs a REACTION AND a charge; a Drift Globe costs an Action and a charge; a permanent +1
+   * sword costs neither. Folding them together is what made "has charges" imply "is a consumable
+   * you click", which is how a reaction item ended up on the main tab.
+   *
+   * Unset is read as `action` for a row that rolls an attack and `free` for a reference row —
+   * the behaviour before this field existed, so nothing moves until an item says otherwise.
+   */
+  activation?: ItemActivation;
   /** Charge tracking for items with limited uses */
   charges?: EquipmentCharges;
   /** What happens when a charge is spent */
@@ -797,7 +823,24 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
     // either; deriving it from the pool fixes them all at once and stays true for any item
     // authored later. Weapons without charges still roll from the main tab, not from here.
     hasDefinedUse: isConsumable || Boolean(item.charges),
-    economyCost: undefined,        // equipment bag never costs action economy slots
+    /**
+     * ⚠ "THE EQUIPMENT BAG NEVER COSTS ACTION ECONOMY SLOTS" WAS TRUE OF A BAG AND FALSE OF A
+     * USABLE ITEM.
+     *
+     * It is right for a reference row — a worn breastplate costs nothing to keep wearing. It is
+     * wrong the moment the row has a Use button, which the line above grants to every charged
+     * item in the library. The Gloamstep Shard and the Hollow Lantern cost a BONUS ACTION and
+     * were spending nothing; the Repulsion Shield costs a Reaction and was spending nothing.
+     *
+     * Christopher: *"there is bonus action charge items like the Gloamstep Shard and Hollow
+     * Lantern."*
+     *
+     * A weapon stays free here on purpose: its roll lives on the main tab, and charging the
+     * Action twice for one swing is the double-count this whole split exists to avoid.
+     */
+    economyCost: (isWeapon || !(isConsumable || item.charges))
+      ? undefined
+      : economyCostFor(item.activation ?? "free"),
     category: item.type.charAt(0).toUpperCase() + item.type.slice(1),
     tags: item.tags,
     metadata: {
@@ -906,6 +949,24 @@ export function itemToAction(item: EquipmentItem, equipped = true): ActorAction 
 
 export function itemToAttackAction(item: EquipmentItem): ActorAction {
   item = resolveChassisItem(item);
+  /**
+   * ⚠ THIS HARD-CODED AN ACTION, AND HARD-CODED AWAY THE CHARGE.
+   *
+   * Two separate faults in one object literal, both invisible because the row LOOKED right:
+   *
+   *   economyCost: ["main"]   The Ashwood Brigandine's attack row spent the turn's Action while
+   *                           the item's own text says Reaction. Same for the Displaced Ward
+   *                           Brooch. The economy tracker then recorded the turn as spent, doing
+   *                           exactly what it was told.
+   *   no `charges`            `consumeActionResources` step 0 spends an item pool only when the
+   *                           ACTION BEING USED carries `metadata.charges`, and only the
+   *                           `equip-` row ever did. So clicking the attack row spent no charge
+   *                           at all, and `itemChargeKey` — which exists precisely so `equip-<id>`
+   *                           and `atk-<id>` share one pool — never got the chance to do its job.
+   *
+   * Christopher: *"what about items with a charge cost."* Both currencies travel now.
+   */
+  const activation = item.activation ?? "action";
   return {
     id: `atk-${item.id}`,
     label: item.name,
@@ -916,7 +977,7 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
     logMode: "table-note",
     displayMode: "compact",
     hasDefinedUse: true,
-    economyCost: ["main"],
+    economyCost: economyCostFor(activation),
     category: item.category ?? (item.type.charAt(0).toUpperCase() + item.type.slice(1)),
     tags: item.tags,
     metadata: {
@@ -924,7 +985,10 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
       damage: item.damage,
       crit: item.crit,
       range: item.range,
-      cost: "Action",
+      // ONE ITEM, ONE POOL — `itemChargeKey` strips the prefix so this and the equipment row
+      // draw from the same charges. It only works if the charges are actually here.
+      ...(item.charges ? { charges: item.charges } : {}),
+      cost: ITEM_ACTIVATION_LABEL[activation],
       // Information on the attack: range, then the chosen Weapon Mastery's rules text.
       details: [
         item.range ? `Range: ${item.range}` : undefined,
@@ -1279,6 +1343,41 @@ function ItemForm({ initial, onSave, onCancel, bindTargets = [] }: ItemFormProps
             back is a rest cadence; "manual" means nothing restores it but a hand on the
             card, which is what a dawn recharge needs. */}
         <ChargesFields charges={draft.charges} onChange={v => set("charges", v)} inputStyle={inputStyle} />
+        {/* ── WHAT USING IT COSTS ────────────────────────────────────────────────────────
+            ⚠ THE FIELD BESIDE CHARGES, BECAUSE THEY ARE DIFFERENT CURRENCIES. A Repulsion
+            Shield costs a Reaction AND a charge; a Drift Globe costs an Action and a charge.
+            Until this existed the adapters guessed — an attack row hard-coded an Action, an
+            equipment row charged nothing — so every reaction item in the library cost a full
+            Action and every bonus-action item cost nothing.
+
+            Christopher: *"there is bonus action charge items like the Gloamstep Shard and
+            Hollow Lantern."* The reading beside it is the item's own text, offered and never
+            applied — the same contract the damage-type picker works under. */}
+        {(() => {
+          const reading = readActivation([draft.mechanicsText, draft.description].filter(Boolean).join(" "));
+          return (
+            <label style={{ fontSize: 11, display: "block" }}>
+              Costs to use
+              <select value={draft.activation ?? ""} style={inputStyle}
+                title="What spending this item costs in the action economy. Separate from its charges — an item can cost a Reaction AND a charge. 'No action' is right for something that just happens when its trigger fires."
+                onChange={e => set("activation", (e.target.value || undefined) as ItemActivation | undefined)}>
+                <option value="">— not set —</option>
+                {(["action", "bonus", "reaction", "free"] as ItemActivation[]).map(a => (
+                  <option key={a} value={a}>{ITEM_ACTIVATION_LABEL[a]}</option>
+                ))}
+              </select>
+              {reading.activation && draft.activation !== reading.activation && (
+                <span style={{ display: "block", fontSize: 10, color: reading.ambiguous ? "#e0b23a" : "#667", marginTop: 2 }}>
+                  {reading.ambiguous
+                    ? `⚠ its text names ${reading.named.map(a => ITEM_ACTIVATION_LABEL[a]).join(" and ")} — pick which one the charge is for`
+                    : <>Reads as <strong style={{ color: "#dfe4ff" }}>{ITEM_ACTIVATION_LABEL[reading.activation]}</strong>{" "}
+                      <button type="button" className="inline-commit-button"
+                        onClick={() => set("activation", reading.activation)}>use it</button></>}
+                </span>
+              )}
+            </label>
+          );
+        })()}
       </div>
 
       {/* An artificer's own creations can require attunement just as campaign loot does, so

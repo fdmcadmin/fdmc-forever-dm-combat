@@ -106,6 +106,9 @@ jobs:
       - name: check reaction economy
         run: npm run check:reactions
 
+      - name: check item activation
+        run: npm run check:activation
+
       # Fails on any published number that moved. Not a bug report — read the diff.
       - name: check baseline
         run: npm run check:baseline

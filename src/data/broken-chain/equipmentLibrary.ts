@@ -98,6 +98,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-farwatch-glass",
+    "activation": "action",
     "name": "Farwatch Glass",
     "type": "magic",
     "description": "A thumb-sized oval of smoke-dark glass with a silver thread trapped inside it. The thread drifts when the glass is idle and snaps toward whatever the glass is remembering when awakened. Tags: A1 · Utility",
@@ -112,6 +113,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-slipstone",
+    "activation": "bonus",
     "name": "Slipstone",
     "type": "magic",
     "description": "A flat piece of violet-grey stone whose two faces never seem perfectly aligned. Turn it in the hand and one edge appears to arrive a fraction of a heartbeat before the rest. Tags: A1 · Movement",
@@ -126,6 +128,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-rootheart-seed",
+    "activation": "reaction",
     "name": "Rootheart Seed",
     "type": "magic",
     "description": "A black seed the size of a thumbnail, veined with dull green-gold. It is almost weightless until the ground shifts beneath its bearer, when it becomes suddenly and impossibly heavy. Tags: A1 · Stability",
@@ -271,6 +274,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-canopy-eye",
+    "activation": "bonus",
     "name": "Canopy Eye",
     "type": "magic",
     "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface. Tags: A1 · Utility",
@@ -379,6 +383,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-ashwood-brigandine",
+    "activation": "reaction",
     "name": "Ashwood Brigandine",
     "type": "armor",
     "description": "Plated with bark from the corruption's edge, where the wood hardened wrong — denser than any living tree.",
@@ -405,6 +410,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-displaced-ward-brooch",
+    "activation": "reaction",
     "name": "Displaced Ward Brooch",
     "type": "magic",
     "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here did not spare the equipment. Tags: A1 · Defense",
@@ -564,6 +570,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-north-wind-flask",
+    "activation": "action",
     "name": "North Wind Flask",
     "type": "gear",
     "description": "A stoppered blue-glass flask that rattles with trapped wind. Frost forms around the cork whenever the pressure inside rises.",
@@ -696,6 +703,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-hollow-lantern",
+    "activation": "bonus",
     "name": "Hollow Lantern",
     "type": "magic",
     "description": "A Ward field lantern recovered from the village cache. Its pale flame does not flicker in wind, and for a moment it shows what prefers not to be found. Tags: A2 · Cleanse",
@@ -721,6 +729,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-sentinel-chalk",
+    "activation": "action",
     "name": "Sentinel Chalk",
     "type": "magic",
     "description": "A stick of blue-white chalk recovered from the frozen line. A mark drawn with it holds its edge even under snow and rime. Tags: A2 · Utility",
@@ -734,6 +743,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-gloamstep-shard",
+    "activation": "bonus",
     "name": "Gloamstep Shard",
     "type": "magic",
     "description": "A sliver of dark glass rimed white on one edge and perfectly black on the other. In dim light the shard seems a few inches closer than the hand holding it. Tags: A2 · Movement",
@@ -874,6 +884,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-wendigo-heart-ember",
+    "activation": "action",
     "name": "Wendigo Ember Heart",
     "type": "magic",
     "damage": "3d6",
@@ -931,6 +942,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-step-stabilizer",
+    "activation": "bonus",
     "name": "Step Stabilizer",
     "type": "magic",
     "description": "A small paired set of heel plates that seem to find the next safe piece of ground first. Tags: Recipe: Movement + Utility · Completed: Movement",
@@ -944,6 +956,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-reinforced-wrap",
+    "activation": "reaction",
     "name": "Reinforced Wrap",
     "type": "magic",
     "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands. Tags: Recipe: Defense + Stability · Completed: Defense",
@@ -958,6 +971,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-lensing-glass",
+    "activation": "bonus",
     "name": "Lensing Glass",
     "type": "magic",
     "description": "A clear lens that catches edges the eye normally loses. Tags: Recipe: Cleanse + Utility · Completed: Cleanse",
@@ -1012,6 +1026,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-quickstep",
+    "activation": "bonus",
     "name": "Quickstep",
     "type": "magic",
     "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next. Tags: Recipe: Movement + Utility · Completed: Movement",
@@ -1038,6 +1053,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-driftveil",
+    "activation": "reaction",
     "name": "Driftveil",
     "type": "magic",
     "description": "A short mantle that pulls sideways at the instant a blow finds its wearer. Tags: Recipe: Defense + Movement · Completed: Defense",
@@ -1052,6 +1068,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "bc-clearward-mantle",
+    "activation": "bonus",
     "name": "Clearward Mantle",
     "type": "magic",
     "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
@@ -1120,6 +1137,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-mirrorbark-scale",
+    "activation": "reaction",
     "name": "Mirrorbark Scale",
     "effect": { "type": "reroll", "rerollMethod": "reroll", "condition": "when an attack hits you (Reaction) — the attacker rerolls" },
     "type": "magic",
@@ -1134,6 +1152,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-branchcall-marker",
+    "activation": "reaction",
     "name": "Branchcall Marker",
     "type": "magic",
     "description": "A leaf-thin disc of living wood etched with branching paths. Its edges flex toward nearby motion, and two of the carved routes brighten together when the battlefield opens. Tags: A3 · Tactical",
@@ -1160,6 +1179,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-veilwash-leaf",
+    "activation": "action",
     "name": "Veilwash Leaf",
     "type": "magic",
     "description": "A translucent leaf whose veins carry warm yellow in one direction and icy blue in the other. Pressed to living skin, hostile residue beads away from it like rain refusing to cling. Tags: A3 · Cleanse",
@@ -1197,6 +1217,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   // of those himself. Do not fill it in from the recipe table.
   {
     "id": "bc-turnstep-relay",
+    "activation": "reaction",
     "name": "Turnstep Relay",
     "type": "magic",
     "description": "A narrow pair of hinged plates whose inner marks click toward the next threat a heartbeat before it moves. Tags: Recipe: Movement + Tactical · Completed: Tactical",
