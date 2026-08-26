@@ -36,7 +36,6 @@ import { MonsterTemplateEditor } from "./MonsterTemplateEditor";
 import { safeStorage } from "../utils/safeStorage";
 
 /** One table, one party — persisted so every encounter loads scaled to it. */
-const SHADOW_ACK_KEY = "fdmc.dm.monsterShadowAck.v1";
 const PARTY_SIZE_KEY = "fdmc.dm.encounterPartySize.v1";
 
 // ─── Module unlock ────────────────────────────────────────────────────────────
@@ -547,6 +546,15 @@ export function EncounterLibraryPanel({
   /** The override list starts folded — it is a reference, not an alert. */
   const [overridesOpen, setOverridesOpen] = useState(false);
   const [monsterImportResult, setMonsterImportResult] = useState<MonsterImportResult | null>(null);
+  /**
+   * ⚠ WHAT THE SAVE ACTUALLY DID, READ BACK FROM THE STORE.
+   *
+   * Christopher: *"because i never know when the edit has gone through, i never know when my
+   * submit instead reverts to a seeded version."* The editor closed and said nothing, so a save
+   * that stuck and a save that was discarded were indistinguishable — and one of them really was
+   * being discarded, which is how the Grief Colossus went back to 230 seven times.
+   */
+  const [saveNotice, setSaveNotice] = useState<{ name: string; ok: boolean; where: string; detail: string } | null>(null);
   // DM's own monster library from localStorage — "My Library" (DM creations). Reactive: the
   // monster picker + count derive from this, so created monsters persist and appear after reload.
   const [dmLibrary, setDmLibrary] = useState<MainMonsterTemplate[]>(() => loadMonsterLibrary());
@@ -578,29 +586,11 @@ export function EncounterLibraryPanel({
   });
 
   /**
-   * ⚠ THE NOTICE HAD NO WAY TO END, WHICH TURNED AN EXPLANATION INTO NAGGING.
-   *
-   * The shadow check recomputes on EVERY render and the stale copy is deliberately never deleted
-   * — an unmarked copy might predate the `dmEdited` marker, so throwing it away could discard a
-   * real edit. Correct, but it means the banner reappears forever: Christopher, 2026-08-20:
-   * *"why is this note at the top always there."*
-   *
-   * A one-time explanation should be acknowledgeable. This records WHAT was reported — id plus
-   * the stored numbers — so the notice stays gone while the situation is unchanged, and comes
-   * back if a later correction moves the numbers again. Nothing is deleted either way.
+   * ⚠ THE ACKNOWLEDGE PLUMBING WENT WITH THE BANNER IT SERVED. It existed so a DM could dismiss
+   * the notice that their saved copy had just been overruled by the shipped creature. Nothing
+   * overrules a saved copy any more, so there is nothing to acknowledge — and a "Got it" button
+   * on a thing that no longer happens is worse than no button.
    */
-  const [shadowAck, setShadowAck] = useState<Set<string>>(() => {
-    try {
-      const raw = safeStorage().getItem(SHADOW_ACK_KEY);
-      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
-    } catch { return new Set<string>(); }
-  });
-
-  function acknowledgeShadowed(signatures: string[]) {
-    const next = new Set([...shadowAck, ...signatures]);
-    setShadowAck(next);
-    try { safeStorage().setItem(SHADOW_ACK_KEY, JSON.stringify([...next])); } catch { /* ok */ }
-  }
 
   function changePartySize(next: number) {
     setPartySize(next);
@@ -634,7 +624,6 @@ export function EncounterLibraryPanel({
   const resolution = resolveMonsterLibrary(monsterLibrary, { stored: dmLibrary, includeCampaign: unlocked });
   const overriddenCampaignTemplates = resolution.overridden;
   // A notice the DM has already acknowledged stays gone until the numbers move again.
-  const shadowedCampaignTemplates = resolution.shadowed.filter(r => !shadowAck.has(r.signature));
   const myMonsters = resolution.library.filter(t => !isCampaignTemplate(t.templateId));
   const campaignBase = resolution.library.filter(t => isCampaignTemplate(t.templateId));
   const baseLibrary = [...myMonsters, ...campaignBase];
@@ -685,6 +674,36 @@ export function EncounterLibraryPanel({
     // Notify parent if it wants to refresh its static library copy
     onMonsterLibraryUpdate?.(updated);
     setEditingMonsterTemplateId(null);
+
+    /**
+     * ⚠ SAY WHETHER IT LANDED, BY READING IT BACK.
+     *
+     * Christopher: *"because i never know when the edit has gone through, i never know when my
+     * submit instead reverts to a seeded version."* The editor closed on save and said nothing, so
+     * a save that stuck and a save that was discarded looked exactly the same — and until 0.7.56
+     * one of them really was being discarded.
+     *
+     * ⚠ IT RE-READS THE STORE RATHER THAN TRUSTING THE WRITE. `saveMonsterLibrary` swallows a
+     * storage failure by design (a browser that has said no is not an error to crash on), so
+     * "I called upsert" is not evidence that anything was written. A confirmation that cannot
+     * fail is not a confirmation. This asks the resolver the same question the next reload will
+     * ask, and reports what it actually answers.
+     */
+    const readBack = resolveMonsterLibrary(monsterLibrary, {
+      stored: loadMonsterLibrary(),
+      includeCampaign: unlocked,
+    }).library.find(t => t.templateId === updated.templateId);
+    const landed = readBack
+      ? JSON.stringify(readBack.stats) === JSON.stringify(updated.stats)
+      : false;
+    setSaveNotice({
+      name: updated.name,
+      ok: landed,
+      where: owner === "campaign" ? "the campaign library" : "My Library",
+      detail: landed
+        ? `${updated.stats.maxHp} HP · AC ${updated.stats.ac} — this is what the app will load next time.`
+        : "The store did not read back what was just written. Nothing was lost in the editor — copy your changes before reloading.",
+    });
   }
 
   function persistStaged(next: StagedEntry[]) {
@@ -1185,62 +1204,65 @@ export function EncounterLibraryPanel({
         </div>
       </div>
 
-      {/* ⚠ NOTHING HEALS SILENTLY. A stale stored copy shadowing corrected campaign data is
-          exactly the kind of thing that has to be SAID — if it were fixed quietly, the next
-          person to see a number they did not recognise would have no way to know why it moved. */}
-      {shadowedCampaignTemplates.length > 0 && (
-        <div style={{ padding: "6px 14px", background: "#1a1608", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#c9a227" }}>
-          <strong>
-            {shadowedCampaignTemplates.length} campaign creature{shadowedCampaignTemplates.length === 1 ? "" : "s"} had
-            {" "}an older saved copy — now reading the campaign version:
-          </strong>
-          {shadowedCampaignTemplates.map(s => (
-            <div key={s.name} style={{ color: "#8a8aa0" }}>
-              {s.name}: was {s.was} → {s.now}
-            </div>
-          ))}
-          <div style={{ color: "#666", marginTop: 2, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span>Nothing you edited was discarded — only copies with no recorded edit. Edit and save one to take it over again.</span>
-            <button type="button"
-              onClick={() => acknowledgeShadowed(shadowedCampaignTemplates.map(s2 => s2.signature))}
-              title="Stop showing this. The old copies are kept, not deleted — the notice returns only if a later correction moves these numbers again."
-              style={{ fontSize: 10, padding: "2px 8px", background: "#c9a22722", border: "1px solid #c9a22755", borderRadius: 3, color: "#c9a227", cursor: "pointer" }}>
-              Got it
-            </button>
-          </div>
+      {saveNotice && (
+        <div style={{
+          padding: "6px 14px", fontSize: 11, borderBottom: "1px solid #2a2a3e",
+          background: saveNotice.ok ? "#0f2015" : "#241612",
+          color: saveNotice.ok ? "#7be08a" : "#ff8a5c",
+          display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+        }}>
+          <strong>{saveNotice.ok ? "Saved" : "NOT SAVED"} — {saveNotice.name}</strong>
+          <span style={{ color: "#8a8aa0" }}>
+            {saveNotice.ok ? `in ${saveNotice.where}. ` : ""}{saveNotice.detail}
+          </span>
+          <button type="button" onClick={() => setSaveNotice(null)}
+            style={{ marginLeft: "auto", fontSize: 10, padding: "2px 8px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#666", cursor: "pointer" }}>
+            dismiss
+          </button>
         </div>
       )}
 
-      {/* ⚠ YOUR EDITS, AND THE WAY BACK. A stamped edit outranks the shipped campaign creature
-          forever, which is right — a later correction must never quietly overwrite the DM. What
-          was missing is the exit: the only control that removed an override was Delete, offered
-          on My Monsters only, and deleting a campaign creature reads as destroying something the
-          encounters need. Revert restores the campaign version IN PLACE. */}
+      {/* ⚠ THE "STALE SEED" BANNER IS GONE, BECAUSE THE BEHAVIOUR IT ANNOUNCED IS GONE.
+          It said a saved copy "had an older version — now reading the campaign version", which
+          was the app telling the DM it had just thrown their save away. A stored copy always wins
+          now; what remains worth saying is which creatures differ from the SHIPPED build, and
+          that is the pending-changes notice below. */}
+
+      {/* ⚠ PENDING CHANGES — NOT "YOU ARE USING AN EDITED VERSION".
+          Christopher: *"for me the 'you are using an edited version' should never be a thing, at
+          best it should tell me there are pending changes."* He is right, and the old wording was
+          a symptom of the old model: it framed a saved edit as an unusual state the app was
+          tolerating, when a saved edit is simply the creature. What is genuinely worth saying is
+          narrower and more useful — these differ from the build that shipped, so they are what a
+          publish would carry.
+
+          Revert is still here, and still not a delete: the shipped creature takes the same slot
+          and every encounter using it keeps working. */}
       {overriddenCampaignTemplates.length > 0 && (
         <div style={{ padding: "6px 14px", background: "#0f1412", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#4caf50" }}>
           <button type="button" onClick={() => setOverridesOpen(o => !o)}
             style={{ background: "transparent", border: "none", padding: 0, color: "#4caf50", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
-            {overridesOpen ? "▼" : "▶"} {overriddenCampaignTemplates.length} campaign creature{overriddenCampaignTemplates.length === 1 ? " is" : "s are"} running your edited version
+            {overridesOpen ? "▼" : "▶"} {overriddenCampaignTemplates.length} creature{overriddenCampaignTemplates.length === 1 ? " has" : "s have"} changes not in the published build
           </button>
           {overridesOpen && (
             <>
               {overriddenCampaignTemplates.map(o => (
                 <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
                   <span style={{ color: "#8a8aa0" }}>
-                    {o.name}: yours {o.mine} · campaign {o.campaign}
+                    {o.name}: yours {o.mine} · published {o.campaign}
                     {o.at && <span style={{ color: "#555" }}> · edited {new Date(o.at).toLocaleDateString()}</span>}
                   </span>
                   {o.mine !== o.campaign && (
                     <button type="button" onClick={() => revertCampaignOverride(o.id)}
                       title="Go back to the campaign version. This is NOT a delete — the campaign creature takes the same slot and every encounter using it keeps working."
                       style={{ fontSize: 10, padding: "1px 7px", background: "#4caf5022", border: "1px solid #4caf5055", borderRadius: 3, color: "#4caf50", cursor: "pointer" }}>
-                      ↩ Revert to campaign
+                      ↩ Discard, use published
                     </button>
                   )}
                 </div>
               ))}
               <div style={{ color: "#666", marginTop: 3 }}>
-                Reverting removes your saved copy only — the creature stays in the library and every encounter using it keeps working.
+These are what the next publish will carry. Discarding removes your saved copy only — the creature stays in the library and every encounter using it keeps working.
               </div>
             </>
           )}

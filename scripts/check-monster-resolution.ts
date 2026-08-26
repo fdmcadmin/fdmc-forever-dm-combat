@@ -41,15 +41,33 @@ const edited = tpl("broken-chain:warden", "Hollow Warden", 99, 18, { dmEdited: {
 const r2 = resolveMonsterLibrary(bundled, { stored: [edited] });
 eq("dmEdited copy wins", hpOf(r2, "broken-chain:warden"), 99);
 eq("...and is reported as overridden", r2.overridden.map(o => o.id), ["broken-chain:warden"]);
-eq("...and is not called a stale seed", r2.shadowed.length, 0);
+// `shadowed` means "the numbers disagree with what shipped", which is TRUE of a deliberate edit.
+// It no longer means "was overruled" — the copy is in the library either way; this is the notice.
+eq("...and the disagreement is reported rather than acted on",
+  r2.shadowed.map(s => `${s.was} -> ${s.now}`), ["76 HP / AC 16 -> 99 HP / AC 18"]);
 
-// 3. An UNMARKED stored copy is a stale seed: the shipped template wins, and it is reported.
-//    This is the Hollow Warden 78/18-vs-76/16 case that started the rule.
-const stale = tpl("broken-chain:warden", "Hollow Warden", 78, 18);
-const r3 = resolveMonsterLibrary(bundled, { stored: [stale] });
-eq("unmarked copy LOSES", hpOf(r3, "broken-chain:warden"), 76);
-eq("...and is reported as shadowed", r3.shadowed.map(s => `${s.was} -> ${s.now}`), ["78 HP / AC 18 -> 76 HP / AC 16"]);
-eq("...and is not called an override", r3.overridden.length, 0);
+/**
+ * 3. AN UNMARKED STORED COPY ALSO WINS. A SEEDED CREATURE NEVER OVERRIDES A SAVED ONE.
+ *
+ * ⚠ THIS ASSERTED THE OPPOSITE UNTIL 0.7.56, and the rule it protected cost real edits. An
+ * unmarked copy used to be read as a stale seed and discarded — right when the app seeded these
+ * stores with copies of the bundled library, and wrong ever since `upsertMonsterTemplate` became
+ * the only writer. On a current build an unmarked copy is a save, not a leftover.
+ *
+ * Christopher: *"there should never be a seeded monster that overrides my authored monster [...]
+ * because i never know when the edit has gone through, i never know when my submit instead
+ * reverts to a seeded version."* The old rule fired only when the stamp happened to be missing,
+ * so a save that worked and a save that was thrown away looked identical.
+ *
+ * What the rule was really for is kept: the disagreement is still REPORTED — as what the table is
+ * running, with the shipped numbers beside it.
+ */
+const unstamped = tpl("broken-chain:warden", "Hollow Warden", 78, 18);
+const r3 = resolveMonsterLibrary(bundled, { stored: [unstamped] });
+eq("an unmarked stored copy WINS", hpOf(r3, "broken-chain:warden"), 78);
+eq("...and is reported as an override", r3.overridden.map(o => o.id), ["broken-chain:warden"]);
+eq("...and the disagreement is reported, shipped -> running",
+  r3.shadowed.map(s => `${s.was} -> ${s.now}`), ["76 HP / AC 16 -> 78 HP / AC 18"]);
 
 // 4. A DM's own creature always appears, and is never mistaken for campaign content.
 const mine = tpl("custom-goblin", "Ripper", 22, 13);

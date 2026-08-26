@@ -100,32 +100,43 @@ export function upsertMonsterTemplate(template: MainMonsterTemplate, owner: Mons
  * entry [...] and the encounter checker still show what was there before instead of what is there
  * now then isnt not working correctly."*
  *
- * The precedence, in one place, for every caller:
+ * THE PRECEDENCE, in one place, for every caller — and it is now one sentence:
  *
- *   1. The DM's OWN creations always appear — their ids are never campaign ids.
- *   2. A copy in the CAMPAIGN store is authored content and outranks the bundle.
- *   3. A copy in the DM store outranks the bundle only when it carries `dmEdited`.
- *   4. An unmarked DM-store copy is a STALE SEED and loses. It is reported, never silently
- *      applied: the campaign library gets corrected (0.7.8.16 repriced 24 Act 3 creatures) and a
- *      copy saved by an older build would otherwise shadow every one of those corrections forever.
+ *   A STORED COPY WINS. Always. The bundled creature is what you get when nothing is stored.
  *
- * ⚠ RULE 2 IS NEW, AND ITS ABSENCE THREW AWAY ELEVEN AUTHORED CREATURES. The campaign store was
- * added after this rule was written, and `handleSaveMonsterTemplate` is explicit that *"a campaign
- * save is NOT a DM edit, so it carries no `dmEdited` stamp"* — which is right, that marker exists
- * to let a private copy outrank shipped content. But rule 4 then read the unstamped result as a
- * stale seed and DISCARDED it. Saving to the campaign store produced exactly the artefact
- * resolution threw away, so authoring a campaign creature had no visible effect at all:
+ * ⚠ IT USED TO HAVE FOUR RULES AND THE LAST ONE THREW AWAY EDITS. Rule 4 read an unstamped stored
+ * copy as a STALE SEED and returned the bundled creature instead — written when the app seeded
+ * these stores with copies of the bundled library, so an unmarked copy really was a leftover.
+ * That has not been true for a long time: `upsertMonsterTemplate` is the only writer, and import
+ * routes by ownership since 0.7.51.0. Every stored copy on a current build is there because
+ * somebody saved it.
+ *
+ * It cost real work twice over. First silently, through the campaign store —
+ * `handleSaveMonsterTemplate` is explicit that *"a campaign save is NOT a DM edit, so it carries
+ * no `dmEdited` stamp"*, which is right, and rule 4 then discarded exactly that artefact:
  *
  *   Christopher, on renaming the Veil-Torn Wyrmling: *"the wyrmlings are back vs them being
  *   changed to the drake guard"*, and *"nothing is saving with the app."*
  *
- * A campaign-store copy is not a leftover. It is the newest version of that creature on this
- * machine, and on the author's machine it is the campaign itself — the bundle is REGENERATED from
- * it by the next fold. So it wins, and it is still REPORTED (with `source`) and still revertible,
- * which keeps the "nothing heals silently" guarantee rule 4 was built for.
+ * And then, once that was patched, through the remaining unstamped cases — which is the worse
+ * failure, because it was CONDITIONAL and invisible:
  *
- * Rules 2–4 are why this returns REPORTS as well as a list. The panel renders them as banners; the
- * checker ignores them. One merge, two consumers, no second implementation to drift.
+ *   *"i am tired of editing a monster and then turning the app off and back on only for it to be
+ *   the same seeded monster, there should never be a seeded monster that overrides my authored
+ *   monster [...] because i never know when the edit has gone through, i never know when my
+ *   submit instead reverts to a seeded version."*
+ *
+ * A save that worked and a save that was discarded looked identical from the outside. A rule you
+ * cannot predict is worse than no rule, and this one was protecting against a shape the app stopped
+ * producing years of commits ago.
+ *
+ * ⚠ WHAT RULE 4 WAS REALLY FOR IS KEPT. A stored copy that disagrees with the shipped creature is
+ * still reported — as a difference this table is RUNNING, with a revert button, rather than as a
+ * correction already applied behind the DM's back. Nothing heals silently; it just no longer heals
+ * by deleting the DM's work.
+ *
+ * That reporting is why this returns REPORTS as well as a list. The panel renders them as banners;
+ * the checker ignores them. One merge, two consumers, no second implementation to drift.
  */
 export type MonsterLibraryResolution = {
   /** The creatures as they actually are: DM creations, then campaign with edits applied. */
@@ -136,7 +147,10 @@ export type MonsterLibraryResolution = {
    * `"dm"` is a deliberate private override.
    */
   overridden: { id: string; name: string; mine: string; campaign: string; at?: string; source?: "campaign" | "dm" }[];
-  /** Unmarked DM-store copies that disagree with the shipped template and were ignored. */
+  /**
+   * Stored copies whose HP or AC disagrees with the shipped creature. They are IN `library` —
+   * this is what the table is running, not what was overruled.
+   */
   shadowed: { id: string; name: string; was: string; now: string; signature: string }[];
 };
 
@@ -213,26 +227,47 @@ export function resolveMonsterLibrary(
       if (signature(copy) === signature(t)) return t;
       // Rule 2 then rule 3. An authored copy needs no stamp; a private one does.
       const isAuthored = authored.has(t.templateId);
-      if (isAuthored || copy.dmEdited) {
-        overridden.push({
-          id: t.templateId, name: t.name, mine: shape(copy), campaign: shape(t),
-          at: copy.dmEdited?.at, source: isAuthored ? "campaign" : "dm",
-        });
-        return copy;
-      }
-      // Report a stale seed only when it actually disagrees, so the notice means something.
+      /**
+       * ⚠ THE STORED COPY ALWAYS WINS. A SEEDED CREATURE NEVER OVERRIDES A SAVED ONE.
+       *
+       * Christopher: *"i am tired of editing a monster and then turning the app off and back on
+       * only for it to be the same seeded monster, there should never be a seeded monster that
+       * overrides my authored monster"* — and the reason it was unbearable rather than merely
+       * wrong: *"because i never know when the edit has gone through, i never know when my submit
+       * instead reverts to a seeded version."*
+       *
+       * This used to return the BUNDLED creature for a copy carrying no `dmEdited` stamp, on the
+       * grounds that an unmarked copy was a stale seed from an older build. That was true when the
+       * app seeded these stores with copies of the bundled library. It does not any more —
+       * `upsertMonsterTemplate` is the only writer, and import routes by ownership since 0.7.51.0.
+       * So on a current build every stored copy is there because somebody deliberately saved it,
+       * and discarding one is discarding an edit.
+       *
+       * Worse, it was SILENT and conditional: it fired only when the stamp happened to be missing,
+       * so a save that worked and a save that was thrown away looked identical from the outside.
+       * A rule you cannot predict is worse than no rule.
+       *
+       * ⚠ THE VISIBILITY IT WAS PROTECTING IS KEPT, AND IS NOW HONEST. A copy that disagrees with
+       * the shipped creature is still reported — as a difference the DM is running, with a revert
+       * button, rather than as a correction already applied behind their back.
+       */
+      overridden.push({
+        id: t.templateId, name: t.name, mine: shape(copy), campaign: shape(t),
+        at: copy.dmEdited?.at, source: isAuthored ? "campaign" : "dm",
+      });
+      // Still reported when the headline numbers disagree — but as information, not a takeover.
       if (copy.stats.maxHp !== t.stats.maxHp || String(copy.stats.ac) !== String(t.stats.ac)) {
         shadowed.push({
           id: t.templateId,
           name: t.name,
-          was: shape(copy),
-          now: shape(t),
+          was: shape(t),        // what the build ships
+          now: shape(copy),     // what this table is actually running
           // The signature carries the numbers, so acknowledging THIS divergence does not silence
           // a different one later — a fresh correction changes it and speaks up again.
           signature: `${t.templateId}|${copy.stats.maxHp}/${copy.stats.ac}|${t.stats.maxHp}/${t.stats.ac}`,
         });
       }
-      return t;
+      return copy;
     })
     : [];
 
