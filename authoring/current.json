@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T23:13:39.860Z",
-  "digest": "fnv1a-efe80438-105602",
+  "exportedAt": "2026-08-26T23:19:03.120Z",
+  "digest": "fnv1a-e5347fa0-105131",
   "monsters": [
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
@@ -13,13 +13,7 @@
         "ac": 16,
         "maxHp": 55,
         "speed": "30 ft., fly 60 FT",
-        "defenses": [
-          {
-            "name": "First attack each round at disadvantage",
-            "ehpMultiplier": 1.0477493435640757,
-            "note": "Read from \"Moon-Slick Scales\" (trait) on \"first attack each round at disadvantage\"."
-          }
-        ],
+        "defenses": [],
         "size": "Medium",
         "classification": "mid-boss",
         "archetype": "skirmisher",
@@ -60,18 +54,7 @@
           "value": "10 (+0)"
         }
       ],
-      "traits": [
-        {
-          "name": "Moon-Slick Scales",
-          "kind": "trait",
-          "text": "The first opportunity attack made against the wyrmling each round has disadvantage."
-        },
-        {
-          "name": "Multiattack",
-          "kind": "trait",
-          "text": "Multiattack. The drake makes three attacks: one with its Bite, one with its Claws, and one with its Tail."
-        }
-      ],
+      "traits": [],
       "actions": [
         {
           "name": "Bite",
