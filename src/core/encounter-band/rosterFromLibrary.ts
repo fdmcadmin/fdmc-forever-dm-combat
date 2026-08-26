@@ -26,7 +26,7 @@
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import { materializeTemplateBody } from "../monsters/actionSetPicks";
-import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, traitRule } from "./compactImport";
+import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { priceDamageResponses, describeDamageResponses } from "./damageResponsePricing";
 import { traceCreature } from "./actionTrace";
@@ -106,7 +106,7 @@ export function traitFactorsFor(
      * display name found nothing, so every one of them was reported as an authored assumption on a
      * figure that came straight out of the 58 calibrated rules. See `MonsterDefense.rule`.
      */
-    const rule = traitRule(d.rule ?? d.name);
+    const rule = resolveTraitRule(d);
     if (contribution === 0) {
       /**
        * ⚠ A DELIBERATE 1.0 IS AN ANSWER, NOT A GAP. The Wendigo Wight's "Wrong Cold + Hungering

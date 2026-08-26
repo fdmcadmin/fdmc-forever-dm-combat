@@ -192,6 +192,34 @@ export function traitRule(label: string): TraitRule | undefined {
 }
 
 /**
+ * Which calibrated rule a defence actually IS, when its `rule` and its `name` disagree.
+ *
+ * ⚠ THE ONE THAT AGREES WITH THE MULTIPLIER IS THE ONE THAT WAS PICKED. A stale `rule` left over
+ * from an earlier selection is not a second opinion, it is debris — and the multiplier says which
+ * of the two is debris, because it was written at the same moment as the pick.
+ *
+ * The Veilbound Drake Guard is the case: name "Resistance - ~50% of opposing damage", multiplier
+ * 1.3418341811719772 which is that rule exactly, and `rule` reading "First attack each round at
+ * disadvantage" from a previous pick. Resolving `rule` first priced it as the wrong trait and
+ * blocked its publish.
+ *
+ * Falls back to `rule` then `name` when neither matches, so a genuinely bespoke multiplier still
+ * reports against whichever rule it claims.
+ */
+export function resolveTraitRule(
+  defence: { name: string; rule?: string; ehpMultiplier?: number },
+): TraitRule | undefined {
+  const byRule = defence.rule ? traitRule(defence.rule) : undefined;
+  const byName = traitRule(defence.name);
+  const x = defence.ehpMultiplier ?? 1;
+  const agrees = (r: TraitRule | undefined) =>
+    r && r.contribution !== null && Math.abs((1 + r.contribution) - x) < 5e-6;
+  if (agrees(byRule)) return byRule;
+  if (agrees(byName)) return byName;
+  return byRule ?? byName;
+}
+
+/**
  * Every distinct stack group in the calibration — the vocabulary an authored trait can claim.
  * Two traits on one creature sharing a group are one effect counted twice.
  */

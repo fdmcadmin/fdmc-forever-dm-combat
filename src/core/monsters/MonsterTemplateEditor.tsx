@@ -173,7 +173,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
       stats: {
         ...d.stats,
         defenses: (d.stats.defenses ?? []).map((x, i) => (i === idx
-          ? { ...x, name: label, ehpMultiplier: rule?.multiplier ?? 1, note: rule?.application }
+          /**
+           * ⚠ THE OLD RULE AND PROVENANCE MUST GO WITH THE OLD TRAIT. This spread `...x` and then
+           * overwrote name, multiplier and note — leaving `rule` and `provenance` behind,
+           * describing a trait that is no longer selected.
+           *
+           * That is exactly what blocked the Veilbound Drake Guard's publish: its "Resistance -
+           * ~50% of opposing damage" carried the correct x1.341834 and a `rule` reading "First
+           * attack each round at disadvantage", left over from an earlier pick. The coverage gate
+           * refused it, correctly — a defence naming one rule and priced by another has no
+           * single answer to where its number came from.
+           *
+           * Picking from this list IS naming the rule, so `rule` is set to the label rather than
+           * cleared, and `provenance` goes because a calibrated pick needs none.
+           */
+          ? { ...x, name: label, rule: label, provenance: undefined, ehpMultiplier: rule?.multiplier ?? 1, note: rule?.application }
           : x)),
       },
     }));

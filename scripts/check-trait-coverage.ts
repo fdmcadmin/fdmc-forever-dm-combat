@@ -30,7 +30,7 @@
  * answer, an undecided one is a gap.
  */
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
-import { traitRule } from "../src/core/encounter-band/compactImport";
+import { resolveTraitRule } from "../src/core/encounter-band/compactImport";
 
 const TOLERANCE = 5e-6;
 const failures: string[] = [];
@@ -49,7 +49,7 @@ for (const template of BROKEN_CHAIN_MONSTER_LIBRARY) {
       continue;
     }
 
-    const rule = traitRule(d.rule ?? d.name);
+    const rule = resolveTraitRule(d);
     if (rule && rule.contribution !== null) {
       if (Math.abs((1 + rule.contribution) - x) < TOLERANCE) { calibrated++; continue; }
       failures.push(
