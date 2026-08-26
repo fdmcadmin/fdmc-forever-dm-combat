@@ -1885,13 +1885,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 16,
       "maxHp": 55,
       "speed": "30 ft., fly 60 FT",
-      "defenses": [
-        {
-          "name": "First attack each round at disadvantage",
-          "ehpMultiplier": 1.0477493435640757,
-          "note": "Read from \"Moon-Slick Scales\" (trait) on \"first attack each round at disadvantage\"."
-        }
-      ],
+      "defenses": [],
       "size": "Medium",
       "classification": "mid-boss",
       "archetype": "skirmisher",
@@ -1932,18 +1926,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "value": "10 (+0)"
       }
     ],
-    "traits": [
-      {
-        "name": "Moon-Slick Scales",
-        "kind": "trait",
-        "text": "The first opportunity attack made against the wyrmling each round has disadvantage."
-      },
-      {
-        "name": "Multiattack",
-        "kind": "trait",
-        "text": "Multiattack. The drake makes three attacks: one with its Bite, one with its Claws, and one with its Tail."
-      }
-    ],
+    "traits": [],
     "actions": [
       {
         "name": "Bite",
@@ -5251,10 +5234,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-efe80438-105602";
+export const AUTHORED_DIGEST = "fnv1a-e5347fa0-105131";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T23:13:53.895Z";
+export const AUTHORED_AT = "2026-08-26T23:19:19.736Z";
 
 /**
  * Merge authored content over a bundled list by id.
