@@ -54,6 +54,25 @@ export type MechanicSource = {
   name: string;
   /** The authored text the gate reads. */
   text: string;
+  /**
+   * WHAT THE ACTION'S OWN FIELDS SAY IT IS — `"attack"` when it carries a `roll`, `"save"` when it
+   * carries a `save`. Undefined for a trait, or for an action that states neither.
+   *
+   * ⚠ WITHOUT THIS, A CREATURE AUTHORED IN THE APP FAILED THE GATE ON ITS OWN ATTACKS. The packet
+   * test below looks for `+7 to hit` IN THE PROSE — which is how a pasted stat block reads, and is
+   * exactly what an app-authored one does NOT contain: the bonus lives in the `roll` field and the
+   * text holds only the Hit line. So the Veilbound Drake Guard's Bite and Claw, two ordinary
+   * attacks, reported as sentences reaching no workbook resolver, and the estimator refused to
+   * call the creature ready.
+   *
+   *   Christopher: *"how can i estimate a creature if 1 of the 3 damage abilities are reading"*,
+   *   and the standing rule behind it — *"each of the creatures in the library should act as a
+   *   hand created monster."*
+   *
+   * The fields ARE the authored fact (RULE 2: one control per fact). Reading the same claim out of
+   * prose and ignoring the field it is stored in is the drift this codebase keeps warning about.
+   */
+  kindHint?: "attack" | "save";
 };
 
 export type CoverageHit = {
@@ -438,9 +457,11 @@ export function auditCoverage(sources: MechanicSource[]): CoverageReport {
       if (!MECHANICAL.test(sentence) || isAbilityCheckOnly(sentence)) { unpriced.push(one); continue; }
 
       // 2. The DPR baseline. An attack or save line carrying damage is the packet itself.
+      //    The prose says so on a pasted stat block; the FIELDS say so on an app-authored one,
+      //    and both are the same claim — see `kindHint`.
       const dice = sentence.match(DICE) ?? [];
-      const isAttack = TO_HIT.test(sentence);
-      const isSave = SAVE_LINE.test(sentence);
+      const isAttack = TO_HIT.test(sentence) || source.kindHint === "attack";
+      const isSave = SAVE_LINE.test(sentence) || source.kindHint === "save";
       if (dice.length && (isAttack || isSave)) {
         packets.push({
           source: one,
@@ -493,15 +514,31 @@ export function auditCoverage(sources: MechanicSource[]): CoverageReport {
 }
 
 /** Gather the readable mechanics off a creature-shaped object. */
+type AuthoredMechanic = { name: string; text?: string; roll?: string; save?: string };
+
 export function mechanicsOf(creature: {
-  traits?: { name: string; text?: string }[];
-  actions?: { name: string; text?: string }[];
-  reactions?: { name: string; text?: string }[];
-  legendaryActions?: { name: string; text?: string }[];
+  traits?: AuthoredMechanic[];
+  actions?: AuthoredMechanic[];
+  reactions?: AuthoredMechanic[];
+  legendaryActions?: AuthoredMechanic[];
 }): MechanicSource[] {
   const out: MechanicSource[] = [];
-  const take = (channel: string, list?: { name: string; text?: string }[]) => {
-    for (const m of list ?? []) if (m.text?.trim()) out.push({ channel, name: m.name, text: m.text });
+  const take = (channel: string, list?: AuthoredMechanic[]) => {
+    for (const m of list ?? []) {
+      if (!m.text?.trim()) continue;
+      /**
+       * ⚠ THE FIELDS ARE PART OF THE MECHANIC, NOT DECORATION AROUND IT. This took `text` alone,
+       * so the gate could only ever see what the prose happened to repeat — and an app-authored
+       * action's prose does NOT repeat its attack bonus, because the bonus is a FIELD.
+       *
+       * A `roll` means "this is an attack" as surely as "+7 to hit" does. Passing that through is
+       * what lets a creature built in the app be estimated like one pasted in from a book.
+       */
+      out.push({
+        channel, name: m.name, text: m.text,
+        kindHint: m.roll?.trim() ? "attack" : m.save?.trim() ? "save" : undefined,
+      });
+    }
   };
   take("trait", creature.traits);
   take("action", creature.actions);
