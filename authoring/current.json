@@ -1,255 +1,8 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T22:12:00.532Z",
-  "digest": "fnv1a-11aaf361-112004",
+  "exportedAt": "2026-08-26T22:26:40.209Z",
+  "digest": "fnv1a-519b14c9-105736",
   "monsters": [
-    {
-      "templateId": "broken-chain:act3:blackbough-reeve:v1",
-      "name": "Blackbough Reeve",
-      "encounterId": "act3-e7-the-last-court",
-      "encounterLabel": "Act 3 E7 - The Last Court",
-      "stats": {
-        "kind": "fey",
-        "ac": 16,
-        "maxHp": 86,
-        "speed": "35 ft.",
-        "defenses": [
-          {
-            "name": "Condition immunity",
-            "ehpMultiplier": 1,
-            "note": "Read from \"Seasoned by Severity\" (trait) on \"immune to a condition\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
-          },
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "bruiser",
-        "skills": [
-          {
-            "label": "Athletics",
-            "modifier": 9
-          }
-        ],
-        "proficiencyBonus": 4,
-        "damageResponses": [
-          {
-            "type": "Fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "DEX",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "INT",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "19 (+4)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Seasoned by Severity",
-          "kind": "trait",
-          "text": "The Reeve has advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Shearing Cut",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "2d8 + @MAIN",
-          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each.",
-          "routineSlots": 2
-        },
-        {
-          "name": "Spoiling Cut",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "1d8 + @MAIN",
-          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
-          "routineSlots": 2
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A broad-shouldered Fey wrapped in split black bark and hooked thorn. Pale cuts run through the growth like old pruning scars. It carries itself like a keeper who has spent years deciding what the Wood is allowed to keep.",
-        "DM DESIGN READ. The Reeve does not lock movement or force targets into place. It either prunes through raw damage or makes ignoring it expensive. A martial can clear Spoiling Cut by committing an attack to the Reeve, then spend any remaining attacks elsewhere. No recharge ability and no special reaction are part of this block.",
-        "UNPRICED IN EHP. Spoiling Cut takes 5 off every damage instance the target aims at anyone except the Reeve. That is ally-side damage prevention, nearest to the workbook's Fixed prevention - 8/round (+0.141871), but it is conditional, single-target and cleared by attacking the Reeve. Left unpriced pending a calibration decision: v3.23 states the fight's 253 raw HP is the figure BEFORE trait, control, reaction, targeting and Winter's Toll conversion."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Blackbough Reeve",
-        "revealedName": "Blackbough Reeve"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:veil-torn-dragon:v1",
-      "name": "Veil-Torn Dragon",
-      "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
-      "encounterLabel": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
-      "stats": {
-        "kind": "dragon",
-        "ac": 19,
-        "maxHp": 195,
-        "speed": "40 ft.; Broken Lift only",
-        "defenses": [
-          {
-            "name": "Legendary Resistance - 1 use",
-            "ehpMultiplier": 1.0424576635782374,
-            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
-          }
-        ],
-        "attacksPerTurn": 3,
-        "size": "Huge",
-        "classification": "mid-boss",
-        "archetype": "commander",
-        "legendaryPerRound": 1,
-        "skills": [
-          {
-            "label": "Perception",
-            "modifier": 8
-          }
-        ],
-        "cr": 9
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "DEX",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "CON",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "20 (+5)"
-        },
-        {
-          "label": "WIS",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "22 (+6)",
-          "saveProficient": true
-        }
-      ],
-      "traits": [
-        {
-          "name": "Legendary Resistance (1/Day)",
-          "kind": "trait",
-          "text": "If the dragon fails a saving throw, it can choose to succeed instead."
-        },
-        {
-          "name": "Moonmark (2/Day)",
-          "kind": "trait",
-          "save": "DEX DC 17",
-          "text": "Action: choose a point within 60 ft.; a 15-ft. radius fills with pale motes until the start of the dragon’s next turn. Creatures of the dragon’s choice in the area make a DC 17 Dexterity save. On a failure, they cannot benefit from invisibility and the first attack against them before the effect ends has advantage. No damage."
-        },
-        {
-          "name": "Blind SIght",
-          "kind": "trait",
-          "range": "30 FT"
-        },
-        {
-          "name": "Darkvision",
-          "kind": "trait",
-          "range": "120"
-        }
-      ],
-      "actions": [
-        {
-          "name": "Broken Lift (Recharge 5–6)",
-          "kind": "action",
-          "economyCost": "bonus",
-          "recharge": "5-6",
-          "text": "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed."
-        },
-        {
-          "name": "Bite",
-          "kind": "attack",
-          "roll": "1d20+@ATK",
-          "damage": "2d10+@STR piercing + 2d6 radiant",
-          "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage",
-          "routineSlots": 2
-        },
-        {
-          "name": "Claw",
-          "kind": "attack",
-          "roll": "1d20+@ATK",
-          "damage": "2d6 + @STR",
-          "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing.",
-          "routineSlots": 1
-        },
-        {
-          "name": "Veilstorm Breath",
-          "kind": "action",
-          "save": "DEX",
-          "recharge": "5-6",
-          "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) lightning damage on failure, half on success. ",
-          "range": "90 FT, 10 FT Wide",
-          "damage": "8d8"
-        },
-        {
-          "name": "Tail Sweep",
-          "kind": "action",
-          "roll": "1d20 + @ATK",
-          "damage": "1d8 + @STR",
-          "legendaryCost": 1,
-          "text": "Once per round at the end of another creature’s turn, make one Tail attack: +7 to hit, reach 15 ft.; Hit: 9 (1d8 + 3) bludgeoning, and the dragon may move 5 ft. without provoking from the target hit."
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A real Fey-touched dragon caught at the point where native belonging has become control. Its wings still know how to fly. The Wood has started deciding when they open.",
-        "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Ground Remembers Wrong. Choose up to three 10-ft. squares of natural ground within 90 ft. Creatures there make a DC 17 Strength save or slide up to 10 ft. to a safe space chosen by the lair. Branches Close. A 15-ft.-radius sphere within 90 ft. becomes heavily obscured by overlapping leaves and wrong-angle branches until the next initiative count 20. Borrowed Sky. Choose one creature within 90 ft. The lair moves it up to 20 ft. horizontally and 10 ft. vertically, placing it safely on a surface. An unwilling creature can resist with a DC 17 Strength save."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Veil-Torn Dragon",
-        "revealedName": "Veil-Torn Dragon"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T13:04:14.897Z"
-      }
-    },
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
       "name": "Veilbound Drake Guard",
@@ -500,141 +253,6 @@
       }
     },
     {
-      "templateId": "broken-chain:act3:thought-harrower:v1",
-      "name": "Thought Harrower",
-      "encounterId": "act3-e10-the-center",
-      "encounterLabel": "Act 3 E10 - The Center",
-      "stats": {
-        "kind": "aberration",
-        "ac": 17,
-        "maxHp": 153,
-        "speed": "30 ft.",
-        "defenses": [
-          {
-            "name": "Legendary Resistance - 1 use",
-            "ehpMultiplier": 1.0424576635782374,
-            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
-          }
-        ],
-        "attacksPerTurn": 3,
-        "size": "Medium",
-        "classification": "act-boss",
-        "archetype": "tactician",
-        "legendaryPerRound": 1,
-        "skills": [
-          {
-            "label": "Arcana",
-            "modifier": 10
-          },
-          {
-            "label": "Perception",
-            "modifier": 8
-          }
-        ],
-        "cr": 9
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "DEX",
-          "value": "12 (+1)"
-        },
-        {
-          "label": "CON",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "INT",
-          "value": "22 (+6)",
-          "save": 10
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "save": 8
-        },
-        {
-          "label": "CHA",
-          "value": "18 (+4)",
-          "saveProficient": true
-        }
-      ],
-      "traits": [
-        {
-          "name": "Legendary Resistance (1/Day)",
-          "kind": "trait",
-          "text": "If the Harrower fails a saving throw, it can choose to succeed instead."
-        },
-        {
-          "name": "Residual Hunger",
-          "kind": "trait",
-          "text": "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed."
-        },
-        {
-          "name": "Wrong Origin",
-          "kind": "trait",
-          "text": "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Fracture Seed",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated.",
-          "routineSlots": 1
-        },
-        {
-          "name": "Rift Lance",
-          "kind": "attack",
-          "roll": "1d20 + 10",
-          "damage": "3d10+6",
-          "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
-          "routineSlots": 2
-        },
-        {
-          "name": "Unmake Distance (Recharge 5–6)",
-          "kind": "action",
-          "save": "INT DC 18",
-          "recharge": "5-6",
-          "damage": "6d8+@MAIN",
-          "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
-        },
-        {
-          "name": "Mind Hook",
-          "kind": "action",
-          "save": "WIS",
-          "legendaryCost": 1,
-          "damage": "3d8+6",
-          "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+6) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
-          "onSave": "half"
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Fold Thought",
-          "kind": "reaction",
-          "text": "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round."
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "The thing doing the thinking at the center has too many correct angles. It does not cast darkness or shadow; it makes two places become adjacent because it has forgotten that they were not.",
-        "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Adjacent Elsewhere. Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn. Memory of Falling. Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage. Wrong Angle. Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Thought Harrower",
-        "revealedName": "Thought Harrower"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T19:47:09.237Z"
-      }
-    },
-    {
       "templateId": "broken-chain:act3:breaker:v1",
       "name": "Breaker",
       "encounterId": "act3-e8-the-occupied-acre",
@@ -752,6 +370,163 @@
       }
     },
     {
+      "templateId": "broken-chain:act3:thought-harrower:v1",
+      "lair": {
+        "initiative": 20,
+        "noRepeatConsecutive": true,
+        "note": "The Center. Distance stops agreeing with itself.",
+        "options": [
+          {
+            "name": "Adjacent Elsewhere",
+            "effect": "portal",
+            "text": "Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn."
+          },
+          {
+            "name": "Memory of Falling",
+            "effect": "forced_movement",
+            "save": "STR DC 18",
+            "text": "Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage."
+          },
+          {
+            "name": "Wrong Angle",
+            "effect": "cover",
+            "text": "Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
+          }
+        ]
+      },
+      "name": "Thought Harrower",
+      "encounterId": "act3-e10-the-center",
+      "encounterLabel": "Act 3 E10 - The Center",
+      "stats": {
+        "kind": "aberration",
+        "ac": 17,
+        "maxHp": 153,
+        "speed": "30 ft.",
+        "defenses": [
+          {
+            "name": "Legendary Resistance - 1 use",
+            "ehpMultiplier": 1.0424576635782374,
+            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
+          }
+        ],
+        "attacksPerTurn": 2,
+        "size": "Medium",
+        "classification": "act-boss",
+        "archetype": "tactician",
+        "legendaryPerRound": 1,
+        "skills": [
+          {
+            "label": "Arcana",
+            "modifier": 10
+          },
+          {
+            "label": "Perception",
+            "modifier": 8
+          }
+        ],
+        "cr": 9
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "DEX",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "CON",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "INT",
+          "value": "22 (+6)",
+          "save": 10
+        },
+        {
+          "label": "WIS",
+          "value": "18 (+4)",
+          "save": 8
+        },
+        {
+          "label": "CHA",
+          "value": "18 (+4)",
+          "saveProficient": true
+        }
+      ],
+      "traits": [
+        {
+          "name": "Legendary Resistance (1/Day)",
+          "kind": "trait",
+          "text": "If the Harrower fails a saving throw, it can choose to succeed instead."
+        },
+        {
+          "name": "Residual Hunger",
+          "kind": "trait",
+          "text": "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed."
+        },
+        {
+          "name": "Wrong Origin",
+          "kind": "trait",
+          "text": "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Fracture Seed",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated."
+        },
+        {
+          "name": "Rift Lance",
+          "kind": "attack",
+          "roll": "1d20 + 10",
+          "damage": "3d10+6",
+          "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
+          "routineSlots": 2
+        },
+        {
+          "name": "Unmake Distance (Recharge 5–6)",
+          "kind": "action",
+          "save": "INT DC 18",
+          "recharge": "5-6",
+          "damage": "6d8+@MAIN",
+          "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
+        },
+        {
+          "name": "Mind Hook",
+          "kind": "action",
+          "save": "WIS",
+          "legendaryCost": 1,
+          "damage": "3d8+6",
+          "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+6) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
+          "onSave": "half"
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Fold Thought",
+          "kind": "reaction",
+          "text": "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "The thing doing the thinking at the center has too many correct angles. It does not cast darkness or shadow; it makes two places become adjacent because it has forgotten that they were not.",
+        "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Adjacent Elsewhere. Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn. Memory of Falling. Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage. Wrong Angle. Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Thought Harrower",
+        "revealedName": "Thought Harrower"
+      },
+      "dmEdited": {
+        "at": "2026-08-26T19:47:09.237Z"
+      }
+    },
+    {
       "templateId": "broken-chain:act3:grief-colossus:v1",
       "name": "Grief Colossus",
       "encounterId": "act3-e10-the-center",
@@ -773,7 +548,7 @@
             "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
           }
         ],
-        "attacksPerTurn": 3,
+        "attacksPerTurn": 2,
         "size": "Huge",
         "classification": "act-boss",
         "archetype": "guardian",
@@ -830,8 +605,7 @@
           "name": "Anchor the Wrong",
           "kind": "action",
           "economyCost": "bonus",
-          "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn.",
-          "routineSlots": 1
+          "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
         },
         {
           "name": "Fist",
