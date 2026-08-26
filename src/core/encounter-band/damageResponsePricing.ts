@@ -23,19 +23,30 @@
  * Resistant halves it: pass 0.925, ×1.081. Vulnerable DOUBLES it, so pass rises to 1.20 and
  * effective HP falls to ×0.833 — a vulnerability makes a creature cheaper, which is the point.
  *
- * ⚠ THE SHARE IS AN INPUT, AND AN UNSET ONE PRICES AT NOTHING. The workbook says "the opposing
- * side's ACTUAL eligible damage-type share" — a fact about the party, not a constant, and the
- * runtime publishes no table of it. Defaulting to a plausible 15% would be inventing exactly the
- * kind of figure the coverage gate exists to reject, so a response with no share is recorded,
- * displayed, and contributes 0 until someone says what the share is.
+ * ⚠ THE SHARE IS DERIVED FROM THE PARTY, NOT TYPED IN. It used to be an input, and an unset one
+ * priced at NOTHING — defensible while the app had no way to know the answer, and wrong the moment
+ * it did. Twelve campaign creatures resist fire; every one of them was pricing at zero and asking
+ * the author to weight it by hand.
+ *
+ *   Christopher: *"i shouldnt need to weight how much fire damage the party has for this to be a
+ *   resistance it has"*, and *"the price should come from the action not the workbook, nothing
+ *   should be priced from the workbook because we have the information in the app."*
+ *
+ * `partyDamageMixFromActors` reads the share off the party's own actions — see that file. This
+ * still invents nothing: with no actors to read there is no mix, and a response with no mix and no
+ * explicit share is recorded, displayed, and contributes 0 exactly as before. An explicit `share`
+ * remains available and WINS, for a table whose damage is not in the app.
  */
+
+import { normalizeDamageType, type PartyDamageMix } from "./partyDamageMix";
 
 export type DamageResponse = {
   type: string;
   response: "resistant" | "immune" | "vulnerable";
   qualifier?: string;
   /**
-   * This damage type's share of the party's output, 0–1. Unset = not yet weighted, prices at 1.0.
+   * OVERRIDE. This damage type's share of the party's output, 0–1. Unset is the normal case — the
+   * share is then read from the party's actual actions. Set it only for a party the app cannot see.
    *
    * ⚠ BYPASS BELONGS IN HERE. "Resistant to nonmagical bludgeoning" against a party carrying
    * magic weapons has an ELIGIBLE share near zero even though bludgeoning is a large share of
@@ -58,8 +69,13 @@ export type DamageResponsePrice = {
   multiplier: number;
   /** Fraction of party damage that still lands. */
   passFraction: number;
-  /** Responses recorded but not weighted — shown rather than silently treated as zero. */
+  /** Responses with no share available at all — shown rather than silently treated as zero. */
   unweighted: DamageResponse[];
+  /**
+   * Responses priced from the PARTY's damage mix rather than an entered figure, with the share
+   * used. Reported so a number the DM did not type is still a number they can see and argue with.
+   */
+  derived: Array<{ response: DamageResponse; share: number; qualifierUnresolved: boolean }>;
 };
 
 /**
@@ -72,20 +88,53 @@ export type DamageResponsePrice = {
  */
 export function priceDamageResponses(
   responses: readonly DamageResponse[] | undefined,
+  /**
+   * The party's damage-type composition, from `partyDamageMixFromActors`. Absent means no actors
+   * were readable, and then an unweighted response behaves as it always did: recorded, not priced.
+   */
+  mix?: PartyDamageMix,
 ): DamageResponsePrice {
   const all = responses ?? [];
-  const unweighted = all.filter(r => r.type.trim() !== "" && !Number.isFinite(r.share as number));
-  const weighted = all.filter(r => r.type.trim() !== "" && Number.isFinite(r.share as number));
+  const named = all.filter(r => r.type.trim() !== "");
+
+  /**
+   * The explicit share if there is one, otherwise the party's own. A type the party does not deal
+   * at all resolves to 0 — which is a real answer, not a missing one: resistance to a damage type
+   * nobody in the party throws is worth exactly nothing, and saying so is the point of reading it
+   * from the actors rather than asking.
+   */
+  const shareFor = (r: DamageResponse): { share: number; derived: boolean } | undefined => {
+    if (Number.isFinite(r.share as number)) return { share: r.share as number, derived: false };
+    // ⚠ `usable`, NOT "has any data". A mix built from sheets that mostly state no damage type
+    // answers 0% to everything, which reads as a decision and is a gap. See `partyDamageMix.ts`.
+    if (!mix?.usable) return undefined;
+    return { share: mix.shares[normalizeDamageType(r.type)] ?? 0, derived: true };
+  };
+
+  const unweighted = named.filter(r => shareFor(r) === undefined);
+  const derived: DamageResponsePrice["derived"] = [];
 
   let removed = 0;
-  for (const r of weighted) {
-    const share = Math.min(1, Math.max(0, r.share as number));
+  for (const r of named) {
+    const resolved = shareFor(r);
+    if (!resolved) continue;
+    const share = Math.min(1, Math.max(0, resolved.share));
+    /**
+     * ⚠ A QUALIFIER NARROWS ELIGIBILITY AND NOTHING HERE CAN READ IT. "Resistant to nonmagical
+     * bludgeoning" against a party carrying magic weapons is eligible on almost none of that
+     * type's share, and the qualifier is free prose. Priced at the FULL type share — the upper
+     * bound — and reported as such, rather than silently narrowed by a guess or silently dropped
+     * to zero. An explicit `share` is the way to state the real figure.
+     */
+    if (resolved.derived) {
+      derived.push({ response: r, share, qualifierUnresolved: Boolean(r.qualifier?.trim()) });
+    }
     removed += share * (1 - PASS_FRACTION[r.response]);
   }
   // A party cannot be prevented from dealing more than all of its damage, and a creature cannot
   // be made to take more than triple — the clamp is a guardrail on nonsense input, not a model.
   const passFraction = Math.min(3, Math.max(0.05, 1 - removed));
-  return { multiplier: 1 / passFraction, passFraction, unweighted };
+  return { multiplier: 1 / passFraction, passFraction, unweighted, derived };
 }
 
 /** One-line summary for a card or an editor row: "Immune to cold · Vulnerable to radiant". */

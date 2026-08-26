@@ -126,6 +126,1565 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     }
   },
   {
+    "templateId": "broken-chain:act3:brandwing:v1",
+    "name": "Brandwing",
+    "encounterId": "act3-e7-the-last-court",
+    "encounterLabel": "Act 3 E7 - The Last Court",
+    "stats": {
+      "kind": "fiend",
+      "ac": 17,
+      "maxHp": 81,
+      "speed": "30 ft., fly 40 ft.",
+      "defenses": [
+        {
+          "name": "Magic Resistance",
+          "ehpMultiplier": 1.115824,
+          "rule": "Magic Resistance",
+          "note": "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects."
+        },
+        {
+          "name": "Vulnerability - ~50% of opposing damage",
+          "ehpMultiplier": 0.6666666666666667,
+          "rule": "Vulnerability - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "tactician",
+      "skills": [
+        {
+          "label": "Perception",
+          "modifier": 8
+        },
+        {
+          "label": "Investigation",
+          "modifier": 9
+        }
+      ],
+      "proficiencyBonus": 4,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "DEX",
+        "value": "20 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "INT",
+        "value": "20 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "WIS",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "CHA",
+        "value": "14 (+2)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Magic Resistance",
+        "kind": "trait",
+        "text": "Brandwing has advantage on saving throws against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Red Script",
+        "kind": "action",
+        "economyCost": "bonus",
+        "damage": "1d8",
+        "text": "Bonus Action: choose one creature within 90 ft. Clear Angle: ignore half and three-quarters cover against it, and the first Ember Lance this turn gains +2 to hit. Closing Stroke: the first Ember Lance that hits it this turn deals an extra 4 (1d8) fire damage. Only one Red Script can be active at a time."
+      },
+      {
+        "name": "Ember Lance",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d10 + @MAIN",
+        "text": "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Cinder Skip",
+        "kind": "reaction",
+        "text": "When Brandwing is hit by an attack or targeted by a spell, the triggering attack or spell resolves completely. Brandwing then teleports up to 15 ft. to an unoccupied space it can see."
+      }
+    ],
+    "resources": [],
+    "notes": [
+      "A narrow Fiend with wing-like sheets of ember script. It writes on bark by touching it and leaves the letters burning after its hand is gone. Brandwing is the only Fiend in the Last Court roster.",
+      "CINDER SKIP IS NOT MITIGATION, and prices at nothing on purpose. The block says the triggering attack or spell resolves COMPLETELY before the teleport, so it changes where Brandwing is standing next, not what it takes.",
+      "RED SCRIPT CARRIES ITS 1d8 SO THE CHECKER CAN READ IT. Without a damage field the checker reported NEEDS DM INPUT - dice appear in the printed text and score zero - which is a real read failure, not a quibble. Once per turn is the rider’s true frequency, so a bonus-action line is the right shape. The trace applies it flat while the block conditions it on the first Ember Lance HITTING, so this reads about 1.4 a round generous. The +2 to hit is not counted at all."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Brandwing",
+      "revealedName": "Brandwing"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T06:58:31.603Z"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:breaker:v1",
+    "name": "Breaker",
+    "encounterId": "act3-e8-the-occupied-acre",
+    "encounterLabel": "Act 3 E8 - The Occupied Acre",
+    "stats": {
+      "kind": "fiend",
+      "ac": 15,
+      "maxHp": 130,
+      "speed": "40 ft.",
+      "defenses": [
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 4,
+      "size": "Large",
+      "classification": "elite",
+      "archetype": "bruiser",
+      "skills": [
+        {
+          "label": "Athletics",
+          "modifier": 9
+        },
+        {
+          "label": "Perception",
+          "modifier": 7
+        }
+      ],
+      "proficiencyBonus": 4,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "21 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "DEX",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CON",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "INT",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "WIS",
+        "value": "16 (+3)",
+        "saveProficient": true
+      },
+      {
+        "label": "CHA",
+        "value": "17 (+3)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Two-Handed Hold",
+        "kind": "trait",
+        "text": "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Grasping Limb",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d6 + @MAIN",
+        "routineSlots": 2,
+        "text": "Melee Weapon Attack: +9 to hit, reach 10 ft., one Medium or smaller creature. Hit: 8 (1d6 + 5) bludgeoning damage, and the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
+      },
+      {
+        "name": "Heavy Blow",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d8 + @MAIN",
+        "routineSlots": 2,
+        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 9 (1d8 + 5) bludgeoning damage."
+      },
+      {
+        "name": "Cast Aside",
+        "kind": "action",
+        "economyCost": "free",
+        "text": "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A massive four-limbed Fiend built to ruin formation rather than hold ground. Two long grasping limbs reach ahead of its shoulders while the shorter arms hammer whatever remains close. It is broad, obvious, and easy to hit; the problem is how much body must be cut through before it stops rearranging the fight.",
+      "DM DESIGN READ. The Breaker enters the party's shape rather than defending a point. Its four-attack routine lets it seize up to two bodies while Heavy Blows keep the turn relevant; Cast Aside is the formation-breaking payoff.",
+      "THE ROUTINE IS A FIXED 2+2 SPLIT, not four of the best attack. Grasping Limb averages 8.5 and Heavy Blow 9.5, so the authored routine is 2x8.5 + 2x9.5 = 36 before to-hit, while a free choice of four would read 38. Check the DPR column against 36, not 38."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Breaker",
+      "revealedName": "Breaker"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:darkmare:v1",
+    "name": "Darkmare",
+    "encounterId": "act3-e3-gate-i-crone-and-mare",
+    "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "stats": {
+      "kind": "fiend",
+      "ac": 12,
+      "maxHp": 97,
+      "speed": "50 ft.",
+      "defenses": [
+        {
+          "name": "Concealment until first attack hits each round",
+          "ehpMultiplier": 1.1132595358150892,
+          "note": "Read from \"Darkmane (Constant)\" (trait) on \"obscurement\"."
+        },
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Large",
+      "classification": "mid-boss",
+      "archetype": "bruiser",
+      "skills": [
+        {
+          "label": "Perception",
+          "modifier": 5
+        }
+      ],
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "20 (+5)",
+        "save": 8
+      },
+      {
+        "label": "DEX",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CON",
+        "value": "14 (+2)",
+        "save": 7
+      },
+      {
+        "label": "INT",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "WIS",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "CHA",
+        "value": "17 (+3)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Darkmane (Constant)",
+        "kind": "trait",
+        "text": "Darkmare creates one-way magical obscurement around itself. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally."
+      },
+      {
+        "name": "Umbral Passage",
+        "kind": "trait",
+        "text": "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold."
+      },
+      {
+        "name": "Shadow Shroud (1/Day)",
+        "kind": "trait",
+        "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Horn",
+        "kind": "attack",
+        "roll": "1d20 + 8",
+        "damage": "2d8 + @MAIN",
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage."
+      },
+      {
+        "name": "Hooves",
+        "kind": "attack",
+        "roll": "1d20 + 8",
+        "damage": "2d6 + @MAIN",
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A war-mount shaped from a noble silhouette and then invaded from the inside. Its hooves do not ask the Wood for a road; they burn one."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Darkmare",
+      "revealedName": "Darkmare"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
+    "name": "Demon Knight of Punishment",
+    "encounterId": "act3-e8-the-occupied-acre",
+    "encounterLabel": "Act 3 E8 - The Occupied Acre",
+    "stats": {
+      "kind": "fiend",
+      "ac": 17,
+      "maxHp": 153,
+      "speed": "30 ft.",
+      "defenses": [
+        {
+          "name": "Damage transfer / redirection",
+          "ehpMultiplier": 1,
+          "note": "Read from \"Oppressive Presence\" (trait) on \"must target\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
+        },
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 1,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "guardian",
+      "skills": [
+        {
+          "label": "Intimidation",
+          "modifier": 7
+        },
+        {
+          "label": "Perception",
+          "modifier": 6
+        }
+      ],
+      "proficiencyBonus": 4,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "18 (+4)"
+      },
+      {
+        "label": "DEX",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CON",
+        "value": "19 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "INT",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "WIS",
+        "value": "14 (+2)",
+        "saveProficient": true
+      },
+      {
+        "label": "CHA",
+        "value": "17 (+3)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Barbed Plate",
+        "kind": "trait",
+        "text": "When a creature within 5 ft. hits the Knight with a melee attack that deals bludgeoning, piercing, or slashing damage, that attacker takes piercing damage equal to the Knight’s Constitution modifier (4). The triggering attack resolves normally."
+      },
+      {
+        "name": "Oppressive Presence",
+        "kind": "trait",
+        "text": "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Iron Grasp",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d10 + @MAIN",
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Commanding Presence",
+        "kind": "reaction",
+        "text": "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances."
+      }
+    ],
+    "resources": [],
+    "notes": [
+      "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
+      "DM DESIGN READ. The Knight is the wall. Its shattered plate is deliberately hittable, but its raw body is large. Barbed Plate punishes repeated close physical hits. Oppressive Presence taxes multi-target creature effects once, and Commanding Presence can force a second legal instance into the Knight; single-target effects remain valid answers.",
+      "BARBED PLATE IS DAMAGE, NOT DEFENCE, and the trace cannot see it. 4 piercing per melee hit taken is real pressure on the party - roughly 12 a round against three melee hits - but it is retaliation triggered by the PARTY's action, and the trace prices only what the creature spends its own action economy on. Not counted in the DPR below."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Demon Knight of Punishment",
+      "revealedName": "Demon Knight of Punishment"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T07:06:55.539Z"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:demonic-reaver:v1",
+    "name": "Demonic Reaver",
+    "encounterId": "act3-e8-the-occupied-acre",
+    "encounterLabel": "Act 3 E8 - The Occupied Acre",
+    "stats": {
+      "kind": "fiend",
+      "ac": 18,
+      "maxHp": 90,
+      "speed": "40 ft.",
+      "defenses": [
+        {
+          "name": "All attacks at disadvantage - 1 round",
+          "ehpMultiplier": 1.1294156939022204,
+          "note": "Read from \"Shifting Outline\" (trait) on \"attack rolls against it have disadvantage\"."
+        },
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "skirmisher",
+      "skills": [
+        {
+          "label": "Acrobatics",
+          "modifier": 8
+        },
+        {
+          "label": "Stealth",
+          "modifier": 12
+        },
+        {
+          "label": "Perception",
+          "modifier": 12
+        }
+      ],
+      "cr": 9,
+      "damageResponses": [
+        {
+          "type": "fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "DEX",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "INT",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "WIS",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "CHA",
+        "value": "14 (+2)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Shifting Outline",
+        "kind": "trait",
+        "text": "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect."
+      },
+      {
+        "name": "Scent the Expense",
+        "kind": "trait",
+        "text": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
+      }
+    ],
+    "actions": [
+      {
+        "name": "Rending Talon",
+        "kind": "attack",
+        "roll": "1d20 +@ATK",
+        "damage": "1d10+@MAIN slashing + 2d6 fire",
+        "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Demonic Reaver",
+      "revealedName": "Demonic Reaver"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T06:26:47.425Z"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:folded-bulwark:v1",
+    "name": "Folded Bulwark",
+    "encounterId": "act3-e4-the-hollow-feast",
+    "encounterLabel": "Act 3 E4 - The Hollow Feast",
+    "stats": {
+      "kind": "fiend",
+      "ac": 18,
+      "maxHp": 46,
+      "speed": "25 ft.",
+      "defenses": [
+        {
+          "name": "Fixed prevention - 8/round",
+          "ehpMultiplier": 1.1418712644969924,
+          "note": "Read from \"Interpose\" (reaction) on \"damage reduced by ~8\"."
+        },
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Large",
+      "classification": "strong",
+      "archetype": "guardian",
+      "skills": [
+        {
+          "label": "Athletics",
+          "modifier": 7
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": [
+        {
+          "type": "FIre",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "DEX",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "CON",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "INT",
+        "value": "8 (-1)"
+      },
+      {
+        "label": "WIS",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CHA",
+        "value": "12 (+1)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Braced Form",
+        "kind": "trait",
+        "text": "The Bulwark has advantage on saving throws and ability checks made to resist being knocked prone or moved against its will."
+      },
+      {
+        "name": "Interposing Bulk",
+        "kind": "trait",
+        "text": "A hostile creature moving through the Bulwark's reach toward a creature on the opposite side of the Bulwark treats that movement as difficult terrain."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Heavy Fist",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d10 + @MAIN",
+        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Fist attacks."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Interpose",
+        "kind": "reaction",
+        "text": "When another creature within 10 ft. of the Bulwark is hit by an attack, the Bulwark can move up to 5 ft. toward that creature without provoking opportunity attacks. If it ends within 5 ft. of that creature, reduce the triggering damage by 8. The Bulwark then takes 4 damage that cannot be reduced or prevented. Once per round."
+      }
+    ],
+    "resources": [],
+    "notes": [
+      "A broad Fiend built from overlapping folds of black-red hide and dense plated tissue. Its mass spreads sideways rather than upward. It carries no chains, stakes, saintly shape, or siege hardware; every part of it looks designed for one purpose - putting itself between danger and the creature beside it.",
+      "Bodyguard. Protects any nearby ally, but its encounter priority is the Regent. Killing it does NOT turn the Host hostile."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Folded Bulwark",
+      "revealedName": "Folded Bulwark"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:gloam-harrow:v1",
+    "name": "Gloam Harrow",
+    "encounterId": "act3-e7-the-last-court",
+    "encounterLabel": "Act 3 E7 - The Last Court",
+    "stats": {
+      "kind": "fey",
+      "ac": 16,
+      "maxHp": 86,
+      "speed": "30 ft.",
+      "defenses": [],
+      "attacksPerTurn": 1,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "commander",
+      "skills": [
+        {
+          "label": "Insight",
+          "modifier": 7
+        },
+        {
+          "label": "Persuasion",
+          "modifier": 8
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": []
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "DEX",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "CON",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "INT",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "WIS",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "CHA",
+        "value": "20 (+5)",
+        "saveProficient": true
+      }
+    ],
+    "traits": [
+      {
+        "name": "Fey Mind",
+        "kind": "trait",
+        "text": "Gloam Harrow has advantage on saving throws against being Charmed, and magic cannot put her to sleep."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Winter Needle",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d10 + @MAIN",
+        "text": "Ranged Spell Attack: +8 to hit, range 90 ft., one target. Hit: 10 (1d10 + 5) cold and psychic damage."
+      },
+      {
+        "name": "Winter’s Toll",
+        "kind": "action",
+        "text": "Choose a point within 60 ft. Until the start of Harrow’s next turn, a 15-ft.-radius area is steeped in biting Fey glamour. Harrow’s allies in the area gain +3 to attack rolls and saving throws. Hostile creatures in the area take -3 to attack rolls and saving throws. The area ends early if Harrow is incapacitated."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A courtly Fey in a mantle of dead-green leaves stitched through with pale winter light. She speaks of hardship as cultivation: the Wood has sheltered too much, spared too much, and should learn again what deserves to survive.",
+      "DM DESIGN READ. Harrow is the enchanter and commander, not a secondary damage dealer. Winter’s Toll helps allies and hinders enemies in the same space, so placement is the action. Using it costs Harrow her Action and therefore her own damage for the round. Its flat 3 is intentional.",
+      "UNPRICED IN EHP, AND THE WRONG SHAPE FOR A PER-CREATURE MULTIPLIER. Winter’s Toll is roster-wide: -3 to party attack rolls reads as roughly +3 AC on every ally standing in it, against the workbook's Shield-like +5 AC - 1 round (+0.141537). It is also a trade, because casting it costs Harrow her whole action, which is why her own damage column is one attack and not two."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Gloam Harrow",
+      "revealedName": "Gloam Harrow"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:grief-colossus:v1",
+    "name": "Grief Colossus",
+    "encounterId": "act3-e10-the-center",
+    "encounterLabel": "Act 3 E10 - The Center",
+    "stats": {
+      "kind": "aberration",
+      "ac": 18,
+      "maxHp": 207,
+      "speed": "35 ft.",
+      "defenses": [
+        {
+          "name": "Legendary Resistance - 1 use",
+          "ehpMultiplier": 1.0424576635782374,
+          "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
+        },
+        {
+          "name": "Fixed prevention - 12/round",
+          "ehpMultiplier": 1.2323134514052565,
+          "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Huge",
+      "classification": "act-boss",
+      "archetype": "guardian",
+      "skills": [
+        {
+          "label": "Athletics",
+          "modifier": 10
+        }
+      ],
+      "proficiencyBonus": 4
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "22 (+6)",
+        "saveProficient": true
+      },
+      {
+        "label": "DEX",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "CON",
+        "value": "22 (+6)",
+        "saveProficient": true
+      },
+      {
+        "label": "INT",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "WIS",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CHA",
+        "value": "10 (+0)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Legendary Resistance (1/Day)",
+        "kind": "trait",
+        "text": "If the Colossus fails a saving throw, it can choose to succeed instead."
+      },
+      {
+        "name": "Impossible Mass",
+        "kind": "trait",
+        "text": "Advantage on saves against being knocked prone or moved against its will."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Anchor the Wrong",
+        "kind": "action",
+        "economyCost": "bonus",
+        "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
+      },
+      {
+        "name": "Fist",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d10 + @MAIN",
+        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning."
+      },
+      {
+        "name": "Collapse Space (Recharge 5–6)",
+        "kind": "action",
+        "save": "STR DC 18",
+        "recharge": "5-6",
+        "damage": "5d8",
+        "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Body Between",
+        "kind": "reaction",
+        "text": "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round."
+      }
+    ],
+    "resources": [],
+    "notes": [
+      "The weight behind the thought. Its limbs do not bend in the same number of places twice, but when it decides a space is occupied, the battlefield has to argue with several tons of certainty."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Grief Colossus",
+      "revealedName": "Grief Colossus"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T07:15:22.399Z"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:marrowstalk:v1",
+    "name": "Marrowstalk",
+    "encounterId": "act3-e2-the-cut-below",
+    "encounterLabel": "Act 3 E2 - The Cut Below",
+    "stats": {
+      "kind": "fiend",
+      "ac": 15,
+      "maxHp": 68,
+      "speed": "30 ft.",
+      "defenses": [
+        {
+          "name": "Fixed prevention - 12/round",
+          "ehpMultiplier": 1.2323134514052565,
+          "note": "Read from \"Marrow Grip\" (trait) on \"damage reduced by ~12\"."
+        },
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Large",
+      "classification": "elite",
+      "archetype": "bruiser",
+      "skills": [
+        {
+          "label": "Athletics",
+          "modifier": 7
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "DEX",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "CON",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "INT",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "WIS",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "CHA",
+        "value": "12 (+1)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Breakroot",
+        "kind": "trait",
+        "text": "The first 10 ft. of natural difficult terrain Marrowstalk enters on a turn costs no extra movement. The spaces it crosses become scarred until the start of its next turn; natural difficult terrain in those spaces is suppressed, and a hostile creature entering a scarred space spends 5 extra ft. of movement."
+      },
+      {
+        "name": "Marrow Grip",
+        "kind": "trait",
+        "text": "A creature hit by Hooking Claw has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Hooking Claw",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d10 + @MAIN",
+        "text": "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing."
+      },
+      {
+        "name": "Crushing Cast (Recharge 5–6)",
+        "kind": "action",
+        "save": "STR DC 15",
+        "recharge": "5-6",
+        "damage": "4d8",
+        "text": "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A heavy Fiend whose limbs look assembled around the idea of a hook. It does not pass through undergrowth; it crushes a corridor through it and leaves that corridor wrong behind it."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Marrowstalk",
+      "revealedName": "Marrowstalk"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:nail-saint:v1",
+    "name": "Nail Saint",
+    "encounterId": "act3-e5-the-scar-line",
+    "encounterLabel": "Act 3 E5 - The Scar Line",
+    "stats": {
+      "kind": "fiend",
+      "ac": 16,
+      "maxHp": 56,
+      "speed": "30 ft.",
+      "defenses": [
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "tactician",
+      "skills": [
+        {
+          "label": "Arcana",
+          "modifier": 8
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "DEX",
+        "value": "16 (+3)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "INT",
+        "value": "20 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "WIS",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "CHA",
+        "value": "14 (+2)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Claimed Line",
+        "kind": "trait",
+        "text": "The first hostile creature each round that crosses a claimed line must spend 10 extra ft. of movement or stop immediately before crossing, its choice. Forced movement ignores this rule."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Drive Nail",
+        "kind": "action",
+        "economyCost": "bonus",
+        "text": "Bonus Action: place one nail in an adjacent solid surface. Maximum two. A nail is an object (AC 13, 8 HP). A straight line up to 20 ft. long between Nail Saint and a nail is a claimed line until the start of the next turn."
+      },
+      {
+        "name": "Boundary Spike",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d8 + @MAIN",
+        "text": "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force."
+      },
+      {
+        "name": "Hammer the Border (Recharge 5–6)",
+        "kind": "action",
+        "save": "STR DC 16",
+        "recharge": "5-6",
+        "damage": "4d8",
+        "text": "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A thin Fiend wrapped in strips of material that look stitched to nothing. It carries iron nails too long for carpentry and drives them into living wood like survey posts."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Nail Saint",
+      "revealedName": "Nail Saint"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:quillshrike:v1",
+    "name": "Quillshrike",
+    "encounterId": "act3-e2-the-cut-below",
+    "encounterLabel": "Act 3 E2 - The Cut Below",
+    "stats": {
+      "kind": "fiend",
+      "ac": 17,
+      "maxHp": 39,
+      "speed": "40 ft., climb 20 ft.",
+      "defenses": [
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "skirmisher",
+      "skills": [
+        {
+          "label": "Acrobatics",
+          "modifier": 8
+        },
+        {
+          "label": "Stealth",
+          "modifier": 8
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "DEX",
+        "value": "20 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "INT",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "WIS",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "CHA",
+        "value": "14 (+2)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "First Nails",
+        "kind": "trait",
+        "text": "When initiative is rolled, place two visible nail marks in spaces within 20 ft. Quillshrike may then move up to half speed toward one of them. No attack or save occurs."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Snap to the Nail",
+        "kind": "action",
+        "economyCost": "bonus",
+        "text": "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn."
+      },
+      {
+        "name": "Razor Quill",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d12 + @MAIN slashing + 1d6",
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn."
+      },
+      {
+        "name": "Black Fan (Recharge 5–6)",
+        "kind": "action",
+        "save": "DEX DC 16",
+        "recharge": "5-6",
+        "damage": "4d8",
+        "text": "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A narrow Fiend plated in black quills like forged nails. Wherever it stops, one of those nails ends up driven into bark, stone, or soil, leaving a straight line where the forest had none."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Quillshrike",
+      "revealedName": "Quillshrike"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:rift-slick:v1",
+    "name": "Rift-Slick",
+    "encounterId": "act3-e5-the-scar-line",
+    "encounterLabel": "Act 3 E5 - The Scar Line",
+    "stats": {
+      "kind": "fiend",
+      "ac": 12,
+      "maxHp": 59,
+      "speed": "40 ft., climb 30 ft.",
+      "defenses": [
+        {
+          "name": "Vulnerability - ~50% of opposing damage",
+          "ehpMultiplier": 0.6666666666666667,
+          "rule": "Vulnerability - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "skirmisher",
+      "skills": [
+        {
+          "label": "Acrobatics",
+          "modifier": 8
+        },
+        {
+          "label": "Stealth",
+          "modifier": 8
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "DEX",
+        "value": "20 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "INT",
+        "value": "16 (+3)",
+        "saveProficient": true
+      },
+      {
+        "label": "WIS",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "CHA",
+        "value": "10 (+0)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Through the Wound",
+        "kind": "trait",
+        "text": "Rift-Slick can move through a space as narrow as 3 inches without squeezing. When it passes through natural cover, roots, or a tree-space, it leaves a 5-ft. scar at the exit until the start of its next turn."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Scar Slip",
+        "kind": "action",
+        "economyCost": "bonus",
+        "text": "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation."
+      },
+      {
+        "name": "Raking Claw",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "1d12 + @MAIN",
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing."
+      },
+      {
+        "name": "Warping Cut (Recharge 5–6)",
+        "kind": "action",
+        "save": "DEX DC 16",
+        "recharge": "5-6",
+        "damage": "4d8",
+        "text": "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round."
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "A gray Fiend whose body can become too thin for its skeleton and then remember bones afterward. Wherever it squeezes through the Wood, sap hisses from the wound."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Rift-Slick",
+      "revealedName": "Rift-Slick"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:shardbound:v1",
+    "name": "Shardbound",
+    "encounterId": "act3-e2-the-cut-below",
+    "encounterLabel": "Act 3 E2 - The Cut Below",
+    "stats": {
+      "kind": "fiend",
+      "ac": 17,
+      "maxHp": 46,
+      "speed": "30 ft.",
+      "defenses": [
+        {
+          "name": "Resistance - ~50% of opposing damage",
+          "ehpMultiplier": 1.3418341811719772,
+          "rule": "Resistance - ~50% of opposing damage",
+          "note": "profile"
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "elite",
+      "archetype": "tactician",
+      "skills": [
+        {
+          "label": "Arcana",
+          "modifier": 8
+        }
+      ],
+      "proficiencyBonus": 3,
+      "damageResponses": [
+        {
+          "type": "Fire",
+          "response": "resistant"
+        }
+      ]
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "10 (+0)"
+      },
+      {
+        "label": "DEX",
+        "value": "16 (+3)",
+        "saveProficient": true
+      },
+      {
+        "label": "CON",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "INT",
+        "value": "20 (+5)",
+        "saveProficient": true
+      },
+      {
+        "label": "WIS",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "CHA",
+        "value": "12 (+1)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Refracted Origin",
+        "kind": "trait",
+        "text": "When making a ranged spell attack, Shardbound can have the attack originate from itself or from one of its stakes it can see. Range is measured from the chosen origin. This can bend a sight line but does not increase damage."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Survey Stake",
+        "kind": "action",
+        "economyCost": "bonus",
+        "text": "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover."
+      },
+      {
+        "name": "Crystal Bolt",
+        "kind": "attack",
+        "roll": "1d20 + @ATK",
+        "damage": "2d6 + @MAIN",
+        "text": "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force."
+      },
+      {
+        "name": "Refracted Lance (Recharge 5–6)",
+        "kind": "action",
+        "save": "DEX DC 16",
+        "recharge": "5-6",
+        "damage": "5d8",
+        "text": "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Shatter the Stake",
+        "kind": "reaction",
+        "text": "When Shardbound is targeted by an attack, it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once per round."
+      }
+    ],
+    "resources": [],
+    "notes": [
+      "A faceted Fiend that plants crystal into living soil as if staking a survey line. The crystal does not grow with the Wood. It replaces what was there."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Shardbound",
+      "revealedName": "Shardbound"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:thought-harrower:v1",
+    "name": "Thought Harrower",
+    "encounterId": "act3-e10-the-center",
+    "encounterLabel": "Act 3 E10 - The Center",
+    "stats": {
+      "kind": "aberration",
+      "ac": 17,
+      "maxHp": 153,
+      "speed": "30 ft.",
+      "defenses": [
+        {
+          "name": "Legendary Resistance - 1 use",
+          "ehpMultiplier": 1.0424576635782374,
+          "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
+        }
+      ],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "act-boss",
+      "archetype": "tactician",
+      "legendaryPerRound": 1,
+      "skills": [
+        {
+          "label": "Arcana",
+          "modifier": 10
+        },
+        {
+          "label": "Perception",
+          "modifier": 8
+        }
+      ],
+      "cr": 9
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "14 (+2)"
+      },
+      {
+        "label": "DEX",
+        "value": "12 (+1)"
+      },
+      {
+        "label": "CON",
+        "value": "16 (+3)"
+      },
+      {
+        "label": "INT",
+        "value": "22 (+6)",
+        "save": 10
+      },
+      {
+        "label": "WIS",
+        "value": "18 (+4)",
+        "save": 8
+      },
+      {
+        "label": "CHA",
+        "value": "18 (+4)",
+        "saveProficient": true
+      }
+    ],
+    "traits": [
+      {
+        "name": "Legendary Resistance (1/Day)",
+        "kind": "trait",
+        "text": "If the Harrower fails a saving throw, it can choose to succeed instead."
+      },
+      {
+        "name": "Residual Hunger",
+        "kind": "trait",
+        "text": "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed."
+      },
+      {
+        "name": "Wrong Origin",
+        "kind": "trait",
+        "text": "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Fracture Seed",
+        "kind": "action",
+        "economyCost": "bonus",
+        "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated."
+      },
+      {
+        "name": "Rift Lance",
+        "kind": "attack",
+        "roll": "1d20 + 10",
+        "damage": "3d10+6",
+        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic."
+      },
+      {
+        "name": "Unmake Distance (Recharge 5–6)",
+        "kind": "action",
+        "save": "INT DC 18",
+        "recharge": "5-6",
+        "damage": "6d8",
+        "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
+      },
+      {
+        "name": "Mind Hook",
+        "kind": "action",
+        "save": "WIS",
+        "legendaryCost": 1,
+        "damage": "3d8+6",
+        "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+6) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
+        "onSave": "half"
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Fold Thought",
+        "kind": "reaction",
+        "text": "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round."
+      }
+    ],
+    "resources": [],
+    "notes": [
+      "The thing doing the thinking at the center has too many correct angles. It does not cast darkness or shadow; it makes two places become adjacent because it has forgotten that they were not.",
+      "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Adjacent Elsewhere. Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn. Memory of Falling. Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage. Wrong Angle. Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Thought Harrower",
+      "revealedName": "Thought Harrower"
+    }
+  },
+  {
     "templateId": "broken-chain:act3:veil-torn-dragon:v1",
     "name": "Veil-Torn Dragon",
     "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
@@ -263,50 +1822,42 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     }
   },
   {
-    "templateId": "broken-chain:act3:demonic-reaver:v1",
-    "name": "Demonic Reaver",
-    "encounterId": "act3-e8-the-occupied-acre",
-    "encounterLabel": "Act 3 E8 - The Occupied Acre",
+    "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
+    "name": "Veilbound Drake Guard",
+    "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
+    "encounterLabel": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     "stats": {
-      "kind": "fiend",
-      "ac": 18,
-      "maxHp": 90,
-      "speed": "40 ft.",
+      "kind": "dragon",
+      "ac": 16,
+      "maxHp": 75,
+      "speed": "30 ft., fly 60 FT",
       "defenses": [
-        {
-          "name": "All attacks at disadvantage - 1 round",
-          "ehpMultiplier": 1.1294156939022204,
-          "note": "Read from \"Shifting Outline\" (trait) on \"attack rolls against it have disadvantage\"."
-        },
         {
           "name": "Resistance - ~50% of opposing damage",
           "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
+          "rule": "First attack each round at disadvantage",
           "note": "profile"
+        },
+        {
+          "name": "First attack each round at disadvantage",
+          "ehpMultiplier": 1.0477493435640757,
+          "note": "Read from \"Moon-Slick Scales\" (trait) on \"first attack each round at disadvantage\"."
         }
       ],
-      "attacksPerTurn": 2,
       "size": "Medium",
-      "classification": "elite",
+      "classification": "mid-boss",
       "archetype": "skirmisher",
       "skills": [
         {
-          "label": "Acrobatics",
-          "modifier": 8
-        },
-        {
           "label": "Stealth",
-          "modifier": 12
-        },
-        {
-          "label": "Perception",
-          "modifier": 12
+          "modifier": 4
         }
       ],
-      "cr": 9,
+      "cr": 4,
+      "attacksPerTurn": 3,
       "damageResponses": [
         {
-          "type": "fire",
+          "type": "Fire",
           "response": "resistant"
         }
       ]
@@ -314,417 +1865,85 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "abilities": [
       {
         "label": "STR",
-        "value": "10 (+0)"
+        "value": "14 (+2)"
       },
       {
         "label": "DEX",
-        "value": "18 (+4)",
+        "value": "15 (+2)",
         "saveProficient": true
       },
       {
         "label": "CON",
-        "value": "12 (+1)"
-      },
-      {
-        "label": "INT",
         "value": "16 (+3)"
       },
       {
+        "label": "INT",
+        "value": "10 (+0)"
+      },
+      {
         "label": "WIS",
-        "value": "18 (+4)",
-        "saveProficient": true
+        "value": "14 (+2)"
       },
       {
         "label": "CHA",
-        "value": "14 (+2)"
+        "value": "10 (+0)"
       }
     ],
     "traits": [
       {
-        "name": "Shifting Outline",
+        "name": "Moon-Slick Scales",
         "kind": "trait",
-        "text": "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect."
+        "text": "The first opportunity attack made against the wyrmling each round has disadvantage."
       },
       {
-        "name": "Scent the Expense",
+        "name": "Multiattack",
         "kind": "trait",
-        "text": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
+        "text": "Multiattack. The drake makes three attacks: one with its Bite, one with its Claws, and one with its Tail."
       }
     ],
     "actions": [
       {
-        "name": "Rending Talon",
+        "name": "Bite",
         "kind": "attack",
-        "roll": "1d20 +@ATK",
-        "damage": "1d10+@MAIN slashing + 2d6 fire",
-        "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks."
+        "roll": "1d20 + 7",
+        "damage": "2d6 + 4 piercing + 1d6 radiant",
+        "text": "Hit: 9 (2d6 + 2) piercing damage."
+      },
+      {
+        "name": "Veil Breath",
+        "kind": "action",
+        "save": "DEX",
+        "recharge": "6",
+        "damage": "4d6",
+        "text": "The drake exhales corrupted Fey energy in a 20-foot cone. Each creature in that area must make a Dexterity saving throw, taking 14 (4d6) fire on a failed save, or half as much on a successful one.",
+        "onSave": "half",
+        "range": "20 FT cone"
+      },
+      {
+        "name": "Claw",
+        "kind": "action",
+        "roll": "1d20+@ATK",
+        "damage": "2d6+@STR",
+        "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage."
+      },
+      {
+        "name": "Tail",
+        "kind": "action",
+        "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
+        "roll": "1d20@ATK",
+        "damage": "2d6@STR",
+        "save": "STR"
       }
     ],
     "reactions": [],
     "resources": [],
     "notes": [
-      "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it."
+      "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early"
     ],
     "visibility": {
       "defaultState": "hp-bar",
-      "hiddenName": "Demonic Reaver",
-      "revealedName": "Demonic Reaver"
-    },
-    "dmEdited": {
-      "at": "2026-08-26T06:26:47.425Z"
-    }
-  },
-  {
-    "templateId": "broken-chain:act3:brandwing:v1",
-    "name": "Brandwing",
-    "encounterId": "act3-e7-the-last-court",
-    "encounterLabel": "Act 3 E7 - The Last Court",
-    "stats": {
-      "kind": "fiend",
-      "ac": 17,
-      "maxHp": 81,
-      "speed": "30 ft., fly 40 ft.",
-      "defenses": [
-        {
-          "name": "Magic Resistance",
-          "ehpMultiplier": 1.115824,
-          "rule": "Magic Resistance",
-          "note": "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects."
-        },
-        {
-          "name": "Vulnerability - ~50% of opposing damage",
-          "ehpMultiplier": 0.6666666666666667,
-          "rule": "Vulnerability - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
-      "attacksPerTurn": 2,
-      "size": "Medium",
-      "classification": "elite",
-      "archetype": "tactician",
-      "skills": [
-        {
-          "label": "Perception",
-          "modifier": 8
-        },
-        {
-          "label": "Investigation",
-          "modifier": 9
-        }
-      ],
-      "proficiencyBonus": 4,
-      "damageResponses": [
-        {
-          "type": "Fire",
-          "response": "resistant"
-        }
-      ]
-    },
-    "abilities": [
-      {
-        "label": "STR",
-        "value": "10 (+0)"
-      },
-      {
-        "label": "DEX",
-        "value": "20 (+5)",
-        "saveProficient": true
-      },
-      {
-        "label": "CON",
-        "value": "10 (+0)"
-      },
-      {
-        "label": "INT",
-        "value": "20 (+5)",
-        "saveProficient": true
-      },
-      {
-        "label": "WIS",
-        "value": "18 (+4)",
-        "saveProficient": true
-      },
-      {
-        "label": "CHA",
-        "value": "14 (+2)"
-      }
-    ],
-    "traits": [
-      {
-        "name": "Magic Resistance",
-        "kind": "trait",
-        "text": "Brandwing has advantage on saving throws against spells and other magical effects."
-      }
-    ],
-    "actions": [
-      {
-        "name": "Red Script",
-        "kind": "action",
-        "economyCost": "bonus",
-        "damage": "1d8",
-        "text": "Bonus Action: choose one creature within 90 ft. Clear Angle: ignore half and three-quarters cover against it, and the first Ember Lance this turn gains +2 to hit. Closing Stroke: the first Ember Lance that hits it this turn deals an extra 4 (1d8) fire damage. Only one Red Script can be active at a time."
-      },
-      {
-        "name": "Ember Lance",
-        "kind": "attack",
-        "roll": "1d20 + @ATK",
-        "damage": "2d10 + @MAIN",
-        "text": "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks."
-      }
-    ],
-    "reactions": [
-      {
-        "name": "Cinder Skip",
-        "kind": "reaction",
-        "text": "When Brandwing is hit by an attack or targeted by a spell, the triggering attack or spell resolves completely. Brandwing then teleports up to 15 ft. to an unoccupied space it can see."
-      }
-    ],
-    "resources": [],
-    "notes": [
-      "A narrow Fiend with wing-like sheets of ember script. It writes on bark by touching it and leaves the letters burning after its hand is gone. Brandwing is the only Fiend in the Last Court roster.",
-      "CINDER SKIP IS NOT MITIGATION, and prices at nothing on purpose. The block says the triggering attack or spell resolves COMPLETELY before the teleport, so it changes where Brandwing is standing next, not what it takes.",
-      "RED SCRIPT CARRIES ITS 1d8 SO THE CHECKER CAN READ IT. Without a damage field the checker reported NEEDS DM INPUT - dice appear in the printed text and score zero - which is a real read failure, not a quibble. Once per turn is the rider’s true frequency, so a bonus-action line is the right shape. The trace applies it flat while the block conditions it on the first Ember Lance HITTING, so this reads about 1.4 a round generous. The +2 to hit is not counted at all."
-    ],
-    "visibility": {
-      "defaultState": "hp-bar",
-      "hiddenName": "Brandwing",
-      "revealedName": "Brandwing"
-    },
-    "dmEdited": {
-      "at": "2026-08-26T06:58:31.603Z"
-    }
-  },
-  {
-    "templateId": "broken-chain:act3:grief-colossus:v1",
-    "name": "Grief Colossus",
-    "encounterId": "act3-e10-the-center",
-    "encounterLabel": "Act 3 E10 - The Center",
-    "stats": {
-      "kind": "aberration",
-      "ac": 18,
-      "maxHp": 207,
-      "speed": "35 ft.",
-      "defenses": [
-        {
-          "name": "Legendary Resistance - 1 use",
-          "ehpMultiplier": 1.0424576635782374,
-          "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
-        },
-        {
-          "name": "Fixed prevention - 12/round",
-          "ehpMultiplier": 1.2323134514052565,
-          "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
-        }
-      ],
-      "attacksPerTurn": 2,
-      "size": "Huge",
-      "classification": "act-boss",
-      "archetype": "guardian",
-      "skills": [
-        {
-          "label": "Athletics",
-          "modifier": 10
-        }
-      ],
-      "proficiencyBonus": 4
-    },
-    "abilities": [
-      {
-        "label": "STR",
-        "value": "22 (+6)",
-        "saveProficient": true
-      },
-      {
-        "label": "DEX",
-        "value": "10 (+0)"
-      },
-      {
-        "label": "CON",
-        "value": "22 (+6)",
-        "saveProficient": true
-      },
-      {
-        "label": "INT",
-        "value": "10 (+0)"
-      },
-      {
-        "label": "WIS",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "CHA",
-        "value": "10 (+0)"
-      }
-    ],
-    "traits": [
-      {
-        "name": "Legendary Resistance (1/Day)",
-        "kind": "trait",
-        "text": "If the Colossus fails a saving throw, it can choose to succeed instead."
-      },
-      {
-        "name": "Impossible Mass",
-        "kind": "trait",
-        "text": "Advantage on saves against being knocked prone or moved against its will."
-      }
-    ],
-    "actions": [
-      {
-        "name": "Anchor the Wrong",
-        "kind": "action",
-        "economyCost": "bonus",
-        "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
-      },
-      {
-        "name": "Fist",
-        "kind": "attack",
-        "roll": "1d20 + @ATK",
-        "damage": "2d10 + @MAIN",
-        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning."
-      },
-      {
-        "name": "Collapse Space (Recharge 5–6)",
-        "kind": "action",
-        "save": "STR DC 18",
-        "recharge": "5-6",
-        "damage": "5d8",
-        "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
-      }
-    ],
-    "reactions": [
-      {
-        "name": "Body Between",
-        "kind": "reaction",
-        "text": "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round."
-      }
-    ],
-    "resources": [],
-    "notes": [
-      "The weight behind the thought. Its limbs do not bend in the same number of places twice, but when it decides a space is occupied, the battlefield has to argue with several tons of certainty."
-    ],
-    "visibility": {
-      "defaultState": "hp-bar",
-      "hiddenName": "Grief Colossus",
-      "revealedName": "Grief Colossus"
-    },
-    "dmEdited": {
-      "at": "2026-08-26T07:15:22.399Z"
-    }
-  },
-  {
-    "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
-    "name": "Demon Knight of Punishment",
-    "encounterId": "act3-e8-the-occupied-acre",
-    "encounterLabel": "Act 3 E8 - The Occupied Acre",
-    "stats": {
-      "kind": "fiend",
-      "ac": 17,
-      "maxHp": 153,
-      "speed": "30 ft.",
-      "defenses": [
-        {
-          "name": "Damage transfer / redirection",
-          "ehpMultiplier": 1,
-          "note": "Read from \"Oppressive Presence\" (trait) on \"must target\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
-      "attacksPerTurn": 1,
-      "size": "Medium",
-      "classification": "elite",
-      "archetype": "guardian",
-      "skills": [
-        {
-          "label": "Intimidation",
-          "modifier": 7
-        },
-        {
-          "label": "Perception",
-          "modifier": 6
-        }
-      ],
-      "proficiencyBonus": 4,
-      "damageResponses": [
-        {
-          "type": "Fire",
-          "response": "resistant"
-        }
-      ]
-    },
-    "abilities": [
-      {
-        "label": "STR",
-        "value": "18 (+4)"
-      },
-      {
-        "label": "DEX",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "CON",
-        "value": "19 (+4)",
-        "saveProficient": true
-      },
-      {
-        "label": "INT",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "WIS",
-        "value": "14 (+2)",
-        "saveProficient": true
-      },
-      {
-        "label": "CHA",
-        "value": "17 (+3)"
-      }
-    ],
-    "traits": [
-      {
-        "name": "Barbed Plate",
-        "kind": "trait",
-        "text": "When a creature within 5 ft. hits the Knight with a melee attack that deals bludgeoning, piercing, or slashing damage, that attacker takes piercing damage equal to the Knight’s Constitution modifier (4). The triggering attack resolves normally."
-      },
-      {
-        "name": "Oppressive Presence",
-        "kind": "trait",
-        "text": "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions."
-      }
-    ],
-    "actions": [
-      {
-        "name": "Iron Grasp",
-        "kind": "attack",
-        "roll": "1d20 + @ATK",
-        "damage": "1d10 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
-      }
-    ],
-    "reactions": [
-      {
-        "name": "Commanding Presence",
-        "kind": "reaction",
-        "text": "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances."
-      }
-    ],
-    "resources": [],
-    "notes": [
-      "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
-      "DM DESIGN READ. The Knight is the wall. Its shattered plate is deliberately hittable, but its raw body is large. Barbed Plate punishes repeated close physical hits. Oppressive Presence taxes multi-target creature effects once, and Commanding Presence can force a second legal instance into the Knight; single-target effects remain valid answers.",
-      "BARBED PLATE IS DAMAGE, NOT DEFENCE, and the trace cannot see it. 4 piercing per melee hit taken is real pressure on the party - roughly 12 a round against three melee hits - but it is retaliation triggered by the PARTY's action, and the trace prices only what the creature spends its own action economy on. Not counted in the DPR below."
-    ],
-    "visibility": {
-      "defaultState": "hp-bar",
-      "hiddenName": "Demon Knight of Punishment",
-      "revealedName": "Demon Knight of Punishment"
-    },
-    "dmEdited": {
-      "at": "2026-08-26T07:06:55.539Z"
+      "hiddenName": "Corrupted Guards",
+      "revealedName": "Veilbound Drake Guard"
     }
   }
 ];
@@ -3974,10 +5193,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
 ];
 
 /** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
-export const AUTHORED_DIGEST = "fnv1a-e950bc22-109215";
+export const AUTHORED_DIGEST = "fnv1a-c93685f7-137397";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T07:35:48.267Z";
+export const AUTHORED_AT = "2026-08-26T09:05:36.408Z";
 
 /**
  * Merge authored content over a bundled list by id.

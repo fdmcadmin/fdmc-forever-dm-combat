@@ -29,6 +29,7 @@ import { materializeTemplateBody } from "../monsters/actionSetPicks";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { priceDamageResponses, describeDamageResponses } from "./damageResponsePricing";
+import type { PartyDamageMix } from "./partyDamageMix";
 import { traceCreature } from "./actionTrace";
 import type { PartyDefence } from "./damageExpression";
 import type { RosterGroup, SustainFactor } from "./checkerV2";
@@ -84,6 +85,8 @@ export function acMultiplierFor(
  */
 export function traitFactorsFor(
   template: MainMonsterTemplate, out: RosterAssumption[],
+  /** The party's damage composition, so a typed response prices itself. See `partyDamageMix.ts`. */
+  damageMix?: PartyDamageMix,
 ): SustainFactor[] {
   const name = template.name;
   const defenses = template.stats.defenses ?? [];
@@ -159,7 +162,7 @@ export function traitFactorsFor(
    * one: a creature can hold `Resistance - ~25% of opposing damage` as a calibrated trait AND be
    * immune to cold, and those are different claims about different damage.
    */
-  const typed = priceDamageResponses(template.stats.damageResponses);
+  const typed = priceDamageResponses(template.stats.damageResponses, damageMix);
   if (typed.multiplier !== 1) {
     factors.push({
       stackGroup: "typed_damage_response",
@@ -167,9 +170,30 @@ export function traitFactorsFor(
       contribution: typed.multiplier - 1,
     });
   }
+  /**
+   * ⚠ THE MESSAGE NAMES THE WORK, because there is a finite amount of it and finishing it makes
+   * every one of these price itself for good. The party's damage mix is unreadable only because
+   * some damaging actions do not state a damage type; fill those in once and this stops asking.
+   */
   for (const r of typed.unweighted) {
+    const gap = damageMix?.untyped.length ?? 0;
     out.push({ creature: name, flag: "NEEDS DM INPUT", field: "damage_response",
-      detail: `"${r.response} to ${r.type}" is recorded but not weighted, so it prices at nothing. The workbook weights it by the party's ACTUAL share of that damage type — enter the share and it prices as ${r.response === "immune" ? "all" : r.response === "resistant" ? "half" : "double"} of it.` });
+      detail: gap > 0
+        ? `"${r.response} to ${r.type}" prices at nothing because this party's damage mix cannot be read: ${gap} damaging action${gap === 1 ? "" : "s"} on the actors state no damage type (${damageMix!.untyped.slice(0, 3).map(u => u.label).join(", ")}${gap > 3 ? ", …" : ""}). Set the damage type on those actions and every typed response prices itself.`
+        : `"${r.response} to ${r.type}" is recorded but there are no readable party actors to weigh it against, so it prices at nothing. The workbook weights it by the party's ACTUAL share of that damage type — choose the party's actors, or enter the share directly.` });
+  }
+  /**
+   * ⚠ A DERIVED NUMBER IS STILL REPORTED. It is not a gap — nothing is being asked for — but the
+   * DM did not type it, so it is shown with the share it used and where that share came from.
+   */
+  for (const d of typed.derived) {
+    const pct = (d.share * 100).toFixed(1);
+    out.push({ creature: name, flag: "ESTIMATED", field: "damage_response",
+      detail: d.share === 0
+        ? `"${d.response.response} to ${d.response.type}" prices at nothing because this party deals no ${d.response.type} damage — read from their own actions, not assumed.`
+        : d.qualifierUnresolved
+          ? `"${d.response.response} to ${d.response.type} ${d.response.qualifier}" priced at this party's full ${pct}% ${d.response.type} share. The qualifier narrows what is eligible and cannot be read from prose, so this is the UPPER bound — enter a share to state the real one.`
+          : `"${d.response.response} to ${d.response.type}" priced at this party's own ${pct}% ${d.response.type} share, read from their actions.` });
   }
 
   if (factors.length === 0 && template.stats.kitMultiplier && template.stats.kitMultiplier !== 1) {
@@ -289,7 +313,7 @@ export function rosterFromTemplates(
      * `tm` agree to within 0.005, so this is the same number arrived at from the readable source
      * instead of a precomputed one.
      */
-    const traitFactors: SustainFactor[] = traitFactorsFor(template, assumptions);
+    const traitFactors: SustainFactor[] = traitFactorsFor(template, assumptions, target.damageMix);
 
     /**
      * ⚠ ONE BODY PER PC OVERRIDES THE AUTHORED COUNT. The Mirrors are the campaign's sole

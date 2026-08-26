@@ -34,6 +34,7 @@ import {
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
+import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
 const MODES: { id: PartyEquipmentMode; label: string; blurb: string }[] = [
@@ -166,6 +167,17 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     [chosen, resolved],
   );
 
+  /**
+   * What this party DEALS, by type — so a creature's typed resistance prices itself against the
+   * actual party instead of asking the author to weigh it by hand. Same resolution rule as the
+   * healing above: an unresolved roster reads NOTHING rather than a mix built from the wrong
+   * actors, because an overstated fire share overprices every fire-resistant creature in the act.
+   */
+  const partyDamageMix = useMemo(
+    () => resolved ? partyDamageMixFromActors(chosen as never[]) : EMPTY_DAMAGE_MIX,
+    [chosen, resolved],
+  );
+
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
 
   const roster = useMemo(() => {
@@ -182,12 +194,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number; bodies?: TemplateBodyChoice[] }>;
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
-    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves });
+    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix });
     return {
       roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought

@@ -136,11 +136,24 @@ export function collectCampaignAuthoring(): CampaignAuthoringPayload {
    * Campaign items are authored content by definition. From the DM store the same two things
    * qualify as before: a deliberate edit, or the DM own creation.
    */
+  /**
+   * ⚠ THE EDIT WINS, BECAUSE THE EDIT IS WHAT THE APP IS SHOWING.
+   *
+   * This kept the CAMPAIGN row wherever both stores held an id — and `upsertItem` writes every
+   * edit to the DM store, campaign items included, precisely so the merged read (which gives DM
+   * priority) picks it up. So the author edited a campaign item, saw the change everywhere in the
+   * app, published, and shipped the row they had just replaced. Silent, and in the direction that
+   * loses work rather than the direction that shouts.
+   *
+   * The export now resolves ids the same way `loadEquipmentLibrary()` does. What ships is what
+   * the author was looking at when they pressed the button.
+   */
   const campaignEquipment = loadEquipmentLibrary("campaign");
-  const campaignItemIds = new Set(campaignEquipment.map(i => i.id));
+  const dmEquipment = loadEquipmentLibrary("dm");
+  const dmItemIds = new Set(dmEquipment.map(i => i.id));
   const equipment = [
-    ...campaignEquipment,
-    ...loadEquipmentLibrary("dm").filter(i => !campaignItemIds.has(i.id)),
+    ...campaignEquipment.filter(i => !dmItemIds.has(i.id)),
+    ...dmEquipment,
   ].map(stripLocalInstantiation);
   /**
    * Campaign-owned encounters are authored content by definition. A DM's own fights stay theirs,

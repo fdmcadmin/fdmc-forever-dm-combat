@@ -122,6 +122,24 @@ function SmallBtn({ onClick, children, color = "#7b68ee", title }: { onClick: ()
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
+/**
+ * A BLANK ROW IS NOT AUTHORING, AND IT USED TO BE SAVED AS IF IT WERE.
+ *
+ * "+ Add defense" appends `{ name: "", ehpMultiplier: 1 }` so there is a row to type into. Leave
+ * without typing and that row is persisted, exported, and read by the coverage gate as a decided
+ * multiplier of 1.0 with no stated reason — which fails the fold. One stray click on the Gloam
+ * Harrow was enough to block a publish, with nothing on screen to point at: the row renders empty,
+ * so it looks like the absence of a defence rather than the presence of a nameless one.
+ *
+ * Dropped at the save, where the difference between "I decided this contributes nothing" and "I
+ * never filled this in" is still knowable.
+ */
+function withoutBlankDefences(draft: MainMonsterTemplate): MainMonsterTemplate {
+  const defenses = draft.stats.defenses ?? [];
+  const kept = defenses.filter(d => d.name.trim() !== "");
+  return kept.length === defenses.length ? draft : { ...draft, stats: { ...draft.stats, defenses: kept } };
+}
+
 export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptions = [], onSave, onCancel, onRevertToCampaign, canSaveToCampaign = false }: MonsterTemplateEditorProps) {
   const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
   const [step, setStep] = useState<StepId>("identity");
@@ -1140,7 +1158,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
         <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
           <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4a9eff" }}>Damage responses</span>
           <p style={{ ...hintStyle, marginTop: 4 }}>
-            What the block prints — <strong style={{ color: "#aaa" }}>Damage Immunities Cold</strong>, <strong style={{ color: "#aaa" }}>Damage Vulnerabilities Radiant</strong>. Type them as they read. These record what the creature IS; the effective-HP weight is the trait list below, because the workbook prices resistance as a share of opposing damage rather than by name.
+            What the block prints — <strong style={{ color: "#aaa" }}>Damage Immunities Cold</strong>, <strong style={{ color: "#aaa" }}>Damage Vulnerabilities Radiant</strong>. Type them as they read, and leave <strong style={{ color: "#aaa" }}>Share %</strong> blank: the checker weights each one against how much of that damage type the party actually deals, read from their own actions.
           </p>
           {(draft.stats.damageResponses ?? []).map((r, i) => (
             <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
@@ -1162,13 +1180,18 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 <input value={r.qualifier ?? ""} onChange={e => updateDamageResponse(i, { qualifier: e.target.value })}
                   placeholder="from nonmagical attacks" style={inputStyle} />
               </div>
+              {/* ⚠ AN OVERRIDE, NOT A REQUIREMENT — AND IT USED TO READ AS ONE. Christopher:
+                  *"i shouldnt need to weight how much fire damage the party has for this to be a
+                  resistance it has."* He is right: the checker reads the share off the party's own
+                  actions now (see `partyDamageMix.ts`), so leaving this blank is the normal case
+                  and prices correctly. It stays for a table whose damage is not in the app. */}
               <div style={{ width: 88 }}>
-                <span style={labelStyle}>Share %</span>
-                <input type="number" min={0} max={100} placeholder="—"
+                <span style={labelStyle}>Share % <span style={{ color: "#666", fontWeight: 400 }}>opt</span></span>
+                <input type="number" min={0} max={100} placeholder="auto"
                   value={typeof r.share === "number" ? String(Math.round(r.share * 100)) : ""}
                   onChange={e => updateDamageResponse(i, { share: e.target.value === "" ? undefined : Math.max(0, Math.min(100, Number(e.target.value))) / 100 })}
                   style={{ ...inputStyle, textAlign: "center" }}
-                  title="What share of the party-s damage is this type. The workbook weights a response by the party-s ACTUAL eligible share, so an unweighted response is recorded but prices at nothing." />
+                  title="Leave blank. The checker weights this against the share of the party's damage that is actually this type, read from the party's own actions. Fill it in only to override that for a party the app cannot see." />
               </div>
               <SmallBtn color="#ff6b6b" onClick={() => removeDamageResponse(i)}>✕</SmallBtn>
             </div>
@@ -1530,7 +1553,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
         <div style={{ display: "flex", gap: 6 }}>
           <button type="button" disabled={blockers.length > 0}
             title={blockers.length ? blockers.join("  ") : cautions.join("  ") || "Save to My Library"}
-            onClick={() => { if (blockers.length === 0) onSave(draft); }}
+            onClick={() => { if (blockers.length === 0) onSave(withoutBlankDefences(draft)); }}
             style={{ fontSize: 11, padding: "3px 12px", border: "none", borderRadius: 3, fontWeight: 700,
                      background: blockers.length ? "#2a2a3e" : "#34c759",
                      color: blockers.length ? "#666" : "#06210f",
@@ -1547,7 +1570,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           {canSaveToCampaign && (
             <button type="button" disabled={blockers.length > 0}
               title={blockers.length ? blockers.join("  ") : "Save as CAMPAIGN content — ships with the module through the author export, rather than staying in your personal library."}
-              onClick={() => { if (blockers.length === 0) onSave(draft, "campaign"); }}
+              onClick={() => { if (blockers.length === 0) onSave(withoutBlankDefences(draft), "campaign"); }}
               style={{ fontSize: 11, padding: "3px 12px", borderRadius: 3, fontWeight: 700,
                        background: blockers.length ? "#2a2a3e" : "#7b68ee",
                        border: "none",

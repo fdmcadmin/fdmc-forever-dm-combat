@@ -103,20 +103,40 @@ export function upsertMonsterTemplate(template: MainMonsterTemplate, owner: Mons
  * The precedence, in one place, for every caller:
  *
  *   1. The DM's OWN creations always appear — their ids are never campaign ids.
- *   2. A campaign creature is the SHIPPED template, unless a stored copy carries `dmEdited`.
- *   3. An unmarked stored copy is a STALE SEED and loses. It is reported, never silently applied:
- *      the campaign library gets corrected (0.7.8.16 repriced 24 Act 3 creatures) and a copy saved
- *      by an older build would otherwise shadow every one of those corrections forever.
+ *   2. A copy in the CAMPAIGN store is authored content and outranks the bundle.
+ *   3. A copy in the DM store outranks the bundle only when it carries `dmEdited`.
+ *   4. An unmarked DM-store copy is a STALE SEED and loses. It is reported, never silently
+ *      applied: the campaign library gets corrected (0.7.8.16 repriced 24 Act 3 creatures) and a
+ *      copy saved by an older build would otherwise shadow every one of those corrections forever.
  *
- * Rule 3 is why this returns REPORTS as well as a list. The panel renders them as banners; the
+ * ⚠ RULE 2 IS NEW, AND ITS ABSENCE THREW AWAY ELEVEN AUTHORED CREATURES. The campaign store was
+ * added after this rule was written, and `handleSaveMonsterTemplate` is explicit that *"a campaign
+ * save is NOT a DM edit, so it carries no `dmEdited` stamp"* — which is right, that marker exists
+ * to let a private copy outrank shipped content. But rule 4 then read the unstamped result as a
+ * stale seed and DISCARDED it. Saving to the campaign store produced exactly the artefact
+ * resolution threw away, so authoring a campaign creature had no visible effect at all:
+ *
+ *   Christopher, on renaming the Veil-Torn Wyrmling: *"the wyrmlings are back vs them being
+ *   changed to the drake guard"*, and *"nothing is saving with the app."*
+ *
+ * A campaign-store copy is not a leftover. It is the newest version of that creature on this
+ * machine, and on the author's machine it is the campaign itself — the bundle is REGENERATED from
+ * it by the next fold. So it wins, and it is still REPORTED (with `source`) and still revertible,
+ * which keeps the "nothing heals silently" guarantee rule 4 was built for.
+ *
+ * Rules 2–4 are why this returns REPORTS as well as a list. The panel renders them as banners; the
  * checker ignores them. One merge, two consumers, no second implementation to drift.
  */
 export type MonsterLibraryResolution = {
   /** The creatures as they actually are: DM creations, then campaign with edits applied. */
   library: MainMonsterTemplate[];
-  /** Campaign creatures the DM deliberately edited — the stored copy IS in `library`. */
-  overridden: { id: string; name: string; mine: string; campaign: string; at?: string }[];
-  /** Unmarked stored copies that disagree with the shipped template and were ignored. */
+  /**
+   * Campaign creatures running a stored copy rather than the bundled one — the copy IS in
+   * `library`. `source` says which store it came from: `"campaign"` is authored content,
+   * `"dm"` is a deliberate private override.
+   */
+  overridden: { id: string; name: string; mine: string; campaign: string; at?: string; source?: "campaign" | "dm" }[];
+  /** Unmarked DM-store copies that disagree with the shipped template and were ignored. */
   shadowed: { id: string; name: string; was: string; now: string; signature: string }[];
 };
 
@@ -132,10 +152,16 @@ export function resolveMonsterLibrary(
     stored?: MainMonsterTemplate[];
     /** Campaign content is gated on the module unlock in the UI. Defaults to included. */
     includeCampaign?: boolean;
+    /**
+     * Which stored ids came from the CAMPAIGN store — rule 2. Defaults to reading it, because
+     * every caller that passes `stored` passes the MERGED list and cannot tell them apart.
+     */
+    authoredIds?: ReadonlySet<string>;
   } = {},
 ): MonsterLibraryResolution {
   const stored = opts.stored ?? loadMonsterLibrary();
   const includeCampaign = opts.includeCampaign ?? true;
+  const authored = opts.authoredIds ?? new Set(loadMonsterLibrary("campaign").map(t => t.templateId));
   const isCampaign = (id: string) => isCampaignTemplateId(id, bundled);
 
   const overridden: MonsterLibraryResolution["overridden"] = [];
@@ -147,8 +173,13 @@ export function resolveMonsterLibrary(
     ? bundled.map(t => {
       const copy = stored.find(m => m.templateId === t.templateId);
       if (!copy) return t;
-      if (copy.dmEdited) {
-        overridden.push({ id: t.templateId, name: t.name, mine: shape(copy), campaign: shape(t), at: copy.dmEdited.at });
+      // Rule 2 then rule 3. An authored copy needs no stamp; a private one does.
+      const isAuthored = authored.has(t.templateId);
+      if (isAuthored || copy.dmEdited) {
+        overridden.push({
+          id: t.templateId, name: t.name, mine: shape(copy), campaign: shape(t),
+          at: copy.dmEdited?.at, source: isAuthored ? "campaign" : "dm",
+        });
         return copy;
       }
       // Report a stale seed only when it actually disagrees, so the notice means something.
@@ -200,6 +231,29 @@ export type MonsterImportResult = {
   message: string;
 };
 
+/**
+ * WHICH STORE AN IMPORTED CREATURE BELONGS IN.
+ *
+ * ⚠ THIS IS THE LINE THAT ATE ELEVEN AUTHORED CREATURES. Import called `upsertMonsterTemplate(t)`
+ * with the DEFAULT owner — "dm" — and that function deliberately prunes the id out of the other
+ * store, so importing a campaign creature DELETED the campaign copy and re-filed it as a private
+ * one. Import adds no `dmEdited` stamp either, so the re-filed creature then failed the export's
+ * "`dmEdited` or `custom-`" test and fell out of the payload entirely.
+ *
+ * The visible result, on 2026-08-26: the author published 17 creatures at 07:33, round-tripped the
+ * file back through Import to check it, published again at 07:35 — and the payload had collapsed
+ * to the 6 that happened to carry a stamp. The fold folded the 6. Christopher: *"why did none of my
+ * authored creatures move into the seed [...] i have done these 4 or 5 times and nothing is saving
+ * with the app."* Nothing warned, because every step did what it was told.
+ *
+ * A file does not change what a creature IS. The reserved namespace already answers the question,
+ * so ownership survives the round trip: `broken-chain:` is campaign content, everything else is
+ * the DM's own.
+ */
+function importOwnerFor(templateId: string): MonsterLibraryOwner {
+  return templateId.startsWith("broken-chain:") ? "campaign" : "dm";
+}
+
 export async function importMonsterLibrary(file: File): Promise<MonsterImportResult> {
   try {
     const text = await file.text();
@@ -215,7 +269,7 @@ export async function importMonsterLibrary(file: File): Promise<MonsterImportRes
       const t = raw as MainMonsterTemplate;
       if (!t.templateId || !t.name) { skipped++; continue; }
       if (existingIds.has(t.templateId)) updated++; else added++;
-      upsertMonsterTemplate(t);
+      upsertMonsterTemplate(t, importOwnerFor(t.templateId));
     }
     return { ok: true, added, updated, skipped, message: `Imported ${added + updated} monster${added + updated === 1 ? "" : "s"} (${added} new, ${updated} updated${skipped > 0 ? `, ${skipped} skipped` : ""}).` };
   } catch (e) {

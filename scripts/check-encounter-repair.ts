@@ -11,7 +11,8 @@
  * current creatures arrive, and an edit to an entry that still resolves survives untouched.
  */
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
-import { seedEncounterLibraryFromTemplates, loadEncounterLibrary, saveEncounterLibrary } from "../src/core/monsters/encounterLibrary";
+import { seedEncounterLibraryFromTemplates, loadEncounterLibrary, saveEncounterLibrary, deleteEncounter, restoreEncounter } from "../src/core/monsters/encounterLibrary";
+import { safeStorage } from "../src/core/utils/safeStorage";
 
 const known = new Set(L.map(t => t.templateId));
 const problems: string[] = [];
@@ -57,5 +58,44 @@ const wolves = (pack?.entries ?? []).find(e => e.templateId.includes("thornfang-
 console.log(`A1 edited wolf count after repair: ${wolves?.count} (authored 4, seed says 2)`);
 if (wolves?.count !== 4) problems.push(`a DM edit on a healthy fight was reset: wolf count ${wolves?.count}, expected 4`);
 
+/**
+ * ─── A DELETION IS AUTHORING TOO ────────────────────────────────────────────────────────────
+ *
+ * ⚠ THE SEEDER USED TO OVERRULE IT, ONCE PER PUBLISH. The seed loop DERIVES an encounter from
+ * every creature carrying an `encounterId`, and `ENCOUNTER_LIBRARY_SEED_VERSION` embeds
+ * `AUTHORED_DIGEST` — which changes on every fold. So publishing anything re-seeded everything,
+ * and every fight the author had deleted came back. Christopher, having deleted the same one
+ * several times: *"i have had both the deleted mirror fight and the Wyrmling reseed"*, and
+ * *"encounter that arent here."*
+ *
+ * Delete it, re-seed, and it must still be gone — then restore it and it must come back.
+ *
+ * ⚠ THE RE-SEED HAS TO BE FORCED, WHICH IS THE WHOLE POINT. `seedEncounterLibraryFromTemplates`
+ * early-returns while the stored seed version matches, so calling it twice in a row does nothing
+ * and a test that does that passes against the bug. In the app the version changes on its own —
+ * it ENDS in `AUTHORED_DIGEST`, so every publish invalidates it. Clearing the key here is that
+ * same event, reproduced.
+ */
+const forceReseed = () => {
+  safeStorage().removeItem("fdmc.dm.encounterLibrary.seedVersion");
+  seedEncounterLibraryFromTemplates(L);
+};
+const victim = after.find(e => e.entries.length > 0);
+if (!victim) {
+  problems.push("no seeded campaign encounter to test a deletion against");
+} else {
+  deleteEncounter(victim.id, "campaign");
+  forceReseed();
+  const stillGone = !loadEncounterLibrary("campaign").some(e => e.id === victim.id);
+  console.log(`"${victim.name}" deleted, then re-seeded: ${stillGone ? "still gone" : "CAME BACK"}`);
+  if (!stillGone) problems.push(`a deleted campaign fight was re-created by the seeder: ${victim.id}`);
+
+  restoreEncounter(victim.id);
+  forceReseed();
+  const back = loadEncounterLibrary("campaign").some(e => e.id === victim.id);
+  console.log(`"${victim.name}" restored, then re-seeded: ${back ? "back, and stays back" : "STILL SUPPRESSED"}`);
+  if (!back) problems.push(`restoring a deleted fight did not lift its tombstone: ${victim.id}`);
+}
+
 if (problems.length) { console.error(`\nFAILED:\n  ${problems.join("\n  ")}`); process.exit(1); }
-console.log(`\nPASS — dead entries dropped, current creatures restored, unrelated DM edits untouched.`);
+console.log(`\nPASS — dead entries dropped, current creatures restored, DM edits untouched, and a deletion survives a re-seed.`);

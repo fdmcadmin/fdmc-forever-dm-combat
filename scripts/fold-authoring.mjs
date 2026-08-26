@@ -84,6 +84,35 @@ if (badMonsters.length || badItems.length || badEncounters.length) {
 }
 
 /**
+ * ⚠ AN EMPTY DEFENCE ROW IS A LEFTOVER, NOT A DECISION — AND IT BLOCKED A PUBLISH.
+ *
+ * The editor's defence list can be left holding a row nobody filled in: `{ name: "", ehpMultiplier: 1 }`.
+ * The coverage gate reads that as a multiplier of 1.0 with no stated reason — correctly, because
+ * *"a decided non-contribution needs its reason, an undecided one is a gap"* — and fails the fold.
+ * One blank row on the Gloam Harrow is enough to stop the whole publish.
+ *
+ * The editor no longer writes them. This drops the ones already sitting in a browser, because an
+ * author cannot reach into their own localStorage to delete a row they cannot see, and being
+ * permanently unable to publish is not a reasonable price for a stray click.
+ *
+ * ⚠ AFTER THE DIGEST CHECK, DELIBERATELY. This changes the content, so computing the digest over
+ * the stripped version would make every genuine export fail as "modified after it was exported".
+ */
+let strippedDefences = 0;
+for (const m of monsters) {
+  const defenses = m?.stats?.defenses;
+  if (!Array.isArray(defenses)) continue;
+  const kept = defenses.filter(d => String(d?.name ?? "").trim() !== "");
+  if (kept.length !== defenses.length) {
+    strippedDefences += defenses.length - kept.length;
+    m.stats.defenses = kept;
+  }
+}
+if (strippedDefences > 0) {
+  console.log(`Dropped ${strippedDefences} unnamed defence row(s) — a blank row is not an authored 1.0.`);
+}
+
+/**
  * ⚠ AN ENCOUNTER MUST NOT REFERENCE A CREATURE THAT IS NOT SHIPPING. THIS IS AN ERROR NOW.
  *
  * It used to warn, because it compared only against the export and so could not tell a bundled

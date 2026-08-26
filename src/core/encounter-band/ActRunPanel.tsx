@@ -39,6 +39,7 @@ import {
 } from "./actRun";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import { rosterFromTemplates } from "./rosterFromLibrary";
+import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 import { simulateEncounter, resolvePartyProfile } from "./checkerV2";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -51,12 +52,18 @@ type ActRunPanelProps = {
    * bundled constant, or the run prices shipped creatures instead of the DM's edited ones.
    */
   monsterLibrary: MainMonsterTemplate[];
+  /**
+   * The DM's actors, for the same reason the difficulty panel takes them: a creature's typed
+   * resistance is priced against the party's ACTUAL damage mix, not a figure someone types in.
+   * Optional — with none readable the run prices exactly as it did before.
+   */
+  actors?: unknown[];
 };
 
 const REST_COLOR: Record<string, string> = { Long: "#7b68ee", Short: "#4caf50", None: "#555" };
 const input = { width: "100%", padding: "2px 5px", borderRadius: 3, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 11 } as const;
 
-export function ActRunPanel({ encounters, monsterLibrary }: ActRunPanelProps) {
+export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunPanelProps) {
   const [runs, setRuns] = useState<ActRun[]>(() => loadActRuns());
   const [activeId, setActiveId] = useState<string>(() => loadActRuns()[0]?.id ?? "");
   const [choices, setChoices] = useState<Record<string, RestChoice>>({});
@@ -65,6 +72,22 @@ export function ActRunPanel({ encounters, monsterLibrary }: ActRunPanelProps) {
   useEffect(() => { saveActRuns(runs); }, [runs]);
 
   const run = runs.find(r => r.id === activeId);
+
+  /**
+   * What this party deals, by damage type — read only when the roster is UNAMBIGUOUS.
+   *
+   * ⚠ SAME DISCIPLINE AS THE DIFFICULTY PANEL, WITHOUT ITS PICKER. That panel makes the DM choose
+   * WHICH actors are in a party when the library holds more than the party size, because reading
+   * six actors' damage into a four-player fight overstates every share it produces — and an
+   * overstated fire share overprices every fire-resistant creature in the act. This panel has no
+   * such picker, so it reads the actors only when there is nothing to choose: exactly as many
+   * player actors as the run's party size. Otherwise it reads none, and prices as it always did.
+   */
+  const partyDamageMix = useMemo(() => {
+    const players = (actors as Array<{ kind?: string }>).filter(a => a?.kind === "player");
+    const size = Math.max(1, run?.partySize ?? 4);
+    return players.length === size ? partyDamageMixFromActors(players as never[]) : EMPTY_DAMAGE_MIX;
+  }, [actors, run?.partySize]);
   const resolved = useMemo(() => (run ? resolveActRun(run.steps, choices) : []), [run, choices]);
   const blocks = useMemo(() => restBlocks(resolved), [resolved]);
   const gates = useMemo(() => (run ? runLevelGates(run.steps) : []), [run]);
@@ -113,7 +136,7 @@ export function ActRunPanel({ encounters, monsterLibrary }: ActRunPanelProps) {
         const defence = partyDefenceAt(step.partyLevel, run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard");
         const saveBonus = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
         const built = rosterFromTemplates(entries, step.partyLevel, {
-          ac: defence.ac, saveBonus, partySize,
+          ac: defence.ac, saveBonus, partySize, damageMix: partyDamageMix,
         });
         // Weakest bodies first — the same kill priority the difficulty panel simulates.
         const roster = [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity);
@@ -135,7 +158,7 @@ export function ActRunPanel({ encounters, monsterLibrary }: ActRunPanelProps) {
         return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, result: null, cost: 0 };
       }
     });
-  }, [resolved, encounters, monsterLibrary, run?.partySize, run?.shortRestRecovery, run?.partyMode]);
+  }, [resolved, encounters, monsterLibrary, run?.partySize, run?.shortRestRecovery, run?.partyMode, partyDamageMix]);
 
   const pricedById = useMemo(() => new Map(priced.map(p => [p.id, p])), [priced]);
 

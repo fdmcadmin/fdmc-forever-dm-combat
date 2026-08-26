@@ -885,6 +885,7 @@ function DmPanelApp() {
             <ActRunPanel
               encounters={loadEncounterLibrary()}
               monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library}
+              actors={actors}
             />
             {/* ⚠ THE CHECKER PRICES THE LIBRARY AS IT ACTUALLY IS, not as it shipped. Both of
                 these were handed the bundled constant, so a creature the DM had edited was still

@@ -142,6 +142,38 @@ const CAMPAIGN_LIBRARY_KEY = "fdmc.dm.encounterLibrary.campaign.v1";
 const DM_LIBRARY_KEY = "fdmc.dm.encounterLibrary.custom.v1";
 /** Unused/archived encounters — moved here on delete, never hard deleted */
 const UNUSED_LIBRARY_KEY = "fdmc.dm.encounterLibraryUnused.v1";
+/**
+ * DELETED SEEDED FIGHTS — the ids the seeder must not put back.
+ *
+ * ⚠ WITHOUT THIS, DELETING A CAMPAIGN FIGHT LASTED UNTIL THE NEXT PUBLISH. The seed loop below
+ * INFERS an encounter from every creature carrying an `encounterId`, and `ENCOUNTER_LIBRARY_SEED_VERSION`
+ * embeds `AUTHORED_DIGEST` — which changes on every fold. So each publish re-seeded, and each
+ * re-seed re-derived every fight the author had deleted. Christopher, after deleting the same one
+ * repeatedly: *"i have had both the deleted mirror fight and the Wyrmling reseed"*, and *"loot
+ * pools i cant remove, encounter that arent here."*
+ *
+ * The archive could not answer this on its own: `permanentlyDeleteEncounter` empties it, and an
+ * id purged from the archive would start coming back again — the opposite of what "permanently"
+ * means. So the tombstone is its own list, and the three verbs read correctly against it:
+ *
+ *   delete    → archived AND tombstoned   — gone from the library, restorable, stays gone
+ *   restore   → tombstone lifted          — comes back, and keeps coming back
+ *   permanent → archive row dropped, tombstone KEPT — never comes back
+ */
+const RETIRED_ENCOUNTER_KEY = "fdmc.dm.encounterLibraryRetired.v1";
+
+function loadRetiredEncounterIds(): Set<string> {
+  try {
+    const raw = safeStorage().getItem(RETIRED_ENCOUNTER_KEY);
+    return new Set(raw ? JSON.parse(raw) as string[] : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveRetiredEncounterIds(ids: Set<string>): void {
+  try { safeStorage().setItem(RETIRED_ENCOUNTER_KEY, JSON.stringify([...ids])); } catch { /* ok */ }
+}
 /** Legacy key — migrated on first load */
 const ENCOUNTER_LIBRARY_KEY = "fdmc.dm.encounterLibrary.v1";
 const ENCOUNTER_LIBRARY_SEED_KEY = "fdmc.dm.encounterLibrary.seedVersion";
@@ -332,6 +364,11 @@ export function deleteEncounter(id: string, owner?: EncounterLibraryOwner): void
       saveUnusedEncounters([...unused, encounter]);
     }
   }
+
+  // And record the intent, so the next re-seed does not undo it.
+  const retired = loadRetiredEncounterIds();
+  retired.add(id);
+  saveRetiredEncounterIds(retired);
 }
 
 /** Restore an archived encounter back to the active library. */
@@ -343,11 +380,22 @@ export function restoreEncounter(id: string): void {
   saveUnusedEncounters(unused.filter(e => e.id !== id));
   // Put back in the correct active library
   upsertEncounter(encounter, encounter.owner ?? "dm");
+  // Asking for it back means asking the seeder to stop suppressing it.
+  const retired = loadRetiredEncounterIds();
+  if (retired.delete(id)) saveRetiredEncounterIds(retired);
 }
 
-/** Permanently remove an archived encounter from the unused list (cannot be restored). */
+/**
+ * Permanently remove an archived encounter from the unused list (cannot be restored).
+ *
+ * The TOMBSTONE stays. Dropping it here would let the next re-seed re-derive the fight, which is
+ * the one outcome the word "permanently" rules out.
+ */
 export function permanentlyDeleteEncounter(id: string): void {
   saveUnusedEncounters(loadUnusedEncounters().filter(e => e.id !== id));
+  const retired = loadRetiredEncounterIds();
+  retired.add(id);
+  saveRetiredEncounterIds(retired);
 }
 
 // ─── Seed from bundled Act 2 data ────────────────────────────────────────────
@@ -501,9 +549,25 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
     if (!merged.find(e => e.id === existingCampaign.id)) merged.push(existingCampaign);
   }
 
-  saveEncounterLibrary(merged, "campaign");
+  /**
+   * ⚠ A DELETION IS AUTHORING TOO, AND THE SEEDER USED TO OVERRULE IT.
+   *
+   * Everything above re-derives the campaign library from the bundle. Applied unfiltered that
+   * re-creates every fight the author deliberately removed — and because the seed version carries
+   * `AUTHORED_DIGEST`, it re-ran on every single publish. Deleting the Gate II mirrors fight and
+   * then pushing the change put it straight back, which is why it kept being reported as deleted
+   * and still present.
+   *
+   * Filtered LAST, so it also catches an authored row and a surviving stored row, not just the
+   * derived ones. `restoreEncounter` lifts the tombstone, so this suppresses only what is still
+   * meant to be gone.
+   */
+  const retired = loadRetiredEncounterIds();
+  const kept = retired.size > 0 ? merged.filter(e => !retired.has(e.id)) : merged;
+
+  saveEncounterLibrary(kept, "campaign");
   try { safeStorage().setItem(ENCOUNTER_LIBRARY_SEED_KEY, ENCOUNTER_LIBRARY_SEED_VERSION); } catch { /* ok */ }
-  return merged;
+  return kept;
 }
 
 // ─── Spawn instances from encounter ──────────────────────────────────────────

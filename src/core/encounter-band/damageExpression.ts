@@ -1,3 +1,5 @@
+import type { PartyDamageMix } from "./partyDamageMix";
+
 /**
  * Reading a printed damage expression. The one piece of the old `encounterConstruction.ts`
  * that survived it — everything else in that file was a parallel action-budget model,
@@ -49,6 +51,21 @@ export function damageExpressionAverage(expr: string | undefined): number {
   for (const m of withoutDice.matchAll(/([+-])\s*(\d+)/g)) {
     total += (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10);
   }
+  /**
+   * ⚠ A FLAT DAMAGE WITH ITS TYPE WRITTEN AFTER IT — "4 bludgeoning" — WAS READING AS ZERO.
+   *
+   * The bare-number branch above requires the WHOLE string to be a number, and the flat-term loop
+   * requires a SIGN, so an unsigned leading figure followed by anything at all fell through every
+   * branch. Every Unarmed Strike on every character sheet is written exactly this way, so all five
+   * of them were worth nothing — which is also every damage line the party damage mix could read.
+   *
+   * Only consulted when nothing else was found, so no expression that already parses can move:
+   * "1d8 + 2 slashing" leads with a die and never reaches here.
+   */
+  if (total === 0) {
+    const leading = text.match(/^\s*(\d+(?:\.\d+)?)(?!\s*d\d)/);
+    if (leading) return Number.parseFloat(leading[1]);
+  }
   return Math.max(0, total);
 }
 
@@ -82,6 +99,14 @@ export type PartyDefence = {
    * single-number fallback for callers that have no party profile.
    */
   saves?: Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
+  /**
+   * What this party actually DEALS, by damage type — from `partyDamageMixFromActors`.
+   *
+   * It rides on the defence bag because a typed resistance is priced against the party the same
+   * way an attack is: both are "what is this creature facing". Absent means no actors were
+   * readable, and a typed response then prices at nothing and says so, as it always did.
+   */
+  damageMix?: PartyDamageMix;
 };
 
 /**
