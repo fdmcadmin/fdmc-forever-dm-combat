@@ -93,15 +93,25 @@ if (irrelevant.unweighted.length !== 0) problems.push("a party that deals no nec
 const partial = [{
   name: "Half-filled",
   actions: [
-    { label: "Unarmed Strike", metadata: { damage: "4 bludgeoning", damageType: "bludgeoning" } },
-    { label: "Greataxe", metadata: { damage: "1d12+3" } },   // no type stated — the real case
+    // A weapon needs nothing typed in: the name is in BASE_WEAPONS, and that is where a
+    // Greataxe's slashing lives. Christopher: *"i shouldnt need to go through each of my
+    // character sheet."*
+    { label: "Greataxe", metadata: { damage: "1d12+3" } },
+    // ⚠ THE REAL GAP, AND IT IS THE ONE THAT MATTERS. "Burning Seals (Fire)" is not a weapon and
+    // states no `damageType`; the word Fire is in its LABEL and its description, which are prose.
+    // So the party's actual fire damage is exactly what a mix cannot see — which is why an
+    // incomplete sheet must not be allowed to answer "0% fire" and price twelve creatures at zero.
+    { label: "Burning Seals (Fire)", metadata: { damage: "1d6" } },
   ],
 }];
 const partialMix = partyDamageMixFromActors(partial);
 console.log(`
   half-filled sheet: coverage ${(partialMix.coverage * 100).toFixed(0)}% · usable ${partialMix.usable} · ${partialMix.untyped.length} action(s) with no type`);
 if (partialMix.usable) problems.push("a mix with untyped damage was marked usable — an incomplete sheet must not answer");
-if (partialMix.untyped.length !== 1) problems.push("the untyped action was not reported as the work item");
+if (partialMix.untyped.length !== 1) problems.push(`${partialMix.untyped.length} action(s) reported as the work item, expected 1 (the Burning Seals)`);
+if (partialMix.untyped[0]?.label !== "Burning Seals (Fire)") problems.push("the wrong action was named as the gap");
+// The weapon answered for itself, off the table, with nothing typed onto the sheet.
+if (!near(partialMix.shares.slashing ?? 0, 1)) problems.push(`the Greataxe did not resolve to slashing from BASE_WEAPONS: ${JSON.stringify(partialMix.shares)}`);
 
 const onPartial = priceDamageResponses([{ type: "fire", response: "resistant" }], partialMix);
 console.log(`  "resistant to fire" against it: x${onPartial.multiplier.toFixed(4)}, reported as ${onPartial.unweighted.length} needing a share`);

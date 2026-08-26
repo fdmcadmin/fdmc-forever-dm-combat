@@ -23,6 +23,13 @@ name: gates
 on:
   push:
     branches: ["**"]
+    # ⚠ A PUBLISH IS NOT A SOURCE CHANGE, AND RUNNING BOTH WORKFLOWS ON IT IS WORSE THAN WASTEFUL.
+    # `fold-authoring` runs this same gate set against the FOLDED tree, which is the tree that
+    # matters. Running here as well tests the payload UNFOLDED — a green run that proves nothing
+    # about the content, sitting next to the one that does. A push touching source as well as the
+    # payload still runs, because paths-ignore only skips when EVERY changed file matches.
+    paths-ignore:
+      - "authoring/**"
   pull_request:
   workflow_dispatch:
 

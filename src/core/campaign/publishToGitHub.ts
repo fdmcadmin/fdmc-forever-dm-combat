@@ -12,13 +12,14 @@
  *
  * ─── WHAT HAPPENS AFTER THE BUTTON ──────────────────────────────────────────────────────────
  *
- *   this file        PUT authoring/current.json on a branch
+ *   this file        re-cut `authoring` from main, then PUT authoring/current.json on it
  *   fold-authoring   folds it, runs every gate, commits authored.generated.ts back
- *   gates            runs again on the merge to main
+ *                    then fast-forwards main to it — automatically, when every gate passed
  *
  * The workflow is the reason this writes to a BRANCH and not to main. A payload that breaks a
  * check stops on a red run with nothing merged, which is the whole point of putting CI between
- * the author button and the release.
+ * the author button and the release. Nothing waits on a person: *"Do not require me to manually
+ * promote every passing authoring change."*
  *
  * ─── ⚠ THE TOKEN, PLAINLY ───────────────────────────────────────────────────────────────────
  *
@@ -49,29 +50,41 @@ export type PublishConfig = {
   /** e.g. "fdmc-forever-dm-combat" */
   repo: string;
   /**
-   * The branch the author button writes to. `main`, and that is a correction.
+   * The branch the author button writes to.
    *
-   * ⚠ A LIBRARY CHANGE IS NOT AN APP CHANGE, AND MUST NOT BE BLOCKED BY ONE. Christopher: *"my
-   * publish should not be hindered just because the app is on the wrong version, I'm not pushing
-   * app changes i am pushing library changes"* and *"when you change things and push a version it
-   * then voids my publish and i have to delete the authoring and remake it."*
+   * ⚠ IT IS RESET ONTO `baseBranch` FIRST, EVERY TIME, AND THAT IS THE WHOLE FIX. Christopher has
+   * hit both failure modes of this branch, from opposite directions:
    *
-   * Both were consequences of publishing to a side branch. That branch carried a SNAPSHOT of the
-   * app source alongside the payload, so every push to main left it behind, and a fast-forward
-   * promotion of a behind branch is impossible — the authoring had to be deleted and remade for
-   * a reason that had nothing to do with its content.
+   *   *"my publish should not be hindered just because the app is on the wrong version, I'm not
+   *   pushing app changes i am pushing library changes"* and *"when you change things and push a
+   *   version it then voids my publish and i have to delete the authoring and remake it."*
    *
-   * The payload is DATA. `authoring/current.json` is read by exactly one thing, the fold, so a
-   * payload sitting on main changes nothing until CI folds it — and the fold commits its result
-   * ONLY if every gate passes. The gate protects the build; it was never the branch doing that.
+   *   and then, after publishing was moved to main to escape that:
+   *
+   *   *"my branching is just falling behind because my library edits are going straight to main,
+   *   this isnt what i ment."*
+   *
+   * Both are the same cause: a long-lived side branch carrying a SNAPSHOT of the app source. Every
+   * push to main leaves it behind, and a behind branch cannot fast-forward — so it had to be
+   * deleted and remade by hand for a reason that had nothing to do with its content.
+   *
+   * A branch that is re-cut from main at the moment of publishing can never be behind. Deleting
+   * and remaking it is exactly what happens now, automatically, on every press of the button. The
+   * branch is a place for the gates to run, not a place anything lives.
    */
   branch: string;
+  /**
+   * What `branch` is re-cut from. The payload is always folded against the CURRENT app, so a
+   * library change is never gated by an app version — and never carries a stale one forward.
+   */
+  baseBranch: string;
 };
 
 const DEFAULT_CONFIG: PublishConfig = {
   owner: "fdmcadmin",
   repo: "fdmc-forever-dm-combat",
-  branch: "main",
+  branch: "authoring",
+  baseBranch: "main",
 };
 
 export function loadPublishConfig(): PublishConfig {
@@ -148,7 +161,7 @@ export async function publishCampaignAuthoring(): Promise<PublishResult> {
   if (!token) {
     return { ok: false, message: "No GitHub token saved. Add a fine-grained token with Contents: read and write on this one repository." };
   }
-  const { owner, repo, branch } = loadPublishConfig();
+  const { owner, repo, branch, baseBranch } = loadPublishConfig();
 
   let payload: ReturnType<typeof collectCampaignAuthoring>;
   try {
@@ -163,6 +176,51 @@ export async function publishCampaignAuthoring(): Promise<PublishResult> {
 
   const body = JSON.stringify(payload, null, 2);
   const base = `/repos/${owner}/${repo}/contents/${PAYLOAD_PATH}`;
+
+  /**
+   * RE-CUT THE BRANCH FROM MAIN BEFORE WRITING TO IT.
+   *
+   * This is the step whose absence caused every branching complaint. Without it the branch drifts
+   * behind main by one commit per app push, cannot fast-forward, and has to be deleted and remade
+   * by hand. Done here it costs one request and the branch is, by construction, never behind.
+   *
+   * Skipped when publishing to the base branch itself, which is a supported configuration for a
+   * table that does not want a side branch at all.
+   */
+  if (branch !== baseBranch) {
+    try {
+      const headRes = await gh(`/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(baseBranch)}`, token);
+      if (!headRes.ok) {
+        const err = await headRes.json().catch(() => ({})) as GitHubError;
+        return { ok: false, message: `Could not read ${baseBranch} (${headRes.status}): ${err.message ?? "no reason given"}` };
+      }
+      const baseSha = (await headRes.json() as { object?: { sha?: string } }).object?.sha;
+      if (!baseSha) return { ok: false, message: `GitHub returned no commit for ${baseBranch}.` };
+
+      // `force` because this is a RESET, not a merge — anything on the branch is a previous
+      // payload that has already been folded, or one that failed its gates and must not persist.
+      const move = await gh(`/repos/${owner}/${repo}/git/refs/heads/${encodeURIComponent(branch)}`, token, {
+        method: "PATCH",
+        body: JSON.stringify({ sha: baseSha, force: true }),
+      });
+      if (move.status === 404 || move.status === 422) {
+        // The branch does not exist yet. Cutting it fresh is the same operation.
+        const create = await gh(`/repos/${owner}/${repo}/git/refs`, token, {
+          method: "POST",
+          body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: baseSha }),
+        });
+        if (!create.ok) {
+          const err = await create.json().catch(() => ({})) as GitHubError;
+          return { ok: false, message: `Could not create ${branch} from ${baseBranch} (${create.status}): ${err.message ?? "no reason given"}` };
+        }
+      } else if (!move.ok) {
+        const err = await move.json().catch(() => ({})) as GitHubError;
+        return { ok: false, message: `Could not re-cut ${branch} from ${baseBranch} (${move.status}): ${err.message ?? "no reason given"}. The token needs Contents: read and write.` };
+      }
+    } catch (err) {
+      return { ok: false, message: `Could not reach GitHub: ${(err as Error).message}` };
+    }
+  }
 
   // Read the current sha, if the file is already there. A 404 means this is the first publish.
   let sha: string | undefined;
@@ -196,7 +254,9 @@ export async function publishCampaignAuthoring(): Promise<PublishResult> {
     return {
       ok: true,
       url: `https://github.com/${owner}/${repo}/actions`,
-      message: `Published ${payload.monsters.length} creature(s), ${payload.encounters.length} encounter(s) and ${payload.equipment.length} item(s) to ${branch}. The gates are running — nothing merges until they pass.`,
+      message: branch === baseBranch
+        ? `Published ${payload.monsters.length} creature(s), ${payload.encounters.length} encounter(s) and ${payload.equipment.length} item(s) to ${branch}. The gates are running — nothing folds into the build until they pass.`
+        : `Published ${payload.monsters.length} creature(s), ${payload.encounters.length} encounter(s) and ${payload.equipment.length} item(s) to ${branch}, freshly cut from ${baseBranch}. The gates are running — it merges itself when they pass, and stops there if they do not.`,
     };
   } catch (err) {
     return { ok: false, message: `Could not reach GitHub: ${(err as Error).message}` };

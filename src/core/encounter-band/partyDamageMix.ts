@@ -54,6 +54,10 @@
  */
 
 import { damageExpressionAverage } from "./damageExpression";
+import { DAMAGE_TYPES, normalizeDamageType } from "../constants/damageTypes";
+import { BASE_WEAPONS } from "../constants/baseWeapons";
+
+export { normalizeDamageType };
 
 /** Deliberately narrow, so any actor-like object works — same approach as `partyHealingFromActors`. */
 type RiderLike = { formula?: string; damageType?: string };
@@ -110,22 +114,33 @@ function actionsOf(actor: ActorLike): ActionLike[] {
 }
 
 /**
- * A type as the pricing side will look it up. Case and stray punctuation vary by who typed it —
- * the campaign library alone carries "Fire", "fire" and "FIre" for the same element, and a mix
- * keyed on the literal string would match one of the three.
+ * WHAT A WEAPON DEALS, WITHOUT ANYBODY TYPING IT IN.
+ *
+ * Christopher: *"i shouldnt need to go through each of my character sheet."* He is right, and the
+ * sheets were never the place for it. A Greataxe deals slashing because it is a Greataxe, and
+ * `BASE_WEAPONS` is where that is known — so an action whose damage field states no type is
+ * matched against the weapon table by NAME.
+ *
+ * ⚠ THIS IS A LOOKUP ON A NAME, NOT A READ OF PROSE. The label of a weapon action IS the weapon's
+ * name, and the table is keyed by that name — the same shape as `traitRule(d.name)` matching a
+ * defence against the calibrated rules. It never touches the description, which is where these
+ * sheets happen to spell the type out ("Martial. Piercing. Finesse.") and where reading it would
+ * be inference.
+ *
+ * A name that is not in the table — a magic item, a class feature, a spell — simply does not
+ * match, and stays an honest gap.
  */
-export function normalizeDamageType(type: string | undefined): string {
-  return (type ?? "").trim().toLowerCase().replace(/\s+/g, " ");
-}
+const WEAPON_TYPE_BY_NAME = new Map<string, string>(
+  BASE_WEAPONS.map(w => [w.name.trim().toLowerCase(), w.damageType]),
+);
 
-/**
- * The thirteen types. A closed list, because it is the one in the rules — anything else in a
- * damage expression is a word, not a type, and guessing at it is how prose gets read as data.
- */
-const DAMAGE_TYPES = [
-  "acid", "bludgeoning", "cold", "fire", "force", "lightning",
-  "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder",
-] as const;
+function weaponDamageType(label: string | undefined): string | undefined {
+  const name = (label ?? "").trim().toLowerCase();
+  if (!name) return undefined;
+  // "Longsword (two-handed)" and "Dagger — thrown" are the same weapon wearing a note.
+  const bare = name.replace(/\s*[([—-].*$/, "").trim();
+  return WEAPON_TYPE_BY_NAME.get(name) ?? WEAPON_TYPE_BY_NAME.get(bare);
+}
 
 /**
  * SPLIT A DAMAGE EXPRESSION INTO ITS TYPED PARTS.
@@ -168,11 +183,21 @@ function splitTypedDamage(expr: string | undefined): Array<{ type: string; amoun
   return out;
 }
 
-/** Every typed and untyped damage line on one action. */
+/**
+ * Every typed and untyped damage line on one action, in order of how directly the type is stated:
+ *
+ *   1. the action's own `damageType` field           — someone said so
+ *   2. a type written inside the damage expression   — "4 bludgeoning", the app's own convention
+ *   3. the weapon table, matched by the action name  — a Greataxe deals slashing
+ *
+ * and nothing after that. An action that is none of those three is a gap, and is reported as one.
+ */
 function damageLinesOf(action: ActionLike): Array<{ type: string; amount: number }> {
   const md = action.metadata;
   if (!md) return [];
   const lines: Array<{ type: string; amount: number }> = [];
+  const fromWeapon = weaponDamageType(action.label);
+
   const add = (formula: string | undefined, type: string | undefined) => {
     // A stated `damageType` is the whole answer and needs no parsing.
     const stated = normalizeDamageType(type);
@@ -181,10 +206,15 @@ function damageLinesOf(action: ActionLike): Array<{ type: string; amount: number
       if (amount > 0) lines.push({ type: stated, amount });
       return;
     }
-    for (const part of splitTypedDamage(formula)) lines.push(part);
+    for (const part of splitTypedDamage(formula)) {
+      // The weapon's own type answers for whatever the expression left untyped.
+      lines.push(part.type || !fromWeapon ? part : { ...part, type: fromWeapon });
+    }
   };
   add(md.damage, md.damageType);
   add(md.spell?.damage, md.spell?.damageType);
+  // ⚠ A RIDER IS NOT THE WEAPON. Hunter's Mark's `+1d6` is its own damage with its own type, and
+  // inheriting the weapon's would state something nobody said. It falls through to the gap list.
   for (const r of md.riders ?? []) add(r.formula, r.damageType);
   return lines;
 }

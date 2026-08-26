@@ -18,9 +18,10 @@
 # the payload nor the bundled library — the case that would have shipped two rebuilt Act 3 fights
 # EMPTY — so that failure surfaces here as a failed step rather than a silent gap in play.
 #
-# ⚠ IT COMMITS TO WHEREVER THE PAYLOAD ARRIVED, which is now main. A library change is not an app
-# change and must not wait on one — see the note at the foot of this file for why the side branch
-# was removed.
+# ⚠ IT COMMITS TO WHEREVER THE PAYLOAD ARRIVED, then promotes that to main when every gate passed.
+# The branch is re-cut from main by the author button immediately before the payload is written, so
+# it can never be behind and the promotion is always a fast-forward — see the note at the foot of
+# this file. A library change is not an app change and must never wait on one.
 
 name: fold-authoring
 
@@ -117,23 +118,41 @@ jobs:
           echo "could not push after three attempts"
           exit 1
 
-      # ── NO PROMOTION STEP, AND THAT IS THE FIX ─────────────────────────────────────────────
+      # ── PROMOTION, WITHOUT A PERSON IN IT ──────────────────────────────────────────────────
       #
-      # The author button publishes to MAIN now, so there is nothing to promote — the fold commits
-      # its result to the branch the payload arrived on, and that branch is main.
+      # Christopher: *"Do not require me to manually promote every passing authoring change [...]
+      # Human approval should only be required for explicit architecture/source-of-truth changes
+      # or release-level exceptions, not routine passing updates."*
       #
-      # Christopher: *"my publish should not be hindered just because the app is on the wrong
-      # version, I'm not pushing app changes i am pushing library changes"* and *"when you change
+      # Everything above already passed, against the FOLDED tree, so there is nothing left for a
+      # person to decide. This fast-forwards main to the folded result.
+      #
+      # ⚠ WHY THIS CAN FAST-FORWARD AT ALL, WHEN IT NEVER USED TO. The author button now RE-CUTS
+      # this branch from main immediately before writing the payload, so at the moment the run
+      # started the branch was main plus one data commit. The old failure — *"when you change
       # things and push a version it then voids my publish and i have to delete the authoring and
-      # remake it."*
+      # remake it"* — was a long-lived branch drifting behind by one commit per app push, which
+      # can never fast-forward. A branch re-cut on every publish cannot drift.
       #
-      # ⚠ BOTH WERE THE SIDE BRANCH, NOT THE GATES. Publishing to `authoring` meant that branch
-      # carried a SNAPSHOT OF THE APP SOURCE alongside the payload. Every push to main left it
-      # behind; a fast-forward promotion of a behind branch is impossible; and the authoring had
-      # to be deleted and remade for a reason that had nothing to do with its content. It also
-      # ran the gates against ITS OWN stale copy of the checks, which is how six red runs happened
-      # against a fix that already existed on main.
-      #
-      # The payload is DATA. `authoring/current.json` is read by exactly one thing — the fold —
-      # so a payload on main changes nothing until it is folded, and the fold commits ONLY when
-      # every gate passes. The build was always protected by the gates rather than by the branch.
+      # If main moved DURING the run, rebase onto it and retry. A payload commit and a source
+      # commit touch different files, so this is a clean replay rather than a merge to resolve.
+      - name: promote to ${{ github.event.repository.default_branch }}
+        if: github.ref_name != github.event.repository.default_branch
+        env:
+          MAIN: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch origin "$MAIN"
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$MAIN"; then
+              echo "promoted on attempt $attempt — every gate passed, so nothing waited on a person"
+              exit 0
+            fi
+            echo "$MAIN moved under us — rebasing and retrying"
+            git fetch origin "$MAIN" || exit 1
+            git rebase "origin/$MAIN" || {
+              echo "the rebase did not apply cleanly. The authoring is safe on this branch; nothing was merged."
+              exit 1
+            }
+          done
+          echo "could not promote after three attempts — the authoring is safe on this branch"
+          exit 1
