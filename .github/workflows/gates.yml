@@ -109,6 +109,9 @@ jobs:
       - name: check item activation
         run: npm run check:activation
 
+      - name: check summons
+        run: npm run check:summons
+
       # Fails on any published number that moved. Not a bug report — read the diff.
       - name: check baseline
         run: npm run check:baseline
