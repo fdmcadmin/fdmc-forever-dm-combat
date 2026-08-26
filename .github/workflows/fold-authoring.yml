@@ -45,6 +45,12 @@ jobs:
         with:
           # The commit-back step needs the branch, not a detached HEAD.
           ref: ${{ github.ref_name }}
+          # ⚠ FULL HISTORY, OR THERE IS NO MERGE BASE TO PROMOTE AGAINST. checkout defaults to a
+          # depth of 1, and the triage step compares this branch to main with `...` — which needs
+          # a common ancestor. A shallow clone has none, so it died with
+          # "fatal: origin/main...HEAD: no merge base" AFTER the fold had already committed,
+          # leaving the work stranded on the branch with a red run.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -95,55 +101,38 @@ jobs:
             exit 0
           fi
           git commit -m "fold authoring $(date -u +%Y-%m-%dT%H:%MZ) — gates green"
-          git push origin HEAD:${{ github.ref_name }}
+          # ⚠ A PUSH LANDING WHILE THE FOLD RAN MUST NOT STRAND THE DM'S WORK. The fold takes
+          # ~45s; a source commit arriving in that window used to reject the push and leave the
+          # authoring unfolded, which is the whole class of failure this workflow exists to end.
+          # Rebasing keeps the generated result on top of whatever main became.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "main moved under us — rebasing and retrying"
+            git pull --rebase origin ${{ github.ref_name }} || exit 1
+          done
+          echo "could not push after three attempts"
+          exit 1
 
-      # ── PROMOTION ───────────────────────────────────────────────────────────────────────────
+      # ── NO PROMOTION STEP, AND THAT IS THE FIX ─────────────────────────────────────────────
       #
-      # Christopher: *"Do not require me to manually promote every passing authoring change…
-      # Human approval should only be required for explicit architecture/source-of-truth changes
-      # or release-level exceptions, not routine passing updates."*
+      # The author button publishes to MAIN now, so there is nothing to promote — the fold commits
+      # its result to the branch the payload arrived on, and that branch is main.
       #
-      # A change that touches ONLY authored content and the artifacts generated from it is a
-      # routine passing update: it has already been folded, built, and run through every gate on
-      # this branch. Making a person click merge adds no information — they would be approving a
-      # green run they cannot see inside.
+      # Christopher: *"my publish should not be hindered just because the app is on the wrong
+      # version, I'm not pushing app changes i am pushing library changes"* and *"when you change
+      # things and push a version it then voids my publish and i have to delete the authoring and
+      # remake it."*
       #
-      # ⚠ THE ROUTINE SET IS AN ALLOWLIST, NOT A DENYLIST, and that is the whole safety property.
-      # Anything outside it — a source file, a workflow, a package script, a spec — is by
-      # definition an architecture or source-of-truth change and stops here for review. A denylist
-      # would auto-promote every path nobody thought to name.
-      - name: is this a routine authoring change?
-        id: triage
-        run: |
-          git fetch origin main --depth=50
-          CHANGED=$(git diff --name-only origin/main...HEAD)
-          echo "changed files:"; echo "$CHANGED" | sed 's/^/    /'
-          OUTSIDE=$(echo "$CHANGED" | grep -vE '^(authoring/|src/data/broken-chain/authored\.generated\.ts$|scripts/(baseline|monster-saves)\.json$)' || true)
-          if [ -z "$OUTSIDE" ]; then
-            echo "routine=true" >> "$GITHUB_OUTPUT"
-            echo "ROUTINE — authored content and its generated artifacts only."
-          else
-            echo "routine=false" >> "$GITHUB_OUTPUT"
-            echo "NOT ROUTINE — these need a person:"; echo "$OUTSIDE" | sed 's/^/    /'
-          fi
-
-      - name: promote to main
-        if: steps.triage.outputs.routine == 'true'
-        run: |
-          # Fast-forward only. A merge commit here would mean main had moved under us, and
-          # silently reconciling that is exactly the kind of decision a person should make.
-          git fetch origin main
-          if ! git merge-base --is-ancestor origin/main HEAD; then
-            echo "main has moved ahead of this branch — not promoting."
-            echo "Rebase the authoring branch on main and publish again."
-            exit 1
-          fi
-          git push origin HEAD:main
-          echo "Promoted to main. Gates were green and nothing outside the authored set changed."
-
-      - name: held for review
-        if: steps.triage.outputs.routine != 'true'
-        run: |
-          echo "Gates are green, but this branch changes files outside authored content."
-          echo "That is an architecture or source-of-truth change, so it is held for a person."
-          echo "Open a PR from ${{ github.ref_name }} to main when you are ready."
+      # ⚠ BOTH WERE THE SIDE BRANCH, NOT THE GATES. Publishing to `authoring` meant that branch
+      # carried a SNAPSHOT OF THE APP SOURCE alongside the payload. Every push to main left it
+      # behind; a fast-forward promotion of a behind branch is impossible; and the authoring had
+      # to be deleted and remade for a reason that had nothing to do with its content. It also
+      # ran the gates against ITS OWN stale copy of the checks, which is how six red runs happened
+      # against a fix that already existed on main.
+      #
+      # The payload is DATA. `authoring/current.json` is read by exactly one thing — the fold —
+      # so a payload on main changes nothing until it is folded, and the fold commits ONLY when
+      # every gate passes. The build was always protected by the gates rather than by the branch.

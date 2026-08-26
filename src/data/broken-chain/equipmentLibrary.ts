@@ -151,7 +151,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@STR+1",
     "mastery": "Vex",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -167,7 +167,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d12+@STR+1",
     "mastery": "Cleave",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -183,7 +183,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@DEX+1",
     "mastery": "Vex",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -199,7 +199,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -218,7 +218,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "spellFocusDamage": "+1",
     "spellFocusSaveDc": "+1",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -230,7 +230,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "14",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -242,7 +242,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "14 + DEX (max 2)",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -254,7 +254,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "11 + DEX",
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "isLocked": true
   },
   {
@@ -265,7 +265,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Movement","actLabel":"A1"},
     "isLocked": true
   },
@@ -277,7 +277,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per short or long rest, you can use a Bonus Action to make a Wisdom (Perception) check to locate a concealed creature or object.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "DISPLACED OWLBEAR",
+    "sourceEncounter": "A1 The Creekside Den",
     "charges": {"max":1,"reset":"shortRest"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Utility","actLabel":"A1"},
     "isLocked": true
@@ -295,7 +295,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@STR+1",
     "mastery": "Sap",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "charges": {"max":1,"reset":"shortRest"},
     "isLocked": true
   },
@@ -312,7 +312,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "4d6+@STR+1",
     "mastery": "Topple",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
@@ -329,7 +329,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d4+@DEX+1",
     "mastery": "Nick",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "isLocked": true
   },
   {
@@ -345,7 +345,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "isLocked": true
   },
   {
@@ -361,7 +361,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Can be used as a spellcasting focus. The wand has 1 charge. When a creature succeeds on a saving throw against a spell you cast, you can expend the charge to force that creature to reroll the save; it must use the new result. The wand regains its charge when you finish a long rest.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
@@ -374,7 +374,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "11 + DEX",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "isLocked": true
   },
   {
@@ -387,7 +387,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d6",
     "ac": "14 + DEX (max 2)",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
@@ -400,7 +400,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "16",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "isLocked": true
   },
   {
@@ -412,7 +412,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": true,
     "damage": "1d6",
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "charges": {"max":1,"reset":"longRest"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Defense","actLabel":"A1"},
     "isLocked": true
@@ -425,7 +425,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "MIRAGE STALKER",
+    "sourceEncounter": "A1 The Ruined Keep",
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A1"},
     "isLocked": true
   },
@@ -588,7 +588,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d6+@STR+1",
     "mastery": "Sap",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "isLocked": true
   },
   {
@@ -604,7 +604,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "4d6+@STR+1",
     "mastery": "Graze",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "isLocked": true
   },
   {
@@ -620,7 +620,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@DEX+1",
     "mastery": "Vex",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "isLocked": true
   },
   {
@@ -636,7 +636,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@DEX+1",
     "mastery": "Slow",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "isLocked": true
   },
   {
@@ -653,7 +653,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "spellFocusDamage": "+1",
     "spellFocusSaveDc": "+1",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
@@ -666,7 +666,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "13 + DEX",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "isLocked": true
   },
   {
@@ -678,7 +678,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "16 + DEX (max 2)",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "isLocked": true
   },
   {
@@ -690,7 +690,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "17",
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "charges": {"max":1,"reset":"longRest"},
     "isLocked": true
   },
@@ -702,7 +702,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "As a Bonus Action, expend its charge. Until the end of your next turn, you know the space occupied by any Invisible or magically hidden creature within 15 feet of you. This does not make the creature visible. The lantern regains its charge when you finish a long rest.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "charges": {"max":1,"reset":"longRest"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Cleanse","actLabel":"A2"},
     "isLocked": true
@@ -715,7 +715,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone or moved against your will.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "LESSER WENDIGOS",
+    "sourceEncounter": "A2 Northgate Night Defense",
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A2"},
     "isLocked": true
   },
@@ -727,7 +727,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "As a Magic action, expend 1 charge to draw a line up to 10 feet long on a solid surface and choose any creatures you can see. Until your next long rest, the first unchosen Tiny or larger creature to cross that line causes it to flash and sound a clear chime audible out to 60 feet, then the mark ends. The chalk regains all expended charges when you finish a long rest.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "FROZEN SENTINELS",
+    "sourceEncounter": "A2 The River Crossing",
     "charges": {"max":3,"reset":"longRest"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Utility","actLabel":"A2"},
     "isLocked": true
@@ -740,7 +740,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "As a Bonus Action while you are in dim light or darkness, teleport up to 10 feet to an unoccupied space you can see that is also in dim light or darkness. Once used, this property cannot be used again until you finish a long rest.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "PALE DRIFTER + FROZEN CLOAK",
+    "sourceEncounter": "A2 The Hill Clearing",
     "charges": {"max":1,"reset":"longRest"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Movement","actLabel":"A2"},
     "isLocked": true
@@ -758,7 +758,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@STR+1",
     "mastery": "Sap",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
     "isLocked": true
   },
@@ -774,7 +774,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "2d6+@STR+1",
     "crit": "4d6+@STR+1",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
     "charges": { "max": 1, "reset": "shortRest" },
     "isLocked": true
@@ -792,7 +792,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@DEX+1",
     "mastery": "Vex",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
     "isLocked": true
   },
@@ -809,7 +809,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "crit": "2d8+@DEX+1",
     "mastery": "Slow",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
     "isLocked": true
   },
@@ -829,7 +829,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "spellFocusDamage": "+1",
     "spellFocusSaveDc": "+1",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
     "isLocked": true
   },
@@ -842,7 +842,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "isUsable": false,
     "ac": "18",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "isLocked": true
   },
   {
@@ -855,7 +855,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d4",
     "ac": "16 + DEX (max 2)",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "isLocked": true
   },
   {
@@ -869,7 +869,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "charges": {"max":1,"reset":"encounter"},
     "ac": "13 + DEX",
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "isLocked": true
   },
   {
@@ -882,7 +882,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Devouring Cold (1/day; recharges at dawn). As a Magic action, target one creature you can see within 30 feet. It must make a DC 13 Constitution saving throw, taking 3d6 cold damage on a failed save or half as much on a successful save.",
     "isUsable": false,
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A2"},
     "isLocked": true
@@ -897,7 +897,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d4",
     "effect": { "type": "armedEffect", "label": "Frozen Resolve", "formula": "+1d4" },
     "act": "Act 2",
-    "sourceEncounter": "FULL WENDIGO",
+    "sourceEncounter": "A2 The Frozen Lake",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Stability","actLabel":"A2"},
     "isLocked": true
@@ -1086,7 +1086,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, after Initiative is rolled but before the first turn begins, choose one hostile creature you can see that has a higher Initiative than you. During the first round, you take your turn immediately before that creature. You do not also act at your original Initiative that round. Starting with round 2, you return to your original Initiative.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Tactical","actLabel":"A3"},
     "isLocked": true
@@ -1099,7 +1099,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when you fail a Constitution saving throw to maintain Concentration, you can succeed instead.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Continuity","actLabel":"A3"},
     "isLocked": true
@@ -1113,7 +1113,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when you damage a creature, you can awaken the seed until the start of your next turn. The first time another creature damages that target before then, the target takes an additional 2d8 damage of one damage type dealt by that triggering effect.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A3"},
     "isLocked": true
@@ -1127,7 +1127,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to force the attacker to reroll the attack roll and use the new roll.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Defense","actLabel":"A3"},
     "isLocked": true
@@ -1140,7 +1140,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when a creature you can see within 30 feet ends its turn, you can use your Reaction. You and one willing creature you can see within 30 feet can each move up to 10 feet without provoking opportunity attacks.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E10 - The Center",
+    "sourceEncounter": "A3 The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Tactical","actLabel":"A3"},
     "isLocked": true
@@ -1153,7 +1153,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The Reaction otherwise resolves normally.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E10 - The Center",
+    "sourceEncounter": "A3 The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Continuity","actLabel":"A3"},
     "isLocked": true
@@ -1166,7 +1166,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, as a Magic action, touch a creature and end one of the following conditions on it: Blinded, Deafened, Paralyzed, or Poisoned.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E10 - The Center",
+    "sourceEncounter": "A3 The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Cleanse","actLabel":"A3"},
     "isLocked": true
@@ -1180,7 +1180,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "mechanicsText": "Once per day, when you deal damage to a creature, you can cause the splinter to flare. The creature takes an additional 2d8 damage of one type dealt by the triggering effect, and it cannot regain hit points until the start of your next turn.",
     "isUsable": false,
     "act": "Act 3",
-    "sourceEncounter": "Act 3 E10 - The Center",
+    "sourceEncounter": "A3 The Center",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"input","enabled":true,"mechanicalTag":"Offensive","actLabel":"A3"},
     "isLocked": true

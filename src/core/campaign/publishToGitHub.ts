@@ -49,9 +49,21 @@ export type PublishConfig = {
   /** e.g. "fdmc-forever-dm-combat" */
   repo: string;
   /**
-   * The branch the author button writes to. NOT main: what reaches main is a merge that the
-   * gates have passed. Defaults to a dedicated branch so an in-progress authoring session
-   * cannot collide with hand-written commits.
+   * The branch the author button writes to. `main`, and that is a correction.
+   *
+   * ⚠ A LIBRARY CHANGE IS NOT AN APP CHANGE, AND MUST NOT BE BLOCKED BY ONE. Christopher: *"my
+   * publish should not be hindered just because the app is on the wrong version, I'm not pushing
+   * app changes i am pushing library changes"* and *"when you change things and push a version it
+   * then voids my publish and i have to delete the authoring and remake it."*
+   *
+   * Both were consequences of publishing to a side branch. That branch carried a SNAPSHOT of the
+   * app source alongside the payload, so every push to main left it behind, and a fast-forward
+   * promotion of a behind branch is impossible — the authoring had to be deleted and remade for
+   * a reason that had nothing to do with its content.
+   *
+   * The payload is DATA. `authoring/current.json` is read by exactly one thing, the fold, so a
+   * payload sitting on main changes nothing until CI folds it — and the fold commits its result
+   * ONLY if every gate passes. The gate protects the build; it was never the branch doing that.
    */
   branch: string;
 };
@@ -59,7 +71,7 @@ export type PublishConfig = {
 const DEFAULT_CONFIG: PublishConfig = {
   owner: "fdmcadmin",
   repo: "fdmc-forever-dm-combat",
-  branch: "authoring",
+  branch: "main",
 };
 
 export function loadPublishConfig(): PublishConfig {
