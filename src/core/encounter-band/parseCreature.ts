@@ -29,6 +29,7 @@ import { spellProfile } from "./compactImport";
 import { conditionsImposedBy } from "./controlPricing";
 import { isMultiattackAction, multiattackCountFromText } from "../monsters/multiattackText";
 import { parseSaveAbility } from "./partyDefenceCurve";
+import type { MonsterRider } from "../monsters/monsterRider";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
 
@@ -305,6 +306,8 @@ type RawAction = {
   targets?: number; onSave?: string; successDamage?: string; uses?: number;
   /** Authored Multiattack split. Unset keeps the convention — see `routineSlots`. */
   routineSlots?: number;
+  /** Extra damage this action carries on a hit — see `MonsterRider`. */
+  riders?: readonly MonsterRider[];
   /** The action's printed reach/range, one field — see MonsterReaderAction.range. */
   range?: string; conditions?: string[];
 };
@@ -387,6 +390,8 @@ function parseSection(
       replacesRoutineSlot: replacesRoutineSlot(name),
       // Authored only. Unset keeps the bite-claw-claw convention — see `routineSlots`.
       routineSlots: a.routineSlots,
+      // Authored only. A rider is never inferred from prose — see `monsterRider.ts`.
+      riders: a.riders?.filter(r => r?.name?.trim() && r?.damage?.trim()),
       spellSlotLevel: a.spellSlotLevel,
       spellName: detectSpell(name, a.text),
       gated: a.gated,

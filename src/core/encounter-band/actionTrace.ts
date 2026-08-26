@@ -22,6 +22,8 @@
 
 import type { ParsedCreature } from "./parseCreature";
 import type { SaveAbility } from "./partyDefenceCurve";
+import { riderWeight, describeRider, type MonsterRider } from "../monsters/monsterRider";
+import { damageExpressionAverage } from "./damageExpression";
 import {
   resolveFeature, expectedDamageForFeature,
   type ParsedFeature, type FeatureAssumption,
@@ -70,6 +72,10 @@ type Budgeted = {
   /** Recharge range, if any. Availability only; never changes the channel. */
   recharge?: string;
   perUse: number;
+  /** Once-per-turn riders on this feature — priced at the TURN, not per use. See `monsterRider.ts`. */
+  turnRiders: readonly MonsterRider[];
+  /** This feature's chance to land one attack, for weighting its riders. */
+  hitChance: number;
   expectation: string;
   method: string;
   castLevel: number | null;
@@ -121,8 +127,30 @@ export function traceCreature(
       if (!assumptions.some(x => x.feature === a.feature && x.detail === a.detail)) assumptions.push(a);
     }
     const channel = (feature.activationType ?? "action") as ActionChannel;
+    /**
+     * ⚠ RIDERS ARE PRICED BY CADENCE, WHICH IS THE WHOLE REASON THEY ARE FIELDS AND NOT DICE
+     * FOLDED INTO A DAMAGE STRING. A rider written into the damage field is billed on every
+     * attack; one printed only in the prose is billed on none. Neither is what the block says.
+     *
+     * v10's Pricing Resolver splits them exactly this way — `conditional_extra_damage` is
+     * "P(condition true) × P(trigger succeeds) × extra damage EV", and
+     * `first_hit_or_once_per_turn_rider` is "P(at least one qualifying trigger in the legal turn)
+     * × rider EV". A per-hit rider rides each use and belongs in `perUse`; a once-per-turn one
+     * does not, and is priced at the turn below, once the routine is known.
+     */
+    const hitChance = feature.attackBonus !== undefined
+      ? Math.min(0.95, Math.max(0.05, (21 + feature.attackBonus - target.ac) / 20))
+      : 1;
+    const riders = feature.riders ?? [];
+    const perHitRiders = riders.filter(r => r.cadence === "per-hit");
+    const perHitBonus = perHitRiders.reduce(
+      (sum, r) => sum + damageExpressionAverage(r.damage) * riderWeight(r, hitChance, 1), 0);
+    const riderNote = perHitRiders.length === 0 ? ""
+      : " + " + perHitBonus.toFixed(1) + " rider (" + perHitRiders.map(describeRider).join("; ") + ")";
     budgeted.push({
       feature, channel,
+      turnRiders: riders.filter(r => r.cadence === "once-per-turn"),
+      hitChance,
       /**
        * A spell, a recharge ability, OR A LIMITED-USE ability IS the Action — it replaces the
        * routine rather than joining it. Recharge never changes the CHANNEL, only availability.
@@ -138,8 +166,8 @@ export function traceCreature(
           || feature.uses !== undefined),
       usesLeft: feature.uses ?? null,
       recharge: feature.recharge,
-      perUse: expected,
-      expectation: basis,
+      perUse: expected + perHitBonus,
+      expectation: basis + riderNote,
       method: resolved.method,
       castLevel: resolved.castLevel,
       targets: feature.targets ?? 1,
@@ -191,7 +219,46 @@ export function traceCreature(
      * what the block says nor what the creature would pick.
      */
     const declared = routine.filter(b => (b.feature.routineSlots ?? 0) > 0);
-    if (declared.length > 0) {
+    const declaredTotal = declared.reduce((s, b) => s + (b.feature.routineSlots ?? 0), 0);
+    /**
+     * ⚠ A SPLIT THAT OVERFLOWS THE BUDGET IS A LIST OF ALTERNATIVES, NOT A ROUTINE.
+     *
+     * Christopher: *"for the guards it makes 3 attacks but it does 1 of each of its actions
+     * (tail, claw, bite), then if it says 2 and both have a 2 on them then the app should be able
+     * to read it can make either of these 2 combined as dpr and finds the middle damage of those."*
+     *
+     * Both cases fall out of comparing the declared counts against the budget:
+     *
+     *   Σ counts == budget    ONE routine. 3 attacks declared 1/1/1 is tail AND claw AND bite.
+     *   Σ counts >  budget    ALTERNATIVES. 2 attacks with two actions each declared 2 cannot all
+     *                         happen, so each is a routine the creature may pick — and the
+     *                         creature is not obliged to pick the best one every round.
+     *
+     * The alternative case is priced as the MEAN of the options, which is his "middle damage" and
+     * is also what the workbook's `multiattack_sequence` asks for: *"Follow the printed sequence
+     * and alternatives; do not add every option."* Taking the maximum would assume a creature that
+     * always guesses right; summing them would field a routine that does not exist.
+     *
+     * ⚠ A SINGLE DECLARED OPTION IS NEVER AN ALTERNATIVE. One action marked 2 of a 2-attack
+     * budget is a routine with one entry, not a choice between it and nothing.
+     */
+    const alternatives = declared.length > 1 && declaredTotal > creature.attacksPerTurn;
+    if (alternatives) {
+      // Each option, capped at the budget, is one routine. Their mean is what gets scheduled.
+      const options = declared.map(b => ({
+        b, uses: Math.min(b.feature.routineSlots ?? 0, creature.attacksPerTurn),
+      }));
+      const meanUses = options.reduce((s, o) => s + o.uses, 0) / options.length;
+      const meanPerUse = options.reduce((s, o) => s + o.b.perUse * o.uses, 0)
+        / Math.max(1, options.reduce((s, o) => s + o.uses, 0));
+      // Scheduled as whole slots of an averaged attack — the trace prints one row per slot, and a
+      // fractional slot count would print a body doing 0.5 of an attack.
+      const whole = Math.max(1, Math.round(meanUses));
+      const carrier = options.reduce((best, o) => (o.b.perUse > best.b.perUse ? o : best), options[0]).b;
+      for (let i = 0; i < whole; i++) {
+        slots.push({ ...carrier, perUse: meanPerUse, feature: { ...carrier.feature, name: `${options.map(o => o.b.feature.name).join(" / ")} (either)` } });
+      }
+    } else if (declared.length > 0) {
       for (const b of declared) {
         for (let i = 0; i < (b.feature.routineSlots ?? 0) && slots.length < creature.attacksPerTurn; i++) {
           slots.push(b);
@@ -263,6 +330,31 @@ export function traceCreature(
           note: slots.length > 1 ? `Multiattack ${i + 1} of ${slots.length}` : undefined,
         });
       });
+      /**
+       * ⚠ ONCE PER TURN IS ONCE PER TURN, NOT ONCE PER ATTACK — and charging it per attack is how
+       * a once-per-turn rider gets tripled on a three-attack creature.
+       *
+       * It fires when AT LEAST ONE of this turn's attacks connects, so it is priced here, where
+       * the routine is finally known, rather than inside `perUse` where the count is not. One row
+       * per rider per turn, however many slots the feature took — which is exactly the workbook's
+       * "P(at least one qualifying trigger in the legal turn) × rider EV".
+       */
+      const riderSlots = new Map<Budgeted, number>();
+      for (const pick of slots) riderSlots.set(pick, (riderSlots.get(pick) ?? 0) + 1);
+      for (const [pick, count] of riderSlots) {
+        for (const rider of pick.turnRiders) {
+          const value = damageExpressionAverage(rider.damage) * riderWeight(rider, pick.hitChance, count);
+          if (value <= 0) continue;
+          scheduled.push({
+            feature: `${pick.feature.name} — ${rider.name}`, channel: "action", method: "rider",
+            castLevel: null, targets: pick.targets,
+            expectation: `${describeRider(rider)} · ${(riderWeight(rider, pick.hitChance, count) * 100).toFixed(0)}% across ${count} attack${count === 1 ? "" : "s"}`,
+            expectedDamage: value,
+            resourceSpent: null,
+            note: rider.note,
+          });
+        }
+      }
     }
 
     // ── Separate budgets: none of these consumes the Action ──────────────────

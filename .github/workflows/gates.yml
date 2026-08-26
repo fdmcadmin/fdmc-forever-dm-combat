@@ -100,6 +100,12 @@ jobs:
       - name: check save DCs
         run: npm run check:savedcs
 
+      - name: check multiattack and riders
+        run: npm run check:multiattack
+
+      - name: check reaction economy
+        run: npm run check:reactions
+
       # Fails on any published number that moved. Not a bug report — read the diff.
       - name: check baseline
         run: npm run check:baseline

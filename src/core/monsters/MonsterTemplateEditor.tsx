@@ -42,6 +42,7 @@ import {
   type CreatorBandId,
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
+import type { MonsterRider } from "./monsterRider";
 import { TRAIT_RULES, traitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
 import { classifyTraits } from "../encounter-band/traitClassifier";
 import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
@@ -309,6 +310,25 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
     setDraft(d => ({ ...d, [list]: d[list].filter((_, i) => i !== idx) }));
   }
 
+  // ── Riders — extra damage an action carries on a hit. See `monsterRider.ts`. ──
+
+  type ListName = "actions" | "traits" | "reactions";
+  function ridersOf(list: ListName, idx: number): MonsterRider[] {
+    return [...(draft[list][idx]?.riders ?? [])];
+  }
+  function addRider(list: ListName, idx: number) {
+    // `per-hit` is the default because it is the commoner shape and the one a DM means by
+    // "extra damage on a hit". Once-per-turn is the deliberate choice.
+    updateListItem(list, idx, { riders: [...ridersOf(list, idx), { name: "", damage: "", cadence: "per-hit" }] });
+  }
+  function updateRider(list: ListName, idx: number, riderIdx: number, patch: Partial<MonsterRider>) {
+    updateListItem(list, idx, { riders: ridersOf(list, idx).map((r, i) => (i === riderIdx ? { ...r, ...patch } : r)) });
+  }
+  function removeRider(list: ListName, idx: number, riderIdx: number) {
+    const next = ridersOf(list, idx).filter((_, i) => i !== riderIdx);
+    updateListItem(list, idx, { riders: next.length > 0 ? next : undefined });
+  }
+
   // ── Abilities plumbing ──
 
   const scores = useMemo(() => scoresFromTemplate(draft.abilities), [draft.abilities]);
@@ -474,6 +494,32 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
 
               Both blank is a legitimate state and stays supported: the checker falls back to
               reading the action text, prices an area against the party, and says it estimated. */}
+          {/* ── HOW MANY OF THE MULTIATTACK THIS ONE IS ─────────────────────────────────
+              ⚠ THE FIELD EXISTED AND HAD NO CONTROL, so the only creature that ever used it was
+              one I hand-wrote into the source. Christopher: *"we need to change how multi-attack
+              works, it shows 2 correctly but i need to be able to say of the 2 this is how many
+              of those action it can do."*
+
+              The attacks-per-turn box above is the BUDGET. This is that budget's split, and the
+              two together say both of the things he needs:
+
+                budget 3, tail 1 + claw 1 + bite 1   -> one routine, all three, 1+1+1 = 3
+                budget 2, two actions each marked 2  -> ALTERNATIVES, because 4 will not fit in 2:
+                                                        either routine is legal and the checker
+                                                        prices the middle of them
+
+              Blank keeps the old convention — the distinct attacks in descending order, last one
+              repeated to fill. That is right for a dragon's bite-claw-claw and wrong for anything
+              that prints its own split, which is why this is authorable rather than inferred. */}
+          {!opts.reaction && (
+            <div style={{ width: 66 }}>
+              <span style={labelStyle}>× of MA</span>
+              <input type="number" min={1} value={a.routineSlots ?? ""} placeholder="auto"
+                onChange={e => updateListItem(list, realIdx, { routineSlots: e.target.value ? Math.max(1, Number(e.target.value)) : undefined })}
+                style={inputStyle}
+                title="How many of the creature's attacks-per-turn are THIS action. Leave blank for the usual convention. If the numbers you set add up to MORE than the attacks-per-turn budget, the checker reads them as alternatives — the creature picks one routine, and it is priced as the middle of them." />
+            </div>
+          )}
           <div style={{ width: 62 }}>
             <span style={labelStyle}>Targets</span>
             <input type="number" min={1} value={a.targets ?? ""} placeholder="auto"
@@ -603,6 +649,58 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           <input value={a.text ?? ""} onChange={e => updateListItem(list, realIdx, { text: e.target.value })}
             placeholder={opts.reaction ? "Trigger: … Effect: …" : undefined} style={inputStyle} />
         </div>
+        {/* ── RIDERS — extra damage on a hit, as facts rather than dice hidden in a formula ──
+            ⚠ THERE WAS NO WAY TO BUILD ONE. Christopher: *"there is no way for me to create a
+            rider for the Reeve."* A PC action has riders; a creature action had a damage string,
+            so the only place to put one was INSIDE that string — where it has no name, no type,
+            no cadence and no condition, and gets billed on every single attack.
+
+            Cadence is the field that changes the answer most: on a two-attack creature an
+            every-hit rider is worth twice a once-per-turn one, and the checker prices them
+            differently on purpose — see `monsterRider.ts`. */}
+        {!opts.reaction && (
+          <div style={{ marginTop: 4 }}>
+            {(a.riders ?? []).map((r, ri) => (
+              <div key={ri} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 4, paddingLeft: 10, borderLeft: "2px solid #3a3a52" }}>
+                <div style={{ flex: 1, minWidth: 90 }}>
+                  <span style={labelStyle}>Rider</span>
+                  <input value={r.name} placeholder="Bloodscent" style={inputStyle}
+                    onChange={e => updateRider(list, realIdx, ri, { name: e.target.value })} />
+                </div>
+                <div style={{ width: 100 }}>
+                  <span style={labelStyle}>Extra dmg</span>
+                  <input value={r.damage} placeholder="1d6 necrotic" style={inputStyle}
+                    onChange={e => updateRider(list, realIdx, ri, { damage: e.target.value })} />
+                </div>
+                <div style={{ width: 118 }}>
+                  <span style={labelStyle}>Fires</span>
+                  <select value={r.cadence} style={inputStyle}
+                    title="Every hit rides each attack that lands. Once per turn fires at most once across the whole turn, however many attacks connect — the difference is a whole attack's worth of damage on a multiattacker."
+                    onChange={e => updateRider(list, realIdx, ri, { cadence: e.target.value as MonsterRider["cadence"] })}>
+                    <option value="per-hit">on every hit</option>
+                    <option value="once-per-turn">once per turn</option>
+                  </select>
+                </div>
+                <div style={{ width: 70 }}>
+                  <span style={labelStyle}>Chance %</span>
+                  <input type="number" min={0} max={100} placeholder="always" style={{ ...inputStyle, textAlign: "center" }}
+                    value={typeof r.chance === "number" ? String(Math.round(r.chance * 100)) : ""}
+                    title="How often the condition it needs is TRUE. Blank = unconditional. The app cannot know whether the party will be marked or bloodied, so the workbook's model is that the author states how often it holds and the rider is weighted by it."
+                    onChange={e => updateRider(list, realIdx, ri, { chance: e.target.value === "" ? undefined : Math.max(0, Math.min(100, Number(e.target.value))) / 100 })} />
+                </div>
+                <div style={{ flex: 2, minWidth: 110 }}>
+                  <span style={labelStyle}>When / why</span>
+                  <input value={r.note ?? ""} placeholder="against a marked target" style={inputStyle}
+                    onChange={e => updateRider(list, realIdx, ri, { note: e.target.value || undefined })} />
+                </div>
+                <SmallBtn color="#ff6b6b" onClick={() => removeRider(list, realIdx, ri)}>✕</SmallBtn>
+              </div>
+            ))}
+            <div style={{ marginTop: 4, paddingLeft: 10 }}>
+              <SmallBtn color="#4a9eff" onClick={() => addRider(list, realIdx)}>+ Rider</SmallBtn>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -20,6 +20,7 @@
  *      substitute is indistinguishable from a real answer once it reaches a total.
  */
 
+import type { MonsterRider } from "../monsters/monsterRider";
 import { spellProfile, type SpellProfile, type SrdVersion } from "./compactImport";
 import { aoeTargetsForParty } from "./parseCreature";
 import { conditionsImposedBy, applySwing, combineSwings, conditionEffect, pHitVsProne, withAdvantage, withDisadvantage, type RollSwing } from "./controlPricing";
@@ -118,6 +119,11 @@ export type ParsedFeature = {
    * the block says nor what the creature would choose.
    */
   routineSlots?: number;
+  /**
+   * Extra damage this action carries on a hit, as authored facts rather than dice folded into the
+   * damage string. See `monsterRider.ts` — cadence is what makes a rider priceable.
+   */
+  riders?: readonly MonsterRider[];
   text?: string;
 };
 

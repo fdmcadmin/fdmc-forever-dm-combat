@@ -1,3 +1,4 @@
+import type { MonsterRider } from "./monsterRider";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FDMC_PRIVATE_MONSTER_LIBRARY_KEY,
@@ -105,6 +106,12 @@ export type MonsterReaderAction = {
    * Grasping Limbs, the WEAKER attack three times.
    */
   routineSlots?: number;
+  /**
+   * Extra damage this action carries on a hit — a name, dice, a cadence and a condition, rather
+   * than dice folded into the damage string where none of those can be expressed.
+   * See `monsterRider.ts`.
+   */
+  riders?: MonsterRider[];
   /**
    * What a SUCCESSFUL save still takes. v7 `parser.success_patterns`: half / none / a printed
    * alternate.
