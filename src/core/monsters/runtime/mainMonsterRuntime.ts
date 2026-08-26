@@ -322,6 +322,51 @@ export type MainMonsterTemplate = {
      * session can re-check it instead of trusting it.
      */
     defenses?: readonly MonsterDefense[];
+    /**
+     * TYPED DAMAGE RESPONSES — "Damage Immunities Cold", "Damage Vulnerabilities Radiant".
+     *
+     * ⚠ THIS IS A DIFFERENT KIND OF FACT FROM `defenses`, AND CONFLATING THEM WAS THE PROBLEM.
+     * Christopher: *"i cant enter specific resistance or vulnerable to a element, this is why i
+     * didnt want the defensives to be a drop down box which they are unless i build a trait for
+     * the 2 types."*
+     *
+     * `defenses` is a PRICE — one of the 58 calibrated rules and the effective-HP weight it
+     * carries. A damage response is what the STAT BLOCK SAYS: this creature is immune to cold.
+     * There is no dropdown entry for "immune to cold", and there should not be, because the
+     * calibrated rows are shares of opposing damage rather than named types.
+     *
+     * Until this existed the only home for it was `notes` — free prose, invisible to the card,
+     * the editor and the checker alike. Twenty-odd creatures carry lines like
+     * "Damage Immunities: Cold, Poison." in a note right now, which is data the app cannot read.
+     *
+     * ⚠ RECORDING IS NOT PRICING. The workbook's `resistance_immunity_vulnerability` primitive
+     * says to "weight actual damage-type share and bypass", and the type share is not published,
+     * so entering a response does NOT move effective HP on its own. A DM who wants it priced adds
+     * the calibrated `Resistance - ~25/50/75% of opposing damage` row alongside — one control for
+     * the fact, one for the weight, which is the same split `rule` and `ehpMultiplier` already
+     * use.
+     */
+    damageResponses?: readonly {
+      /** The damage type as printed: "cold", "radiant", "bludgeoning". */
+      type: string;
+      response: "resistant" | "immune" | "vulnerable";
+      /** "from nonmagical attacks", "while Bone Armor is active" — the printed condition, if any. */
+      qualifier?: string;
+      /**
+       * This type's share of the party's ELIGIBLE damage, 0–1 — the one input the formula needs.
+       *
+       * `pricing_contract.rules.21.formula`: *"Weight by the opposing side's actual eligible
+       * damage-type share and bypass rules; immunity passes 0 eligible damage, resistance 0.5,
+       * vulnerability 2.0."* The multipliers are published; the share is a fact about the party
+       * and no table of it is, so an unset share records the response and prices it at nothing
+       * rather than inventing a plausible-looking figure.
+       *
+       * ELIGIBLE is what the qualifier changes. "Resistant to nonmagical bludgeoning" against a
+       * party carrying magic weapons has a share near zero even though bludgeoning is most of
+       * their damage.
+       */
+      share?: number;
+    }[];
     /** Party damage uptime against this creature (tempo tax). 1.0 = attacks freely. */
     damageUptime?: number;
     /**

@@ -198,6 +198,28 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
    * ⚠ EVERY ADDITION CARRIES THE PHRASE IT MATCHED ON, in the note, because that is the whole
    * difference between reading and guessing. The author can see what it read and delete it.
    */
+  function addDamageResponse() {
+    setDraft(d => ({
+      ...d,
+      stats: { ...d.stats, damageResponses: [...(d.stats.damageResponses ?? []), { type: "", response: "resistant" as const }] },
+    }));
+  }
+  function updateDamageResponse(idx: number, patch: Partial<{ type: string; response: "resistant" | "immune" | "vulnerable"; qualifier: string; share: number | undefined }>) {
+    setDraft(d => ({
+      ...d,
+      stats: {
+        ...d.stats,
+        damageResponses: (d.stats.damageResponses ?? []).map((r, i) => (i === idx ? { ...r, ...patch } : r)),
+      },
+    }));
+  }
+  function removeDamageResponse(idx: number) {
+    setDraft(d => ({
+      ...d,
+      stats: { ...d.stats, damageResponses: (d.stats.damageResponses ?? []).filter((_, i) => i !== idx) },
+    }));
+  }
+
   function readDefensesFromTraits() {
     setDraft(d => {
       const existing = d.stats.defenses ?? [];
@@ -1088,6 +1110,68 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             invented. A rule with a null multiplier is calibrated as UNPRICED — it is a real
             trait the workbook has not assigned a weight to, and the checker flags it rather
             than inventing one. */}
+        {/* ── TYPED DAMAGE RESPONSES ───────────────────────────────────────────────────────
+            ⚠ NOT A DROPDOWN, AND DELIBERATELY NOT PART OF ONE. Christopher: *"i cant enter
+            specific resistance or vulnerable to a element, this is why i didnt want the
+            defensives to be a drop down box which they are unless i build a trait for the 2
+            types."*
+
+            Right, and the reason is that these are two different kinds of fact. The dropdown
+            below is a PRICE — one of the 58 calibrated rules and the weight it carries. "Immune
+            to cold" is what the stat block SAYS, and there is no calibrated row for it because
+            those rows are shares of opposing damage rather than named types.
+
+            Before this existed the only home for it was a free-text note, where the card, the
+            editor and the checker could all not read it. */}
+        <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
+          <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4a9eff" }}>Damage responses</span>
+          <p style={{ ...hintStyle, marginTop: 4 }}>
+            What the block prints — <strong style={{ color: "#aaa" }}>Damage Immunities Cold</strong>, <strong style={{ color: "#aaa" }}>Damage Vulnerabilities Radiant</strong>. Type them as they read. These record what the creature IS; the effective-HP weight is the trait list below, because the workbook prices resistance as a share of opposing damage rather than by name.
+          </p>
+          {(draft.stats.damageResponses ?? []).map((r, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
+              <div style={{ width: 120 }}>
+                <span style={labelStyle}>Response</span>
+                <select value={r.response} onChange={e => updateDamageResponse(i, { response: e.target.value as "resistant" | "immune" | "vulnerable" })} style={inputStyle}>
+                  <option value="resistant">Resistant to</option>
+                  <option value="immune">Immune to</option>
+                  <option value="vulnerable">Vulnerable to</option>
+                </select>
+              </div>
+              <div style={{ flex: 2, minWidth: 110 }}>
+                <span style={labelStyle}>Damage type</span>
+                <input value={r.type} onChange={e => updateDamageResponse(i, { type: e.target.value })}
+                  placeholder="cold" style={inputStyle} />
+              </div>
+              <div style={{ flex: 3, minWidth: 140 }}>
+                <span style={labelStyle}>Qualifier (optional)</span>
+                <input value={r.qualifier ?? ""} onChange={e => updateDamageResponse(i, { qualifier: e.target.value })}
+                  placeholder="from nonmagical attacks" style={inputStyle} />
+              </div>
+              <div style={{ width: 88 }}>
+                <span style={labelStyle}>Share %</span>
+                <input type="number" min={0} max={100} placeholder="—"
+                  value={typeof r.share === "number" ? String(Math.round(r.share * 100)) : ""}
+                  onChange={e => updateDamageResponse(i, { share: e.target.value === "" ? undefined : Math.max(0, Math.min(100, Number(e.target.value))) / 100 })}
+                  style={{ ...inputStyle, textAlign: "center" }}
+                  title="What share of the party-s damage is this type. The workbook weights a response by the party-s ACTUAL eligible share, so an unweighted response is recorded but prices at nothing." />
+              </div>
+              <SmallBtn color="#ff6b6b" onClick={() => removeDamageResponse(i)}>✕</SmallBtn>
+            </div>
+          ))}
+          <div style={{ marginTop: 8, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <SmallBtn color="#4a9eff" onClick={() => addDamageResponse()}>+ Damage response</SmallBtn>
+            {(draft.stats.damageResponses ?? []).length > 0 && (
+              <span style={{ fontSize: 11, color: "#99a" }}>
+                {(draft.stats.damageResponses ?? [])
+                  .filter(r => r.type.trim())
+                  .map(r => `${r.response === "immune" ? "Immune" : r.response === "vulnerable" ? "Vulnerable" : "Resistant"} to ${r.type}${r.qualifier ? ` ${r.qualifier}` : ""}`)
+                  .join(" · ")}
+              </span>
+            )}
+          </div>
+        </div>
+
         <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
           <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#34c759" }}>Defensive traits</span>
           <p style={{ ...hintStyle, marginTop: 4 }}>

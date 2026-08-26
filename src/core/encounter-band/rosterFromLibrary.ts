@@ -28,6 +28,7 @@ import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import { materializeTemplateBody } from "../monsters/actionSetPicks";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, traitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
+import { priceDamageResponses, describeDamageResponses } from "./damageResponsePricing";
 import { traceCreature } from "./actionTrace";
 import type { PartyDefence } from "./damageExpression";
 import type { RosterGroup, SustainFactor } from "./checkerV2";
@@ -147,6 +148,28 @@ export function traitFactorsFor(
         detail: `"${d.name}" is not a calibrated rule and declares no provenance, so there is nothing to say where its ×${(1 + contribution).toFixed(3)} came from. Give it a rule that resolves, or declare the source.` });
     }
     factors.push({ stackGroup, label: d.name, contribution });
+  }
+
+  /**
+   * ⚠ TYPED RESPONSES PRICE THEMSELVES, from the block's own words. Christopher: *"i want to type
+   * the defense like resistance to cold and then it prices off that text not have to go in and
+   * create a trait just for it to price."*
+   *
+   * Their own stack group, because they are not one of the 58 rules and must not collide with
+   * one: a creature can hold `Resistance - ~25% of opposing damage` as a calibrated trait AND be
+   * immune to cold, and those are different claims about different damage.
+   */
+  const typed = priceDamageResponses(template.stats.damageResponses);
+  if (typed.multiplier !== 1) {
+    factors.push({
+      stackGroup: "typed_damage_response",
+      label: describeDamageResponses(template.stats.damageResponses),
+      contribution: typed.multiplier - 1,
+    });
+  }
+  for (const r of typed.unweighted) {
+    out.push({ creature: name, flag: "NEEDS DM INPUT", field: "damage_response",
+      detail: `"${r.response} to ${r.type}" is recorded but not weighted, so it prices at nothing. The workbook weights it by the party's ACTUAL share of that damage type — enter the share and it prices as ${r.response === "immune" ? "all" : r.response === "resistant" ? "half" : "double"} of it.` });
   }
 
   if (factors.length === 0 && template.stats.kitMultiplier && template.stats.kitMultiplier !== 1) {

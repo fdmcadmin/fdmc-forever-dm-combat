@@ -297,7 +297,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "unspecified", ac: 13, maxHp: 100, attacksPerTurn: 2, speed: "50 ft", classification: "act-boss",
       defenses: [
-        { name: "Phantom Step", ehpMultiplier: 1.18, provenance: "uncalibrated", note: "Attacks against it have disadvantage until it takes damage in a round, so the party's first swing each round is much likelier to miss. Roughly one lost attack per round early in the fight." },
+        { name: "Phantom Step", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.18, a hand-authored figure predating the workbook. Calibrated handling: attack-disadvantage-until-damaged + triggered reaction. Kept as a trait, and priced with Phantom Lunge. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -365,7 +365,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "beast", ac: 13, maxHp: 75, speed: "50 ft", classification: "strong",
       defenses: [
-        { name: "Ambush + Apex Unleashed", ehpMultiplier: 1.40, provenance: "uncalibrated", note: "Waits out round 1 and only commits on the round-2 timer, so the party's opening burst lands on chaff; Cold Breath unlocks when the first Pack Hunter drops. v12 analytic 1.48 rds × 1.27 dynamics." },
+        { name: "Ambush + Apex Unleashed", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: offensive trigger / action economy. Apex is priced through Breath, not as effective HP. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -401,7 +401,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "beast", ac: 12, maxHp: 26, speed: "40 ft", classification: "normal",
       defenses: [
-        { name: "Pack coordination", ehpMultiplier: 1.40, provenance: "uncalibrated", note: "Shares the Hollow Pack formation value; the Hunters screen the Stalker until one of them falls. v12 analytic 1.48 rds × 1.27 dynamics. PROVISIONAL — no MC lane yet." },
+        { name: "Pack coordination", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: conditional attack advantage. Kept as an advantage trait, priced in the attack matrix. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -431,7 +431,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 12, maxHp: 42, speed: "20 ft", classification: "normal",
       defenses: [
-        { name: "Hollow Fortitude", ehpMultiplier: 1.45, provenance: "uncalibrated", note: "DC 5 + damage CON save at 0 HP drops it to 1 instead (radiant or a crit bypasses), so kills must be confirmed. Carries the Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics." },
+        { name: "Hollow Fortitude", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: drop-to-1 / revive primitive. Kept as a save-to-1 trait and priced there. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -497,7 +497,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 13, maxHp: 36, speed: "30 ft", classification: "normal",
       defenses: [
-        { name: "Cold Aura + paralysis", ehpMultiplier: 1.45, provenance: "uncalibrated", note: "Aura saves compound with the Hunter's drain and paralysis removes whole PC turns. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
+        { name: "Cold Aura + paralysis", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: control / save manipulation. Priced as the Aura and the Claw, each directly. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -534,7 +534,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 14, maxHp: 82, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
-        { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1.45, provenance: "uncalibrated", note: "Halves nonmagical weapon damage and drains STR (cap 6), softening every later hit. Frozen Hollow formation value: v12 analytic 2.02 rds × 1.27 dynamics. PROVISIONAL." },
+        { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: typed resistance + ability drain. Each is priced directly, by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -575,7 +575,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft", classification: "elite",
       defenses: [
-        { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1.64, provenance: "uncalibrated", note: "Corrupted Touch cuts the party's max HP until a long rest, so their effective pool shrinks while the Guardian's does not — the aura makes every extra round cost more. PROVISIONAL: derived from the analytic screen, no MC lane yet." },
+        { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.64, a hand-authored figure predating the workbook. Calibrated handling: aura + max-HP drain + stun, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -610,7 +610,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "undead", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)", classification: "normal",
       defenses: [
-        { name: "Patrol screen", ehpMultiplier: 1.64, provenance: "uncalibrated", note: "Three Lights tracked separately; magical vs nonmagical matters per attacker. Shares the Last Directive formation value. PROVISIONAL — analytic-derived, no MC lane yet." },
+        { name: "Patrol screen", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.64, a hand-authored figure predating the workbook. Calibrated handling: typed physical resistance + movement, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -771,7 +771,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "undead", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
       size: "Large", archetype: "skirmisher",
       defenses: [
-        { name: "Two fronts + Grab", ehpMultiplier: 1.21, provenance: "uncalibrated", note: "Two bodies entering from separate approaches split the party's focus, and a grappled PC bleeds turns escaping. Note the workbook gives this fight NO trait-based EHP uplift — the value here is fight dynamics, not resistances." },
+        { name: "Two fronts + Grab", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.21, a hand-authored figure predating the workbook. Calibrated handling: encounter structure + grapple + automatic damage. Structure is the roster's job; the rest price directly. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -1122,8 +1122,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       kind: "undead", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
       size: "Large", classification: "elite", archetype: "guardian",
       defenses: [
-        { name: "Wrapped in the Pale", ehpMultiplier: 1.32, provenance: "uncalibrated", note: "-3 damage per attack while in its own dim-light aura. Against ~7 landed attacks/round that is a large flat reduction — and bright light switches it off entirely." },
-        { name: "Shadow Shift", ehpMultiplier: 1.16, provenance: "uncalibrated", note: "Teleports between shadows every turn, so melee rarely gets a full round on it." },
+        { name: "Wrapped in the Pale", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.32, a hand-authored figure predating the workbook. Calibrated handling: flat 3 damage reduction per attack — a damage_reduction_flat primitive, not an HP multiplier. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
+        { name: "Shadow Shift", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.16, a hand-authored figure predating the workbook. Calibrated handling: bonus-action movement / reachability. Priced on the clock, never as effective HP. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
@@ -1183,8 +1183,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // description; publication needs a real type (Christopher, 2026-07-25).
       size: "Medium", classification: "elite", archetype: "skirmisher",
       defenses: [
-        { name: "Reknit in the Cold", ehpMultiplier: 1.40, provenance: "uncalibrated", note: "Returns once at 34 of 85 HP (40%) if it dies in dim light. Radiant damage or bright light at the moment it falls prevents it entirely." },
-        { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1.10, provenance: "uncalibrated", note: "First hit each turn is blunted and it hides as a bonus action inside the Drifter's aura, costing the party attacks." },
+        { name: "Reknit in the Cold", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: conditional +34 HP same-body return. A drop-prevention/revive primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
+        { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.10, a hand-authored figure predating the workbook. Calibrated handling: disadvantage-until-first-hit + Hide, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
     },
     abilities: [
