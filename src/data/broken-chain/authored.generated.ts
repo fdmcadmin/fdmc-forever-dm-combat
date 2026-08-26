@@ -931,7 +931,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 18,
-      "maxHp": 215,
+      "maxHp": 225,
       "speed": "35 ft.",
       "defenses": [
         {
@@ -961,7 +961,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "abilities": [
       {
         "label": "STR",
-        "value": "18 (+4)",
+        "value": "22 (+6)",
         "saveProficient": true
       },
       {
@@ -979,11 +979,11 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "label": "WIS",
-        "value": "12 (+1)"
+        "value": "10 (+0)"
       },
       {
         "label": "CHA",
-        "value": "12 (+1)"
+        "value": "10 (+0)"
       }
     ],
     "traits": [
@@ -1008,9 +1008,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Fist",
         "kind": "attack",
-        "roll": "1d20 + @ATK",
+        "roll": "1d20 + @STR+PB",
         "damage": "3d6+@STR",
-        "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning.",
+        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning.",
         "routineSlots": 2
       },
       {
@@ -1019,7 +1019,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "save": "STR",
         "recharge": "5-6",
         "damage": "5d8",
-        "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 16 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
+        "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
       }
     ],
     "reactions": [
@@ -1037,6 +1037,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Grief Colossus",
       "revealedName": "Grief Colossus"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T23:36:28.900Z"
     }
   },
   {
@@ -1611,7 +1614,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 17,
-      "maxHp": 175,
+      "maxHp": 179,
       "speed": "30 ft.",
       "defenses": [
         {
@@ -1620,7 +1623,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
         }
       ],
-      "attacksPerTurn": 2,
+      "attacksPerTurn": 3,
       "size": "Medium",
       "classification": "act-boss",
       "archetype": "tactician",
@@ -1696,7 +1699,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20+@INT+@PB",
         "damage": "4d8+@INT",
         "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (4d8 +6) psychic.",
-        "routineSlots": 2
+        "routineSlots": 3
       },
       {
         "name": "Unmake Distance (Recharge 5–6)",
@@ -1734,7 +1737,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Thought Harrower"
     },
     "dmEdited": {
-      "at": "2026-08-26T23:20:35.425Z"
+      "at": "2026-08-26T23:36:41.234Z"
     }
   },
   {
@@ -5235,10 +5238,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-24b5b397-105194";
+export const AUTHORED_DIGEST = "fnv1a-a248f3a8-105243";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T23:31:38.930Z";
+export const AUTHORED_AT = "2026-08-26T23:48:36.304Z";
 
 /**
  * Merge authored content over a bundled list by id.

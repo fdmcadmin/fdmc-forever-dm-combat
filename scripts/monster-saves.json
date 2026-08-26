@@ -52,5 +52,5 @@
  "Veil-Torn Dragon": "str3 dex3 con9 int5 wis9 cha10",
  "Elemental Mirror": "str4 dex3 con2 int1 wis1 cha0",
  "Thought Harrower": "str2 dex1 con4 int10 wis8 cha8",
- "Grief Colossus": "str8 dex3 con10 int-1 wis1 cha1"
+ "Grief Colossus": "str10 dex3 con10 int-1 wis0 cha0"
 }
