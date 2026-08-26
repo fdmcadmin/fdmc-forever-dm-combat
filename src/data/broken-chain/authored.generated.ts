@@ -945,7 +945,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
         }
       ],
-      "attacksPerTurn": 3,
+      "attacksPerTurn": 2,
       "size": "Huge",
       "classification": "act-boss",
       "archetype": "guardian",
@@ -1002,8 +1002,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Anchor the Wrong",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn.",
-        "routineSlots": 1
+        "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
       },
       {
         "name": "Fist",
@@ -1582,6 +1581,29 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
   },
   {
     "templateId": "broken-chain:act3:thought-harrower:v1",
+    "lair": {
+      "initiative": 20,
+      "noRepeatConsecutive": true,
+      "note": "The Center. Distance stops agreeing with itself.",
+      "options": [
+        {
+          "name": "Adjacent Elsewhere",
+          "effect": "portal",
+          "text": "Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn."
+        },
+        {
+          "name": "Memory of Falling",
+          "effect": "forced_movement",
+          "save": "STR DC 18",
+          "text": "Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage."
+        },
+        {
+          "name": "Wrong Angle",
+          "effect": "cover",
+          "text": "Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
+        }
+      ]
+    },
     "name": "Thought Harrower",
     "encounterId": "act3-e10-the-center",
     "encounterLabel": "Act 3 E10 - The Center",
@@ -1597,7 +1619,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
         }
       ],
-      "attacksPerTurn": 3,
+      "attacksPerTurn": 2,
       "size": "Medium",
       "classification": "act-boss",
       "archetype": "tactician",
@@ -1665,8 +1687,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Fracture Seed",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated.",
-        "routineSlots": 1
+        "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated."
       },
       {
         "name": "Rift Lance",
@@ -5237,10 +5258,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-11aaf361-112004";
+export const AUTHORED_DIGEST = "fnv1a-519b14c9-105736";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T22:12:19.358Z";
+export const AUTHORED_AT = "2026-08-26T22:26:56.919Z";
 
 /**
  * Merge authored content over a bundled list by id.
