@@ -924,7 +924,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 18,
-      "maxHp": 230,
+      "maxHp": 207,
       "speed": "35 ft.",
       "defenses": [
         {
@@ -1002,7 +1002,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d10 + @MAIN",
-        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning."
+        "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning."
       },
       {
         "name": "Collapse Space (Recharge 5–6)",
@@ -5218,10 +5218,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-d18c774f-97774";
+export const AUTHORED_DIGEST = "fnv1a-5ccd6220-92385";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T14:10:25.878Z";
+export const AUTHORED_AT = "2026-08-26T19:13:19.226Z";
 
 /**
  * Merge authored content over a bundled list by id.
