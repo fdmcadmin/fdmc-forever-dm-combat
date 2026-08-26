@@ -1,128 +1,8 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T13:11:20.981Z",
-  "digest": "fnv1a-155a70db-102884",
+  "exportedAt": "2026-08-26T13:23:08.880Z",
+  "digest": "fnv1a-d18c774f-97774",
   "monsters": [
-    {
-      "templateId": "broken-chain:act3:brandwing:v1",
-      "name": "Brandwing",
-      "encounterId": "act3-e7-the-last-court",
-      "encounterLabel": "Act 3 E7 - The Last Court",
-      "stats": {
-        "kind": "fiend",
-        "ac": 17,
-        "maxHp": 81,
-        "speed": "30 ft., fly 40 ft.",
-        "defenses": [
-          {
-            "name": "Magic Resistance",
-            "ehpMultiplier": 1.115824,
-            "rule": "Magic Resistance",
-            "note": "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects."
-          },
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "tactician",
-        "skills": [
-          {
-            "label": "Perception",
-            "modifier": 8
-          },
-          {
-            "label": "Investigation",
-            "modifier": 9
-          }
-        ],
-        "proficiencyBonus": 4,
-        "damageResponses": [
-          {
-            "type": "Fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "DEX",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "INT",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "14 (+2)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Magic Resistance",
-          "kind": "trait",
-          "text": "Brandwing has advantage on saving throws against spells and other magical effects."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Red Script",
-          "kind": "action",
-          "economyCost": "bonus",
-          "damage": "1d8",
-          "text": "Bonus Action: choose one creature within 90 ft. Clear Angle: ignore half and three-quarters cover against it, and the first Ember Lance this turn gains +2 to hit. Closing Stroke: the first Ember Lance that hits it this turn deals an extra 4 (1d8) fire damage. Only one Red Script can be active at a time."
-        },
-        {
-          "name": "Ember Lance",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "2d10 + @MAIN",
-          "text": "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks."
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Cinder Skip",
-          "kind": "reaction",
-          "text": "When Brandwing is hit by an attack or targeted by a spell, the triggering attack or spell resolves completely. Brandwing then teleports up to 15 ft. to an unoccupied space it can see."
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "A narrow Fiend with wing-like sheets of ember script. It writes on bark by touching it and leaves the letters burning after its hand is gone. Brandwing is the only Fiend in the Last Court roster.",
-        "CINDER SKIP IS NOT MITIGATION, and prices at nothing on purpose. The block says the triggering attack or spell resolves COMPLETELY before the teleport, so it changes where Brandwing is standing next, not what it takes.",
-        "RED SCRIPT CARRIES ITS 1d8 SO THE CHECKER CAN READ IT. Without a damage field the checker reported NEEDS DM INPUT - dice appear in the printed text and score zero - which is a real read failure, not a quibble. Once per turn is the rider’s true frequency, so a bonus-action line is the right shape. The trace applies it flat while the block conditions it on the first Ember Lance HITTING, so this reads about 1.4 a round generous. The +2 to hit is not counted at all."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Brandwing",
-        "revealedName": "Brandwing"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T06:58:31.603Z"
-      }
-    },
     {
       "templateId": "broken-chain:act3:rift-slick:v1",
       "name": "Rift-Slick",
@@ -233,157 +113,20 @@
       }
     },
     {
-      "templateId": "broken-chain:act3:veil-torn-dragon:v1",
-      "name": "Veil-Torn Dragon",
-      "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
-      "encounterLabel": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
+      "templateId": "broken-chain:act3:blackbough-reeve:v1",
+      "name": "Blackbough Reeve",
+      "encounterId": "act3-e7-the-last-court",
+      "encounterLabel": "Act 3 E7 - The Last Court",
       "stats": {
-        "kind": "dragon",
-        "ac": 19,
-        "maxHp": 195,
-        "speed": "40 ft.; Broken Lift only",
+        "kind": "fey",
+        "ac": 16,
+        "maxHp": 86,
+        "speed": "35 ft.",
         "defenses": [
           {
-            "name": "Legendary Resistance - 1 use",
-            "ehpMultiplier": 1.0424576635782374,
-            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
-          }
-        ],
-        "attacksPerTurn": 3,
-        "size": "Huge",
-        "classification": "mid-boss",
-        "archetype": "commander",
-        "legendaryPerRound": 1,
-        "skills": [
-          {
-            "label": "Perception",
-            "modifier": 8
-          }
-        ],
-        "cr": 9
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "DEX",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "CON",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "20 (+5)"
-        },
-        {
-          "label": "WIS",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "22 (+6)",
-          "saveProficient": true
-        }
-      ],
-      "traits": [
-        {
-          "name": "Legendary Resistance (1/Day)",
-          "kind": "trait",
-          "text": "If the dragon fails a saving throw, it can choose to succeed instead."
-        },
-        {
-          "name": "Moonmark (2/Day)",
-          "kind": "trait",
-          "save": "DEX DC 17",
-          "text": "Action: choose a point within 60 ft.; a 15-ft. radius fills with pale motes until the start of the dragon’s next turn. Creatures of the dragon’s choice in the area make a DC 17 Dexterity save. On a failure, they cannot benefit from invisibility and the first attack against them before the effect ends has advantage. No damage."
-        },
-        {
-          "name": "Blind SIght",
-          "kind": "trait",
-          "range": "30 FT"
-        },
-        {
-          "name": "Darkvision",
-          "kind": "trait",
-          "range": "120"
-        }
-      ],
-      "actions": [
-        {
-          "name": "Broken Lift (Recharge 5–6)",
-          "kind": "action",
-          "economyCost": "bonus",
-          "recharge": "5-6",
-          "text": "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed."
-        },
-        {
-          "name": "Bite",
-          "kind": "attack",
-          "roll": "1d20+@ATK",
-          "damage": "2d10+@STR piercing + 2d6 radiant",
-          "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage"
-        },
-        {
-          "name": "Claw",
-          "kind": "attack",
-          "roll": "1d20+@ATK",
-          "damage": "2d6 + @STR",
-          "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing."
-        },
-        {
-          "name": "Veilstorm Breath",
-          "kind": "action",
-          "save": "DEX",
-          "recharge": "5-6",
-          "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) lightning damage on failure, half on success. ",
-          "range": "90 FT, 10 FT Wide",
-          "damage": "8d8"
-        },
-        {
-          "name": "Tail Sweep",
-          "kind": "action",
-          "roll": "1d20 + @ATK",
-          "damage": "1d8 + @STR",
-          "legendaryCost": 1,
-          "text": "Once per round at the end of another creature’s turn, make one Tail attack: +7 to hit, reach 15 ft.; Hit: 9 (1d8 + 3) bludgeoning, and the dragon may move 5 ft. without provoking from the target hit."
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A real Fey-touched dragon caught at the point where native belonging has become control. Its wings still know how to fly. The Wood has started deciding when they open.",
-        "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Ground Remembers Wrong. Choose up to three 10-ft. squares of natural ground within 90 ft. Creatures there make a DC 17 Strength save or slide up to 10 ft. to a safe space chosen by the lair. Branches Close. A 15-ft.-radius sphere within 90 ft. becomes heavily obscured by overlapping leaves and wrong-angle branches until the next initiative count 20. Borrowed Sky. Choose one creature within 90 ft. The lair moves it up to 20 ft. horizontally and 10 ft. vertically, placing it safely on a surface. An unwilling creature can resist with a DC 17 Strength save."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Veil-Torn Dragon",
-        "revealedName": "Veil-Torn Dragon"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T13:04:14.897Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:demonic-reaver:v1",
-      "name": "Demonic Reaver",
-      "encounterId": "act3-e8-the-occupied-acre",
-      "encounterLabel": "Act 3 E8 - The Occupied Acre",
-      "stats": {
-        "kind": "fiend",
-        "ac": 18,
-        "maxHp": 90,
-        "speed": "40 ft.",
-        "defenses": [
-          {
-            "name": "All attacks at disadvantage - 1 round",
-            "ehpMultiplier": 1.1294156939022204,
-            "note": "Read from \"Shifting Outline\" (trait) on \"attack rolls against it have disadvantage\"."
+            "name": "Condition immunity",
+            "ehpMultiplier": 1,
+            "note": "Read from \"Seasoned by Severity\" (trait) on \"immune to a condition\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
           },
           {
             "name": "Resistance - ~50% of opposing damage",
@@ -395,25 +138,17 @@
         "attacksPerTurn": 2,
         "size": "Medium",
         "classification": "elite",
-        "archetype": "skirmisher",
+        "archetype": "bruiser",
         "skills": [
           {
-            "label": "Acrobatics",
-            "modifier": 8
-          },
-          {
-            "label": "Stealth",
-            "modifier": 12
-          },
-          {
-            "label": "Perception",
-            "modifier": 12
+            "label": "Athletics",
+            "modifier": 9
           }
         ],
-        "cr": 9,
+        "proficiencyBonus": 4,
         "damageResponses": [
           {
-            "type": "fire",
+            "type": "Fire",
             "response": "resistant"
           }
         ]
@@ -421,7 +156,8 @@
       "abilities": [
         {
           "label": "STR",
-          "value": "10 (+0)"
+          "value": "20 (+5)",
+          "saveProficient": true
         },
         {
           "label": "DEX",
@@ -430,7 +166,7 @@
         },
         {
           "label": "CON",
-          "value": "12 (+1)"
+          "value": "10 (+0)"
         },
         {
           "label": "INT",
@@ -443,50 +179,157 @@
         },
         {
           "label": "CHA",
-          "value": "14 (+2)"
+          "value": "19 (+4)"
         }
       ],
       "traits": [
         {
-          "name": "Shifting Outline",
+          "name": "Seasoned by Severity",
           "kind": "trait",
-          "text": "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect."
-        },
-        {
-          "name": "Scent the Expense",
-          "kind": "trait",
-          "text": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
+          "text": "The Reeve has advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions."
         }
       ],
       "actions": [
         {
-          "name": "Rending Talon",
+          "name": "Shearing Cut",
           "kind": "attack",
-          "roll": "1d20 +@ATK",
-          "damage": "1d10+@MAIN slashing + 2d6 fire",
-          "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks."
+          "roll": "1d20 + @ATK",
+          "damage": "2d8 + @MAIN",
+          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each."
+        },
+        {
+          "name": "Spoiling Cut",
+          "kind": "attack",
+          "roll": "1d20 + @ATK",
+          "damage": "1d8 + @MAIN",
+          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses."
         }
       ],
       "reactions": [],
-      "resources": [
-        {
-          "id": "res-mta3zave",
-          "name": "Scent the Expense",
-          "max": 1,
-          "reset": "Turn",
-          "note": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damageWhenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
-        }
-      ],
+      "resources": [],
       "notes": [
-        "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it."
+        "A broad-shouldered Fey wrapped in split black bark and hooked thorn. Pale cuts run through the growth like old pruning scars. It carries itself like a keeper who has spent years deciding what the Wood is allowed to keep.",
+        "DM DESIGN READ. The Reeve does not lock movement or force targets into place. It either prunes through raw damage or makes ignoring it expensive. A martial can clear Spoiling Cut by committing an attack to the Reeve, then spend any remaining attacks elsewhere. No recharge ability and no special reaction are part of this block.",
+        "UNPRICED IN EHP. Spoiling Cut takes 5 off every damage instance the target aims at anyone except the Reeve. That is ally-side damage prevention, nearest to the workbook's Fixed prevention - 8/round (+0.141871), but it is conditional, single-target and cleared by attacking the Reeve. Left unpriced pending a calibration decision: v3.23 states the fight's 253 raw HP is the figure BEFORE trait, control, reaction, targeting and Winter's Toll conversion."
       ],
       "visibility": {
         "defaultState": "hp-bar",
-        "hiddenName": "Demonic Reaver",
-        "revealedName": "Demonic Reaver"
+        "hiddenName": "Blackbough Reeve",
+        "revealedName": "Blackbough Reeve"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:grief-colossus:v1",
+      "name": "Grief Colossus",
+      "encounterId": "act3-e10-the-center",
+      "encounterLabel": "Act 3 E10 - The Center",
+      "stats": {
+        "kind": "aberration",
+        "ac": 18,
+        "maxHp": 230,
+        "speed": "35 ft.",
+        "defenses": [
+          {
+            "name": "Legendary Resistance - 1 use",
+            "ehpMultiplier": 1.0424576635782374,
+            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
+          },
+          {
+            "name": "Fixed prevention - 12/round",
+            "ehpMultiplier": 1.2323134514052565,
+            "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
+          }
+        ],
+        "attacksPerTurn": 2,
+        "size": "Huge",
+        "classification": "act-boss",
+        "archetype": "guardian",
+        "skills": [
+          {
+            "label": "Athletics",
+            "modifier": 10
+          }
+        ],
+        "cr": 9
       },
-      "dmEdited": {
-        "at": "2026-08-26T06:26:47.425Z"
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "CON",
+          "value": "22 (+6)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "8 (-1)"
+        },
+        {
+          "label": "WIS",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "CHA",
+          "value": "12 (+1)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Legendary Resistance (1/Day)",
+          "kind": "trait",
+          "text": "If the Colossus fails a saving throw, it can choose to succeed instead."
+        },
+        {
+          "name": "Impossible Mass",
+          "kind": "trait",
+          "text": "Advantage on saves against being knocked prone or moved against its will."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Anchor the Wrong",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
+        },
+        {
+          "name": "Fist",
+          "kind": "attack",
+          "roll": "1d20 + @ATK",
+          "damage": "2d10 + @MAIN",
+          "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning."
+        },
+        {
+          "name": "Collapse Space (Recharge 5–6)",
+          "kind": "action",
+          "save": "STR",
+          "recharge": "5-6",
+          "damage": "5d8",
+          "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 16 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Body Between",
+          "kind": "reaction",
+          "text": "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "The weight behind the thought. Its limbs do not bend in the same number of places twice, but when it decides a space is occupied, the battlefield has to argue with several tons of certainty."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Grief Colossus",
+        "revealedName": "Grief Colossus"
       }
     }
   ],
