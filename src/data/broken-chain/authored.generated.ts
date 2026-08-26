@@ -1008,7 +1008,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Fist",
         "kind": "attack",
         "roll": "1d20 + @ATK",
-        "damage": "2d10 + @MAIN",
+        "damage": "3d6+@STR",
         "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning.",
         "routineSlots": 2
       },
@@ -1647,7 +1647,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "label": "CON",
-        "value": "16 (+3)"
+        "value": "18 (+4)"
       },
       {
         "label": "INT",
@@ -1692,18 +1692,18 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Rift Lance",
         "kind": "attack",
-        "roll": "1d20 + 10",
-        "damage": "3d10+6",
+        "roll": "1d20+@SPELL",
+        "damage": "3d10+@MAIN",
         "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
         "routineSlots": 2
       },
       {
         "name": "Unmake Distance (Recharge 5–6)",
         "kind": "action",
-        "save": "INT DC 18",
+        "save": "INT",
         "recharge": "5-6",
         "damage": "6d8+@MAIN",
-        "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
+        "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8+@Main) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
       },
       {
         "name": "Mind Hook",
@@ -1733,7 +1733,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Thought Harrower"
     },
     "dmEdited": {
-      "at": "2026-08-26T19:47:09.237Z"
+      "at": "2026-08-26T22:44:53.061Z"
     }
   },
   {
@@ -1960,7 +1960,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Bite",
         "kind": "attack",
         "roll": "1d20 + 7",
-        "damage": "2d6 + 4 piercing + 1d6 radiant",
+        "damage": "2d6+@STR",
         "text": "Hit: 9 (2d6 + 2) piercing damage.",
         "routineSlots": 1
       },
@@ -1978,16 +1978,17 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Claw",
         "kind": "action",
         "roll": "1d20+@ATK",
-        "damage": "2d6+@STR",
+        "damage": "2d6+@STR+1d6",
         "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
-        "save": "1"
+        "save": "",
+        "routineSlots": 1
       },
       {
         "name": "Tail",
         "kind": "action",
         "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
-        "roll": "1d20@ATK",
-        "damage": "2d6@STR",
+        "roll": "1d20+@ATK",
+        "damage": "2d6+@STR",
         "save": "STR",
         "routineSlots": 1
       }
@@ -2001,6 +2002,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Corrupted Guards",
       "revealedName": "Veilbound Drake Guard"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T22:47:45.545Z"
     }
   }
 ];
@@ -5258,10 +5262,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-519b14c9-105736";
+export const AUTHORED_DIGEST = "fnv1a-aaafcee4-105783";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T22:26:56.919Z";
+export const AUTHORED_AT = "2026-08-26T22:51:57.022Z";
 
 /**
  * Merge authored content over a bundled list by id.
