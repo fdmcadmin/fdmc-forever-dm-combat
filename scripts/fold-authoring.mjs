@@ -126,6 +126,26 @@ if (strippedDefences > 0) {
  * entries whose template is missing, so folding that export would have replaced two rebuilt
  * Act 3 fights with EMPTY ones. No crash, no error, no bodies.
  */
+/**
+ * ⚠ AN UNCHANGED FOLD MUST COMMIT NOTHING, AND THE TIMESTAMP WAS STOPPING THAT.
+ *
+ * `AUTHORED_AT` was `new Date()` on every run, so re-folding the same payload always produced a
+ * one-line diff and the workflow's `git diff --cached --quiet` guard never fired. Every push of
+ * `authoring/current.json` — including one that changed nothing — landed a commit whose entire
+ * content was a new timestamp, which then rejected the next unrelated push with a non-fast-forward.
+ *
+ * The field means "when the fold last WROTE this file". If the fold did not change it, it did not
+ * write it, and the old timestamp is the true answer.
+ */
+const previous = (() => {
+  try { return readFileSync(resolve("src/data/broken-chain/authored.generated.ts"), "utf8"); }
+  catch { return ""; }
+})();
+const unchanged = previous.includes(`export const AUTHORED_DIGEST = ${JSON.stringify(digest)};`);
+const foldedAt = unchanged
+  ? (previous.match(/export const AUTHORED_AT = "([^"]*)";/)?.[1] ?? new Date().toISOString())
+  : new Date().toISOString();
+
 const bundledSource = readFileSync(resolve("src/data/broken-chain/monsterLibrary.ts"), "utf8");
 const bundledIds = new Set([...bundledSource.matchAll(/templateId: "([^"]+)"/g)].map(m => m[1]));
 const shippingIds = new Set([...monsters.map(m => m.templateId), ...bundledIds]);
@@ -167,7 +187,7 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = ${JSON.stringify(encou
 export const AUTHORED_DIGEST = ${JSON.stringify(digest)};
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = ${JSON.stringify(new Date().toISOString())};
+export const AUTHORED_AT = ${JSON.stringify(foldedAt)};
 
 /**
  * Merge authored content over a bundled list by id.
@@ -187,5 +207,6 @@ export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) =>
 
 writeFileSync(OUT, header + body);
 console.log(`Folded ${monsters.length} creature(s), ${encounters.length} encounter(s) and ${equipment.length} item(s) into authored.generated.ts`);
+if (unchanged) console.log("  content unchanged — the timestamp was left alone so this fold commits nothing");
 console.log(`  digest ${digest}`);
 console.log("Next: npx tsc -b && npm run build, then commit and push.");
