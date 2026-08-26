@@ -176,5 +176,63 @@ const riderRound = (t: MainMonsterTemplate) => traceCreature(parseCreature(t), R
 }
 
 
+/**
+ * ─── A BONUS ACTION IS NOT A MULTIATTACK SLOT ───────────────────────────────────────────────
+ *
+ * Christopher: *"if you read the anchor it is a BONUS action which i cant put on a monster so i
+ * have to make it read some what [...] all there counts go up, this is only until a bonus monster
+ * action is recreated, which i dont know why one wouldnt have been when even as early as act 1 i
+ * had bonus actions."*
+ *
+ * ⚠ THE WORKAROUND HE IS DESCRIBING IS A REAL COST, NOT A COSMETIC ONE. With no way to say
+ * "bonus action", the only way to make one count is to raise `attacksPerTurn` so the Multiattack
+ * budget swallows it — and then it competes for Action slots it should never have touched, and
+ * the creature reads as having more attacks than it has. The Grief Colossus reads 3 and the
+ * Breaker 5 for exactly this reason.
+ *
+ * The channel has always existed in the trace. What was missing was any way to author it.
+ */
+{
+  const withBonus = creature(2, [{ name: "Fist", damage: "10" }]);
+  (withBonus.actions as Array<Record<string, unknown>>).push({
+    name: "Anchor the Wrong", kind: "action", roll: "1d20 + 10", damage: "6",
+    economyCost: "bonus", text: "Bonus Action. Hit: 6 damage.",
+  });
+  const r = round1(withBonus);
+  const names = r.scheduled.map(s => s.feature);
+  console.log(`\n2 attacks + a bonus action -> ${names.join(", ")}  total ${r.totalExpectedDamage.toFixed(1)}`);
+
+  // The routine is still TWO Fists — the bonus action did not take a slot.
+  const fists = names.filter(n => n === "Fist").length;
+  if (fists !== 2) problems.push(`the Multiattack fielded ${fists} Fist(s), expected 2 — a bonus action must not consume an Action slot`);
+  if (!names.includes("Anchor the Wrong")) problems.push("the bonus action was not scheduled at all");
+  // 2 Fists + the bonus, all at 95%: (10 + 10 + 6) x 0.95 = 24.7
+  if (!near(r.totalExpectedDamage, 24.7, 0.6)) {
+    problems.push(`came to ${r.totalExpectedDamage.toFixed(1)}, expected ~24.7 — two Fists AND the bonus action`);
+  }
+
+  // ⚠ AND IT IS ON ITS OWN CHANNEL, which is what stops it competing for the Action.
+  const bonus = r.scheduled.find(s => s.feature === "Anchor the Wrong");
+  if (bonus?.channel !== "bonus_action") {
+    problems.push(`the bonus action landed on the "${bonus?.channel}" channel — it must have its own budget`);
+  }
+
+  // FREE / start of turn: costs nothing, still happens every round.
+  const withFree = creature(1, [{ name: "Slam", damage: "10" }]);
+  (withFree.actions as Array<Record<string, unknown>>).push({
+    name: "Grief Aura", kind: "action", damage: "5", economyCost: "free",
+    text: "At the start of its turn, each creature within 10 feet takes 5 damage.",
+  });
+  const rf = round1(withFree);
+  const aura = rf.scheduled.find(s => s.feature === "Grief Aura");
+  console.log(`1 attack + a free start-of-turn tick -> ${rf.scheduled.map(s => s.feature).join(", ")}`);
+  if (!aura) problems.push("a free start-of-turn action was not scheduled");
+  if (aura && aura.channel !== "free") problems.push(`a free action landed on the "${aura.channel}" channel`);
+  if (rf.scheduled.filter(s => s.feature === "Slam").length !== 1) {
+    problems.push("a free action displaced the creature's Action");
+  }
+}
+
+
 if (problems.length) { console.error(`\nFAILED:\n  ${problems.join("\n  ")}`); process.exit(1); }
-console.log(`\nPASS — a declared split is a routine, an overflowing one is a choice priced at its middle, and a rider is priced by its cadence.`);
+console.log(`\nPASS — a declared split is a routine, an overflowing one is a choice priced at its middle, a rider is priced by its cadence, and a bonus action never takes a Multiattack slot.`);

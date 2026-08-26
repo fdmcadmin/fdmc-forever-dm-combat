@@ -30,7 +30,7 @@ import {
 } from "./featureResolver";
 
 export type ActionChannel =
-  | "action" | "bonus_action" | "reaction" | "legendary_action" | "lair_action";
+  | "action" | "bonus_action" | "reaction" | "legendary_action" | "lair_action" | "free";
 
 export type TracedFeature = {
   feature: string;

@@ -324,11 +324,37 @@ function parseSection(
   for (const a of entries ?? []) {
     if (!a) continue;
     const name = a.name ?? "unnamed";
-    const activationType = a.economyCost === "bonus"
+    /**
+     * ⚠ THE AUTHORED COST WINS OVER EVERY GUESS, AND IT ONLY READ ONE VALUE.
+     *
+     * `economyCost` has been on `MonsterReaderAction` and read here since the field existed, and
+     * it recognised exactly one string — "bonus". Reaction, legendary and free fell through to
+     * `parseActivationType`, which reads the SECTION and then sniffs the action's NAME for
+     * "(Bonus Action)". So the only way to author a monster's bonus action was to type it into
+     * the name, and there has never been a control for any of it.
+     *
+     * Christopher: *"if you read the anchor it is a BONUS action which i cant put on a monster so
+     * i have to make it read some what [...] all there counts go up, this is only until a bonus
+     * monster action is recreated, which i dont know why one wouldnt have been when even as early
+     * as act 1 i had bonus actions."*
+     *
+     * He is right that it should have existed, and right about the cost of it not existing: the
+     * workaround is to raise `attacksPerTurn` so the Multiattack budget swallows the extra
+     * action, which is why the Grief Colossus reads 3 attacks and the Breaker 5.
+     */
+    const authoredChannel = ({
+      bonus: "bonus_action", bonus_action: "bonus_action",
+      reaction: "reaction",
+      legendary: "legendary_action", legendary_action: "legendary_action",
+      lair: "lair_action", lair_action: "lair_action",
+      free: "free", none: "free",
+      action: "action", main: "action",
+    } as Record<string, ActivationType>)[String(a.economyCost ?? "").trim().toLowerCase()];
+    const activationType = authoredChannel ?? (a.economyCost === "bonus"
       ? "bonus_action"
       : a.legendaryCost !== undefined
         ? "legendary_action"
-        : parseActivationType(section, name);
+        : parseActivationType(section, name));
 
     const feature: ParsedFeature = {
       name,

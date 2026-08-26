@@ -62,7 +62,15 @@ export type ResolvedFeature = {
 export type ParsedFeature = {
   name: string;
   /** From the SECTION HEADING, never inferred from the word "Recharge". */
-  activationType?: "action" | "bonus_action" | "reaction" | "legendary_action" | "lair_action" | "trait";
+  /**
+   * ⚠ `free` IS FOR AN EFFECT THAT COSTS NOTHING BUT IS NOT A TRAIT. A creature that burns
+   * everything near it at the start of its turn spends no Action, no Bonus Action and no
+   * Reaction — but it DOES deal damage every round, which a `trait` never does (traits are
+   * skipped by the scheduler entirely). Without this channel the only way to make such a thing
+   * count was to inflate the Multiattack budget, which is exactly the workaround this exists to
+   * retire. Christopher: *"this also goes for each monster that has a start of turn 1/turn."*
+   */
+  activationType?: "action" | "bonus_action" | "reaction" | "legendary_action" | "lair_action" | "free" | "trait";
   damage?: string;
   attackBonus?: number;
   saveDc?: number;

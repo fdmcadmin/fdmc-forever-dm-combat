@@ -511,6 +511,39 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               Blank keeps the old convention — the distinct attacks in descending order, last one
               repeated to fill. That is right for a dragon's bite-claw-claw and wrong for anything
               that prints its own split, which is why this is authorable rather than inferred. */}
+          {/* ── WHAT THIS ACTION COSTS THE CREATURE ─────────────────────────────────────
+              ⚠ THE FIELD, THE PARSER AND THE WHOLE SCHEDULING PATH HAVE EXISTED THE ENTIRE TIME.
+              `MonsterReaderAction.economyCost` is read by `parseCreature`, and `actionTrace` gives
+              every non-Action channel its own budget so a Bonus Action can never eat the Action a
+              Multiattack needed. There was simply no control, so the only way to author one was to
+              type "(Bonus Action)" into the action's NAME and hope the name-sniffer caught it.
+
+              Christopher: *"if you read the anchor it is a BONUS action which i cant put on a
+              monster so i have to make it read some what [...] all there counts go up, this is
+              only until a bonus monster action is recreated, which i dont know why one wouldnt
+              have been when even as early as act 1 i had bonus actions."*
+
+              He is right that it should have existed, and right about what its absence cost: the
+              workaround is to raise attacks-per-turn so the Multiattack budget swallows the extra
+              action — which is why the Grief Colossus reads 3 attacks and the Breaker 5. Setting
+              the cost here is what lets those go back down.
+
+              "Free" is for something that costs nothing but still happens every round — a
+              start-of-turn tick. Not a trait: a trait is never scheduled and never deals damage. */}
+          {!opts.legendary && !opts.reaction && (
+            <div style={{ width: 104 }}>
+              <span style={labelStyle}>Costs</span>
+              <select value={a.economyCost ?? ""} style={inputStyle}
+                title="Which budget this action spends. A Bonus Action, Reaction or Free action has its own budget and never consumes the Action a Multiattack needs — so you do not have to inflate attacks-per-turn to make it count. Blank reads it from the section it is in."
+                onChange={e => updateListItem(list, realIdx, { economyCost: e.target.value || undefined })}>
+                <option value="">— from section —</option>
+                <option value="action">Action</option>
+                <option value="bonus">Bonus Action</option>
+                <option value="reaction">Reaction</option>
+                <option value="free">Free / start of turn</option>
+              </select>
+            </div>
+          )}
           {!opts.reaction && (
             <div style={{ width: 66 }}>
               <span style={labelStyle}>× of MA</span>
