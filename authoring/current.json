@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T19:47:38.566Z",
-  "digest": "fnv1a-b3fb77ec-110542",
+  "exportedAt": "2026-08-26T22:12:00.532Z",
+  "digest": "fnv1a-11aaf361-112004",
   "monsters": [
     {
       "templateId": "broken-chain:act3:blackbough-reeve:v1",
@@ -486,15 +486,7 @@
         }
       ],
       "reactions": [],
-      "resources": [
-        {
-          "id": "res-mta3zave",
-          "name": "Scent the Expense",
-          "max": 1,
-          "reset": "Turn",
-          "note": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damageWhenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
-        }
-      ],
+      "resources": [],
       "notes": [
         "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it."
       ],
@@ -524,7 +516,7 @@
             "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
           }
         ],
-        "attacksPerTurn": 2,
+        "attacksPerTurn": 3,
         "size": "Medium",
         "classification": "act-boss",
         "archetype": "tactician",
@@ -592,7 +584,8 @@
           "name": "Fracture Seed",
           "kind": "action",
           "economyCost": "bonus",
-          "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated."
+          "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated.",
+          "routineSlots": 1
         },
         {
           "name": "Rift Lance",
@@ -636,6 +629,9 @@
         "defaultState": "hp-bar",
         "hiddenName": "Thought Harrower",
         "revealedName": "Thought Harrower"
+      },
+      "dmEdited": {
+        "at": "2026-08-26T19:47:09.237Z"
       }
     },
     {
@@ -656,7 +652,7 @@
             "note": "profile"
           }
         ],
-        "attacksPerTurn": 4,
+        "attacksPerTurn": 5,
         "size": "Large",
         "classification": "elite",
         "archetype": "bruiser",
@@ -735,7 +731,8 @@
           "name": "Cast Aside",
           "kind": "action",
           "economyCost": "free",
-          "text": "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends."
+          "text": "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends.",
+          "routineSlots": 1
         }
       ],
       "reactions": [],
@@ -749,6 +746,125 @@
         "defaultState": "hp-bar",
         "hiddenName": "Breaker",
         "revealedName": "Breaker"
+      },
+      "dmEdited": {
+        "at": "2026-08-26T19:47:34.600Z"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:grief-colossus:v1",
+      "name": "Grief Colossus",
+      "encounterId": "act3-e10-the-center",
+      "encounterLabel": "Act 3 E10 - The Center",
+      "stats": {
+        "kind": "aberration",
+        "ac": 18,
+        "maxHp": 207,
+        "speed": "35 ft.",
+        "defenses": [
+          {
+            "name": "Legendary Resistance - 1 use",
+            "ehpMultiplier": 1.0424576635782374,
+            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
+          },
+          {
+            "name": "Fixed prevention - 12/round",
+            "ehpMultiplier": 1.2323134514052565,
+            "note": "Read from \"Body Between\" (reaction) on \"damage reduced by ~12\"."
+          }
+        ],
+        "attacksPerTurn": 3,
+        "size": "Huge",
+        "classification": "act-boss",
+        "archetype": "guardian",
+        "skills": [
+          {
+            "label": "Athletics",
+            "modifier": 10
+          }
+        ],
+        "cr": 9
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "CON",
+          "value": "22 (+6)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "8 (-1)"
+        },
+        {
+          "label": "WIS",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "CHA",
+          "value": "12 (+1)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Legendary Resistance (1/Day)",
+          "kind": "trait",
+          "text": "If the Colossus fails a saving throw, it can choose to succeed instead."
+        },
+        {
+          "name": "Impossible Mass",
+          "kind": "trait",
+          "text": "Advantage on saves against being knocked prone or moved against its will."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Anchor the Wrong",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn.",
+          "routineSlots": 1
+        },
+        {
+          "name": "Fist",
+          "kind": "attack",
+          "roll": "1d20 + @ATK",
+          "damage": "2d10 + @MAIN",
+          "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning.",
+          "routineSlots": 2
+        },
+        {
+          "name": "Collapse Space (Recharge 5–6)",
+          "kind": "action",
+          "save": "STR",
+          "recharge": "5-6",
+          "damage": "5d8",
+          "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 16 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Body Between",
+          "kind": "reaction",
+          "text": "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "The weight behind the thought. Its limbs do not bend in the same number of places twice, but when it decides a space is occupied, the battlefield has to argue with several tons of certainty."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Grief Colossus",
+        "revealedName": "Grief Colossus"
       }
     }
   ],
