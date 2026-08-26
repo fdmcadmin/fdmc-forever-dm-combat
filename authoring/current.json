@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-26T22:26:40.209Z",
-  "digest": "fnv1a-519b14c9-105736",
+  "exportedAt": "2026-08-26T22:51:43.363Z",
+  "digest": "fnv1a-aaafcee4-105783",
   "monsters": [
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
@@ -88,7 +88,7 @@
           "name": "Bite",
           "kind": "attack",
           "roll": "1d20 + 7",
-          "damage": "2d6 + 4 piercing + 1d6 radiant",
+          "damage": "2d6+@STR",
           "text": "Hit: 9 (2d6 + 2) piercing damage.",
           "routineSlots": 1
         },
@@ -106,16 +106,17 @@
           "name": "Claw",
           "kind": "action",
           "roll": "1d20+@ATK",
-          "damage": "2d6+@STR",
+          "damage": "2d6+@STR+1d6",
           "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
-          "save": "1"
+          "save": "",
+          "routineSlots": 1
         },
         {
           "name": "Tail",
           "kind": "action",
           "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
-          "roll": "1d20@ATK",
-          "damage": "2d6@STR",
+          "roll": "1d20+@ATK",
+          "damage": "2d6+@STR",
           "save": "STR",
           "routineSlots": 1
         }
@@ -129,6 +130,9 @@
         "defaultState": "hp-bar",
         "hiddenName": "Corrupted Guards",
         "revealedName": "Veilbound Drake Guard"
+      },
+      "dmEdited": {
+        "at": "2026-08-26T22:47:45.545Z"
       }
     },
     {
@@ -437,7 +441,7 @@
         },
         {
           "label": "CON",
-          "value": "16 (+3)"
+          "value": "18 (+4)"
         },
         {
           "label": "INT",
@@ -482,18 +486,18 @@
         {
           "name": "Rift Lance",
           "kind": "attack",
-          "roll": "1d20 + 10",
-          "damage": "3d10+6",
+          "roll": "1d20+@SPELL",
+          "damage": "3d10+@MAIN",
           "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (3d10 + 6) psychic.",
           "routineSlots": 2
         },
         {
           "name": "Unmake Distance (Recharge 5–6)",
           "kind": "action",
-          "save": "INT DC 18",
+          "save": "INT",
           "recharge": "5-6",
           "damage": "6d8+@MAIN",
-          "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
+          "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8+@Main) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
         },
         {
           "name": "Mind Hook",
@@ -523,7 +527,7 @@
         "revealedName": "Thought Harrower"
       },
       "dmEdited": {
-        "at": "2026-08-26T19:47:09.237Z"
+        "at": "2026-08-26T22:44:53.061Z"
       }
     },
     {
@@ -611,7 +615,7 @@
           "name": "Fist",
           "kind": "attack",
           "roll": "1d20 + @ATK",
-          "damage": "2d10 + @MAIN",
+          "damage": "3d6+@STR",
           "text": "Melee Weapon Attack: +8 to hit, reach 10 ft.; Hit: 17 (2d10 + 4) bludgeoning.",
           "routineSlots": 2
         },
