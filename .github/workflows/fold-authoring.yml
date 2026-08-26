@@ -18,8 +18,9 @@
 # the payload nor the bundled library — the case that would have shipped two rebuilt Act 3 fights
 # EMPTY — so that failure surfaces here as a failed step rather than a silent gap in play.
 #
-# ⚠ IT NEVER COMMITS TO MAIN DIRECTLY. The write goes to the branch the payload arrived on. What
-# reaches main is a merge, gated by `gates.yml`.
+# ⚠ IT COMMITS TO WHEREVER THE PAYLOAD ARRIVED, which is now main. A library change is not an app
+# change and must not wait on one — see the note at the foot of this file for why the side branch
+# was removed.
 
 name: fold-authoring
 
@@ -45,11 +46,9 @@ jobs:
         with:
           # The commit-back step needs the branch, not a detached HEAD.
           ref: ${{ github.ref_name }}
-          # ⚠ FULL HISTORY, OR THERE IS NO MERGE BASE TO PROMOTE AGAINST. checkout defaults to a
-          # depth of 1, and the triage step compares this branch to main with `...` — which needs
-          # a common ancestor. A shallow clone has none, so it died with
-          # "fatal: origin/main...HEAD: no merge base" AFTER the fold had already committed,
-          # leaving the work stranded on the branch with a red run.
+          # ⚠ FULL HISTORY. The rebase-and-retry below needs real history to rebase onto, and the
+          # retired triage step died on a shallow clone with "fatal: origin/main...HEAD: no merge
+          # base" AFTER the fold had committed — stranding the work under a red run.
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -82,6 +81,7 @@ jobs:
           npm run check:formulas
           npm run check:responses
           npm run check:imports
+          npm run check:pools
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
       # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the

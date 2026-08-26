@@ -809,7 +809,23 @@ export default function App() {
   // were never opened in this browser. Idempotent — guarded by the seed-version key.
   // The repair runs BEFORE the seeders: it drops rows a previous build left behind, and seeding
   // on top of them would just re-resolve to the stale copies.
-  useMemo(() => { repairEquipmentLibraries(); migrateEncounterNames(); seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS); seedBaseWeapons(); }, []);
+  useMemo(() => {
+    /**
+     * ⚠ ORDER IS THE BUG. The rename migration used to run BEFORE the seed, so every boot went:
+     * clean the stale pool tags, then re-write them from the seeded library. And because the
+     * migration stamps itself as done, it never got a second chance — the stale pools came back
+     * once per load and could not be removed, because a pool is a STRING on an item rather than
+     * an object anyone can delete.
+     *
+     * Christopher: *"why am i still seeing loot tables that i cant get rid of."*
+     *
+     * Seed first, then migrate what the seed just wrote.
+     */
+    repairEquipmentLibraries();
+    seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS);
+    seedBaseWeapons();
+    migrateEncounterNames();
+  }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
   // All runtime hooks that need actor IDs/HP defaults receive the real seeded actors this way.

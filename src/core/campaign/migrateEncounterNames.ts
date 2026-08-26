@@ -19,7 +19,18 @@ import { BROKEN_CHAIN_ENCOUNTER_RENAMES } from "../../modules/the-broken-chain/c
 import { safeStorage } from "../utils/safeStorage";
 
 const RENAME_KEY = "fdmc.encounterNames.migration.v1";
-const RENAME_VERSION = "0.7.27-acts1-3-named-scenes";
+/**
+ * ⚠ BUMPED BECAUSE THE FIRST RUN COULD NOT WIN. This migration ran once, stamped itself, and
+ * returned immediately ever after — while `seedCampaignEquipmentLibrary` ran AFTER it on every
+ * boot and re-wrote the very pool tags it had just cleaned. Christopher: *"why am i still seeing
+ * loot tables that i cant get rid of."* Because they were being put back, once per load, by a
+ * seed the migration had already finished with.
+ *
+ * Both halves are fixed: the seeded library now ships current pool names (0.7.49.0), and the boot
+ * order runs this AFTER seeding so anything newly written is migrated too. This bump is what
+ * makes an already-stamped browser run it one more time and clear what the old order left behind.
+ */
+const RENAME_VERSION = "0.7.49.1-after-seed";
 
 export type RenameReport = { encounters: number; items: number; pools: string[] };
 
