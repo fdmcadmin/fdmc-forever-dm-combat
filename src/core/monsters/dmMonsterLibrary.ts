@@ -167,12 +167,50 @@ export function resolveMonsterLibrary(
   const overridden: MonsterLibraryResolution["overridden"] = [];
   const shadowed: MonsterLibraryResolution["shadowed"] = [];
   const shape = (t: MainMonsterTemplate) => `${t.stats.maxHp} HP / AC ${t.stats.ac}`;
+  /**
+   * The whole creature, key order made irrelevant — two copies that differ only in how JSON.stringify
+   * happened to walk them are the same creature. `dmEdited` is a marker ABOUT the copy rather than
+   * part of what the creature is, so it is excluded: a stamped copy of an unchanged creature is
+   * still unchanged.
+   */
+  const signature = (t: MainMonsterTemplate) =>
+    JSON.stringify(t, (k, v) => {
+      if (k === "dmEdited") return undefined;
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        return Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)));
+      }
+      return v;
+    });
 
   const mine = stored.filter(t => !isCampaign(t.templateId));
   const campaign = includeCampaign
     ? bundled.map(t => {
       const copy = stored.find(m => m.templateId === t.templateId);
       if (!copy) return t;
+      /**
+       * ⚠ A COPY THAT MATCHES THE BUNDLE IS NOT AN OVERRIDE, AND CALLING IT ONE COST REAL WORK.
+       *
+       * Once a publish is folded, the shipped creature IS the author's edit — so the stored copy
+       * and the bundled template agree exactly and the local copy has nothing left to say. The
+       * banner announced it anyway, printing the same numbers on both sides:
+       *
+       *     Rift-Slick:       yours 59 HP / AC 12  -  campaign 59 HP / AC 12
+       *     Blackbough Reeve: yours 86 HP / AC 16  -  campaign 86 HP / AC 16
+       *
+       * Christopher: *"i changed a trait and it reads you edited version, i publish it, then i
+       * have to go in a 'remove' my campaign creatures for it to show the same thing."* Removing
+       * them is exactly what the notice invited — and the export reads that store, so the NEXT
+       * publish carried fewer creatures than the one before. That is how 17 authored creatures
+       * became 4 and then 3.
+       *
+       * Nothing here heals silently: an identical copy is redundant by definition, so dropping it
+       * from the report hides no disagreement. A copy that actually differs is still reported.
+       *
+       * ⚠ COMPARED WHOLE, NOT ON HP/AC. The banner's own summary is two numbers, which is why a
+       * changed TRAIT looked identical on both sides while genuinely differing. `signature`
+       * decides; `shape` only prints.
+       */
+      if (signature(copy) === signature(t)) return t;
       // Rule 2 then rule 3. An authored copy needs no stamp; a private one does.
       const isAuthored = authored.has(t.templateId);
       if (isAuthored || copy.dmEdited) {

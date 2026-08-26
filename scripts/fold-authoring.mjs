@@ -166,16 +166,68 @@ if (dangling.length) {
 }
 console.log(`Encounter references check out: ${bundledIds.size} bundled creature id(s) known.`);
 
+/**
+ * ⚠ A PUBLISH UPDATES THE AUTHORED SET. IT DOES NOT REPLACE IT.
+ *
+ * This wrote the payload's arrays straight out, so the authored set became whatever ONE browser
+ * happened to export that minute — and every creature missing from that export silently reverted
+ * to the bundled seed. It is visible in the history, three folds in a row:
+ *
+ *     f4d329f  17 authored creatures
+ *     c4d283b   4      Brandwing, Rift-Slick, Veil-Torn Dragon, Demonic Reaver
+ *     ed59450   3      Rift-Slick, Blackbough Reeve, Grief Colossus
+ *
+ * Eleven minutes apart, and almost disjoint. The Drake Guard, Thought Harrower, Breaker, Gloam
+ * Harrow, Quillshrike, Marrowstalk, Shardbound, Darkmare, Nail Saint and Folded Bulwark all went
+ * back to stats nobody had chosen since the rebuild.
+ *
+ *   Christopher: *"no matter what i do when i push something it reverts to a seed that SHOULD NOT
+ *   EXIST, my edits are the new seed, if i am not overwriting the seed then whats the point of
+ *   doing edits if the seed can just say nah i like this version better and change it back."*
+ *
+ * He is right, and it is a one-line consequence of replace semantics. An authored creature is an
+ * OVERRIDE OF A BUNDLED ONE — dropping it is not "no change", it is a revert. So creatures and
+ * equipment MERGE by id: a publish carrying three creatures updates three and leaves the rest
+ * authored exactly as they were.
+ *
+ * ⚠ ENCOUNTERS STAY REPLACE, DELIBERATELY. An authored encounter can be a whole fight rather than
+ * an override, and deleting a fight is a thing the author actually does — merging would make the
+ * Gate II mirrors fight immortal, which is the bug next door. The count has held at 24 across four
+ * publishes, so the export is not losing them the way it loses creatures.
+ *
+ * `--replace` forces the old behaviour for a deliberate reset. Nothing is silent either way: what
+ * was carried forward is printed by name.
+ */
+const REPLACE = process.argv.includes("--replace");
+const previousArray = (name) => {
+  const m = previous.match(new RegExp(`export const ${name}[^=]*=\\s*(\\[[\\s\\S]*?\\n\\]);`));
+  if (!m) return [];
+  try { return JSON.parse(m[1]); } catch { return []; }
+};
+const mergeById = (label, incoming, idOf, previous) => {
+  if (REPLACE) return incoming;
+  const byId = new Map(previous.map(p => [idOf(p), p]));
+  for (const item of incoming) byId.set(idOf(item), item);
+  const kept = [...byId.values()];
+  const carried = previous.filter(p => !incoming.some(i => idOf(i) === idOf(p)));
+  if (carried.length) {
+    console.log(`  ${label}: ${incoming.length} updated, ${carried.length} carried forward — ${carried.map(p => p.name ?? idOf(p)).join(", ")}`);
+  }
+  return kept;
+};
+const foldedMonsters = mergeById("creatures", monsters, m => m.templateId, previousArray("AUTHORED_MONSTERS"));
+const foldedEquipment = mergeById("equipment", equipment, i => i.id, previousArray("AUTHORED_EQUIPMENT"));
+
 const header = readFileSync(OUT, "utf8").split("import type { MainMonsterTemplate }")[0];
 const body = `import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
 import type { EncounterDefinition } from "../../core/monsters/encounterLibrary";
 
 /** Creatures authored in-app. Replaces a bundled creature by templateId, or adds a new one. */
-export const AUTHORED_MONSTERS: MainMonsterTemplate[] = ${JSON.stringify(monsters, null, 2)};
+export const AUTHORED_MONSTERS: MainMonsterTemplate[] = ${JSON.stringify(foldedMonsters, null, 2)};
 
 /** Equipment authored in-app — including unpicked Gift chassis. Replaces or adds by id. */
-export const AUTHORED_EQUIPMENT: EquipmentItem[] = ${JSON.stringify(equipment, null, 2)};
+export const AUTHORED_EQUIPMENT: EquipmentItem[] = ${JSON.stringify(foldedEquipment, null, 2)};
 
 /**
  * Encounters authored in-app — the fights, their act tag and ORDER, and the bodies built from
@@ -183,7 +235,15 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = ${JSON.stringify(equipment, n
  */
 export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = ${JSON.stringify(encounters, null, 2)};
 
-/** Fingerprint of the two arrays above, as published. Empty when nothing is authored. */
+/**
+ * Fingerprint of the PAYLOAD that last updated this file — not of the arrays above.
+ *
+ * They stopped being the same thing when the fold began MERGING creatures and equipment by id
+ * rather than replacing them, which it does because a publish carrying three creatures must not
+ * revert the other fourteen. The digest still answers the question it was built for — "is this
+ * generated file the untouched output of a real export?" — and it is also what the encounter
+ * library seed version keys off, so a publish still re-seeds a browser.
+ */
 export const AUTHORED_DIGEST = ${JSON.stringify(digest)};
 
 /** When the fold script last wrote this file. */

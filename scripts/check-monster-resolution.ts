@@ -83,5 +83,45 @@ eq("locked keeps DM creations", hpOf(r5, "custom-goblin"), 22);
   eq("every mirror is the same EHP at every party size", new Set(perBody).size, 1);
 }
 
+
+/**
+ * ─── A COPY THAT MATCHES THE BUNDLE IS NOT AN OVERRIDE ──────────────────────────────────────
+ *
+ * ⚠ THE BANNER THAT REPORTED ONE COST THIRTEEN AUTHORED CREATURES. After a publish is folded the
+ * shipped creature IS the author's edit, so the stored copy agrees with it exactly — and the
+ * panel announced "running your edited version" with the same numbers printed on both sides:
+ *
+ *     Rift-Slick: yours 59 HP / AC 12  -  campaign 59 HP / AC 12
+ *
+ * Christopher: *"i changed a trait and it reads you edited version, i publish it, then i have to
+ * go in a 'remove' my campaign creatures for it to show the same thing."* Removing them is what
+ * the notice invited, the export reads that store, and the next publish therefore carried fewer
+ * creatures than the one before — 17, then 4, then 3, each fold reverting the rest to the seed.
+ */
+{
+  const base = bundled.find(t => t.templateId === "broken-chain:warden")!;
+
+  // Identical copy in the campaign store: redundant, so silent.
+  const same = resolveMonsterLibrary(bundled, {
+    stored: [JSON.parse(JSON.stringify(base)) as typeof base],
+    authoredIds: new Set(["broken-chain:warden"]),
+  });
+  eq("an identical copy reports no override", same.overridden.length, 0);
+  eq("an identical copy reports no shadow", same.shadowed.length, 0);
+
+  // ⚠ AND A CHANGED TRAIT STILL REPORTS, which HP/AC comparison could never see.
+  const traitChanged = JSON.parse(JSON.stringify(base)) as typeof base;
+  traitChanged.traits = [...(traitChanged.traits ?? []), { name: "Probe", kind: "trait", text: "Added by the author." } as never];
+  const changed = resolveMonsterLibrary(bundled, {
+    stored: [traitChanged],
+    authoredIds: new Set(["broken-chain:warden"]),
+  });
+  eq("a changed trait still reports as an override", changed.overridden.length, 1);
+  eq("and the changed copy is the one in the library",
+    changed.library.find(t => t.templateId === "broken-chain:warden")?.traits?.length,
+    traitChanged.traits.length);
+}
+
+
 console.log(problems.length ? `\nFAILED: ${problems.join(", ")}` : "\nALL PASS");
 process.exit(problems.length ? 1 : 0);
