@@ -22,6 +22,7 @@ import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
 import { FDMC_ACCENTS } from "./core/constants/theme";
 import appManifest from "../public/manifest.json";
+import { useNewBuildAvailable } from "./core/campaign/useNewBuildAvailable";
 
 const APP_VERSION = appManifest.version;
 
@@ -660,8 +661,41 @@ function DmPanelApp() {
   // actorId → seat color, so the library shows which character belongs to which seat (P-UX1).
   const actorSeatColor = buildActorSeatColorMap(seats);
 
+  /**
+   * Is a newer build being served than the one this window is running? Two minutes is plenty —
+   * the answer only changes when a fold redeploys, and a check nobody is waiting on should not
+   * be chatty.
+   */
+  const newBuild = useNewBuildAvailable(APP_VERSION);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "#0d0d14", color: "#fff" }}>
+      {/* ── A NEWER BUILD IS LIVE ────────────────────────────────────────────────────────
+          Christopher: *"why do i have to reload the app every time i publish, shouldnt a cache
+          buster make it to where it updates the mod library."*
+
+          ⚠ MOST OF THAT RELOAD WAS A BUG AND IS GONE — see 0.7.56. An edit is live the moment it
+          is saved now; publishing was never what made one take effect, it only looked that way
+          because the resolver was discarding the saved copy until the BUNDLE changed.
+
+          What is left is real and cannot be cache-busted away: the library is COMPILED INTO the
+          bundle, so a page already running cannot pick up a new one without re-executing. This
+          notices and offers the button. It never reloads on its own — *"any creature not in
+          combat is updated"* draws the line at live combat, and so does this. */}
+      {newBuild.available && (
+        <div style={{ padding: "5px 14px", background: "#141a2a", borderBottom: "1px solid #2a3550", fontSize: 11, color: "#8fb8ff", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <strong>Build {newBuild.available} is live</strong>
+          <span style={{ color: "#8a8aa0" }}>
+            — this window is running {APP_VERSION}. Your own saved edits are already live; this is for
+            library changes published from elsewhere.
+          </span>
+          <button type="button" onClick={newBuild.reload}
+            title="Reloads this window. Nothing saved is lost — it closes pop-outs and interrupts anyone mid-turn, so take it between fights."
+            style={{ marginLeft: "auto", fontSize: 10, padding: "2px 9px", background: "#8fb8ff22", border: "1px solid #8fb8ff55", borderRadius: 3, color: "#8fb8ff", cursor: "pointer" }}>
+            Reload to pick it up
+          </button>
+        </div>
+      )}
       {/* Header — accent stripe + title colored by panel type */}
       <div style={{ padding: "8px 14px", borderTop: `3px solid ${PANEL_ACCENT[panelId]}`, borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0d0d14", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
