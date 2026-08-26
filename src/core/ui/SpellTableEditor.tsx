@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { readDamageTypeChoice } from "../rules/damageTypeChoice";
+import { DamageTypePicker } from "./DamageTypePicker";
 import { FormulaInput } from "./FormulaInput";
 import { SaveDcComposer } from "./SaveDcComposer";
 import type { ActorAction } from "../types/tabs";
@@ -60,6 +61,20 @@ type SpellRow = {
   saveAbility: string;
   /** On a MAXIMUM damage die, roll another and add it — Sorcerous Burst. */
   explodingDamage: boolean;
+  /**
+   * What this spell DEALS.
+   *
+   * ⚠ THERE WAS NO BOX FOR THIS, AND SO NOT ONE SPELL IN THE LIBRARY HAD ONE. Fifteen damaging
+   * spells across five characters, all untyped — not because nobody typed a type, because the
+   * spell editor never offered the field. The action editor had it; every spell is authored here.
+   */
+  damageType: string;
+  /**
+   * The permitted SET, when the caster picks per cast — Sorcerous Burst names seven. Derived from
+   * the spell's own text on save, and now also settable, because a derivation nobody can see or
+   * correct is the thing this codebase keeps having to undo.
+   */
+  damageTypeOptions?: string[];
   include: boolean;
 };
 
@@ -132,6 +147,7 @@ function rowToAction(row: SpellRow): ActorAction {
       ...(row.castingClass ? { castingClass: row.castingClass } : {}),
       ...(row.saveAbility.trim() ? { saveAbility: row.saveAbility.trim() } : {}),
       ...(row.explodingDamage ? { explodingDamage: true } : {}),
+      ...(row.damageType.trim() ? { damageType: row.damageType.trim() } : {}),
       /**
        * THE ELEMENT PICKER, on the editor a spell is ACTUALLY built in.
        *
@@ -145,6 +161,9 @@ function rowToAction(row: SpellRow): ActorAction {
        * healing" — its text names no damage type, so the reader returns `none` unprompted.
        */
       ...(() => {
+        // ⚠ AN AUTHORED SET WINS. This used to re-derive on every save, so clearing a set the
+        // reader had suggested was impossible — the next save put it straight back.
+        if (row.damageTypeOptions) return { damageTypeOptions: row.damageTypeOptions };
         const reading = readDamageTypeChoice(detailParts || row.details);
         return reading.kind === "choice" ? { damageTypeOptions: reading.options } : {};
       })(),
@@ -196,6 +215,8 @@ function actionToRow(action: ActorAction): SpellRow {
     castingClass: action.metadata?.castingClass ?? "",
     saveAbility: action.metadata?.saveAbility ?? "",
     explodingDamage: Boolean(action.metadata?.explodingDamage),
+    damageType: action.metadata?.damageType ?? "",
+    damageTypeOptions: action.metadata?.damageTypeOptions,
     upcastDamage: action.metadata?.upcastDamage ?? "",
     attackRolls: action.metadata?.attackRolls ? String(action.metadata.attackRolls) : "",
     attackRollsPerLevel: action.metadata?.attackRollsPerLevel ? String(action.metadata.attackRollsPerLevel) : "",
@@ -230,6 +251,7 @@ function makeBlankRow(): SpellRow {
     castingClass: "",
     saveAbility: "",
     explodingDamage: false,
+    damageType: "",
     include: false,
   };
 }
@@ -563,6 +585,20 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                   onChange={v => setRow(idx, { crit: v })}
                   placeholder="16d6 fire"
                   showVars={["@STR","@WIS","@CHA"]}
+                />
+                {/* ⚠ THE FIELD THAT WAS NOT HERE. Every spell in the game is authored on this
+                    screen, and it offered no way to say what the spell DEALS — so the encounter
+                    checker, weighting a creature's fire resistance by how much fire the party
+                    actually throws, found fifteen damaging spells and no types.
+                    Christopher: *"i still cant just pick a damage tpye like for spells like i can
+                    from actions."* Same control the action editor uses, literally — see
+                    `DamageTypePicker`, which both now share so they cannot drift apart again. */}
+                <DamageTypePicker
+                  value={row.damageType || undefined}
+                  onChange={v => setRow(idx, { damageType: v ?? "" })}
+                  text={row.details}
+                  options={row.damageTypeOptions}
+                  onOptions={v => setRow(idx, { damageTypeOptions: v })}
                 />
                 <label style={{ fontSize: 11 }}>
                   Range

@@ -1205,11 +1205,19 @@ button {
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 640px) {
-  .compact-action-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* ⚠ NO VIEWPORT COLLAPSE ON THE ACTION GRIDS, AND THAT IS THE FIX.
+ *
+ * These grids are already `repeat(auto-fit, minmax(190px, 1fr))`, which puts one button per row
+ * exactly when the CARD is too narrow for two — measured on the card, which is the thing that
+ * decides. A `@media (max-width: 640px)` override forced one column off the VIEWPORT instead, so
+ * the moment the panel was narrower than 640px every card inside it went single-file no matter how
+ * wide the card itself was. Inside an OBR iframe the viewport IS the panel, so this fired
+ * constantly and reappeared the instant the window was resized.
+ *
+ * Christopher: *"the buttons reverted back to 1 per row when you reverted the size of the window."*
+ *
+ * auto-fit already answers the question this was trying to answer, and answers it against the
+ * right box. */
 
 /* BUILD 0.4.0a JCON normalization pass */
 .action-category-block {
@@ -1455,12 +1463,7 @@ button {
   letter-spacing: 0.02em;
 }
 
-@media (max-width: 640px) {
-  .active-action-grid,
-  .compact-action-grid.active-action-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* Same reason as the compact grid above: auto-fit collapses on the card's own width. */
 
 /* BUILD 1.2.0a native committed-roll foundation */
 .committed-roll-panel {
@@ -1958,12 +1961,9 @@ body,
     grid-row: auto;
   }
 
-  .action-grid,
-  .active-action-grid,
-  .compact-action-grid.active-action-grid,
-  .pinned-grid {
-    grid-template-columns: 1fr;
-  }
+  /* The action grids are deliberately absent here. They size off their own container —
+     see the note at the foot of this file — and a viewport breakpoint overrides that with
+     the wrong measurement. Everything else in this block genuinely is a shell concern. */
 }
 
 /* BUILD 1.3.0b Owlbear panel polish */
@@ -6827,14 +6827,20 @@ body,
   grid-template-columns: 1fr;
 }
 
-@media (max-width: 560px) {
-  .active-action-grid,
-  .compact-action-grid.active-action-grid,
-  .action-grid,
-  .pinned-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* ⚠ THE BREAKPOINT THAT USED TO SIT HERE UNDID THE RULE TWELVE LINES ABOVE IT.
+ *
+ * That rule's own comment is the argument against it: "no breakpoint to keep in sync with the
+ * shell - which matters because the same grid renders in the panel, the popout and the combat
+ * window." A `@media (max-width: 560px)` forcing `1fr` is exactly such a breakpoint, it was the
+ * LAST rule in the cascade so it won every time, and it measures the VIEWPORT — which inside an
+ * OBR iframe is the panel, routinely narrower than 560px. So every card went one-button-per-row
+ * regardless of how wide the card itself was.
+ *
+ * Christopher: *"the buttons reverted back to 1 per row when you reverted the size of the
+ * window."* The window was never the thing that should have decided.
+ *
+ * `minmax(max(158px, (100% - 16px) / 3), 1fr)` already gives one column when the CONTAINER cannot
+ * hold two at a readable width. Narrow still collapses; it just collapses on the right box. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
    PLAYSHEET PANEL PASS - SECOND ROUND (0.7.34.2)

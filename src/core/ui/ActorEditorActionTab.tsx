@@ -1,8 +1,7 @@
 import type { RerollMethod } from "../state/rerollMethod";
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
-import { DAMAGE_TYPES, isCustomDamageType } from "../constants/damageTypes";
-import { readDamageTypeChoice } from "../rules/damageTypeChoice";
+import { DamageTypePicker } from "./DamageTypePicker";
 import { SaveDcComposer } from "./SaveDcComposer";
 import { tabAccent } from "./tabVisuals";
 import { resolveOutcomeMode } from "../types/tabs";
@@ -176,7 +175,6 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
   const [errors, setErrors] = useState<string[]>([]);
   // P-UX4 Phase 3: damage-type picker is a standard-type dropdown + a Custom free-text
   // mode. Start in custom mode when editing an action whose type isn't a standard one.
-  const [customDamageType, setCustomDamageType] = useState(() => isCustomDamageType(initial?.metadata?.damageType));
 
   function set<K extends keyof PcActionDraft>(key: K, value: PcActionDraft[K]) {
     setDraft(d => ({ ...d, [key]: value }));
@@ -381,56 +379,16 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
             </label>
           )}
 
-
-          {/* WHAT THE SPELL'S OWN TEXT SAYS ABOUT ITS TYPE. Read, never silently applied —
-              a wrong guess has to be visible, which is why this is a note beside the picker
-              rather than something that rewrites the field. "cold instead of fire" is one type;
-              "you CAN use cold instead of fire" is two; "a type you choose" is all of them. */}
-          {(() => {
-            const reading = readDamageTypeChoice(draft.description, draft.rollMode === "healing" ? "healing" : undefined);
-            if (reading.kind === "none") return null;
-            return (
-              <div style={{ fontSize: 10, color: reading.kind === "choice" ? "#7be08a" : "#667", padding: "2px 0" }}>
-                {reading.kind === "choice" ? "⚡ Caster picks: " : "Reads as: "}
-                <strong style={{ color: "#dfe4ff" }}>{reading.options.join(" · ")}</strong>
-                <span style={{ display: "block", color: "#667" }}>{reading.reason}</span>
-                {reading.primary && draft.damageType !== reading.primary && (
-                  <button type="button" className="inline-commit-button" style={{ marginTop: 2 }}
-                    onClick={() => { set("damageType", reading.primary); setCustomDamageType(false); }}>
-                    Use {reading.primary}
-                  </button>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* P-UX4 Phase 3: damage type — standard D&D defaults + Custom free text so the
-              engine stays all-system, not D&D-locked. */}
-          <label style={{ fontSize: 12 }}>
-            Damage Type
-            <select
-              value={customDamageType ? "__custom__" : (draft.damageType ?? "")}
-              onChange={e => {
-                const v = e.target.value;
-                if (v === "__custom__") { setCustomDamageType(true); }
-                else { setCustomDamageType(false); set("damageType", v || undefined); }
-              }}
-              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
-            >
-              <option value="">— none —</option>
-              {DAMAGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              <option value="__custom__">Custom…</option>
-            </select>
-            {customDamageType && (
-              <input
-                type="text"
-                value={draft.damageType ?? ""}
-                onChange={e => set("damageType", e.target.value || undefined)}
-                placeholder="custom damage type (e.g. shadow, void)"
-                style={{ display: "block", width: "100%", marginTop: 4, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
-              />
-            )}
-          </label>
+          {/* ⚠ THE SAME CONTROL THE SPELL EDITOR USES, and that is the point of it being a
+              component. This block was the only one of its kind, so the spell editor — where
+              every spell in the game is actually authored — simply had nothing. Two copies would
+              have drifted the first time either side changed; there is one. */}
+          <DamageTypePicker
+            value={draft.damageType}
+            onChange={v => set("damageType", v)}
+            text={draft.description}
+            isHealing={draft.rollMode === "healing"}
+          />
           {draft.rollMode === "attack" && (
             <FormulaInput
               label="Crit Damage"
