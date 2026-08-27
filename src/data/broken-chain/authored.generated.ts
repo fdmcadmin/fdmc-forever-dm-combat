@@ -383,20 +383,14 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
     "stats": {
       "kind": "fiend",
-      "ac": 14,
-      "maxHp": 97,
+      "ac": 13,
+      "maxHp": 90,
       "speed": "50 ft.",
       "defenses": [
         {
           "name": "Concealment until first attack hits each round",
           "ehpMultiplier": 1.1132595358150892,
           "note": "Read from \"Darkmane (Constant)\" (trait) on \"obscurement\"."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 2,
@@ -409,12 +403,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "modifier": 5
         }
       ],
-      "damageResponses": [
-        {
-          "type": "Fire",
-          "response": "resistant"
-        }
-      ],
+      "damageResponses": [],
       "spellSlots": [
         {
           "level": 3,
@@ -502,7 +491,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Darkmare"
     },
     "dmEdited": {
-      "at": "2026-08-26T23:53:27.901Z"
+      "at": "2026-08-27T00:23:57.189Z"
     }
   },
   {
@@ -948,7 +937,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 18,
-      "maxHp": 225,
+      "maxHp": 213,
       "speed": "35 ft.",
       "defenses": [
         {
@@ -1023,10 +1012,10 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
       },
       {
-        "name": "Fist",
+        "name": "Slam",
         "kind": "attack",
         "roll": "1d20 + @STR+PB",
-        "damage": "3d6+@STR",
+        "damage": "3d10+@STR",
         "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning.",
         "routineSlots": 2
       },
@@ -2007,8 +1996,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
     "stats": {
       "kind": "fey",
-      "ac": 16,
-      "maxHp": 120,
+      "ac": 15,
+      "maxHp": 111,
       "speed": "30 ft., swim 30 ft.",
       "defenses": [],
       "attacksPerTurn": 2,
@@ -2146,7 +2135,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Veilwood Crone"
     },
     "dmEdited": {
-      "at": "2026-08-27T00:12:16.606Z"
+      "at": "2026-08-27T00:24:27.001Z"
     }
   }
 ];
@@ -5409,10 +5398,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-e81d09bc-112136";
+export const AUTHORED_DIGEST = "fnv1a-0c4e6150-111953";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T00:14:49.989Z";
+export const AUTHORED_AT = "2026-08-27T00:28:11.412Z";
 
 /**
  * Merge authored content over a bundled list by id.
