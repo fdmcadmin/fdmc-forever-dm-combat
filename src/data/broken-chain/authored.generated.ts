@@ -383,7 +383,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
     "stats": {
       "kind": "fiend",
-      "ac": 12,
+      "ac": 14,
       "maxHp": 97,
       "speed": "50 ft.",
       "defenses": [
@@ -397,6 +397,12 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "ehpMultiplier": 1.3418341811719772,
           "rule": "Resistance - ~50% of opposing damage",
           "note": "profile"
+        },
+        {
+          "name": "Shield-like +5 AC - 1 round",
+          "ehpMultiplier": 1.1415369655092271,
+          "rule": "Shield-like +5 AC - 1 round",
+          "note": "conditional"
         }
       ],
       "attacksPerTurn": 2,
@@ -413,6 +419,12 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         {
           "type": "Fire",
           "response": "resistant"
+        }
+      ],
+      "spellSlots": [
+        {
+          "level": 3,
+          "max": 1
         }
       ]
     },
@@ -467,14 +479,22 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + 8",
         "damage": "2d8 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage."
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage.",
+        "routineSlots": 1
       },
       {
         "name": "Hooves",
         "kind": "attack",
         "roll": "1d20 + 8",
         "damage": "2d6 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage."
+        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage.",
+        "routineSlots": 1
+      },
+      {
+        "name": "Shadow Shroud ",
+        "kind": "spell",
+        "spellSlotLevel": 3,
+        "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
       }
     ],
     "reactions": [],
@@ -486,6 +506,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Darkmare",
       "revealedName": "Darkmare"
+    },
+    "dmEdited": {
+      "at": "2026-08-26T23:53:27.901Z"
     }
   },
   {
@@ -1981,6 +2004,161 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     },
     "dmEdited": {
       "at": "2026-08-26T23:18:04.304Z"
+    }
+  },
+  {
+    "templateId": "broken-chain:act3:veilwood-crone:v1",
+    "name": "Veilwood Crone",
+    "encounterId": "act3-e3-gate-i-crone-and-mare",
+    "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
+    "stats": {
+      "kind": "fey",
+      "ac": 16,
+      "maxHp": 120,
+      "speed": "30 ft., swim 30 ft.",
+      "defenses": [],
+      "attacksPerTurn": 2,
+      "size": "Medium",
+      "classification": "mid-boss",
+      "archetype": "mystic",
+      "spellSlots": [
+        {
+          "level": 1,
+          "max": 4
+        },
+        {
+          "level": 2,
+          "max": 3
+        },
+        {
+          "level": 3,
+          "max": 3
+        },
+        {
+          "level": 4,
+          "max": 1
+        }
+      ],
+      "skills": [
+        {
+          "label": "Nature",
+          "modifier": 7
+        },
+        {
+          "label": "Perception",
+          "modifier": 9
+        }
+      ],
+      "proficiencyBonus": 3
+    },
+    "abilities": [
+      {
+        "label": "STR",
+        "value": "18 (+4)"
+      },
+      {
+        "label": "DEX",
+        "value": "18 (+4)"
+      },
+      {
+        "label": "CON",
+        "value": "18 (+4)",
+        "saveProficient": true
+      },
+      {
+        "label": "INT",
+        "value": "18 (+4)"
+      },
+      {
+        "label": "WIS",
+        "value": "22 (+6)",
+        "saveProficient": true
+      },
+      {
+        "label": "CHA",
+        "value": "14 (+2)"
+      }
+    ],
+    "traits": [
+      {
+        "name": "Spellcasting",
+        "kind": "trait",
+        "roll": "1d20 + 9",
+        "text": "7th-level spellcaster; spell save DC 17, +9 to hit. Slots 4 / 3 / 3 / 1. Core control list: Entangle, Web, Hold Person. A spell replaces Multiattack."
+      },
+      {
+        "name": "Night-Garden Native",
+        "kind": "trait",
+        "text": "The Crone ignores difficult terrain created by plants and vegetation, and nonmagical plants do not impede her movement."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Claw",
+        "kind": "attack",
+        "roll": "1d20 + @STR+@PROF",
+        "damage": "2d8 + @STR",
+        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage."
+      },
+      {
+        "name": "",
+        "kind": "action",
+        "save": "WIS DC 17",
+        "damage": "6d8",
+        "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned."
+      },
+      {
+        "name": "Blighted Vitality (Recharge 4–6)",
+        "kind": "action",
+        "save": "CON DC 17",
+        "recharge": "4-6",
+        "text": "Choose up to two creatures within 60 ft. Each makes a DC 17 Constitution save. On a failure, healing received is halved until the end of the Crone’s second turn after the effect begins. Reapplying the effect does not extend or stack the duration."
+      },
+      {
+        "name": "Venomous Eruption",
+        "kind": "spell",
+        "spellSlotLevel": 4,
+        "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned.",
+        "damage": "6d8+@MAIN",
+        "economyCost": "action",
+        "save": "WIZ",
+        "onSave": "half"
+      },
+      {
+        "name": "Hold Person",
+        "kind": "spell",
+        "text": "Choose a Humanoid that you can see within range. The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.",
+        "save": "WIS",
+        "onSave": "none",
+        "spellSlotLevel": 2
+      },
+      {
+        "name": " Entangle",
+        "kind": "spell",
+        "text": "Grasping plants sprout from the ground in a 20-foot square within range. For the duration, these plants turn the ground in the area into Difficult Terrain. They disappear when the spell ends.  Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends. A Restrained creature can take an action to make a Strength (Athletics) check against your spell save DC. On a success, it frees itself from the grasping plants and is no longer Restrained by them.",
+        "save": "STR",
+        "onSave": "none",
+        "spellSlotLevel": 1
+      },
+      {
+        "name": "Fear",
+        "kind": "spell",
+        "text": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration.  A Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn’t have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.",
+        "range": "30 FT Cone"
+      }
+    ],
+    "reactions": [],
+    "resources": [],
+    "notes": [
+      "The Crone is not an invader. Black flowers open for her because this is still Feywild soil. Her cruelty is native: poisonous hospitality, thorn-shadow, and the night-side of living things."
+    ],
+    "visibility": {
+      "defaultState": "hp-bar",
+      "hiddenName": "Veilwood Crone",
+      "revealedName": "Veilwood Crone"
+    },
+    "dmEdited": {
+      "at": "2026-08-27T00:03:18.372Z"
     }
   }
 ];
@@ -5038,7 +5216,12 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
         "templateId": "broken-chain:act3:darkmare:v1",
         "count": 1,
         "startingVisibility": "hp-bar",
-        "hiddenNameOverride": "Darkmare"
+        "hiddenNameOverride": "Darkmare",
+        "spellPicks": {
+          "3": [
+            "Shadow Shroud "
+          ]
+        }
       }
     ],
     "owner": "campaign",
@@ -5238,10 +5421,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-a248f3a8-105243";
+export const AUTHORED_DIGEST = "fnv1a-32c919a4-112545";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-26T23:48:36.304Z";
+export const AUTHORED_AT = "2026-08-27T00:04:07.406Z";
 
 /**
  * Merge authored content over a bundled list by id.
