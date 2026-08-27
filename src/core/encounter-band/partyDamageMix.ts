@@ -257,7 +257,26 @@ export function partyDamageMixFromActors(actors: readonly ActorLike[]): PartyDam
     shares,
     typedTotal,
     coverage,
-    usable: untyped.length === 0 && coverage >= 1,
+    /**
+     * ⚠ ANY TYPED DAMAGE IS ENOUGH TO ANSWER. THIS DEMANDED ALL OF IT, AND THAT WAS A WALL.
+     *
+     * The bar was full coverage, on the reasoning that a partial mix could confidently answer
+     * "0% fire" while the party is holding a fire spell. That risk is real, and the price of
+     * guarding against it this way was that one unfilled action anywhere on any sheet blocked
+     * every typed resistance in the campaign.
+     *
+     * Christopher: *"i shouldnt not have to go through and price 33 actions, the reader should
+     * only say ok i read this much fire action, no action damage then it doesnt care about that
+     * action."* Right — the question is how much fire the party throws, and an action with no
+     * damage type is not evidence either way. It is not an obstacle to counting the fire that IS
+     * readable.
+     *
+     * ⚠ SO THE HONESTY MOVES INTO THE REPORT INSTEAD OF THE GATE. `coverage` still says what
+     * fraction of the party's damage the shares were computed over, and the checker prints it
+     * beside every derived price — a qualified number the DM can argue with, rather than a
+     * refusal they cannot clear without an afternoon of data entry.
+     */
+    usable: typedTotal > 0,
     untyped: untyped.sort((a, b) => b.amount - a.amount),
     sources: sources.sort((a, b) => b.amount - a.amount),
   };

@@ -211,6 +211,22 @@ function DmPanelApp() {
       .map(a => ({ id: a.id, name: a.name })),
     [actorLibrary]
   );
+  /**
+   * ⚠ COMPANIONS, FOR THE "BONDED COMPANION" PICKER — AND IT WAS BEING HANDED THE PC LIST.
+   *
+   * Two opposite questions were reading one array. "Owner (acts on their turn)" wants the PCs; a
+   * companion bond's "Bonded companion" wants the COMPANIONS. Both were fed `ownerOptions`, so
+   * Pack Instinct — whose every stage reads "your companion moves and makes one attack" — offered
+   * a list of player characters and no way to name Faelar.
+   *
+   * Christopher: *"i cant mark a companion for the bond of pack only PCs."*
+   */
+  const companionOptions = useMemo(
+    () => Object.values(actorLibrary)
+      .filter(a => a.kind === "companion")
+      .map(a => ({ id: a.id, name: a.name })),
+    [actorLibrary]
+  );
 
   // ── Room live state ────────────────────────────────────────────────────────
   const [roomLiveState, setRoomLiveState] = useState<FdmcRoomLiveState>(() => createEmptyRoomLiveState());
@@ -744,12 +760,12 @@ function DmPanelApp() {
         {/* ── Edit Actors ── */}
         {panelId === "editActors" && (
           editingActorId === "__new__" ? (
-            <ActorEditor mode="create-new" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
+            <ActorEditor mode="create-new" ownerOptions={ownerOptions} companionOptions={companionOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
           ) : editingActorId ? (
             (() => {
               const actor = actors.find(a => a.id === editingActorId);
               if (!actor) return <p style={{ padding: 14 }}>Actor not found.</p>;
-              return <ActorEditor actor={actor} mode="edit-current" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
+              return <ActorEditor actor={actor} mode="edit-current" ownerOptions={ownerOptions} companionOptions={companionOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
             })()
           ) : (
             <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -1195,12 +1211,12 @@ function DmPanelApp() {
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {libraryTab === "actors" && (
                 editingActorId === "__new__" ? (
-                  <ActorEditor mode="create-new" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
+                  <ActorEditor mode="create-new" ownerOptions={ownerOptions} companionOptions={companionOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />
                 ) : editingActorId ? (
                   (() => {
                     const actor = actors.find(a => a.id === editingActorId);
                     if (!actor) return <p style={{ padding: 14 }}>Actor not found.</p>;
-                    return <ActorEditor actor={actor} mode="edit-current" ownerOptions={ownerOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
+                    return <ActorEditor actor={actor} mode="edit-current" ownerOptions={ownerOptions} companionOptions={companionOptions} onSave={handleActorEditorSave} onCancel={() => setEditingActorId(null)} />;
                   })()
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>

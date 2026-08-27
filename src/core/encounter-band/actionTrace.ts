@@ -244,20 +244,37 @@ export function traceCreature(
      */
     const alternatives = declared.length > 1 && declaredTotal > creature.attacksPerTurn;
     if (alternatives) {
-      // Each option, capped at the budget, is one routine. Their mean is what gets scheduled.
-      const options = declared.map(b => ({
-        b, uses: Math.min(b.feature.routineSlots ?? 0, creature.attacksPerTurn),
-      }));
-      const meanUses = options.reduce((s, o) => s + o.uses, 0) / options.length;
-      const meanPerUse = options.reduce((s, o) => s + o.b.perUse * o.uses, 0)
-        / Math.max(1, options.reduce((s, o) => s + o.uses, 0));
-      // Scheduled as whole slots of an averaged attack — the trace prints one row per slot, and a
-      // fractional slot count would print a body doing 0.5 of an attack.
-      const whole = Math.max(1, Math.round(meanUses));
-      const carrier = options.reduce((best, o) => (o.b.perUse > best.b.perUse ? o : best), options[0]).b;
-      for (let i = 0; i < whole; i++) {
-        slots.push({ ...carrier, perUse: meanPerUse, feature: { ...carrier.feature, name: `${options.map(o => o.b.feature.name).join(" / ")} (either)` } });
-      }
+      /**
+       * ⚠ THE CREATURE TAKES ITS BEST OPTION, EVERY SLOT. THIS AVERAGED THEM AND THAT WAS WRONG.
+       *
+       * Christopher: *"the Reeve was showing damage sequence that was the highest, now this is
+       * reverted to 16 and the attack should never be counted as only possible to do 16."* He is
+       * right, and the Reeve is the case that shows why: its block reads *"the Reeve makes two
+       * attacks, choosing Shearing Cut or Spoiling Cut for each."*
+       *
+       * CHOOSING FOR EACH IS A FREE CHOICE, PER ATTACK, AT NO COST. Nothing stops a DM taking
+       * Shearing Cut twice, so the damage the creature can do is 2 x 14, not the mean of 14 and
+       * 9.5. Averaging them priced the Reeve at 16.0 against a ceiling of 19.1 — and a checker
+       * that under-reports what a creature CAN do is worse than useless, because the whole
+       * question it answers is whether the party survives the bad case.
+       *
+       * The Spoiling Cut exists because it lands a debuff. That is a trade a DM makes for CONTROL,
+       * and control is priced on its own channel — folding it into the damage average charges the
+       * trade twice and credits it to neither.
+       *
+       * ⚠ AND IT IS NOT THE UNDECLARED CONVENTION EITHER, which is why this has its own branch.
+       * That convention is "one of each distinct attack, then repeat the last" — bite-claw-claw —
+       * and it is right for a dragon whose block LISTS a Bite and a Claw, because those are what
+       * the block says it does. It is wrong here: a creature told it may choose for each attack is
+       * not obliged to take one of everything, and filling Heavy then Quick reads a free choice as
+       * a fixed sequence.
+       *
+       * So the whole budget goes to the best option. What the declaration still buys is the case
+       * where the counts FIT the budget — 1+1+1 on the Drake Guard IS a sequence, one of each, and
+       * that is the case the convention gets wrong in the other direction.
+       */
+      const best = declared.reduce((a, b) => (b.perUse > a.perUse ? b : a), declared[0]);
+      for (let i = 0; i < creature.attacksPerTurn; i++) slots.push(best);
     } else if (declared.length > 0) {
       for (const b of declared) {
         for (let i = 0; i < (b.feature.routineSlots ?? 0) && slots.length < creature.attacksPerTurn; i++) {

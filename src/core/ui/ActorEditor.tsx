@@ -41,6 +41,11 @@ export type ActorEditorProps = {
   submitLabel?: string;
   /** Candidate owners (player actors) for the Companion "Owner" dropdown. */
   ownerOptions?: OwnerOption[];
+  /**
+   * The COMPANIONS a bond may be performed by. Separate from `ownerOptions` because they answer
+   * opposite questions — see the note in dm-panel.
+   */
+  companionOptions?: OwnerOption[];
 };
 
 // Blank actor used as the base for create-new mode
@@ -334,7 +339,7 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = [], characterLevel, canAssignBond = false }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean }) {
+function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean }) {
   /** Why the last path click was refused, in `chooseBondPath`'s own words. */
   const [bondPathRefusal, setBondPathRefusal] = useState<string | null>(null);
 
@@ -684,11 +689,18 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
             {tpl?.actor === "companion" ? (
               <label style={labelStyle}>
                 Bonded companion
+                {/* ⚠ COMPANIONS, NOT OWNERS. This read `ownerOptions` — the PC list — so a bond
+                    performed BY a companion offered player characters to perform it. */}
                 <select value={draft.bondCompanionId} style={inputStyle}
                   onChange={e => onChange({ ...draft, bondCompanionId: e.target.value })}>
                   <option value="">— choose —</option>
-                  {ownerOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  {companionOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
+                {companionOptions.length === 0 && (
+                  <span style={{ display: "block", fontSize: 10, color: "#e9a66a", marginTop: 2 }}>
+                    No companions in the library yet — create one with Character Type "Companion" and set its owner.
+                  </span>
+                )}
               </label>
             ) : tpl && atMeta ? (
               <label style={labelStyle}>
@@ -746,7 +758,7 @@ function ProfileTab({ draft, onChange, ownerOptions, hasSpells, bondOptions = []
 
 // ─── Main editor ──────────────────────────────────────────────────────────────
 
-export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, submitLabel = "Submit for DM Approval", ownerOptions = [] }: ActorEditorProps) {
+export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, submitLabel = "Submit for DM Approval", ownerOptions = [], companionOptions = [] }: ActorEditorProps) {
   const actor = actorProp ?? createBlankActor();
   const [activeTab, setActiveTab] = useState<EditorTab>("profile");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => actorToProfileDraft(actor));
@@ -1013,7 +1025,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       {/* Tab content */}
       <div style={{ flex: 1, overflow: "auto", padding: 14 }}>
         {activeTab === "profile" && (
-          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0}
+          <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} companionOptions={companionOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0}
             bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
             characterLevel={actor.level ?? 1}
             canAssignBond={!proposeMode} />

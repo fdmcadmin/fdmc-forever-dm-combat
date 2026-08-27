@@ -186,14 +186,24 @@ export function traitFactorsFor(
    * ⚠ A DERIVED NUMBER IS STILL REPORTED. It is not a gap — nothing is being asked for — but the
    * DM did not type it, so it is shown with the share it used and where that share came from.
    */
+  /**
+   * ⚠ THE COVERAGE TRAVELS WITH THE NUMBER, because the gate that used to demand full coverage is
+   * gone. A share read off 84% of the party's damage is a usable answer and a qualified one, and
+   * the difference between those two has to be visible or the number is a claim it cannot support.
+   * Christopher: *"the reader should only say ok i read this much fire action."* This is the "how
+   * much" half of that sentence.
+   */
+  const cover = damageMix && damageMix.coverage < 0.999
+    ? ` Read from ${(damageMix.coverage * 100).toFixed(0)}% of their damage — ${damageMix.untyped.length} action${damageMix.untyped.length === 1 ? "" : "s"} state no damage type.`
+    : "";
   for (const d of typed.derived) {
     const pct = (d.share * 100).toFixed(1);
     out.push({ creature: name, flag: "ESTIMATED", field: "damage_response",
-      detail: d.share === 0
-        ? `"${d.response.response} to ${d.response.type}" prices at nothing because this party deals no ${d.response.type} damage — read from their own actions, not assumed.`
+      detail: (d.share === 0
+        ? `"${d.response.response} to ${d.response.type}" prices at nothing because none of this party's readable damage is ${d.response.type} — read from their own actions, not assumed.`
         : d.qualifierUnresolved
           ? `"${d.response.response} to ${d.response.type} ${d.response.qualifier}" priced at this party's full ${pct}% ${d.response.type} share. The qualifier narrows what is eligible and cannot be read from prose, so this is the UPPER bound — enter a share to state the real one.`
-          : `"${d.response.response} to ${d.response.type}" priced at this party's own ${pct}% ${d.response.type} share, read from their actions.` });
+          : `"${d.response.response} to ${d.response.type}" priced at this party's own ${pct}% ${d.response.type} share, read from their actions.`) + cover });
   }
 
   if (factors.length === 0 && template.stats.kitMultiplier && template.stats.kitMultiplier !== 1) {

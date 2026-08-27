@@ -79,14 +79,25 @@ const round1 = (t: MainMonsterTemplate) => {
     { name: "Quick", damage: "10", slots: 2 },
   ]));
   console.log(`2 attacks, 2 and 2 -> ${r.scheduled.length} scheduled: ${r.scheduled.map(s => s.feature).join(", ")}  total ${r.totalExpectedDamage.toFixed(1)}`);
-  // Either routine is 2 uses; the mean per use is (20 + 10) / 2 = 15, so the turn is ~30.
-  if (!near(r.totalExpectedDamage, 30, 2)) {
-    problems.push(`alternatives came to ${r.totalExpectedDamage.toFixed(1)}, expected ~30 — the middle of a 40 routine and a 20 one`);
+  /**
+   * ⚠ THE BEST OPTION, EVERY SLOT — AND THIS ASSERTED THE OPPOSITE UNTIL 0.7.60.
+   *
+   * It demanded the MEAN, on the reading that a creature does not always pick right. The Reeve
+   * showed why that is wrong: its block says "the Reeve makes two attacks, choosing Shearing Cut
+   * or Spoiling Cut for each" — a free choice, per attack, at no cost. Nothing stops two Shearing
+   * Cuts, so 2 x 14 is what the creature can do, and averaging priced it at 16.0 against a real
+   * ceiling of 19.1. Christopher: *"the attack should never be counted as only possible to do 16."*
+   *
+   * A weaker option that lands a debuff is a CONTROL trade, priced on its own channel. Folding it
+   * into the damage average charges it twice and credits it to neither.
+   */
+  if (!near(r.totalExpectedDamage, 38, 2)) {
+    problems.push(`alternatives came to ${r.totalExpectedDamage.toFixed(1)}, expected ~38 — two of the BEST option`);
   }
-  if (r.totalExpectedDamage >= 39) problems.push("alternatives priced at the BEST option — a creature does not always pick right");
+  if (r.totalExpectedDamage <= 32) problems.push("alternatives were averaged — a creature choosing per attack takes its best every time");
   if (r.totalExpectedDamage >= 55) problems.push("alternatives priced as the SUM — that routine does not exist");
-  if (!r.scheduled.some(s => /either/i.test(s.feature))) {
-    problems.push("an averaged routine must say so in the trace, or the number looks like an attack the block does not have");
+  if (r.scheduled.some(s => /either/i.test(s.feature))) {
+    problems.push("an alternatives routine should name the attack it actually takes, not a blended one");
   }
 }
 

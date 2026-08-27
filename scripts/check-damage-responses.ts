@@ -82,41 +82,52 @@ if (irrelevant.multiplier !== 1) problems.push("immunity to a type the party nev
 if (irrelevant.unweighted.length !== 0) problems.push("a party that deals no necrotic still ANSWERS the question — it must not report as unweighted");
 
 /**
- * ⚠ AN INCOMPLETE SHEET MUST NOT ANSWER. Measured against the real party on 2026-08-26: of 20
- * damaging actions across six character sheets, five stated a damage type and all five were
- * Unarmed Strike. A mix built from that says the party deals 100% bludgeoning and 0% fire, so
- * every "resistant to fire" in Act 3 would price at exactly nothing — confidently, and wrongly.
+ * ⚠ A PARTIAL SHEET STILL ANSWERS, AND THIS ASSERTED THE OPPOSITE UNTIL 0.7.60.
  *
- * A confident wrong number is worse than the "I cannot price this" it replaced, so a mix with any
- * untyped damage is not usable and the response reports the GAP instead.
+ * The bar was FULL coverage, guarding against a mix that confidently reports "0% fire" while the
+ * party holds a fire spell. That risk is real. The price of guarding against it that way was that
+ * one unfilled action anywhere blocked every typed resistance in the campaign:
+ *
+ *   Christopher: *"i shouldnt not have to go through and price 33 actions, the reader should only
+ *   say ok i read this much fire action, no action damage then it doesnt care about that action."*
+ *
+ * He is right about what the question is. An action with no damage type is not evidence either
+ * way — it is not an obstacle to counting the fire that IS readable. So the honesty moved from a
+ * refusal into the report: `coverage` travels with every derived price, and the checker prints
+ * how much of the party's damage the share was read from.
  */
 const partial = [{
   name: "Half-filled",
   actions: [
-    // A weapon needs nothing typed in: the name is in BASE_WEAPONS, and that is where a
-    // Greataxe's slashing lives. Christopher: *"i shouldnt need to go through each of my
-    // character sheet."*
+    // A weapon needs nothing typed in — BASE_WEAPONS knows a Greataxe deals slashing.
     { label: "Greataxe", metadata: { damage: "1d12+3" } },
-    // ⚠ THE REAL GAP, AND IT IS THE ONE THAT MATTERS. "Burning Seals (Fire)" is not a weapon and
-    // states no `damageType`; the word Fire is in its LABEL and its description, which are prose.
-    // So the party's actual fire damage is exactly what a mix cannot see — which is why an
-    // incomplete sheet must not be allowed to answer "0% fire" and price twelve creatures at zero.
+    // States no type anywhere a field can reach. It lowers COVERAGE; it does not veto the answer.
     { label: "Burning Seals (Fire)", metadata: { damage: "1d6" } },
   ],
 }];
 const partialMix = partyDamageMixFromActors(partial);
 console.log(`
   half-filled sheet: coverage ${(partialMix.coverage * 100).toFixed(0)}% · usable ${partialMix.usable} · ${partialMix.untyped.length} action(s) with no type`);
-if (partialMix.usable) problems.push("a mix with untyped damage was marked usable — an incomplete sheet must not answer");
+if (!partialMix.usable) problems.push("a partial mix refused to answer — readable damage is still an answer");
 if (partialMix.untyped.length !== 1) problems.push(`${partialMix.untyped.length} action(s) reported as the work item, expected 1 (the Burning Seals)`);
 if (partialMix.untyped[0]?.label !== "Burning Seals (Fire)") problems.push("the wrong action was named as the gap");
+if (partialMix.coverage >= 0.999) problems.push("coverage must fall below 1 when an action states no type — it is what qualifies the number");
 // The weapon answered for itself, off the table, with nothing typed onto the sheet.
 if (!near(partialMix.shares.slashing ?? 0, 1)) problems.push(`the Greataxe did not resolve to slashing from BASE_WEAPONS: ${JSON.stringify(partialMix.shares)}`);
 
+// ⚠ AND IT PRICES. The party's readable damage is all slashing, so fire resistance is worth
+// nothing against them — a real answer, reported with the coverage that produced it.
 const onPartial = priceDamageResponses([{ type: "fire", response: "resistant" }], partialMix);
-console.log(`  "resistant to fire" against it: x${onPartial.multiplier.toFixed(4)}, reported as ${onPartial.unweighted.length} needing a share`);
-if (onPartial.multiplier !== 1) problems.push("an unusable mix still moved effective HP");
-if (onPartial.unweighted.length !== 1) problems.push("an unusable mix must report the response, not silently zero it");
+console.log(`  "resistant to fire" against it: x${onPartial.multiplier.toFixed(4)}, ${onPartial.derived.length} derived, ${onPartial.unweighted.length} needing a share`);
+if (onPartial.unweighted.length !== 0) problems.push("a partial mix still reported the response as unweighted");
+if (onPartial.derived.length !== 1) problems.push("a partial mix must report the price as DERIVED, so the coverage travels with it");
+
+// A party with NO readable damage at all still cannot answer — there is nothing to read.
+const blind = partyDamageMixFromActors([{ name: "Blind", actions: [{ label: "Greataxe", metadata: {} }] }]);
+const onBlind = priceDamageResponses([{ type: "fire", response: "resistant" }], blind);
+console.log(`  a party with no readable damage: usable ${blind.usable}, ${onBlind.unweighted.length} needing a share`);
+if (blind.usable) problems.push("a mix with no typed damage at all was marked usable");
+if (onBlind.unweighted.length !== 1) problems.push("with nothing readable the response must report, not silently zero");
 
 
 // An entered share still WINS, for a table whose damage is not in the app.

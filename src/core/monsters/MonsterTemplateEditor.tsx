@@ -456,13 +456,22 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
   function actionRow(list: "actions" | "traits" | "reactions", a: MonsterReaderAction, realIdx: number, opts: { legendary?: boolean; reaction?: boolean; spell?: boolean } = {}) {
     return (
       <div key={realIdx} style={rowStyle}>
-        <div style={{ display: "flex", gap: 4 }}>
-          <div style={{ flex: 2 }}>
+        {/* ⚠ IT WRAPS. Christopher, on a Grief Colossus row squeezed to "Collap" / "1(" / "5(":
+            *"exactly how do you think i can read this"* — a fair question, and the answer was that
+            you could not. This strip is a single flex line and it grew two more fields (Costs, and
+            the multiattack split), so on a narrow panel every column shrank until the values were
+            one character wide. Nothing was broken; there was just no room.
+
+            Wrapping plus a floor under each field is the whole fix: fixed-width controls stop
+            being squeezed, flexible ones stop shrinking below readable, and the row runs onto a
+            second line instead of compressing. */}
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", rowGap: 6 }}>
+          <div style={{ flex: 2, minWidth: 96 }}>
             <span style={labelStyle}>Name</span>
             <input value={a.name} onChange={e => updateListItem(list, realIdx, { name: e.target.value })} style={inputStyle} />
           </div>
           {opts.legendary && (
-            <div style={{ width: 62 }}>
+            <div style={{ width: 62, flexShrink: 0 }}>
               <span style={labelStyle}>Cost</span>
               <select value={a.legendaryCost ?? 1} onChange={e => updateListItem(list, realIdx, { legendaryCost: Number(e.target.value) })} style={inputStyle}>
                 <option value={1}>1</option>
@@ -472,17 +481,17 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           )}
           {!opts.reaction && (
             <>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 96 }}>
                 <span style={labelStyle}>Roll</span>
                 <input value={a.roll ?? ""} onChange={e => updateListItem(list, realIdx, { roll: e.target.value })} placeholder="1d20+4" style={inputStyle} />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 96 }}>
                 <span style={labelStyle}>Dmg</span>
                 <input value={a.damage ?? ""} onChange={e => updateListItem(list, realIdx, { damage: e.target.value })} placeholder="1d6+2" style={inputStyle} />
               </div>
             </>
           )}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 96 }}>
             <span style={labelStyle}>Save</span>
             <input value={a.save ?? ""} onChange={e => updateListItem(list, realIdx, { save: e.target.value })} placeholder="DEX DC 13" style={inputStyle} />
           </div>
@@ -531,7 +540,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               "Free" is for something that costs nothing but still happens every round — a
               start-of-turn tick. Not a trait: a trait is never scheduled and never deals damage. */}
           {!opts.legendary && !opts.reaction && (
-            <div style={{ width: 104 }}>
+            <div style={{ width: 104, flexShrink: 0 }}>
               <span style={labelStyle}>Costs</span>
               <select value={a.economyCost ?? ""} style={inputStyle}
                 title="Which budget this action spends. A Bonus Action, Reaction or Free action has its own budget and never consumes the Action a Multiattack needs — so you do not have to inflate attacks-per-turn to make it count. Blank reads it from the section it is in."
@@ -545,7 +554,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             </div>
           )}
           {!opts.reaction && (
-            <div style={{ width: 66 }}>
+            <div style={{ width: 66, flexShrink: 0 }}>
               <span style={labelStyle}>× of MA</span>
               <input type="number" min={1} value={a.routineSlots ?? ""} placeholder="auto"
                 onChange={e => updateListItem(list, realIdx, { routineSlots: e.target.value ? Math.max(1, Number(e.target.value)) : undefined })}
@@ -553,7 +562,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 title="How many of the creature's attacks-per-turn are THIS action. Leave blank for the usual convention. If the numbers you set add up to MORE than the attacks-per-turn budget, the checker reads them as alternatives — the creature picks one routine, and it is priced as the middle of them." />
             </div>
           )}
-          <div style={{ width: 62 }}>
+          <div style={{ width: 62, flexShrink: 0 }}>
             <span style={labelStyle}>Targets</span>
             <input type="number" min={1} value={a.targets ?? ""} placeholder="auto"
               onChange={e => updateListItem(list, realIdx, { targets: e.target.value ? Math.max(1, Number(e.target.value)) : undefined })}
@@ -585,7 +594,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               placeholder="5 ft, 120 ft..." style={inputStyle}
               title="This action's reach or range, exactly as the PC sheet takes it. Occupied space comes from the creature's size; this is how far the action itself goes. Blank reads it from the action text." /></div>
           {(a.save ?? "").trim() !== "" && (
-            <div style={{ width: 92 }}>
+            <div style={{ width: 92, flexShrink: 0 }}>
               <span style={labelStyle}>On a save</span>
               <select value={a.onSave ?? ""} onChange={e => updateListItem(list, realIdx, { onSave: (e.target.value || undefined) as MonsterReaderAction["onSave"] })}
                 style={inputStyle}
@@ -598,14 +607,14 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             </div>
           )}
           {a.onSave === "custom" && (
-            <div style={{ width: 70 }}>
+            <div style={{ width: 70, flexShrink: 0 }}>
               <span style={labelStyle}>On success</span>
               <input value={a.successDamage ?? ""} onChange={e => updateListItem(list, realIdx, { successDamage: e.target.value || undefined })}
                 placeholder="2d6" style={inputStyle} />
             </div>
           )}
           {(draft.actionSets?.length ?? 0) > 0 && !opts.legendary && list === "actions" && (
-            <div style={{ width: 96 }}>
+            <div style={{ width: 96, flexShrink: 0 }}>
               <span style={labelStyle}>Set</span>
               <select value={a.setId ?? ""} style={inputStyle}
                 title="Put this action in a pool. Each body picks the set's stated number from its candidates, and a picked action leaves the pool for the others."
@@ -627,7 +636,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             "two attacks out of five", where every candidate is a single action.
           */}
           {a.setId && !opts.legendary && list === "actions" && (
-            <div style={{ width: 92 }}>
+            <div style={{ width: 92, flexShrink: 0 }}>
               <span style={labelStyle}>Option</span>
               <input value={a.setOption ?? ""} style={inputStyle} placeholder={a.name || "(own)"}
                 title="Group several actions into ONE choice by giving them the same option name — an element package carrying three spells. Blank = this action is its own option."
@@ -635,7 +644,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             </div>
           )}
           {!opts.legendary && !opts.reaction && !opts.spell && list === "actions" && (
-            <div style={{ width: 70 }}>
+            <div style={{ width: 70, flexShrink: 0 }}>
               <span style={labelStyle}>Recharge</span>
               <input value={a.recharge ?? ""} onChange={e => updateListItem(list, realIdx, { recharge: e.target.value })} placeholder="5-6" style={inputStyle} title="Recharge range, e.g. '6' or '5-6'" />
             </div>
@@ -651,7 +660,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           */}
           {opts.spell && (
             <>
-              <div style={{ width: 62 }}>
+              <div style={{ width: 62, flexShrink: 0 }}>
                 <span style={labelStyle}>Slot</span>
                 <select value={a.spellSlotLevel ?? ""} style={inputStyle}
                   title="Spell-slot level this action spends. Blank = costs no slot."
