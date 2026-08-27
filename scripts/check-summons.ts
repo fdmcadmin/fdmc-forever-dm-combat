@@ -25,6 +25,7 @@
 import { materializeSummon, resolveSummonFormula, arithmetic, type SummonSpec, type SummonerContext } from "../src/core/monsters/summon";
 import { legalLairOptions, lairDamagePerRound, unpricedLairOptions } from "../src/core/monsters/lair";
 import { lairRosterGroups } from "../src/core/encounter-band/lairRoster";
+import { summonRosterGroups, summonerContextFor } from "../src/core/encounter-band/summonRoster";
 import { prepareRoster, encounterDprAt } from "../src/core/encounter-band/checkerV2";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { formatAbilityEntry } from "../src/core/monsters/creator/monsterCreatorModel";
@@ -326,6 +327,69 @@ eq("a mixed expression is left alone", arithmetic("2d8+1d4"), "2d8+1d4");
     (lairRosterGroups(BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!, BROKEN_CHAIN_MONSTER_LIBRARY)
       .groups[0] as { endsWithGroupId?: string }).endsWithGroupId,
     BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!.templateId);
+}
+
+/**
+ * THE AUTHORED SPEC, PRICED — the round trip the editor now produces.
+ *
+ * Christopher: *"make it choseable on the action and the spell side so either can be written as a
+ * summon, then test it with the arcane cannon and the pick choice with the steed."*
+ *
+ * These two specs are what the editor SAVED, copied verbatim out of the running panel: an action
+ * carrying a plain summon, and a spell carrying one with a slot and a set pick. Asserting them here
+ * is what stops the authoring surface and the pricing path drifting apart — the summon engine was
+ * correct and unreachable for exactly as long as nothing tied the two together.
+ */
+{
+  const abil = ["STR", "DEX", "CON", "INT", "WIS", "CHA"].map(l => formatAbilityEntry(l as never, 10));
+  const vis = (n: string) => ({ defaultState: "hp-bar" as const, hiddenName: n, revealedName: n });
+
+  const steed = {
+    templateId: "srd:steed2", name: "Otherworldly Steed",
+    stats: { kind: "celestial", ac: "10+@SLOT", maxHp: "5+10*@SLOT", speed: "60 ft." }, abilities: abil,
+    actionSets: [{ id: "form", label: "Form", pick: 1, namesBody: true }],
+    actions: [
+      { name: "Otherworldly Slam", kind: "attack", roll: "1d20+@SPELL", damage: "1d8+@SLOT" },
+      { name: "Healing Touch", kind: "action", setId: "form", setOption: "Celestial", economyCost: "bonus" },
+      { name: "Fey Step", kind: "action", setId: "form", setOption: "Fey", economyCost: "bonus" },
+      { name: "Fell Glare", kind: "action", setId: "form", setOption: "Fiend", economyCost: "bonus" },
+    ], visibility: vis("Steed"),
+  } as unknown as MainMonsterTemplate;
+  const cannon = {
+    templateId: "my:cannon2", name: "Eldritch Cannon",
+    stats: { kind: "construct", ac: 18, maxHp: "5*@LEVEL", speed: "15 ft." }, abilities: abil,
+    actions: [{ name: "Force Ballista", kind: "attack", roll: "1d20+@SPELL", damage: "2d8" }], visibility: vis("Cannon"),
+  } as unknown as MainMonsterTemplate;
+  const caster = {
+    templateId: "test:artificer2", name: "Artificer",
+    stats: { kind: "humanoid", ac: 15, maxHp: 60, cr: 6 }, abilities: abil,
+    actions: [
+      { name: "Arcane Cannon", kind: "action", summon: { count: 1, templateId: "my:cannon2" } },
+      { name: "Find Steed", kind: "spell", spellSlotLevel: 3,
+        summon: { count: 1, picks: { form: ["Fey"] }, slotLevel: 3, templateId: "srd:steed2" } },
+    ], visibility: vis("Artificer"),
+  } as unknown as MainMonsterTemplate;
+
+  const lib = [steed, cannon, caster];
+  const built = summonRosterGroups(caster, lib);
+  const byName = (frag: string) => built.groups.find(g => g.name.includes(frag));
+
+  eq("an ACTION's summon becomes a roster row", Boolean(byName("Eldritch Cannon")), true);
+  eq("...with 5*@LEVEL read off the caster's CR 6", byName("Eldritch Cannon")?.baseHp, 30);
+  eq("a SPELL's summon becomes a roster row too", Boolean(byName("Otherworldly Steed")), true);
+  eq("...with 5+10*@SLOT read off the authored slot 3", byName("Otherworldly Steed")?.baseHp, 35);
+  eq("both end with the summoner", built.groups.every(g => g.endsWithGroupId === caster.templateId), true);
+  eq("nothing is left unresolved", built.assumptions.filter(a => a.flag === "NEEDS DM INPUT").length, 0);
+
+  /**
+   * ⚠ THE PICK IS THE POINT. One template, three forms — without it the Celestial's Healing Touch,
+   * the Fey's Fey Step and the Fiend's Fell Glare all arrive on the same body.
+   */
+  const fey = materializeSummon({ count: 1, picks: { form: ["Fey"] }, slotLevel: 3, templateId: "srd:steed2" },
+    summonerContextFor(caster), lib)!;
+  eq("the Fey pick takes ONLY its own package",
+    (fey.body?.actions ?? []).map(a => a.name), ["Otherworldly Slam", "Fey Step"]);
+  eq("...and the slot still drives AC", fey.body?.stats.ac, 13);
 }
 
 /**

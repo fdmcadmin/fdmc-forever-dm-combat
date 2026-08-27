@@ -339,6 +339,46 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
     setDraft(d => ({ ...d, [list]: [...d[list], item] }));
   }
 
+  /**
+   * Patch one action's summon spec, leaving the rest of the action alone.
+   *
+   * Mirrors `updateRider`: the row edits fields one at a time, and a summon is a nested object,
+   * so a plain `updateListItem` would replace the whole spec on every keystroke.
+   */
+  function updateSummon(list: "actions" | "traits" | "reactions", idx: number, patch: Partial<NonNullable<MonsterReaderAction["summon"]>>) {
+    setDraft(d => {
+      const rows = [...((d[list] ?? []) as MonsterReaderAction[])];
+      const row = rows[idx];
+      if (!row) return d;
+      rows[idx] = { ...row, summon: { ...(row.summon ?? {}), ...patch } };
+      return { ...d, [list]: rows };
+    });
+  }
+
+  /**
+   * The action SETS a summoned template carries — the Steed's three forms, an element package.
+   *
+   * ⚠ READ OFF THE CHOSEN CREATURE, never off the creature being edited. A summoner and the thing
+   * it summons are different blocks, and offering the summoner's own sets here would let a DM pick
+   * a package the summoned body does not have.
+   */
+  function summonSetsFor(templateId: string | undefined): Array<{ id: string; label: string }> {
+    if (!templateId) return [];
+    const t = (chassisOptions ?? []).find(x => x.templateId === templateId);
+    return (t?.actionSets ?? []).map(s => ({ id: s.id, label: s.label || s.id }));
+  }
+
+  /** The option names inside one of that template's sets — "Celestial", "Fey", "Fiend". */
+  function summonOptionsFor(templateId: string | undefined, setId: string): string[] {
+    if (!templateId) return [];
+    const t = (chassisOptions ?? []).find(x => x.templateId === templateId);
+    const names = (t?.actions ?? [])
+      .filter(a => a.setId === setId)
+      .map(a => a.setOption || a.name)
+      .filter((n): n is string => Boolean(n));
+    return [...new Set(names)];
+  }
+
   function removeListItem(list: "actions" | "traits" | "reactions", idx: number) {
     setDraft(d => ({ ...d, [list]: d[list].filter((_, i) => i !== idx) }));
   }
@@ -774,6 +814,102 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             <div style={{ marginTop: 4, paddingLeft: 10 }}>
               <SmallBtn color="#4a9eff" onClick={() => addRider(list, realIdx)}>+ Rider</SmallBtn>
             </div>
+          </div>
+        )}
+        {/* ── SUMMON — the body this action or spell calls ───────────────────────────────────
+            ⚠ THE ENGINE HAD NO AUTHORING SURFACE. `summon.ts` resolved every formula and the
+            roster walk priced the result, but no `.tsx` wrote a `SummonSpec`, so the only way
+            to give an action a summon was to hand-edit source.
+
+            Christopher: *"summons always come from spells or action [...] they can not come
+            from nothing"*, then: *"make it choseable on the action and the spell side so
+            either can be written as a summon."* This sits in the SHARED row renderer, so it is
+            on both by construction rather than by being written twice. Traits and reactions
+            are excluded: a trait is a standing property and does not "call" anything. */}
+        {(list === "actions" || opts.spell) && !opts.legendary && (
+          <div style={{ marginTop: 4 }}>
+            {!a.summon ? (
+              <div style={{ paddingLeft: 10 }}>
+                <SmallBtn color="#4caf50" onClick={() => updateListItem(list, realIdx, { summon: { count: 1 } })}>+ Summon</SmallBtn>
+              </div>
+            ) : (
+              <div style={{ paddingLeft: 10, borderLeft: "2px solid #2a5a2a", marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
+                  <div style={{ flex: 1, minWidth: 90 }}>
+                    <span style={labelStyle}>Summons</span>
+                    <input value={a.summon.name ?? ""} placeholder="Eldritch Cannon" style={inputStyle}
+                      title="What the table calls it. Blank falls back to the chosen creature's own name."
+                      onChange={e => updateSummon(list, realIdx, { name: e.target.value || undefined })} />
+                  </div>
+                  <div style={{ width: 150 }}>
+                    <span style={labelStyle}>Creature</span>
+                    {/* ⚠ A LIBRARY CREATURE, NOT AN INLINE BODY. `SummonSpec` accepts an inline
+                        block and the engine resolves one, but there is nowhere in this editor to
+                        BUILD one — offering it here would be a dropdown option that leads to a
+                        dead end. A body a DM can author is a creature in their own library, which
+                        is what the library is for; the inline path stays for content built in
+                        code. */}
+                    <select value={a.summon.templateId ?? ""} style={inputStyle}
+                      title="The creature this calls. Build the body as its own creature in My Library first — an Eldritch Cannon is one artificer's, not campaign content — then choose it here."
+                      onChange={e => updateSummon(list, realIdx, { templateId: e.target.value || undefined })}>
+                      <option value="">— choose a creature —</option>
+                      {(chassisOptions ?? []).map(t => (
+                        <option key={t.templateId} value={t.templateId}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ width: 52 }}>
+                    <span style={labelStyle}>Count</span>
+                    <input type="number" min={1} value={a.summon.count ?? 1} style={inputStyle}
+                      onChange={e => updateSummon(list, realIdx, { count: Math.max(1, Number(e.target.value) || 1) })} />
+                  </div>
+                  <div style={{ width: 62 }}>
+                    <span style={labelStyle}>Slot</span>
+                    <select value={a.summon.slotLevel ?? ""} style={inputStyle}
+                      title="The slot this is cast at, for a body whose numbers scale with it — the Steed's AC 10+@SLOT and HP 5+10*@SLOT. Blank = the body uses no slot."
+                      onChange={e => updateSummon(list, realIdx, { slotLevel: e.target.value ? Number(e.target.value) : undefined })}>
+                      <option value="">—</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(l => <option key={l} value={l}>L{l}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ width: 66 }}>
+                    <span style={labelStyle}>Lasts</span>
+                    <input type="number" min={1} value={a.summon.durationRounds ?? ""} placeholder="—" style={inputStyle}
+                      title="Rounds the body lasts. Blank = until it drops or is dismissed. The Covenant bond-creature lasts 2."
+                      onChange={e => updateSummon(list, realIdx, { durationRounds: e.target.value ? Math.max(1, Number(e.target.value)) : undefined })} />
+                  </div>
+                  <SmallBtn color="#ff6b6b" onClick={() => updateListItem(list, realIdx, { summon: undefined })}>✕</SmallBtn>
+                </div>
+                {/* ⚠ THE PICKS — a summoned template with action SETS has to say which package it
+                    took, or every option ships at once. The Otherworldly Steed is one template
+                    with three forms; without this the Celestial's Healing Touch, the Fey's Fey
+                    Step and the Fiend's Fell Glare would all arrive on the same body. Same shape
+                    the Mirror uses, so a summon needs no picking logic of its own. */}
+                {summonSetsFor(a.summon.templateId).map(set => (
+                  <div key={set.id} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 4 }}>
+                    <div style={{ width: 150 }}>
+                      <span style={labelStyle}>{set.label}</span>
+                      <select value={(a.summon?.picks?.[set.id] ?? [])[0] ?? ""} style={inputStyle}
+                        title={`Which ${set.label.toLowerCase()} this casting brings. The summoned body takes only that package.`}
+                        onChange={e => updateSummon(list, realIdx, {
+                          picks: {
+                            ...(a.summon?.picks ?? {}),
+                            ...(e.target.value ? { [set.id]: [e.target.value] } : { [set.id]: [] }),
+                          },
+                        })}>
+                        <option value="">— DM chooses at cast —</option>
+                        {summonOptionsFor(a.summon?.templateId, set.id).map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+                <p style={{ ...hintStyle, margin: "4px 0 0" }}>
+                  {a.summon.templateId
+                    ? <>Its formulas resolve against THIS creature — <code>@LEVEL</code> is its CR, <code>@PROF</code> its proficiency, <code>@SLOT</code> the slot chosen above.</>
+                    : <>Pick the creature this calls. If it does not exist yet, build it in My Library first — a summoned body is a creature like any other.</>}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
