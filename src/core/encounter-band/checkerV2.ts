@@ -417,6 +417,24 @@ export type RosterGroup = {
    *  · is still governed by `arrivesRound` / `expiresAfterRound` like anything else.
    */
   bodiless?: boolean;
+  /**
+   * THIS GROUP STOPS ACTING ONCE THAT GROUP IS DEAD.
+   *
+   * Christopher: *"[Lairs] go away with the boss they are attached to but the 'lair' will be used
+   * for things like active volcano and world hazards."*
+   *
+   * Two different things wearing the same mechanism, and the difference is exactly one field. A
+   * boss's lair is an extension of the boss — kill the dragon and the clearing stops rearranging
+   * itself — so it names its parent here and falls silent when that parent has no living bodies
+   * left. A volcano names nobody: it was erupting before the fight and does not care how the fight
+   * goes.
+   *
+   * ⚠ WITHOUT THIS A BOUND LAIR IS PRICED FOREVER. A `bodiless` group can never be killed, which
+   * is the point, so a boss lair with a damaging option would go on contributing damage for every
+   * round the simulation runs after the boss is already dead — the party would be charged for an
+   * environment that stopped when the creature did.
+   */
+  endsWithGroupId?: string;
   outcomeEvents?: OutcomeEvent[];
 };
 
@@ -566,6 +584,14 @@ export function encounterDprAt(
   return roster.reduce((total, group) => {
     // A body not on the field this round contributes nothing — see `groupPresentIn`.
     if (!groupPresentIn(group, round)) return total;
+    /**
+     * A lair ends with the creature it belongs to — see `RosterGroup.endsWithGroupId`. A world
+     * hazard names no parent and is unaffected by this branch.
+     */
+    if (group.endsWithGroupId) {
+      const parent = roster.find(g => g.id === group.endsWithGroupId);
+      if (parent && livingBodies(parent, cumulativePartyDamage) <= 0) return total;
+    }
     const alive = livingBodies(group, cumulativePartyDamage);
     const bodyDpr = roundValue(group.dpr, round);
     return total + alive * bodyDpr * group.dprUptime;

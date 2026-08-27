@@ -46,6 +46,8 @@ export type LairRosterGroup = {
   expiresAfterRound?: number;
   /** The lair's own row: it acts, it is never a body. See `RosterGroup.bodiless`. */
   bodiless?: boolean;
+  /** A creature's lair falls silent when that creature is dead. A world hazard leaves this unset. */
+  endsWithGroupId?: string;
 };
 
 export type LairAssumption = { creature: string; flag: string; field: string; detail: string };
@@ -143,6 +145,16 @@ export function lairRosterGroups(
     dpr: { round1: damage, round2: damage, round3: damage, round4Plus: damage },
     damageUptime: 1,
     arrivesRound: 1,
+    /**
+     * ⚠ A CREATURE'S LAIR DIES WITH THE CREATURE. Christopher: *"[Lairs] go away with the boss they
+     * are attached to but the 'lair' will be used for things like active volcano and world
+     * hazards."* This row hangs off `template.lair`, so it always has a boss — the roster group id
+     * for a creature IS its templateId, which is what makes the link a single field.
+     *
+     * A world hazard is the same row with this omitted: bodiless, one action a round, and nobody's
+     * death silences it.
+     */
+    endsWithGroupId: template.templateId,
   });
 
   const addSummon = (spec: NonNullable<LairOption["summon"]>, source: string, round: number, certain: boolean) => {

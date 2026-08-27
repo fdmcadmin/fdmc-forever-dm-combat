@@ -25,6 +25,7 @@
 import { materializeSummon, resolveSummonFormula, arithmetic, type SummonSpec, type SummonerContext } from "../src/core/monsters/summon";
 import { legalLairOptions, lairDamagePerRound, unpricedLairOptions } from "../src/core/monsters/lair";
 import { lairRosterGroups } from "../src/core/encounter-band/lairRoster";
+import { prepareRoster, encounterDprAt } from "../src/core/encounter-band/checkerV2";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { formatAbilityEntry } from "../src/core/monsters/creator/monsterCreatorModel";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
@@ -298,6 +299,35 @@ eq("a mixed expression is left alone", arithmetic("2d8+1d4"), "2d8+1d4");
 }
 
 ;
+/**
+ * A LAIR ENDS WITH ITS BOSS. A WORLD HAZARD DOES NOT.
+ *
+ * Christopher: *"[Lairs] go away with the boss they are attached to but the 'lair' will be used for
+ * things like active volcano and world hazards."* Same row, same bodiless actor, one field apart —
+ * and without it a bound lair would be charged to the party for every round after the boss dropped,
+ * because a bodiless group can never be killed.
+ */
+{
+  const boss = { id: "boss", name: "Boss", quantity: 1, baseHp: 40, acMultiplier: 1,
+    traitFactors: [], dpr: { round1: 10, round2: 10, round3: 10, round4Plus: 10 }, damageUptime: 1 };
+  const lairRow = (bound: boolean) => ({ id: "lair", name: "Lair", quantity: 1, baseHp: 0, bodiless: true,
+    acMultiplier: 1, traitFactors: [], dpr: { round1: 7, round2: 7, round3: 7, round4Plus: 7 },
+    damageUptime: 1, arrivesRound: 1, ...(bound ? { endsWithGroupId: "boss" } : {}) });
+
+  const bound = prepareRoster([boss, lairRow(true)] as never, 4);
+  eq("a bound lair acts while its boss lives", encounterDprAt(bound, 0, 1), 17);
+  eq("...and falls silent when the boss dies", encounterDprAt(bound, 999, 5), 0);
+
+  const hazard = prepareRoster([boss, lairRow(false)] as never, 4);
+  eq("a world hazard acts while the boss lives", encounterDprAt(hazard, 0, 1), 17);
+  eq("...and keeps going after the boss dies", encounterDprAt(hazard, 999, 5), 7);
+
+  eq("a campaign lair is bound to its creature",
+    (lairRosterGroups(BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!, BROKEN_CHAIN_MONSTER_LIBRARY)
+      .groups[0] as { endsWithGroupId?: string }).endsWithGroupId,
+    BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!.templateId);
+}
+
 /**
  * ⚠ THE EXIT CHECK LIVES AT THE BOTTOM, AND IT DID NOT.
  *
