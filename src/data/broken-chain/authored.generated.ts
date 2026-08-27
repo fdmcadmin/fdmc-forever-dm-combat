@@ -46,12 +46,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "name": "Condition immunity",
           "ehpMultiplier": 1,
           "note": "Read from \"Seasoned by Severity\" (trait) on \"immune to a condition\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 2,
@@ -155,12 +149,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "ehpMultiplier": 1.115824,
           "rule": "Magic Resistance",
           "note": "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 2,
@@ -269,14 +257,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 15,
       "maxHp": 100,
       "speed": "40 ft.",
-      "defenses": [
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
+      "defenses": [],
       "attacksPerTurn": 5,
       "size": "Large",
       "classification": "elite",
@@ -509,12 +490,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "name": "Damage transfer / redirection",
           "ehpMultiplier": 1,
           "note": "Read from \"Oppressive Presence\" (trait) on \"must target\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 1,
@@ -625,12 +600,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "name": "All attacks at disadvantage - 1 round",
           "ehpMultiplier": 1.1294156939022204,
           "note": "Read from \"Shifting Outline\" (trait) on \"attack rolls against it have disadvantage\"."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 2,
@@ -746,12 +715,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "name": "Fixed prevention - 8/round",
           "ehpMultiplier": 1.1418712644969924,
           "note": "Read from \"Interpose\" (reaction) on \"damage reduced by ~8\"."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 2,
@@ -814,11 +777,11 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     ],
     "actions": [
       {
-        "name": "Heavy Fist",
+        "name": "Heavy Slam",
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d10 + @MAIN",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Fist attacks."
+        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Slam attacks."
       }
     ],
     "reactions": [
@@ -1016,7 +979,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @STR+PB",
         "damage": "4d10+@STR",
-        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (4d10 + 6) bludgeoning.",
+        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 28 (4d10 + 6) bludgeoning damage.",
         "routineSlots": 2
       },
       {
@@ -1025,7 +988,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "save": "STR",
         "recharge": "5-6",
         "damage": "5d8+@STR",
-        "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
+        "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 29 (5d8 + 6) force damage and knocked prone. Success: half damage and not prone."
       }
     ],
     "reactions": [
@@ -1063,12 +1026,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "name": "Fixed prevention - 12/round",
           "ehpMultiplier": 1.2323134514052565,
           "note": "Read from \"Marrow Grip\" (trait) on \"damage reduced by ~12\"."
-        },
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
         }
       ],
       "attacksPerTurn": 2,
@@ -1167,14 +1124,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 16,
       "maxHp": 56,
       "speed": "30 ft.",
-      "defenses": [
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
+      "defenses": [],
       "size": "Medium",
       "classification": "elite",
       "archetype": "tactician",
@@ -1271,14 +1221,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 17,
       "maxHp": 39,
       "speed": "40 ft., climb 20 ft.",
-      "defenses": [
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
+      "defenses": [],
       "attacksPerTurn": 2,
       "size": "Medium",
       "classification": "elite",
@@ -1379,14 +1322,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 12,
       "maxHp": 59,
       "speed": "40 ft., climb 30 ft.",
-      "defenses": [
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
+      "defenses": [],
       "attacksPerTurn": 2,
       "size": "Medium",
       "classification": "elite",
@@ -1488,14 +1424,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 17,
       "maxHp": 46,
       "speed": "30 ft.",
-      "defenses": [
-        {
-          "name": "Resistance - ~50% of opposing damage",
-          "ehpMultiplier": 1.3418341811719772,
-          "rule": "Resistance - ~50% of opposing damage",
-          "note": "profile"
-        }
-      ],
+      "defenses": [],
       "attacksPerTurn": 2,
       "size": "Medium",
       "classification": "elite",
@@ -1704,7 +1633,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@INT+@PB",
         "damage": "4d8+@INT",
-        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (4d8 +6) psychic.",
+        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 24 (4d8 + 6) psychic damage.",
         "routineSlots": 3
       },
       {
@@ -1713,7 +1642,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "save": "INT",
         "recharge": "5-6",
         "damage": "8d6+@INT",
-        "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (8d6+6) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
+        "text": "30-ft. cone from the Harrower or a fracture; DC 18 Intelligence save. Failure: 34 (8d6 + 6) psychic damage and the creature is moved up to 15 ft. toward or away from the origin, Harrower’s choice. Success: half damage and no forced movement."
       },
       {
         "name": "Mind Hook",
@@ -1721,7 +1650,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "save": "WIS",
         "legendaryCost": 1,
         "damage": "4d6+@INT",
-        "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+@INT) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
+        "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of the Harrower or a fracture makes a DC 18 Wisdom save. Failure: 20 (4d6 + 6) psychic damage and moved 10 ft. toward the origin. Success: half damage and no movement.",
         "onSave": "half"
       }
     ],
@@ -1841,7 +1770,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d10+@STR piercing + 2d6 radiant",
-        "text": "Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage",
+        "text": "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage.",
         "routineSlots": 2
       },
       {
@@ -1849,7 +1778,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d6 + @STR",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 12 (2d6 + 3) slashing.",
+        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (2d6 + 3) slashing damage.",
         "routineSlots": 1
       },
       {
@@ -1867,7 +1796,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20 + @ATK",
         "damage": "1d8 + @STR",
         "legendaryCost": 1,
-        "text": "Once per round at the end of another creature’s turn, make one Tail attack: +7 to hit, reach 15 ft.; Hit: 9 (1d8 + 3) bludgeoning, and the dragon may move 5 ft. without provoking from the target hit."
+        "text": "Once per round at the end of another creature’s turn, make one Tail attack: +7 to hit, reach 15 ft.; Hit: 7 (1d8 + 3) bludgeoning damage, and the dragon may move 5 ft. without provoking from the target hit."
       }
     ],
     "reactions": [],
@@ -1943,7 +1872,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 +@STR+@PB",
         "damage": "2d6+@STR",
-        "text": "Hit: 9 (2d6 + 2) piercing damage.",
+        "text": "Melee Weapon Attack: +4 to hit, reach 5 ft.; Hit: 9 (2d6 + 2) piercing damage.",
         "routineSlots": 1
       },
       {
@@ -1952,7 +1881,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "save": "DEX",
         "recharge": "6",
         "damage": "4d6",
-        "text": "The drake exhales corrupted Fey energy in a 20-foot cone. Each creature in that area must make a Dexterity saving throw, taking 14 (4d6) fire on a failed save, or half as much on a successful one.",
+        "text": "Recharge 6. The drake exhales corrupted Fey energy in a 20-ft. cone. Each creature in the area makes a Dexterity save, taking 14 (4d6) fire damage on a failure, or half as much on a success.",
         "onSave": "half",
         "range": "20 FT cone"
       },
@@ -1961,14 +1890,14 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "action",
         "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR+1d6",
-        "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
+        "text": "Melee Weapon Attack: +4 to hit, reach 5 ft.; Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
         "save": "",
         "routineSlots": 1
       },
       {
         "name": "Tail",
         "kind": "action",
-        "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
+        "text": "Melee Weapon Attack: +4 to hit, reach 10 ft.; Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller it must succeed on a DC 12 Strength save or be knocked prone.",
         "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR",
         "save": "",
@@ -2094,7 +2023,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Venomous Eruption",
         "kind": "spell",
         "spellSlotLevel": 4,
-        "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned.",
+        "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 33 (6d8 + 6) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned.",
         "damage": "6d8+@MAIN",
         "economyCost": "action",
         "save": "WIS",
@@ -5398,10 +5327,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-6c083028-115862";
+export const AUTHORED_DIGEST = "fnv1a-03346d46-141109";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T01:04:09.435Z";
+export const AUTHORED_AT = "2026-08-27T06:15:28.956Z";
 
 /**
  * Merge authored content over a bundled list by id.
