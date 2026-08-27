@@ -76,8 +76,25 @@ export type PartyCurveRow = {
   brokenChain: PartyCurveMode;
 };
 
-/** The generic checker supports 3–20; levels 1–2 exist for the campaign only. */
-export const GENERIC_CHECKER_LEVELS = { minimum: 3, maximum: 20 } as const;
+/**
+ * The levels the checker offers. 1–20, both equipment modes.
+ *
+ * ⚠ THIS WAS 3, AND THE 3 WAS NOT A DATA LIMIT. The header above says "levels 1–2 are
+ * campaign-only; the generic checker's own floor is level 3", and the selector was built straight
+ * off this constant — so no table, campaign or generic, could check a level 1 or level 2 fight at
+ * all. Christopher: *"how would a DM build lvl 1 and 2 encounters if they cant check them against
+ * a party, standard or BC."*
+ *
+ * There is nothing to withhold. Both rows are complete for BOTH modes and carry the same evidence
+ * class as every level up to 16 — `EMPIRICAL_REBUILT_128_PARTY_FIELD`, 3000 weighted samples,
+ * stage "Pre-Bond" — and the two modes diverge exactly where they should: identical at L1, where
+ * no gear has dropped yet, and 29.8 vs 32.0 DPR at L2, where the campaign overlay starts. The
+ * party defence curve publishes AC and all six saves at both levels in both modes too.
+ *
+ * So the restriction described a publication scope, not a gap in what can be answered, and it cost
+ * the first two levels of every campaign.
+ */
+export const GENERIC_CHECKER_LEVELS = { minimum: 1, maximum: 20 } as const;
 export const EMPIRICAL_LEVELS = { minimum: 1, maximum: 16 } as const;
 export const PROJECTED_LEVELS = { minimum: 17, maximum: 20 } as const;
 

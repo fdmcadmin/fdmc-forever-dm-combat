@@ -395,6 +395,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                     onChange={e => setPartyLevel(Number(e.target.value))}
                     style={{ fontSize: 11, padding: "3px 6px", borderRadius: 4, border: "1px solid #2a2a3e", background: "#0d0d14", color: "#ddd" }}
                   >
+                    {/* 1–20, both equipment modes. The floor used to be 3, which left a DM unable
+                        to check a level 1 or 2 fight at all. See `GENERIC_CHECKER_LEVELS`. */}
                     {Array.from({ length: GENERIC_CHECKER_LEVELS.maximum - GENERIC_CHECKER_LEVELS.minimum + 1 },
                       (_, i) => GENERIC_CHECKER_LEVELS.minimum + i).map(l => (
                         <option key={l} value={l}>L{l}{isProjectedLevel(l) ? " (projected)" : ""}</option>
