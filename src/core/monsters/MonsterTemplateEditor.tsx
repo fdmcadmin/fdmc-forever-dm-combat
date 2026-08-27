@@ -275,7 +275,40 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           note: `Read from "${m.traitName}" (${m.from}) on "${m.evidence}".`
             + (m.rule.multiplier == null ? " The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight." : ""),
         }));
-      if (additions.length === 0) return d;
+      /**
+       * ⚠ FINDING NOTHING IS AN ANSWER, AND RETURNING `d` THREW IT AWAY.
+       *
+       * The pricer draws a line between a creature that HAS no defensive trait and one nobody has
+       * looked at yet: an explicit 1.0 row with a reason is a decision and prices at raw HP
+       * silently, while `defenses: []` reports "No defensive traits assessed" as a gap. Every Act 1
+       * creature carries the decided row — *"Pack Tactics is offensive (advantage to hit), not
+       * durability. Plain HP bar."* — which is why none of them flags.
+       *
+       * This button was the only way to record that decision, and on a creature with nothing to
+       * find it did nothing at all. So the author reads the flag as the app objecting to a creature
+       * they built deliberately. Christopher: *"the flag for defence and a creature not having any
+       * should not be there, i know they dont have trait for defence because i built them that
+       * way."* Right — and the fix is to let the button SAY so, not to stop asking the question,
+       * because "nobody has assessed this yet" is still worth reporting on a creature that does
+       * have resistances nobody priced.
+       *
+       * Only when the list is empty. A creature that already has rows has already been assessed.
+       */
+      if (additions.length === 0) {
+        if (existing.length > 0) return d;
+        return {
+          ...d,
+          stats: {
+            ...d.stats,
+            defenses: [{
+              name: "No notable defensive traits",
+              ehpMultiplier: 1,
+              note: "Read from traits: nothing on this block matches a calibrated defensive rule. "
+                + "Decided 1.0 — this creature prices at raw HP.",
+            }],
+          },
+        };
+      }
       return { ...d, stats: { ...d.stats, defenses: [...existing, ...additions] } };
     });
   }

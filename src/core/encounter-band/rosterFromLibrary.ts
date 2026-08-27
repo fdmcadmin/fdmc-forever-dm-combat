@@ -93,7 +93,25 @@ export function traitFactorsFor(
   const factors: SustainFactor[] = [];
   const claimed = new Map<string, string>();
 
-  if (defenses.length === 0 && !template.stats.kitMultiplier) {
+  /**
+   * ⚠ A TYPED RESPONSE IS AN ASSESSMENT, and this asked for one that was already sitting there.
+   *
+   * The question is "has anyone looked at this creature's durability", not "does it own a defence
+   * row". A block carrying `resistant to Fire` has been looked at — that resistance prices itself
+   * below, off the party's real damage share — so demanding a row as well asks for the same fact
+   * in a second place, which is the complaint this whole reader exists to answer.
+   *
+   * Christopher: *"why is it we have over 200 readable trait pricing and i still have to go in and
+   * say this is a resistance."* He should not have to, and adding the row is actively WRONG: a
+   * typed response and a calibrated rule sit in different stack groups on purpose, so a
+   * hand-added "Resistance - ~50% of opposing damage" beside `resistant to Fire` prices the same
+   * resistance twice.
+   *
+   * The flag still fires on a block with NOTHING recorded anywhere, because that one really is
+   * unassessed.
+   */
+  const hasTypedResponse = (template.stats.damageResponses ?? []).some(r => r.type.trim() !== "");
+  if (defenses.length === 0 && !template.stats.kitMultiplier && !hasTypedResponse) {
     out.push({ creature: name, flag: "NEEDS DM INPUT", field: "trait",
       detail: "No defensive traits assessed, so this creature prices at raw HP. If it has resistances, regeneration, a revival or an AC reaction, they are not being counted." });
     return factors;
