@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-27T00:52:12.390Z",
-  "digest": "fnv1a-ae52cbb3-115862",
+  "exportedAt": "2026-08-27T00:59:11.556Z",
+  "digest": "fnv1a-fec16391-115863",
   "monsters": [
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
@@ -236,7 +236,7 @@
       "stats": {
         "kind": "fiend",
         "ac": 15,
-        "maxHp": 115,
+        "maxHp": 100,
         "speed": "40 ft.",
         "defenses": [
           {
@@ -896,7 +896,7 @@
       "stats": {
         "kind": "fiend",
         "ac": 16,
-        "maxHp": 120,
+        "maxHp": 1110,
         "speed": "30 ft.",
         "defenses": [
           {
