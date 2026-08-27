@@ -502,7 +502,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "fiend",
       "ac": 16,
-      "maxHp": 1110,
+      "maxHp": 110,
       "speed": "30 ft.",
       "defenses": [
         {
@@ -5398,10 +5398,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-fec16391-115863";
+export const AUTHORED_DIGEST = "fnv1a-6c083028-115862";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T00:59:25.214Z";
+export const AUTHORED_AT = "2026-08-27T01:04:09.435Z";
 
 /**
  * Merge authored content over a bundled list by id.
