@@ -563,7 +563,25 @@ export function isMonsterLegendaryAction(a: MonsterReaderAction): boolean {
   const ec = (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() ?? "";
   if (ec === "legendary") return true;
   // Name fallback for hand-authored blocks, which mark the cost in prose.
-  return /\(\s*legendary/i.test(a.name ?? "");
+  if (/\(\s*legendary/i.test(a.name ?? "")) return true;
+  /**
+   * ⚠ THE TIMING WINDOW IS THE TELL. Christopher: *"if something says 'once per round at the end
+   * of another creature's turn' you can read that is a legendary action."*
+   *
+   * He is right, and it is the same reasoning as the name fallback above: a hand-authored block
+   * states the cost in prose rather than in a field. Nothing else in the economy acts at the end
+   * of ANOTHER creature's turn — an action is taken on your own turn, a bonus action likewise, and
+   * a reaction fires on a TRIGGER ("when a creature does X"), not in a timing window.
+   *
+   * ⚠ CHANGES NOTHING TODAY, ON PURPOSE. Both blocks that carry the phrase — the Veil-Torn
+   * Dragon's Tail Sweep and the Thought Harrower's Mind Hook — already state `legendaryCost: 1`
+   * and were already read correctly. This is a guard for the next block authored by hand, so the
+   * phrase never has to be backed up by a field that someone remembered to set.
+   *
+   * Curly apostrophe included deliberately: every authored block in this campaign uses U+2019, and
+   * a straight-quote-only pattern silently matches none of them.
+   */
+  return /at the end of (another|each other|the other|a) creature[’'`]?s turn/i.test(a.text ?? "");
 }
 
 /**

@@ -2420,7 +2420,17 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       },
     ],
     traits: [
-      { name: "Elemental Guard", kind: "trait", text: "The mirror is immune to {primary} and {secondary} damage. The active immunity changes every turn and is always described aloud before damage is committed, so players can route damage around it." },
+      /**
+       * ⚠ IMMUNE TO ONE, RESISTANT TO THE PAIR — the text said immune to BOTH, and the price
+       * never agreed with it. The defence row above resolves to the workbook's `Telegraphed
+       * alternating immunity/resistance` (+0.075916), which is exactly the doc's rule; the trait
+       * text was the only place claiming double immunity. v3.24 Balanced Library Sync states it
+       * as below, so the card, the doc and the multiplier now say the same thing.
+       */
+      { name: "Elemental Guard", kind: "trait", text: "At the start of each turn, choose one element in the mirror’s pair as the active guard: the mirror is immune to that damage type and resistant to the paired type until the start of its next turn. The active immunity is visibly telegraphed before affected players commit damage." },
+      { name: "Inherent Bond", kind: "trait", text: "The mirror has the DM-assigned Bond and Metamorphosis path selected during construction. It resolves with its printed timing and one activation per round." },
+      { name: "Primary Convergence", kind: "trait", text: "A signature spell consumes the mirror’s action. In one round, no more than one Offensive mirror and one Defensive mirror can use a 1/day signature spell." },
+      { name: "Role Attack", kind: "trait", text: "Use the chosen archetype’s Attack line. Claws and Bolts deal 2d6 + the listed damage modifier for that archetype. A mirror can replace its normal attack routine with a spell from its elemental package." },
       { name: "Constructed Answer", kind: "trait", text: "The mirror is built from an archetype, an element package and one bond at its Metamorphosis path. It is close enough to a party's roles to be insulting, and never an exact copy." },
       { name: "Signature Limit", kind: "trait", text: "Roster-limited: at most one 1/day signature effect per round across the whole mirror encounter, and at most one Offensive and one Defensive mirror may use a signature in any one round." },
     ],
