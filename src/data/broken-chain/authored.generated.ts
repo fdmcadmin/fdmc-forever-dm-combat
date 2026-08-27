@@ -267,7 +267,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "fiend",
       "ac": 15,
-      "maxHp": 130,
+      "maxHp": 115,
       "speed": "40 ft.",
       "defenses": [
         {
@@ -501,8 +501,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E8 - The Occupied Acre",
     "stats": {
       "kind": "fiend",
-      "ac": 17,
-      "maxHp": 153,
+      "ac": 16,
+      "maxHp": 120,
       "speed": "30 ft.",
       "defenses": [
         {
@@ -569,9 +569,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     ],
     "traits": [
       {
-        "name": "Barbed Plate",
+        "name": "Retaliatory Shock",
         "kind": "trait",
-        "text": "When a creature within 5 ft. hits the Knight with a melee attack that deals bludgeoning, piercing, or slashing damage, that attacker takes piercing damage equal to the Knight’s Constitution modifier (4). The triggering attack resolves normally."
+        "text": "When the Demon Knight of Punishment takes bludgeoning, piercing, or slashing damage, each enemy within 10 feet of the Knight takes piercing damage equal to the Knight's Constitution modifier (4). The triggering damage resolves normally."
       },
       {
         "name": "Oppressive Presence",
@@ -937,7 +937,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 18,
-      "maxHp": 213,
+      "maxHp": 200,
       "speed": "35 ft.",
       "defenses": [
         {
@@ -1015,8 +1015,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Slam",
         "kind": "attack",
         "roll": "1d20 + @STR+PB",
-        "damage": "3d10+@STR",
-        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning.",
+        "damage": "4d10+@STR",
+        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (4d10 + 6) bludgeoning.",
         "routineSlots": 2
       },
       {
@@ -1024,7 +1024,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "action",
         "save": "STR",
         "recharge": "5-6",
-        "damage": "5d8",
+        "damage": "5d8+@STR",
         "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
       }
     ],
@@ -5398,10 +5398,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-0c4e6150-111953";
+export const AUTHORED_DIGEST = "fnv1a-ae52cbb3-115862";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T00:28:11.412Z";
+export const AUTHORED_AT = "2026-08-27T00:52:32.794Z";
 
 /**
  * Merge authored content over a bundled list by id.
