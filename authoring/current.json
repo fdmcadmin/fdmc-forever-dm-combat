@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-27T00:27:55.526Z",
-  "digest": "fnv1a-0c4e6150-111953",
+  "exportedAt": "2026-08-27T00:52:12.390Z",
+  "digest": "fnv1a-ae52cbb3-115862",
   "monsters": [
     {
       "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
@@ -236,7 +236,7 @@
       "stats": {
         "kind": "fiend",
         "ac": 15,
-        "maxHp": 130,
+        "maxHp": 115,
         "speed": "40 ft.",
         "defenses": [
           {
@@ -510,7 +510,7 @@
       "stats": {
         "kind": "aberration",
         "ac": 18,
-        "maxHp": 213,
+        "maxHp": 200,
         "speed": "35 ft.",
         "defenses": [
           {
@@ -588,8 +588,8 @@
           "name": "Slam",
           "kind": "attack",
           "roll": "1d20 + @STR+PB",
-          "damage": "3d10+@STR",
-          "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (2d10 + 6) bludgeoning.",
+          "damage": "4d10+@STR",
+          "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (4d10 + 6) bludgeoning.",
           "routineSlots": 2
         },
         {
@@ -597,7 +597,7 @@
           "kind": "action",
           "save": "STR",
           "recharge": "5-6",
-          "damage": "5d8",
+          "damage": "5d8+@STR",
           "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
         }
       ],
@@ -886,6 +886,122 @@
       },
       "dmEdited": {
         "at": "2026-08-27T00:24:27.001Z"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
+      "name": "Demon Knight of Punishment",
+      "encounterId": "act3-e8-the-occupied-acre",
+      "encounterLabel": "Act 3 E8 - The Occupied Acre",
+      "stats": {
+        "kind": "fiend",
+        "ac": 16,
+        "maxHp": 120,
+        "speed": "30 ft.",
+        "defenses": [
+          {
+            "name": "Damage transfer / redirection",
+            "ehpMultiplier": 1,
+            "note": "Read from \"Oppressive Presence\" (trait) on \"must target\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
+          },
+          {
+            "name": "Resistance - ~50% of opposing damage",
+            "ehpMultiplier": 1.3418341811719772,
+            "rule": "Resistance - ~50% of opposing damage",
+            "note": "profile"
+          }
+        ],
+        "attacksPerTurn": 1,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "guardian",
+        "skills": [
+          {
+            "label": "Intimidation",
+            "modifier": 7
+          },
+          {
+            "label": "Perception",
+            "modifier": 6
+          }
+        ],
+        "proficiencyBonus": 4,
+        "damageResponses": [
+          {
+            "type": "Fire",
+            "response": "resistant"
+          }
+        ]
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)"
+        },
+        {
+          "label": "DEX",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "CON",
+          "value": "19 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "WIS",
+          "value": "14 (+2)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "17 (+3)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Retaliatory Shock",
+          "kind": "trait",
+          "text": "When the Demon Knight of Punishment takes bludgeoning, piercing, or slashing damage, each enemy within 10 feet of the Knight takes piercing damage equal to the Knight's Constitution modifier (4). The triggering damage resolves normally."
+        },
+        {
+          "name": "Oppressive Presence",
+          "kind": "trait",
+          "text": "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Iron Grasp",
+          "kind": "attack",
+          "roll": "1d20 + @ATK",
+          "damage": "1d10 + @MAIN",
+          "text": "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Commanding Presence",
+          "kind": "reaction",
+          "text": "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
+        "DM DESIGN READ. The Knight is the wall. Its shattered plate is deliberately hittable, but its raw body is large. Barbed Plate punishes repeated close physical hits. Oppressive Presence taxes multi-target creature effects once, and Commanding Presence can force a second legal instance into the Knight; single-target effects remain valid answers.",
+        "BARBED PLATE IS DAMAGE, NOT DEFENCE, and the trace cannot see it. 4 piercing per melee hit taken is real pressure on the party - roughly 12 a round against three melee hits - but it is retaliation triggered by the PARTY's action, and the trace prices only what the creature spends its own action economy on. Not counted in the DPR below."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Demon Knight of Punishment",
+        "revealedName": "Demon Knight of Punishment"
+      },
+      "dmEdited": {
+        "at": "2026-08-26T07:06:55.539Z"
       }
     }
   ],
