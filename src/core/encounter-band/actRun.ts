@@ -258,7 +258,28 @@ export function normalizeRun(steps: ActRunStep[]): ActRunStep[] {
 const ACT_RUN_KEY = "fdmc.dm.actRuns.v1";
 
 export function loadActRuns(): ActRun[] {
-  try { return JSON.parse(safeStorage().getItem(ACT_RUN_KEY) ?? "[]") as ActRun[]; } catch { return []; }
+  try {
+    const runs = JSON.parse(safeStorage().getItem(ACT_RUN_KEY) ?? "[]") as ActRun[];
+    return runs.map(r => ({ ...r, steps: (r.steps ?? []).map(repairRestDefault) }));
+  } catch { return []; }
+}
+
+/**
+ * A REST THAT EXISTS IS TAKEN BY DEFAULT — repairing runs saved before that was true.
+ *
+ * `restDefault` was only ever WRITTEN as "Skip", by step creation, and the rest-type control did
+ * not move it. So every run already saved carries "Skip" on rests the DM deliberately added, and
+ * `restCompletesByDefault` refuses all of them — the party never rests and every fight after the
+ * first reads harder than it is.
+ *
+ * ⚠ THIS CANNOT DISCARD A REAL DECISION, which is the only reason it is safe to do on load. A
+ * deliberate skip is not stored here at all: it lives in the panel's `choices` map as an explicit
+ * per-step override, and that is untouched. "Skip" beside a real rest type was unreachable through
+ * the UI, so it can only ever be the stale value.
+ */
+function repairRestDefault(step: ActRunStep): ActRunStep {
+  if (step.restType === "None" || step.restDefault !== "Skip") return step;
+  return { ...step, restDefault: "Take" };
 }
 
 export function saveActRuns(runs: ActRun[]): void {

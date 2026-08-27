@@ -302,7 +302,28 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
                     title="Party level for this fight" style={{ ...input, width: 42, textAlign: "center" }} />
                   <select value={s.restType} onChange={e => {
                       const rt = e.target.value as RestType;
-                      patchStep(s.id, { restType: rt, ...(rt === "None" ? { restStatus: "—" as RestStatus, restDefault: "Skip" as const } : {}) });
+                      /**
+                       * ⚠ THE REST DEFAULT MUST MOVE WITH THE TYPE, AND IT DID NOT.
+                       *
+                       * A step is created with `restDefault: "Skip"`, which is right while
+                       * `restType` is "None". Choosing Long or Short changed only the TYPE, so the
+                       * step kept "Skip" — and `restCompletesByDefault` bails on "Skip" before it
+                       * ever looks at the status. Every rest a DM added was silently not taken:
+                       * the button read "skipped" and the party carried its whole spend forward.
+                       *
+                       * Visible in Christopher's Act 3 run — Gate I is a Long/Safe rest, and the
+                       * Hollow Feast after it still arrived at 97% spent and wiped in round 1. A
+                       * long rest resets to 0, which `nextArrivalSpent` has always done correctly;
+                       * it was never being told the rest happened.
+                       *
+                       * "Take" rather than "Complete": Take lets the STATUS decide, so Set/Safe/
+                       * Available complete and Threatened/Unsafe/Conditional still do not — which
+                       * is the whole reason a status sits beside the type. Skipping stays a
+                       * deliberate act through the cycle button.
+                       */
+                      patchStep(s.id, rt === "None"
+                        ? { restType: rt, restStatus: "—" as RestStatus, restDefault: "Skip" as const }
+                        : { restType: rt, restDefault: "Take" as const });
                     }} style={{ ...input, width: 62 }}>
                     <option>None</option><option>Short</option><option>Long</option>
                   </select>

@@ -7,7 +7,7 @@
  * v7 and applied here; a SHORT rest is NOT published anywhere in the bundle, so it is a DM input and
  * this proves the default gives back nothing rather than a plausible-looking constant.
  */
-import { nextArrivalSpent, resolveActRun, restBlocks, runLevelGates, normalizeRun, type ActRunStep } from "../src/core/encounter-band/actRun";
+import { nextArrivalSpent, resolveActRun, restBlocks, runLevelGates, normalizeRun, loadActRuns, saveActRuns, type ActRunStep } from "../src/core/encounter-band/actRun";
 import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
 
 const problems: string[] = [];
@@ -64,6 +64,33 @@ const walk = (rests: ActRunStep["restType"][], cost = 0.3) => {
 console.log("\nact run — arrival depends on rest placement:");
 eq("no rests: the party gets steadily worse", walk(["None", "None", "None", "None"]), [0, 30, 60, 90]);
 eq("a long rest mid-run resets it", walk(["None", "Long", "None", "None"]), [0, 30, 0, 30]);
+
+
+/**
+ * ⚠ REGRESSION — THE REST DEFAULT DID NOT MOVE WITH THE REST TYPE.
+ *
+ * Every case above builds its steps with restDefault "Take" by hand, so none of them ever walked
+ * the path the UI actually takes: a step is created "None"/"Skip", and choosing Long or Short
+ * changed only the TYPE. restCompletesByDefault bails on "Skip" before it looks at the status, so
+ * every rest a DM added was silently not taken and the party carried its whole spend forward.
+ * Christopher’s Act 3 run showed it — a Long/Safe rest at Gate I, and the Hollow Feast after it
+ * still arriving at 97% spent and wiping in round 1.
+ */
+const stale = step("stale", 1, 6, "Long", "Safe", "Skip", 7);
+eq("a Long/Safe rest with the stale Skip default does NOT complete", resolveActRun([stale])[0].restTaken, "None");
+saveActRuns([{ id: "r", name: "r", partyMode: "Broken Chain", steps: [stale] }]);
+const repaired = loadActRuns()[0].steps[0];
+eq("...but loading repairs it", repaired.restDefault, "Take");
+eq("...so the rest is taken", resolveActRun([repaired])[0].restTaken, "Long");
+eq("...and the next fight arrives fresh", nextArrivalSpent(0.47, 0.5, resolveActRun([repaired])[0].restTaken), 0);
+eq("a real None step is left alone by the repair",
+  loadActRuns.length >= 0 && repairNoneUntouched(), true);
+
+function repairNoneUntouched(): boolean {
+  const none = step("none", 1, 6, "None", "—", "Skip");
+  saveActRuns([{ id: "r2", name: "r2", partyMode: "Broken Chain", steps: [none] }]);
+  return loadActRuns()[0].steps[0].restDefault === "Skip";
+}
 
 console.log(problems.length ? `\nFAILED: ${problems.join(", ")}` : "\nALL PASS");
 process.exit(problems.length ? 1 : 0);
