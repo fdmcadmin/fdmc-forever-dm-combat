@@ -18,7 +18,7 @@ import {
 } from "./encounterLibrary";
 import { SUPPORTED_PARTY_SIZES, BASELINE_PARTY_SIZE, PARTY_SIZE_HP_MULTIPLIER } from "../encounter-band/partyCurveV2";
 import { upsertMonsterTemplate, deleteMonsterTemplate, loadMonsterLibrary, resolveMonsterLibrary, isCampaignTemplateId, exportMonsterLibrary, importMonsterLibrary, type MonsterImportResult } from "./dmMonsterLibrary";
-import { exportCampaignAuthoring } from "../campaign/authorExport";
+import { exportCampaignAuthoring, exportFullCreatureLibrary } from "../campaign/authorExport";
 import { publishCampaignAuthoring, hasPublishToken, savePublishToken, savePublishConfig, loadPublishConfig } from "../campaign/publishToGitHub";
 // The panel is the seam where campaign content meets the engine editors — the same place
 // chassisOptions is assembled. The editor itself never imports mod content (RULE 3).
@@ -1182,6 +1182,29 @@ export function EncounterLibraryPanel({
               style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee11", color: "#7b68ee99", border: "1px solid #7b68ee33", borderRadius: 3, cursor: "pointer" }}
               title="Download the same payload as a file, for folding by hand with scripts/fold-authoring.mjs. The fallback for when publishing is unavailable. Local picks (a chassis's chosen weapon form) are stripped: the template ships, the pick does not.">
               ↓ Author
+            </button>
+          )}
+          {/*
+            ⚠ THE WHOLE LIBRARY, NOT THE CHANGES — a different question from ↓ Author.
+
+            Christopher: *"it only does changes, just give me a export creature library button."*
+            ↓ Author carries what this browser edited, which is right for a publish and useless for
+            a reconciliation pass against an encounter document: a creature never opened in the app
+            has no stored copy and so never appears in an export at all.
+
+            This ships every campaign creature as the app resolves it — bundled seed where nothing
+            is stored, the stored copy where there is one — in the same payload schema the fold
+            consumes. Encounters and equipment ride along untouched, because the fold REPLACES
+            encounters and an empty array would delete every authored fight.
+          */}
+          {unlocked && (
+            <button type="button"
+              onClick={() => setAuthorExportMsg(
+                exportFullCreatureLibrary(resolvedLibrary.filter(t => isCampaignTemplate(t.templateId))).message,
+              )}
+              style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee11", color: "#7b68ee99", border: "1px solid #7b68ee33", borderRadius: 3, cursor: "pointer" }}
+              title="Download EVERY campaign creature, not just the ones edited on this machine — the full library as the app resolves it, in the same format the fold script consumes. Use this when reconciling the library against an encounter document.">
+              ↓ Library
             </button>
           )}
           {/* Monster library import */}

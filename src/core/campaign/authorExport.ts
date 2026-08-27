@@ -111,7 +111,18 @@ function stripLocalInstantiation(item: EquipmentItem): EquipmentItem {
  * bundled library it is measured against — and guessing at that is how a DM's own creature
  * would end up published as campaign content.
  */
-export function collectCampaignAuthoring(): CampaignAuthoringPayload {
+export function collectCampaignAuthoring(
+  opts: {
+    /**
+     * The creature list to ship, replacing the "what changed on this machine" collection below.
+     *
+     * Only `exportFullCreatureLibrary` passes this. Everything else — ↑ Publish and ↓ Author —
+     * leaves it undefined and gets the changes-only payload, which is the right default: a
+     * publish should carry the author's work, not re-state 54 creatures nobody touched.
+     */
+    monsters?: MainMonsterTemplate[];
+  } = {},
+): CampaignAuthoringPayload {
   /**
    * Everything in the CAMPAIGN store is authored campaign content by definition — the author put
    * it there deliberately, which is the whole point of the store existing.
@@ -122,7 +133,7 @@ export function collectCampaignAuthoring(): CampaignAuthoringPayload {
    */
   const campaignAuthored = loadMonsterLibrary("campaign");
   const campaignIds = new Set(campaignAuthored.map(t => t.templateId));
-  const monsters = [
+  const monsters = opts.monsters ?? [
     ...campaignAuthored,
     ...loadMonsterLibrary("dm").filter(t =>
       !campaignIds.has(t.templateId) && (t.dmEdited || t.templateId.startsWith("custom-"))),
@@ -195,6 +206,45 @@ export function exportCampaignAuthoring(): { ok: boolean; message: string } {
   return {
     ok: true,
     message: `Exported ${payload.monsters.length} creature(s), ${payload.encounters.length} encounter(s) and ${payload.equipment.length} item(s). Fold it into the build with: node scripts/fold-authoring.mjs <file>`,
+  };
+}
+
+/**
+ * EXPORT EVERY CAMPAIGN CREATURE, not just the ones this browser changed.
+ *
+ * Christopher, on the author button: *"it only does changes, just give me a export creature
+ * library button."*
+ *
+ * The changes-only payload is right for a publish and wrong for a reconciliation pass. A creature
+ * the author has never opened in the app has no stored copy, so it never appears in an export — and
+ * `authored.generated.ts` therefore shadows some creatures and not others, with no way to tell
+ * which from inside the app. Correcting text against an encounter document means working on the
+ * WHOLE library, so the whole library has to be able to leave the app.
+ *
+ * ⚠ EQUIPMENT AND ENCOUNTERS ARE CARRIED UNCHANGED, AND THAT IS NOT OPTIONAL. `fold-authoring`
+ * merges creatures and equipment by id but REPLACES encounters wholesale, deliberately — deleting
+ * a fight is a thing the author does. So a creatures-only payload with an empty `encounters` array
+ * would fold to zero fights and take all 24 authored encounters with it. This collects them
+ * exactly as ↓ Author does.
+ *
+ * The caller passes the resolved library because only it holds the bundled set the resolution is
+ * measured against — the same reason `collectCampaignAuthoring` never guesses at it.
+ */
+export function exportFullCreatureLibrary(library: MainMonsterTemplate[]): { ok: boolean; message: string } {
+  if (library.length === 0) {
+    return { ok: false, message: "No campaign creatures to export — unlock the module first." };
+  }
+  const payload = collectCampaignAuthoring({ monsters: library });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `fdmc-creature-library-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  return {
+    ok: true,
+    message: `Exported all ${payload.monsters.length} campaign creature(s), plus ${payload.encounters.length} encounter(s) and ${payload.equipment.length} item(s). Fold it with: node scripts/fold-authoring.mjs <file>`,
   };
 }
 
