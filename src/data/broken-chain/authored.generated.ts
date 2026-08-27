@@ -397,12 +397,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "ehpMultiplier": 1.3418341811719772,
           "rule": "Resistance - ~50% of opposing damage",
           "note": "profile"
-        },
-        {
-          "name": "Shield-like +5 AC - 1 round",
-          "ehpMultiplier": 1.1415369655092271,
-          "rule": "Shield-like +5 AC - 1 round",
-          "note": "conditional"
         }
       ],
       "attacksPerTurn": 2,
@@ -2101,13 +2095,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage."
       },
       {
-        "name": "",
-        "kind": "action",
-        "save": "WIS DC 17",
-        "damage": "6d8",
-        "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned."
-      },
-      {
         "name": "Blighted Vitality (Recharge 4–6)",
         "kind": "action",
         "save": "CON DC 17",
@@ -2121,7 +2108,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned.",
         "damage": "6d8+@MAIN",
         "economyCost": "action",
-        "save": "WIZ",
+        "save": "WIS",
         "onSave": "half"
       },
       {
@@ -2144,7 +2131,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Fear",
         "kind": "spell",
         "text": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration.  A Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn’t have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.",
-        "range": "30 FT Cone"
+        "range": "30 FT Cone",
+        "save": "WIS"
       }
     ],
     "reactions": [],
@@ -2158,7 +2146,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "revealedName": "Veilwood Crone"
     },
     "dmEdited": {
-      "at": "2026-08-27T00:03:18.372Z"
+      "at": "2026-08-27T00:12:16.606Z"
     }
   }
 ];
@@ -5421,10 +5409,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-32c919a4-112545";
+export const AUTHORED_DIGEST = "fnv1a-e81d09bc-112136";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T00:04:07.406Z";
+export const AUTHORED_AT = "2026-08-27T00:14:49.989Z";
 
 /**
  * Merge authored content over a bundled list by id.
