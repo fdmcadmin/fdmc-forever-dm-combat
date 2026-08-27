@@ -285,6 +285,25 @@ const ACTOR_CARD_SESSION_CHANNEL = "forever-dm-combat:actor-card-session-state:v
 // whole fight and auto-clear when combat ends.
 export const FDMC_COMBAT_END_CHANNEL = "forever-dm-combat:combat-end:v1";
 
+/**
+ * AN ACTOR'S TURN STARTS — every client clears that actor's spent slots.
+ *
+ * ⚠ THE DOTS READ TWO SOURCES AND ONLY ONE OF THEM SYNCED. `ActionEconomyPanel` colours a slot
+ * from `state` (the economy hook, which broadcasts on its own channel) OR from `usedCostSlots`,
+ * which lives in this file's session snapshot and is cleared by a `turnResetVersion` tick — a
+ * prop the DM bumps in its own component state and that no other client ever sees.
+ *
+ * A monster turn start already had `fdmc:monster-turn-reset` for exactly this reason. An ACTOR
+ * turn start had nothing: the DM cleared its own copy and the player's stayed red.
+ *
+ * Christopher: *"actions are not resetting in combat when a players turn comes up."*
+ *
+ * ⚠ IT SURFACED WHEN THE END-TURN BUTTON STOPPED RESETTING LOCALLY (0.7.60.1). Before that the
+ * player's own click cleared their own dots, which masked the missing sync — the state was being
+ * fixed by accident, on the wrong client, for the wrong reason.
+ */
+export const FDMC_ACTOR_TURN_RESET_CHANNEL = "forever-dm-combat:actor-turn-reset:v1";
+
 type ActorCardSessionSnapshot = {
   resolvedReadiedKeysByActorId?: Record<string, string[]>;
   usedCostSlotsByActorId?: Record<string, ActionCost[]>;
@@ -1071,6 +1090,34 @@ export function ActorCard({
       suppressNextSessionBroadcastRef.current = true;
       writeActorCardSessionSnapshot(event.data.snapshot);
       applyActorCardSessionSnapshot(event.data.snapshot);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!OBR.isAvailable) {
+      return;
+    }
+    return OBR.broadcast.onMessage(FDMC_ACTOR_TURN_RESET_CHANNEL, (event) => {
+      const msg = event.data as { actorId?: string } | undefined;
+      const actorId = msg?.actorId;
+      if (!actorId) return;
+      /**
+       * ⚠ THIS ACTOR ONLY. Clearing the whole map here would wipe the spent slots of everyone
+       * else in the initiative order — a monster mid-round, or a player who has already acted and
+       * is waiting for the round to come back around.
+       */
+      setUsedCostSlotsByActorId((current) => {
+        if (!current[actorId]) return current;
+        const next = { ...current };
+        delete next[actorId];
+        return next;
+      });
+      setResolvedReadiedKeysByActorId((current) => {
+        if (!current[actorId]) return current;
+        const next = { ...current };
+        delete next[actorId];
+        return next;
+      });
     });
   }, []);
 

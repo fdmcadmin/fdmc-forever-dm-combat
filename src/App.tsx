@@ -73,7 +73,7 @@ import { initiativeRollFormula, getActorInitiativeModifier } from "./core/state/
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { ToolPanelLayer } from "./core/runtime-shell/ToolPanelLayer";
 import { getToolPanelTitle, type ToolPanelId } from "./core/runtime-shell/toolPanelTypes";
-import { ActorCard, FDMC_COMBAT_END_CHANNEL } from "./core/ui/ActorCard";
+import { ActorCard, FDMC_COMBAT_END_CHANNEL, FDMC_ACTOR_TURN_RESET_CHANNEL } from "./core/ui/ActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { ActorSelector } from "./core/ui/ActorSelector";
@@ -2154,6 +2154,21 @@ export default function App() {
     if (sorted.length === 0) return;
     const firstId = sorted[0].id;
     resetCompanionTurns(firstId);
+    /**
+     * ⚠ COMBAT STARTING IS A TURN STARTING, and it announced nothing. The first combatant walks
+     * into round 1 carrying whatever slots the last fight left spent — on every client except
+     * whichever one happens to clear them locally.
+     *
+     * Same channel as the turn advance, for the same reason: half an actor's turn state lives in
+     * the actor-card session snapshot and is cleared by a version tick nobody else can see.
+     */
+    if (sorted[0].kind === "actor" && OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(
+        FDMC_ACTOR_TURN_RESET_CHANNEL,
+        { type: "fdmc:actor-turn-reset", actorId: firstId },
+        { destination: "ALL" },
+      ).catch(() => undefined);
+    }
     // Read fresh from OBR to ensure seat bindings from dm-panel are captured
     void (async () => {
       const freshState = await readFdmcRoomStateKey(FDMC_ROOM_LIVE_STATE_KEY, normalizeFdmcRoomLiveState);
@@ -2228,6 +2243,28 @@ export default function App() {
       if (nextActor) {
         resetActorTurn(nextActor.id);
         resetCompanionTurns(nextActor.id); // companions share the owner's turn
+        /**
+         * ⚠ AND TELL EVERY OTHER CLIENT, because half this actor's turn state does not sync.
+         *
+         * `resetActorTurn` clears the economy hook, which broadcasts on its own channel. The
+         * DOTS also read `usedCostSlots`, which lives in the actor-card session snapshot and is
+         * cleared by the `turnResetVersion` tick below — a bump in THIS component's state that
+         * no other client can see. So the DM's copy went green and the player's stayed red.
+         *
+         * A monster turn start has had `fdmc:monster-turn-reset` for exactly this reason; an
+         * actor turn start had nothing. Christopher: *"actions are not resetting in combat when
+         * a players turn comes up."*
+         *
+         * ALL, not REMOTE: this client needs it too when the card is rendered elsewhere, and the
+         * listener is a no-op for an actor whose slots are already clear.
+         */
+        if (OBR.isAvailable) {
+          void OBR.broadcast.sendMessage(
+            FDMC_ACTOR_TURN_RESET_CHANNEL,
+            { type: "fdmc:actor-turn-reset", actorId: nextActor.id },
+            { destination: "ALL" },
+          ).catch(() => undefined);
+        }
       }
       setTurnResetVersion(v => v + 1);
       setSelectedActorId(nextCombatant.id);
