@@ -621,9 +621,24 @@ export default function App() {
       const msg = event.data as unknown;
       if (msg && typeof msg === "object" && (msg as { type?: string }).type === "fdmc:request-next-turn") {
         const req = msg as { type: string; actorId: string };
-        if (req.actorId && req.actorId === roomLiveStateRef.current.combat.activeActorId) {
+        const active = roomLiveStateRef.current.combat.activeActorId;
+        if (req.actorId && req.actorId === active) {
           handleNextTurnRef.current();
+          return;
         }
+        /**
+         * ⚠ A DROPPED REQUEST USED TO BE SILENT, WHICH IS HOW THIS WENT UNDIAGNOSED. The player
+         * clicked, nothing happened, and there was nothing anywhere saying why — so it read as a
+         * dead button rather than as a turn that was not theirs to end.
+         */
+        addEntry({
+          actorName: actors.find(a => a.id === req.actorId)?.name ?? "A player",
+          actionName: "Turn End",
+          tabId: "system",
+          message: req.actorId
+            ? `asked to end their turn, but it is ${actors.find(a => a.id === active)?.name ?? "someone else"}'s turn.`
+            : "asked to end a turn without a claimed actor.",
+        });
       }
     });
   }, [isDmMode]);
@@ -2159,9 +2174,26 @@ export default function App() {
   function handleNextTurn() {
     // Players broadcast a request — DM executes the actual state change
     if (isPlayerMode && OBR.isAvailable) {
+      /**
+       * ⚠ IT NAMES THE PLAYER'S OWN ACTOR, NOT WHOEVER THE PLAYER THINKS IS ACTIVE.
+       *
+       * This sent `roomLiveState.combat.activeActorId` — the active actor as read from the
+       * PLAYER's copy of room state — and the DM then dropped the request unless that id matched
+       * the DM's. Two failures fell out of one line: a player whose room state was a beat behind
+       * had their click silently ignored, and a player who was NOT the active one could end
+       * somebody else's turn, because the ids matched from both sides.
+       *
+       * Saying "I am done" is a claim about YOURSELF. The DM still decides whether that means the
+       * turn advances, by checking the named actor against its own current state — which is the
+       * check that was already there and is now being given something worth checking.
+       */
+      const mine = seatActors.map(a => a.id);
+      const asking = mine.includes(roomLiveState.combat.activeActorId ?? "")
+        ? roomLiveState.combat.activeActorId
+        : mine[0];
       void OBR.broadcast.sendMessage(
         FDMC_SEAT_BROADCAST_CHANNEL,
-        { type: "fdmc:request-next-turn", actorId: roomLiveState.combat.activeActorId },
+        { type: "fdmc:request-next-turn", actorId: asking },
         { destination: "REMOTE" }
       );
       return;
@@ -4613,7 +4645,28 @@ export default function App() {
                 onReadyActionCosts={(costs, readiedKey) => readyActionCosts(focusedActorId, costs, readiedKey)}
                 onUnreadyAction={(readiedKey) => unreadyActionKey(focusedActorId, readiedKey)}
                 onRemovePendingLogEntries={removePendingEntries}
-                onResetTurn={() => { resetActorTurn(focusedActorId); setTurnResetVersion(v => v + 1); }}
+                /**
+                 * ⚠ THE TWO ACTOR-CARD RENDERS DISAGREED, AND ONLY ONE OF THEM TOLD THE DM.
+                 *
+                 * The tracker card passes `handleNextTurn`, which in player mode broadcasts
+                 * `fdmc:request-next-turn` so the DM advances combat. This full-screen focused
+                 * card — the one a player is actually looking at when it is their turn — passed a
+                 * purely LOCAL economy reset. So the button labelled "End My Turn" cleared the
+                 * player's own dots, told nobody, and left the turn exactly where it was.
+                 *
+                 * Christopher: *"players cant hit the next turn to start their turn [...] they
+                 * have to hit the next turn but they cant do it i have to."*
+                 *
+                 * A player's click goes through the same request path as the tracker card. A DM's
+                 * keeps the local reset it has always done here — this overlay is how a DM resets
+                 * ONE actor's turn without advancing the initiative order, which is a different
+                 * thing from ending the round.
+                 */
+                onResetTurn={() => {
+                  if (isPlayerMode) { handleNextTurn(); return; }
+                  resetActorTurn(focusedActorId);
+                  setTurnResetVersion(v => v + 1);
+                }}
                 onSetConcentration={(next) => setActorConcentration(focusedActorId, next)}
                 onClearConcentration={() => clearActorConcentration(focusedActorId)}
                 onStartCommittedRoll={(input) => {

@@ -290,6 +290,25 @@ type ActorCardSessionSnapshot = {
   usedCostSlotsByActorId?: Record<string, ActionCost[]>;
   sessionCountersByActorId?: Record<string, Partial<Record<SessionCounterId, SessionCounter>>>;
   armedEffectsByActorId?: Record<string, ArmedEffect[]>;
+  /**
+   * ⚠ THE DELIBERATE "OFF" FOR A SPELL FOCUS — and its absence is why they all came back on.
+   *
+   * An equipped focus arms itself, which is right: a spell carries no attack bonus of its own, so
+   * an un-armed focus means rolling a bare d20 and nobody wants to tick their wand before every
+   * cast. Turning one OFF was recorded in a `useRef`, which lives exactly as long as one mounted
+   * card — while the armed effects it fights with are persisted here and survive everything.
+   *
+   * So the two halves were asymmetric: ON survived a reload, a window switch and a re-render, and
+   * OFF survived none of them. Every remount re-ran the auto-arm over an empty disarmed set and
+   * switched the focuses straight back on.
+   *
+   *   Christopher: *"all the spell focus are forcing themself on even when we turn it on, the
+   *   first one always forces itself on."*
+   *
+   * The first is the loudest because the innate/first-equipped focus is the first the auto-arm
+   * loop reaches on every single mount.
+   */
+  disarmedFocusIdsByActorId?: Record<string, string[]>;
   classOptionContextByActorId?: Record<string, ClassOptionContext | null>;
   classOptionsDismissedByActorId?: Record<string, boolean>;
   initiativeByActorId?: Record<string, InitiativeRollState | null>;
@@ -914,6 +933,7 @@ export function ActorCard({
   const [usedCostSlotsByActorId, setUsedCostSlotsByActorId] = useState<Record<string, ActionCost[]>>(() => readActorCardSessionSnapshot().usedCostSlotsByActorId ?? {});
   const [sessionCountersByActorId, setSessionCountersByActorId] = useState<Record<string, Partial<Record<SessionCounterId, SessionCounter>>>>(() => readActorCardSessionSnapshot().sessionCountersByActorId ?? {});
   const [armedEffectsByActorId, setArmedEffectsByActorId] = useState<Record<string, ArmedEffect[]>>(() => readActorCardSessionSnapshot().armedEffectsByActorId ?? {});
+  const [disarmedFocusIdsByActorId, setDisarmedFocusIdsByActorId] = useState<Record<string, string[]>>(() => readActorCardSessionSnapshot().disarmedFocusIdsByActorId ?? {});
   const [classOptionContextByActorId, setClassOptionContextByActorId] = useState<Record<string, ClassOptionContext | null>>(() => readActorCardSessionSnapshot().classOptionContextByActorId ?? {});
   const [classOptionsDismissedByActorId, setClassOptionsDismissedByActorId] = useState<Record<string, boolean>>(() => readActorCardSessionSnapshot().classOptionsDismissedByActorId ?? {});
   const [initiativeByActorId, setInitiativeByActorId] = useState<Record<string, InitiativeRollState | null>>(() => readActorCardSessionSnapshot().initiativeByActorId ?? {});
@@ -977,6 +997,7 @@ export function ActorCard({
       usedCostSlotsByActorId,
       sessionCountersByActorId,
       armedEffectsByActorId,
+      disarmedFocusIdsByActorId,
       classOptionContextByActorId,
       classOptionsDismissedByActorId,
       initiativeByActorId,
@@ -997,6 +1018,7 @@ export function ActorCard({
     usedCostSlotsByActorId,
     sessionCountersByActorId,
     armedEffectsByActorId,
+    disarmedFocusIdsByActorId,
     classOptionContextByActorId,
     classOptionsDismissedByActorId,
     initiativeByActorId,
@@ -1011,6 +1033,7 @@ export function ActorCard({
     setUsedCostSlotsByActorId(snapshot.usedCostSlotsByActorId ?? {});
     setSessionCountersByActorId(snapshot.sessionCountersByActorId ?? {});
     setArmedEffectsByActorId(snapshot.armedEffectsByActorId ?? {});
+    setDisarmedFocusIdsByActorId(snapshot.disarmedFocusIdsByActorId ?? {});
     setClassOptionContextByActorId(snapshot.classOptionContextByActorId ?? {});
     setClassOptionsDismissedByActorId(snapshot.classOptionsDismissedByActorId ?? {});
     setInitiativeByActorId(snapshot.initiativeByActorId ?? {});
@@ -2845,10 +2868,23 @@ export function ActorCard({
    * spell rolled a bare d20, which is exactly what happened at the table. Nobody wants to
    * remember to tick their wand before every cast.
    *
-   * It stays a TOGGLE. Turning one off is still one click and still sticks, because
-   * `disarmedFocusIds` records the deliberate off rather than the auto-arm re-arming over it.
+   * It stays a TOGGLE. Turning one off is one click and it STICKS — the deliberate off is
+   * recorded beside the deliberate on, in the session snapshot, so the two survive exactly the
+   * same things. It used to be a `useRef`, which lives as long as one mounted card while the
+   * armed effects it fights with persist through everything: ON survived a reload and OFF did
+   * not, so every remount re-ran the auto-arm over an empty set and switched them all back on.
    */
-  const disarmedFocusIds = useRef<Set<string>>(new Set());
+  const disarmedFocusIds = useMemo(
+    () => new Set(disarmedFocusIdsByActorId[actor.id] ?? []),
+    [disarmedFocusIdsByActorId, actor.id],
+  );
+  const setFocusDisarmed = useCallback((focusId: string, off: boolean) => {
+    setDisarmedFocusIdsByActorId(prev => {
+      const current = new Set(prev[actor.id] ?? []);
+      if (off) current.add(focusId); else current.delete(focusId);
+      return { ...prev, [actor.id]: [...current] };
+    });
+  }, [actor.id]);
   const actorCasts =
     (actor.tabs.spells?.length ?? 0) > 0
     || Boolean(classLevels(actor)[0]?.castingAbility)
@@ -2884,7 +2920,7 @@ export function ActorCard({
   useEffect(() => {
     if (!actorCasts) return;
     for (const focus of getEquippedSpellFocuses()) {
-      if (disarmedFocusIds.current.has(focus.id)) continue;
+      if (disarmedFocusIds.has(focus.id)) continue;
       const armed = armedEffects.find(e => e.id === `focus:${focus.id}`);
       if (armed
         && (armed.attackFormula ?? "") === (focus.attack ?? "")
@@ -2893,16 +2929,18 @@ export function ActorCard({
       armSpellFocus(focus);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actorCasts, JSON.stringify(actor.tabs.equipment ?? []), JSON.stringify(armedEffects)]);
+    // ⚠ `disarmedFocusIds` BELONGS IN THE DEPS. It used to be a ref, which React never watches,
+    // so the loop could run against a stale set and re-arm something just switched off.
+  }, [actorCasts, JSON.stringify(actor.tabs.equipment ?? []), JSON.stringify(armedEffects), disarmedFocusIds]);
 
   function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
     const effectId = `focus:${focus.id}`;
     if (isSpellFocusArmed(focus.id)) {
-      disarmedFocusIds.current.add(focus.id);
+      setFocusDisarmed(focus.id, true);
       clearArmedEffect(effectId);
       return;
     }
-    disarmedFocusIds.current.delete(focus.id);
+    setFocusDisarmed(focus.id, false);
     armSpellFocus(focus);
   }
 
