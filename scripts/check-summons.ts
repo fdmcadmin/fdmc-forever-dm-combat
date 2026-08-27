@@ -24,6 +24,7 @@
  */
 import { materializeSummon, resolveSummonFormula, arithmetic, type SummonSpec, type SummonerContext } from "../src/core/monsters/summon";
 import { legalLairOptions, lairDamagePerRound, unpricedLairOptions } from "../src/core/monsters/lair";
+import { lairRosterGroups } from "../src/core/encounter-band/lairRoster";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { formatAbilityEntry } from "../src/core/monsters/creator/monsterCreatorModel";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
@@ -248,4 +249,43 @@ eq("a mixed expression is left alone", arithmetic("2d8+1d4"), "2d8+1d4");
 
 
 if (problems.length) { console.error(`\nFAILED — ${problems.length}:\n  ${problems.join("\n  ")}`); process.exit(1); }
-console.log(`\nPASS — all three summons build, every number the block calls "yours" comes from the summoner, and both lairs act on 20 without repeating.`);
+console.log(`\nPASS — all three summons build, every number the block calls "yours" comes from the summoner, and both lairs act on 20 without repeating.`)
+/**
+ * ⚠ THE CHECKER HAS TO BE ABLE TO SEE THE LAIR. Christopher: *"the summon feature was suppose to
+ * then build into the lair actions and then the checker could read that a lair is summoned."*
+ *
+ * summon.ts and lair.ts were both finished; the gap was between them and the pricer.
+ * rosterFromTemplates never read template.lair, and RosterGroup.arrivesRound had ZERO production
+ * writers — checkerV2 could schedule a body arriving on round 3 and nothing ever handed it one.
+ */
+{
+  const dragon = BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!;
+  const guard = BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veilbound Drake Guard")!;
+
+  const bare = lairRosterGroups(dragon, BROKEN_CHAIN_MONSTER_LIBRARY);
+  eq("a lair with no summon adds no bodies", bare.groups.length, 0);
+  eq("...but the checker is TOLD the lair is there", bare.assumptions.some(a => a.field === "lair"), true);
+
+  const withSummon = {
+    ...dragon,
+    lair: {
+      ...dragon.lair!,
+      openingSummon: { name: "Guard", templateId: guard.templateId, count: 2 },
+      options: dragon.lair!.options.map((o, i) =>
+        i === 0 ? { ...o, summon: { name: "Shard", templateId: guard.templateId, durationRounds: 2 } } : o),
+    },
+  } as typeof dragon;
+  const built = lairRosterGroups(withSummon, BROKEN_CHAIN_MONSTER_LIBRARY);
+  eq("an opening summon becomes a body", built.groups[0].quantity, 2);
+  eq("...standing from round 1", built.groups[0].arrivesRound, 1);
+  eq("...with the summoned template HP", built.groups[0].baseHp, guard.stats.maxHp);
+  eq("a duration becomes an expiry", built.groups[1].expiresAfterRound, 2);
+  eq("an option summon is flagged as a ceiling, not a schedule",
+    built.assumptions.some(a => a.flag === "ESTIMATED" && /ceiling/.test(a.detail)), true);
+
+  const broken = { ...dragon, lair: { ...dragon.lair!, openingSummon: { templateId: "nope" } } } as typeof dragon;
+  eq("a summon nothing resolves is REPORTED, not skipped",
+    lairRosterGroups(broken, BROKEN_CHAIN_MONSTER_LIBRARY).assumptions.some(a => a.flag === "NEEDS DM INPUT"), true);
+}
+
+;

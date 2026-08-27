@@ -26,6 +26,7 @@
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import { materializeTemplateBody } from "../monsters/actionSetPicks";
+import { lairRosterGroups } from "./lairRoster";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { priceDamageResponses, describeDamageResponses } from "./damageResponsePricing";
@@ -371,6 +372,25 @@ export function rosterFromTemplates(
       damageUptime: template.stats.damageUptime ?? 1,
     };
   });
+
+  /**
+   * ⚠ THE LAIR, WHICH THIS FUNCTION USED TO WALK STRAIGHT PAST.
+   *
+   * `template.lair` was read nowhere in the pricing path, so Gate III and the Act 3 final were
+   * checked as though the environment did not take a turn — no bodies, no damage, and no line
+   * saying a lair was present at all. See `lairRoster.ts` for why the arrival round is the part
+   * that actually needed building.
+   *
+   * Appended AFTER the creature rows so a summoned body never renumbers the roster the DM authored.
+   */
+  const lairGroups: typeof roster = [];
+  for (const { template } of expanded) {
+    if (!template.lair) continue;
+    const built = lairRosterGroups(template, entries.map(e => e.template));
+    lairGroups.push(...(built.groups as unknown as typeof roster));
+    assumptions.push(...built.assumptions as RosterAssumption[]);
+  }
+  roster.push(...lairGroups);
 
   // One line per distinct message across the whole roster.
   const seen = new Set<string>();
