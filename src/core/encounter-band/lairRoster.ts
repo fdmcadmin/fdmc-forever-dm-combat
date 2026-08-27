@@ -44,6 +44,8 @@ export type LairRosterGroup = {
   damageUptime: number;
   arrivesRound?: number;
   expiresAfterRound?: number;
+  /** The lair's own row: it acts, it is never a body. See `RosterGroup.bodiless`. */
+  bodiless?: boolean;
 };
 
 export type LairAssumption = { creature: string; flag: string; field: string; detail: string };
@@ -109,6 +111,38 @@ export function lairRosterGroups(
     detail: `Lair acts on initiative ${lair.initiative ?? 20}${lair.noRepeatConsecutive ? ", never repeating an option" : ""}`
       + ` — ${lair.options.length} option(s), ${damage > 0 ? `${damage.toFixed(1)} average damage a round` : "no damage"}.`
       + (unpriced.length ? ` ${unpriced.length} option(s) nothing can price yet: ${unpriced.map(o => o.name).join(", ")}.` : ""),
+  });
+
+  /**
+   * ⚠ THE LAIR ITSELF IS A ROW, NOT JUST A NOTE — and this is the half that was missing.
+   *
+   * Christopher: *"lair summons happen at round 0 and they get a initiative 20 so there isnt a
+   * summon because its a 'creature' with a X action but one 1 action per turn."*
+   *
+   * That is the workbook's `lair_action` primitive word for word: `separate_action_budget` on the
+   * offense channel, *"priced on authored initiative/cadence"*. The lair is not a summoned body and
+   * not part of the parent's action economy — it is its own actor, present from round 1 on
+   * initiative 20, taking exactly one option a round.
+   *
+   * Until now the damage `lairDamagePerRound` computes went into an assumption STRING and nowhere
+   * else, so it was narrated and never counted. It is a `bodiless` group so it acts without being
+   * something the party can kill: no EHP, never dies, one action a round.
+   *
+   * ⚠ ZERO IS STILL A ROW. Both campaign lairs author only movement, obscurement and cover, so the
+   * damage really is 0 — but the row has to exist anyway, or the first lair anybody authors with a
+   * damaging option prices at nothing and nothing says why.
+   */
+  groups.push({
+    id: `${template.templateId}:lair`,
+    name: `${name} — lair (initiative ${lair.initiative ?? 20})`,
+    quantity: 1,
+    baseHp: 0,
+    bodiless: true,
+    acMultiplier: 1,
+    traitFactors: [],
+    dpr: { round1: damage, round2: damage, round3: damage, round4Plus: damage },
+    damageUptime: 1,
+    arrivesRound: 1,
   });
 
   const addSummon = (spec: NonNullable<LairOption["summon"]>, source: string, round: number, certain: boolean) => {

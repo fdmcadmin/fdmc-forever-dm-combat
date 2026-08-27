@@ -248,8 +248,6 @@ eq("a mixed expression is left alone", arithmetic("2d8+1d4"), "2d8+1d4");
 }
 
 
-if (problems.length) { console.error(`\nFAILED — ${problems.length}:\n  ${problems.join("\n  ")}`); process.exit(1); }
-console.log(`\nPASS — all three summons build, every number the block calls "yours" comes from the summoner, and both lairs act on 20 without repeating.`)
 /**
  * ⚠ THE CHECKER HAS TO BE ABLE TO SEE THE LAIR. Christopher: *"the summon feature was suppose to
  * then build into the lair actions and then the checker could read that a lair is summoned."*
@@ -262,9 +260,20 @@ console.log(`\nPASS — all three summons build, every number the block calls "y
   const dragon = BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!;
   const guard = BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veilbound Drake Guard")!;
 
+  /**
+   * ⚠ THE LAIR IS A ROW OF ITS OWN NOW — bodiless, one action a round on its own initiative, per
+   * the workbook's `lair_action` = `separate_action_budget`. So "adds no bodies" means no BODIES,
+   * not no rows, and every assertion below reads the body list rather than an index that shifts
+   * the moment the lair row is prepended.
+   */
+  const bodies = (b: { groups: Array<{ bodiless?: boolean }> }) => b.groups.filter(g => !g.bodiless);
   const bare = lairRosterGroups(dragon, BROKEN_CHAIN_MONSTER_LIBRARY);
-  eq("a lair with no summon adds no bodies", bare.groups.length, 0);
+  eq("a lair with no summon adds no bodies", bodies(bare).length, 0);
   eq("...but the checker is TOLD the lair is there", bare.assumptions.some(a => a.field === "lair"), true);
+  eq("...and the lair is its own actor row", bare.groups.length, 1);
+  eq("...which is bodiless", (bare.groups[0] as { bodiless?: boolean }).bodiless, true);
+  eq("...bringing no HP for the party to chew through", bare.groups[0].baseHp, 0);
+  eq("...present from round 1, on its initiative", bare.groups[0].arrivesRound, 1);
 
   const withSummon = {
     ...dragon,
@@ -276,10 +285,10 @@ console.log(`\nPASS — all three summons build, every number the block calls "y
     },
   } as typeof dragon;
   const built = lairRosterGroups(withSummon, BROKEN_CHAIN_MONSTER_LIBRARY);
-  eq("an opening summon becomes a body", built.groups[0].quantity, 2);
-  eq("...standing from round 1", built.groups[0].arrivesRound, 1);
-  eq("...with the summoned template HP", built.groups[0].baseHp, guard.stats.maxHp);
-  eq("a duration becomes an expiry", built.groups[1].expiresAfterRound, 2);
+  eq("an opening summon becomes a body", bodies(built)[0].quantity, 2);
+  eq("...standing from round 1", bodies(built)[0].arrivesRound, 1);
+  eq("...with the summoned template HP", bodies(built)[0].baseHp, guard.stats.maxHp);
+  eq("a duration becomes an expiry", bodies(built)[1].expiresAfterRound, 2);
   eq("an option summon is flagged as a ceiling, not a schedule",
     built.assumptions.some(a => a.flag === "ESTIMATED" && /ceiling/.test(a.detail)), true);
 
@@ -289,3 +298,13 @@ console.log(`\nPASS — all three summons build, every number the block calls "y
 }
 
 ;
+/**
+ * ⚠ THE EXIT CHECK LIVES AT THE BOTTOM, AND IT DID NOT.
+ *
+ * It used to sit ABOVE the lair-roster block, so every assertion in that block ran after the
+ * process had already decided whether to fail. Four of them were failing and the gate still
+ * printed PASS and exited 0. A check that cannot fail is worse than no check, because it is
+ * trusted. Nothing may be appended below this line.
+ */
+if (problems.length) { console.error(`\nFAILED — ${problems.length}:\n  ${problems.join("\n  ")}`); process.exit(1); }
+console.log(`\nPASS — all three summons build, every number the block calls "yours" comes from the summoner, both lairs act on 20 without repeating, and a lair is its own bodiless actor.`);

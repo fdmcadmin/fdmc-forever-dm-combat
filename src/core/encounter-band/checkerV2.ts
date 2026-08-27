@@ -397,6 +397,26 @@ export type RosterGroup = {
    * Counting both is the double-count that primitive exists to forbid.
    */
   replacesParent?: boolean;
+  /**
+   * ⚠ AN ACTOR WITH NO BODY — the shape a LAIR needs, and the one the roster could not hold.
+   *
+   * Christopher: *"lair summons happen at round 0 and they get a initiative 20 so there isnt a
+   * summon because its a 'creature' with a X action but one 1 action per turn."* Exactly right,
+   * and it is the workbook's own model: `lair_action` is `separate_action_budget` on the offense
+   * channel — *"Price on authored initiative/cadence."* Its own action, once a round, on its own
+   * initiative. Not a summoned body, and not part of the parent creature's action economy.
+   *
+   * A lair therefore has to ACT without being a body, and `livingBodies` refuses that: it bails on
+   * `bodyEhp <= 0`, correctly, because a body with no hit points is not a body. So a lair entered
+   * at 0 HP contributed nothing, and a fight with a lair priced identically to one without.
+   *
+   * A bodiless group:
+   *  · adds NOTHING to encounter EHP — there is no body for the party to cut through, and
+   *    inventing one would make the environment something you can kill;
+   *  · can never be killed, so it keeps acting for as long as it is present;
+   *  · is still governed by `arrivesRound` / `expiresAfterRound` like anything else.
+   */
+  bodiless?: boolean;
   outcomeEvents?: OutcomeEvent[];
 };
 
@@ -482,6 +502,8 @@ export function remainingGroupFraction(group: PreparedGroup, cumulativePartyDama
  * group in the order is dead, so the group's own share is measured from `cumulativeStart`.
  */
 export function livingBodies(group: PreparedGroup, cumulativePartyDamage: number): number {
+  // An actor with no body is never killed and never soaks — see `RosterGroup.bodiless`.
+  if (group.bodiless) return Math.max(0, Number(group.quantity ?? 0));
   if (group.bodyEhp <= 0) return 0;
   const cumulativeStart = group.cumulativeEnd - group.groupEhp;
   const intoThisGroup = clamp(cumulativePartyDamage - cumulativeStart, 0, group.groupEhp);
