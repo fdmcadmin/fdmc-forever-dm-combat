@@ -202,7 +202,18 @@ export function materializeSummon(
   spec: SummonSpec,
   summoner: SummonerContext,
   library: readonly MainMonsterTemplate[] = [],
-): { body: MainMonsterTemplate; count: number; problems: string[] } | undefined {
+/**
+ * ⚠ `body` IS OPTIONAL BECAUSE FAILURE IS REAL, and it used to lie about that.
+ *
+ * The two failure paths below returned `{ body: undefined as never }` — a truthy result whose body
+ * is undefined, with the type asserting the opposite. `check:summons` never caught it because the
+ * only case it exercises reads `.problems` and never touches `.body`, so the trap sat waiting for
+ * the first real caller. It got one the moment an action could carry a summon, and crashed with
+ * "Cannot read properties of undefined (reading 'stats')".
+ *
+ * Every caller must now check `body` before using it, which is what the compiler enforces.
+ */
+): { body?: MainMonsterTemplate; count: number; problems: string[] } | undefined {
   const problems: string[] = [];
   const fromLibrary = spec.templateId
     ? library.find(t => t.templateId === spec.templateId)
@@ -214,12 +225,12 @@ export function materializeSummon(
    */
   if (spec.templateId && !fromLibrary) {
     problems.push(`"${spec.name ?? spec.templateId}" names the creature ${spec.templateId}, which is not in the library.`);
-    if (!spec.inline) return { body: undefined as never, count: 0, problems };
+    if (!spec.inline) return { count: 0, problems };
   }
   const template = fromLibrary ?? spec.inline;
   if (!template) {
     problems.push(`"${spec.name ?? "summon"}" has neither a creature to summon nor a body of its own.`);
-    return { body: undefined as never, count: 0, problems };
+    return { count: 0, problems };
   }
 
   /**

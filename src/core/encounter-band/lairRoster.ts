@@ -30,6 +30,8 @@
 
 import type { LairSpec, LairOption } from "../monsters/lair";
 import { lairDamagePerRound, unpricedLairOptions } from "../monsters/lair";
+import { materializeSummon } from "../monsters/summon";
+import { summonerContextFor } from "./summonRoster";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 
 /** The subset of a roster group this file produces. Kept structural so it cannot drift from checkerV2. */
@@ -75,12 +77,27 @@ function arrivalRoundFor(lair: LairSpec, option: LairOption): { round: number; c
   return { round: 1, certain: !contested && !!option.summon };
 }
 
-/** HP a summoned body brings, from its own template or its inline block. */
-function summonBaseHp(spec: NonNullable<LairOption["summon"]>, library: MainMonsterTemplate[]): number | undefined {
-  if (spec.inline) return Number(spec.inline.stats?.maxHp) || undefined;
-  if (!spec.templateId) return undefined;
-  const t = library.find(x => x.templateId === spec.templateId);
-  return t ? Number(t.stats?.maxHp) || undefined : undefined;
+/**
+ * HP a summoned body brings — THROUGH THE SUMMON ENGINE, which this used to bypass.
+ *
+ * ⚠ IT READ `stats.maxHp` STRAIGHT OFF THE TEMPLATE, so a body whose HP is a FORMULA — which is
+ * the whole reason `summon.ts` exists — resolved to `Number("5+10*@SLOT")`, NaN, undefined, and a
+ * NEEDS DM INPUT saying nothing resolved it. The one live path that summoned anything could only
+ * summon a creature whose HP was already a literal.
+ *
+ * The summoner is the creature whose lair this is. Christopher: *"summons always come from spells
+ * or action [...] they can not come from nothing"* — a lair action is an action, and the boss it
+ * belongs to is what its formulas resolve against.
+ */
+function summonBaseHp(
+  spec: NonNullable<LairOption["summon"]>,
+  library: MainMonsterTemplate[],
+  summoner: MainMonsterTemplate,
+): { hp: number; problems: string[] } | undefined {
+  const made = materializeSummon(spec, summonerContextFor(summoner), library);
+  if (!made?.body) return undefined;
+  const hp = Number(made.body.stats?.maxHp);
+  return Number.isFinite(hp) && hp > 0 ? { hp, problems: made.problems } : undefined;
 }
 
 /**
@@ -158,12 +175,18 @@ export function lairRosterGroups(
   });
 
   const addSummon = (spec: NonNullable<LairOption["summon"]>, source: string, round: number, certain: boolean) => {
-    const hp = summonBaseHp(spec, library);
-    if (hp === undefined) {
+    const resolved = summonBaseHp(spec, library, template);
+    if (resolved === undefined) {
       assumptions.push({ creature: name, flag: "NEEDS DM INPUT", field: "lair",
         detail: `${source} summons "${spec.name ?? spec.templateId ?? "an unnamed body"}", and nothing resolves it to a creature with HP. `
           + `Give the summon a templateId that exists, or an inline block.` });
       return;
+    }
+    const hp = resolved.hp;
+    // A formula the summoner could not fill in is REPORTED — the body is still priced, because a
+    // body with one unreadable number is closer to the truth than no body at all.
+    for (const problem of resolved.problems) {
+      assumptions.push({ creature: name, flag: "NEEDS DM INPUT", field: "lair", detail: `${source}: ${problem}` });
     }
     const count = Math.max(1, Math.round(spec.count ?? 1));
     groups.push({

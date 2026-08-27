@@ -135,9 +135,10 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         // mean of the six ability rows). Nothing here invents a party defence.
         const defence = partyDefenceAt(step.partyLevel, run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard");
         const saveBonus = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
+        // The full library, not just this fight — a summoned creature is never already on the field.
         const built = rosterFromTemplates(entries, step.partyLevel, {
           ac: defence.ac, saveBonus, partySize, damageMix: partyDamageMix,
-        });
+        }, monsterLibrary);
         // Weakest bodies first — the same kill priority the difficulty panel simulates.
         const roster = [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity);
         const full = resolvePartyProfile({ level: step.partyLevel, size: partySize });

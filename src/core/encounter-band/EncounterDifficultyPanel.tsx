@@ -194,7 +194,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number; bodies?: TemplateBodyChoice[] }>;
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
-    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix });
+    // The full library, not just this fight — a summoned creature is never already on the field.
+    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix }, monsterLibrary);
     return {
       roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,

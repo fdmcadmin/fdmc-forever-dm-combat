@@ -27,6 +27,7 @@ import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime
 import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import { materializeTemplateBody } from "../monsters/actionSetPicks";
 import { lairRosterGroups } from "./lairRoster";
+import { summonRosterGroups } from "./summonRoster";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { priceDamageResponses, describeDamageResponses } from "./damageResponsePricing";
@@ -289,8 +290,23 @@ export type RosterBuild = { roster: RosterGroup[]; assumptions: RosterAssumption
  */
 export function rosterFromTemplates(
   entries: RosterEntryInput[], partyLevel: number, target: PartyDefence,
+  /**
+   * ⚠ WHERE A SUMMONED CREATURE IS LOOKED UP — and it cannot be the encounter.
+   *
+   * Both the lair path and the action path resolved a summon's `templateId` against
+   * `entries.map(e => e.template)`, which is the creatures ALREADY IN THE FIGHT. A summoned body is
+   * by definition not one of those: "Find Steed" names a steed precisely because no steed is on the
+   * field yet. So every summon naming a library creature reported "not in the library" while
+   * sitting one lookup away from it.
+   *
+   * Defaults to the entries so every existing caller behaves exactly as before; a caller that holds
+   * the real library passes it and summons resolve.
+   */
+  library?: readonly MainMonsterTemplate[],
 ): RosterBuild {
   const assumptions: RosterAssumption[] = [];
+  /** The library a summon resolves against — see the `library` parameter. */
+  const summonLibrary: readonly MainMonsterTemplate[] = library ?? entries.map(e => e.template);
 
   /**
    * ⚠ A TEMPLATE WITH AUTHORED BODIES IS PRICED AS THOSE BODIES, ONE ROW EACH.
@@ -386,11 +402,29 @@ export function rosterFromTemplates(
   const lairGroups: typeof roster = [];
   for (const { template } of expanded) {
     if (!template.lair) continue;
-    const built = lairRosterGroups(template, entries.map(e => e.template));
+    const built = lairRosterGroups(template, summonLibrary as MainMonsterTemplate[]);
     lairGroups.push(...(built.groups as unknown as typeof roster));
     assumptions.push(...built.assumptions as RosterAssumption[]);
   }
   roster.push(...lairGroups);
+
+  /**
+   * ⚠ AND THE BODIES A CREATURE'S OWN ACTIONS CALL. Christopher: *"summons always come from spells
+   * or action [...] they can not come from nothing."* An action carrying a `summon` is the only way
+   * one enters a fight, so this is the walk that finally gives `materializeSummon` a caller — it
+   * had none outside its own test, which is why the Steed, the Cannon and the bond-creature all
+   * resolved correctly and none of them could reach a roster.
+   *
+   * Appended after the lair rows for the same reason the lair rows come after the creatures: a
+   * called body must never renumber the roster the DM authored.
+   */
+  const summonGroups: typeof roster = [];
+  for (const { template } of expanded) {
+    const built = summonRosterGroups(template, summonLibrary);
+    summonGroups.push(...(built.groups as unknown as typeof roster));
+    assumptions.push(...built.assumptions as RosterAssumption[]);
+  }
+  roster.push(...summonGroups);
 
   // One line per distinct message across the whole roster.
   const seen = new Set<string>();

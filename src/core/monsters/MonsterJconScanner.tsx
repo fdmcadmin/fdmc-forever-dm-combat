@@ -10,6 +10,7 @@ import OBR, { type Item, type Metadata } from "@owlbear-rodeo/sdk";
 // Type-only, so it is erased at compile — mainMonsterRuntime already type-imports from
 // this file, and neither side gains a runtime dependency on the other.
 import type { MonsterClassification, MonsterKind } from "./runtime/mainMonsterRuntime";
+import type { SummonSpec } from "./summon";
 import { safeStorage } from "../utils/safeStorage";
 
 type JconScanStatus =
@@ -36,6 +37,25 @@ export type MonsterReaderAction = {
   /** Legendary-action cost (1 or 2). Set = this is a legendary action spending from the
    *  creature's `stats.legendaryPerRound` pool (Monster Gate A6). */
   legendaryCost?: number;
+  /**
+   * THE BODY THIS ACTION CALLS — because a summon never comes from nowhere.
+   *
+   * Christopher: *"summons always come from spells or action, use the things like call familiar,
+   * the find steed and the arcane cannon, they can not come from nothing, even the conv. bond come
+   * from the summon action."*
+   *
+   * ⚠ THIS FIELD IS WHY THE SUMMON ENGINE HAD NO CALLER. `summon.ts` resolves every formula the
+   * three test cases need — the Steed's `5+10*@SLOT`, the Cannon's `5*@LEVEL`, the bond-creature's
+   * `@HITDIEMAX + @LEVEL` — and `check:summons` proves all of it. But `materializeSummon` had ZERO
+   * production callers and no `.tsx` in the app so much as mentioned `SummonSpec`, because nothing
+   * a creature or character could DO carried one. A tested engine nobody can reach is the same
+   * failure shape as the action budget and multiattack before it.
+   *
+   * The action is the carrier, so the SUMMONER is whatever took the action — which is exactly the
+   * context `materializeSummon` asks for, and the reason `@LEVEL` and `@SPELL` have anything to
+   * resolve against. See `summonRoster.ts` for the walk.
+   */
+  summon?: SummonSpec;
   /**
    * THIS SPELL IS A CANDIDATE FOR A SLOT, NOT AUTOMATICALLY LIVE.
    *
