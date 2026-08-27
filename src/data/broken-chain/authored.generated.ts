@@ -812,7 +812,13 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 16,
       "maxHp": 86,
       "speed": "30 ft.",
-      "defenses": [],
+      "defenses": [
+        {
+          "name": "No notable defensive traits",
+          "ehpMultiplier": 1,
+          "note": "DECIDED 1.0, not unassessed. The Last Court gives her the Blackbough Reeve and Brandwing to stand behind; Winter's Toll is roster-wide and already priced on the fight, not on her body. Prices at raw HP on purpose."
+        }
+      ],
       "attacksPerTurn": 1,
       "size": "Medium",
       "classification": "elite",
@@ -1824,7 +1830,13 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 15,
       "maxHp": 55,
       "speed": "30 ft., fly 60 FT",
-      "defenses": [],
+      "defenses": [
+        {
+          "name": "No notable defensive traits",
+          "ehpMultiplier": 1,
+          "note": "DECIDED 1.0, not unassessed. The v3.24 block prints \"TRAITS: None.\" — the guard's whole contribution is its three-attack routine and Veil Breath. Prices at raw HP on purpose."
+        }
+      ],
       "size": "Medium",
       "classification": "mid-boss",
       "archetype": "skirmisher",
@@ -1928,7 +1940,13 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 15,
       "maxHp": 111,
       "speed": "30 ft., swim 30 ft.",
-      "defenses": [],
+      "defenses": [
+        {
+          "name": "No notable defensive traits",
+          "ehpMultiplier": 1,
+          "note": "DECIDED 1.0, not unassessed. Gate I pairs her with the Darkmare, and the durability in that fight belongs to the mare — the Crone is the damage and the control, and she is meant to be reached. Prices at raw HP on purpose."
+        }
+      ],
       "attacksPerTurn": 2,
       "size": "Medium",
       "classification": "mid-boss",
@@ -5327,10 +5345,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-03346d46-141109";
+export const AUTHORED_DIGEST = "fnv1a-b512c7b2-141917";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T06:15:28.956Z";
+export const AUTHORED_AT = "2026-08-27T06:23:09.299Z";
 
 /**
  * Merge authored content over a bundled list by id.
