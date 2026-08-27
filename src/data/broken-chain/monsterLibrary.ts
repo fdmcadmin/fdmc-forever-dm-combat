@@ -1567,7 +1567,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e3-gate-i-crone-and-mare",
     encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
     stats: {
-      kind: "fey", ac: 16, maxHp: 119, speed: "30 ft., swim 30 ft.",
+      kind: "fey", ac: 15, maxHp: 111, speed: "30 ft., swim 30 ft.",
       defenses: [
         { name: "Control spellcasting", ehpMultiplier: 1.108348, rule: "Opposing damage uptime -10%", note: "Workbook: Opposing damage uptime -10% (+0.108348). Entangle, Web and Hold Person cost the party attacking turns; this is a CLOCK tax, not resistance." },
       ],
@@ -1612,7 +1612,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e3-gate-i-crone-and-mare",
     encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
     stats: {
-      kind: "fiend", ac: 12, maxHp: 97, speed: "50 ft.",
+      kind: "fiend", ac: 13, maxHp: 90, speed: "50 ft.",
       defenses: [
         { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
         { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
@@ -2114,7 +2114,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e8-the-occupied-acre",
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
-      kind: "fiend", ac: 17, maxHp: 153, speed: "30 ft.",
+      kind: "fiend", ac: 16, maxHp: 110, speed: "30 ft.",
       defenses: [
         { name: "Oppressive Presence + Commanding Presence", ehpMultiplier: 1, note: "UNPRICED, and left at 1.0 deliberately. Forcing one instance of every multi-target Action onto the Knight is the workbook's Damage transfer / redirection, which it publishes with a NULL contribution - the one category it declines to price. It is also not this creature's own sustain: it moves damage from its allies ONTO the Knight, so a per-creature multiplier above 1.0 would be backwards. Needs a roster-level decision." },
       ],
@@ -2155,7 +2155,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e8-the-occupied-acre",
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
-      kind: "fiend", ac: 15, maxHp: 130, speed: "40 ft.",
+      kind: "fiend", ac: 15, maxHp: 100, speed: "40 ft.",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1, note: "Two-Handed Hold, Cast Aside and the grapples are CONTROL - they move bodies and deny position, they do not reduce damage taken. v3.23: AC 15 is intentional, the party should be able to hit it while still working through 130 HP. A plain HP bar is the correct read." },
       ],
@@ -2236,13 +2236,21 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e9-gate-iii-veil-torn-dragon",
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
-      kind: "dragon", ac: 17, maxHp: 39, speed: "30 ft., glide 30 ft.",
+      kind: "dragon", ac: 15, maxHp: 55, speed: "30 ft., fly 60 ft.",
       defenses: [
         { name: "Moon-Slick Scales", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round." },
       ],
-      size: "Small", classification: "mid-boss", archetype: "skirmisher",
+      size: "Medium", classification: "mid-boss", archetype: "skirmisher",
       skills: [{ label: "Perception", modifier: 5 }],
-      proficiencyBonus: 3,
+      /**
+       * ⚠ CR, NOT A PRINTED BONUS — and the printed 3 here was WRONG.
+       *
+       * `creatureProficiencyBonus` takes `proficiencyBonus` when the block prints one and derives
+       * from `cr` otherwise. This entry printed 3; the app derives +2 from CR 4 and the v3.24
+       * document also says "Proficiency Bonus: +2". So the stored figure was the only wrong one,
+       * and it would have come back the moment the authored copy went missing.
+       */
+      cr: 4,
     },
     abilities: [
       { label: "STR", value: "14 (+2)" },
@@ -2307,7 +2315,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e9-gate-iii-veil-torn-dragon",
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
-      kind: "dragon", ac: 18, maxHp: 195, speed: "40 ft.; Broken Lift only",
+      kind: "dragon", ac: 19, maxHp: 195, speed: "40 ft.; Broken Lift only",
       defenses: [
         { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
       ],
@@ -2490,7 +2498,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e10-the-center",
     encounterLabel: "Act 3 E10 - The Center",
     stats: {
-      kind: "aberration", ac: 17, maxHp: 173, speed: "30 ft.",
+      kind: "aberration", ac: 17, maxHp: 179, speed: "30 ft.",
       defenses: [
         { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
       ],
@@ -2535,7 +2543,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e10-the-center",
     encounterLabel: "Act 3 E10 - The Center",
     stats: {
-      kind: "aberration", ac: 18, maxHp: 230, speed: "35 ft.",
+      kind: "aberration", ac: 18, maxHp: 200, speed: "35 ft.",
       defenses: [
         { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
         { name: "Body Between", ehpMultiplier: 1.232313, rule: "Fixed prevention - 12/round", note: "Workbook: Fixed prevention - 12/round (+0.232313), exact. Reduces the triggering damage by 12 once per round." },
