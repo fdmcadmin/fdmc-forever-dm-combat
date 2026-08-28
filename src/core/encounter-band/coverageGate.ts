@@ -223,6 +223,41 @@ const ABILITY_CHECK_ONLY =
 const CHECK_SKILL =
   /\b(perception|investigation|survival|stealth|insight|persuasion|deception|intimidation|performance|history|nature|arcana|religion|medicine|athletics|acrobatics|sleight of hand|animal handling)\b/i;
 
+/**
+ * Effects that act on a caster's RESOURCES rather than on the fight's clocks.
+ *
+ * ⚠ RULED BY CHRISTOPHER, 2026-08-28. DO NOT RE-RAISE. Of Glacial Freeze (spell negation, slot
+ * denial) and Whiteout (concentration disruption): *"these do not need priced, a dm can see what
+ * those actions do."*
+ *
+ * He is right, and the gate was wrong to hold them. Every other primitive resolves to a movement of
+ * HP, damage, action economy or reachability — quantities the encounter model tracks. Countering a
+ * spell and breaking concentration move a PLAYER'S resource, which the model does not carry and a
+ * DM reads straight off the card. There is no number for the workbook to give, so demanding one
+ * kept two permanent entries under a panel whose whole purpose is that an entry means something is
+ * wrong.
+ *
+ * ⚠ GENERIC, NOT A CREATURE EXCEPTION. This is a CLASS — anything that negates a spell, wastes a
+ * slot, or forces a concentration save. It is not "Glacial Freeze is exempt", which is exactly what
+ * the contract forbids.
+ *
+ * ⚠ AND IT IS NARROW. Damage that happens to be delivered BY a spell still prices as a packet, and
+ * a concentration effect that also deals damage still prices that damage — the packet test runs
+ * first. Only the resource half is unpriced.
+ */
+const SPELLCASTING_RESOURCE = [
+  /\bconcentration\b/i,
+  /\bspell (fails|is countered|slot is wasted|slot is expended)\b/i,
+  /\bcounterspell\b/i,
+  /\b(negates?|counters?|interrupts?) (the |a |that )?spell\b/i,
+  /\bloses? the spell\b/i,
+  /\btries to cast a spell\b/i,
+];
+
+function isSpellcastingResource(s: string): boolean {
+  return SPELLCASTING_RESOURCE.some(re => re.test(s));
+}
+
 function isAbilityCheckOnly(s: string): boolean {
   if (!ABILITY_CHECK_ONLY.test(s)) return false;
   // A check mentioned alongside a save or damage is part of a combat routine (an escape check on a
@@ -383,7 +418,7 @@ const TEXT_ROUTES: { re: RegExp; primitive: string }[] = [
   { re: /\btemporary hit points\b|\btemp HP\b/i, primitive: "temporary_hp" },
   { re: /\b(regains?|heals?)\s+\d|\bregains hit points\b/i, primitive: "healing" },
   { re: /\bat the (start|end) of (its|each|the|their) turn\b[^.]*\bdamage\b/i, primitive: "automatic_start_end_turn_damage" },
-  { re: /\bwhen (it is|hit|damaged|struck)\b[^.]*\bdamage\b/i, primitive: "retaliation" },
+  { re: /\bwhen\b[^.]*\b(it is|is )?(hit|damaged|struck|takes?)\b[^.]*\bdamage\b/i, primitive: "retaliation" },
   { re: /\b(dies|is reduced to 0)\b[^.]*\b(explodes?|bursts?|deals?)\b/i, primitive: "death_burst" },
   { re: /\b(is reduced to 0 hit points|drops to 0 hit points|reaches 0 HP|is killed|dies)\b/i, primitive: "body_lifecycle_state" },
   { re: /\bsummons?\b|\bspawns?\b|\bcalls? (forth|up)\b/i, primitive: "summon_spawn_child_body" },
@@ -484,7 +519,8 @@ export function auditCoverage(sources: MechanicSource[]): CoverageReport {
 
       // 1. No rule in the sentence at all — flavour, a scouting note, DM guidance — or an
       //    out-of-combat ability check, which the workbook prices at nothing.
-      if (!MECHANICAL.test(sentence) || isAbilityCheckOnly(sentence)) { unpriced.push(one); continue; }
+      if (!MECHANICAL.test(sentence) || isAbilityCheckOnly(sentence)
+          || isSpellcastingResource(sentence)) { unpriced.push(one); continue; }
 
       // 2. The DPR baseline. An attack or save line carrying damage is the packet itself.
       //    The prose says so on a pasted stat block; the FIELDS say so on an app-authored one,
