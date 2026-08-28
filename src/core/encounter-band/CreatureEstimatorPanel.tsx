@@ -50,8 +50,30 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
 
   const template = monsterLibrary.find(t => t.templateId === templateId);
 
+  /**
+   * ⚠ A TEMPLATE HAS NO PRICE, AND OFFERING ONE IS WORSE THAN OFFERING NOTHING.
+   *
+   * Christopher: *"the estimator should just not be able to price them until the encounter is
+   * 'built' in the DM's library and that can then be priced and used in the estimator."*
+   *
+   * The Elemental Mirror is not a creature; it is the instruction for building one. Its card prints
+   * a body with no element, no bond and an unreshaped ability spine, because those are chosen per
+   * mirror when the encounter is assembled. Rating that body produced a CR for a thing that never
+   * takes the field — and it read exactly like a real one, which is the failure mode this whole
+   * file exists to prevent.
+   *
+   * It also explains the last three coverage blocks. "Claws and Bolts deal 2d6 + the listed damage
+   * modifier for that archetype", "At-will cantrip", "No damage" are not unpriceable mechanics;
+   * they are a template deferring to choices that have not been made. The gate was right that it
+   * could not resolve them and wrong to be looking at all.
+   *
+   * ⚠ THE BUILT BODY IS AN ORDINARY CREATURE. `materializeTemplateBody` clears `isTemplate`, so a
+   * finished mirror prices through the same path as everything else — no special case, no exemption.
+   */
+  const unbuiltTemplate = Boolean(template?.isTemplate);
+
   const estimate = useMemo(() => {
-    if (!template) return null;
+    if (!template || unbuiltTemplate) return null;
     const parsed = parseCreature(template);
     const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
     const defence = partyDefenceAt(band.referenceLevel, refMode);
@@ -82,7 +104,7 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
       saveDc,
       desiredCr,
     });
-  }, [template, refBand, refMode, desiredCr]);
+  }, [template, unbuiltTemplate, refBand, refMode, desiredCr]);
 
   /**
    * THE COVERAGE GATE, on the panel that hands out the number.
@@ -97,14 +119,15 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
    * block. The gate names the sentences it could not resolve, so the workbook edit that fixes them
    * can be written without coming back here.
    */
+  // Nothing to gate: the unresolved sentences belong to choices the DM has not made yet.
   const coverage = useMemo<CoverageReport | null>(() => {
-    if (!template) return null;
+    if (!template || unbuiltTemplate) return null;
     try {
       return auditCoverage(mechanicsOf({
         traits: template.traits, actions: template.actions, reactions: template.reactions,
       } as Parameters<typeof mechanicsOf>[0]));
     } catch { return null; }
-  }, [template]);
+  }, [template, unbuiltTemplate]);
 
   const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
   const defence = partyDefenceAt(band.referenceLevel, refMode);
@@ -166,6 +189,24 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
 
           {!template && (
             <p style={{ ...hintStyle, color: "#555", fontStyle: "italic" }}>Pick a creature to rate it.</p>
+          )}
+
+          {template && unbuiltTemplate && (
+            <div style={{
+              marginTop: 8, padding: "7px 9px", borderRadius: 4, fontSize: 11, lineHeight: 1.55,
+              background: "#16182a", border: "1px solid #33395c", color: "#a9b0d0",
+            }}>
+              <strong style={{ color: "#8fa9ff", letterSpacing: 0.4 }}>TEMPLATE — NOT PRICEABLE YET</strong>
+              <div style={{ marginTop: 4 }}>
+                {template.name} is the instruction for building a creature, not a creature. Its
+                element package, bond and ability spine are chosen per body when the encounter is
+                built, so there is no single profile to rate.
+              </div>
+              <div style={{ marginTop: 4, color: "#7f86a8" }}>
+                Build the bodies in the encounter editor, then rate any one of them here — a built
+                body is an ordinary creature and prices through the normal path.
+              </div>
+            </div>
           )}
 
           {template && estimate && (

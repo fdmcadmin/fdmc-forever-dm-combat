@@ -254,6 +254,32 @@ const SPELLCASTING_RESOURCE = [
   /\btries to cast a spell\b/i,
 ];
 
+/**
+ * Sentences that state the ABSENCE of a cost, a limit or an effect.
+ *
+ * ⚠ "No damage." IS AN ANSWER, not an unread mechanic. It was blocking as something the model
+ * could not resolve when it is the model's own conclusion written down — Mold Earth deals
+ * nothing, and the card says so precisely so a DM stops looking for a damage line.
+ *
+ * Same for at-will. The workbook prices a frequency LIMIT (limited_use_action, recharge_action);
+ * at-will is the absence of one, so there is no resolver to reach and never will be.
+ *
+ * Both surfaced on a BUILT Elemental Mirror, which is the case that has to come out clean:
+ * a finished body is an ordinary creature and must price without a caveat.
+ */
+const STATES_ABSENCE = [
+  /^no damage\b/i,
+  /\b(deals?|causes?) no damage\b/i,
+  /\bat[- ]will\b/i,
+  /\bno (action|cost|limit|save|effect)\b/i,
+];
+
+function statesAbsence(s: string): boolean {
+  // A sentence carrying dice is doing something; only a bare absence qualifies.
+  if (/\d+d\d+/.test(s)) return false;
+  return STATES_ABSENCE.some(re => re.test(s));
+}
+
 function isSpellcastingResource(s: string): boolean {
   return SPELLCASTING_RESOURCE.some(re => re.test(s));
 }
@@ -520,7 +546,7 @@ export function auditCoverage(sources: MechanicSource[]): CoverageReport {
       // 1. No rule in the sentence at all — flavour, a scouting note, DM guidance — or an
       //    out-of-combat ability check, which the workbook prices at nothing.
       if (!MECHANICAL.test(sentence) || isAbilityCheckOnly(sentence)
-          || isSpellcastingResource(sentence)) { unpriced.push(one); continue; }
+          || isSpellcastingResource(sentence) || statesAbsence(sentence)) { unpriced.push(one); continue; }
 
       // 2. The DPR baseline. An attack or save line carrying damage is the packet itself.
       //    The prose says so on a pasted stat block; the FIELDS say so on an app-authored one,
@@ -528,7 +554,21 @@ export function auditCoverage(sources: MechanicSource[]): CoverageReport {
       const dice = sentence.match(DICE) ?? [];
       const isAttack = TO_HIT.test(sentence) || source.kindHint === "attack";
       const isSave = SAVE_LINE.test(sentence) || source.kindHint === "save";
-      if (dice.length && (isAttack || isSave)) {
+      /**
+       * ⚠ A PACKET DOES NOT HAVE TO CARRY ITS OWN DELIVERY. The Mirror's Role Attack reads
+       * "Claws and Bolts deal 2d6 + the listed damage modifier for that archetype" — the delivery
+       * lives on the attacks it names and the modifier on the archetype spine, so the sentence
+       * has dice and a damage verb and nothing else. That is still the base packet, not a missing
+       * resolver, and a BUILT body has to come out clean.
+       *
+       * ⚠ RIDERS ARE EXCLUDED, because they are a different primitive: "deals an additional 1d8
+       * necrotic" must reach conditional_extra_damage, so anything marked additional / extra /
+       * plus / instead is left for the routes below.
+       */
+      const isBareDamage = dice.length > 0
+        && /\bdeal(s|ing)?\b/i.test(sentence)
+        && !/\b(additional|extra|plus|instead)\b/i.test(sentence);
+      if (dice.length && (isAttack || isSave || isBareDamage)) {
         packets.push({
           source: one,
           kind: isAttack ? "attack" : "save",
