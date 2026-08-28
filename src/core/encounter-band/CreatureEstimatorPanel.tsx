@@ -264,7 +264,7 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
                   <span style={{ color: "#667" }}> → atk/DC-adj {estimate.deliveryAdjustedOffensiveCr}</span></span>
                 <span>suggested <strong style={{ color: "#7be08a" }}>{estimate.crRange}</strong>
                   <span style={{ color: "#667" }}> centre {estimate.estimatedCr}</span></span>
-                {estimate.capStatus !== "WITHIN CR 0-25 TABLE" && (
+                {estimate.capStatus !== "WITHIN CR 0-30 TABLE" && (
                   <span style={{ color: "#e8b64c" }}>{estimate.capStatus}</span>
                 )}
               </div>

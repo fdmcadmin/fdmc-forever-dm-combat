@@ -64,12 +64,17 @@ export function validateOutput(capability: EngineCapability, output: unknown): C
         ...requireFinite(o, ["effectiveHp", "effectiveAc", "modeledDpr",
           "baseDefensiveCr", "acAdjustedDefensiveCr", "baseOffensiveCr", "deliveryAdjustedOffensiveCr"]),
         ...requireNonNegative(o, ["effectiveHp", "modeledDpr"]),
-        // `estimatedCr` is a number OR the string "25+" past the table, so it is checked by shape.
+        // `estimatedCr` is a number OR a top-of-table sentinel past it, checked by SHAPE.
+        //
+        // ⚠ NOT ONE LITERAL. The sentinel names where the table stops, so it changed from "25+" to
+        // "30+" when M28 extended it — and a certified LKG packaged before M28 still returns the
+        // old one. Pinning the literal would make a correct recovery answer read as a contract
+        // violation, which is the regime trap Gate 6 already paid for once.
         ...(o.estimatedCr === undefined || o.estimatedCr === null
           ? [{ field: "estimatedCr", problem: "missing" }]
-          : finite(o.estimatedCr) || o.estimatedCr === "25+"
+          : finite(o.estimatedCr) || /^\d+\+$/.test(String(o.estimatedCr))
             ? []
-            : [{ field: "estimatedCr", problem: `neither a number nor "25+" (${String(o.estimatedCr)})` }]),
+            : [{ field: "estimatedCr", problem: `neither a number nor a "<cr>+" sentinel (${String(o.estimatedCr)})` }]),
       ];
 
     case "resolvePartyProfile": {

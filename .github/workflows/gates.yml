@@ -145,6 +145,13 @@ jobs:
       - name: check archetype reshape
         run: npm run check:reshape
 
+      # The SRD parse against Christopher's 330-block audit (RULE 1: the document read the
+      # printed pages, the parser read a text layer that drops digits), plus M28 - the estimator
+      # reaching CR 30. The 38 creatures the parser never produced are PINNED here: that count may
+      # fall when the PDF is re-parsed, and must never rise unnoticed.
+      - name: check SRD against the audit
+        run: npm run check:srd
+
       # ⚠ PACKAGE BEFORE CHECKING. check:engine asserts the candidate is packaged and carries a
       # hash; without this step it would be testing a source checkout that reports "unpackaged".
       - name: package engine
