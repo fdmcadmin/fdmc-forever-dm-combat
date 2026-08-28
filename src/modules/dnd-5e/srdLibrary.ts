@@ -12,10 +12,10 @@
  * the parse's value is RECORDED, so a correction is always traceable rather than a silent edit.
  * The parser read a text layer; the audit read the page.
  *
- * ⚠ AND IT CAN ONLY CORRECT, NEVER SUPPLY. A creature the parser never produced cannot be
- * recovered from here — the audit has no actions, and a creature with AC and HP and no actions
- * prices at ZERO DPR, which is a wrong answer wearing the shape of an answer. Those are reported
- * as `SRD_ABSENT` and need the PDF re-parsed.
+ * ⚠ AND IT CAN ONLY CORRECT, NEVER SUPPLY. The audit has no actions, so a creature the parser did
+ * not produce could never be recovered here — a body with AC and HP and no actions prices at ZERO
+ * DPR, which is a wrong answer wearing the shape of an answer. `SRD_ABSENT` is empty today because
+ * the PARSER was fixed; if it is ever non-empty again the fix belongs in `import-srd.mjs`.
  */
 
 import { SRD_CREATURES, type SrdCreature } from "./srdMonsters.generated";
@@ -55,6 +55,26 @@ export const SLOT_SCALED_SUMMONS: readonly string[] = [
 ];
 
 const SLOT_SCALED_KEYS = new Set(SLOT_SCALED_SUMMONS.map(srdNameKey));
+
+/**
+ * ⚠ THERE IS NO NAME-REPAIR TABLE, BECAUSE THE PARSER WAS FIXED INSTEAD.
+ *
+ * For one commit this file carried a hand-written map — "Ooze" → Gray Ooze, "Medium Swarm of" →
+ * Swarm of Crawling Claws — patching names the importer had mangled. That was treating the symptom
+ * at the wrong layer: it fixed four records and left 33 creatures missing entirely, and every new
+ * mangling would have needed another row.
+ *
+ * `import-srd.mjs` now anchors on the audit's own 330 names, refuses to let a short name match
+ * inside a longer one, tolerates a repeated running header, and decodes CP1252 punctuation. Every
+ * audited creature parses under its printed name, so there is nothing left here to repair. Fix the
+ * reader, not the output.
+ */
+
+export const SRD_OFF_AUDITED_PAGES: readonly string[] = [
+  "Otherworldly Steed", "Giant Insect", "Draconic Spirit",   // bodies a spell creates
+  "Giant Fly",                                                // a form of the Giant Insect summon
+  "Avatar of Death",                                          // printed with the Deck of Many Things
+];
 
 export type SrdCorrection = {
   field: "cr" | "ac" | "hp";
@@ -139,9 +159,12 @@ export const SRD_ABSENT: SrdAuditChassis[] = (() => {
  * block the parser invented out of a page break — "Medium Swarm of", "Ooze" — and is not a
  * creature a DM should ever be offered.
  */
-export const SRD_UNMATCHED: SrdLibraryEntry[] =
-  SRD_LIBRARY.filter(c => !c.chassis && c.scaling !== "slot");
+const OFF_PAGE_KEYS = new Set(SRD_OFF_AUDITED_PAGES.map(srdNameKey));
+
+export const SRD_UNMATCHED: SrdLibraryEntry[] = SRD_LIBRARY.filter(
+  c => !c.chassis && c.scaling !== "slot" && !OFF_PAGE_KEYS.has(srdNameKey(c.name)));
 
 /** Creatures fit to offer: matched to a printed page, or a summon that scales with its slot. */
-export const SRD_USABLE: SrdLibraryEntry[] =
-  SRD_LIBRARY.filter(c => (c.chassis || c.scaling === "slot") && c.missing.length === 0);
+export const SRD_USABLE: SrdLibraryEntry[] = SRD_LIBRARY.filter(
+  c => (c.chassis || c.scaling === "slot" || OFF_PAGE_KEYS.has(srdNameKey(c.name)))
+    && c.missing.length === 0);

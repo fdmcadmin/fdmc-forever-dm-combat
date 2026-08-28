@@ -78,6 +78,30 @@ function pdfText(file) {
     }
     if (out.trim()) pages.push(out);
   }
+
+  /**
+   * ⚠ THE TEXT IS WINDOWS-1252, NOT LATIN-1, AND THE DIFFERENCE IS ONE RANGE.
+   *
+   * Decoding the stream as latin1 leaves 0x80-0x9F as C1 control characters. In CP1252 that range
+   * holds the typographic punctuation — curly quotes, en/em dashes, the ellipsis — so an apostrophe
+   * came out as char 146 rather than "'".
+   *
+   * It cost a creature: the Will-o'-Wisp's name in the PDF is "Will-o\x92-Wisp", so searching for
+   * the printed spelling found nothing, and the block was reported missing. Nothing was wrong with
+   * the PDF or the search — one byte range was being read as the wrong character set.
+   *
+   * Mapping it here fixes every extracted string at once: names, trait text and action prose.
+   */
+  const CP1252 = {
+    0x80: "\u20ac", 0x82: "\u201a", 0x83: "\u0192", 0x84: "\u201e", 0x85: "\u2026",
+    0x86: "\u2020", 0x87: "\u2021", 0x88: "\u02c6", 0x89: "\u2030", 0x8a: "\u0160",
+    0x8b: "\u2039", 0x8c: "\u0152", 0x8e: "\u017d", 0x91: "\u2018", 0x92: "\u2019",
+    0x93: "\u201c", 0x94: "\u201d", 0x95: "\u2022", 0x96: "\u2013", 0x97: "\u2014",
+    0x98: "\u02dc", 0x99: "\u2122", 0x9a: "\u0161", 0x9b: "\u203a", 0x9c: "\u0153",
+    0x9e: "\u017e", 0x9f: "\u0178",
+  };
+  const dec1252 = s => s.replace(/[\u0080-\u009f]/g, c => CP1252[c.charCodeAt(0)] ?? c);
+  for (let p = 0; p < pages.length; p++) pages[p] = dec1252(pages[p]);
   // Drop control bytes the font encoding leaves behind; keep the printable range plus punctuation.
   return pages.join("\n").replace(
     /[^\x09\x0a\x20-\x7e -ɏ‐-‧‰-⁞]/g, " ");
@@ -195,20 +219,149 @@ function entries(text) {
 
 
 const raw = pdfText(PDF);
+const HEAD_ONE = new RegExp(`((?:${SIZES})(?: or (?:${SIZES}))?)\\s*(${TYPES})([^\\n]*)`);
 const HEAD = new RegExp(`((?:${SIZES})(?: or (?:${SIZES}))?) (${TYPES})([^\\n]*)`, "g");
 
-const anchors = [];
-for (const m of raw.matchAll(HEAD)) {
-  const name = nameBefore(raw.slice(0, m.index));
-  if (!name || name.length < 3 || name.length > 42 || !/^[A-Z]/.test(name)) continue;
-  anchors.push({ nameAt: m.index, at: m.index - name.length, name, size: m[1], type: m[2], tail: (m[3] || "").trim() });
+/* ── 2. ANCHOR ON KNOWN NAMES, NOT ON LAYOUT ─────────────────────────────────────────────────
+ *
+ * ⚠ THE OLD PASS GUESSED THE NAME FROM WHATEVER PRECEDED THE SIZE LINE, AND DROPPED IT SILENTLY
+ * WHEN THE GUESS LOOKED WRONG (`continue`, no exception). It cost 33 creatures — Aboleth, Kraken,
+ * Treant, Unicorn, Djinni, every swarm — and reported 301 of 330 as a success.
+ *
+ * Two things defeated it, both of them ordinary SRD typesetting:
+ *
+ *   · A SWARM'S SIZE LINE CONTAINS THE WORD "of". "Swarm of Crawling Claws" is followed by
+ *     "Medium Swarm of Tiny Undead", so the size/type regex matched INSIDE the size line and the
+ *     name was read as "Medium Swarm of".
+ *   · A GROUP HEADING RUNS INTO THE NAME. "Fungi" + "Shrieker Fungus" = "FungiShrieker Fungus".
+ *
+ * The audit knows all 330 names. So the parser is handed them and only has to LOCATE each one,
+ * which is a far smaller problem than inferring where a name starts. A name is accepted as an
+ * anchor only when a size line follows it immediately — that is what separates the stat block from
+ * the same name mentioned in another creature's prose.
+ */
+const AUDIT_TS = new URL("../src/modules/dnd-5e/srdAuditChassis.generated.ts", import.meta.url);
+const auditSrc = fs.readFileSync(AUDIT_TS, "utf8");
+const auditJson = auditSrc.slice(
+  auditSrc.indexOf("SRD_AUDIT_CHASSIS: SrdAuditChassis[] = ") + "SRD_AUDIT_CHASSIS: SrdAuditChassis[] = ".length,
+  auditSrc.indexOf("] as SrdAuditChassis[]") >= 0
+    ? auditSrc.indexOf("] as SrdAuditChassis[]") + 1
+    : auditSrc.indexOf("];", auditSrc.indexOf("SRD_AUDIT_CHASSIS")) + 1);
+const AUDIT = JSON.parse(auditJson);
+
+/**
+ * Blocks the audit does not list because they are not on the monster pages: three bodies a SPELL
+ * creates, one form of the Giant Insect summon, and the Deck of Many Things' Avatar of Death.
+ * Named here so their absence from the chassis map is a fact rather than a hole.
+ */
+const OFF_PAGE = ["Otherworldly Steed", "Giant Insect", "Draconic Spirit", "Giant Fly", "Avatar of Death"];
+
+const esc = s => s.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
+
+/**
+ * ⚠ TWO THINGS SIT BETWEEN A NAME AND ITS SIZE LINE, AND NEITHER IS A REASON TO GIVE UP.
+ *
+ *   · THE NAME IS OFTEN PRINTED TWICE — a running header and the block title land next to each
+ *     other in the text layer: "Gray OozeGray\n OozeMedium Ooze, Unaligned",
+ *     "Will-o-WispWill-o-WispTiny Undead". A strict "size follows the name" test rejects both.
+ *   · THE TEXT LAYER DROPS THE APOSTROPHE. The audit says "Will-o'-Wisp"; the PDF says
+ *     "Will-o-Wisp". Searching for the audited spelling finds nothing.
+ *
+ * So the lookahead allows ONE optional repeat of the name, and the needle is tried in a few
+ * punctuation variants. These two alone were the last two missing creatures.
+ */
+function needleVariants(name) {
+  const out = [name];
+  const noApos = name.replace(/[’‘ʼ']/g, "");
+  const plain = name.replace(/[’‘ʼ]/g, "'");
+  if (noApos !== name) out.push(noApos);
+  if (plain !== name && !out.includes(plain)) out.push(plain);
+  return out;
 }
-const seen = new Set();
-const blocks = anchors.filter(a => {
-  const k = a.name.toLowerCase();
-  if (seen.has(k)) return false;
-  seen.add(k);
-  return true;
+
+/** Every position where this name is followed by its size line, allowing a repeated header. */
+function anchorsFor(name) {
+  for (const needle of needleVariants(name)) {
+    // The repeat may carry line breaks inside it: "Gray\n Ooze".
+    const repeat = esc(needle).replace(/\\?\s/g, "\\s*");
+    const after = new RegExp(`^(?:\\s*${repeat})?\\s*(?:${SIZES})\\b`);
+    const hits = [];
+    let from = 0;
+    for (;;) {
+      const at = raw.indexOf(needle, from);
+      if (at < 0) break;
+      from = at + 1;
+      if (after.test(raw.slice(at + needle.length, at + needle.length + 120))) hits.push({ at, len: needle.length });
+    }
+    if (hits.length) return hits;
+  }
+  return [];
+}
+
+const TARGETS = [...AUDIT, ...OFF_PAGE.map(name => ({ name }))];
+
+/**
+ * ⚠ A SHORT NAME LIVES INSIDE A LONGER ONE, AND THAT IS NOT AN ANCHOR.
+ *
+ * "Rat" occurs inside "Giant Rat" — and because the size line follows the LONGER name, the short
+ * name passes the size-line test too, six characters further on. Sorting by position then put "Rat"
+ * immediately after "Giant Rat", so the Giant Rat's body was six characters long and it lost AC, HP
+ * and CR. The same collision hits Hawk/Blood Hawk, Wolf/Winter Wolf, Spider/Phase Spider and every
+ * "Giant <animal>" in the book.
+ *
+ * So candidates are gathered for EVERY name first, and any hit sitting inside a LONGER name's span
+ * is discarded. The real "Rat" block elsewhere in the PDF is untouched — only the one hiding inside
+ * its bigger cousin goes.
+ */
+const candidates = [];
+for (const row of TARGETS) {
+  for (const h of anchorsFor(row.name)) candidates.push({ row, name: row.name, at: h.at, len: h.len });
+}
+
+const swallowed = new Set();
+for (const a of candidates) {
+  for (const b of candidates) {
+    if (a === b || b.len <= a.len) continue;
+    if (a.at > b.at && a.at < b.at + b.len) { swallowed.add(a); break; }
+  }
+}
+const surviving = candidates.filter(c => !swallowed.has(c));
+
+const missingBlocks = [];
+const chosen = [];
+for (const row of TARGETS) {
+  const hits = surviving.filter(c => c.row === row).map(c => c.at);
+  if (hits.length === 0) {
+    // ⚠ REPORTED, NEVER SKIPPED. This is exactly the line the old parser did not have.
+    missingBlocks.push({ name: row.name, reason: "no stat-block anchor found in the PDF text layer" });
+    continue;
+  }
+  // More than one occurrence is settled by the audit's own numbers: the real block has them nearby.
+  let best = hits[0];
+  if (hits.length > 1 && row.ac) {
+    const scored = hits.map(at => {
+      const win = raw.slice(at, at + 2600);
+      return { at, score: (win.includes(`AC ${row.ac}`) ? 2 : 0) + (win.includes(`HP ${row.hp}`) ? 2 : 0) };
+    }).sort((a, b) => b.score - a.score);
+    best = scored[0].at;
+  }
+  chosen.push({ name: row.name, at: best });
+}
+
+chosen.sort((a, b) => a.at - b.at);
+
+// A body runs from its own name to the next block's name.
+const blocks = chosen.map((c, i) => {
+  const head = raw.slice(c.at, c.at + 260).match(HEAD_ONE);
+  return {
+    name: c.name,
+    nameAt: c.at,
+    at: c.at,
+    end: i + 1 < chosen.length ? chosen[i + 1].at : c.at + 9000,
+    size: head ? head[1] : null,
+    type: head ? head[2] : null,
+    tail: head ? (head[3] || "").trim() : "",
+  };
 });
 
 const records = [];
@@ -216,7 +369,7 @@ const exceptions = [];
 
 for (let i = 0; i < blocks.length; i++) {
   const b = blocks[i];
-  const body = raw.slice(b.nameAt, i + 1 < blocks.length ? blocks[i + 1].at : b.nameAt + 9000);
+  const body = raw.slice(b.nameAt, b.end);
 
   const ac = body.match(/\bAC\s*\n?\s*(\d+)/);
   const hp = body.match(/\bHP\s*\n?\s*(\d+)(?:\s*\(([^)]*)\))?/);
@@ -257,6 +410,9 @@ for (let i = 0; i < blocks.length; i++) {
   }
   records.push(rec);
 }
+
+// ⚠ A BLOCK THE PARSER COULD NOT LOCATE IS A LOUDER FAILURE THAN ONE WITH A HOLE IN IT.
+for (const m of missingBlocks) exceptions.push({ name: m.name, missing: ["BLOCK"], reason: m.reason });
 
 /* ── 3. emit ─────────────────────────────────────────────────────────────────────────────── */
 

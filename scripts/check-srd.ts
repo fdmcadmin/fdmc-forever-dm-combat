@@ -7,17 +7,18 @@
  * pages; `import-srd.mjs` read a text layer that drops digits. This gate asserts the library agrees
  * with the document wherever the document speaks, and COUNTS what it cannot fix.
  *
- * ⚠ THE DEFICIT IS ASSERTED, NOT HIDDEN. 38 stat blocks the audit lists were never produced by the
- * parser, and they cannot be recovered from the audit — it carries no actions, and a body with AC
- * and HP and no actions prices at zero DPR. The count is pinned here so it can only go DOWN
- * silently; going UP fails.
+ * ⚠ EVERY AUDITED CREATURE MUST PARSE. This started at 301 of 330 with the shortfall reported as a
+ * success, because the old importer guessed names from layout and dropped an anchor it could not
+ * read with a bare `continue` — no exception, no count. The parser is anchored on the audit's own
+ * names now and `SRD_ABSENT` must be EMPTY. A creature going missing is a build failure, not a
+ * footnote.
  *
  * ⚠ THE EXIT CHECK IS THE LAST THING IN THIS FILE. See MASTER on `check:summons`.
  */
 
 import {
   SRD_LIBRARY, SRD_ABSENT, SRD_UNMATCHED, SRD_CORRECTED, SRD_STILL_INCOMPLETE,
-  SRD_USABLE, SLOT_SCALED_SUMMONS, srdNameKey,
+  SRD_USABLE, SLOT_SCALED_SUMMONS, srdNameKey, SRD_OFF_AUDITED_PAGES,
 } from "../src/modules/dnd-5e/srdLibrary";
 import { SRD_AUDIT_CHASSIS, SRD_AUDIT_CR_ROWS } from "../src/modules/dnd-5e/srdAuditChassis.generated";
 import { estimateCreature } from "../src/core/encounter-band/creatureEstimator";
@@ -90,19 +91,54 @@ console.log("\nName folding");
   ok("so Will-o'-Wisp matches its page rather than reading as missing", Boolean(wisp?.chassis));
 }
 
+/* ── The parser reads printed names ─────────────────────────────────────────────────────── */
+console.log("\nNames come out as printed");
+{
+  const byName = new Map(SRD_LIBRARY.map(c => [c.name, c]));
+
+  // Each of these was a DIFFERENT way for a name to break, and each cost real creatures. They are
+  // named individually so a regression says WHICH defect came back, not just that the count moved.
+  const named: Array<[string, string]> = [
+    ["Gray Ooze", "a group heading no longer swallows the name"],
+    ["Shrieker Fungus", "'Fungi' is not glued to the front of it"],
+    ["Swarm of Crawling Claws", "a swarm's size line no longer becomes its name"],
+    ["Swarm of Bats", "and neither does its neighbour's"],
+    ["Swarm of Ravens", "the swarm sharing a CR/AC/HP triple with Bats parses on its own"],
+    ["Will-o\u2019-Wisp", "CP1252 punctuation decodes, so the apostrophe survives"],
+    ["Giant Rat", "a short name no longer anchors inside a longer one"],
+    ["Rat", "and the short name still parses where it really lives"],
+    ["Aboleth", "the first block in the book is not skipped"],
+    ["Kraken", "nor is a large one"],
+    ["Treant", "nor a mid-book one"],
+  ];
+  for (const [name, why] of named) {
+    ok(`${name} — ${why}`, byName.has(name), byName.has(name) ? "" : "NOT IN THE LIBRARY");
+  }
+
+  const sizeNamed = SRD_LIBRARY.filter(c => /^(Tiny|Small|Medium|Large|Huge|Gargantuan)\b/.test(c.name));
+  ok("no record is named after a size line", sizeNamed.length === 0,
+    sizeNamed.map(c => c.name).join(", "));
+
+  const withActions = SRD_LIBRARY.filter(c => (c.actions?.length ?? 0) > 0).length;
+  ok("bodies survived the re-anchor — 328+ creatures have actions", withActions >= 328,
+    `${withActions} of ${SRD_LIBRARY.length}`);
+}
+
 /* ── The deficit, counted ───────────────────────────────────────────────────────────────── */
 console.log("\nWhat the audit cannot fix");
 {
-  // ⚠ PINNED. This may fall when the PDF is re-parsed; it must never rise unnoticed.
-  ok("38 audited creatures are still absent from the parse", SRD_ABSENT.length === 38,
-    `${SRD_ABSENT.length}: ${SRD_ABSENT.slice(0, 4).map(c => c.name).join(", ")}…`);
-  ok("nothing absent was invented into the library",
-    SRD_LIBRARY.every(c => c.chassis || c.scaling === "slot" || SRD_UNMATCHED.includes(c)));
-  ok("the parser's own fragments are quarantined, not offered",
-    SRD_UNMATCHED.every(c => !SRD_USABLE.includes(c)), `${SRD_UNMATCHED.length} unmatched`);
+  ok("NO audited creature is absent from the parse", SRD_ABSENT.length === 0,
+    SRD_ABSENT.length ? SRD_ABSENT.map(c => c.name).join(", ") : "all 330 present");
+  ok("the parse produces no fragment records at all", SRD_UNMATCHED.length === 0,
+    SRD_UNMATCHED.map(c => c.name).join(", ") || "none");
+  ok("every record is either an audited page or a known off-page block",
+    SRD_LIBRARY.every(c => c.chassis || SRD_OFF_AUDITED_PAGES.includes(c.name)));
   ok("nothing incomplete is offered as usable",
     SRD_STILL_INCOMPLETE.every(c => !SRD_USABLE.includes(c)),
     `${SRD_STILL_INCOMPLETE.length} incomplete, ${SRD_USABLE.length} usable`);
+  ok("all 330 audited creatures are usable",
+    SRD_USABLE.filter(c => c.chassis).length === 330,
+    `${SRD_USABLE.filter(c => c.chassis).length}`);
 }
 
 /* ── M28 — the estimator reaches CR 30 ──────────────────────────────────────────────────── */

@@ -9,7 +9,7 @@
  * personal library, never carried in an export. See `core/content/contentScope.ts` for why that is
  * enforced in the data model rather than by hiding buttons.
  *
- * Parsed 301 blocks · 283 complete · 18 with a missing value.
+ * Parsed 335 blocks · 312 complete · 23 with a missing value.
  */
 
 import type { ContentProvenance } from "../../core/content/contentScope";
@@ -60,19 +60,19 @@ const RAW = [
   "traits": [
    {
     "name": "Life Bond",
-    "text": "When you regain Hit Points from a level 1+ spell, the steed regains the same number of Hit Points if you re within 5 feet of it."
+    "text": "When you regain Hit Points from a level 1+ spell, the steed regains the same number of Hit Points if you’re within 5 feet of it."
    }
   ],
   "actions": [
    {
     "name": "Otherworldly Slam",
-    "text": "Melee Attack Roll: Bonus equals Hit: 1d8 plus the spell s level of Radiant (Celestial), Psychic (Fey), or Ne - crotic (Fiend) damage."
+    "text": "Melee Attack Roll: Bonus equals Hit: 1d8 plus the spell’s level of Radiant (Celestial), Psychic (Fey), or Ne - crotic (Fiend) damage."
    }
   ],
   "bonusActions": [
    {
     "name": "Cantrip Upgrade",
-    "text": "The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).Fire ShieldLevel 4 Evocation (Druid, Sorcerer, Wizard)Casting Time: Action Range: Self Components: Duration: 10 minutes shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet. chill shield, as you choose. The warm shield grants you Resistance to Cold damage, and the chill shield grants you Resistance to Fire damage. In addition, whenever a creature within 5 feet of you hits you with a melee attack roll, the shield - age from a warm shield or 2d8 Cold damage from a chill shield.Fire StormLevel 7 Evocation (Cleric, Druid, Sorcerer)Casting Time: Action Range: Components: V, S Duration: Instantaneous the storm consists of up to ten 10-foot Cubes, which you arrange as you like. Each Cube must be contig - uous with at least one other Cube. Each creature in the area makes a Dexterity saving throw, taking 7d10 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren t being worn or carried start burning.Flame BladeLevel 2 Evocation (Druid, Sorcerer)Casting Time: Bonus Action Range: Self Components: V, S, M (a sumac leaf) Duration: Concentration, up to 10 minutes is similar in size and shape to a scimitar, and it lasts for the duration. If you let go of the blade, it disap - pears, but you can evoke it again as a"
+    "text": "The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).Fire ShieldLevel 4 Evocation (Druid, Sorcerer, Wizard)Casting Time: Action Range: Self Components: Duration: 10 minutes shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet. chill shield, as you choose. The warm shield grants you Resistance to Cold damage, and the chill shield grants you Resistance to Fire damage. In addition, whenever a creature within 5 feet of you hits you with a melee attack roll, the shield - age from a warm shield or 2d8 Cold damage from a chill shield.Fire StormLevel 7 Evocation (Cleric, Druid, Sorcerer)Casting Time: Action Range: Components: V, S Duration: Instantaneous the storm consists of up to ten 10-foot Cubes, which you arrange as you like. Each Cube must be contig - uous with at least one other Cube. Each creature in the area makes a Dexterity saving throw, taking 7d10 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren’t being worn or carried start burning.Flame BladeLevel 2 Evocation (Druid, Sorcerer)Casting Time: Bonus Action Range: Self Components: V, S, M (a sumac leaf) Duration: Concentration, up to 10 minutes is similar in size and shape to a scimitar, and it lasts for the duration. If you let go of the blade, it disap - pears, but you can evoke it again as a"
    },
    {
     "name": "Bonus Action",
@@ -84,11 +84,11 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The Fire damage and the Radiant damage increase by 1d6 for each spell slot level above 5.Flaming SphereLevel 2 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a ball of wax) Duration: Concentration, up to 1 minute - occupied space on the ground within range. It lasts for the duration. Any creature that ends its turn within 5 feet of the sphere makes a Dexterity saving throw, taking 2d6 Fire damage on a failed save or half as much damage on a successful one. As a Bonus Action, you can move the sphere up to 30 feet, rolling it along the ground. If you move the sphere into a creature s space, that creature makes the save against the sphere, and the sphere stops moving for the turn. When you move the sphere, you can direct it over barriers up to 5 feet tall and jump it across pits up to 10 feet wide. Flammable objects that aren t be - ing worn or carried start burning if touched by the sphere, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. Using a"
+    "text": "The Fire damage and the Radiant damage increase by 1d6 for each spell slot level above 5.Flaming SphereLevel 2 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a ball of wax) Duration: Concentration, up to 1 minute - occupied space on the ground within range. It lasts for the duration. Any creature that ends its turn within 5 feet of the sphere makes a Dexterity saving throw, taking 2d6 Fire damage on a failed save or half as much damage on a successful one. As a Bonus Action, you can move the sphere up to 30 feet, rolling it along the ground. If you move the sphere into a creature’s space, that creature makes the save against the sphere, and the sphere stops moving for the turn. When you move the sphere, you can direct it over barriers up to 5 feet tall and jump it across pits up to 10 feet wide. Flammable objects that aren’t be - ing worn or carried start burning if touched by the sphere, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d6 for each spell slot level above 2. 133Flesh to StoneLevel 6 Transmutation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a cockatrice feather) Duration: Concentration, up to 1 minuteYou attempt to turn one creature that you can see within range into stone. The target makes a Consti - tution saving throw. On a failed save, it has the Re - strained condition for the duration. On a successful save, its Speed is 0 until the start of your next turn. Constructs automatically succeed on the save. A Restrained target makes another Constitution saving throw at the end of each of its turns. If it successfully saves against this spell three times, the spell ends. If it fails its saves three times, it is the duration. The successes and failures needn t be consecutive; keep track of both until the target col - lects three of a kind. If you maintain your Concentration on this spell for the entire possible duration, the target is Petri - Greater Resto - ration or similar magic.Floating DiskLevel 1 Conjuration (Wizard)Casting Time: Action or Ritual Range: 30 feet Components: V, S, M (a drop of mercury) Duration: 1 hourThis spell creates a circular, horizontal plane of 3 feet above the ground in an unoccupied space of your choice that you can see within range. The disk remains for the duration and can hold up to 500 pounds. If more weight is placed on it, the spell ends, and everything on the disk falls to the ground. The disk is immobile while you are within 20 feet of it. If you move more than 20 feet away from it, the disk follows you so that it remains within 20 feet of you. It can move across uneven terrain, up or down stairs, slopes and the like, but it can t cross an ele - vation change of 10 feet or more. For example, the disk can t move across a 10-foot-deep pit, nor could it leave such a pit if it was created at the bottom. If you move more than 100 feet from the disk (typ - ically because it can t move around an obstacle to follow you), the spell ends.FlyLevel 3 Transmutation (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a feather) Duration: Concentration, up to 10 minutesYou touch a willing creature. For the duration, the target gains a Fly Speed of 60 feet and can hover. When the spell ends, the target falls if it is still aloft unless it can stop the fall. Using a"
+    "text": "The damage in - creases by 1d6 for each spell slot level above 2. 133Flesh to StoneLevel 6 Transmutation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a cockatrice feather) Duration: Concentration, up to 1 minuteYou attempt to turn one creature that you can see within range into stone. The target makes a Consti - tution saving throw. On a failed save, it has the Re - strained condition for the duration. On a successful save, its Speed is 0 until the start of your next turn. Constructs automatically succeed on the save. A Restrained target makes another Constitution saving throw at the end of each of its turns. If it successfully saves against this spell three times, the spell ends. If it fails its saves three times, it is the duration. The successes and failures needn’t be consecutive; keep track of both until the target col - lects three of a kind. If you maintain your Concentration on this spell for the entire possible duration, the target is Petri - Greater Resto - ration or similar magic.Floating DiskLevel 1 Conjuration (Wizard)Casting Time: Action or Ritual Range: 30 feet Components: V, S, M (a drop of mercury) Duration: 1 hourThis spell creates a circular, horizontal plane of 3 feet above the ground in an unoccupied space of your choice that you can see within range. The disk remains for the duration and can hold up to 500 pounds. If more weight is placed on it, the spell ends, and everything on the disk falls to the ground. The disk is immobile while you are within 20 feet of it. If you move more than 20 feet away from it, the disk follows you so that it remains within 20 feet of you. It can move across uneven terrain, up or down stairs, slopes and the like, but it can’t cross an ele - vation change of 10 feet or more. For example, the disk can’t move across a 10-foot-deep pit, nor could it leave such a pit if it was created at the bottom. If you move more than 100 feet from the disk (typ - ically because it can’t move around an obstacle to follow you), the spell ends.FlyLevel 3 Transmutation (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a feather) Duration: Concentration, up to 10 minutesYou touch a willing creature. For the duration, the target gains a Fly Speed of 60 feet and can hover. When the spell ends, the target falls if it is still aloft unless it can stop the fall. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -96,11 +96,11 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The fog s radius increases by 20 feet for each spell slot level above 1.ForbiddanceLevel 6 Abjuration (Cleric)Casting Time: 10 minutes or Ritual Range: Touch Components: V, S, M (ruby dust worth 1,000+ GP) Duration: 1 dayYou create a ward against magical travel that pro - creatures can t teleport into the area or use portals, such as those created by the Gate spell, to enter the area. The spell proofs the area against planar travel, and therefore prevents creatures from accessing the area by way of the Astral Plane, the Ethereal Plane, the Feywild, the Shadowfell, or the Plane Shift spell. In addition, the spell damages types of creatures that you choose when you cast it. Choose one or more of the following: Aberrations, Celestials, Ele - mentals, Fey, Fiends, and"
+    "text": "The fog’s radius increases by 20 feet for each spell slot level above 1.ForbiddanceLevel 6 Abjuration (Cleric)Casting Time: 10 minutes or Ritual Range: Touch Components: V, S, M (ruby dust worth 1,000+ GP) Duration: 1 dayYou create a ward against magical travel that pro - creatures can’t teleport into the area or use portals, such as those created by the Gate spell, to enter the area. The spell proofs the area against planar travel, and therefore prevents creatures from accessing the area by way of the Astral Plane, the Ethereal Plane, the Feywild, the Shadowfell, or the Plane Shift spell. In addition, the spell damages types of creatures that you choose when you cast it. Choose one or more of the following: Aberrations, Celestials, Ele - mentals, Fey, Fiends, and"
    },
    {
     "name": "Undead",
-    "text": "When a creature time on a turn or ends its turn there, the creature takes 5d10 Radiant or Necrotic damage (your choice when you cast this spell). You can designate a password when you cast the spell. A creature that speaks the password as it en - ters the area takes no damage from the spell. The spell s area can t overlap with the area of another Forbiddance spell. If you cast Forbiddance every day for 30 days in the same location, the spell lasts until it is dispelled, and the Material compo - nents are consumed on the last casting. 134ForcecageLevel 7 Evocation (Bard, Warlock, Wizard)Casting Time: Action Range: 100 feet Components: which the spell consumes) Duration: Concentration, up to 1 hourAn immobile, Invisible, Cube-shaped prison com - posed of magical force springs into existence around an area you choose within range. The prison can be a cage or a solid box, as you choose. A prison in the shape of a cage can be up to 20 feet on a side and is made from 1/2-inch diameter bars spaced 1/2 inch apart. A prison in the shape of a box can be up to 10 feet on a side, creating a solid bar - rier that prevents any matter from passing through it and blocking any spells cast into or out from the area. When you cast the spell, any creature that is com - pletely inside the cage s area is trapped. Creatures only partially within the area, or those too large to area until they are completely outside it. A creature inside the cage can t leave it by non - magical means. If the creature tries to use telepor - make a Charisma saving throw. On a successful save, the creature can use that magic to exit the cage. On a failed save, the creature doesn t exit the cage and wastes the spell or effect. The cage also extends into the Ethereal Plane, blocking ethereal travel. This spell can t be dispelled by Dispel Magic .ForesightLevel 9 Divination (Bard, Druid, Warlock, Wizard)Casting Time: 1 minute Range: Touch Components: V, S, M (a hummingbird feather) Duration: 8 hoursYou touch a willing creature and bestow a limited ability to see into the immediate future. For the du - ration, the target has Advantage on D20 Tests, and other creatures have Disadvantage on attack rolls against it. The spell ends early if you cast it again.Freedom of MovementLevel 4 Abjuration (Bard, Cleric, Druid, Ranger)Casting Time: Action Range: Touch Components: V, S, M (a leather strap) Duration: 1 hourYou touch a willing creature. For the duration, Terrain, and spells and other magical effects can neither reduce the target s Speed nor cause the tar - get to have the Paralyzed or Restrained conditions. The target also has a Swim Speed equal to its"
+    "text": "When a creature time on a turn or ends its turn there, the creature takes 5d10 Radiant or Necrotic damage (your choice when you cast this spell). You can designate a password when you cast the spell. A creature that speaks the password as it en - ters the area takes no damage from the spell. The spell’s area can’t overlap with the area of another Forbiddance spell. If you cast Forbiddance every day for 30 days in the same location, the spell lasts until it is dispelled, and the Material compo - nents are consumed on the last casting. 134ForcecageLevel 7 Evocation (Bard, Warlock, Wizard)Casting Time: Action Range: 100 feet Components: which the spell consumes) Duration: Concentration, up to 1 hourAn immobile, Invisible, Cube-shaped prison com - posed of magical force springs into existence around an area you choose within range. The prison can be a cage or a solid box, as you choose. A prison in the shape of a cage can be up to 20 feet on a side and is made from 1/2-inch diameter bars spaced 1/2 inch apart. A prison in the shape of a box can be up to 10 feet on a side, creating a solid bar - rier that prevents any matter from passing through it and blocking any spells cast into or out from the area. When you cast the spell, any creature that is com - pletely inside the cage’s area is trapped. Creatures only partially within the area, or those too large to area until they are completely outside it. A creature inside the cage can’t leave it by non - magical means. If the creature tries to use telepor - make a Charisma saving throw. On a successful save, the creature can use that magic to exit the cage. On a failed save, the creature doesn’t exit the cage and wastes the spell or effect. The cage also extends into the Ethereal Plane, blocking ethereal travel. This spell can’t be dispelled by Dispel Magic .ForesightLevel 9 Divination (Bard, Druid, Warlock, Wizard)Casting Time: 1 minute Range: Touch Components: V, S, M (a hummingbird feather) Duration: 8 hoursYou touch a willing creature and bestow a limited ability to see into the immediate future. For the du - ration, the target has Advantage on D20 Tests, and other creatures have Disadvantage on attack rolls against it. The spell ends early if you cast it again.Freedom of MovementLevel 4 Abjuration (Bard, Cleric, Druid, Ranger)Casting Time: Action Range: Touch Components: V, S, M (a leather strap) Duration: 1 hourYou touch a willing creature. For the duration, Terrain, and spells and other magical effects can neither reduce the target’s Speed nor cause the tar - get to have the Paralyzed or Restrained conditions. The target also has a Swim Speed equal to its"
    },
    {
     "name": "Speed",
@@ -108,27 +108,27 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can target one additional creature for each spell slot level above 4.Freezing SphereLevel 6 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 300 feet Components: V, S, M (a miniature crystal sphere) Duration: InstantaneousA frigid globe streaks from you to a point of your choice within range, where it explodes in a 60-foot-radius Sphere. Each creature in that area makes a Constitution saving throw, taking 10d6 Cold damage on failed save or half as much damage on a successful one. If the globe strikes a body of water, it freezes the water to a depth of 6 inches over an area 30 feet square. This ice lasts for 1 minute. Creatures that were swimming on the surface of frozen water are trapped in the ice and have the Restrained condi - tion. A trapped creature can take an action to make a Strength (Athletics) check against your spell save DC to break free. - pleting the spell s casting. If you do so, a globe about the size of a sling bullet, cool to the touch, appears in your hand. At any time, you or a creature you give the globe to can throw the globe (to a range of 40 feet) or hurl it with a sling (to the sling s normal range). It shatters on impact, with the same effect as a normal casting of the spell. You can also set the globe down without shattering it. After 1 minute, if the globe hasn t already shattered, it explodes. Using a"
+    "text": "You can target one additional creature for each spell slot level above 4.Freezing SphereLevel 6 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 300 feet Components: V, S, M (a miniature crystal sphere) Duration: InstantaneousA frigid globe streaks from you to a point of your choice within range, where it explodes in a 60-foot-radius Sphere. Each creature in that area makes a Constitution saving throw, taking 10d6 Cold damage on failed save or half as much damage on a successful one. If the globe strikes a body of water, it freezes the water to a depth of 6 inches over an area 30 feet square. This ice lasts for 1 minute. Creatures that were swimming on the surface of frozen water are trapped in the ice and have the Restrained condi - tion. A trapped creature can take an action to make a Strength (Athletics) check against your spell save DC to break free. - pleting the spell’s casting. If you do so, a globe about the size of a sling bullet, cool to the touch, appears in your hand. At any time, you or a creature you give the globe to can throw the globe (to a range of 40 feet) or hurl it with a sling (to the sling’s normal range). It shatters on impact, with the same effect as a normal casting of the spell. You can also set the globe down without shattering it. After 1 minute, if the globe hasn’t already shattered, it explodes. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d6 for each spell slot level above 6.Gaseous FormLevel 3 Transmutation (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a bit of gauze) Duration: Concentration, up to 1 hourA willing creature you touch shape-shifts, along with everything it s wearing and carrying, into a misty cloud for the duration. The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself. 135 While in this form, the target s only method of movement is a Fly Speed of 10 feet, and it can hover. The target can enter and occupy the space of another creature. The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advan - tage on Strength, Dexterity, and Constitution saving throws. The target can pass through narrow open - ings, but it treats liquids as though they were solid surfaces. The target can t talk or manipulate objects, and any objects it was carrying or holding can t be dropped, used, or otherwise interacted with. Fi - nally, the target can t attack or cast spells. Using a"
+    "text": "The damage in - creases by 1d6 for each spell slot level above 6.Gaseous FormLevel 3 Transmutation (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a bit of gauze) Duration: Concentration, up to 1 hourA willing creature you touch shape-shifts, along with everything it’s wearing and carrying, into a misty cloud for the duration. The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself. 135 While in this form, the target’s only method of movement is a Fly Speed of 10 feet, and it can hover. The target can enter and occupy the space of another creature. The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advan - tage on Strength, Dexterity, and Constitution saving throws. The target can pass through narrow open - ings, but it treats liquids as though they were solid surfaces. The target can’t talk or manipulate objects, and any objects it was carrying or holding can’t be dropped, used, or otherwise interacted with. Fi - nally, the target can’t attack or cast spells. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can target one additional creature for each spell slot level above 3.GateLevel 9 Conjuration (Cleric, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 1 minuteYou conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence. The portal is a circular opening, which you can make 5 to 20 feet in diam - eter. You can orient the portal in any direction you choose. The portal lasts for the duration, and the portal s destination is visible through it. The portal has a front and a back on each plane where it appears. Travel through the portal is possi - ble only by moving through its front. Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal. Deities and other planar rulers can prevent por - tals created by this spell from opening in their pres - ence or anywhere within their domains. When you cast this spell, you can speak the name - name doesn t work). If that creature is on a plane other than the one you are on, the portal opens next to the named creature and transports it to the nearest unoccupied space on your side of the portal. You gain no special power over the creature, and it is free to act as the GM deems appropriate. It might leave, attack you, or help you.GeasLevel 5 Enchantment (Bard, Cleric, Druid, Paladin, Wizard)Casting Time: 1 minute Range: 60 feet Components: V Duration: 30 daysYou give a verbal command to a creature that you can see within range, ordering it to carry out some service or refrain from an action or a course of ac - tivity as you decide. The target must succeed on a Wisdom saving throw or have the Charmed condi - tion for the duration. The target automatically suc - ceeds if it can t understand your command. While Charmed, the creature takes 5d10 Psychic damage if it acts in a manner directly counter to your command. It takes this damage no more than once each day. You can issue any command you choose, short of an activity that would result in certain death. Should you issue a suicidal command, the spell ends. A Remove Curse , Greater Restoration , or Wish spell ends this spell. Using a"
+    "text": "You can target one additional creature for each spell slot level above 3.GateLevel 9 Conjuration (Cleric, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 1 minuteYou conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence. The portal is a circular opening, which you can make 5 to 20 feet in diam - eter. You can orient the portal in any direction you choose. The portal lasts for the duration, and the portal’s destination is visible through it. The portal has a front and a back on each plane where it appears. Travel through the portal is possi - ble only by moving through its front. Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal. Deities and other planar rulers can prevent por - tals created by this spell from opening in their pres - ence or anywhere within their domains. When you cast this spell, you can speak the name - name doesn’t work). If that creature is on a plane other than the one you are on, the portal opens next to the named creature and transports it to the nearest unoccupied space on your side of the portal. You gain no special power over the creature, and it is free to act as the GM deems appropriate. It might leave, attack you, or help you.GeasLevel 5 Enchantment (Bard, Cleric, Druid, Paladin, Wizard)Casting Time: 1 minute Range: 60 feet Components: V Duration: 30 daysYou give a verbal command to a creature that you can see within range, ordering it to carry out some service or refrain from an action or a course of ac - tivity as you decide. The target must succeed on a Wisdom saving throw or have the Charmed condi - tion for the duration. The target automatically suc - ceeds if it can’t understand your command. While Charmed, the creature takes 5d10 Psychic damage if it acts in a manner directly counter to your command. It takes this damage no more than once each day. You can issue any command you choose, short of an activity that would result in certain death. Should you issue a suicidal command, the spell ends. A Remove Curse , Greater Restoration , or Wish spell ends this spell. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "If you use a level 7 or 8 spell slot, the duration is 365 days. If you use a level 9 spell slot, the spell lasts until it is ended by one of the spells mentioned above.Gentle ReposeLevel 2 Necromancy (Cleric, Paladin, Wizard)Casting Time: Action or Ritual Range: Touch Components: V, S, M (2 Copper Pieces, which the spell consumes) Duration: 10 daysYou touch a corpse or other remains. For the dura- tion, the target is protected from decay and can t become"
+    "text": "If you use a level 7 or 8 spell slot, the duration is 365 days. If you use a level 9 spell slot, the spell lasts until it is ended by one of the spells mentioned above.Gentle ReposeLevel 2 Necromancy (Cleric, Paladin, Wizard)Casting Time: Action or Ritual Range: Touch Components: V, S, M (2 Copper Pieces, which the spell consumes) Duration: 10 daysYou touch a corpse or other remains. For the dura- tion, the target is protected from decay and can’t become"
    },
    {
     "name": "Undead",
-    "text": "The spell also effectively extends the time limit on raising the target from the dead, since days spent the time limit of spells such as Raise Dead .Giant InsectLevel 4 Conjuration (Druid)Casting Time: Action Range: 60 feet Components: V, S Duration: Concentration, up to 10 minutesYou summon a giant centipede, spider, or wasp (cho - sen when you cast the spell). It manifests in an un - occupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don t issue any, it takes the Dodge action and uses its movement to avoid danger. 136 Using a"
+    "text": "The spell also effectively extends the time limit on raising the target from the dead, since days spent the time limit of spells such as Raise Dead .Giant InsectLevel 4 Conjuration (Druid)Casting Time: Action Range: 60 feet Components: V, S Duration: Concentration, up to 10 minutesYou summon a giant centipede, spider, or wasp (cho - sen when you cast the spell). It manifests in an un - occupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger. 136 Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "Use the spell slot s level for the spell s level in the stat block."
+    "text": "Use the spell slot’s level for the spell’s level in the stat block."
    }
   ],
   "reactions": [],
@@ -155,29 +155,29 @@ const RAW = [
   "actions": [
    {
     "name": "Multiattack",
-    "text": "The insect makes a number of attacks equal to half this spell s level (round down)."
+    "text": "The insect makes a number of attacks equal to half this spell’s level (round down)."
    },
    {
     "name": "Poison Jab",
-    "text": "Melee Attack Roll: Bonus equals your spell Hit: 1d6 + 3 plus the spell s level Piercing damage plus 1d4 Poison damage."
+    "text": "Melee Attack Roll: Bonus equals your spell Hit: 1d6 + 3 plus the spell’s level Piercing damage plus 1d4 Poison damage."
    },
    {
     "name": "Web Bolt (Spider Only)",
-    "text": "Ranged Attack Roll: Bonus Hit: 1d10 + 3 plus the spell s level Bludgeoning damage, and the target s Speed is reduced to 0 until the start of the in - sect s next turn."
+    "text": "Ranged Attack Roll: Bonus Hit: 1d10 + 3 plus the spell’s level Bludgeoning damage, and the target’s Speed is reduced to 0 until the start of the in - sect’s next turn."
    }
   ],
   "bonusActions": [
    {
     "name": "Venomous Spew (Centipede Only)",
-    "text": "Constitution Saving Throw: Your spell save DC, one creature the insect can see within 10 feet. Failure: The target has the Poisoned condition until the start of the insect s next turn.GlibnessLevel 8 Enchantment (Bard, Warlock)Casting Time: Action Range: Self Components: V Duration: 1 hourUntil the spell ends, when you make a Charisma check, you can replace the number you roll with a 15. Additionally, no matter what you say, magic that would determine if you are telling the truth indi - cates that you are being truthful.Globe of InvulnerabilityLevel 6 Abjuration (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V, S, M (a glass bead) Duration: Concentration, up to 1 minuteAn immobile, shimmering barrier appears in a 10- foot Emanation around you and remains for the duration. Any spell of level 5 or lower cast from outside the barrier can t affect anything within it. Such a spell can target creatures and objects within the barrier, but the spell has no effect on them. Similarly, the area within the barrier is excluded from areas of effect created by such spells. Using a"
+    "text": "Constitution Saving Throw: Your spell save DC, one creature the insect can see within 10 feet. Failure: The target has the Poisoned condition until the start of the insect’s next turn.GlibnessLevel 8 Enchantment (Bard, Warlock)Casting Time: Action Range: Self Components: V Duration: 1 hourUntil the spell ends, when you make a Charisma check, you can replace the number you roll with a 15. Additionally, no matter what you say, magic that would determine if you are telling the truth indi - cates that you are being truthful.Globe of InvulnerabilityLevel 6 Abjuration (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V, S, M (a glass bead) Duration: Concentration, up to 1 minuteAn immobile, shimmering barrier appears in a 10- foot Emanation around you and remains for the duration. Any spell of level 5 or lower cast from outside the barrier can’t affect anything within it. Such a spell can target creatures and objects within the barrier, but the spell has no effect on them. Similarly, the area within the barrier is excluded from areas of effect created by such spells. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The barrier blocks spells of 1 level higher for each spell slot level above 6.Glyph of WardingLevel 3 Abjuration (Bard, Cleric, Wizard)Casting Time: 1 hour Range: Touch Components: V, S, M (powdered diamond worth 200+ GP, which the spell consumes) Duration: Until dispelled or triggeredYou inscribe a glyph that later unleashes a magical effect. You inscribe it either on a surface (such as a can be closed (such as a book or chest) to conceal the glyph. The glyph can cover an area no larger than 10 feet in diameter. If the surface or object is moved more than 10 feet from where you cast this spell, the glyph is broken, and the spell ends with - out being triggered. The glyph is nearly imperceptible and requires a successful Wisdom (Perception) check against your spell save DC to notice. When you inscribe the glyph, you set its trigger and choose whether it s an explosive rune or a spell glyph, as explained below."
+    "text": "The barrier blocks spells of 1 level higher for each spell slot level above 6.Glyph of WardingLevel 3 Abjuration (Bard, Cleric, Wizard)Casting Time: 1 hour Range: Touch Components: V, S, M (powdered diamond worth 200+ GP, which the spell consumes) Duration: Until dispelled or triggeredYou inscribe a glyph that later unleashes a magical effect. You inscribe it either on a surface (such as a can be closed (such as a book or chest) to conceal the glyph. The glyph can cover an area no larger than 10 feet in diameter. If the surface or object is moved more than 10 feet from where you cast this spell, the glyph is broken, and the spell ends with - out being triggered. The glyph is nearly imperceptible and requires a successful Wisdom (Perception) check against your spell save DC to notice. When you inscribe the glyph, you set its trigger and choose whether it’s an explosive rune or a spell glyph, as explained below."
    },
    {
     "name": "Set the Trigger",
-    "text": "You decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, common triggers include touching or stepping on the glyph, removing another object cov - ering it, or approaching within a certain distance of it. For glyphs inscribed within an object, common triggers include opening that object or seeing the glyph. Once a glyph is triggered, this spell ends. of certain types activate it (for example, the glyph could be set to affect Aberrations). You can also set conditions for creatures that don t trigger the glyph, such as those who say a certain password."
+    "text": "You decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, common triggers include touching or stepping on the glyph, removing another object cov - ering it, or approaching within a certain distance of it. For glyphs inscribed within an object, common triggers include opening that object or seeing the glyph. Once a glyph is triggered, this spell ends. of certain types activate it (for example, the glyph could be set to affect Aberrations). You can also set conditions for creatures that don’t trigger the glyph, such as those who say a certain password."
    },
    {
     "name": "Explosive Rune",
@@ -189,7 +189,7 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage of an explosive rune increases by 1d8 for each spell slot level above 3. If you create a spell glyph, you can store any spell of up to the same level as the spell slot you use for the Glyph of Warding.GoodberryLevel 1 Conjuration (Druid, Ranger)Casting Time: Action Range: Self Components: V, S, M (a sprig of mistletoe) Duration: Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry re - stores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.GreaseLevel 1 Conjuration (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a bit of pork rind or butter) Duration: 1 minute foot square centered on a point within range and When the grease appears, each creature stand - ing in its area must succeed on a Dexterity saving throw or have the Prone condition. A creature that enters the area or ends its turn there must also suc - ceed on that save or fall Prone.Greater InvisibilityLevel 4 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: Concentration, up to 1 minuteA creature you touch has the Invisible condition un - til the spell ends.Greater RestorationLevel 5 Abjuration (Bard, Cleric, Druid, Paladin, Ranger)Casting Time: Action Range: Touch Components: V, S, M (diamond dust worth 100+ GP, which the spell consumes) Duration: InstantaneousYou touch a creature and magically remove one of the following effects from it: 1 Exhaustion level A curse, including the target s Attunement to a cursed magic item Any reduction to one of the target s ability scores Any reduction to the target s Hit Point maximumGuardian of FaithLevel 4 Conjuration (Cleric)Casting Time: Action Range: 30 feet Components: V Duration: 8 hoursA Large spectral guardian appears and hovers for the duration in an unoccupied space that you can see within range. The guardian occupies that space and is invulnerable, and it appears in a form appro - priate for your deity or pantheon. Any enemy that moves to a space within 10 feet of turn there makes a Dexterity saving throw, taking 20 Radiant damage on a failed save or half as much damage on a successful one. The guardian vanishes when it has dealt a total of 60 damage.Guards and WardsLevel 6 Abjuration (Bard, Wizard)Casting Time: 1 hour Range: Touch Components: V, S, M (a silver rod worth 10+ GP) Duration: You create a ward that protects up to 2,500 square 20 feet tall, and you shape it as one 50-foot square, one hundred 5-foot squares that are contiguous, or When you cast this spell, you can specify individu - als that are unaffected by the spell s effects. You can also specify a password that, when spoken aloud within 5 feet of the warded area, makes the speaker immune to its effects. 138 The spell creates the effects below within the warded area. Dispel Magic has no effect on Guards and Wards itself, but each of the following effects can be dispelled. If all four are dispelled, Guards and Wards ends. If you cast the spell every day for 365 days on the same area, the spell thereafter lasts un - til all its effects are dispelled. Corridors. making them"
+    "text": "The damage of an explosive rune increases by 1d8 for each spell slot level above 3. If you create a spell glyph, you can store any spell of up to the same level as the spell slot you use for the Glyph of Warding.GoodberryLevel 1 Conjuration (Druid, Ranger)Casting Time: Action Range: Self Components: V, S, M (a sprig of mistletoe) Duration: Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry re - stores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.GreaseLevel 1 Conjuration (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a bit of pork rind or butter) Duration: 1 minute foot square centered on a point within range and When the grease appears, each creature stand - ing in its area must succeed on a Dexterity saving throw or have the Prone condition. A creature that enters the area or ends its turn there must also suc - ceed on that save or fall Prone.Greater InvisibilityLevel 4 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: Concentration, up to 1 minuteA creature you touch has the Invisible condition un - til the spell ends.Greater RestorationLevel 5 Abjuration (Bard, Cleric, Druid, Paladin, Ranger)Casting Time: Action Range: Touch Components: V, S, M (diamond dust worth 100+ GP, which the spell consumes) Duration: InstantaneousYou touch a creature and magically remove one of the following effects from it: • 1 Exhaustion level • • A curse, including the target’s Attunement to a cursed magic item • Any reduction to one of the target’s ability scores • Any reduction to the target’s Hit Point maximumGuardian of FaithLevel 4 Conjuration (Cleric)Casting Time: Action Range: 30 feet Components: V Duration: 8 hoursA Large spectral guardian appears and hovers for the duration in an unoccupied space that you can see within range. The guardian occupies that space and is invulnerable, and it appears in a form appro - priate for your deity or pantheon. Any enemy that moves to a space within 10 feet of turn there makes a Dexterity saving throw, taking 20 Radiant damage on a failed save or half as much damage on a successful one. The guardian vanishes when it has dealt a total of 60 damage.Guards and WardsLevel 6 Abjuration (Bard, Wizard)Casting Time: 1 hour Range: Touch Components: V, S, M (a silver rod worth 10+ GP) Duration: You create a ward that protects up to 2,500 square 20 feet tall, and you shape it as one 50-foot square, one hundred 5-foot squares that are contiguous, or When you cast this spell, you can specify individu - als that are unaffected by the spell’s effects. You can also specify a password that, when spoken aloud within 5 feet of the warded area, makes the speaker immune to its effects. 138 The spell creates the effects below within the warded area. Dispel Magic has no effect on Guards and Wards itself, but each of the following effects can be dispelled. If all four are dispelled, Guards and Wards ends. If you cast the spell every day for 365 days on the same area, the spell thereafter lasts un - til all its effects are dispelled. Corridors. making them"
    },
    {
     "name": "Heavily Obscured",
@@ -201,7 +201,7 @@ const RAW = [
    },
    {
     "name": "Other Spell Effect",
-    "text": "Place one of the following mag - ical effects within the warded area: Dancing Lights in four corridors, with a simple program that the lights repeat as long as Guards and Wards lasts Magic Mouth in two locations Stinking Cloud in two locations (the vapors return within 10 minutes if dispersed while Guards and Wards lasts) Gust of Wind in one corridor or room (the wind blows continuously while the spell lasts) Suggestion in one 5-foot square; any creature that enters that square receives the suggestion mentallyGuidanceDivination Cantrip (Cleric, Druid)Casting Time: Action Range: Touch Component: V, S Duration: Concentration, up to 1 minuteYou touch a willing creature and choose a skill. Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill.Guiding BoltLevel 1 Evocation (Cleric)Casting Time: Action Range: 120 feet Components: V, S Duration: 1 roundYou hurl a bolt of light toward a creature within range. Make a ranged spell attack against the tar - get. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has"
+    "text": "Place one of the following mag - ical effects within the warded area: • Dancing Lights in four corridors, with a simple program that the lights repeat as long as Guards and Wards lasts • Magic Mouth in two locations • Stinking Cloud in two locations (the vapors return within 10 minutes if dispersed while Guards and Wards lasts) • Gust of Wind in one corridor or room (the wind blows continuously while the spell lasts) • Suggestion in one 5-foot square; any creature that enters that square receives the suggestion mentallyGuidanceDivination Cantrip (Cleric, Druid)Casting Time: Action Range: Touch Component: V, S Duration: Concentration, up to 1 minuteYou touch a willing creature and choose a skill. Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill.Guiding BoltLevel 1 Evocation (Cleric)Casting Time: Action Range: 120 feet Components: V, S Duration: 1 roundYou hurl a bolt of light toward a creature within range. Make a ranged spell attack against the tar - get. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has"
    },
    {
     "name": "Advantage",
@@ -217,7 +217,7 @@ const RAW = [
    },
    {
     "name": "Undead",
-    "text": "Creatures of the chosen types can t willingly enter the area, and any creature that is possessed by or that has the Charmed or Fright - ened condition from such creatures isn t possessed, Charmed, or Frightened by them while in the area."
+    "text": "Creatures of the chosen types can’t willingly enter the area, and any creature that is possessed by or that has the Charmed or Fright - ened condition from such creatures isn’t possessed, Charmed, or Frightened by them while in the area."
    },
    {
     "name": "Extra Effect",
@@ -225,15 +225,15 @@ const RAW = [
    },
    {
     "name": "Courage",
-    "text": "Creatures of any types you choose can t gain the Frightened condition while in the area. Darkness. well as magical light created by spells of a level lower than this spell, can t illuminate the area. 139Daylight. - ness created by spells of a level lower than this spell can t extinguish the light."
+    "text": "Creatures of any types you choose can’t gain the Frightened condition while in the area. Darkness. well as magical light created by spells of a level lower than this spell, can’t illuminate the area. 139Daylight. - ness created by spells of a level lower than this spell can’t extinguish the light."
    },
    {
     "name": "Peaceful Rest",
-    "text": "Dead bodies interred in the area can t be turned into"
+    "text": "Dead bodies interred in the area can’t be turned into"
    },
    {
     "name": "Extradimensional Interference",
-    "text": "Creatures of any types you choose can t enter or exit the area using teleportation or interplanar travel."
+    "text": "Creatures of any types you choose can’t enter or exit the area using teleportation or interplanar travel."
    },
    {
     "name": "Fear",
@@ -249,11 +249,11 @@ const RAW = [
    },
    {
     "name": "Tongues",
-    "text": "Creatures of any types you choose can communicate with any other creature in the area even if they don t share a common language."
+    "text": "Creatures of any types you choose can communicate with any other creature in the area even if they don’t share a common language."
    },
    {
     "name": "Vulnerability",
-    "text": "Creatures of any types you choose have Vulnerability to one damage type of your choice while in the area.Hallucinatory TerrainLevel 4 Illusion (Bard, Druid, Warlock, Wizard)Casting Time: 10 minutes Range: 300 feet Components: V, S, M (a mushroom) Duration: You make natural terrain in a 150-foot Cube in range look, sound, and smell like another sort of made to resemble a swamp, hill, crevasse, or some made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road. Manufactured structures, equipment, and creatures within the area aren t changed. The tactile characteristics of the terrain are un - changed, so creatures entering the area are likely to notice the illusion. If the difference isn t obvious by touch, a creature examining the illusion can take the Study action to make an Intelligence (Investiga- tion) check against your spell save DC to disbelieve it. If a creature discerns that the terrain is illusory, the creature sees a vague image superimposed on the real terrain.HarmLevel 6 Necromancy (Cleric)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousYou unleash virulent magic on a creature you can see within range. The target makes a Constitu - tion saving throw. On a failed save, it takes 14d6 Necrotic damage, and its Hit Point maximum is re - duced by an amount equal to the Necrotic damage it took. On a successful save, it takes half as much damage only. This spell can t reduce a target s Hit Point maximum below 1.HasteLevel 3 Transmutation (Sorcerer, Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a shaving of licorice root) Duration: Concentration, up to 1 minuteChoose a willing creature that you can see within range. Until the spell ends, the target s Speed is doubled, it gains a +2 bonus to Armor Class, it has Advantage on Dexterity saving throws, and it gains an additional action on each of its turns. That ac - tion can be used to take only the Attack (one attack only), Dash, Disengage, Hide, or Utilize action. When the spell ends, the target is Incapacitated and has a Speed of 0 until the end of its next turn, as a wave of lethargy washes over it.HealLevel 6 Abjuration (Cleric, Druid)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousChoose a creature that you can see within range. Positive energy washes through the target, restor - ing 70"
+    "text": "Creatures of any types you choose have Vulnerability to one damage type of your choice while in the area.Hallucinatory TerrainLevel 4 Illusion (Bard, Druid, Warlock, Wizard)Casting Time: 10 minutes Range: 300 feet Components: V, S, M (a mushroom) Duration: You make natural terrain in a 150-foot Cube in range look, sound, and smell like another sort of made to resemble a swamp, hill, crevasse, or some made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road. Manufactured structures, equipment, and creatures within the area aren’t changed. The tactile characteristics of the terrain are un - changed, so creatures entering the area are likely to notice the illusion. If the difference isn’t obvious by touch, a creature examining the illusion can take the Study action to make an Intelligence (Investiga- tion) check against your spell save DC to disbelieve it. If a creature discerns that the terrain is illusory, the creature sees a vague image superimposed on the real terrain.HarmLevel 6 Necromancy (Cleric)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousYou unleash virulent magic on a creature you can see within range. The target makes a Constitu - tion saving throw. On a failed save, it takes 14d6 Necrotic damage, and its Hit Point maximum is re - duced by an amount equal to the Necrotic damage it took. On a successful save, it takes half as much damage only. This spell can’t reduce a target’s Hit Point maximum below 1.HasteLevel 3 Transmutation (Sorcerer, Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a shaving of licorice root) Duration: Concentration, up to 1 minuteChoose a willing creature that you can see within range. Until the spell ends, the target’s Speed is doubled, it gains a +2 bonus to Armor Class, it has Advantage on Dexterity saving throws, and it gains an additional action on each of its turns. That ac - tion can be used to take only the Attack (one attack only), Dash, Disengage, Hide, or Utilize action. When the spell ends, the target is Incapacitated and has a Speed of 0 until the end of its next turn, as a wave of lethargy washes over it.HealLevel 6 Abjuration (Cleric, Druid)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousChoose a creature that you can see within range. Positive energy washes through the target, restor - ing 70"
    },
    {
     "name": "Hit Points",
@@ -265,7 +265,7 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The healing in- creases by 2d4 for each spell slot level above 1.Heat MetalLevel 2 Transmutation (Bard, Druid)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 1 minute 140Choose a manufactured metal object, such as a metal weapon or a suit of Heavy or Medium metal armor, that you can see within range. You cause the object to glow red-hot. Any creature in physical contact with the object takes 2d8 Fire damage when you cast the spell. Until the spell ends, you can take a Bonus Action on each of your later turns to deal this damage again if the object is within range. If a creature is holding or wearing the object and takes the damage from it, the creature must suc - ceed on a Constitution saving throw or drop the object if it can. If it doesn t drop the object, it has Disadvantage on attack rolls and ability checks un - til the start of your next turn. Using a"
+    "text": "The healing in- creases by 2d4 for each spell slot level above 1.Heat MetalLevel 2 Transmutation (Bard, Druid)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 1 minute 140Choose a manufactured metal object, such as a metal weapon or a suit of Heavy or Medium metal armor, that you can see within range. You cause the object to glow red-hot. Any creature in physical contact with the object takes 2d8 Fire damage when you cast the spell. Until the spell ends, you can take a Bonus Action on each of your later turns to deal this damage again if the object is within range. If a creature is holding or wearing the object and takes the damage from it, the creature must suc - ceed on a Constitution saving throw or drop the object if it can. If it doesn’t drop the object, it has Disadvantage on attack rolls and ability checks un - til the start of your next turn. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -273,7 +273,7 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d10 for each spell slot level above 1.Heroes FeastLevel 6 Conjuration (Bard, Cleric, Druid)Casting Time: 10 minutes Range: Self Components: V, S, M (a gem-encrusted bowl worth 1,000+ GP, which the spell consumes) Duration: InstantaneousYou conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you. The feast takes 1 hour to consume and disappears at the end until this hour is over. Up to twelve creatures can partake of the feast. which last for 24 hours. The creature has Resis - tance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions. Its Hit Point maximum also increases by 2d10, and it gains the same number of Hit Points.HeroismLevel 1 Enchantment (Bard, Paladin)Casting Time: Action Range: Touch Components: V, S Duration: Concentration, up to 1 minuteA willing creature you touch is imbued with brav - ery. Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit the start of each of its turns. Using a"
+    "text": "The damage in - creases by 1d10 for each spell slot level above 1.Heroes’ FeastLevel 6 Conjuration (Bard, Cleric, Druid)Casting Time: 10 minutes Range: Self Components: V, S, M (a gem-encrusted bowl worth 1,000+ GP, which the spell consumes) Duration: InstantaneousYou conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you. The feast takes 1 hour to consume and disappears at the end until this hour is over. Up to twelve creatures can partake of the feast. which last for 24 hours. The creature has Resis - tance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions. Its Hit Point maximum also increases by 2d10, and it gains the same number of Hit Points.HeroismLevel 1 Enchantment (Bard, Paladin)Casting Time: Action Range: Touch Components: V, S Duration: Concentration, up to 1 minuteA willing creature you touch is imbued with brav - ery. Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit the start of each of its turns. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -281,7 +281,7 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "Your Concentra - tion can last longer with a spell slot of level 2 (up to 4 hours), 3 4 (up to 8 hours), or 5+ (24 hours).Hideous LaughterLevel 1 Enchantment (Bard, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a tart and a feather) Duration: Concentration, up to 1 minuteOne creature of your choice that you can see within range makes a Wisdom saving throw. On a failed save, it has the Prone and Incapacitated conditions for the duration. During that time, it laughs uncon - trollably if it s capable of laughter, and it can t end the Prone condition on itself. At the end of each of its turns and each time it takes damage, it makes another Wisdom saving throw. The target has Advantage on the save if the save is triggered by damage. On a successful save, the spell ends. Using a"
+    "text": "Your Concentra - tion can last longer with a spell slot of level 2 (up to 4 hours), 3–4 (up to 8 hours), or 5+ (24 hours).Hideous LaughterLevel 1 Enchantment (Bard, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a tart and a feather) Duration: Concentration, up to 1 minuteOne creature of your choice that you can see within range makes a Wisdom saving throw. On a failed save, it has the Prone and Incapacitated conditions for the duration. During that time, it laughs uncon - trollably if it’s capable of laughter, and it can’t end the Prone condition on itself. At the end of each of its turns and each time it takes damage, it makes another Wisdom saving throw. The target has Advantage on the save if the save is triggered by damage. On a successful save, the spell ends. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -293,11 +293,11 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can target one additional Humanoid for each spell slot level above 2.Holy AuraLevel 8 Abjuration (Cleric)Casting Time: Action Range: Self Components: V, S, M (a reliquary worth 1,000+ GP) Duration: Concentration, up to 1 minuteFor the duration, you emit an aura in a 30-foot Em - anation. While in the aura, creatures of your choice have Advantage on all saving throws, and other creatures have Disadvantage on attack rolls against them. In addition, when a Fiend or an Undead hits an affected creature with a melee attack roll, the at - tacker must succeed on a Constitution saving throw or have the Blinded condition until the end of its next turn.Hunter s MarkLevel 1 Divination (Ranger)Casting Time: Bonus Action Range: 90 feet Components: V Duration: Concentration, up to 1 hourYou magically mark one creature you can see within range as your quarry. Until the spell ends, you deal an extra 1d6 Force damage to the target whenever you hit it with an attack roll. You also have Advan - tage on any Wisdom (Perception or Survival) check If the target drops to 0 Hit Points before this spell ends, you can take a Bonus Action to move the mark to a new creature you can see within range. Using a"
+    "text": "You can target one additional Humanoid for each spell slot level above 2.Holy AuraLevel 8 Abjuration (Cleric)Casting Time: Action Range: Self Components: V, S, M (a reliquary worth 1,000+ GP) Duration: Concentration, up to 1 minuteFor the duration, you emit an aura in a 30-foot Em - anation. While in the aura, creatures of your choice have Advantage on all saving throws, and other creatures have Disadvantage on attack rolls against them. In addition, when a Fiend or an Undead hits an affected creature with a melee attack roll, the at - tacker must succeed on a Constitution saving throw or have the Blinded condition until the end of its next turn.Hunter’s MarkLevel 1 Divination (Ranger)Casting Time: Bonus Action Range: 90 feet Components: V Duration: Concentration, up to 1 hourYou magically mark one creature you can see within range as your quarry. Until the spell ends, you deal an extra 1d6 Force damage to the target whenever you hit it with an attack roll. You also have Advan - tage on any Wisdom (Perception or Survival) check If the target drops to 0 Hit Points before this spell ends, you can take a Bonus Action to move the mark to a new creature you can see within range. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "Your Concentra - tion can last longer with a spell slot of level 3 4 (up to 8 hours) or 5+ (up to 24 hours).Hypnotic PatternLevel 3 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 120 feet Components: S, M (a pinch of confetti) Duration: Concentration, up to 1 minuteYou create a twisting pattern of colors in a 30-foot Cube within range. The pattern appears for a mo - ment and vanishes. Each creature in the area who can see the pattern must succeed on a Wisdom saving throw or have the Charmed condition for the duration. While Charmed, the creature has the Inca- pacitated condition and a Speed of 0. The spell ends for an affected creature if it takes any damage or if someone else uses an action to shake the creature out of its stupor.Ice KnifeLevel 1 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: S, M (a drop of water or a piece of ice) Duration: Instantaneous within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Piercing damage. Hit or miss, the shard then explodes. The target and each creature within 5 feet of it must succeed on a Dexterity saving throw or take 2d6 Cold damage. Using a"
+    "text": "Your Concentra - tion can last longer with a spell slot of level 3–4 (up to 8 hours) or 5+ (up to 24 hours).Hypnotic PatternLevel 3 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 120 feet Components: S, M (a pinch of confetti) Duration: Concentration, up to 1 minuteYou create a twisting pattern of colors in a 30-foot Cube within range. The pattern appears for a mo - ment and vanishes. Each creature in the area who can see the pattern must succeed on a Wisdom saving throw or have the Charmed condition for the duration. While Charmed, the creature has the Inca- pacitated condition and a Speed of 0. The spell ends for an affected creature if it takes any damage or if someone else uses an action to shake the creature out of its stupor.Ice KnifeLevel 1 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: S, M (a drop of water or a piece of ice) Duration: Instantaneous within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Piercing damage. Hit or miss, the shard then explodes. The target and each creature within 5 feet of it must succeed on a Dexterity saving throw or take 2d6 Cold damage. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -305,7 +305,7 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The Bludgeoning damage increases by 1d10 for each spell slot level above 4.IdentifyLevel 1 Divination (Bard, Wizard)Casting Time: 1 minute or Ritual Range: Touch Components: V, S, M (a pearl worth 100+ GP) Duration: InstantaneousYou touch an object throughout the spell s casting. If the object is a magic item or some other magi - cal object, you learn its properties and how to use them, whether it requires Attunement, and how many charges it has, if any. You learn whether any ongoing spells are affecting the item and what they are. If the item was created by a spell, you learn that spell s name. If you instead touch a creature throughout the casting, you learn which ongoing spells, if any, are currently affecting it.Illusory ScriptLevel 1 Illusion (Bard, Warlock, Wizard)Casting Time: 1 minute or Ritual Range: Touch Components: S, M (ink worth 10+ GP, which the spell consumes) Duration: 10 daysYou write on parchment, paper, or another suitable material and imbue it with an illusion that lasts for the duration. To you and any creatures you desig - nate when you cast the spell, the writing appears normal, seems to be written in your hand, and conveys whatever meaning you intended when you wrote the text. To all others, the writing appears as if it were written in an unknown or magical script that is unintelligible. Alternatively, the illusion can alter the meaning, handwriting, and language of the text, though the language must be one you know. If the spell is dispelled, the original script and the illusion both disappear. A creature that has Truesight can read the hidden message.ImprisonmentLevel 9 Abjuration (Warlock, Wizard)Casting Time: 1 minute Range: 30 feet Components: V, S, M (a statuette of the target worth Duration: Until dispelledYou create a magical restraint to hold a creature that you can see within range. The target must make a Wisdom saving throw. On a successful save, the target is unaffected, and it is immune to this spell for the next 24 hours. On a failed save, the target is imprisoned. While imprisoned, the target doesn t need to breathe, eat, or drink, and it doesn t age. Divination spells can t locate or perceive the imprisoned target, and the target can t teleport. Until the spell ends, the target is also affected by one of the following effects of your choice: The target is entombed beneath the earth in a hollow globe of magical force that is just large enough to contain the target. Nothing can pass into or out of the globe. Chaining. the target in place. The target has the Restrained condition and can t be moved by any means."
+    "text": "The Bludgeoning damage increases by 1d10 for each spell slot level above 4.IdentifyLevel 1 Divination (Bard, Wizard)Casting Time: 1 minute or Ritual Range: Touch Components: V, S, M (a pearl worth 100+ GP) Duration: InstantaneousYou touch an object throughout the spell’s casting. If the object is a magic item or some other magi - cal object, you learn its properties and how to use them, whether it requires Attunement, and how many charges it has, if any. You learn whether any ongoing spells are affecting the item and what they are. If the item was created by a spell, you learn that spell’s name. If you instead touch a creature throughout the casting, you learn which ongoing spells, if any, are currently affecting it.Illusory ScriptLevel 1 Illusion (Bard, Warlock, Wizard)Casting Time: 1 minute or Ritual Range: Touch Components: S, M (ink worth 10+ GP, which the spell consumes) Duration: 10 daysYou write on parchment, paper, or another suitable material and imbue it with an illusion that lasts for the duration. To you and any creatures you desig - nate when you cast the spell, the writing appears normal, seems to be written in your hand, and conveys whatever meaning you intended when you wrote the text. To all others, the writing appears as if it were written in an unknown or magical script that is unintelligible. Alternatively, the illusion can alter the meaning, handwriting, and language of the text, though the language must be one you know. If the spell is dispelled, the original script and the illusion both disappear. A creature that has Truesight can read the hidden message.ImprisonmentLevel 9 Abjuration (Warlock, Wizard)Casting Time: 1 minute Range: 30 feet Components: V, S, M (a statuette of the target worth Duration: Until dispelledYou create a magical restraint to hold a creature that you can see within range. The target must make a Wisdom saving throw. On a successful save, the target is unaffected, and it is immune to this spell for the next 24 hours. On a failed save, the target is imprisoned. While imprisoned, the target doesn’t need to breathe, eat, or drink, and it doesn’t age. Divination spells can’t locate or perceive the imprisoned target, and the target can’t teleport. Until the spell ends, the target is also affected by one of the following effects of your choice: The target is entombed beneath the earth in a hollow globe of magical force that is just large enough to contain the target. Nothing can pass into or out of the globe. Chaining. the target in place. The target has the Restrained condition and can’t be moved by any means."
    },
    {
     "name": "Hedged Prison",
@@ -317,11 +317,11 @@ const RAW = [
    },
    {
     "name": "Slumber",
-    "text": "The target has the Unconscious condition and can t be awoken."
+    "text": "The target has the Unconscious condition and can’t be awoken."
    },
    {
     "name": "Ending the Spell",
-    "text": "When you cast the spell, specify a trigger that will end it. The trigger can be as sim - ple or as elaborate as you choose, but the GM must agree that it has a high likelihood of happening within the next decade. The trigger must be an ob - servable action, such as someone making a partic - ular offering at the temple of your god, saving your A Dispel Magic spell can end the spell only if it is cast with a level 9 spell slot, targeting either the prison or the component used to create it.Incendiary CloudLevel 8 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: Components: V, S Duration: Concentration, up to 1 minute 20-foot-radius Sphere centered on a point within range. The cloud s area is"
+    "text": "When you cast the spell, specify a trigger that will end it. The trigger can be as sim - ple or as elaborate as you choose, but the GM must agree that it has a high likelihood of happening within the next decade. The trigger must be an ob - servable action, such as someone making a partic - ular offering at the temple of your god, saving your A Dispel Magic spell can end the spell only if it is cast with a level 9 spell slot, targeting either the prison or the component used to create it.Incendiary CloudLevel 8 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: Components: V, S Duration: Concentration, up to 1 minute 20-foot-radius Sphere centered on a point within range. The cloud’s area is"
    },
    {
     "name": "Heavily Obscured",
@@ -333,11 +333,11 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d10 for each spell slot level above 5.Instant SummonsLevel 6 Conjuration (Wizard)Casting Time: 1 minute or Ritual Range: Touch Components: V, S, M (a sapphire worth 1,000+ GP) Duration: Until dispelledYou touch the sapphire used in the casting and an object weighing 10 pounds or less whose longest dimension is 6 feet or less. The spell leaves an Invis - ible mark on that object and invisibly inscribes the object s name on the sapphire. Each time you cast this spell, you must use a different sapphire. Thereafter, you can take a Magic action to speak the object s name and crush the sapphire. The ob - ject instantly appears in your hand regardless of physical or planar distances, and the spell ends. If another creature is holding or carrying the ob - ject, crushing the sapphire doesn t transport it, but instead you learn who that creature is and where that creature is currently located.Irresistible DanceLevel 6 Enchantment (Bard, Wizard)Casting Time: Action Range: 30 feet Components: V Duration: Concentration, up to 1 minuteOne creature that you can see within range must make a Wisdom saving throw. On a successful save, the target dances comically until the end of its next turn, during which it must spend all its movement to dance in place. On a failed save, the target has the Charmed con - dition for the duration. While Charmed, the target dances comically, must use all its movement to dance in place, and has Disadvantage on Dexterity saving throws and attack rolls, and other creatures have Advantage on attack rolls against it. On each of its turns, the target can take an action to collect itself and repeat the save, ending the spell on itself on a success.InvisibilityLevel 2 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (an eyelash in gum arabic) Duration: Concentration, up to 1 hourA creature you touch has the Invisible condition un - til the spell ends. The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell. Using a"
+    "text": "The damage in - creases by 1d10 for each spell slot level above 5.Instant SummonsLevel 6 Conjuration (Wizard)Casting Time: 1 minute or Ritual Range: Touch Components: V, S, M (a sapphire worth 1,000+ GP) Duration: Until dispelledYou touch the sapphire used in the casting and an object weighing 10 pounds or less whose longest dimension is 6 feet or less. The spell leaves an Invis - ible mark on that object and invisibly inscribes the object’s name on the sapphire. Each time you cast this spell, you must use a different sapphire. Thereafter, you can take a Magic action to speak the object’s name and crush the sapphire. The ob - ject instantly appears in your hand regardless of physical or planar distances, and the spell ends. If another creature is holding or carrying the ob - ject, crushing the sapphire doesn’t transport it, but instead you learn who that creature is and where that creature is currently located.Irresistible DanceLevel 6 Enchantment (Bard, Wizard)Casting Time: Action Range: 30 feet Components: V Duration: Concentration, up to 1 minuteOne creature that you can see within range must make a Wisdom saving throw. On a successful save, the target dances comically until the end of its next turn, during which it must spend all its movement to dance in place. On a failed save, the target has the Charmed con - dition for the duration. While Charmed, the target dances comically, must use all its movement to dance in place, and has Disadvantage on Dexterity saving throws and attack rolls, and other creatures have Advantage on attack rolls against it. On each of its turns, the target can take an action to collect itself and repeat the save, ending the spell on itself on a success.InvisibilityLevel 2 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (an eyelash in gum arabic) Duration: Concentration, up to 1 hourA creature you touch has the Invisible condition un - til the spell ends. The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can target one additional creature for each spell slot level above 2.JumpLevel 1 Transmutation (Druid, Ranger, Sorcerer, Wizard)Casting Time: Bonus Action Range: Touch Component: V, S, M (a grasshopper s hind leg) Duration: 1 minuteYou touch a willing creature. Once on each of its turns until the spell ends, that creature can jump up to 30 feet by spending 10 feet of movement. Using a"
+    "text": "You can target one additional creature for each spell slot level above 2.JumpLevel 1 Transmutation (Druid, Ranger, Sorcerer, Wizard)Casting Time: Bonus Action Range: Touch Component: V, S, M (a grasshopper’s hind leg) Duration: 1 minuteYou touch a willing creature. Once on each of its turns until the spell ends, that creature can jump up to 30 feet by spending 10 feet of movement. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -349,45 +349,45 @@ const RAW = [
    },
    {
     "name": "GM",
-    "text": "If the famous thing you chose isn t actually fa- mous, you hear sad musical notes played on a trom - bone, and the spell fails.Lesser RestorationLevel 2 Abjuration (Bard, Cleric, Druid, Paladin, Ranger)Casting Time: Bonus Action Range: Touch Components: V, S Duration: InstantaneousYou touch a creature and end one condition on it: Blinded, Deafened, Paralyzed, or Poisoned.LevitateLevel 2 Transmutation (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a metal spring) Duration: Concentration, up to 10 minutesOne creature or loose object of your choice that you can see within range rises vertically up to 20 feet and remains suspended there for the duration. The spell can levitate an object that weighs up to 500 pounds. An unwilling creature that succeeds on a Constitution saving throw is unaffected. The target can move only by pushing or pulling as a wall or a ceiling), which allows it to move as if it were climbing. You can change the target s altitude by up to 20 feet in either direction on your turn. If you are the target, you can move up or down as part of your move. Otherwise, you can take a Magic ac - tion to move the target, which must remain within the spell s range. ground if it is still aloft.LightEvocation Cantrip (Bard, Cleric, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: Duration: 1 hourYou touch one Large or smaller object that isn t being worn or carried by someone else. Until the spell ends, the object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The light can be colored as you like. Covering the object with something opaque blocks the light. The spell ends if you cast it again.Lightning BoltLevel 3 Evocation (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V, S, M (a bit of fur and a crystal rod) Duration: InstantaneousA stroke of lightning forming a 100-foot-long, 5-foot-wide Line blasts out from you in a direction you choose. Each creature in the Line makes a Dex - terity saving throw, taking 8d6 Lightning damage on a failed save or half as much damage on a suc - cessful one. Using a"
+    "text": "If the famous thing you chose isn’t actually fa- mous, you hear sad musical notes played on a trom - bone, and the spell fails.Lesser RestorationLevel 2 Abjuration (Bard, Cleric, Druid, Paladin, Ranger)Casting Time: Bonus Action Range: Touch Components: V, S Duration: InstantaneousYou touch a creature and end one condition on it: Blinded, Deafened, Paralyzed, or Poisoned.LevitateLevel 2 Transmutation (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a metal spring) Duration: Concentration, up to 10 minutesOne creature or loose object of your choice that you can see within range rises vertically up to 20 feet and remains suspended there for the duration. The spell can levitate an object that weighs up to 500 pounds. An unwilling creature that succeeds on a Constitution saving throw is unaffected. The target can move only by pushing or pulling as a wall or a ceiling), which allows it to move as if it were climbing. You can change the target’s altitude by up to 20 feet in either direction on your turn. If you are the target, you can move up or down as part of your move. Otherwise, you can take a Magic ac - tion to move the target, which must remain within the spell’s range. ground if it is still aloft.LightEvocation Cantrip (Bard, Cleric, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: Duration: 1 hourYou touch one Large or smaller object that isn’t being worn or carried by someone else. Until the spell ends, the object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The light can be colored as you like. Covering the object with something opaque blocks the light. The spell ends if you cast it again.Lightning BoltLevel 3 Evocation (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V, S, M (a bit of fur and a crystal rod) Duration: InstantaneousA stroke of lightning forming a 100-foot-long, 5-foot-wide Line blasts out from you in a direction you choose. Each creature in the Line makes a Dex - terity saving throw, taking 8d6 Lightning damage on a failed save or half as much damage on a suc - cessful one. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d6 for each spell slot level above 3.Locate Animals or PlantsLevel 2 Divination (Bard, Druid, Ranger)Casting Time: Action or Ritual Range: Self Components: V, S, M (fur from a bloodhound) Duration: Instantaneous creature, or nonmagical plant. You learn the direc - tion and distance to the closest creature or plant of that kind within 5 miles, if any are present. 145Locate CreatureLevel 4 Divination (Bard, Cleric, Druid, Paladin, Ranger, Wizard)Casting Time: Action Range: Self Components: V, S, M (fur from a bloodhound) Duration: Concentration, up to 1 hourDescribe or name a creature that is familiar to you. You sense the direction to the creature s location if that creature is within 1,000 feet of you. If the creature is moving, you know the direction of its movement. as a human or a unicorn) if you have seen such a If the creature you described or named is in a dif - ferent form, such as under the effects of a Flesh to Stone or Polymorph spell, this spell doesn t locate the creature. This spell can t locate a creature if any thickness of lead blocks a direct path between you and the creature.Locate ObjectLevel 2 Divination (Bard, Cleric, Druid, Paladin, Ranger, Wizard)Casting Time: Action Range: Self Components: V, S, M (a forked twig) Duration: Concentration, up to 10 minutesDescribe or name an object that is familiar to you. You sense the direction to the object s location if that object is within 1,000 feet of you. If the object is in motion, you know the direction of its movement. once. Alternatively, the spell can locate the nearest object of a particular kind, such as a certain kind of apparel, jewelry, furniture, tool, or weapon. This spell can t locate an object if any thickness of lead blocks a direct path between you and the object.LongstriderLevel 1 Transmutation (Bard, Druid, Ranger, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a pinch of dirt) Duration: 1 hourYou touch a creature. The target s Speed increases by 10 feet until the spell ends. Using a"
+    "text": "The damage in - creases by 1d6 for each spell slot level above 3.Locate Animals or PlantsLevel 2 Divination (Bard, Druid, Ranger)Casting Time: Action or Ritual Range: Self Components: V, S, M (fur from a bloodhound) Duration: Instantaneous creature, or nonmagical plant. You learn the direc - tion and distance to the closest creature or plant of that kind within 5 miles, if any are present. 145Locate CreatureLevel 4 Divination (Bard, Cleric, Druid, Paladin, Ranger, Wizard)Casting Time: Action Range: Self Components: V, S, M (fur from a bloodhound) Duration: Concentration, up to 1 hourDescribe or name a creature that is familiar to you. You sense the direction to the creature’s location if that creature is within 1,000 feet of you. If the creature is moving, you know the direction of its movement. as a human or a unicorn) if you have seen such a If the creature you described or named is in a dif - ferent form, such as under the effects of a Flesh to Stone or Polymorph spell, this spell doesn’t locate the creature. This spell can’t locate a creature if any thickness of lead blocks a direct path between you and the creature.Locate ObjectLevel 2 Divination (Bard, Cleric, Druid, Paladin, Ranger, Wizard)Casting Time: Action Range: Self Components: V, S, M (a forked twig) Duration: Concentration, up to 10 minutesDescribe or name an object that is familiar to you. You sense the direction to the object’s location if that object is within 1,000 feet of you. If the object is in motion, you know the direction of its movement. once. Alternatively, the spell can locate the nearest object of a particular kind, such as a certain kind of apparel, jewelry, furniture, tool, or weapon. This spell can’t locate an object if any thickness of lead blocks a direct path between you and the object.LongstriderLevel 1 Transmutation (Bard, Druid, Ranger, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a pinch of dirt) Duration: 1 hourYou touch a creature. The target’s Speed increases by 10 feet until the spell ends. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can target one additional creature for each spell slot level above 1.Mage ArmorLevel 1 Abjuration (Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a piece of cured leather) Duration: 8 hoursYou touch a willing creature who isn t wearing armor. Until the spell ends, the target s base AC be - early if the target dons armor.Mage HandConjuration Cantrip (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, S Duration: 1 minute choose within range. The hand lasts for the dura- tion. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again. When you cast the spell, you can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial. As a Magic action on your later turns, you can con - trol the hand thus again. As part of that action, you can move the hand up to 30 feet. The hand can t attack, activate magic items, or carry more than 10 pounds.Magic CircleLevel 3 Abjuration (Cleric, Paladin, Warlock, Wizard)Casting Time: 1 minute Range: 10 feet Components: V, S, M (salt and powdered silver worth 100+ GP, which the spell consumes) Duration: 1 hourYou create a 10-foot-radius, 20-foot-tall Cylinder of magical energy centered on a point on the ground that you can see within range. Glowing runes ap - or other surface. Choose one or more of the following types of crea- tures: Celestials, Elementals, Fey, Fiends, or"
+    "text": "You can target one additional creature for each spell slot level above 1.Mage ArmorLevel 1 Abjuration (Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a piece of cured leather) Duration: 8 hoursYou touch a willing creature who isn’t wearing armor. Until the spell ends, the target’s base AC be - early if the target dons armor.Mage HandConjuration Cantrip (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, S Duration: 1 minute choose within range. The hand lasts for the dura- tion. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again. When you cast the spell, you can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial. As a Magic action on your later turns, you can con - trol the hand thus again. As part of that action, you can move the hand up to 30 feet. The hand can’t attack, activate magic items, or carry more than 10 pounds.Magic CircleLevel 3 Abjuration (Cleric, Paladin, Warlock, Wizard)Casting Time: 1 minute Range: 10 feet Components: V, S, M (salt and powdered silver worth 100+ GP, which the spell consumes) Duration: 1 hourYou create a 10-foot-radius, 20-foot-tall Cylinder of magical energy centered on a point on the ground that you can see within range. Glowing runes ap - or other surface. Choose one or more of the following types of crea- tures: Celestials, Elementals, Fey, Fiends, or"
    },
    {
     "name": "Undead",
-    "text": "The circle affects a creature of the chosen type in the following ways: The creature can t willingly enter the Cylinder by nonmagical means. If the creature tries to use teleportation or interplanar travel to do so, it The creature has Disadvantage on attack rolls against targets within the Cylinder. 146 Targets within the Cylinder can t be possessed by or gain the Charmed or Frightened condition from the creature. Each time you cast this spell, you can cause its magic to operate in the reverse direction, prevent - Cylinder and protecting targets outside it. Using a"
+    "text": "The circle affects a creature of the chosen type in the following ways: • The creature can’t willingly enter the Cylinder by nonmagical means. If the creature tries to use teleportation or interplanar travel to do so, it • The creature has Disadvantage on attack rolls against targets within the Cylinder. 146• Targets within the Cylinder can’t be possessed by or gain the Charmed or Frightened condition from the creature. Each time you cast this spell, you can cause its magic to operate in the reverse direction, prevent - Cylinder and protecting targets outside it. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The duration in- creases by 1 hour for each spell slot level above 3.Magic JarLevel 6 Necromancy (Wizard)Casting Time: 1 minute Range: Self Components: V, S, M (a gem, crystal, or reliquary worth Duration: Until dispelledYour body falls into a catatonic state as your soul leaves it and enters the container you used for the spell s Material component. While your soul inhab - its the container, you are aware of your surround - ings as if you were in the container s space. You can t move or take"
+    "text": "The duration in- creases by 1 hour for each spell slot level above 3.Magic JarLevel 6 Necromancy (Wizard)Casting Time: 1 minute Range: Self Components: V, S, M (a gem, crystal, or reliquary worth Duration: Until dispelledYour body falls into a catatonic state as your soul leaves it and enters the container you used for the spell’s Material component. While your soul inhab - its the container, you are aware of your surround - ings as if you were in the container’s space. You can’t move or take"
    }
   ],
   "reactions": [
    {
     "name": "Incapacitated",
-    "text": "While possessing a body, you can take a Magic ac - tion to return from the host body to the container if it is within 100 feet of you, returning the host crea- ture s soul to its body. If the host body dies while you re in it, the creature dies, and you make a Cha- risma saving throw against your own spellcasting"
+    "text": "While possessing a body, you can take a Magic ac - tion to return from the host body to the container if it is within 100 feet of you, returning the host crea- ture’s soul to its body. If the host body dies while you’re in it, the creature dies, and you make a Cha- risma saving throw against your own spellcasting"
    },
    {
     "name": "DC",
-    "text": "On a success, you return to the container if it is within 100 feet of you. Otherwise, you die. If the container is destroyed or the spell ends, your soul returns to your body. If your body is more than 100 feet away from you or if your body is dead, you die. If another creature s soul is in the container when it is destroyed, the creature s soul returns to its body if the body is alive and within 100 feet. Oth - erwise, that creature dies. When the spell ends, the container is destroyed.Magic MissileLevel 1 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: InstantaneousYou create three glowing darts of magical force. Each dart strikes a creature of your choice that you can see within range. A dart deals 1d4 + 1 Force damage to its target. The darts all strike simultane - ously, and you can direct them to hit one creature or several. Using a"
+    "text": "On a success, you return to the container if it is within 100 feet of you. Otherwise, you die. If the container is destroyed or the spell ends, your soul returns to your body. If your body is more than 100 feet away from you or if your body is dead, you die. If another creature’s soul is in the container when it is destroyed, the creature’s soul returns to its body if the body is alive and within 100 feet. Oth - erwise, that creature dies. When the spell ends, the container is destroyed.Magic MissileLevel 1 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: InstantaneousYou create three glowing darts of magical force. Each dart strikes a creature of your choice that you can see within range. A dart deals 1d4 + 1 Force damage to its target. The darts all strike simultane - ously, and you can direct them to hit one creature or several. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The spell creates one more dart for each spell slot level above 1.Magic MouthLevel 2 Illusion (Bard, Wizard)Casting Time: 1 minute or Ritual Range: 30 feet Components: V, S, M (jade dust worth 10+ GP, which the spell consumes) Duration: Until dispelled message that is uttered when a trigger condition is met. Choose an object that you can see and that isn t being worn or carried by another creature. Then speak the message, which must be 25 words or fewer, though it can be delivered over as long as 10 minutes. Finally, determine the circumstance that will trigger the spell to deliver your message. When that trigger occurs, a magical mouth ap - pears on the object and recites the message in your voice and at the same volume you spoke. If the ob - ject you chose has a mouth or something that looks like a mouth (for example, the mouth of a statue), the magical mouth appears there, so the words appear to come from the object s mouth. When you cast this spell, you can have the spell end after it delivers its message, or it can remain and repeat its message whenever the trigger occurs. The trigger can be as general or as detailed as you like, though it must be based on visual or audible conditions that occur within 30 feet of the object. For example, you could instruct the mouth to speak when any creature moves within 30 feet of the ob - ject or when a silver bell rings within 30 feet of it.Magic WeaponLevel 2 Transmutation (Paladin, Ranger, Sorcerer, Wizard)Casting Time: Bonus Action Range: Touch 147Components: V, S Duration: 1 hourYou touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and damage rolls. The spell ends early if you cast it again. Using a"
+    "text": "The spell creates one more dart for each spell slot level above 1.Magic MouthLevel 2 Illusion (Bard, Wizard)Casting Time: 1 minute or Ritual Range: 30 feet Components: V, S, M (jade dust worth 10+ GP, which the spell consumes) Duration: Until dispelled message that is uttered when a trigger condition is met. Choose an object that you can see and that isn’t being worn or carried by another creature. Then speak the message, which must be 25 words or fewer, though it can be delivered over as long as 10 minutes. Finally, determine the circumstance that will trigger the spell to deliver your message. When that trigger occurs, a magical mouth ap - pears on the object and recites the message in your voice and at the same volume you spoke. If the ob - ject you chose has a mouth or something that looks like a mouth (for example, the mouth of a statue), the magical mouth appears there, so the words appear to come from the object’s mouth. When you cast this spell, you can have the spell end after it delivers its message, or it can remain and repeat its message whenever the trigger occurs. The trigger can be as general or as detailed as you like, though it must be based on visual or audible conditions that occur within 30 feet of the object. For example, you could instruct the mouth to speak when any creature moves within 30 feet of the ob - ject or when a silver bell rings within 30 feet of it.Magic WeaponLevel 2 Transmutation (Paladin, Ranger, Sorcerer, Wizard)Casting Time: Bonus Action Range: Touch 147Components: V, S Duration: 1 hourYou touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and damage rolls. The spell ends early if you cast it again. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The bonus in- creases to +2 with a level 3 5 spell slot. The bonus increases to +3 with a level 6+ spell slot.Level 7 Conjuration (Bard, Wizard)Casting Time: 1 minute Range: 300 feet Components: Duration: You conjure a shimmering door in range that lasts for the duration. The door leads to an extradimen - sional dwelling and is 5 feet wide and 10 feet tall. You and any creature you designate when you cast the spell can enter the extradimensional dwelling as long as the door remains open. You can open or close it (no action required) if you are within 30 feet of it. While closed, the door is imperceptible. numerous chambers beyond. The dwelling s atmo - sphere is clean, fresh, and warm. dwelling, but it can t exceed 50 contiguous 10-foot"
+    "text": "The bonus in- creases to +2 with a level 3–5 spell slot. The bonus increases to +3 with a level 6+ spell slot.Level 7 Conjuration (Bard, Wizard)Casting Time: 1 minute Range: 300 feet Components: Duration: You conjure a shimmering door in range that lasts for the duration. The door leads to an extradimen - sional dwelling and is 5 feet wide and 10 feet tall. You and any creature you designate when you cast the spell can enter the extradimensional dwelling as long as the door remains open. You can open or close it (no action required) if you are within 30 feet of it. While closed, the door is imperceptible. numerous chambers beyond. The dwelling’s atmo - sphere is clean, fresh, and warm. dwelling, but it can’t exceed 50 contiguous 10-foot"
    },
    {
     "name": "Cubes",
-    "text": "The place is furnished and decorated as you course banquet for up to 100 people. Furnishings and other objects created by this spell dissipate into smoke if removed from it. A staff of 100 near-transparent servants attends all who enter. You determine the appearance of these servants and their attire. They are invulner - able and obey your commands. Each servant can perform tasks that a human could perform, but they can t attack or take any action that would directly harm another creature. Thus the servants can fetch food, pour wine, and so on. The servants can t leave the dwelling. When the spell ends, any creatures or objects left inside the extradimensional space are expelled into the unoccupied spaces nearest to the entrance.Major ImageLevel 3 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 120 feet Components: Duration: Concentration, up to 10 minutesYou create the image of an object, a creature, or some other visible phenomenon that is no larger than a 20-foot Cube. The image appears at a spot that you can see within range and lasts for the du - ration. It seems real, including sounds, smells, and temperature appropriate to the thing depicted, but it can t deal damage or cause conditions. If you are within range of the illusion, you can take a Magic action to cause the image to move to any other spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. For exam - ple, if you create an image of a creature and move it, you can alter the image so that it appears to be walking. Similarly, you can cause the illusion to make different sounds at different times, even mak - ing it carry on a conversation, for example. Physical interaction with the image reveals it to be an illusion, for things can pass through it. A crea- ture that takes a Study action to examine the image can determine that it is an illusion with a success - ful Intelligence (Investigation) check against your spell save"
+    "text": "The place is furnished and decorated as you course banquet for up to 100 people. Furnishings and other objects created by this spell dissipate into smoke if removed from it. A staff of 100 near-transparent servants attends all who enter. You determine the appearance of these servants and their attire. They are invulner - able and obey your commands. Each servant can perform tasks that a human could perform, but they can’t attack or take any action that would directly harm another creature. Thus the servants can fetch food, pour wine, and so on. The servants can’t leave the dwelling. When the spell ends, any creatures or objects left inside the extradimensional space are expelled into the unoccupied spaces nearest to the entrance.Major ImageLevel 3 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 120 feet Components: Duration: Concentration, up to 10 minutesYou create the image of an object, a creature, or some other visible phenomenon that is no larger than a 20-foot Cube. The image appears at a spot that you can see within range and lasts for the du - ration. It seems real, including sounds, smells, and temperature appropriate to the thing depicted, but it can’t deal damage or cause conditions. If you are within range of the illusion, you can take a Magic action to cause the image to move to any other spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. For exam - ple, if you create an image of a creature and move it, you can alter the image so that it appears to be walking. Similarly, you can cause the illusion to make different sounds at different times, even mak - ing it carry on a conversation, for example. Physical interaction with the image reveals it to be an illusion, for things can pass through it. A crea- ture that takes a Study action to examine the image can determine that it is an illusion with a success - ful Intelligence (Investigation) check against your spell save"
    },
    {
     "name": "DC",
@@ -403,15 +403,15 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The healing in- creases by 1d4 for each spell slot level above 3.Mass SuggestionLevel 6 Enchantment (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, M (a snake s tongue) Duration: you can see within range that can hear and under - stand you. The suggestion must sound achievable and not involve anything that would obviously deal damage to any of the targets or their allies. For example, you could say, Walk to the village down that road, and help the villagers there harvest crops until sunset. Or you could say, Now is not the time for violence. Drop your weapons, and dance! Stop in an hour. Each target must succeed on a Wisdom saving throw or have the Charmed condition for the dura - tion or until you or your allies deal damage to the target. Each Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the sug - gested activity can be completed in a shorter time, the spell ends for a target upon completing it. Using a"
+    "text": "The healing in- creases by 1d4 for each spell slot level above 3.Mass SuggestionLevel 6 Enchantment (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, M (a snake’s tongue) Duration: you can see within range that can hear and under - stand you. The suggestion must sound achievable and not involve anything that would obviously deal damage to any of the targets or their allies. For example, you could say, “Walk to the village down that road, and help the villagers there harvest crops until sunset.” Or you could say, “Now is not the time for violence. Drop your weapons, and dance! Stop in an hour.” Each target must succeed on a Wisdom saving throw or have the Charmed condition for the dura - tion or until you or your allies deal damage to the target. Each Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the sug - gested activity can be completed in a shorter time, the spell ends for a target upon completing it. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).MazeLevel 8 Conjuration (Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: Concentration, up to 10 minutesYou banish a creature that you can see within range into a labyrinthine demiplane. The target remains there for the duration or until it escapes the maze. The target can take a Study action to try to es - cape. When it does so, it makes a DC 20 Intelligence (Investigation) check. If it succeeds, it escapes, and the spell ends. When the spell ends, the target reappears in the space it left or, if that space is occupied, in the near - est unoccupied space.Meld into StoneLevel 3 Transmutation (Cleric, Druid, Ranger)Casting Time: Action or Ritual Range: Touch Components: V, S Duration: 8 hoursYou step into a stone object or surface large enough to fully contain your body, merging yourself and your equipment with the stone for the duration. You must touch the stone to do so. Nothing of your presence remains visible or otherwise detectable by nonmagical senses. While merged with the stone, you can t see what occurs outside it, and any Wisdom (Perception) checks you make to hear sounds outside it are made with"
+    "text": "The duration is longer with a spell slot of level 7 (10 days), 8 (30 days), or 9 (366 days).MazeLevel 8 Conjuration (Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: Concentration, up to 10 minutesYou banish a creature that you can see within range into a labyrinthine demiplane. The target remains there for the duration or until it escapes the maze. The target can take a Study action to try to es - cape. When it does so, it makes a DC 20 Intelligence (Investigation) check. If it succeeds, it escapes, and the spell ends. When the spell ends, the target reappears in the space it left or, if that space is occupied, in the near - est unoccupied space.Meld into StoneLevel 3 Transmutation (Cleric, Druid, Ranger)Casting Time: Action or Ritual Range: Touch Components: V, S Duration: 8 hoursYou step into a stone object or surface large enough to fully contain your body, merging yourself and your equipment with the stone for the duration. You must touch the stone to do so. Nothing of your presence remains visible or otherwise detectable by nonmagical senses. While merged with the stone, you can’t see what occurs outside it, and any Wisdom (Perception) checks you make to hear sounds outside it are made with"
    },
    {
     "name": "Disadvantage",
-    "text": "You remain aware of the pas - sage of time and can cast spells on yourself while merged in the stone. You can use 5 feet of movement to leave the stone where you entered it, which ends the spell. You otherwise can t move. Minor physical damage to the stone doesn t harm you, but its partial destruction or a change in its expels you and deals 6d6 Force damage to you. The stone s complete destruction (or transmutation into a different substance) expels you and deals 50 Force damage to you. If expelled, you move into an unoc - have the Prone condition.MendingTransmutation Cantrip (Bard, Cleric, Druid, Sorcerer, Wizard)Casting Time: 1 minute Range: Touch Components: V, S, M (two lodestones) Duration: InstantaneousThis spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin. As long as the break or tear is no larger than 1 foot in any dimension, you mend it, leaving no trace of the former damage. This spell can physically repair a magic item, but it can t restore magic to such an object.MessageTransmutation Cantrip (Bard, Druid, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: S, M (a copper wire) Duration: 1 round 149You point toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear. You can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier. Magical silence; 1 foot of stone, metal, or wood; or a thin sheet of lead blocks the spell.Meteor SwarmLevel 9 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 1 mile Components: V, S Duration: Instantaneous different points you can see within range. Each creature in a 40-foot-radius Sphere centered on each of those points makes a Dexterity saving throw. A creature takes 20d6 Fire damage and 20d6 Bludgeoning damage on a failed save or half as much damage on a successful one. A creature in the once. A nonmagical object that isn t being worn or car - ried also takes the damage if it s in the spell s area, Mind BlankLevel 8 Abjuration (Bard, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: Until the spell ends, one willing creature you touch has Immunity to Psychic damage and the Charmed condition. The target is also unaffected by anything that would sense its emotions or alignment, read its thoughts, or magically detect its location, and Wish about the target, observe it remotely, or control its mind.Mind SpikeLevel 2 Divination (Sorcerer, Warlock, Wizard)Casting Time: Action Range: 120 feet Components: S Duration: Concentration, up to 1 hourYou drive a spike of psionic energy into the mind of one creature you can see within range. The target makes a Wisdom saving throw, taking 3d8 Psychic damage on a failed save or half as much damage on a successful one. On a failed save, you also always know the target s location until the spell ends, but only while the two of you are on the same plane of existence. While you have this knowledge, the target can t become hidden from you, and if it has condition against you. Using a"
+    "text": "You remain aware of the pas - sage of time and can cast spells on yourself while merged in the stone. You can use 5 feet of movement to leave the stone where you entered it, which ends the spell. You otherwise can’t move. Minor physical damage to the stone doesn’t harm you, but its partial destruction or a change in its expels you and deals 6d6 Force damage to you. The stone’s complete destruction (or transmutation into a different substance) expels you and deals 50 Force damage to you. If expelled, you move into an unoc - have the Prone condition.MendingTransmutation Cantrip (Bard, Cleric, Druid, Sorcerer, Wizard)Casting Time: 1 minute Range: Touch Components: V, S, M (two lodestones) Duration: InstantaneousThis spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin. As long as the break or tear is no larger than 1 foot in any dimension, you mend it, leaving no trace of the former damage. This spell can physically repair a magic item, but it can’t restore magic to such an object.MessageTransmutation Cantrip (Bard, Druid, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: S, M (a copper wire) Duration: 1 round 149You point toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear. You can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier. Magical silence; 1 foot of stone, metal, or wood; or a thin sheet of lead blocks the spell.Meteor SwarmLevel 9 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 1 mile Components: V, S Duration: Instantaneous different points you can see within range. Each creature in a 40-foot-radius Sphere centered on each of those points makes a Dexterity saving throw. A creature takes 20d6 Fire damage and 20d6 Bludgeoning damage on a failed save or half as much damage on a successful one. A creature in the once. A nonmagical object that isn’t being worn or car - ried also takes the damage if it’s in the spell’s area, Mind BlankLevel 8 Abjuration (Bard, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: Until the spell ends, one willing creature you touch has Immunity to Psychic damage and the Charmed condition. The target is also unaffected by anything that would sense its emotions or alignment, read its thoughts, or magically detect its location, and Wish about the target, observe it remotely, or control its mind.Mind SpikeLevel 2 Divination (Sorcerer, Warlock, Wizard)Casting Time: Action Range: 120 feet Components: S Duration: Concentration, up to 1 hourYou drive a spike of psionic energy into the mind of one creature you can see within range. The target makes a Wisdom saving throw, taking 3d8 Psychic damage on a failed save or half as much damage on a successful one. On a failed save, you also always know the target’s location until the spell ends, but only while the two of you are on the same plane of existence. While you have this knowledge, the target can’t become hidden from you, and if it has condition against you. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -423,23 +423,23 @@ const RAW = [
    },
    {
     "name": "Sound",
-    "text": "If you create a sound, its volume can range from a whisper to a scream. It can be your voice, someone else s voice, a lion s roar, a beating of drums, or any other sound you choose. The sound continues unabated throughout the duration, or you can make discrete sounds at different times before the spell ends. Image. must be no larger than a 5-foot Cube. The image can t create sound, light, smell, or any other sensory effect. Physical interaction with the image reveals it to be an illusion, since things can pass through it.Mirage ArcaneLevel 7 Illusion (Bard, Druid, Wizard)Casting Time: 10 minutes Range: Sight Components: V, S Duration: 10 daysYou make terrain in an area up to 1 mile square look, sound, smell, and even feel like some other to resemble a swamp, hill, crevasse, or some other rough or impassable terrain. A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road. Similarly, you can alter the appearance of struc - tures or add them where none are present. The spell doesn t disguise, conceal, or add creatures. The illusion includes audible, visual, tactile, and olfactory elements, so it can turn clear ground 150 impede movement through the area. Any piece of the illusory terrain (such as a rock or stick) that is removed from the spell s area disappears immediately. Creatures with Truesight can see through the illu - sion to the terrain s true form; however, all other el - ements of the illusion remain, so while the creature is aware of the illusion s presence, the creature can still physically interact with the illusion.Mirror ImageLevel 2 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Self Components: V, S Duration: 1 minuteThree illusory duplicates of yourself appear in your space. Until the spell ends, the duplicates move with you and mimic your actions, shifting position so it s impossible to track which image is real. Each time a creature hits you with an attack roll during the spell s duration, roll a d6 for each of your remaining duplicates. If any of the d6s rolls a 3 or higher, one of the duplicates is hit instead of you, and the duplicate is destroyed. The duplicates otherwise ignore all other damage and effects. The spell ends when all three duplicates are destroyed. A creature is unaffected by this spell if it has the Blinded condition, Blindsight, or Truesight.MisleadLevel 5 Illusion (Bard, Warlock, Wizard)Casting Time: Action Range: Self Components: S Duration: Concentration, up to 1 hourYou gain the Invisible condition at the same time that an illusory double of you appears where you are standing. The double lasts for the duration, but the invisibility ends immediately after you make an attack roll, deal damage, or cast a spell. As a Magic action, you can move the illusory dou - ble up to twice your Speed and make it gesture, speak, and behave in whatever way you choose. It is intangible and invulnerable. You can see through its eyes and hear through its ears as if you were located where it is.Misty StepLevel 2 Conjuration (Sorcerer, Warlock, Wizard)Casting Time: Bonus Action Range: Self Components: V Duration: Instantaneous to 30 feet to an unoccupied space you can see.Modify MemoryLevel 5 Enchantment (Bard, Wizard)Casting Time: Action Range: 30 feet Components: V, S Duration: Concentration, up to 1 minuteYou attempt to reshape another creature s mem - ories. One creature that you can see within range the creature, it has Advantage on the save. On a failed save, the target has the Charmed condition for the duration. While Charmed in this way, the target also has the Incapacitated condition and is unaware of its surroundings, though it can hear you. If it takes any damage or is targeted by another While this charm lasts, you can affect the target s memory of an event that it experienced within the last 24 hours and that lasted no more than 10 min - utes. You can permanently eliminate all memory of the event, allow the target to recall the event with perfect clarity, change its memory of the event s de - tails, or create a memory of some other event. You must speak to the target to describe how its memories are affected, and it must be able to under - memories take hold when the spell ends. how a creature behaves, particularly if the mem - ory contradicts the creature s natural inclinations, such as a false memory of how much the creature enjoyed swimming in acid, is dismissed as a bad nonsensical to affect a creature. A Remove Curse or Greater Restoration spell cast on the target restores the creature s true memory. Using a"
+    "text": "If you create a sound, its volume can range from a whisper to a scream. It can be your voice, someone else’s voice, a lion’s roar, a beating of drums, or any other sound you choose. The sound continues unabated throughout the duration, or you can make discrete sounds at different times before the spell ends. Image. must be no larger than a 5-foot Cube. The image can’t create sound, light, smell, or any other sensory effect. Physical interaction with the image reveals it to be an illusion, since things can pass through it.Mirage ArcaneLevel 7 Illusion (Bard, Druid, Wizard)Casting Time: 10 minutes Range: Sight Components: V, S Duration: 10 daysYou make terrain in an area up to 1 mile square look, sound, smell, and even feel like some other to resemble a swamp, hill, crevasse, or some other rough or impassable terrain. A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road. Similarly, you can alter the appearance of struc - tures or add them where none are present. The spell doesn’t disguise, conceal, or add creatures. The illusion includes audible, visual, tactile, and olfactory elements, so it can turn clear ground 150 impede movement through the area. Any piece of the illusory terrain (such as a rock or stick) that is removed from the spell’s area disappears immediately. Creatures with Truesight can see through the illu - sion to the terrain’s true form; however, all other el - ements of the illusion remain, so while the creature is aware of the illusion’s presence, the creature can still physically interact with the illusion.Mirror ImageLevel 2 Illusion (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Self Components: V, S Duration: 1 minuteThree illusory duplicates of yourself appear in your space. Until the spell ends, the duplicates move with you and mimic your actions, shifting position so it’s impossible to track which image is real. Each time a creature hits you with an attack roll during the spell’s duration, roll a d6 for each of your remaining duplicates. If any of the d6s rolls a 3 or higher, one of the duplicates is hit instead of you, and the duplicate is destroyed. The duplicates otherwise ignore all other damage and effects. The spell ends when all three duplicates are destroyed. A creature is unaffected by this spell if it has the Blinded condition, Blindsight, or Truesight.MisleadLevel 5 Illusion (Bard, Warlock, Wizard)Casting Time: Action Range: Self Components: S Duration: Concentration, up to 1 hourYou gain the Invisible condition at the same time that an illusory double of you appears where you are standing. The double lasts for the duration, but the invisibility ends immediately after you make an attack roll, deal damage, or cast a spell. As a Magic action, you can move the illusory dou - ble up to twice your Speed and make it gesture, speak, and behave in whatever way you choose. It is intangible and invulnerable. You can see through its eyes and hear through its ears as if you were located where it is.Misty StepLevel 2 Conjuration (Sorcerer, Warlock, Wizard)Casting Time: Bonus Action Range: Self Components: V Duration: Instantaneous to 30 feet to an unoccupied space you can see.Modify MemoryLevel 5 Enchantment (Bard, Wizard)Casting Time: Action Range: 30 feet Components: V, S Duration: Concentration, up to 1 minuteYou attempt to reshape another creature’s mem - ories. One creature that you can see within range the creature, it has Advantage on the save. On a failed save, the target has the Charmed condition for the duration. While Charmed in this way, the target also has the Incapacitated condition and is unaware of its surroundings, though it can hear you. If it takes any damage or is targeted by another While this charm lasts, you can affect the target’s memory of an event that it experienced within the last 24 hours and that lasted no more than 10 min - utes. You can permanently eliminate all memory of the event, allow the target to recall the event with perfect clarity, change its memory of the event’s de - tails, or create a memory of some other event. You must speak to the target to describe how its memories are affected, and it must be able to under - memories take hold when the spell ends. how a creature behaves, particularly if the mem - ory contradicts the creature’s natural inclinations, such as a false memory of how much the creature enjoyed swimming in acid, is dismissed as a bad nonsensical to affect a creature. A Remove Curse or Greater Restoration spell cast on the target restores the creature’s true memory. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can alter the target s memories of an event that took place up to 7 days ago (level 6 spell slot), 30 days ago (level 7 spell slot), 365 days ago (level 8 spell slot), or any time in the creature s past (level 9 spell slot).MoonbeamLevel 2 Evocation (Druid)Casting Time: Action Range: 120 feet Components: V, S, M (a moonseed leaf) Duration: Concentration, up to 1 minute 151A silvery beam of pale light shines down in a 5-foot-radius, 40-foot-high Cylinder centered on a point within range. Until the spell ends, Dim Light later turns to move the Cylinder up to 60 feet. When the Cylinder appears, each creature in it makes a Constitution saving throw. On a failed save, a creature takes 2d10 Radiant damage, and if the creature is shape-shifted (as a result of the Poly - morph spell, for example), it reverts to its true form and can t shape-shift until it leaves the Cylinder. On a successful save, a creature takes half as much damage only. A creature also makes this save when the spell s area moves into its space and when it enters the spell s area or ends its turn there. A crea- ture makes this save only once per turn. Using a"
+    "text": "You can alter the target’s memories of an event that took place up to 7 days ago (level 6 spell slot), 30 days ago (level 7 spell slot), 365 days ago (level 8 spell slot), or any time in the creature’s past (level 9 spell slot).MoonbeamLevel 2 Evocation (Druid)Casting Time: Action Range: 120 feet Components: V, S, M (a moonseed leaf) Duration: Concentration, up to 1 minute 151A silvery beam of pale light shines down in a 5-foot-radius, 40-foot-high Cylinder centered on a point within range. Until the spell ends, Dim Light later turns to move the Cylinder up to 60 feet. When the Cylinder appears, each creature in it makes a Constitution saving throw. On a failed save, a creature takes 2d10 Radiant damage, and if the creature is shape-shifted (as a result of the Poly - morph spell, for example), it reverts to its true form and can’t shape-shift until it leaves the Cylinder. On a successful save, a creature takes half as much damage only. A creature also makes this save when the spell’s area moves into its space and when it enters the spell’s area or ends its turn there. A crea- ture makes this save only once per turn. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d10 for each spell slot level above 2.Move EarthLevel 6 Transmutation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a miniature shovel) Duration: Concentration, up to 2 hoursChoose an area of terrain no larger than 40 feet on a side within range. You can reshape dirt, sand, or clay in the area in any manner you choose for the duration. You can raise or lower the area s eleva- or form a pillar. The extent of any such changes can t exceed half the area s largest dimension. For example, if you affect a 40-foot square, you can create a pillar up to 20 feet high, raise or lower the square s elevation by up to 20 feet, dig a trench up to 20 feet deep, and so on. It takes 10 minutes for these changes to complete. Because the terrain s transformation occurs slowly, creatures in the area can t usually be trapped or injured by the ground s movement. At the end of every 10 minutes you spend concen - trating on the spell, you can choose a new area of terrain to affect within range. This spell can t manipulate natural stone or stone construction. Rocks and structures shift to accom - modate the new terrain. If the way you shape the terrain would make a structure unstable, it might collapse. Similarly, this spell doesn t directly affect plant growth. The moved earth carries any plants along with it.NondetectionLevel 3 Abjuration (Bard, Ranger, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a pinch of diamond dust worth Duration: 8 hoursFor the duration, you hide a target that you touch from Divination spells. The target can be a willing creature, or it can be a place or an object no larger than 10 feet in any dimension. The target can t be targeted by any Divination spell or perceived through magical scrying sensors.PasswallLevel 5 Transmutation (Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a pinch of sesame seeds) Duration: 1 hourA passage appears at a point that you can see on a wooden, plaster, or stone surface (such as a wall, - tion. You choose the opening s dimensions: up to 5 feet wide, 8 feet tall, and 20 feet deep. The passage creates no instability in a structure surrounding it. When the opening disappears, any creatures or objects still in the passage created by the spell are safely ejected to an unoccupied space nearest to the surface on which you cast the spell.Pass without TraceLevel 2 Abjuration (Druid, Ranger)Casting Time: Action Range: Self Components: V, S, M (ashes from burned mistletoe) Duration: Concentration, up to 1 hourYou radiate a concealing aura in a 30-foot Emana- tion for the duration. While in the aura, you and each creature you choose have a +10 bonus to Dex - terity (Stealth) checks and leave no tracks.Phantasmal ForceLevel 2 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 1 minuteYou attempt to craft an illusion in the mind of a creature you can see within range. The target makes an Intelligence saving throw. On a failed save, you create a phantasmal object, creature, or other phenomenon that is no larger than a 10-foot Cube and that is perceivable only to the target for the duration. The phantasm includes sound, tem- perature, and other stimuli. The target can take a Study action to examine the phantasm with an Intelligence (Investigation) check against your spell save"
+    "text": "The damage in - creases by 1d10 for each spell slot level above 2.Move EarthLevel 6 Transmutation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a miniature shovel) Duration: Concentration, up to 2 hoursChoose an area of terrain no larger than 40 feet on a side within range. You can reshape dirt, sand, or clay in the area in any manner you choose for the duration. You can raise or lower the area’s eleva- or form a pillar. The extent of any such changes can’t exceed half the area’s largest dimension. For example, if you affect a 40-foot square, you can create a pillar up to 20 feet high, raise or lower the square’s elevation by up to 20 feet, dig a trench up to 20 feet deep, and so on. It takes 10 minutes for these changes to complete. Because the terrain’s transformation occurs slowly, creatures in the area can’t usually be trapped or injured by the ground’s movement. At the end of every 10 minutes you spend concen - trating on the spell, you can choose a new area of terrain to affect within range. This spell can’t manipulate natural stone or stone construction. Rocks and structures shift to accom - modate the new terrain. If the way you shape the terrain would make a structure unstable, it might collapse. Similarly, this spell doesn’t directly affect plant growth. The moved earth carries any plants along with it.NondetectionLevel 3 Abjuration (Bard, Ranger, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a pinch of diamond dust worth Duration: 8 hoursFor the duration, you hide a target that you touch from Divination spells. The target can be a willing creature, or it can be a place or an object no larger than 10 feet in any dimension. The target can’t be targeted by any Divination spell or perceived through magical scrying sensors.PasswallLevel 5 Transmutation (Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a pinch of sesame seeds) Duration: 1 hourA passage appears at a point that you can see on a wooden, plaster, or stone surface (such as a wall, - tion. You choose the opening’s dimensions: up to 5 feet wide, 8 feet tall, and 20 feet deep. The passage creates no instability in a structure surrounding it. When the opening disappears, any creatures or objects still in the passage created by the spell are safely ejected to an unoccupied space nearest to the surface on which you cast the spell.Pass without TraceLevel 2 Abjuration (Druid, Ranger)Casting Time: Action Range: Self Components: V, S, M (ashes from burned mistletoe) Duration: Concentration, up to 1 hourYou radiate a concealing aura in a 30-foot Emana- tion for the duration. While in the aura, you and each creature you choose have a +10 bonus to Dex - terity (Stealth) checks and leave no tracks.Phantasmal ForceLevel 2 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 1 minuteYou attempt to craft an illusion in the mind of a creature you can see within range. The target makes an Intelligence saving throw. On a failed save, you create a phantasmal object, creature, or other phenomenon that is no larger than a 10-foot Cube and that is perceivable only to the target for the duration. The phantasm includes sound, tem- perature, and other stimuli. The target can take a Study action to examine the phantasm with an Intelligence (Investigation) check against your spell save"
    },
    {
     "name": "DC",
-    "text": "If the check succeeds, 152the target realizes that the phantasm is an illusion, and the spell ends. While affected by the spell, the target treats the phantasm as if it were real and rationalizes any il - logical outcomes from interacting with it. For exam - ple, if the target steps through a phantasmal bridge and survives the fall, it believes the bridge exists and something else caused it to fall. An affected target can even take damage from the illusion if the phantasm represents a dangerous creature or hazard. On each of your turns, such a phantasm can deal 2d8 Psychic damage to the tar - get if it is in the phantasm s area or within 5 feet of the phantasm. The target perceives the damage as a type appropriate to the illusion.Phantasmal KillerLevel 4 Illusion (Bard, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: Concentration, up to 1 minuteYou tap into the nightmares of a creature you can see within range and create an illusion of its deep - est fears, visible only to that creature. The target makes a Wisdom saving throw. On a failed save, the target takes 4d10 Psychic damage and has Disad - vantage on ability checks and attack rolls for the duration. On a successful save, the target takes half as much damage, and the spell ends. For the duration, the target makes a Wisdom sav - ing throw at the end of each of its turns. On a failed save, it takes the Psychic damage again. On a suc - cessful save, the spell ends. Using a"
+    "text": "If the check succeeds, 152the target realizes that the phantasm is an illusion, and the spell ends. While affected by the spell, the target treats the phantasm as if it were real and rationalizes any il - logical outcomes from interacting with it. For exam - ple, if the target steps through a phantasmal bridge and survives the fall, it believes the bridge exists and something else caused it to fall. An affected target can even take damage from the illusion if the phantasm represents a dangerous creature or hazard. On each of your turns, such a phantasm can deal 2d8 Psychic damage to the tar - get if it is in the phantasm’s area or within 5 feet of the phantasm. The target perceives the damage as a type appropriate to the illusion.Phantasmal KillerLevel 4 Illusion (Bard, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: Concentration, up to 1 minuteYou tap into the nightmares of a creature you can see within range and create an illusion of its deep - est fears, visible only to that creature. The target makes a Wisdom saving throw. On a failed save, the target takes 4d10 Psychic damage and has Disad - vantage on ability checks and attack rolls for the duration. On a successful save, the target takes half as much damage, and the spell ends. For the duration, the target makes a Wisdom sav - ing throw at the end of each of its turns. On a failed save, it takes the Psychic damage again. On a suc - cessful save, the spell ends. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d10 for each spell slot level above 4.Phantom SteedLevel 3 Illusion (Wizard)Casting Time: 1 minute or Ritual Range: 30 feet Components: V, S Duration: 1 hourA Large, quasi-real, horselike creature appears on the ground in an unoccupied space of your choice within range. You decide the creature s appearance, and it is equipped with a saddle, bit, and bridle. Any of the equipment created by the spell vanishes in a puff of smoke if it is carried more than 10 feet away from the steed. For the duration, you or a creature you choose can ride the steed. The steed uses the Riding Horse stat block (see Monsters ), except it has a Speed of 100 feet and can travel 13 miles in an hour. When the spell ends, the steed gradually fades, giving the rider 1 minute to dismount. The spell ends early if the steed takes any damage.Planar AllyLevel 6 Conjuration (Cleric)Casting Time: 10 minutes Range: 60 feet Components: V, S Duration: InstantaneousYou beseech an otherworldly entity for aid. The be - ing must be known to you: a god, a demon prince, or some other being of cosmic power. That entity sends a Celestial, an Elemental, or a Fiend loyal to it to aid you, making the creature appear in an unoccupied name, you can speak that name when you cast this spell to request that creature, though you might get a different creature anyway (GM s choice). When the creature appears, it is under no com - pulsion to behave a particular way. You can ask it to perform a service in exchange for payment, but it isn t obliged to do so. The requested task could protect us during our foray into the dungeon). You must be able to communicate with the creature to bargain for its services. Payment can take a variety of forms. A Celestial might require a sizable donation of gold or magic items to an allied temple, while a Fiend might de - creatures might exchange their service for a quest undertaken by you. A task that can be measured in minutes requires a payment worth 100 GP per minute. A task measured in hours requires 1,000 GP per hour. And a task measured in days (up to 10 days) requires 10,000 GP per day. The GM can adjust these payments based on the circumstances under which you cast the spell. If the task is aligned with the creature s ethos, the payment might be halved or even waived. Nonhazardous tasks typically require only half the suggested payment, while especially dangerous tasks might require a greater gift. Creatures rarely accept tasks that seem suicidal. After the creature completes the task, or when the agreed-upon duration of service expires, the crea - ture returns to its home plane after reporting back to you if possible. If you are unable to agree on a price for the creature s service, the creature imme - diately returns to its home plane.Planar BindingLevel 5 Abjuration (Bard, Cleric, Druid, Warlock, Wizard)Casting Time: 1 hour Range: 60 feet Components: V, S, M (a jewel worth 1,000+ GP, which the spell consumes) Duration: 153You attempt to bind a Celestial, an Elemental, a Fey, or a Fiend to your service. The creature must be within range for the entire casting of the spell. center of the inverted version of the Magic Circle spell to trap it while this spell is cast.) At the com - pletion of the casting, the target must succeed on a Charisma saving throw or be bound to serve you for the duration. If the creature was summoned or created by another spell, that spell s duration is ex - tended to match the duration of this spell. A bound creature must follow your commands to the best of its ability. You might command the creature to accompany you on an adventure, to guard a location, or to deliver a message. If the creature is Hostile, it strives to twist your com - mands to achieve its own objectives. If the creature carries out your commands completely before the spell ends, it travels to you to report this fact if you are on the same plane of existence. If you are on a different plane, it returns to the place where you bound it and remains there until the spell ends. Using a"
+    "text": "The damage in - creases by 1d10 for each spell slot level above 4.Phantom SteedLevel 3 Illusion (Wizard)Casting Time: 1 minute or Ritual Range: 30 feet Components: V, S Duration: 1 hourA Large, quasi-real, horselike creature appears on the ground in an unoccupied space of your choice within range. You decide the creature’s appearance, and it is equipped with a saddle, bit, and bridle. Any of the equipment created by the spell vanishes in a puff of smoke if it is carried more than 10 feet away from the steed. For the duration, you or a creature you choose can ride the steed. The steed uses the Riding Horse stat block (see “Monsters”), except it has a Speed of 100 feet and can travel 13 miles in an hour. When the spell ends, the steed gradually fades, giving the rider 1 minute to dismount. The spell ends early if the steed takes any damage.Planar AllyLevel 6 Conjuration (Cleric)Casting Time: 10 minutes Range: 60 feet Components: V, S Duration: InstantaneousYou beseech an otherworldly entity for aid. The be - ing must be known to you: a god, a demon prince, or some other being of cosmic power. That entity sends a Celestial, an Elemental, or a Fiend loyal to it to aid you, making the creature appear in an unoccupied name, you can speak that name when you cast this spell to request that creature, though you might get a different creature anyway (GM’s choice). When the creature appears, it is under no com - pulsion to behave a particular way. You can ask it to perform a service in exchange for payment, but it isn’t obliged to do so. The requested task could protect us during our foray into the dungeon). You must be able to communicate with the creature to bargain for its services. Payment can take a variety of forms. A Celestial might require a sizable donation of gold or magic items to an allied temple, while a Fiend might de - creatures might exchange their service for a quest undertaken by you. A task that can be measured in minutes requires a payment worth 100 GP per minute. A task measured in hours requires 1,000 GP per hour. And a task measured in days (up to 10 days) requires 10,000 GP per day. The GM can adjust these payments based on the circumstances under which you cast the spell. If the task is aligned with the creature’s ethos, the payment might be halved or even waived. Nonhazardous tasks typically require only half the suggested payment, while especially dangerous tasks might require a greater gift. Creatures rarely accept tasks that seem suicidal. After the creature completes the task, or when the agreed-upon duration of service expires, the crea - ture returns to its home plane after reporting back to you if possible. If you are unable to agree on a price for the creature’s service, the creature imme - diately returns to its home plane.Planar BindingLevel 5 Abjuration (Bard, Cleric, Druid, Warlock, Wizard)Casting Time: 1 hour Range: 60 feet Components: V, S, M (a jewel worth 1,000+ GP, which the spell consumes) Duration: 153You attempt to bind a Celestial, an Elemental, a Fey, or a Fiend to your service. The creature must be within range for the entire casting of the spell. center of the inverted version of the Magic Circle spell to trap it while this spell is cast.) At the com - pletion of the casting, the target must succeed on a Charisma saving throw or be bound to serve you for the duration. If the creature was summoned or created by another spell, that spell’s duration is ex - tended to match the duration of this spell. A bound creature must follow your commands to the best of its ability. You might command the creature to accompany you on an adventure, to guard a location, or to deliver a message. If the creature is Hostile, it strives to twist your com - mands to achieve its own objectives. If the creature carries out your commands completely before the spell ends, it travels to you to report this fact if you are on the same plane of existence. If you are on a different plane, it returns to the place where you bound it and remains there until the spell ends. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -451,7 +451,7 @@ const RAW = [
    },
    {
     "name": "Overgrowth",
-    "text": "Choose a point within range. All normal plants in a 100-foot-radius Sphere centered on that point become thick and overgrown. A crea- ture moving through that area must spend 4 feet of movement for every 1 foot it moves. You can exclude one or more areas of any size within the spell s area from being affected."
+    "text": "Choose a point within range. All normal plants in a 100-foot-radius Sphere centered on that point become thick and overgrown. A crea- ture moving through that area must spend 4 feet of movement for every 1 foot it moves. You can exclude one or more areas of any size within the spell’s area from being affected."
    },
    {
     "name": "Enrichment",
@@ -463,19 +463,19 @@ const RAW = [
    },
    {
     "name": "Beast",
-    "text": "The target must suc - ceed on a Wisdom saving throw or shape-shift into a Beast form for the duration. That form can be any Beast you choose that has a Challenge Rating equal to or less than the target s (or the target s level if it doesn t have a Challenge Rating). The target s game statistics are replaced by the stat block of the chosen Beast, but the target retains its alignment, personality, creature type, Hit Points, and Hit Point"
+    "text": "The target must suc - ceed on a Wisdom saving throw or shape-shift into a Beast form for the duration. That form can be any Beast you choose that has a Challenge Rating equal to or less than the target’s (or the target’s level if it doesn’t have a Challenge Rating). The target’s game statistics are replaced by the stat block of the chosen Beast, but the target retains its alignment, personality, creature type, Hit Points, and Hit Point"
    },
    {
     "name": "Dice",
-    "text": "See the Animals section of Monsters for a sample of Beast stat blocks. The target gains a number of Temporary Hit Points equal to the Hit Points of the Beast form. These Temporary Hit Points vanish if any remain when the spell ends. The spell ends early on the tar - get if it has no Temporary Hit Points left. The target is limited in the actions it can perform by the anatomy of its new form, and it can t speak or cast spells. 154 The target s gear melds into the new form. The that equipment.Power Word HealLevel 9 Enchantment (Bard, Cleric)Casting Time: Action Range: 60 feet Component: V Duration: InstantaneousA wave of healing energy washes over one creature you can see within range. The target regains all its"
+    "text": "See the “Animals” section of “Monsters” for a sample of Beast stat blocks. The target gains a number of Temporary Hit Points equal to the Hit Points of the Beast form. These Temporary Hit Points vanish if any remain when the spell ends. The spell ends early on the tar - get if it has no Temporary Hit Points left. The target is limited in the actions it can perform by the anatomy of its new form, and it can’t speak or cast spells. 154 The target’s gear melds into the new form. The that equipment.Power Word HealLevel 9 Enchantment (Bard, Cleric)Casting Time: Action Range: 60 feet Component: V Duration: InstantaneousA wave of healing energy washes over one creature you can see within range. The target regains all its"
    },
    {
     "name": "Hit Points",
-    "text": "If the creature has the Charmed, Fright - ened, Paralyzed, Poisoned, or Stunned condition, the condition ends. If the creature has the Prone condition, it can use its Reaction to stand up.Power Word KillLevel 9 Enchantment (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 60 feet Component: V Duration: InstantaneousYou compel one creature you can see within range to die. If the target has 100 Hit Points or fewer, it dies. Otherwise, it takes 12d12 Psychic damage.Power Word StunLevel 8 Enchantment (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 60 feet Components: V Duration: InstantaneousYou overwhelm the mind of one creature you can see within range. If the target has 150 Hit Points or fewer, it has the Stunned condition. Otherwise, its Speed is 0 until the start of your next turn. The Stunned target makes a Constitution saving throw at the end of each of its turns, ending the con - dition on itself on a success.Prayer of HealingLevel 2 Abjuration (Cleric, Paladin)Casting Time: 10 minutes Range: 30 feet Components: V Duration: Instantaneous within range for the spell s entire casting gain the"
+    "text": "If the creature has the Charmed, Fright - ened, Paralyzed, Poisoned, or Stunned condition, the condition ends. If the creature has the Prone condition, it can use its Reaction to stand up.Power Word KillLevel 9 Enchantment (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 60 feet Component: V Duration: InstantaneousYou compel one creature you can see within range to die. If the target has 100 Hit Points or fewer, it dies. Otherwise, it takes 12d12 Psychic damage.Power Word StunLevel 8 Enchantment (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 60 feet Components: V Duration: InstantaneousYou overwhelm the mind of one creature you can see within range. If the target has 150 Hit Points or fewer, it has the Stunned condition. Otherwise, its Speed is 0 until the start of your next turn. The Stunned target makes a Constitution saving throw at the end of each of its turns, ending the con - dition on itself on a success.Prayer of HealingLevel 2 Abjuration (Cleric, Paladin)Casting Time: 10 minutes Range: 30 feet Components: V Duration: Instantaneous within range for the spell’s entire casting gain the"
    },
    {
     "name": "Points",
-    "text": "A creature can t be affected by this spell Using a"
+    "text": "A creature can’t be affected by this spell Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -523,23 +523,23 @@ const RAW = [
    },
    {
     "name": "Indigo",
-    "text": "Failed Save: The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition ends. If it fails is freed by an effect like the Greater Restoration spell. The successes and failures needn t be con - secutive; keep track of both until the target col - lects three of a kind. 7"
+    "text": "Failed Save: The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition ends. If it fails is freed by an effect like the Greater Restoration spell. The successes and failures needn’t be con - secutive; keep track of both until the target col - lects three of a kind. 7"
    },
    {
     "name": "Violet",
-    "text": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condi - tion ends, and the creature teleports to another plane of existence (GM s choice). 8"
+    "text": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condi - tion ends, and the creature teleports to another plane of existence (GM’s choice). 8"
    },
    {
     "name": "Special",
-    "text": "The target is struck by two rays. Roll twice, rerolling any 8.Prismatic WallLevel 9 Abjuration (Bard, Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: 10 minutesA shimmering, multicolored plane of light forms range. Alternatively, you shape the wall into a globe up to 30 feet in diameter centered on a point within range. The wall lasts for the duration. If you posi - tion the wall in a space occupied by a creature, the spell ends instantly without effect. The wall sheds Bright Light within 100 feet and Dim Light for an additional 100 feet. You and crea- tures you designate when you cast the spell can pass through and be near the wall without harm. If another creature that can see the wall moves within 20 feet of it or starts its turn there, the creature must succeed on a Constitution saving throw or have the Blinded condition for 1 minute. The wall consists of seven layers, each with a different color. When a creature reaches into or passes through the wall, it does so one layer at a time through all the layers. Each layer forces the creature to make a Dexterity saving throw or be af - fected by that layer s properties as described in the Prismatic Layers table. The wall, which has AC 10, can be destroyed one layer at a time, in order from red to violet, by means gone for the duration. Antimagic Field has no effect on the wall, and Dispel Magic can affect only the vio - let layer.Prismatic LayersOrder Effects1"
+    "text": "The target is struck by two rays. Roll twice, rerolling any 8.Prismatic WallLevel 9 Abjuration (Bard, Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: 10 minutesA shimmering, multicolored plane of light forms range. Alternatively, you shape the wall into a globe up to 30 feet in diameter centered on a point within range. The wall lasts for the duration. If you posi - tion the wall in a space occupied by a creature, the spell ends instantly without effect. The wall sheds Bright Light within 100 feet and Dim Light for an additional 100 feet. You and crea- tures you designate when you cast the spell can pass through and be near the wall without harm. If another creature that can see the wall moves within 20 feet of it or starts its turn there, the creature must succeed on a Constitution saving throw or have the Blinded condition for 1 minute. The wall consists of seven layers, each with a different color. When a creature reaches into or passes through the wall, it does so one layer at a time through all the layers. Each layer forces the creature to make a Dexterity saving throw or be af - fected by that layer’s properties as described in the Prismatic Layers table. The wall, which has AC 10, can be destroyed one layer at a time, in order from red to violet, by means gone for the duration. Antimagic Field has no effect on the wall, and Dispel Magic can affect only the vio - let layer.Prismatic LayersOrder Effects1"
    },
    {
     "name": "Red",
-    "text": "Failed Save: 12d6 Fire damage. Successful Save: Half as much damage. Additional Effects : Nonmagical ranged attacks can t pass through this layer, which is destroyed if it takes at 2"
+    "text": "Failed Save: 12d6 Fire damage. Successful Save: Half as much damage. Additional Effects : Nonmagical ranged attacks can’t pass through this layer, which is destroyed if it takes at 2"
    },
    {
     "name": "Orange",
-    "text": "Failed Save: 12d6 Acid damage. Suc - cessful Save: Half as much damage. Additional Effects: Magical ranged attacks can t pass through this layer, which is destroyed by a strong wind (such as the one created by Gust of Wind ). 3"
+    "text": "Failed Save: 12d6 Acid damage. Suc - cessful Save: Half as much damage. Additional Effects: Magical ranged attacks can’t pass through this layer, which is destroyed by a strong wind (such as the one created by Gust of Wind ). 3"
    },
    {
     "name": "Yellow",
@@ -555,11 +555,11 @@ const RAW = [
    },
    {
     "name": "Indigo",
-    "text": "Failed Save: The target has the Re - strained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition condition until it is freed by an effect like the Greater Restoration spell. The successes and failures needn t be consecutive; keep track of both until the target collects three of a kind. Additional Effects: Spells can t be cast through this layer, which is destroyed by Bright Light shed by the Daylight spell. 7"
+    "text": "Failed Save: The target has the Re - strained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition condition until it is freed by an effect like the Greater Restoration spell. The successes and failures needn’t be consecutive; keep track of both until the target collects three of a kind. Additional Effects: Spells can’t be cast through this layer, which is destroyed by Bright Light shed by the Daylight spell. 7"
    },
    {
     "name": "Violet",
-    "text": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condition ends, and the creature teleports to another plane of existence (GM s choice). Additional Effects: This layer is destroyed by Dispel Magic . 156Private SanctumLevel 4 Abjuration (Wizard)Casting Time: 10 minutes Range: 120 feet Components: V, S, M (a thin sheet of lead) Duration: You make an area within range magically secure. The area is a Cube that can be as small as 5 feet to as large as 100 feet on each side. The spell lasts for the duration. When you cast the spell, you decide what sort of security the spell provides, choosing any of the fol - lowing properties: Sound can t pass through the barrier at the edge of the warded area. The barrier of the warded area appears dark and foggy, preventing vision (including Darkvision) through it. Sensors created by Divination spells can t appear inside the protected area or pass through the bar - rier at its perimeter. Creatures in the area can t be targeted by Divina- tion spells. Nothing can teleport into or out of the warded area. Planar travel is blocked within the warded area. Casting this spell on the same spot every day for 365 days makes the spell last until dispelled. Using a"
+    "text": "Failed Save: The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condition ends, and the creature teleports to another plane of existence (GM’s choice). Additional Effects: This layer is destroyed by Dispel Magic . 156Private SanctumLevel 4 Abjuration (Wizard)Casting Time: 10 minutes Range: 120 feet Components: V, S, M (a thin sheet of lead) Duration: You make an area within range magically secure. The area is a Cube that can be as small as 5 feet to as large as 100 feet on each side. The spell lasts for the duration. When you cast the spell, you decide what sort of security the spell provides, choosing any of the fol - lowing properties: • Sound can’t pass through the barrier at the edge of the warded area. • The barrier of the warded area appears dark and foggy, preventing vision (including Darkvision) through it. • Sensors created by Divination spells can’t appear inside the protected area or pass through the bar - rier at its perimeter. • Creatures in the area can’t be targeted by Divina- tion spells. • Nothing can teleport into or out of the warded area. • Planar travel is blocked within the warded area. Casting this spell on the same spot every day for 365 days makes the spell last until dispelled. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -571,15 +571,15 @@ const RAW = [
    },
    {
     "name": "DC",
-    "text": "If a creature discerns the illu - sion for what it is, the creature can see through the image, and any noise it makes sounds hollow to the creature.Project ImageLevel 7 Illusion (Bard, Wizard)Casting Time: Action Range: Components: V, S, M (a statuette of yourself worth Duration: Concentration, up to 1 dayYou create an illusory copy of yourself that lasts for the duration. The copy can appear at any location within range that you have seen before, regardless of intervening obstacles. The illusion looks and sounds like you, but it is intangible. If the illusion takes any damage, it disappears, and the spell ends. You can see through the illusion s eyes and hear through its ears as if you were in its space. As a Magic action, you can move it up to 60 feet and make it gesture, speak, and behave in whatever way you choose. It mimics your mannerisms perfectly. Physical interaction with the image reveals it to be illusory, since things can pass through it. A creature that takes the Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save"
+    "text": "If a creature discerns the illu - sion for what it is, the creature can see through the image, and any noise it makes sounds hollow to the creature.Project ImageLevel 7 Illusion (Bard, Wizard)Casting Time: Action Range: Components: V, S, M (a statuette of yourself worth Duration: Concentration, up to 1 dayYou create an illusory copy of yourself that lasts for the duration. The copy can appear at any location within range that you have seen before, regardless of intervening obstacles. The illusion looks and sounds like you, but it is intangible. If the illusion takes any damage, it disappears, and the spell ends. You can see through the illusion’s eyes and hear through its ears as if you were in its space. As a Magic action, you can move it up to 60 feet and make it gesture, speak, and behave in whatever way you choose. It mimics your mannerisms perfectly. Physical interaction with the image reveals it to be illusory, since things can pass through it. A creature that takes the Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save"
    },
    {
     "name": "DC",
-    "text": "If a creature discerns the illu - sion for what it is, the creature can see through the 157image, and any noise it makes sounds hollow to the creature.Protection from EnergyLevel 3 Abjuration (Cleric, Druid, Ranger, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: Concentration, up to 1 hourFor the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder.Protection from Evil and GoodLevel 1 Abjuration (Cleric, Druid, Paladin, Warlock, Wizard)Casting Time: Action Range: Touch Components: GP, which the spell consumes) Duration: Concentration up to 10 minutesUntil the spell ends, one willing creature you touch is protected against creatures that are Aberrations, Celestials, Elementals, Fey, Fiends, or Undead. of those types have Disadvantage on attack rolls against the target. The target also can t be pos - sessed by or gain the Charmed or Frightened condi - tions from them. If the target is already possessed, Charmed, or Frightened by such a creature, the tar - get has Advantage on any new saving throw against the relevant effect.Protection from PoisonLevel 2 Abjuration (Cleric, Druid, Paladin, Ranger)Casting Time: Action Range: Touch Components: V, S Duration: 1 hourYou touch a creature and end the Poisoned condi - tion on it. For the duration, the target has Advan - tage on saving throws to avoid or end the Poisoned condition, and it has Resistance to Poison damage.Purify Food and DrinkLevel 1 Transmutation (Cleric, Druid, Paladin)Casting Time: Action or Ritual Range: 10 feet Components: V, S Duration: InstantaneousYou remove poison and rot from nonmagical food and drink in a 5-foot-radius Sphere centered on a point within range.Raise DeadLevel 5 Necromancy (Bard, Cleric, Paladin)Casting Time: 1 hour Range: Touch Components: the spell consumes) Duration: InstantaneousWith a touch, you revive a dead creature if it has been dead no longer than 10 days and it wasn t Un - dead when it died. The creature returns to life with 1"
+    "text": "If a creature discerns the illu - sion for what it is, the creature can see through the 157image, and any noise it makes sounds hollow to the creature.Protection from EnergyLevel 3 Abjuration (Cleric, Druid, Ranger, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: Concentration, up to 1 hourFor the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder.Protection from Evil and GoodLevel 1 Abjuration (Cleric, Druid, Paladin, Warlock, Wizard)Casting Time: Action Range: Touch Components: GP, which the spell consumes) Duration: Concentration up to 10 minutesUntil the spell ends, one willing creature you touch is protected against creatures that are Aberrations, Celestials, Elementals, Fey, Fiends, or Undead. of those types have Disadvantage on attack rolls against the target. The target also can’t be pos - sessed by or gain the Charmed or Frightened condi - tions from them. If the target is already possessed, Charmed, or Frightened by such a creature, the tar - get has Advantage on any new saving throw against the relevant effect.Protection from PoisonLevel 2 Abjuration (Cleric, Druid, Paladin, Ranger)Casting Time: Action Range: Touch Components: V, S Duration: 1 hourYou touch a creature and end the Poisoned condi - tion on it. For the duration, the target has Advan - tage on saving throws to avoid or end the Poisoned condition, and it has Resistance to Poison damage.Purify Food and DrinkLevel 1 Transmutation (Cleric, Druid, Paladin)Casting Time: Action or Ritual Range: 10 feet Components: V, S Duration: InstantaneousYou remove poison and rot from nonmagical food and drink in a 5-foot-radius Sphere centered on a point within range.Raise DeadLevel 5 Necromancy (Bard, Cleric, Paladin)Casting Time: 1 hour Range: Touch Components: the spell consumes) Duration: InstantaneousWith a touch, you revive a dead creature if it has been dead no longer than 10 days and it wasn’t Un - dead when it died. The creature returns to life with 1"
    },
    {
     "name": "Hit Point",
-    "text": "This spell also neutralizes any poisons that affected the creature at the time of death. This spell closes all mortal wounds, but it doesn t restore missing body parts. If the creature is lack - Coming back from the dead is an ordeal. The tar - by 1 until it becomes 0.Ray of EnfeeblementLevel 2 Necromancy (Warlock, Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: Concentration, up to 1 minuteA beam of enervating energy shoots from you to - ward a creature within range. The target must make a Constitution saving throw. On a successful save, the target has Disadvantage on the next attack roll it makes until the start of your next turn. On a failed save, the target has Disadvantage on Strength-based D20 Tests for the duration. During that time, it also subtracts 1d8 from all its damage rolls. The target repeats the save at the end of each of its turns, ending the spell on a success.Ray of FrostEvocation Cantrip (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousA frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 1d8 Cold dam - age, and its Speed is reduced by 10 feet until the start of your next turn."
+    "text": "This spell also neutralizes any poisons that affected the creature at the time of death. This spell closes all mortal wounds, but it doesn’t restore missing body parts. If the creature is lack - Coming back from the dead is an ordeal. The tar - by 1 until it becomes 0.Ray of EnfeeblementLevel 2 Necromancy (Warlock, Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: Concentration, up to 1 minuteA beam of enervating energy shoots from you to - ward a creature within range. The target must make a Constitution saving throw. On a successful save, the target has Disadvantage on the next attack roll it makes until the start of your next turn. On a failed save, the target has Disadvantage on Strength-based D20 Tests for the duration. During that time, it also subtracts 1d8 from all its damage rolls. The target repeats the save at the end of each of its turns, ending the spell on a success.Ray of FrostEvocation Cantrip (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousA frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 1d8 Cold dam - age, and its Speed is reduced by 10 feet until the start of your next turn."
    },
    {
     "name": "Cantrip Upgrade",
@@ -591,27 +591,27 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d8 for each spell slot level above 1.ReincarnateLevel 5 Necromancy (Druid)Casting Time: 1 hour Range: Touch Components: V, S, M (rare oils worth 1,000+ GP, which the spell consumes) Duration: InstantaneousYou touch a dead Humanoid or a piece of one. If the creature has been dead no longer than 10 days, the spell forms a new body for it and calls the soul to enter that body. Roll 1d10 and consult the table below to determine the body s species, or the GM chooses another playable species.1d10 Species 1d10 Species1 Roll again. 6 Goliath 2 Dragonborn 7 3 Dwarf 8 Human Elf 9 Orc Gnome 10 The reincarnated creature makes any choices that a species description offers, and the creature re - calls its former life. It retains the capabilities it had in its original form, except it loses the traits of its previous species and gains the traits of its new one.Remove CurseLevel 3 Abjuration (Cleric, Paladin, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: InstantaneousAt your touch, all curses affecting one creature or object end. If the object is a cursed magic item, its curse remains, but the spell breaks its owner s Attunement to the object so it can be removed or discarded.Resilient SphereLevel 4 Abjuration (Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a glass sphere) Duration: Concentration, up to 1 minuteA shimmering sphere encloses a Large or smaller creature or object within range. An unwilling crea- ture must succeed on a Dexterity saving throw or be enclosed for the duration. out, though a creature in the sphere can breathe there. The sphere is immune to all damage, and a creature or object inside can t be damaged by at - tacks or effects originating from outside, nor can a creature inside the sphere damage anything outside it. The sphere is weightless and just large enough to contain the creature or object inside. An enclosed creature can take an action to push against the sphere s walls and thus roll the sphere at up to half the creature s"
+    "text": "The damage in - creases by 1d8 for each spell slot level above 1.ReincarnateLevel 5 Necromancy (Druid)Casting Time: 1 hour Range: Touch Components: V, S, M (rare oils worth 1,000+ GP, which the spell consumes) Duration: InstantaneousYou touch a dead Humanoid or a piece of one. If the creature has been dead no longer than 10 days, the spell forms a new body for it and calls the soul to enter that body. Roll 1d10 and consult the table below to determine the body’s species, or the GM chooses another playable species.1d10 Species 1d10 Species1 Roll again. 6 Goliath 2 Dragonborn 7 3 Dwarf 8 Human Elf 9 Orc Gnome 10 The reincarnated creature makes any choices that a species’ description offers, and the creature re - calls its former life. It retains the capabilities it had in its original form, except it loses the traits of its previous species and gains the traits of its new one.Remove CurseLevel 3 Abjuration (Cleric, Paladin, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: InstantaneousAt your touch, all curses affecting one creature or object end. If the object is a cursed magic item, its curse remains, but the spell breaks its owner’s Attunement to the object so it can be removed or discarded.Resilient SphereLevel 4 Abjuration (Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a glass sphere) Duration: Concentration, up to 1 minuteA shimmering sphere encloses a Large or smaller creature or object within range. An unwilling crea- ture must succeed on a Dexterity saving throw or be enclosed for the duration. out, though a creature in the sphere can breathe there. The sphere is immune to all damage, and a creature or object inside can’t be damaged by at - tacks or effects originating from outside, nor can a creature inside the sphere damage anything outside it. The sphere is weightless and just large enough to contain the creature or object inside. An enclosed creature can take an action to push against the sphere’s walls and thus roll the sphere at up to half the creature’s"
    },
    {
     "name": "Speed",
-    "text": "Similarly, the globe can be picked up and moved by other creatures. A Disintegrate spell targeting the globe destroys it without harming anything inside.ResistanceAbjuration Cantrip (Cleric, Druid)Casting Time: Action Range: Touch Component: V, S Duration: Concentration, up to 1 minuteYou touch a willing creature and choose a damage type: Acid, Bludgeoning, Cold, Fire, Lightning, Ne - crotic, Piercing, Poison, Radiant, Slashing, or Thun - der. When the creature takes damage of the chosen type before the spell ends, the creature reduces the from this spell only once per turn.ResurrectionLevel 7 Necromancy (Bard, Cleric)Casting Time: 1 hour Range: Touch Components: V, S, M (a diamond worth 1,000+ GP, which the spell consumes) Duration: Instantaneous 159With a touch, you revive a dead creature that has been dead for no more than a century, didn t die of old age, and wasn t Undead when it died. The creature returns to life with all its"
+    "text": "Similarly, the globe can be picked up and moved by other creatures. A Disintegrate spell targeting the globe destroys it without harming anything inside.ResistanceAbjuration Cantrip (Cleric, Druid)Casting Time: Action Range: Touch Component: V, S Duration: Concentration, up to 1 minuteYou touch a willing creature and choose a damage type: Acid, Bludgeoning, Cold, Fire, Lightning, Ne - crotic, Piercing, Poison, Radiant, Slashing, or Thun - der. When the creature takes damage of the chosen type before the spell ends, the creature reduces the from this spell only once per turn.ResurrectionLevel 7 Necromancy (Bard, Cleric)Casting Time: 1 hour Range: Touch Components: V, S, M (a diamond worth 1,000+ GP, which the spell consumes) Duration: Instantaneous 159With a touch, you revive a dead creature that has been dead for no more than a century, didn’t die of old age, and wasn’t Undead when it died. The creature returns to life with all its"
    },
    {
     "name": "Hit Points",
-    "text": "This spell also neutralizes any poisons that affected the creature at the time of death. This spell closes all mortal wounds and restores any missing body parts. Coming back from the dead is an ordeal. The tar - by 1 until it becomes 0. Casting this spell to revive a creature that has been dead for 365 days or longer taxes you. Until and you have Disadvantage on D20 Tests.Reverse GravityLevel 7 Transmutation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 100 feet Components: Duration: Concentration, up to 1 minuteThis spell reverses gravity in a 50-foot-radius, 100- foot high Cylinder centered on a point within range. All creatures and objects in that area that aren t anchored to the ground fall upward and reach the top of the Cylinder. A creature can make a Dexterity avoiding the fall upward. If a ceiling or an anchored object is encountered in this upward fall, creatures and objects strike it just as they would during a downward fall. If an af - fected creature or object reaches the Cylinder s top without striking anything, it hovers there for the duration. When the spell ends, affected objects and creatures fall downward.RevivifyLevel 3 Necromancy (Cleric, Druid, Paladin, Ranger)Casting Time: Action Range: Touch Components: V, S, M (a diamond worth 300+ GP, which the spell consumes) Duration: InstantaneousYou touch a creature that has died within the last minute. That creature revives with 1"
+    "text": "This spell also neutralizes any poisons that affected the creature at the time of death. This spell closes all mortal wounds and restores any missing body parts. Coming back from the dead is an ordeal. The tar - by 1 until it becomes 0. Casting this spell to revive a creature that has been dead for 365 days or longer taxes you. Until and you have Disadvantage on D20 Tests.Reverse GravityLevel 7 Transmutation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 100 feet Components: Duration: Concentration, up to 1 minuteThis spell reverses gravity in a 50-foot-radius, 100- foot high Cylinder centered on a point within range. All creatures and objects in that area that aren’t anchored to the ground fall upward and reach the top of the Cylinder. A creature can make a Dexterity avoiding the fall upward. If a ceiling or an anchored object is encountered in this upward fall, creatures and objects strike it just as they would during a downward fall. If an af - fected creature or object reaches the Cylinder’s top without striking anything, it hovers there for the duration. When the spell ends, affected objects and creatures fall downward.RevivifyLevel 3 Necromancy (Cleric, Druid, Paladin, Ranger)Casting Time: Action Range: Touch Components: V, S, M (a diamond worth 300+ GP, which the spell consumes) Duration: InstantaneousYou touch a creature that has died within the last minute. That creature revives with 1"
    },
    {
     "name": "Hit Point",
-    "text": "This spell can t revive a creature that has died of old age, nor does it restore any missing body parts.Rope TrickLevel 2 Transmutation (Wizard)Casting Time: Action Range: Touch Components: V, S, M (a segment of rope) Duration: 1 hourYou touch a rope. One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling. At the rope s upper end, an Invisible 3-foot-by-5-foot portal opens to an extra- dimensional space that lasts until the spell ends. That space can be reached by climbing the rope, which can be pulled into or dropped out of it. The space can hold up to eight Medium or smaller creatures. Attacks, spells, and other effects can t pass into or out of the space, but creatures inside it can see through the portal. Anything inside the space drops out when the spell ends.Sacred FlameEvocation Cantrip (Cleric)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousFlame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 Radiant dam - Three-Quarters Cover for this save."
+    "text": "This spell can’t revive a creature that has died of old age, nor does it restore any missing body parts.Rope TrickLevel 2 Transmutation (Wizard)Casting Time: Action Range: Touch Components: V, S, M (a segment of rope) Duration: 1 hourYou touch a rope. One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling. At the rope’s upper end, an Invisible 3-foot-by-5-foot portal opens to an extra- dimensional space that lasts until the spell ends. That space can be reached by climbing the rope, which can be pulled into or dropped out of it. The space can hold up to eight Medium or smaller creatures. Attacks, spells, and other effects can’t pass into or out of the space, but creatures inside it can see through the portal. Anything inside the space drops out when the spell ends.Sacred FlameEvocation Cantrip (Cleric)Casting Time: Action Range: 60 feet Components: V, S Duration: InstantaneousFlame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 Radiant dam - Three-Quarters Cover for this save."
    },
    {
     "name": "Cantrip Upgrade",
-    "text": "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).SanctuaryLevel 1 Abjuration (Cleric)Casting Time: Bonus Action Range: 30 feet Components: V, S, M (a shard of glass from a mirror) Duration: 1 minuteYou ward a creature within range. Until the spell ends, any creature who targets the warded crea- ture with an attack roll or a damaging spell must succeed on a Wisdom saving throw or either choose a new target or lose the attack or spell. This spell doesn t protect the warded creature from areas of effect. The spell ends if the warded creature makes an attack roll, casts a spell, or deals damage.Scorching RayLevel 2 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: Instantaneous target within range or at several. Make a ranged spell attack for each ray. On a hit, the target takes 2d6 Fire damage. Using a"
+    "text": "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).SanctuaryLevel 1 Abjuration (Cleric)Casting Time: Bonus Action Range: 30 feet Components: V, S, M (a shard of glass from a mirror) Duration: 1 minuteYou ward a creature within range. Until the spell ends, any creature who targets the warded crea- ture with an attack roll or a damaging spell must succeed on a Wisdom saving throw or either choose a new target or lose the attack or spell. This spell doesn’t protect the warded creature from areas of effect. The spell ends if the warded creature makes an attack roll, casts a spell, or deals damage.Scorching RayLevel 2 Evocation (Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: Instantaneous target within range or at several. Make a ranged spell attack for each ray. On a hit, the target takes 2d6 Fire damage. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You create one additional ray for each spell slot level above 2. 160ScryingLevel 5 Divination (Bard, Cleric, Druid, Warlock, Wizard)Casting Time: 10 minutes Range: Self Components: V, S, M (a focus worth 1,000+ GP, such as Duration: Concentration, up to 10 minutesYou can see and hear a creature you choose that is on the same plane of existence as you. The target (see the tables below) by how well you know the target and the sort of physical connection you have to it. The target doesn t know what it is making the save against, only that it feels uneasy.Your Knowledge of the Target Is Secondhand (heard of the target) Firsthand (met the target) +0 Extensive (know the target well) You Have the Target s Picture or other likeness Garment or other possession Body part, lock of hair, or bit of nail On a successful save, the target isn t affected, and you can t use this spell on it again for 24 hours. On a failed save, the spell creates an Invisible, intangible sensor within 10 feet of the target. You can see and hear through the sensor as if you were there. The sensor moves with the target, remaining within 10 feet of it for the duration. If something can see the sensor, it appears as a luminous orb Instead of targeting a creature, you can target a location you have seen. When you do so, the sensor appears at that location and doesn t move.Searing SmiteLevel 1 Evocation (Paladin)Casting Time: Bonus Action, which you take immedi - ately after hitting a target with a Melee weapon or an Unarmed Strike Range: Self Component: V Duration: 1 minuteAs you hit the target, it takes an extra 1d6 Fire dam - age from the attack. At the start of each of its turns until the spell ends, the target takes 1d6 Fire dam - age and then makes a Constitution saving throw. On a failed save, the spell continues. On a successful save, the spell ends. Using a"
+    "text": "You create one additional ray for each spell slot level above 2. 160ScryingLevel 5 Divination (Bard, Cleric, Druid, Warlock, Wizard)Casting Time: 10 minutes Range: Self Components: V, S, M (a focus worth 1,000+ GP, such as Duration: Concentration, up to 10 minutesYou can see and hear a creature you choose that is on the same plane of existence as you. The target (see the tables below) by how well you know the target and the sort of physical connection you have to it. The target doesn’t know what it is making the save against, only that it feels uneasy.Your Knowledge of the Target Is … Secondhand (heard of the target) Firsthand (met the target) +0 Extensive (know the target well) You Have the Target’s … Picture or other likeness Garment or other possession Body part, lock of hair, or bit of nail On a successful save, the target isn’t affected, and you can’t use this spell on it again for 24 hours. On a failed save, the spell creates an Invisible, intangible sensor within 10 feet of the target. You can see and hear through the sensor as if you were there. The sensor moves with the target, remaining within 10 feet of it for the duration. If something can see the sensor, it appears as a luminous orb Instead of targeting a creature, you can target a location you have seen. When you do so, the sensor appears at that location and doesn’t move.Searing SmiteLevel 1 Evocation (Paladin)Casting Time: Bonus Action, which you take immedi - ately after hitting a target with a Melee weapon or an Unarmed Strike Range: Self Component: V Duration: 1 minuteAs you hit the target, it takes an extra 1d6 Fire dam - age from the attack. At the start of each of its turns until the spell ends, the target takes 1d6 Fire dam - age and then makes a Constitution saving throw. On a failed save, the spell continues. On a successful save, the spell ends. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -623,23 +623,23 @@ const RAW = [
    },
    {
     "name": "Ethereal Plane",
-    "text": "Creatures and objects there appear ghostly.SeemingLevel 5 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: 30 feet Components: V, S Duration: 8 hoursYou give an illusory appearance to each creature of your choice that you can see within range. An un - willing target can make a Charisma saving throw, and if it succeeds, it is unaffected by this spell. You can give the same appearance or different ones to the targets. The spell can change the ap - pearance of the targets bodies and equipment. You can make each creature seem 1 foot shorter or taller and appear heavier or lighter. A target s new appearance must have the same basic arrangement of limbs as the target, but the extent of the illusion 161is otherwise up to you. The spell lasts for the duration. The changes wrought by this spell fail to hold up to physical inspection. For example, if you use this through the hat. A creature that takes the Study action to examine a target can make an Intelligence (Investigation) check against your spell save"
+    "text": "Creatures and objects there appear ghostly.SeemingLevel 5 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: 30 feet Components: V, S Duration: 8 hoursYou give an illusory appearance to each creature of your choice that you can see within range. An un - willing target can make a Charisma saving throw, and if it succeeds, it is unaffected by this spell. You can give the same appearance or different ones to the targets. The spell can change the ap - pearance of the targets’ bodies and equipment. You can make each creature seem 1 foot shorter or taller and appear heavier or lighter. A target’s new appearance must have the same basic arrangement of limbs as the target, but the extent of the illusion 161is otherwise up to you. The spell lasts for the duration. The changes wrought by this spell fail to hold up to physical inspection. For example, if you use this through the hat. A creature that takes the Study action to examine a target can make an Intelligence (Investigation) check against your spell save"
    },
    {
     "name": "DC",
-    "text": "If it succeeds, it becomes aware that the target is disguised.SendingLevel 3 Divination (Bard, Cleric, Wizard)Casting Time: Action Range: Unlimited Components: V, S, M (a copper wire) Duration: InstantaneousYou send a short message of 25 words or fewer to a creature you have met or a creature described to you by someone who has met it. The target hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately. The spell enables targets to understand the meaning of your message. You can send the message across any distance and even to other planes of existence, but if the target is on a different plane than you, there is a 5 percent chance that the message doesn t arrive. You know if the delivery fails. Upon receiving your message, a creature can block your ability to reach it again with this spell for 8 hours. If you try to send another message during that time, you learn that you are blocked, and the spell fails.SequesterLevel 7 Transmutation (Wizard)Casting Time: Action Range: Touch Components: which the spell consumes) Duration: Until dispelledWith a touch, you magically sequester an object or a willing creature. For the duration, the target has the Invisible condition and can t be targeted by Divina- tion spells, detected by magic, or viewed remotely with magic. If the target is a creature, it enters a state of sus - pended animation; it has the Unconscious condition, doesn t age, and doesn t need food, water, or air. You can set a condition for the spell to end early. The condition can be anything you choose, but it must occur or be visible within 1 mile of the target. Examples include after 1,000 years or when the tarrasque awakens. This spell also ends if the tar - get takes any damage.ShapechangeLevel 9 Transmutation (Druid, Wizard)Casting Time: Action Range: Self Components: Duration: Concentration, up to 1 hourYou shape-shift into another creature for the dura- tion or until you take a Magic action to shape-shift into a different eligible form. The new form must be of a creature that has a Challenge Rating no higher than your level or"
+    "text": "If it succeeds, it becomes aware that the target is disguised.SendingLevel 3 Divination (Bard, Cleric, Wizard)Casting Time: Action Range: Unlimited Components: V, S, M (a copper wire) Duration: InstantaneousYou send a short message of 25 words or fewer to a creature you have met or a creature described to you by someone who has met it. The target hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately. The spell enables targets to understand the meaning of your message. You can send the message across any distance and even to other planes of existence, but if the target is on a different plane than you, there is a 5 percent chance that the message doesn’t arrive. You know if the delivery fails. Upon receiving your message, a creature can block your ability to reach it again with this spell for 8 hours. If you try to send another message during that time, you learn that you are blocked, and the spell fails.SequesterLevel 7 Transmutation (Wizard)Casting Time: Action Range: Touch Components: which the spell consumes) Duration: Until dispelledWith a touch, you magically sequester an object or a willing creature. For the duration, the target has the Invisible condition and can’t be targeted by Divina- tion spells, detected by magic, or viewed remotely with magic. If the target is a creature, it enters a state of sus - pended animation; it has the Unconscious condition, doesn’t age, and doesn’t need food, water, or air. You can set a condition for the spell to end early. The condition can be anything you choose, but it must occur or be visible within 1 mile of the target. Examples include “after 1,000 years” or “when the tarrasque awakens.” This spell also ends if the tar - get takes any damage.ShapechangeLevel 9 Transmutation (Druid, Wizard)Casting Time: Action Range: Self Components: Duration: Concentration, up to 1 hourYou shape-shift into another creature for the dura- tion or until you take a Magic action to shape-shift into a different eligible form. The new form must be of a creature that has a Challenge Rating no higher than your level or"
    },
    {
     "name": "Challenge Rating",
-    "text": "You must have seen the sort of creature before, and it can t be a Construct or an"
+    "text": "You must have seen the sort of creature before, and it can’t be a Construct or an"
    },
    {
     "name": "Undead",
-    "text": "When you cast the spell, you gain a number of Temporary Hit Points equal to the Hit Points of the - rary Hit Points vanish if any remain when the spell ends. Your game statistics are replaced by the stat block of the chosen form, but you retain your creature type; alignment; personality; Intelligence, Wisdom, and Charisma scores; Hit Points; Hit Point Dice; pro - the Spellcasting feature, you retain it too. Upon shape-shifting, you determine whether your equipment drops to the ground or changes in size ShatterLevel 2 Evocation (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a chip of mica) Duration: InstantaneousA loud noise erupts from a point of your choice within range. Each creature in a 10-foot-radius Sphere centered there makes a Constitution saving throw, taking 3d8 Thunder damage on a failed save or half as much damage on a successful one. A Con - struct has Disadvantage on the save. A nonmagical object that isn t being worn or car - ried also takes the damage if it s in the spell s area. Using a"
+    "text": "When you cast the spell, you gain a number of Temporary Hit Points equal to the Hit Points of the - rary Hit Points vanish if any remain when the spell ends. Your game statistics are replaced by the stat block of the chosen form, but you retain your creature type; alignment; personality; Intelligence, Wisdom, and Charisma scores; Hit Points; Hit Point Dice; pro - the Spellcasting feature, you retain it too. Upon shape-shifting, you determine whether your equipment drops to the ground or changes in size ShatterLevel 2 Evocation (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a chip of mica) Duration: InstantaneousA loud noise erupts from a point of your choice within range. Each creature in a 10-foot-radius Sphere centered there makes a Constitution saving throw, taking 3d8 Thunder damage on a failed save or half as much damage on a successful one. A Con - struct has Disadvantage on the save. A nonmagical object that isn’t being worn or car - ried also takes the damage if it’s in the spell’s area. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d8 for each spell slot level above 2.ShieldLevel 1 Abjuration (Sorcerer, Wizard)Casting Time: Reaction, which you take when you are hit by an attack roll or targeted by the Magic Missile spell Range: Self Components: V, S Duration: 1 roundAn imperceptible barrier of magical force protects you. Until the start of your next turn, you have a +5 162bonus to AC, including against the triggering attack, and you take no damage from Magic Missile .Shield of FaithLevel 1 Abjuration (Cleric, Paladin)Casting Time: Bonus Action Range: 60 feet Components: V, S, M (a prayer scroll) Duration: Concentration, up to 10 minutes choice within range, granting it a +2 bonus to AC for the duration.ShillelaghTransmutation Cantrip (Druid)Casting Time: Bonus Action Range: Self Components: V, S, M (mistletoe) Duration: 1 minuteA Club or Quarterstaff you are holding is imbued with nature s power. For the duration, you can use your spellcasting ability instead of Strength for the attack and damage rolls of melee attacks using that weapon, and the weapon s damage die becomes a d8. If the attack deals damage, it can be Force damage or the weapon s normal damage type (your choice). The spell ends early if you cast it again or if you let go of the weapon."
+    "text": "The damage in - creases by 1d8 for each spell slot level above 2.ShieldLevel 1 Abjuration (Sorcerer, Wizard)Casting Time: Reaction, which you take when you are hit by an attack roll or targeted by the Magic Missile spell Range: Self Components: V, S Duration: 1 roundAn imperceptible barrier of magical force protects you. Until the start of your next turn, you have a +5 162bonus to AC, including against the triggering attack, and you take no damage from Magic Missile .Shield of FaithLevel 1 Abjuration (Cleric, Paladin)Casting Time: Bonus Action Range: 60 feet Components: V, S, M (a prayer scroll) Duration: Concentration, up to 10 minutes choice within range, granting it a +2 bonus to AC for the duration.ShillelaghTransmutation Cantrip (Druid)Casting Time: Bonus Action Range: Self Components: V, S, M (mistletoe) Duration: 1 minuteA Club or Quarterstaff you are holding is imbued with nature’s power. For the duration, you can use your spellcasting ability instead of Strength for the attack and damage rolls of melee attacks using that weapon, and the weapon’s damage die becomes a d8. If the attack deals damage, it can be Force damage or the weapon’s normal damage type (your choice). The spell ends early if you cast it again or if you let go of the weapon."
    },
    {
     "name": "Cantrip Upgrade",
@@ -647,35 +647,35 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d6 for each spell slot level above 2.Shocking GraspEvocation Cantrip (Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: InstantaneousLightning springs from you to a creature that you try to touch. Make a melee spell attack against the target. On a hit, the target takes 1d8 Lightning dam - age, and it can t make Opportunity Attacks until the start of its next turn."
+    "text": "The damage in - creases by 1d6 for each spell slot level above 2.Shocking GraspEvocation Cantrip (Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S Duration: InstantaneousLightning springs from you to a creature that you try to touch. Make a melee spell attack against the target. On a hit, the target takes 1d8 Lightning dam - age, and it can’t make Opportunity Attacks until the start of its next turn."
    },
    {
     "name": "Cantrip Upgrade",
-    "text": "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).SilenceLevel 2 Illusion (Bard, Cleric, Ranger)Casting Time: Action or Ritual Range: 120 feet Components: V, S Duration: Concentration, up to 10 minutesFor the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the Sphere has Immunity to Thunder damage, and creatures have the Deaf - ened condition while entirely inside it. Casting a spell that includes a Verbal component is impossible there.Silent ImageLevel 1 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 10 minutesYou create the image of an object, a creature, or some other visible phenomenon that is no larger than a 15-foot Cube. The image appears at a spot within range and lasts for the duration. The image is purely visual; it isn t accompanied by sound, smell, or other sensory effects. As a Magic action, you can cause the image to move to any spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. For example, if you create an image of a creature and move it, you can alter the image so that it ap - pears to be walking. Physical interaction with the image reveals it to be an illusion, since things can pass through it. A creature that takes a Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save"
+    "text": "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).SilenceLevel 2 Illusion (Bard, Cleric, Ranger)Casting Time: Action or Ritual Range: 120 feet Components: V, S Duration: Concentration, up to 10 minutesFor the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the Sphere has Immunity to Thunder damage, and creatures have the Deaf - ened condition while entirely inside it. Casting a spell that includes a Verbal component is impossible there.Silent ImageLevel 1 Illusion (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: Duration: Concentration, up to 10 minutesYou create the image of an object, a creature, or some other visible phenomenon that is no larger than a 15-foot Cube. The image appears at a spot within range and lasts for the duration. The image is purely visual; it isn’t accompanied by sound, smell, or other sensory effects. As a Magic action, you can cause the image to move to any spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. For example, if you create an image of a creature and move it, you can alter the image so that it ap - pears to be walking. Physical interaction with the image reveals it to be an illusion, since things can pass through it. A creature that takes a Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save"
    },
    {
     "name": "DC",
-    "text": "If a creature discerns the illu - sion for what it is, the creature can see through the image.SimulacrumLevel 7 Illusion (Wizard)Casting Time: 12 hours Range: Touch Components: which the spell consumes) Duration: Until dispelled 163You create a simulacrum of one Beast or Humanoid that is within 10 feet of you for the entire casting of creature and a pile of ice or snow that is the same size as that creature, and the pile turns into the simulacrum, which is a creature. It uses the game statistics of the original creature at the time of cast - ing, except it is a Construct, its Hit Point maximum is half as much, and it can t cast this spell. The simulacrum is Friendly to you and creatures you designate. It obeys your commands and acts on your turn in combat. The simulacrum can t gain lev - els, and it can t take"
+    "text": "If a creature discerns the illu - sion for what it is, the creature can see through the image.SimulacrumLevel 7 Illusion (Wizard)Casting Time: 12 hours Range: Touch Components: which the spell consumes) Duration: Until dispelled 163You create a simulacrum of one Beast or Humanoid that is within 10 feet of you for the entire casting of creature and a pile of ice or snow that is the same size as that creature, and the pile turns into the simulacrum, which is a creature. It uses the game statistics of the original creature at the time of cast - ing, except it is a Construct, its Hit Point maximum is half as much, and it can’t cast this spell. The simulacrum is Friendly to you and creatures you designate. It obeys your commands and acts on your turn in combat. The simulacrum can’t gain lev - els, and it can’t take"
    },
    {
     "name": "Short or Long Rests",
-    "text": "If the simulacrum takes damage, the only way to restore its Hit Points is to repair it as you take a Long Rest, during which you expend components worth 100 GP per Hit Point restored. The simula- crum must stay within 5 feet of you for the repair. The simulacrum lasts until it drops to 0 Hit Points, at which point it reverts to snow and melts away. If you cast this spell again, any simulacrum you cre - ated with this spell is instantly destroyed.SleepLevel 1 Enchantment (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a pinch of sand or rose petals) Duration: Concentration, up to 1 minuteEach creature of your choice in a 5-foot-radius Sphere centered on a point within range must suc - ceed on a Wisdom saving throw or have the Inca- pacitated condition until the end of its next turn, at which point it must repeat the save. If the target fails the second save, the target has the Unconscious condition for the duration. The spell ends on a tar - get if it takes damage or someone within 5 feet of it takes an action to shake it out of the spell s effect. Creatures that don t sleep, such as elves, or that have Immunity to the Exhaustion condition auto - matically succeed on saves against this spell.Sleet StormLevel 3 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: Components: V, S, M (a miniature umbrella) Duration: Concentration, up to 1 minuteUntil the spell ends, sleet falls in a 40-foot-tall, 20-foot-radius Cylinder centered on a point you choose within range. The area is Heavily Obscured, a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration.SlowLevel 3 Transmutation (Bard, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a drop of molasses) Duration: Concentration, up to 1 minuteYou alter time around up to six creatures of your choice in a 40-foot Cube within range. Each target must succeed on a Wisdom saving throw or be af - fected by this spell for the duration. penalty to AC and Dexterity saving throws, and it can t take"
+    "text": "If the simulacrum takes damage, the only way to restore its Hit Points is to repair it as you take a Long Rest, during which you expend components worth 100 GP per Hit Point restored. The simula- crum must stay within 5 feet of you for the repair. The simulacrum lasts until it drops to 0 Hit Points, at which point it reverts to snow and melts away. If you cast this spell again, any simulacrum you cre - ated with this spell is instantly destroyed.SleepLevel 1 Enchantment (Bard, Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a pinch of sand or rose petals) Duration: Concentration, up to 1 minuteEach creature of your choice in a 5-foot-radius Sphere centered on a point within range must suc - ceed on a Wisdom saving throw or have the Inca- pacitated condition until the end of its next turn, at which point it must repeat the save. If the target fails the second save, the target has the Unconscious condition for the duration. The spell ends on a tar - get if it takes damage or someone within 5 feet of it takes an action to shake it out of the spell’s effect. Creatures that don’t sleep, such as elves, or that have Immunity to the Exhaustion condition auto - matically succeed on saves against this spell.Sleet StormLevel 3 Conjuration (Druid, Sorcerer, Wizard)Casting Time: Action Range: Components: V, S, M (a miniature umbrella) Duration: Concentration, up to 1 minuteUntil the spell ends, sleet falls in a 40-foot-tall, 20-foot-radius Cylinder centered on a point you choose within range. The area is Heavily Obscured, a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration.SlowLevel 3 Transmutation (Bard, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a drop of molasses) Duration: Concentration, up to 1 minuteYou alter time around up to six creatures of your choice in a 40-foot Cube within range. Each target must succeed on a Wisdom saving throw or be af - fected by this spell for the duration. penalty to AC and Dexterity saving throws, and it can’t take"
    },
    {
     "name": "Reactions",
-    "text": "On its turns, it can take either an action or a Bonus Action, not both, and it can make only one attack if it takes the Attack action. If it casts a spell with a Somatic component, there is a 25 percent chance the spell fails as a result of the target making the spell s gestures too slowly. An affected target repeats the save at the end of each of its turns, ending the spell on itself on a success.Sorcerous BurstEvocation Cantrip (Sorcerer)Casting Time: Action Range: 120 feet Component: V, S Duration: InstantaneousYou cast sorcerous energy at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 damage of a type you choose: Acid, Cold, Fire, Lightning, Poison, Psychic, or"
+    "text": "On its turns, it can take either an action or a Bonus Action, not both, and it can make only one attack if it takes the Attack action. If it casts a spell with a Somatic component, there is a 25 percent chance the spell fails as a result of the target making the spell’s gestures too slowly. An affected target repeats the save at the end of each of its turns, ending the spell on itself on a success.Sorcerous BurstEvocation Cantrip (Sorcerer)Casting Time: Action Range: 120 feet Component: V, S Duration: InstantaneousYou cast sorcerous energy at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 damage of a type you choose: Acid, Cold, Fire, Lightning, Poison, Psychic, or"
    },
    {
     "name": "Thunder",
-    "text": "If you roll an 8 on a d8 for this spell, you can roll another d8, and add it to the damage. When you cast this spell, the maximum number of these d8s you can add to the spell s damage equals your spellcast -"
+    "text": "If you roll an 8 on a d8 for this spell, you can roll another d8, and add it to the damage. When you cast this spell, the maximum number of these d8s you can add to the spell’s damage equals your spellcast -"
    },
    {
     "name": "Cantrip Upgrade",
-    "text": "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).Spare the DyingNecromancy Cantrip (Cleric, Druid)Casting Time: Action Range: Components: V, S Duration: InstantaneousChoose a creature within range that has 0 Hit Points and isn t dead. The creature becomes"
+    "text": "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).Spare the DyingNecromancy Cantrip (Cleric, Druid)Casting Time: Action Range: Components: V, S Duration: InstantaneousChoose a creature within range that has 0 Hit Points and isn’t dead. The creature becomes"
    },
    {
     "name": "Cantrip Upgrade",
-    "text": "The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet). 164Speak with AnimalsLevel 1 Divination (Bard, Druid, Ranger, Warlock)Casting Time: Action or Ritual Range: Self Components: V, S Duration: 10 minutesFor the duration, you can comprehend and verbally communicate with Beasts, and you can use any of Most Beasts have little to say about topics that don t pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.Speak with DeadLevel 3 Necromancy (Bard, Cleric, Wizard)Casting Time: Action Range: 10 feet Components: V, S, M (burning incense) Duration: 10 minutesYou grant the semblance of life to a corpse of your choice within range, allowing it to answer ques - tions you pose. The corpse must have a mouth, and this spell fails if the deceased creature was Undead when it died. The spell also fails if the corpse was the target of this spell within the past 10 days. Until the spell ends, you can ask the corpse up to in life, including the languages it knew. Answers are usually brief, cryptic, or repetitive, and the corpse is under no compulsion to offer a truthful answer if you are antagonistic toward it or it recognizes you as an enemy. This spell doesn t return the creature s soul to its body, only its animating spirit. Thus, the corpse can t learn new information, doesn t compre - hend anything that has happened since it died, and can t speculate about future events.Speak with PlantsLevel 3 Transmutation (Bard, Druid, Ranger)Casting Time: Action Range: Self Components: V, S Duration: 10 minutesYou imbue plants in an immobile 30-foot Emanation with limited sentience and animation, giving them the ability to communicate with you and follow your simple commands. You can question plants about events in the spell s area within the past day, gain - ing information about creatures that have passed, weather, and other circumstances. growth (such as thickets and undergrowth) into ordinary terrain that lasts for the duration. Or you can turn ordinary terrain where plants are present The spell doesn t enable plants to uproot them - selves and move about, but they can move their branches, tendrils, and stalks for you. If a Plant creature is in the area, you can commu - nicate with it as if you shared a common language.Spider ClimbLevel 2 Transmutation (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a drop of bitumen and a spider) Duration: Concentration, up to 1 hourUntil the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and along ceilings, while leaving its hands free. The target also gains a Climb Speed equal to its"
+    "text": "The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet). 164Speak with AnimalsLevel 1 Divination (Bard, Druid, Ranger, Warlock)Casting Time: Action or Ritual Range: Self Components: V, S Duration: 10 minutesFor the duration, you can comprehend and verbally communicate with Beasts, and you can use any of Most Beasts have little to say about topics that don’t pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.Speak with DeadLevel 3 Necromancy (Bard, Cleric, Wizard)Casting Time: Action Range: 10 feet Components: V, S, M (burning incense) Duration: 10 minutesYou grant the semblance of life to a corpse of your choice within range, allowing it to answer ques - tions you pose. The corpse must have a mouth, and this spell fails if the deceased creature was Undead when it died. The spell also fails if the corpse was the target of this spell within the past 10 days. Until the spell ends, you can ask the corpse up to in life, including the languages it knew. Answers are usually brief, cryptic, or repetitive, and the corpse is under no compulsion to offer a truthful answer if you are antagonistic toward it or it recognizes you as an enemy. This spell doesn’t return the creature’s soul to its body, only its animating spirit. Thus, the corpse can’t learn new information, doesn’t compre - hend anything that has happened since it died, and can’t speculate about future events.Speak with PlantsLevel 3 Transmutation (Bard, Druid, Ranger)Casting Time: Action Range: Self Components: V, S Duration: 10 minutesYou imbue plants in an immobile 30-foot Emanation with limited sentience and animation, giving them the ability to communicate with you and follow your simple commands. You can question plants about events in the spell’s area within the past day, gain - ing information about creatures that have passed, weather, and other circumstances. growth (such as thickets and undergrowth) into ordinary terrain that lasts for the duration. Or you can turn ordinary terrain where plants are present The spell doesn’t enable plants to uproot them - selves and move about, but they can move their branches, tendrils, and stalks for you. If a Plant creature is in the area, you can commu - nicate with it as if you shared a common language.Spider ClimbLevel 2 Transmutation (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, S, M (a drop of bitumen and a spider) Duration: Concentration, up to 1 hourUntil the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and along ceilings, while leaving its hands free. The target also gains a Climb Speed equal to its"
    },
    {
     "name": "Speed",
@@ -683,7 +683,7 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "You can target one additional creature for each spell slot level above 2.Spike GrowthLevel 2 Transmutation (Druid, Ranger)Casting Time: Action Range: Components: V, S, M (seven thorns) Duration: Concentration, up to 10 minutesThe ground in a 20-foot-radius Sphere centered on a point within range sprouts hard spikes and duration. When a creature moves into or within the area, it takes 2d4 Piercing damage for every 5 feet it travels. to look natural. Any creature that can t see the area when the spell is cast must take a Search action and succeed on a Wisdom (Perception or Survival) check against your spell save DC to recognize the terrain as hazardous before entering it.Spirit GuardiansLevel 3 Conjuration (Cleric)Casting Time: Action Range: Self Components: V, S, M (a prayer scroll) Duration: Concentration, up to 10 minutes- nation for the duration. If you are good or neutral, their spectral form appears angelic or fey (your When you cast this spell, you can designate crea- tures to be unaffected by it. Any other creature s Speed is halved in the Emanation, and whenever the Emanation enters a creature s space and whenever 165a creature enters the Emanation or ends its turn there, the creature must make a Wisdom saving throw. On a failed save, the creature takes 3d8 Ra- diant damage (if you are good or neutral) or 3d8 Ne - crotic damage (if you are evil). On a successful save, the creature takes half as much damage. A creature makes this save only once per turn. Using a"
+    "text": "You can target one additional creature for each spell slot level above 2.Spike GrowthLevel 2 Transmutation (Druid, Ranger)Casting Time: Action Range: Components: V, S, M (seven thorns) Duration: Concentration, up to 10 minutesThe ground in a 20-foot-radius Sphere centered on a point within range sprouts hard spikes and duration. When a creature moves into or within the area, it takes 2d4 Piercing damage for every 5 feet it travels. to look natural. Any creature that can’t see the area when the spell is cast must take a Search action and succeed on a Wisdom (Perception or Survival) check against your spell save DC to recognize the terrain as hazardous before entering it.Spirit GuardiansLevel 3 Conjuration (Cleric)Casting Time: Action Range: Self Components: V, S, M (a prayer scroll) Duration: Concentration, up to 10 minutes- nation for the duration. If you are good or neutral, their spectral form appears angelic or fey (your When you cast this spell, you can designate crea- tures to be unaffected by it. Any other creature’s Speed is halved in the Emanation, and whenever the Emanation enters a creature’s space and whenever 165a creature enters the Emanation or ends its turn there, the creature must make a Wisdom saving throw. On a failed save, the creature takes 3d8 Ra- diant damage (if you are good or neutral) or 3d8 Ne - crotic damage (if you are evil). On a successful save, the creature takes half as much damage. A creature makes this save only once per turn. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -699,11 +699,11 @@ const RAW = [
    },
    {
     "name": "Heavily Obscured",
-    "text": "The cloud lingers in the air for the duration or until a strong wind (such as the one created by Gust of Wind ) disperses it. Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the cur - rent turn. While Poisoned in this way, the creature can t take an action or a Bonus Action.Stone ShapeLevel 4 Transmutation (Cleric, Druid, Wizard)Casting Time: Action Range: Touch Components: V, S, M (soft clay) Duration: InstantaneousYou touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any di - mension and form it into any shape you like. For ex - ample, you could shape a large rock into a weapon, statue, or coffer, or you could make a small passage through a wall that is 5 feet thick. You could also shape a stone door or its frame to seal the door shut. The object you create can have up to two hinges and StoneskinLevel 4 Transmutation (Druid, Ranger, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S, M (diamond dust worth 100+ GP, which the spell consumes) Duration: Concentration, up to 1 hourUntil the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slash - ing damage.Storm of VengeanceLevel 9 Conjuration (Druid)Casting Time: Action Range: 1 mile Components: V, S Duration: Concentration, up to 1 minuteA churning storm cloud forms for the duration, centered on a point within range and spreading to a radius of 300 feet. Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration. At the start of each of your later turns, the storm produces different effects, as detailed below. Turn 2. Acidic rain falls. Each creature and object under the cloud takes 4d6 Acid damage. Turn 3. You call six bolts of lightning from the cloud to strike six different creatures or objects beneath it. Each target makes a Dexterity saving throw, taking 10d6 Lightning damage on a failed save or half as much damage on a successful one. 166 Turn 4. Hailstones rain down. Each creature un - der the cloud takes 2d6 Bludgeoning damage. Turns 5 10. Gusts and freezing rain assail the area under the cloud. Each creature there takes 1d6 - cult Terrain and Heavily Obscured, ranged attacks with weapons are impossible there, and strong wind blows through the area.SuggestionLevel 2 Enchantment (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, M (a drop of honey) Duration: Concentration, up to 8 hours within range that can hear and understand you. The suggestion must sound achievable and not in - volve anything that would obviously deal damage to the target or its allies. For example, you could say, Fetch the key to the cult s treasure vault, and leave this library peacefully, and don t return. The target must succeed on a Wisdom saving throw or have the Charmed condition for the dura - tion or until you or your allies deal damage to the target. The Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the sug - gested activity can be completed in a shorter time, the spell ends for the target upon completing it.Summon DragonLevel 5 Conjuration (Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (an object with the image of a Duration: Concentration, up to 1 hourYou call forth a Dragon spirit. It manifests in an un - occupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don t issue any, it takes the Dodge action and uses its movement to avoid danger. Using a"
+    "text": "The cloud lingers in the air for the duration or until a strong wind (such as the one created by Gust of Wind ) disperses it. Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the cur - rent turn. While Poisoned in this way, the creature can’t take an action or a Bonus Action.Stone ShapeLevel 4 Transmutation (Cleric, Druid, Wizard)Casting Time: Action Range: Touch Components: V, S, M (soft clay) Duration: InstantaneousYou touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any di - mension and form it into any shape you like. For ex - ample, you could shape a large rock into a weapon, statue, or coffer, or you could make a small passage through a wall that is 5 feet thick. You could also shape a stone door or its frame to seal the door shut. The object you create can have up to two hinges and StoneskinLevel 4 Transmutation (Druid, Ranger, Sorcerer, Wizard)Casting Time: Action Range: Touch Components: V, S, M (diamond dust worth 100+ GP, which the spell consumes) Duration: Concentration, up to 1 hourUntil the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slash - ing damage.Storm of VengeanceLevel 9 Conjuration (Druid)Casting Time: Action Range: 1 mile Components: V, S Duration: Concentration, up to 1 minuteA churning storm cloud forms for the duration, centered on a point within range and spreading to a radius of 300 feet. Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration. At the start of each of your later turns, the storm produces different effects, as detailed below. Turn 2. Acidic rain falls. Each creature and object under the cloud takes 4d6 Acid damage. Turn 3. You call six bolts of lightning from the cloud to strike six different creatures or objects beneath it. Each target makes a Dexterity saving throw, taking 10d6 Lightning damage on a failed save or half as much damage on a successful one. 166 Turn 4. Hailstones rain down. Each creature un - der the cloud takes 2d6 Bludgeoning damage. Turns 5–10. Gusts and freezing rain assail the area under the cloud. Each creature there takes 1d6 - cult Terrain and Heavily Obscured, ranged attacks with weapons are impossible there, and strong wind blows through the area.SuggestionLevel 2 Enchantment (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, M (a drop of honey) Duration: Concentration, up to 8 hours within range that can hear and understand you. The suggestion must sound achievable and not in - volve anything that would obviously deal damage to the target or its allies. For example, you could say, “Fetch the key to the cult’s treasure vault, and leave this library peacefully, and don’t return.” The target must succeed on a Wisdom saving throw or have the Charmed condition for the dura - tion or until you or your allies deal damage to the target. The Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the sug - gested activity can be completed in a shorter time, the spell ends for the target upon completing it.Summon DragonLevel 5 Conjuration (Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (an object with the image of a Duration: Concentration, up to 1 hourYou call forth a Dragon spirit. It manifests in an un - occupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "Use the spell slot s level for the spell s level in the stat block."
+    "text": "Use the spell slot’s level for the spell’s level in the stat block."
    }
   ],
   "legendaryActions": [],
@@ -738,11 +738,11 @@ const RAW = [
   "actions": [
    {
     "name": "Multiattack",
-    "text": "The spirit makes a number of Rend attacks equal to half the spell s level (round down), and it uses"
+    "text": "The spirit makes a number of Rend attacks equal to half the spell’s level (round down), and it uses"
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: Bonus equals your spell attack Hit: 1d6 + 4 + the spell s level Piercing damage."
+    "text": "Melee Attack Roll: Bonus equals your spell attack Hit: 1d6 + 4 + the spell’s level Piercing damage."
    },
    {
     "name": "Breath Weapon",
@@ -754,7 +754,7 @@ const RAW = [
    },
    {
     "name": "Set the Trigger",
-    "text": "You decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, common triggers include touching or stepping on the glyph, removing another object cov - ering it, or approaching within a certain distance of it. For glyphs inscribed within an object, common triggers include opening that object or seeing the glyph. of certain types activate it (for example, the glyph could be set to affect Aberrations). You can also set conditions for creatures that don t trigger the glyph, such as those who say a certain password. 60-foot-radius Sphere with Dim Light for 10 minutes, after which time the spell ends. Each creature in the Sphere when the glyph activates is targeted by its effect, as is a creature that enters the there. A creature is targeted only once per turn."
+    "text": "You decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, common triggers include touching or stepping on the glyph, removing another object cov - ering it, or approaching within a certain distance of it. For glyphs inscribed within an object, common triggers include opening that object or seeing the glyph. of certain types activate it (for example, the glyph could be set to affect Aberrations). You can also set conditions for creatures that don’t trigger the glyph, such as those who say a certain password. 60-foot-radius Sphere with Dim Light for 10 minutes, after which time the spell ends. Each creature in the Sphere when the glyph activates is targeted by its effect, as is a creature that enters the there. A creature is targeted only once per turn."
    },
    {
     "name": "Death",
@@ -782,23 +782,23 @@ const RAW = [
    },
    {
     "name": "Creature",
-    "text": "You can try to move a Huge or smaller creature. The target must succeed on a Strength saving throw, or you move it up to 30 feet in any direction within the spell s range. Until the end of your next turn, the creature has the Restrained con - dition, and if you lift it into the air, it is suspended there. It falls at the end of your next turn unless you use this option on it again and it fails the save."
+    "text": "You can try to move a Huge or smaller creature. The target must succeed on a Strength saving throw, or you move it up to 30 feet in any direction within the spell’s range. Until the end of your next turn, the creature has the Restrained con - dition, and if you lift it into the air, it is suspended there. It falls at the end of your next turn unless you use this option on it again and it fails the save."
    },
    {
     "name": "Object",
-    "text": "You can try to move a Huge or smaller object. If the object isn t being worn or carried, you automatically move it up to 30 feet in any direction within the spell s range. 168 If the object is worn or carried by a creature, that creature must succeed on a Strength saving throw, or you pull the object away and move it up to 30 feet in any direction within the spell s range. telekinetic grip, such as manipulating a simple tool,Telepathic BondLevel 5 Divination (Bard, Wizard)Casting Time: Action or Ritual Range: 30 feet Components: V, S, M (two eggs) Duration: 1 hourYou forge a telepathic link among up to eight willing creatures of your choice within range, psychically linking each creature to all the others for the dura- tion. Creatures that can t communicate in any lan - guages aren t affected by this spell. Until the spell ends, the targets can communicate telepathically through the bond whether or not they share a language. The communication is possible over any distance, though it can t extend to other planes of existence.TeleportLevel 7 Conjuration (Bard, Sorcerer, Wizard)Casting Time: Action Range: 10 feet Components: V Duration: InstantaneousThis spell instantly transports you and up to eight willing creatures that you can see within range, or a single object that you can see within range, to a des - tination you select. If you target an object, it must be Large or smaller, and it can t be held or carried by an unwilling creature. The destination you choose must be known to you, and it must be on the same plane of existence as you. Your familiarity with the destination deter - mines whether you arrive there successfully. The GM rolls 1d100 and consults the Teleportation Out - come table and the explanations after it.Teleportation OutcomeFamiliarity Mishap Similar Area Off Target On TargetPermanent circle 01 00 Linked object 01 00 Very familiar 06 13 Seen casually 01 33 Viewed once or described False destination"
+    "text": "You can try to move a Huge or smaller object. If the object isn’t being worn or carried, you automatically move it up to 30 feet in any direction within the spell’s range. 168 If the object is worn or carried by a creature, that creature must succeed on a Strength saving throw, or you pull the object away and move it up to 30 feet in any direction within the spell’s range. telekinetic grip, such as manipulating a simple tool,Telepathic BondLevel 5 Divination (Bard, Wizard)Casting Time: Action or Ritual Range: 30 feet Components: V, S, M (two eggs) Duration: 1 hourYou forge a telepathic link among up to eight willing creatures of your choice within range, psychically linking each creature to all the others for the dura- tion. Creatures that can’t communicate in any lan - guages aren’t affected by this spell. Until the spell ends, the targets can communicate telepathically through the bond whether or not they share a language. The communication is possible over any distance, though it can’t extend to other planes of existence.TeleportLevel 7 Conjuration (Bard, Sorcerer, Wizard)Casting Time: Action Range: 10 feet Components: V Duration: InstantaneousThis spell instantly transports you and up to eight willing creatures that you can see within range, or a single object that you can see within range, to a des - tination you select. If you target an object, it must be Large or smaller, and it can’t be held or carried by an unwilling creature. The destination you choose must be known to you, and it must be on the same plane of existence as you. Your familiarity with the destination deter - mines whether you arrive there successfully. The GM rolls 1d100 and consults the Teleportation Out - come table and the explanations after it.Teleportation OutcomeFamiliarity Mishap Similar Area Off Target On TargetPermanent circle — — — 01–00 Linked object — — — 01–00 Very familiar 06–13 Seen casually 01–33 Viewed once or described False destination — —"
    },
    {
     "name": "Familiarity",
-    "text": "Here are the meanings of the terms in the table s Familiarity column: Permanent circle means a permanent teleporta- tion circle whose sigil sequence you know. Linked object means you possess an object taken from the desired destination within the last six months, such as a book from a wizard s library. Very familiar is a place you have visited often, a place you have carefully studied, or a place you can see when you cast the spell. Seen casually is a place you have seen more than once but with which you aren t very familiar. Viewed once or described is a place you have seen once, possibly using magic, or a place you know through someone else s description, per - haps from a map. False destination is a place that doesn t exist. Perhaps you tried to scry an enemy s sanctum but instead viewed an illusion, or you are attempting to teleport to a location that no longer exists."
+    "text": "Here are the meanings of the terms in the table’s Familiarity column: • “Permanent circle” means a permanent teleporta- tion circle whose sigil sequence you know. • “Linked object” means you possess an object taken from the desired destination within the last six months, such as a book from a wizard’s library. • “Very familiar” is a place you have visited often, a place you have carefully studied, or a place you can see when you cast the spell. • “Seen casually” is a place you have seen more than once but with which you aren’t very familiar. • “Viewed once or described” is a place you have seen once, possibly using magic, or a place you know through someone else’s description, per - haps from a map. • “False destination” is a place that doesn’t exist. Perhaps you tried to scry an enemy’s sanctum but instead viewed an illusion, or you are attempting to teleport to a location that no longer exists."
    },
    {
     "name": "Mishap",
-    "text": "The spell s unpredictable magic results in target object) takes 3d10 Force damage, and the GM rerolls on the table to see where you wind up (mul - tiple mishaps can occur, dealing damage each time)."
+    "text": "The spell’s unpredictable magic results in target object) takes 3d10 Force damage, and the GM rerolls on the table to see where you wind up (mul - tiple mishaps can occur, dealing damage each time)."
    },
    {
     "name": "Similar Area",
-    "text": "You and your group (or the target object) appear in a different area that s visually or thematically similar to the target area. You appear in the closest similar place. If you are heading for your home laboratory, for example, you might ap - pear in another person s laboratory in the same city."
+    "text": "You and your group (or the target object) appear in a different area that’s visually or thematically similar to the target area. You appear in the closest similar place. If you are heading for your home laboratory, for example, you might ap - pear in another person’s laboratory in the same city."
    },
    {
     "name": "Off Target",
@@ -834,31 +834,31 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d8 for each spell slot level above 1.Time StopLevel 9 Transmutation (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V Duration: Instantaneous yourself. No time passes for other creatures, while you take 1d4 + 1 turns in a row, during which you can use actions and move as normal. This spell ends if one of the actions you use during this period, or any effects that you create during it, affects a creature other than you or an object being worn or carried by someone other than you. In addi - tion, the spell ends if you move to a place more than 1,000 feet from the location where you cast it.Tiny HutLevel 3 Evocation (Bard, Wizard)Casting Time: 1 minute or Ritual Range: Self Components: V, S, M (a crystal bead) Duration: 8 hoursA 10-foot Emanation springs into existence around you and remains stationary for the duration. The spell fails when you cast it if the Emanation isn t big enough to fully encapsulate all creatures in its area. Creatures and objects within the Emanation when you cast the spell can move through it freely. All other creatures and objects are barred from passing through it. Spells of level 3 or lower can t be cast through it, and the effects of such spells can t extend into it. The atmosphere inside the Emanation is comfort - able and dry, regardless of the weather outside. Until the spell ends, you can command the interior to have"
+    "text": "The damage in - creases by 1d8 for each spell slot level above 1.Time StopLevel 9 Transmutation (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V Duration: Instantaneous yourself. No time passes for other creatures, while you take 1d4 + 1 turns in a row, during which you can use actions and move as normal. This spell ends if one of the actions you use during this period, or any effects that you create during it, affects a creature other than you or an object being worn or carried by someone other than you. In addi - tion, the spell ends if you move to a place more than 1,000 feet from the location where you cast it.Tiny HutLevel 3 Evocation (Bard, Wizard)Casting Time: 1 minute or Ritual Range: Self Components: V, S, M (a crystal bead) Duration: 8 hoursA 10-foot Emanation springs into existence around you and remains stationary for the duration. The spell fails when you cast it if the Emanation isn’t big enough to fully encapsulate all creatures in its area. Creatures and objects within the Emanation when you cast the spell can move through it freely. All other creatures and objects are barred from passing through it. Spells of level 3 or lower can’t be cast through it, and the effects of such spells can’t extend into it. The atmosphere inside the Emanation is comfort - able and dry, regardless of the weather outside. Until the spell ends, you can command the interior to have"
    },
    {
     "name": "Dim Light or Darkness (no action required)",
-    "text": "The Em - anation is opaque from the outside and of any color you choose, but it s transparent from the inside. The spell ends early if you leave the Emanation or if you cast it again.TonguesLevel 3 Divination (Bard, Cleric, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, M (a miniature ziggurat) Duration: 1 hourThis spell grants the creature you touch the ability to understand any spoken or signed language that it hears or sees. Moreover, when the target commu - nicates by speaking or signing, any creature that 170knows at least one language can understand it if that creature can hear the speech or see the signing.Transport via PlantsLevel 6 Conjuration (Druid)Casting Time: Action Range: 10 feet Components: V, S Duration: 1 minuteThis spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of exis - tence. You must have seen or touched the destina- tion plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.Tree StrideLevel 5 Conjuration (Druid, Ranger)Casting Time: Action Range: Self Components: V, S Duration: Concentration, up to 1 minuteYou gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet. Both trees must be living and at least the same size as you. You must use 5 feet of movement to enter a tree. You instantly know the location of all other trees of the same kind within 500 feet and, as part of the move used to enter the tree, can either pass into one of those trees or step out of the tree you re in. You appear in a spot of your choice within 5 feet of the destination tree, using another 5 feet of movement. If you have no move - ment left, you appear within 5 feet of the tree you entered. You can use this transportation ability only once on each of your turns. You must end each turn out - side a tree.True PolymorphLevel 9 Transmutation (Bard, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a drop of mercury, a dollop of gum arabic, and a wisp of smoke) Duration: Concentration, up to 1 hourChoose one creature or nonmagical object that you can see within range. The creature shape-shifts into a different creature or a nonmagical object, or the object shape-shifts into a creature (the object must be neither worn nor carried). The transformation lasts for the duration or until the target dies or is destroyed, but if you maintain Concentration on this spell for the full duration, the spell lasts until dispelled. An unwilling creature can make a Wisdom saving throw, and if it succeeds, it isn t affected by this spell. Creature into"
+    "text": "The Em - anation is opaque from the outside and of any color you choose, but it’s transparent from the inside. The spell ends early if you leave the Emanation or if you cast it again.TonguesLevel 3 Divination (Bard, Cleric, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: V, M (a miniature ziggurat) Duration: 1 hourThis spell grants the creature you touch the ability to understand any spoken or signed language that it hears or sees. Moreover, when the target commu - nicates by speaking or signing, any creature that 170knows at least one language can understand it if that creature can hear the speech or see the signing.Transport via PlantsLevel 6 Conjuration (Druid)Casting Time: Action Range: 10 feet Components: V, S Duration: 1 minuteThis spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of exis - tence. You must have seen or touched the destina- tion plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.Tree StrideLevel 5 Conjuration (Druid, Ranger)Casting Time: Action Range: Self Components: V, S Duration: Concentration, up to 1 minuteYou gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet. Both trees must be living and at least the same size as you. You must use 5 feet of movement to enter a tree. You instantly know the location of all other trees of the same kind within 500 feet and, as part of the move used to enter the tree, can either pass into one of those trees or step out of the tree you’re in. You appear in a spot of your choice within 5 feet of the destination tree, using another 5 feet of movement. If you have no move - ment left, you appear within 5 feet of the tree you entered. You can use this transportation ability only once on each of your turns. You must end each turn out - side a tree.True PolymorphLevel 9 Transmutation (Bard, Warlock, Wizard)Casting Time: Action Range: 30 feet Components: V, S, M (a drop of mercury, a dollop of gum arabic, and a wisp of smoke) Duration: Concentration, up to 1 hourChoose one creature or nonmagical object that you can see within range. The creature shape-shifts into a different creature or a nonmagical object, or the object shape-shifts into a creature (the object must be neither worn nor carried). The transformation lasts for the duration or until the target dies or is destroyed, but if you maintain Concentration on this spell for the full duration, the spell lasts until dispelled. An unwilling creature can make a Wisdom saving throw, and if it succeeds, it isn’t affected by this spell. Creature into"
    },
    {
     "name": "Creature",
-    "text": "If you turn a creature into another kind of creature, the new form can be any kind you choose that has a Challenge Rating equal to or less than the target s Challenge Rating or level. The target s game statistics are replaced by the stat block of the new form, but it retains its Hit Points, Hit Point Dice, alignment, and personality. The target gains a number of Temporary Hit Points equal to the Hit Points of the new form. These Temporary Hit Points vanish if any remain when the spell ends. The target is limited in the actions it can perform by the anatomy of its new form, and it can t speak or cast spells. The target s gear melds into the new form. The that equipment. Object into"
+    "text": "If you turn a creature into another kind of creature, the new form can be any kind you choose that has a Challenge Rating equal to or less than the target’s Challenge Rating or level. The target’s game statistics are replaced by the stat block of the new form, but it retains its Hit Points, Hit Point Dice, alignment, and personality. The target gains a number of Temporary Hit Points equal to the Hit Points of the new form. These Temporary Hit Points vanish if any remain when the spell ends. The target is limited in the actions it can perform by the anatomy of its new form, and it can’t speak or cast spells. The target’s gear melds into the new form. The that equipment. Object into"
    },
    {
     "name": "Creature",
-    "text": "You can turn an object into any kind of creature, as long as the creature s size is no larger than the object s size and the creature has a Challenge Rating of 9 or lower. The creature is Friendly to you and your allies. In combat, it takes its turns immediately after yours, and it obeys your commands. If the spell lasts more than an hour, you no longer control the creature. It might remain Friendly to you, depending on how you have treated it. Creature into"
+    "text": "You can turn an object into any kind of creature, as long as the creature’s size is no larger than the object’s size and the creature has a Challenge Rating of 9 or lower. The creature is Friendly to you and your allies. In combat, it takes its turns immediately after yours, and it obeys your commands. If the spell lasts more than an hour, you no longer control the creature. It might remain Friendly to you, depending on how you have treated it. Creature into"
    },
    {
     "name": "Object",
-    "text": "If you turn a creature into an object, it transforms along with whatever it is wearing and carrying into that form, as long as the object s size is no larger than the creature s size. The creature s statistics become those of the object, and the creature has no memory of time spent in this form after the spell ends and it returns to normal.True ResurrectionLevel 9 Necromancy (Cleric, Druid)Casting Time: 1 hour Range: Touch Components: which the spell consumes) Duration: InstantaneousYou touch a creature that has been dead for no longer than 200 years and that died for any reason except old age. The creature is revived with all its"
+    "text": "If you turn a creature into an object, it transforms along with whatever it is wearing and carrying into that form, as long as the object’s size is no larger than the creature’s size. The creature’s statistics become those of the object, and the creature has no memory of time spent in this form after the spell ends and it returns to normal.True ResurrectionLevel 9 Necromancy (Cleric, Druid)Casting Time: 1 hour Range: Touch Components: which the spell consumes) Duration: InstantaneousYou touch a creature that has been dead for no longer than 200 years and that died for any reason except old age. The creature is revived with all its"
    },
    {
     "name": "Hit Points",
-    "text": "This spell closes all wounds, neutralizes any poison, cures all magical contagions, and lifts any curses affecting the creature when it died. The spell replaces damaged or missing organs and limbs. If the creature was Undead, it is restored to its non-Undead form. The spell can provide a new body if the original no longer exists, in which case you must speak the 171creature s name. The creature then appears in an unoccupied space you choose within 10 feet of you.True SeeingLevel 6 Divination (Bard, Cleric, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: GP, which the spell consumes) Duration: 1 hourFor the duration, the willing creature you touch has Truesight with a range of 120 feet.True StrikeDivination Cantrip (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Self Components: - ciency and that is worth 1+ CP) Duration: Instantaneous attack with the weapon used in the spell s casting. The attack uses your spellcasting ability for the at - tack and damage rolls instead of using Strength or Dexterity. If the attack deals damage, it can be Ra- diant damage or the weapon s normal damage type (your choice)."
+    "text": "This spell closes all wounds, neutralizes any poison, cures all magical contagions, and lifts any curses affecting the creature when it died. The spell replaces damaged or missing organs and limbs. If the creature was Undead, it is restored to its non-Undead form. The spell can provide a new body if the original no longer exists, in which case you must speak the 171creature’s name. The creature then appears in an unoccupied space you choose within 10 feet of you.True SeeingLevel 6 Divination (Bard, Cleric, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Touch Components: GP, which the spell consumes) Duration: 1 hourFor the duration, the willing creature you touch has Truesight with a range of 120 feet.True StrikeDivination Cantrip (Bard, Sorcerer, Warlock, Wizard)Casting Time: Action Range: Self Components: - ciency and that is worth 1+ CP) Duration: Instantaneous attack with the weapon used in the spell’s casting. The attack uses your spellcasting ability for the at - tack and damage rolls instead of using Strength or Dexterity. If the attack deals damage, it can be Ra- diant damage or the weapon’s normal damage type (your choice)."
    },
    {
     "name": "Cantrip Upgrade",
-    "text": "Whether you deal Radiant dam - age or the weapon s normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6).TsunamiLevel 8 Conjuration (Druid)Casting Time: 1 minute Range: 1 mile Components: V, S Duration: Concentration, up to 6 roundsA wall of water springs into existence at a point you choose within range. You can make the wall up to 300 feet long, 300 feet high, and 50 feet thick. The wall lasts for the duration. When the wall appears, each creature in its area makes a Strength saving throw, taking 6d10 Blud - geoning damage on a failed save or half as much damage on a successful one. At the start of each of your turns after the wall appears, the wall, along with any creatures in it, moves 50 feet away from you. Any Huge or smaller creature inside the wall or whose space the wall enters when it moves must succeed on a Strength saving throw or take 5d10 Bludgeoning damage. A creature can take this damage only once per round. At the end of the turn, the wall s height is reduced by 50 feet, and the damage the wall deals on later rounds is reduced by 1d10. When the wall reaches 0 feet in height, the spell ends. A creature caught in the wall can move by swim - ming. Because of the wave s force, though, the crea- ture must succeed on a Strength (Athletics) check against your spell save DC to move at all. If it fails the check, it can t move. A creature that moves out of the wall falls to the ground.Unseen ServantLevel 1 Conjuration (Bard, Warlock, Wizard)Casting Time: Action or Ritual Range: 60 feet Components: V, S, M (a bit of string and of wood) Duration: 1 hourThis spell creates an Invisible, mindless, shapeless, Medium force that performs simple tasks at your command until the spell ends. The servant springs into existence in an unoccupied space on the ground within range. It has AC 10, 1 Hit Point, and a Strength of 2, and it can t attack. If it drops to 0 Hit Points, the spell ends. Once on each of your turns as a Bonus Action, you can mentally command the servant to move up to 15 feet and interact with an object. The servant can perform simple tasks that a human could do, such as fetching things, cleaning, mending, folding clothes, Once you give the command, the servant performs the task to the best of its ability until it completes the task, then waits for your next command. If you command the servant to perform a task that would move it more than 60 feet away from you, the spell ends.Vampiric TouchLevel 3 Necromancy (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Self Components: V, S Duration: Concentration, up to 1 minuteThe touch of your shadow-wreathed hand can si - phon life force from others to heal your wounds. Make a melee spell attack against one creature within reach. On a hit, the target takes 3d6 Necrotic damage, and you regain Hit Points equal to half the amount of Necrotic damage dealt. Until the spell ends, you can make the attack again on each of your turns as a Magic action, targeting the same creature or a different one. Using a"
+    "text": "Whether you deal Radiant dam - age or the weapon’s normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6).TsunamiLevel 8 Conjuration (Druid)Casting Time: 1 minute Range: 1 mile Components: V, S Duration: Concentration, up to 6 roundsA wall of water springs into existence at a point you choose within range. You can make the wall up to 300 feet long, 300 feet high, and 50 feet thick. The wall lasts for the duration. When the wall appears, each creature in its area makes a Strength saving throw, taking 6d10 Blud - geoning damage on a failed save or half as much damage on a successful one. At the start of each of your turns after the wall appears, the wall, along with any creatures in it, moves 50 feet away from you. Any Huge or smaller creature inside the wall or whose space the wall enters when it moves must succeed on a Strength saving throw or take 5d10 Bludgeoning damage. A creature can take this damage only once per round. At the end of the turn, the wall’s height is reduced by 50 feet, and the damage the wall deals on later rounds is reduced by 1d10. When the wall reaches 0 feet in height, the spell ends. A creature caught in the wall can move by swim - ming. Because of the wave’s force, though, the crea- ture must succeed on a Strength (Athletics) check against your spell save DC to move at all. If it fails the check, it can’t move. A creature that moves out of the wall falls to the ground.Unseen ServantLevel 1 Conjuration (Bard, Warlock, Wizard)Casting Time: Action or Ritual Range: 60 feet Components: V, S, M (a bit of string and of wood) Duration: 1 hourThis spell creates an Invisible, mindless, shapeless, Medium force that performs simple tasks at your command until the spell ends. The servant springs into existence in an unoccupied space on the ground within range. It has AC 10, 1 Hit Point, and a Strength of 2, and it can’t attack. If it drops to 0 Hit Points, the spell ends. Once on each of your turns as a Bonus Action, you can mentally command the servant to move up to 15 feet and interact with an object. The servant can perform simple tasks that a human could do, such as fetching things, cleaning, mending, folding clothes, Once you give the command, the servant performs the task to the best of its ability until it completes the task, then waits for your next command. If you command the servant to perform a task that would move it more than 60 feet away from you, the spell ends.Vampiric TouchLevel 3 Necromancy (Sorcerer, Warlock, Wizard)Casting Time: Action Range: Self Components: V, S Duration: Concentration, up to 1 minuteThe touch of your shadow-wreathed hand can si - phon life force from others to heal your wounds. Make a melee spell attack against one creature within reach. On a hit, the target takes 3d6 Necrotic damage, and you regain Hit Points equal to half the amount of Necrotic damage dealt. Until the spell ends, you can make the attack again on each of your turns as a Magic action, targeting the same creature or a different one. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
@@ -874,23 +874,23 @@ const RAW = [
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage in - creases by 1d8 for each spell slot level above 4.Wall of ForceLevel 5 Evocation (Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a shard of glass) Duration: Concentration, up to 10 minutesAn Invisible wall of force springs into existence at a point you choose within range. The wall appears in any orientation you choose, as a horizontal or or resting on a solid surface. You can form it into a hemispherical dome or a globe with a radius of up of ten 10-foot-by-10-foot panels. Each panel must be contiguous with another panel. In any form, the wall is 1/4 inch thick and lasts for the duration. If the wall cuts through a creature s space when it ap - pears, the creature is pushed to one side of the wall (you choose which side). Nothing can physically pass through the wall. It is immune to all damage and can t be dispelled by"
+    "text": "The damage in - creases by 1d8 for each spell slot level above 4.Wall of ForceLevel 5 Evocation (Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a shard of glass) Duration: Concentration, up to 10 minutesAn Invisible wall of force springs into existence at a point you choose within range. The wall appears in any orientation you choose, as a horizontal or or resting on a solid surface. You can form it into a hemispherical dome or a globe with a radius of up of ten 10-foot-by-10-foot panels. Each panel must be contiguous with another panel. In any form, the wall is 1/4 inch thick and lasts for the duration. If the wall cuts through a creature’s space when it ap - pears, the creature is pushed to one side of the wall (you choose which side). Nothing can physically pass through the wall. It is immune to all damage and can’t be dispelled by"
    },
    {
     "name": "Dispel Magic",
-    "text": "A Disintegrate spell destroys the wall instantly, however. The wall also extends into the Ethereal Plane and blocks ethereal travel through the wall.Wall of IceLevel 6 Evocation (Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a piece of quartz) Duration: Concentration, up to 10 minutesYou create a wall of ice on a solid surface within range. You can form it into a hemispherical dome or a globe with a radius of up to 10 feet, or you can panels. Each panel must be contiguous with another panel. In any form, the wall is 1 foot thick and lasts for the duration. If the wall cuts through a creature s space when it appears, the creature is pushed to one side of the wall (you choose which side) and makes a Dexterity saving throw, taking 10d6 Cold damage on a failed save or half as much damage on a successful one. The wall is an object that can be damaged and thus breached. It has AC 12 and 30 Hit Points per 10-foot section, and it has Immunity to Cold, Poi - son, and Psychic damage and Vulnerability to Fire damage. Reducing a 10-foot section of wall to 0 Hit Points destroys it and leaves behind a sheet of frigid air in the space the wall occupied. A creature moving through the sheet of frigid air saving throw, taking 5d6 Cold damage on a failed save or half as much damage on a successful one. 173 Using a"
+    "text": "A Disintegrate spell destroys the wall instantly, however. The wall also extends into the Ethereal Plane and blocks ethereal travel through the wall.Wall of IceLevel 6 Evocation (Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a piece of quartz) Duration: Concentration, up to 10 minutesYou create a wall of ice on a solid surface within range. You can form it into a hemispherical dome or a globe with a radius of up to 10 feet, or you can panels. Each panel must be contiguous with another panel. In any form, the wall is 1 foot thick and lasts for the duration. If the wall cuts through a creature’s space when it appears, the creature is pushed to one side of the wall (you choose which side) and makes a Dexterity saving throw, taking 10d6 Cold damage on a failed save or half as much damage on a successful one. The wall is an object that can be damaged and thus breached. It has AC 12 and 30 Hit Points per 10-foot section, and it has Immunity to Cold, Poi - son, and Psychic damage and Vulnerability to Fire damage. Reducing a 10-foot section of wall to 0 Hit Points destroys it and leaves behind a sheet of frigid air in the space the wall occupied. A creature moving through the sheet of frigid air saving throw, taking 5d6 Cold damage on a failed save or half as much damage on a successful one. 173 Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "The damage the wall deals when it appears increases by 2d6 and the damage from passing through the sheet of frigid air increases by 1d6 for each spell slot level above 6.Wall of StoneLevel 5 Evocation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a cube of granite) Duration: Concentration, up to 10 minutesA nonmagical wall of solid stone springs into exis - tence at a point you choose within range. The wall is 6 inches thick and is composed of ten 10-foot-by- 10-foot panels. Each panel must be contiguous with another panel. Alternatively, you can create 10-foot- by-20-foot panels that are only 3 inches thick. If the wall cuts through a creature s space when it appears, the creature is pushed to one side of the wall (you choose which side). If a creature would be surrounded on all sides by the wall (or the wall and another solid surface), that creature can make a Dexterity saving throw. On a success, it can use its Reaction to move up to its Speed so that it is no lon - ger enclosed by the wall. The wall can have any shape you desire, though it can t occupy the same space as a creature or object. foundation. It must, however, merge with and be solidly supported by existing stone. Thus, you can use this spell to bridge a chasm or create a ramp. If you create a span greater than 20 feet in length, you must halve the size of each panel to create sup - ports. You can crudely shape the wall to create bat - tlements and the like. The wall is an object made of stone that can be damaged and thus breached. Each panel has AC 15 and 30 Hit Points per inch of thickness, and it has Immunity to Poison and Psychic damage. Reducing a panel to 0 Hit Points destroys it and might cause connected panels to collapse at the GM s discretion. If you maintain your Concentration on this spell for its full duration, the wall becomes permanent and can t be dispelled. Otherwise, the wall disap - pears when the spell ends.Wall of ThornsLevel 6 Conjuration (Druid)Casting Time: Action Range: 120 feet Components: V, S, M (a handful of thorns) Duration: Concentration, up to 10 minutesYou create a wall of tangled brush bristling with needle-sharp thorns. The wall appears within range on a solid surface and lasts for the duration. You choose to make the wall up to 60 feet long, 10 feet high, and 5 feet thick or a circle that has a 20-foot diameter and is up to 20 feet high and 5 feet thick. The wall blocks line of sight. When the wall appears, each creature in its area makes a Dexterity saving throw, taking 7d8 Pierc - ing damage on a failed save or half as much damage on a successful one. A creature can move through the wall, albeit slowly and painfully. For every 1 foot a creature moves through the wall, it must spend 4 feet of enters a space in the wall on a turn or ends its turn there, the creature makes a Dexterity saving throw, taking 7d8 Slashing damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn. Using a"
+    "text": "The damage the wall deals when it appears increases by 2d6 and the damage from passing through the sheet of frigid air increases by 1d6 for each spell slot level above 6.Wall of StoneLevel 5 Evocation (Druid, Sorcerer, Wizard)Casting Time: Action Range: 120 feet Components: V, S, M (a cube of granite) Duration: Concentration, up to 10 minutesA nonmagical wall of solid stone springs into exis - tence at a point you choose within range. The wall is 6 inches thick and is composed of ten 10-foot-by- 10-foot panels. Each panel must be contiguous with another panel. Alternatively, you can create 10-foot- by-20-foot panels that are only 3 inches thick. If the wall cuts through a creature’s space when it appears, the creature is pushed to one side of the wall (you choose which side). If a creature would be surrounded on all sides by the wall (or the wall and another solid surface), that creature can make a Dexterity saving throw. On a success, it can use its Reaction to move up to its Speed so that it is no lon - ger enclosed by the wall. The wall can have any shape you desire, though it can’t occupy the same space as a creature or object. foundation. It must, however, merge with and be solidly supported by existing stone. Thus, you can use this spell to bridge a chasm or create a ramp. If you create a span greater than 20 feet in length, you must halve the size of each panel to create sup - ports. You can crudely shape the wall to create bat - tlements and the like. The wall is an object made of stone that can be damaged and thus breached. Each panel has AC 15 and 30 Hit Points per inch of thickness, and it has Immunity to Poison and Psychic damage. Reducing a panel to 0 Hit Points destroys it and might cause connected panels to collapse at the GM’s discretion. If you maintain your Concentration on this spell for its full duration, the wall becomes permanent and can’t be dispelled. Otherwise, the wall disap - pears when the spell ends.Wall of ThornsLevel 6 Conjuration (Druid)Casting Time: Action Range: 120 feet Components: V, S, M (a handful of thorns) Duration: Concentration, up to 10 minutesYou create a wall of tangled brush bristling with needle-sharp thorns. The wall appears within range on a solid surface and lasts for the duration. You choose to make the wall up to 60 feet long, 10 feet high, and 5 feet thick or a circle that has a 20-foot diameter and is up to 20 feet high and 5 feet thick. The wall blocks line of sight. When the wall appears, each creature in its area makes a Dexterity saving throw, taking 7d8 Pierc - ing damage on a failed save or half as much damage on a successful one. A creature can move through the wall, albeit slowly and painfully. For every 1 foot a creature moves through the wall, it must spend 4 feet of enters a space in the wall on a turn or ends its turn there, the creature makes a Dexterity saving throw, taking 7d8 Slashing damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn. Using a"
    },
    {
     "name": "Higher-Level Spell Slot",
-    "text": "Both types of damage increase by 1d8 for each spell slot level above 6.Warding BondLevel 2 Abjuration (Cleric, Paladin)Casting Time: Action Range: Touch Components: V, S, M (a pair of platinum rings worth the duration) Duration: 1 hourYou touch another creature that is willing and create a mystic connection between you and the target until the spell ends. While the target is within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it has Resistance to all damage. Also, each time it takes damage, you take the same amount of damage. The spell ends if you drop to 0 Hit Points or if you and the target become separated by more than 60 feet. It also ends if the spell is cast again on either of the connected creatures.Water BreathingLevel 3 Transmutation (Druid, Ranger, Sorcerer, Wizard)Casting Time: Action or Ritual Range: 30 feet Components: V, S, M (a short reed) Duration: This spell grants up to ten willing creatures of your choice within range the ability to breathe under - water until the spell ends. Affected creatures also retain their normal mode of respiration.Water WalkLevel 3 Transmutation (Cleric, Druid, Ranger, Sorcerer)Casting Time: Action or Ritual Range: 30 feet 174Components: V, S, M (a piece of cork) Duration: 1 hourThis spell grants the ability to move across any liquid - tures crossing molten lava can still take damage from the heat). Up to ten willing creatures of your choice within range gain this ability for the duration. An affected target must take a Bonus Action to pass from the liquid s surface into the liquid itself and vice versa, but if the target falls into the liquid, the target passes through the surface into the liquid below.WebLevel 2 Conjuration (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a bit of spiderweb) Duration: Concentration, up to 1 hourYou conjure a mass of sticky webbing at a point area within them is"
+    "text": "Both types of damage increase by 1d8 for each spell slot level above 6.Warding BondLevel 2 Abjuration (Cleric, Paladin)Casting Time: Action Range: Touch Components: V, S, M (a pair of platinum rings worth the duration) Duration: 1 hourYou touch another creature that is willing and create a mystic connection between you and the target until the spell ends. While the target is within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it has Resistance to all damage. Also, each time it takes damage, you take the same amount of damage. The spell ends if you drop to 0 Hit Points or if you and the target become separated by more than 60 feet. It also ends if the spell is cast again on either of the connected creatures.Water BreathingLevel 3 Transmutation (Druid, Ranger, Sorcerer, Wizard)Casting Time: Action or Ritual Range: 30 feet Components: V, S, M (a short reed) Duration: This spell grants up to ten willing creatures of your choice within range the ability to breathe under - water until the spell ends. Affected creatures also retain their normal mode of respiration.Water WalkLevel 3 Transmutation (Cleric, Druid, Ranger, Sorcerer)Casting Time: Action or Ritual Range: 30 feet 174Components: V, S, M (a piece of cork) Duration: 1 hourThis spell grants the ability to move across any liquid - tures crossing molten lava can still take damage from the heat). Up to ten willing creatures of your choice within range gain this ability for the duration. An affected target must take a Bonus Action to pass from the liquid’s surface into the liquid itself and vice versa, but if the target falls into the liquid, the target passes through the surface into the liquid below.WebLevel 2 Conjuration (Sorcerer, Wizard)Casting Time: Action Range: 60 feet Components: V, S, M (a bit of spiderweb) Duration: Concentration, up to 1 hourYou conjure a mass of sticky webbing at a point area within them is"
    },
    {
     "name": "Lightly Obscured",
-    "text": "If the webs aren t anchored between two solid masses (such as walls or trees) or layered across and the spell ends at the start of your next turn. feet. turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained con - dition while in the webs or until it breaks free. A creature Restrained by the webs can take an action to make a Strength (Athletics) check against your spell save"
+    "text": "If the webs aren’t anchored between two solid masses (such as walls or trees) or layered across and the spell ends at the start of your next turn. feet. turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Restrained con - dition while in the webs or until it breaks free. A creature Restrained by the webs can take an action to make a Strength (Athletics) check against your spell save"
    },
    {
     "name": "DC",
@@ -898,11 +898,11 @@ const RAW = [
    },
    {
     "name": "Restrained",
-    "text": "Fire damage to any creature that starts its turn in WeirdLevel 9 Illusion (Warlock, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: Concentration, up to 1 minuteYou try to create illusory terrors in others minds. Each creature of your choice in a 30-foot-radius Sphere centered on a point within range makes a Wisdom saving throw. On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration. On a successful save, a target takes half as much damage only. A Frightened target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes 5d10 Psychic damage. On a successful save, the spell ends on that target.Wind WalkLevel 6 Transmutation (Druid)Casting Time: 1 minute Range: 30 feet Components: V, S, M (a candle) Duration: 8 hoursYou and up to ten willing creatures of your choice within range assume gaseous forms for the du - ration, appearing as wisps of cloud. While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage. The only actions a target can take in this form are the Dash action or a Magic action to begin reverting to its normal form. Reverting takes 1 minute, during which the target has the Stunned condition. Until the spell ends, the target can revert to cloud form, which also requires a Magic action followed by a 1-minute transformation. - fect ends, the target descends 60 feet per round for 1 minute until it lands, which it does safely. If it can t land after 1 minute, it falls the remaining distance.Wind WallLevel 3 Evocation (Druid, Ranger)Casting Time: Action Range: 120 feet Components: V, S, M (a fan and a feather) Duration: Concentration, up to 1 minuteA wall of strong wind rises from the ground at a point you choose within range. You can make the wall up to 50 feet long, 15 feet high, and 1 foot thick. You can shape the wall in any way you choose so long as it makes one continuous path along the ground. The wall lasts for the duration. When the wall appears, each creature in its area makes a Strength saving throw, taking 4d8 Blud - geoning damage on a failed save or half as much damage on a successful one. The strong wind keeps fog, smoke, and other objects can t pass through the wall. Loose, light - Arrows, bolts, and other ordinary projectiles upward and miss automatically. Boulders hurled by Giants or siege engines, and similar projectiles, are unaffected. Creatures in gaseous form can t pass through it. 175WishLevel 9 Conjuration (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V Duration: InstantaneousWish is the mightiest spell a mortal can cast. By simply speaking aloud, you can alter reality itself. The basic use of this spell is to duplicate any other spell of level 8 or lower. If you use it this way, you don t need to meet any requirements to cast that spell, including costly components. The spell simply takes effect. Alternatively, you can create one of the following effects of your choice:"
+    "text": "Fire damage to any creature that starts its turn in WeirdLevel 9 Illusion (Warlock, Wizard)Casting Time: Action Range: 120 feet Components: V, S Duration: Concentration, up to 1 minuteYou try to create illusory terrors in others’ minds. Each creature of your choice in a 30-foot-radius Sphere centered on a point within range makes a Wisdom saving throw. On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration. On a successful save, a target takes half as much damage only. A Frightened target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes 5d10 Psychic damage. On a successful save, the spell ends on that target.Wind WalkLevel 6 Transmutation (Druid)Casting Time: 1 minute Range: 30 feet Components: V, S, M (a candle) Duration: 8 hoursYou and up to ten willing creatures of your choice within range assume gaseous forms for the du - ration, appearing as wisps of cloud. While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage. The only actions a target can take in this form are the Dash action or a Magic action to begin reverting to its normal form. Reverting takes 1 minute, during which the target has the Stunned condition. Until the spell ends, the target can revert to cloud form, which also requires a Magic action followed by a 1-minute transformation. - fect ends, the target descends 60 feet per round for 1 minute until it lands, which it does safely. If it can’t land after 1 minute, it falls the remaining distance.Wind WallLevel 3 Evocation (Druid, Ranger)Casting Time: Action Range: 120 feet Components: V, S, M (a fan and a feather) Duration: Concentration, up to 1 minuteA wall of strong wind rises from the ground at a point you choose within range. You can make the wall up to 50 feet long, 15 feet high, and 1 foot thick. You can shape the wall in any way you choose so long as it makes one continuous path along the ground. The wall lasts for the duration. When the wall appears, each creature in its area makes a Strength saving throw, taking 4d8 Blud - geoning damage on a failed save or half as much damage on a successful one. The strong wind keeps fog, smoke, and other objects can’t pass through the wall. Loose, light - Arrows, bolts, and other ordinary projectiles upward and miss automatically. Boulders hurled by Giants or siege engines, and similar projectiles, are unaffected. Creatures in gaseous form can’t pass through it. 175WishLevel 9 Conjuration (Sorcerer, Wizard)Casting Time: Action Range: Self Components: V Duration: InstantaneousWish is the mightiest spell a mortal can cast. By simply speaking aloud, you can alter reality itself. The basic use of this spell is to duplicate any other spell of level 8 or lower. If you use it this way, you don’t need to meet any requirements to cast that spell, including costly components. The spell simply takes effect. Alternatively, you can create one of the following effects of your choice:"
    },
    {
     "name": "Object Creation",
-    "text": "You create one object of up to 25,000 GP in value that isn t a magic item. The object can be no more than 300 feet in any dimen - sion, and it appears in an unoccupied space that you can see on the ground."
+    "text": "You create one object of up to 25,000 GP in value that isn’t a magic item. The object can be no more than 300 feet in any dimen - sion, and it appears in an unoccupied space that you can see on the ground."
    },
    {
     "name": "Instant Health",
@@ -918,11 +918,11 @@ const RAW = [
    },
    {
     "name": "Sudden Learning",
-    "text": "You replace one of your feats with another feat for which you are eligible. You lose all the new one. You can t replace a feat that is a pre - requisite for any of your other feats or features."
+    "text": "You replace one of your feats with another feat for which you are eligible. You lose all the new one. You can’t replace a feat that is a pre - requisite for any of your other feats or features."
    },
    {
     "name": "Roll Redo",
-    "text": "You undo a single recent event by forcing a reroll of any die roll made within the last round (including your last turn). Reality reshapes itself to accommodate the new result. For example, a Wish spell could undo an ally s failed saving throw or a foe s"
+    "text": "You undo a single recent event by forcing a reroll of any die roll made within the last round (including your last turn). Reality reshapes itself to accommodate the new result. For example, a Wish spell could undo an ally’s failed saving throw or a foe’s"
    },
    {
     "name": "Critical Hit",
@@ -930,11 +930,7 @@ const RAW = [
    },
    {
     "name": "Reshape Reality",
-    "text": "You may wish for something not included in any of the other effects. To do so, state your wish to the GM as precisely as possible. The GM has great latitude in ruling what occurs in such an instance; the greater the wish, the greater the likelihood that something goes wrong. This spell might simply fail, the effect you desire might be achieved only in part, or you might suffer an unforeseen consequence as a result of how you worded the wish. For example, wishing that a villain were dead might propel you forward in time to a period when that villain is no longer alive, effectively removing you from the game. Similarly, wishing for a Legendary magic item or an Artifact might instantly transport you to the presence of the item s current owner. If your wish is granted and its effects have consequences for a whole community, region, or world, you are likely to attract powerful foes. If your wish would affect a god, the god s divine servants might instantly in - tervene to prevent it or to encourage you to craft the wish in a particular way. If your wish would undo the multiverse itself, your wish fails. The stress of casting Wish to produce any effect other than duplicating another spell weakens you. After enduring that stress, each time you cast a Necrotic damage per level of that spell. This damage can t be reduced or prevented in any way. In addi - tion, your Strength score becomes 3 for 2d4 days. For each of those days that you spend resting and doing nothing more than light activity, your remain - ing recovery time decreases by 2 days. Finally, there is a 33 percent chance that you are unable to cast Wish ever again if you suffer this stress.Word of RecallLevel 6 Conjuration (Cleric)Casting Time: Action Range: Components: V Duration: Instantaneous of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanc - preparing a sanctuary, the spell has no effect. You must designate a location, such as a temple, as a sanctuary by casting this spell there.Zone of TruthLevel 2 Enchantment (Bard, Cleric, Paladin)Casting Time: Action Range: 60 feet Components: V, S Duration: 10 minutesYou create a magical zone that guards against de - ception in a 15-foot-radius Sphere centered on a point within range. Until the spell ends, a creature turn or starts its turn there makes a Charisma sav - ing throw. On a failed save, a creature can t speak a deliberate lie while in the radius. You know whether a creature succeeds or fails on this save. An affected creature is aware of the spell and can avoid answering questions to which it would normally respond with a lie. Such a creature can be evasive yet must be truthful. 176Rules GlossaryGlossary ConventionsThe glossary uses the following conventions: Some entries have a tag in brack - of rules. The tags also have glossary entries. You. - to you in the game world. That you refers to the creature or object that the rule applies to in a particular moment of play. For example, the you in the Prone condition is a creature that currently has that condition."
-   },
-   {
-    "name": "See Also",
-    "text": "Some glossary entries include a See also section that points to other entries in the glossary, to other parts of this document, or both. No Obsolete Terms. - tions of current rules terms only. If you re looking - tion rules, consult the index."
+    "text": "You may wish for something not included in any of the other effects. To do so, state your wish to the GM as precisely as possible. The GM has great latitude in ruling what occurs in such an instance; the greater the wish, the greater the likelihood that something goes wrong. This spell might simply fail, the effect you desire might be achieved only in part, or you might suffer an unforeseen consequence as a result of how you worded the wish. For example, wishing that a villain were dead might propel you forward in time to a period when that villain is no longer alive, effectively removing you from the game. Similarly, wishing for a Legendary magic item or an Artifact might instantly transport you to the presence of the item’s current owner. If your wish is granted and its effects have consequences for a whole community, region, or world, you are likely to attract powerful foes. If your wish would affect a god, the god’s divine servants might instantly in - tervene to prevent it or to encourage you to craft the wish in a particular way. If your wish would undo the multiverse itself, your wish fails. The stress of casting Wish to produce any effect other than duplicating another spell weakens you. After enduring that stress, each time you cast a Necrotic damage per level of that spell. This damage can’t be reduced or prevented in any way. In addi - tion, your Strength score becomes 3 for 2d4 days. For each of those days that you spend resting and doing nothing more than light activity, your remain - ing recovery time decreases by 2 days. Finally, there is a 33 percent chance that you are unable to cast Wish ever again if you suffer this stress.Word of RecallLevel 6 Conjuration (Cleric)Casting Time: Action Range: Components: V Duration: Instantaneous of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanc - preparing a sanctuary, the spell has no effect. You must designate a location, such as a temple, as a sanctuary by casting this spell there.Zone of TruthLevel 2 Enchantment (Bard, Cleric, Paladin)Casting Time: Action Range: 60 feet Components: V, S Duration: 10 minutesYou create a magical zone that guards against de - ception in a 15-foot-radius Sphere centered on a point within range. Until the spell ends, a creature turn or starts its turn there makes a Charisma sav - ing throw. On a failed save, a creature can’t speak a deliberate lie while in the radius. You know whether a creature succeeds or fails on this save. An affected creature is aware of the spell and can avoid answering questions to which it would normally respond with a lie. Such a creature can be evasive yet must be truthful. 176Rules GlossaryGlossary ConventionsThe glossary uses the following conventions: Some entries have a tag in brack - of rules. The tags also have glossary entries. “You.” - to you in the game world. That “you” refers to the creature or object that the rule applies to in a particular moment of play. For example, the “you” in the Prone condition is a creature that currently has that condition. “See Also.” Some glossary entries include a See also section that points to other entries in the glossary, to other parts of this document, or both. No Obsolete Terms. - tions of current rules terms only. If you’re looking - tion rules, consult the index."
    },
    {
     "name": "Abbreviations",
@@ -962,51 +958,39 @@ const RAW = [
    },
    {
     "name": "Wis",
-    "text": "Wisdom XP Experience Point(s)Ability CheckAn ability check is a D20 Test that represents using See also - terity, Constitution, Intelligence, Wisdom, and - with the corresponding ability or when a rule asks you to do so. See also Playing the Game ( The Six Abilities ).ActionOn your turn, you can take one action. Choose which action to take from those below or from the special actions provided by your features. See also Playing elsewhere in this glossary: Attack Dash Disengage Dodge Help Hide Magic Ready Search Study UtilizeAdvantageIf you have Advantage on a D20 Test, roll two d20s, and use the higher roll. A roll can t be affected by more than one Advantage, and Advantage and Dis - advantage on the same roll cancel each other. See also Playing the Game ( D20 Tests ).AdventureAn adventure is a series of encounters. A story emerges through playing them. See also"
-   },
-   {
-    "name": "Encounter",
-    "text": "AlignmentA creature s alignment broadly describes its ethical attitudes and ideals. Alignment is a combination of neutral), and the other describes attitudes toward order (lawful, chaotic, or neutral). These factors al - low for nine possible combinations, such as Lawful"
+    "text": "Wisdom XP Experience Point(s)Ability CheckAn ability check is a D20 Test that represents using See also - terity, Constitution, Intelligence, Wisdom, and - with the corresponding ability or when a rule asks you to do so. See also “Playing the Game” (“The Six Abilities”).ActionOn your turn, you can take one action. Choose which action to take from those below or from the special actions provided by your features. See also “Playing elsewhere in this glossary: Attack Dash Disengage Dodge Help Hide Magic Ready Search Study UtilizeAdvantageIf you have Advantage on a D20 Test, roll two d20s, and use the higher roll. A roll can’t be affected by more than one Advantage, and Advantage and Dis - advantage on the same roll cancel each other. See also “Playing the Game” (“D20 Tests”).AdventureAn adventure is a series of encounters. A story emerges through playing them. See also “Encounter.”AlignmentA creature’s alignment broadly describes its ethical attitudes and ideals. Alignment is a combination of neutral), and the other describes attitudes toward order (lawful, chaotic, or neutral). These factors al - low for nine possible combinations, such as Lawful"
    },
    {
     "name": "Good and Neutral Evil",
-    "text": "See also Character Creation ( Create Your Character ).AllyA creature is your ally if it is a member of your ad - venturing party, your friend, on your side in combat, or a creature that the rules or the GM designates as your ally. 177Area of EffectThe descriptions of many spells and other features specify that they have an area of effect, which typ - ically has one of six shapes. These shapes are de - Cone Cube Cylinder Emanation Line Sphere An area of effect has a point of origin, a location from which the effect s energy erupts. The rules for each shape specify how to position its point of ori - gin. If all straight lines extending from the point of origin to a location in the area of effect are blocked, that location isn t included in the area of effect. To block a line, an obstruction must provide Total"
+    "text": "See also “Character Creation” (“Create Your Character”).AllyA creature is your ally if it is a member of your ad - venturing party, your friend, on your side in combat, or a creature that the rules or the GM designates as your ally. 177Area of EffectThe descriptions of many spells and other features specify that they have an area of effect, which typ - ically has one of six shapes. These shapes are de - Cone Cube Cylinder Emanation Line Sphere An area of effect has a point of origin, a location from which the effect’s energy erupts. The rules for each shape specify how to position its point of ori - gin. If all straight lines extending from the point of origin to a location in the area of effect are blocked, that location isn’t included in the area of effect. To block a line, an obstruction must provide Total"
    },
    {
     "name": "Cover",
-    "text": "See also"
-   },
-   {
-    "name": "Cover",
-    "text": "If the creator of an area of effect places it at an is between the creator and that point, the point of origin comes into being on the near side of the obstruction.Armor ClassAn Armor Class (AC) is the target number for an target. Your base AC calculation is 10 plus your Dexterity - tion, you choose which calculation to use; you can t use more than one. See also"
-   },
-   {
-    "name": "Attack Roll",
-    "text": "Armor TrainingArmor training allows you to use armor of a certain category without the following drawbacks. If you wear Light, Medium, or Heavy armor and lack train - ing with it, you have Disadvantage on any D20 Test that involves Strength or Dexterity, and you can t cast spells. If you use a Shield and lack training with it, you don t gain its AC bonus. See also Disadvan - tage and Equipment ( Armor ).When you take the Attack action, you can make one attack roll with a weapon or an"
+    "text": "See also “Cover.” If the creator of an area of effect places it at an is between the creator and that point, the point of origin comes into being on the near side of the obstruction.Armor ClassAn Armor Class (AC) is the target number for an target. Your base AC calculation is 10 plus your Dexterity - tion, you choose which calculation to use; you can’t use more than one. See also “Attack Roll.”Armor TrainingArmor training allows you to use armor of a certain category without the following drawbacks. If you wear Light, Medium, or Heavy armor and lack train - ing with it, you have Disadvantage on any D20 Test that involves Strength or Dexterity, and you can’t cast spells. If you use a Shield and lack training with it, you don’t gain its AC bonus. See also “Disadvan - tage” and “Equipment” (“Armor”).When you take the Attack action, you can make one attack roll with a weapon or an"
    },
    {
     "name": "Equipping and Unequipping Weapons",
-    "text": "You can either equip or unequip one weapon when you make an attack as part of this action. You do so either before or after the attack. If you equip a weapon before an attack, you don t need to use it for that at - tack. Equipping a weapon includes drawing it from a sheath or picking it up. Unequipping a weapon in - cludes sheathing, stowing, or dropping it. Moving between"
+    "text": "You can either equip or unequip one weapon when you make an attack as part of this action. You do so either before or after the attack. If you equip a weapon before an attack, you don’t need to use it for that at - tack. Equipping a weapon includes drawing it from a sheath or picking it up. Unequipping a weapon in - cludes sheathing, stowing, or dropping it. Moving between"
    },
    {
     "name": "Attacks",
-    "text": "If you move on your turn and have a feature, such as Extra Attack, that gives you more than one attack as part of the Attack action, you can use some or all of that movement to move between those attacks.Attack RollAn attack roll is a D20 Test that represents making an attack with a weapon, an Unarmed Strike, or a spell. See also Playing the Game ( D20 Tests ).AttitudeA monster has a starting attitude toward a player character: Friendly, Hostile, or"
+    "text": "If you move on your turn and have a feature, such as Extra Attack, that gives you more than one attack as part of the Attack action, you can use some or all of that movement to move between those attacks.Attack RollAn attack roll is a D20 Test that represents making an attack with a weapon, an Unarmed Strike, or a spell. See also “Playing the Game” (“D20 Tests”).AttitudeA monster has a starting attitude toward a player character: Friendly, Hostile, or"
    },
    {
     "name": "Indifferent",
-    "text": "See also AttunementSome magic items require a creature to form a creature can use an item s magical properties. A creature can have Attunement with no more than three magic items at a time. See also Equipment ( Magic Items ).While you have the Blinded condition, you experi - ence the following effects. Can t"
+    "text": "See also AttunementSome magic items require a creature to form a creature can use an item’s magical properties. A creature can have Attunement with no more than three magic items at a time. See also “Equipment” (“Magic Items”).While you have the Blinded condition, you experi - ence the following effects."
    },
    {
-    "name": "See",
-    "text": "You can t see and automatically fail any ability check that requires sight."
+    "name": "Can’t See",
+    "text": "You can’t see and automatically fail any ability check that requires sight."
    },
    {
     "name": "Attacks Affected",
-    "text": "Attack rolls against you have Advantage, and your attack rolls have Disadvantage.Blindsight range without relying on physical sight. Within that range, you can see anything that isn t behind Total Cover even if you have the Blinded condition or are in"
+    "text": "Attack rolls against you have Advantage, and your attack rolls have Disadvantage.Blindsight range without relying on physical sight. Within that range, you can see anything that isn’t behind Total Cover even if you have the Blinded condition or are in"
    },
    {
     "name": "Darkness",
-    "text": "Moreover, in that range, you can see something that has the Invisible condition.BloodiedA creature is Bloodied while it has half its Hit Points or fewer remaining.Bonus ActionA Bonus Action is a special action that you can take on the same turn that you take an action. You can t take more than one Bonus Action on a turn, and you have a Bonus Action to take only if a rule explicitly says so. See also Playing the Game ( Actions ).Breaking ObjectsObjects can be harmed by attacks and by some spells, using the rules below. If an object is exceed - ingly fragile, the GM may allow a creature to break it automatically with the Attack or Utilize action."
+    "text": "Moreover, in that range, you can see something that has the Invisible condition.BloodiedA creature is Bloodied while it has half its Hit Points or fewer remaining.Bonus ActionA Bonus Action is a special action that you can take on the same turn that you take an action. You can’t take more than one Bonus Action on a turn, and you have a Bonus Action to take only if a rule explicitly says so. See also “Playing the Game” (“Actions”).Breaking ObjectsObjects can be harmed by attacks and by some spells, using the rules below. If an object is exceed - ingly fragile, the GM may allow a creature to break it automatically with the Attack or Utilize action."
    },
    {
     "name": "Armor Class",
@@ -1018,7 +1002,7 @@ const RAW = [
    },
    {
     "name": "Hit Points",
-    "text": "The Object Hit Points table suggests Hit Points for fragile and resilient objects that are Large or smaller. To track Hit Points for a Huge or Gargan - tuan object, divide it into Large or smaller sections, and track each section s Hit Points separately. The GM determines whether destroying part of an ob - ject causes the whole thing to collapse.Object Hit PointsSize Fragile ResilientTiny (bottle, lock) Small (chest, lute) 3 (1d6) 10 (3d6) Medium (barrel, chandelier) Large (cart, dining table)"
+    "text": "The Object Hit Points table suggests Hit Points for fragile and resilient objects that are Large or smaller. To track Hit Points for a Huge or Gargan - tuan object, divide it into Large or smaller sections, and track each section’s Hit Points separately. The GM determines whether destroying part of an ob - ject causes the whole thing to collapse.Object Hit PointsSize Fragile ResilientTiny (bottle, lock) Small (chest, lute) 3 (1d6) 10 (3d6) Medium (barrel, chandelier) Large (cart, dining table)"
    },
    {
     "name": "Damage Types and Objects",
@@ -1026,43 +1010,19 @@ const RAW = [
    },
    {
     "name": "Damage Threshold",
-    "text": "Big objects, such as castle walls, often have extra resilience represented by a damage threshold. See also"
+    "text": "Big objects, such as castle walls, often have extra resilience represented by a damage threshold. See also “Damage Threshold.”"
    },
    {
     "name": "No Ability Scores",
-    "text": "An object lacks ability scores unless a rule assigns scores to the object. Without ability scores, an object can t make ability checks, and it fails all saving throws.Bright LightBright Light is normal illumination. See also Play - ing the Game ( Exploration ).A burning creature or object takes 1d4 Fire damage at the start of each of its turns. As an action, you the Prone condition and rolling on the ground. suffocated.Burrow SpeedA creature that has a Burrow Speed can use that speed to move through sand, earth, mud, or ice. The creature can t burrow through solid rock unless the creature has a trait that allows it to do so. See also"
+    "text": "An object lacks ability scores unless a rule assigns scores to the object. Without ability scores, an object can’t make ability checks, and it fails all saving throws.Bright LightBright Light is normal illumination. See also “Play - ing the Game” (“Exploration”).A burning creature or object takes 1d4 Fire damage at the start of each of its turns. As an action, you the Prone condition and rolling on the ground. suffocated.Burrow SpeedA creature that has a Burrow Speed can use that speed to move through sand, earth, mud, or ice. The creature can’t burrow through solid rock unless the creature has a trait that allows it to do so. See also “Speed.”CampaignA campaign is a series of adventures. See also “Adventure.”CantripA cantrip is a level 0 spell, which is cast without a spell slot. See also “Spells.”Carrying CapacityYour size and Strength score determine the maxi - mum weight in pounds that you can carry, as shown in the Carrying Capacity table. The table also shows the maximum weight you can drag, lift, or push. While dragging, lifting, or pushing weight in ex - cess of the maximum weight you can carry, your Speed can be no more than 5 feet.Carrying CapacityCreature Size Carry Drag/Lift/PushTiny Small/Medium Large Huge Gargantuan Challenge RatingChallenge Rating (CR) summarizes the threat a monster poses to a group of four player characters. Compare a monster’s CR to the characters’ level. If the CR is higher, the monster is likely a danger. If the CR is lower, the monster likely poses little threat. But circumstances and the number of player charac - - ster is in actual play. “Gameplay Toolbox” (“Combat Encounters”) provides guidance to the GM on using CR while planning potential combat encounters. See also “Stat Block.”Character SheetA character sheet is a paper or digital record that you use to track your character’s information. See also “Character Creation.”While you have the Charmed condition, you experi - ence the following effects."
    },
    {
-    "name": "Speed",
-    "text": "CampaignA campaign is a series of adventures. See also"
-   },
-   {
-    "name": "Adventure",
-    "text": "CantripA cantrip is a level 0 spell, which is cast without a spell slot. See also"
-   },
-   {
-    "name": "Spells",
-    "text": "Carrying CapacityYour size and Strength score determine the maxi - mum weight in pounds that you can carry, as shown in the Carrying Capacity table. The table also shows the maximum weight you can drag, lift, or push. While dragging, lifting, or pushing weight in ex - cess of the maximum weight you can carry, your Speed can be no more than 5 feet.Carrying CapacityCreature Size Carry Drag/Lift/PushTiny Small/Medium Large Huge Gargantuan Challenge RatingChallenge Rating (CR) summarizes the threat a monster poses to a group of four player characters. Compare a monster s CR to the characters level. If the CR is higher, the monster is likely a danger. If the CR is lower, the monster likely poses little threat. But circumstances and the number of player charac - - ster is in actual play. Gameplay Toolbox ( Combat Encounters ) provides guidance to the GM on using CR while planning potential combat encounters. See also"
-   },
-   {
-    "name": "Stat Block",
-    "text": "Character SheetA character sheet is a paper or digital record that you use to track your character s information. See also"
-   },
-   {
-    "name": "Character Creation",
-    "text": "While you have the Charmed condition, you experi - ence the following effects. Can t"
-   },
-   {
-    "name": "Harm the Charmer",
-    "text": "You can t attack the charmer or target the charmer with damaging abili - ties or magical effects."
+    "name": "Can’t Harm the Charmer",
+    "text": "You can’t attack the charmer or target the charmer with damaging abili - ties or magical effects."
    },
    {
     "name": "Social Advantage",
-    "text": "The charmer has Advantage on any ability check to interact with you socially.ClimbingWhile you re climbing, each foot of movement costs ignore this extra cost if you have a Climb Speed and use it to climb. 179 At the GM s option, climbing a slippery surface or one with few handholds might require a successful DC 15 Strength (Athletics) check.Climb SpeedA Climb Speed can be used in place of Speed to tra- verse a vertical surface without expending the extra movement normally associated with climbing. See also Climbing and"
-   },
-   {
-    "name": "Speed",
-    "text": "ConcentrationSome spells and other effects require Concentration If the effect s creator loses Concentration, the effect ends. If the effect has a maximum duration, the ef - concentrate on it: up to 1 minute, 1 hour, or some other duration. The creator can end Concentration at any time (no action required). The following fac - tors break"
+    "text": "The charmer has Advantage on any ability check to interact with you socially.ClimbingWhile you’re climbing, each foot of movement costs ignore this extra cost if you have a Climb Speed and use it to climb. 179 At the GM’s option, climbing a slippery surface or one with few handholds might require a successful DC 15 Strength (Athletics) check.Climb SpeedA Climb Speed can be used in place of Speed to tra- verse a vertical surface without expending the extra movement normally associated with climbing. See also “Climbing” and “Speed.”ConcentrationSome spells and other effects require Concentration If the effect’s creator loses Concentration, the effect ends. If the effect has a maximum duration, the ef - concentrate on it: up to 1 minute, 1 hour, or some other duration. The creator can end Concentration at any time (no action required). The following fac - tors break"
    },
    {
     "name": "Another Concentration Effect",
@@ -1074,19 +1034,11 @@ const RAW = [
    },
    {
     "name": "Incapacitated or Dead",
-    "text": "Your Concentration ends if you have the Incapacitated condition or you die.Condition - tion of a condition says how it affects its recipient, Blinded Charmed Deafened Exhaustion Frightened Grappled Incapacitated Invisible Paralyzed Poisoned Prone Restrained Stunned Unconscious A condition doesn t stack with itself; a recipient either has a condition or doesn t. The Exhaustion condition is an exception to that rule. A Cone is an area of effect that extends in straight lines from a point of origin in a direction its creator chooses. A Cone s width at any point along its length is equal to that point s distance from the point of origin. For example, a Cone is 15 feet wide at a point along its length that is 15 feet from the point of maximum length. A Cone s point of origin isn t included in the area of effect unless its creator decides otherwise.CoverCover provides a degree of protection to a target behind it. There are three degrees of cover, each of Cover (+2 bonus to AC and Dexterity saving throws), Three-Quarters Cover (+5 bonus to AC and Dexter - ity saving throws), and"
+    "text": "Your Concentration ends if you have the Incapacitated condition or you die.Condition - tion of a condition says how it affects its recipient, Blinded Charmed Deafened Exhaustion Frightened Grappled Incapacitated Invisible Paralyzed Poisoned Prone Restrained Stunned Unconscious A condition doesn’t stack with itself; a recipient either has a condition or doesn’t. The Exhaustion condition is an exception to that rule. A Cone is an area of effect that extends in straight lines from a point of origin in a direction its creator chooses. A Cone’s width at any point along its length is equal to that point’s distance from the point of origin. For example, a Cone is 15 feet wide at a point along its length that is 15 feet from the point of maximum length. A Cone’s point of origin isn’t included in the area of effect unless its creator decides otherwise.CoverCover provides a degree of protection to a target behind it. There are three degrees of cover, each of Cover (+2 bonus to AC and Dexterity saving throws), Three-Quarters Cover (+5 bonus to AC and Dexter - ity saving throws), and"
    },
    {
-    "name": "Total Cover (can t be tar\n-\ngeted directly)",
-    "text": "If behind more than one degree of - tive degree. See also Playing the Game ( Combat ).CrawlingWhile you re crawling, each foot of movement costs See also"
-   },
-   {
-    "name": "Speed",
-    "text": "CreatureAny being in the game, including a player s charac - ter, is a creature. See also Creature Type."
-   },
-   {
-    "name": "Creature Type",
-    "text": "Creature TypeEvery creature, including every player character, - ture it is. Most player characters are of the Human - oid type. These are the game s creature types: Aberration Beast Celestial Construct Dragon Elemental Fey Fiend Giant Humanoid Monstrosity Ooze Plant Undead The types don t have rules themselves, but some rules in the game affect creatures of certain types in different ways.Critical HitIf you roll a 20 on the d20 for an attack roll, you score a Critical Hit, and the attack hits regardless of you roll extra dice for the attack s damage against the target. Roll all of the attack s damage dice twice and add them together. Then add any relevant mod - See also Playing the Game ( Damage and Healing ).A Cube is an area of effect that extends in straight lines from a point of origin located anywhere on a face of the Cube. The effect that creates a Cube spec - A Cube s point of origin isn t included in the area of effect unless its creator decides otherwise.CursesSome game effects curse a creature or an object. curse does. Curses can be removed by the Remove Curse and Greater Restoration spells or other magic that explicitly ends curses. 180A Cylinder is an area of effect that extends in straight lines from a point of origin located at the center of the circular top or bottom of the Cylinder. - dius of the Cylinder s base and the Cylinder s height. A Cylinder s point of origin is included in the area of effect.D20 TestD20 Tests encompass the three main d20 rolls of the game: ability checks, attack rolls, and saving throws. If something in the game affects D20 Tests, it affects all three of these rolls. The GM determines whether a D20 Test is warranted in a given circum - stance. See also Playing the Game ( D20 Tests ).DamageDamage represents harm that causes a creature or an object to lose Hit Points.Damage RollA damage roll is a die roll, adjusted by any applica- See also Playing the Game ( Damage and Healing ).Damage ThresholdA creature or an object that has a damage thresh - old has Immunity to all damage unless it takes an amount of damage from a single attack or effect equal to or greater than its damage threshold, in which case it takes that entire instance of dam - age. Any damage that fails to meet or exceed the"
+    "name": "Total Cover (can’t be tar\n-\ngeted directly)",
+    "text": "If behind more than one degree of - tive degree. See also “Playing the Game” (“Combat”).CrawlingWhile you’re crawling, each foot of movement costs See also “Speed.”CreatureAny being in the game, including a player’s charac - ter, is a creature. See also “Creature Type.”Creature TypeEvery creature, including every player character, - ture it is. Most player characters are of the Human - oid type. These are the game’s creature types: Aberration Beast Celestial Construct Dragon Elemental Fey Fiend Giant Humanoid Monstrosity Ooze Plant Undead The types don’t have rules themselves, but some rules in the game affect creatures of certain types in different ways.Critical HitIf you roll a 20 on the d20 for an attack roll, you score a Critical Hit, and the attack hits regardless of you roll extra dice for the attack’s damage against the target. Roll all of the attack’s damage dice twice and add them together. Then add any relevant mod - See also “Playing the Game” (“Damage and Healing”).A Cube is an area of effect that extends in straight lines from a point of origin located anywhere on a face of the Cube. The effect that creates a Cube spec - A Cube’s point of origin isn’t included in the area of effect unless its creator decides otherwise.CursesSome game effects curse a creature or an object. curse does. Curses can be removed by the Remove Curse and Greater Restoration spells or other magic that explicitly ends curses. 180A Cylinder is an area of effect that extends in straight lines from a point of origin located at the center of the circular top or bottom of the Cylinder. - dius of the Cylinder’s base and the Cylinder’s height. A Cylinder’s point of origin is included in the area of effect.D20 TestD20 Tests encompass the three main d20 rolls of the game: ability checks, attack rolls, and saving throws. If something in the game affects D20 Tests, it affects all three of these rolls. The GM determines whether a D20 Test is warranted in a given circum - stance. See also “Playing the Game” (“D20 Tests”).DamageDamage represents harm that causes a creature or an object to lose Hit Points.Damage RollA damage roll is a die roll, adjusted by any applica- See also “Playing the Game” (“Damage and Healing”).Damage ThresholdA creature or an object that has a damage thresh - old has Immunity to all damage unless it takes an amount of damage from a single attack or effect equal to or greater than its damage threshold, in which case it takes that entire instance of dam - age. Any damage that fails to meet or exceed the"
    },
    {
     "name": "Hit Points",
@@ -1094,11 +1046,11 @@ const RAW = [
    },
    {
     "name": "Heavily Obscured",
-    "text": "See also Heavily Obscured and Playing the Game ( Exploration ).DarkvisionIf you have Darkvision, you can see in Dim Light and in Darkness within that range as if it were"
+    "text": "See also “Heavily Obscured” and “Playing the Game” (“Exploration”).DarkvisionIf you have Darkvision, you can see in Dim Light and in Darkness within that range as if it were"
    },
    {
     "name": "Dim Light",
-    "text": "You discern colors in that Darkness only as shades of gray. See also Playing the Game ( Exploration ).When you take the Dash action, you gain extra movement for the current turn. The increase equals Speed of 30 feet, for example, you can move up to 60 feet on your turn if you"
+    "text": "You discern colors in that Darkness only as shades of gray. See also “Playing the Game” (“Exploration”).When you take the Dash action, you gain extra movement for the current turn. The increase equals Speed of 30 feet, for example, you can move up to 60 feet on your turn if you"
    },
    {
     "name": "Dash",
@@ -1106,31 +1058,23 @@ const RAW = [
    },
    {
     "name": "Dash",
-    "text": "If you have a special speed, such as a Fly Speed or Swim Speed, you can use that speed instead of your Speed when you take this action. You choose which speed to use each time you take it. See also"
-   },
-   {
-    "name": "Speed",
-    "text": "DeadA dead creature has no Hit Points and can t regain Raise Dead or Revivify spell. When such a spell is cast, the spirit knows who is casting it and can re - fuse. The spirit of a dead creature has left the body and departed for the Outer Planes, and reviving the creature requires calling the spirit back. If the creature returns to life, the revival effect determines the creature s current"
+    "text": "If you have a special speed, such as a Fly Speed or Swim Speed, you can use that speed instead of your Speed when you take this action. You choose which speed to use each time you take it. See also “Speed.”DeadA dead creature has no Hit Points and can’t regain Raise Dead or Revivify spell. When such a spell is cast, the spirit knows who is casting it and can re - fuse. The spirit of a dead creature has left the body and departed for the Outer Planes, and reviving the creature requires calling the spirit back. If the creature returns to life, the revival effect determines the creature’s current"
    },
    {
     "name": "Hit Points",
-    "text": "Un - less otherwise stated, the creature returns to life with any conditions, magical contagions, or curses that were affecting it at death if the durations of those effects are still ongoing. If the creature died with any Exhaustion levels, it returns with 1 fewer level. If the creature had Attunement to one or more magic items, it is no longer attuned to them. 181While you have the Deafened condition, you experi - ence the following effect. Can t"
+    "text": "Un - less otherwise stated, the creature returns to life with any conditions, magical contagions, or curses that were affecting it at death if the durations of those effects are still ongoing. If the creature died with any Exhaustion levels, it returns with 1 fewer level. If the creature had Attunement to one or more magic items, it is no longer attuned to them. 181While you have the Deafened condition, you experi - ence the following effect."
    },
    {
-    "name": "Hear",
-    "text": "You can t hear and automatically fail any ability check that requires hearing.Death Saving ThrowA player character must make a Death Saving Throw (also called a Death Save) if they start their turn with 0"
+    "name": "Can’t Hear",
+    "text": "You can’t hear and automatically fail any ability check that requires hearing.Death Saving ThrowA player character must make a Death Saving Throw (also called a Death Save) if they start their turn with 0"
    },
    {
     "name": "Hit Points",
-    "text": "See also Playing the Game ( Damage and Healing ).A creature requires an amount of water per day based on its size, as shown in the Water Needs per Day table. A creature that drinks less than half the required water for a day gains 1 Exhaustion level at the day s end. Exhaustion caused by dehydra- tion can t be removed until the creature drinks the full amount of water required for a day. See also"
-   },
-   {
-    "name": "Exhaustion",
-    "text": "Water Needs per DaySize WaterTiny Small 1 gallon Medium 1 gallonSize WaterLarge Huge 16 gallons Gargantuan - ment in that space costs 1 extra foot. For example, - any of the following or something similar: A creature that isn t Tiny or your ally Furniture that is sized for creatures of your size or larger Heavy snow, ice, rubble, or undergrowth Liquid that s between shin- and waist-deep A narrow opening sized for a creature one size smaller than you A slope of 20 degrees or more ability check or a saving throw. See also Playing the Game ( D20 Tests ).Dim LightAn area with Dim Light is"
+    "text": "See also “Playing the Game” (“Damage and Healing”).A creature requires an amount of water per day based on its size, as shown in the Water Needs per Day table. A creature that drinks less than half the required water for a day gains 1 Exhaustion level at the day’s end. Exhaustion caused by dehydra- tion can’t be removed until the creature drinks the full amount of water required for a day. See also “Exhaustion.”Water Needs per DaySize WaterTiny Small 1 gallon Medium 1 gallonSize WaterLarge Huge 16 gallons Gargantuan - ment in that space costs 1 extra foot. For example, - any of the following or something similar: • A creature that isn’t Tiny or your ally • Furniture that is sized for creatures of your size or larger • Heavy snow, ice, rubble, or undergrowth • Liquid that’s between shin- and waist-deep • A narrow opening sized for a creature one size smaller than you • A slope of 20 degrees or more ability check or a saving throw. See also “Playing the Game” (“D20 Tests”).Dim LightAn area with Dim Light is"
    },
    {
     "name": "Lightly Obscured",
-    "text": "See also Lightly Obscured and Playing the Game ( Exploration ).DisadvantageIf you have Disadvantage on a D20 Test, roll two d20s and use the lower roll. A roll can t be affected by more than one Disadvantage, and Advantage and Disadvantage on the same roll cancel each other. See also Playing the Game ( D20 Tests ).If you take the Disengage action, your movement doesn t provoke Opportunity Attacks for the rest of the current turn.If you take the Dodge action, you gain the following roll made against you has Disadvantage if you can see the attacker, and you make Dexterity saving throws with Advantage. - tated condition or if your Speed is 0.An Emanation is an area of effect that extends in straight lines from a creature or an object in all di - rections. The effect that creates an Emanation spec - An Emanation moves with the creature or object that is its origin unless it is an instantaneous or a stationary effect. An Emanation s origin (creature or object) isn t included in the area of effect unless its creator de - cides otherwise.EncounterAn encounter is a scene in an adventure that is part of at least one of the game s three pillars: social in - teraction, exploration, or combat. See also Playing the Game ( Social Interaction, Exploration, and Combat ).Enemy combat, actively works to harm you, or is desig - nated as your enemy by the rules or GM.While you have the Exhaustion condition, you experience the following effects."
+    "text": "See also “Lightly Obscured” and “Playing the Game” (“Exploration”).DisadvantageIf you have Disadvantage on a D20 Test, roll two d20s and use the lower roll. A roll can’t be affected by more than one Disadvantage, and Advantage and Disadvantage on the same roll cancel each other. See also “Playing the Game” (“D20 Tests”).If you take the Disengage action, your movement doesn’t provoke Opportunity Attacks for the rest of the current turn.If you take the Dodge action, you gain the following roll made against you has Disadvantage if you can see the attacker, and you make Dexterity saving throws with Advantage. - tated condition or if your Speed is 0.An Emanation is an area of effect that extends in straight lines from a creature or an object in all di - rections. The effect that creates an Emanation spec - An Emanation moves with the creature or object that is its origin unless it is an instantaneous or a stationary effect. An Emanation’s origin (creature or object) isn’t included in the area of effect unless its creator de - cides otherwise.EncounterAn encounter is a scene in an adventure that is part of at least one of the game’s three pillars: social in - teraction, exploration, or combat. See also “Playing the Game” (“Social Interaction,” “Exploration,” and “Combat”).Enemy combat, actively works to harm you, or is desig - nated as your enemy by the rules or GM.While you have the Exhaustion condition, you experience the following effects."
    },
    {
     "name": "Exhaustion Levels",
@@ -1150,27 +1094,15 @@ const RAW = [
    },
    {
     "name": "Game Master",
-    "text": "When a character s XP total crosses certain thresholds, the character s level increases. See also Level"
-   },
-   {
-    "name": "Advancement",
-    "text": "ExpertiseExpertise is a feature that enhances your use of a - less the bonus is doubled by another feature. If you gain Expertise, you gain it in one skill in - See also A creature that falls takes 1d6 Bludgeoning dam - age at the end of the fall for every 10 feet it fell, to a maximum of 20d6. When the creature lands, it has the Prone condition unless it avoids taking any damage from the fall. A creature that falls into water or another liquid can use its Reaction to make a DC 15 Strength (Ath - letics) or Dexterity (Acrobatics) check to hit the damage resulting from the fall is halved.Flying - ing, you fall if you have the Incapacitated or Prone condition or your Fly Speed is reduced to 0. You can stay aloft in those circumstances if you can hover. See also Falling and Fly Speed."
-   },
-   {
-    "name": "Fly Speed",
-    "text": "Fly SpeedA Fly Speed can be used to travel through the air. While you have a Fly Speed, you can stay aloft until you land, fall, or die. See also Flying and"
-   },
-   {
-    "name": "Speed",
-    "text": "A Friendly creature views you favorably. You Friendly creature. See also While you have the Frightened condition, you expe - rience the following effects."
+    "text": "When a character’s XP total crosses certain thresholds, the character’s level increases. See also “Level Advancement.”ExpertiseExpertise is a feature that enhances your use of a - less the bonus is doubled by another feature. If you gain Expertise, you gain it in one skill in - See also A creature that falls takes 1d6 Bludgeoning dam - age at the end of the fall for every 10 feet it fell, to a maximum of 20d6. When the creature lands, it has the Prone condition unless it avoids taking any damage from the fall. A creature that falls into water or another liquid can use its Reaction to make a DC 15 Strength (Ath - letics) or Dexterity (Acrobatics) check to hit the damage resulting from the fall is halved.Flying - ing, you fall if you have the Incapacitated or Prone condition or your Fly Speed is reduced to 0. You can stay aloft in those circumstances if you can hover. See also “Falling” and “Fly Speed.”Fly SpeedA Fly Speed can be used to travel through the air. While you have a Fly Speed, you can stay aloft until you land, fall, or die. See also “Flying” and “Speed.”A Friendly creature views you favorably. You Friendly creature. See also While you have the Frightened condition, you expe - rience the following effects."
    },
    {
     "name": "Ability Checks and Attacks Affected",
-    "text": "You have Disadvantage on ability checks and attack rolls while the source of fear is within line of sight. Can t"
+    "text": "You have Disadvantage on ability checks and attack rolls while the source of fear is within line of sight."
    },
    {
-    "name": "Approach",
-    "text": "You can t willingly move closer to the source of fear.While you have the Grappled condition, you experi - ence the following effects. Speed 0. Your Speed is 0 and can t increase."
+    "name": "Can’t Approach",
+    "text": "You can’t willingly move closer to the source of fear.While you have the Grappled condition, you experi - ence the following effects. Speed 0. Your Speed is 0 and can’t increase."
    },
    {
     "name": "Attacks Affected",
@@ -1182,7 +1114,7 @@ const RAW = [
    },
    {
     "name": "Unarmed Strike",
-    "text": "Many monsters have special attacks that allow them to quickly grapple prey. However a grapple is initiated, it follows these rules. See also Unarmed Strike and Grappled."
+    "text": "Many monsters have special attacks that allow them to quickly grapple prey. However a grapple is initiated, it follows these rules. See also “Unarmed Strike” and “Grappled.”"
    },
    {
     "name": "Grappled Condition",
@@ -1190,19 +1122,15 @@ const RAW = [
    },
    {
     "name": "Hand",
-    "text": "A creature must have a hand free to grapple another creature. Some stat blocks and game effects allow a creature to grapple using a tentacle, a maw, or another body part. What - ever part a grappler uses, it can grapple only one creature at a time with that part, and the grappler can t use that part to target another creature unless it ends the grapple. Ending a"
+    "text": "A creature must have a hand free to grapple another creature. Some stat blocks and game effects allow a creature to grapple using a tentacle, a maw, or another body part. What - ever part a grappler uses, it can grapple only one creature at a time with that part, and the grappler can’t use that part to target another creature unless it ends the grapple. Ending a"
    },
    {
     "name": "Grapple",
-    "text": "A Grappled creature can use its action to make a Strength (Athletics) or Dexter - ity (Acrobatics) check against the grapple s escape DC, ending the condition on itself on a success. The condition also ends if the grappler has the Inca- pacitated condition or if the distance between the Grappled target and the grappler exceeds the grap - ple s range. In addition, the grappler can release the target at any time (no action required).HazardA hazard is an environmental danger. See also Burning, Dehydration, Falling, Malnutrition, and"
-   },
-   {
-    "name": "Suffocation",
-    "text": "HealingHealing is how you regain"
+    "text": "A Grappled creature can use its action to make a Strength (Athletics) or Dexter - ity (Acrobatics) check against the grapple’s escape DC, ending the condition on itself on a success. The condition also ends if the grappler has the Inca- pacitated condition or if the distance between the Grappled target and the grappler exceeds the grap - ple’s range. In addition, the grappler can release the target at any time (no action required).HazardA hazard is an environmental danger. See also “Burning,” “Dehydration,” “Falling,” “Malnutrition,” and “Suffocation.”HealingHealing is how you regain"
    },
    {
     "name": "Hit Points",
-    "text": "See also Play - ing the Game ( Damage and Healing ).Heavily ObscuredYou have the Blinded condition while trying to see something in a Heavily Obscured space. See also Blinded, Darkness, and Playing the Game ( Exploration ).When you take the Help action, you do one of the following. Assist an"
+    "text": "See also “Play - ing the Game” (“Damage and Healing”).Heavily ObscuredYou have the Blinded condition while trying to see something in a Heavily Obscured space. See also “Blinded,” “Darkness,” and “Playing the Game” (“Exploration”).When you take the Help action, you do one of the following. Assist an"
    },
    {
     "name": "Ability Check",
@@ -1210,11 +1138,7 @@ const RAW = [
    },
    {
     "name": "Attack Roll",
-    "text": "You momentarily distract an enemy within 5 feet of you, giving Advantage to the next attack roll by one of your allies against that turn.Heroic InspirationIf you (a player character) have Heroic Inspiration, you can expend it to reroll any die immediately af - ter rolling it, and you must use the new roll. If you gain Heroic Inspiration but already have it, it s lost unless you give it to a player character who lacks it.With the Hide action, you try to hide yourself. To do so, you must succeed on a DC 15 Dexterity (Stealth) check while you re Heavily Obscured or behind Three-Quarters Cover or Total Cover, and you must be out of any enemy s line of sight; if you can see a creature, you can discern whether it can see you. On a successful check, you have the Invisible con - dition while hidden. Make note of your check s total, Wisdom (Perception) check. You stop being hidden immediately after any of the following occurs: you make a sound louder than roll, or you cast a spell with a Verbal component.High JumpWhen you make a High Jump, you leap into the air a number of feet equal to 3 plus your Strength 10 feet on foot immediately before the jump. When you make a standing High Jump, you can jump only half that distance. Either way, each foot of the jump costs a foot of movement. You can extend your arms half your height above yourself during the jump. Thus, you can reach a dis - tance equal to the height of the jump plus 1 ½ times your height.Hit Point DiceHit Point Dice, or Hit Dice for short, help determine a player character s Hit Point maximum, as ex - plained in"
-   },
-   {
-    "name": "Character Creation",
-    "text": "Most monsters also have"
+    "text": "You momentarily distract an enemy within 5 feet of you, giving Advantage to the next attack roll by one of your allies against that turn.Heroic InspirationIf you (a player character) have Heroic Inspiration, you can expend it to reroll any die immediately af - ter rolling it, and you must use the new roll. If you gain Heroic Inspiration but already have it, it’s lost unless you give it to a player character who lacks it.With the Hide action, you try to hide yourself. To do so, you must succeed on a DC 15 Dexterity (Stealth) check while you’re Heavily Obscured or behind Three-Quarters Cover or Total Cover, and you must be out of any enemy’s line of sight; if you can see a creature, you can discern whether it can see you. On a successful check, you have the Invisible con - dition while hidden. Make note of your check’s total, Wisdom (Perception) check. You stop being hidden immediately after any of the following occurs: you make a sound louder than roll, or you cast a spell with a Verbal component.High JumpWhen you make a High Jump, you leap into the air a number of feet equal to 3 plus your Strength 10 feet on foot immediately before the jump. When you make a standing High Jump, you can jump only half that distance. Either way, each foot of the jump costs a foot of movement. You can extend your arms half your height above yourself during the jump. Thus, you can reach a dis - tance equal to the height of the jump plus 1 ½ times your height.Hit Point DiceHit Point Dice, or Hit Dice for short, help determine a player character’s Hit Point maximum, as ex - plained in “Character Creation.” Most monsters also have"
    },
    {
     "name": "Hit Dice",
@@ -1222,15 +1146,7 @@ const RAW = [
    },
    {
     "name": "Hit Points",
-    "text": "See also Short"
-   },
-   {
-    "name": "Rest",
-    "text": "Hit Points to kill or destroy a creature or an object. Damage reduces Hit Points, and healing restores them. You can t have more Hit Points than your Hit Point maximum, and you can t have less than 0. See also Breaking Objects and Playing the Game ( Dam - age and Healing ).A Hostile creature views you unfavorably. You have - tile creature. See also HoverSome creatures can hover, as noted in their stat blocks, and some spells and other effects grant the you from falling in certain circumstances. See also"
-   },
-   {
-    "name": "Flying",
-    "text": "IllusionsSpells and other effects sometimes create magical il - and which senses or mental faculties it deceives. If an illusion manifests in space, the illusion is insubstantial and weightless, yet it seems to be affected by the environment as if the illusion were - erwise. For example, a visual illusion of a creature to affect the illusory creature. Similarly, an audible illusion echoes in an echoey space.ImmunityIf you have Immunity to a damage type or a condi - tion, it doesn t affect you in any way.Improvised WeaponsAn improvised weapon is an object wielded as a makeshift weapon, such as broken glass, a table leg, or a frying pan. A Simple or Martial weapon also counts as an improvised weapon if it s wielded in a way contrary to its design; if you use a Ranged weapon to make a melee attack or throw a Me - lee weapon that lacks the Thrown property, the weapon counts as an improvised weapon. An impro - vised weapon follows the rules below. attack rolls with an improvised weapon."
+    "text": "See also “Short Rest.”Hit Points to kill or destroy a creature or an object. Damage reduces Hit Points, and healing restores them. You can’t have more Hit Points than your Hit Point maximum, and you can’t have less than 0. See also “Breaking Objects” and “Playing the Game” (“Dam - age and Healing”).A Hostile creature views you unfavorably. You have - tile creature. See also HoverSome creatures can hover, as noted in their stat blocks, and some spells and other effects grant the you from falling in certain circumstances. See also “Flying.”IllusionsSpells and other effects sometimes create magical il - and which senses or mental faculties it deceives. If an illusion manifests in space, the illusion is insubstantial and weightless, yet it seems to be affected by the environment as if the illusion were - erwise. For example, a visual illusion of a creature to affect the illusory creature. Similarly, an audible illusion echoes in an echoey space.ImmunityIf you have Immunity to a damage type or a condi - tion, it doesn’t affect you in any way.Improvised WeaponsAn improvised weapon is an object wielded as a makeshift weapon, such as broken glass, a table leg, or a frying pan. A Simple or Martial weapon also counts as an improvised weapon if it’s wielded in a way contrary to its design; if you use a Ranged weapon to make a melee attack or throw a Me - lee weapon that lacks the Thrown property, the weapon counts as an improvised weapon. An impro - vised weapon follows the rules below. attack rolls with an improvised weapon."
    },
    {
     "name": "Damage",
@@ -1242,11 +1158,11 @@ const RAW = [
    },
    {
     "name": "Weapon Equivalents",
-    "text": "If an improvised weapon resembles a Simple or Martial weapon, the GM may say it functions as that weapon and uses that weap - on s rules. For example, the GM could treat a table leg as a Club. 184While you have the Incapacitated condition, you ex - perience the following effects."
+    "text": "If an improvised weapon resembles a Simple or Martial weapon, the GM may say it functions as that weapon and uses that weap - on’s rules. For example, the GM could treat a table leg as a Club. 184While you have the Incapacitated condition, you ex - perience the following effects."
    },
    {
     "name": "Inactive",
-    "text": "You can t take any action, Bonus Action, or"
+    "text": "You can’t take any action, Bonus Action, or"
    },
    {
     "name": "No Concentration",
@@ -1254,23 +1170,23 @@ const RAW = [
    },
    {
     "name": "Speechless",
-    "text": "You can t speak."
+    "text": "You can’t speak."
    },
    {
     "name": "Surprised",
-    "text": "If you re Incapacitated when you roll Initiative, you have Disadvantage on the roll.An Indifferent creature has no desire to help or hin - der you. Indifferent is the default attitude of a mon - ster. See also do something. Describe or roleplay how you re communicating with the monster. Are you trying to deceive, intimidate, amuse, or gently persuade? The GM then determines whether the monster feels will - ing, unwilling, or hesitant due to your interaction; this determination establishes whether an ability check is necessary, as explained below."
+    "text": "If you’re Incapacitated when you roll Initiative, you have Disadvantage on the roll.An Indifferent creature has no desire to help or hin - der you. Indifferent is the default attitude of a mon - ster. See also do something. Describe or roleplay how you’re communicating with the monster. Are you trying to deceive, intimidate, amuse, or gently persuade? The GM then determines whether the monster feels will - ing, unwilling, or hesitant due to your interaction; this determination establishes whether an ability check is necessary, as explained below."
    },
    {
     "name": "Willing",
-    "text": "If your urging aligns with the monster s desires, no ability check is necessary; the monster"
+    "text": "If your urging aligns with the monster’s desires, no ability check is necessary; the monster"
    },
    {
     "name": "Unwilling",
-    "text": "If your urging is repugnant to the mon - ster or counter to its alignment, no ability check is necessary; it doesn t comply."
+    "text": "If your urging is repugnant to the mon - ster or counter to its alignment, no ability check is necessary; it doesn’t comply."
    },
    {
     "name": "Hesitant",
-    "text": "If you urge the monster to do something that it is hesitant to do, you must make an ability check, which is affected by the monster s attitude: Indifferent, Friendly, or Hostile, each of which is - ble suggests which ability check to make based on how you re interacting with the monster. The GM chooses the check, which has a default DC equal to 15 or the monster s Intelligence score, whichever is higher. On a successful check, the monster does as urged. On a failed check, you must wait 24 hours (or a duration set by the GM) before urging it in the same way again.Influence ChecksAbility Check InteractionCharisma (Deception) Deceiving a monster that understands you Charisma (Intimidation) Intimidating a monster Charisma (Performance) Amusing a monster Charisma (Persuasion) Persuading a monster that understands you Wisdom (Animal Handling) Gently coaxing a Beast or MonstrosityInitiativeInitiative determines the order of turns during com - bat. The combat rules in Playing the Game explain how to roll"
+    "text": "If you urge the monster to do something that it is hesitant to do, you must make an ability check, which is affected by the monster’s attitude: Indifferent, Friendly, or Hostile, each of which is - ble suggests which ability check to make based on how you’re interacting with the monster. The GM chooses the check, which has a default DC equal to 15 or the monster’s Intelligence score, whichever is higher. On a successful check, the monster does as urged. On a failed check, you must wait 24 hours (or a duration set by the GM) before urging it in the same way again.Influence ChecksAbility Check InteractionCharisma (Deception) Deceiving a monster that understands you Charisma (Intimidation) Intimidating a monster Charisma (Performance) Amusing a monster Charisma (Persuasion) Persuading a monster that understands you Wisdom (Animal Handling) Gently coaxing a Beast or MonstrosityInitiativeInitiative determines the order of turns during com - bat. The combat rules in “Playing the Game” explain how to roll"
    },
    {
     "name": "Initiative",
@@ -1278,27 +1194,23 @@ const RAW = [
    },
    {
     "name": "Initiative",
-    "text": "Your Initiative score equals 10 plus your Dexterity increase your Initiative score by 5. If you have Dis - advantage on those rolls, decrease that score by 5. See also Playing the Game ( Combat ).While you have the Invisible condition, you experi - ence the following effects."
+    "text": "Your Initiative score equals 10 plus your Dexterity increase your Initiative score by 5. If you have Dis - advantage on those rolls, decrease that score by 5. See also “Playing the Game” (“Combat”).While you have the Invisible condition, you experi - ence the following effects."
    },
    {
     "name": "Surprise",
-    "text": "If you re Invisible when you roll Initia- tive, you have Advantage on the roll."
+    "text": "If you’re Invisible when you roll Initia- tive, you have Advantage on the roll."
    },
    {
     "name": "Concealed",
-    "text": "You aren t affected by any effect that requires its target to be seen unless the effect s cre - ator can somehow see you. Any equipment you are wearing or carrying is also concealed."
+    "text": "You aren’t affected by any effect that requires its target to be seen unless the effect’s cre - ator can somehow see you. Any equipment you are wearing or carrying is also concealed."
    },
    {
     "name": "Attacks Affected",
-    "text": "Attack rolls against you have Disadvantage, and your attack rolls have Advan - tage. If a creature can somehow see you, you don t JumpingWhen you jump, you make either a Long Jump (hor - izontal) or a"
+    "text": "Attack rolls against you have Disadvantage, and your attack rolls have Advan - tage. If a creature can somehow see you, you don’t JumpingWhen you jump, you make either a Long Jump (hor - izontal) or a"
    },
    {
     "name": "High Jump (vertical)",
-    "text": "See also Long Jump and"
-   },
-   {
-    "name": "High Jump",
-    "text": "Knocking Out a CreatureWhen you would reduce a creature to 0 Hit Points with a melee attack, you can instead reduce the creature to 1"
+    "text": "See also “Long Jump” and “High Jump.”Knocking Out a CreatureWhen you would reduce a creature to 0 Hit Points with a melee attack, you can instead reduce the creature to 1"
    },
    {
     "name": "Hit Point",
@@ -1306,7 +1218,7 @@ const RAW = [
    },
    {
     "name": "Short Rest",
-    "text": "The creature remains Unconscious until it regains any Hit Points or until someone uses an action to - ful DC 10 Wisdom (Medicine) check.Lightly ObscuredYou have Disadvantage on Wisdom (Perception) checks to see something in a Lightly Obscured space. See also Dim Light and Playing the Game ( Exploration ).A Line is an area of effect that extends from a point of origin in a straight path along its length and cov - - A Line s point of origin isn t included in the area of effect unless its creator decides otherwise.Long JumpWhen you make a Long Jump, you leap horizontally a number of feet up to your Strength score if you 185move at least 10 feet immediately before the jump. When you make a standing Long Jump, you can leap only half that distance. Either way, each foot you jump costs a foot of movement. on a DC 10 Dexterity (Acrobatics) check or have the Prone condition. This Long Jump rule assumes that the height of the jump doesn t matter, such as a jump across a stream or chasm. At your GM s option, you must suc - ceed on a DC 10 Strength (Athletics) check to clear a low obstacle (no taller than a quarter of the jump s distance), such as a hedge or low wall. Otherwise, you hit the obstacle.Long Rest Long Rest, you sleep for at least 6 hours and per - form no more than 2 hours of light activity, such as reading, talking, eating, or standing watch. During sleep, you have the Unconscious condition. 16 hours before starting another one. To start a Long Rest, you"
+    "text": "The creature remains Unconscious until it regains any Hit Points or until someone uses an action to - ful DC 10 Wisdom (Medicine) check.Lightly ObscuredYou have Disadvantage on Wisdom (Perception) checks to see something in a Lightly Obscured space. See also “Dim Light” and “Playing the Game” (“Exploration”).A Line is an area of effect that extends from a point of origin in a straight path along its length and cov - - A Line’s point of origin isn’t included in the area of effect unless its creator decides otherwise.Long JumpWhen you make a Long Jump, you leap horizontally a number of feet up to your Strength score if you 185move at least 10 feet immediately before the jump. When you make a standing Long Jump, you can leap only half that distance. Either way, each foot you jump costs a foot of movement. on a DC 10 Dexterity (Acrobatics) check or have the Prone condition. This Long Jump rule assumes that the height of the jump doesn’t matter, such as a jump across a stream or chasm. At your GM’s option, you must suc - ceed on a DC 10 Strength (Athletics) check to clear a low obstacle (no taller than a quarter of the jump’s distance), such as a hedge or low wall. Otherwise, you hit the obstacle.Long Rest Long Rest, you sleep for at least 6 hours and per - form no more than 2 hours of light activity, such as reading, talking, eating, or standing watch. During sleep, you have the Unconscious condition. 16 hours before starting another one. To start a Long Rest, you"
    },
    {
     "name": "Regain All HP",
@@ -1334,35 +1246,11 @@ const RAW = [
    },
    {
     "name": "Interrupting the Rest",
-    "text": "A Long Rest is stopped by the following interruptions: Rolling Initiative Casting a spell other than a cantrip Taking any damage 1 hour of walking or other physical exertion If you rested at least 1 hour before the interruption, See also Short"
-   },
-   {
-    "name": "Rest",
-    "text": "You can resume a Long Rest immediately after an interruption. If you do so, the rest requires 1 addi - When you take the Magic action, you cast a spell that has a casting time of an action or use a feature or magic item that requires a Magic action to be activated. If you cast a spell that has a casting time of 1 min - ute or longer, you must take the Magic action on each turn of that casting, and you must maintain Concentration while you do so. If your Concentra- tion is broken, the spell fails, but you don t expend a spell slot. See also"
-   },
-   {
-    "name": "Concentration",
-    "text": "Magical EffectAn effect is magical if it is created by a spell, a magic item, or a phenomenon that a rule labels as magical.A creature needs an amount of food per day based on its size, as shown in the Food Needs per Day ta- ble. A creature that eats but consumes less than half the required food for a day must succeed on a DC 10 Constitution saving throw or gain 1 Exhaustion level at the day s end. A creature that eats nothing for 5 days automatically gains 1 Exhaustion level at at the end of each subsequent day without food. Exhaustion caused by malnutrition can t be re - moved until the creature eats the full amount of food required for a day. See also"
-   },
-   {
-    "name": "Exhaustion",
-    "text": "Food Needs per DaySize Food Size FoodTiny Large Small 1 pound Huge 16 pounds Medium 1 pound Gargantuan MonsterA monster is a creature controlled by the GM, even if the creature is benevolent. See also Creature and"
-   },
-   {
-    "name": "NPC",
-    "text": "Nonplayer CharacterA nonplayer character (NPC) is a monster that has a personal name and a distinct personality. See also"
-   },
-   {
-    "name": "Monster",
-    "text": "ObjectAn object is a nonliving, distinct thing. Composite things, like buildings, comprise more than one ob - ject. See also"
-   },
-   {
-    "name": "Breaking Objects",
-    "text": "Occupied SpaceA space is occupied if a creature is in it or if it is Opportunity AttacksYou can make an Opportunity Attack when a crea- ture that you can see leaves your reach using its action, its Bonus Action, its Reaction, or one of its speeds. To make the Opportunity Attack, take a Re - action to make one melee attack with a weapon or an Unarmed Strike against the provoking creature. The attack occurs right before the creature leaves your reach. See also Playing the Game ( Combat ). 186While you have the Paralyzed condition, you experi - ence the following effects."
+    "text": "A Long Rest is stopped by the following interruptions: • Rolling Initiative • Casting a spell other than a cantrip • Taking any damage • 1 hour of walking or other physical exertion If you rested at least 1 hour before the interruption, See also “Short Rest.” You can resume a Long Rest immediately after an interruption. If you do so, the rest requires 1 addi - When you take the Magic action, you cast a spell that has a casting time of an action or use a feature or magic item that requires a Magic action to be activated. If you cast a spell that has a casting time of 1 min - ute or longer, you must take the Magic action on each turn of that casting, and you must maintain Concentration while you do so. If your Concentra- tion is broken, the spell fails, but you don’t expend a spell slot. See also “Concentration.”Magical EffectAn effect is magical if it is created by a spell, a magic item, or a phenomenon that a rule labels as magical.A creature needs an amount of food per day based on its size, as shown in the Food Needs per Day ta- ble. A creature that eats but consumes less than half the required food for a day must succeed on a DC 10 Constitution saving throw or gain 1 Exhaustion level at the day’s end. A creature that eats nothing for 5 days automatically gains 1 Exhaustion level at at the end of each subsequent day without food. Exhaustion caused by malnutrition can’t be re - moved until the creature eats the full amount of food required for a day. See also “Exhaustion.”Food Needs per DaySize Food Size FoodTiny Large Small 1 pound Huge 16 pounds Medium 1 pound Gargantuan MonsterA monster is a creature controlled by the GM, even if the creature is benevolent. See also “Creature” and “NPC.”Nonplayer CharacterA nonplayer character (NPC) is a monster that has a personal name and a distinct personality. See also “Monster.”ObjectAn object is a nonliving, distinct thing. Composite things, like buildings, comprise more than one ob - ject. See also “Breaking Objects.”Occupied SpaceA space is occupied if a creature is in it or if it is Opportunity AttacksYou can make an Opportunity Attack when a crea- ture that you can see leaves your reach using its action, its Bonus Action, its Reaction, or one of its speeds. To make the Opportunity Attack, take a Re - action to make one melee attack with a weapon or an Unarmed Strike against the provoking creature. The attack occurs right before the creature leaves your reach. See also “Playing the Game” (“Combat”). 186While you have the Paralyzed condition, you experi - ence the following effects."
    },
    {
     "name": "Incapacitated",
-    "text": "You have the Incapacitated condition. Speed 0. Your Speed is 0 and can t increase."
+    "text": "You have the Incapacitated condition. Speed 0. Your Speed is 0 and can’t increase."
    },
    {
     "name": "Saving Throws Affected",
@@ -1374,7 +1262,7 @@ const RAW = [
    },
    {
     "name": "Automatic Critical Hits",
-    "text": "Any attack roll that hits you is a Critical Hit if the attacker is within 5 feet of you.Passive Perception- ture s general awareness of its surroundings. The GM uses this score when determining whether a creature notices something without consciously making a Wisdom (Perception) check. A creature s Passive Perception equals 10 plus the creature s Wisdom (Perception) check bonus. If the creature has Advantage on such checks, increase the score by 5. If the creature has Disadvantage on them, decrease the score by 5. For example, a level Perception has a Passive Perception of 14 (10 + 2 + 2). If that character has Advantage on Wisdom (Per - ception) checks, the score becomes 19.Per DayIf a rule says you can use something a certain num - Long Rest to use it again after you run out of uses. - ence the following effects."
+    "text": "Any attack roll that hits you is a Critical Hit if the attacker is within 5 feet of you.Passive Perception- ture’s general awareness of its surroundings. The GM uses this score when determining whether a creature notices something without consciously making a Wisdom (Perception) check. A creature’s Passive Perception equals 10 plus the creature’s Wisdom (Perception) check bonus. If the creature has Advantage on such checks, increase the score by 5. If the creature has Disadvantage on them, decrease the score by 5. For example, a level Perception has a Passive Perception of 14 (10 + 2 + 2). If that character has Advantage on Wisdom (Per - ception) checks, the score becomes 19.Per DayIf a rule says you can use something a certain num - Long Rest to use it again after you run out of uses. - ence the following effects."
    },
    {
     "name": "Turned to Inanimate Substance",
@@ -1382,7 +1270,7 @@ const RAW = [
    },
    {
     "name": "Incapacitated",
-    "text": "You have the Incapacitated condition. Speed 0. Your Speed is 0 and can t increase."
+    "text": "You have the Incapacitated condition. Speed 0. Your Speed is 0 and can’t increase."
    },
    {
     "name": "Attacks Affected",
@@ -1398,11 +1286,7 @@ const RAW = [
    },
    {
     "name": "Poison Immunity",
-    "text": "You have Immunity to the Poi - soned condition.Player CharacterA player character is a character controlled by a player. See also"
-   },
-   {
-    "name": "Character Creation",
-    "text": "While you have the Poisoned condition, you experi - ence the following effect."
+    "text": "You have Immunity to the Poi - soned condition.Player CharacterA player character is a character controlled by a player. See also “Character Creation.”While you have the Poisoned condition, you experi - ence the following effect."
    },
    {
     "name": "Ability Checks and Attacks Affected",
@@ -1410,15 +1294,15 @@ const RAW = [
    },
    {
     "name": "Restricted Movement",
-    "text": "Your only movement op - tions are to crawl or to spend an amount of move - ment equal to half your Speed (round down) to right yourself and thereby end the condition. If your Speed is 0, you can t right yourself."
+    "text": "Your only movement op - tions are to crawl or to spend an amount of move - ment equal to half your Speed (round down) to right yourself and thereby end the condition. If your Speed is 0, you can’t right yourself."
    },
    {
     "name": "Attacks Affected",
-    "text": "You have Disadvantage on at - tack rolls. An attack roll against you has Advantage if the attacker is within 5 feet of you. Otherwise, that attack roll has Disadvantage.ReachA creature has a reach of 5 feet unless a rule says otherwise.ReactionA Reaction is a special action taken in response to can take a Reaction on another creature s turn, and if you take it on your turn, you can do so even if you also take an action, a Bonus Action, or both. Once you take a Reaction, you can t take another one until the start of your next turn. The Opportunity Attack is a Reaction available to all creatures. See also Opportunity Attacks and Playing the Game ( Actions ).You take the Ready action to wait for a particular circumstance before you act. To do so, you take this action on your turn, which lets you act by taking a Reaction before the start of your next turn. First, you decide what perceivable circumstance will trigger your"
+    "text": "You have Disadvantage on at - tack rolls. An attack roll against you has Advantage if the attacker is within 5 feet of you. Otherwise, that attack roll has Disadvantage.ReachA creature has a reach of 5 feet unless a rule says otherwise.ReactionA Reaction is a special action taken in response to can take a Reaction on another creature’s turn, and if you take it on your turn, you can do so even if you also take an action, a Bonus Action, or both. Once you take a Reaction, you can’t take another one until the start of your next turn. The Opportunity Attack is a Reaction available to all creatures. See also “Opportunity Attacks” and “Playing the Game” (“Actions”).You take the Ready action to wait for a particular circumstance before you act. To do so, you take this action on your turn, which lets you act by taking a Reaction before the start of your next turn. First, you decide what perceivable circumstance will trigger your"
    },
    {
     "name": "Reaction",
-    "text": "Then, you choose the action you will take in response to that trigger, or you choose to move up to your Speed in response to it. Examples include If the cultist steps on the 187trapdoor, I ll pull the lever that opens it, and If the zombie steps next to me, I move away. When the trigger occurs, you can either take your the trigger. When you Ready a spell, you cast it as normal (ex - pending any resources used to cast it) but hold its energy, which you release with your Reaction when the trigger occurs. To be readied, a spell must have a casting time of an action, and holding on to the spell s magic requires Concentration, which you can maintain up to the start of your next turn. If your Concentration is broken, the spell dissipates with - out taking effect.ResistanceIf you have Resistance to a damage type, damage of that type is halved against you (round down). Resistance is applied only once to an instance of damage. See also Playing the Game ( Damage and Healing ).While you have the Restrained condition, you expe - rience the following effects. Speed 0. Your Speed is 0 and can t increase."
+    "text": "Then, you choose the action you will take in response to that trigger, or you choose to move up to your Speed in response to it. Examples include “If the cultist steps on the 187trapdoor, I’ll pull the lever that opens it,” and “If the zombie steps next to me, I move away.” When the trigger occurs, you can either take your the trigger. When you Ready a spell, you cast it as normal (ex - pending any resources used to cast it) but hold its energy, which you release with your Reaction when the trigger occurs. To be readied, a spell must have a casting time of an action, and holding on to the spell’s magic requires Concentration, which you can maintain up to the start of your next turn. If your Concentration is broken, the spell dissipates with - out taking effect.ResistanceIf you have Resistance to a damage type, damage of that type is halved against you (round down). Resistance is applied only once to an instance of damage. See also “Playing the Game” (“Damage and Healing”).While you have the Restrained condition, you expe - rience the following effects. Speed 0. Your Speed is 0 and can’t increase."
    },
    {
     "name": "Attacks Affected",
@@ -1430,15 +1314,7 @@ const RAW = [
    },
    {
     "name": "Ritual",
-    "text": "The Ritual ver - sion of a spell takes 10 minutes longer to cast than normal. It also doesn t expend a spell slot, which means the ritual version of a spell can t be cast at a higher level. See also"
-   },
-   {
-    "name": "Spells",
-    "text": "Round DownWhenever you divide or multiply a number in the game, round down if you end up with a fraction, even if the fraction is one-half or greater. Some rules make an exception and tell you to round up.SaveSave is another name for a saving throw. See also Saving Throw."
-   },
-   {
-    "name": "Saving Throw",
-    "text": "Saving Throw attempt to avoid or resist a threat. You normally make a saving throw only when a rule requires you to do so, but you can decide to fail the save without rolling. The result of a save is detailed in the effect that allowed it. If a target is forced to make a save and lacks the ability score used by it, the target au - tomatically fails. See also Playing the Game ( D20 Tests ).When you take the Search action, you make a Wis - dom check to discern something that isn t obvious. The Search table suggests which skills are applica- ble when you take this action, depending on what you re trying to detect.SearchSkill Thing to DetectInsight Creature s state of mind Medicine Creature s ailment or cause of death Perception Concealed creature or object Survival Tracks or foodShape-ShiftingIf an effect, such as Wild Shape or the Polymorph what happens to you. Unless that description says form to the other. You revert to your true form if you die.Short RestA Short Rest is a 1-hour period of downtime, during which a creature does nothing more strenuous than reading, talking, eating, or standing watch. To start a Short Rest, you must have at least 1"
+    "text": "The Ritual ver - sion of a spell takes 10 minutes longer to cast than normal. It also doesn’t expend a spell slot, which means the ritual version of a spell can’t be cast at a higher level. See also “Spells.”Round DownWhenever you divide or multiply a number in the game, round down if you end up with a fraction, even if the fraction is one-half or greater. Some rules make an exception and tell you to round up.SaveSave is another name for a saving throw. See also “Saving Throw.”Saving Throw attempt to avoid or resist a threat. You normally make a saving throw only when a rule requires you to do so, but you can decide to fail the save without rolling. The result of a save is detailed in the effect that allowed it. If a target is forced to make a save and lacks the ability score used by it, the target au - tomatically fails. See also “Playing the Game” (“D20 Tests”).When you take the Search action, you make a Wis - dom check to discern something that isn’t obvious. The Search table suggests which skills are applica- ble when you take this action, depending on what you’re trying to detect.SearchSkill Thing to DetectInsight Creature’s state of mind Medicine Creature’s ailment or cause of death Perception Concealed creature or object Survival Tracks or foodShape-ShiftingIf an effect, such as Wild Shape or the Polymorph what happens to you. Unless that description says form to the other. You revert to your true form if you die.Short RestA Short Rest is a 1-hour period of downtime, during which a creature does nothing more strenuous than reading, talking, eating, or standing watch. To start a Short Rest, you must have at least 1"
    },
    {
     "name": "Spend Hit Point Dice",
@@ -1458,35 +1334,31 @@ const RAW = [
    },
    {
     "name": "Interrupting the Rest",
-    "text": "A Short Rest is stopped by the following interruptions: Rolling Initiative Casting a spell other than a cantrip Taking any damage Simultaneous EffectsIf two or more things happen at the same time on a whose turn it is decides the order in which those things happen. For example, if two effects occur at the start of a player character s turn, the player de - 188SizeA creature or an object belongs to a size category: Tiny, Small, Medium, Large, Huge, or"
+    "text": "A Short Rest is stopped by the following interruptions: • Rolling Initiative • Casting a spell other than a cantrip • Taking any damage Simultaneous EffectsIf two or more things happen at the same time on a whose turn it is decides the order in which those things happen. For example, if two effects occur at the start of a player character’s turn, the player de - 188SizeA creature or an object belongs to a size category: Tiny, Small, Medium, Large, Huge, or"
    },
    {
     "name": "Gargantuan",
-    "text": "A creature s size determines how much space the creature occupies in combat. An object s size affects its"
+    "text": "A creature’s size determines how much space the creature occupies in combat. An object’s size affects its"
    },
    {
     "name": "Hit Points",
-    "text": "See also Breaking Objects and Play - ing the Game ( Combat ).SkillA skill is an area of specialization associated with an ability check associated with that skill. See also SpeedA creature has a Speed, which is the distance in feet the creature can cover when it moves on its turn. See also Climbing, Crawling, Flying, Jumping, Swimming and Playing the Game ( Combat )."
+    "text": "See also “Breaking Objects” and “Play - ing the Game” (“Combat”).SkillA skill is an area of specialization associated with an ability check associated with that skill. See also SpeedA creature has a Speed, which is the distance in feet the creature can cover when it moves on its turn. See also “Climbing,” “Crawling,” “Flying,” “Jumping,” “Swimming” and “Playing the Game” (“Combat”)."
    },
    {
     "name": "Special Speeds",
-    "text": "Some creatures have special speeds, such as a Burrow Speed, Climb Speed, Fly in this glossary. If you have more than one speed, choose which one to use when you move; you can switch between the speeds during your move. Whenever you switch, subtract the distance already moved from the new speed. The result determines how much farther you can move. If the result is 0 or less, you can t use the new speed during the current move. For example, if you have a Speed of 30 and a"
+    "text": "Some creatures have special speeds, such as a Burrow Speed, Climb Speed, Fly in this glossary. If you have more than one speed, choose which one to use when you move; you can switch between the speeds during your move. Whenever you switch, subtract the distance already moved from the new speed. The result determines how much farther you can move. If the result is 0 or less, you can’t use the new speed during the current move. For example, if you have a Speed of 30 and a"
    },
    {
     "name": "Changes to Your Speeds",
-    "text": "If an effect increases or decreases your Speed for a time, any special speed you have increases or decreases by an equal amount for the same duration. For example, if your Speed is reduced to 0 and you have a Climb Speed, your Climb Speed is also reduced to 0. Similarly, if your Speed is halved and you have a Fly Speed, your Fly Speed is also halved.SpellA spell is a magical effect that has the characteris - tics described in"
-   },
-   {
-    "name": "Spells",
-    "text": "Spell AttackA spell attack is an attack roll made as part of a spell or another magical effect. See also Spells ( Casting Spells ).Spellcasting FocusA Spellcasting Focus is an object that certain crea- tures can use in place of a spell s Material compo - nents if those materials aren t consumed by the allow its members to use certain types of Spellcast - ing"
+    "text": "If an effect increases or decreases your Speed for a time, any special speed you have increases or decreases by an equal amount for the same duration. For example, if your Speed is reduced to 0 and you have a Climb Speed, your Climb Speed is also reduced to 0. Similarly, if your Speed is halved and you have a Fly Speed, your Fly Speed is also halved.SpellA spell is a magical effect that has the characteris - tics described in “Spells.”Spell AttackA spell attack is an attack roll made as part of a spell or another magical effect. See also “Spells” (“Casting Spells”).Spellcasting FocusA Spellcasting Focus is an object that certain crea- tures can use in place of a spell’s Material compo - nents if those materials aren’t consumed by the allow its members to use certain types of Spellcast - ing"
    },
    {
     "name": "Focuses",
-    "text": "See also Spells ( Casting Spells ).A Sphere is an area of effect that extends in straight lines from a point of origin outward in all direc - distance it extends as the radius of the Sphere. A Sphere s point of origin is included in the Sphere s area of effect.StableA creature is Stable if it has 0 Hit Points but isn t required to make"
+    "text": "See also “Spells” (“Casting Spells”).A Sphere is an area of effect that extends in straight lines from a point of origin outward in all direc - distance it extends as the radius of the Sphere. A Sphere’s point of origin is included in the Sphere’s area of effect.StableA creature is Stable if it has 0 Hit Points but isn’t required to make"
    },
    {
     "name": "Death Saving Throws",
-    "text": "See also Playing the Game ( Damage and Healing ).Stat BlockA stat block contains the game statistics of a mon - ster. Each stat block includes the following informa- tion presented after the monster s name."
+    "text": "See also “Playing the Game” (“Damage and Healing”).Stat BlockA stat block contains the game statistics of a mon - ster. Each stat block includes the following informa- tion presented after the monster’s name."
    },
    {
     "name": "Size",
@@ -1494,27 +1366,19 @@ const RAW = [
    },
    {
     "name": "Gargantuan",
-    "text": "See also"
+    "text": "See also “Size.”"
    },
    {
     "name": "Creature Type",
-    "text": "This entry notes the family of be - ings a monster belongs to, along with any descrip - tive tags. See also"
+    "text": "This entry notes the family of be - ings a monster belongs to, along with any descrip - tive tags. See also “Creature Type.”"
    },
    {
     "name": "Alignment",
-    "text": "An alignment is suggested for the monster, with the GM determining its actual align - ment. See also"
-   },
-   {
-    "name": "Alignment",
-    "text": "AC, Initiative, and"
+    "text": "An alignment is suggested for the monster, with the GM determining its actual align - ment. See also “Alignment.” AC, Initiative, and"
    },
    {
     "name": "HP",
-    "text": "These entries give the monster s Armor Class, Initiative, and Hit Points, which are detailed in"
-   },
-   {
-    "name": "Playing the Game",
-    "text": "In paren - theses after the Hit Points, the monster s Hit Point Dice are provided, along with the contribution of its Constitution, if any, to its"
+    "text": "These entries give the monster’s Armor Class, Initiative, and Hit Points, which are detailed in “Playing the Game.” In paren - theses after the Hit Points, the monster’s Hit Point Dice are provided, along with the contribution of its Constitution, if any, to its"
    },
    {
     "name": "Hit Points",
@@ -1522,31 +1386,31 @@ const RAW = [
    },
    {
     "name": "Speed",
-    "text": "Here the monster s Speed is provided, along with any special speeds. See also Burrow Speed, Climb Speed, Fly Speed, and Swim"
+    "text": "Here the monster’s Speed is provided, along with any special speeds. See also “Burrow Speed,” “Climb Speed,” “Fly Speed,” and “Swim Speed.”"
    },
    {
     "name": "Ability Scores",
-    "text": "A table provides the monster s - ers, all of which are detailed in"
+    "text": "A table provides the monster’s - ers, all of which are detailed in “Playing the Game.”"
    },
    {
     "name": "Skills",
-    "text": "This entry lists the monster s skill pro - See also Playing the Game"
+    "text": "This entry lists the monster’s skill pro - See also “Playing the Game”"
    },
    {
     "name": "Resistances and Vulnerabilities",
-    "text": "These entries list the monster s Resistances and Vulnerabilities, if any. See also Resistance and"
+    "text": "These entries list the monster’s Resistances and Vulnerabilities, if any. See also “Resistance” and “Vulnerability.”"
    },
    {
     "name": "Immunities",
-    "text": "This section lists the monster s damage and condition Immunities, if any. See also"
+    "text": "This section lists the monster’s damage and condition Immunities, if any. See also “Immunity.”"
    },
    {
     "name": "Gear",
-    "text": "If the monster has any equipment that can be given away or retrieved, it s listed in this entry."
+    "text": "If the monster has any equipment that can be given away or retrieved, it’s listed in this entry."
    },
    {
     "name": "Senses",
-    "text": "This entry lists the monster s special senses, such as Darkvision, and its Passive Percep - tion. See also"
+    "text": "This entry lists the monster’s special senses, such as Darkvision, and its Passive Percep - tion. See also “Passive Perception.”"
    },
    {
     "name": "Languages",
@@ -1554,30 +1418,26 @@ const RAW = [
    },
    {
     "name": "CR",
-    "text": "Challenge Rating summarizes the threat a monster poses and is detailed in"
-   },
-   {
-    "name": "Monsters",
-    "text": "The Experience Points characters receive for defeating creatures that are created by magic have no"
+    "text": "Challenge Rating summarizes the threat a monster poses and is detailed in “Monsters.” The Experience Points characters receive for defeating creatures that are created by magic have no"
    },
    {
     "name": "CR",
-    "text": "See also Challenge Rating and Experience Points."
+    "text": "See also “Challenge Rating” and “Experience Points.”"
    }
   ],
   "bonusActions": [],
   "reactions": [
    {
     "name": "Attack Notation",
-    "text": "The entry for a monster s attack starts by identifying whether the attack is a melee or a ranged attack and then provides the attack roll s bonus, its reach or range, and what happens on a hit. An attack is against one target unless its entry says otherwise."
+    "text": "The entry for a monster’s attack starts by identifying whether the attack is a melee or a ranged attack and then provides the attack roll’s bonus, its reach or range, and what happens on a hit. An attack is against one target unless its entry says otherwise."
    },
    {
     "name": "Saving Throw Effect Notation",
-    "text": "If an effect forces a saving throw, the effect s entry starts by identify - ing the kind of saving throw required and then pro - vides the save s DC, a description of which creatures must make the save, and what happens on a failed or a successful save."
+    "text": "If an effect forces a saving throw, the effect’s entry starts by identify - ing the kind of saving throw required and then pro - vides the save’s DC, a description of which creatures must make the save, and what happens on a failed or a successful save."
    },
    {
     "name": "Damage Notation",
-    "text": "A stat block usually provides both a static number and a die expression for each instance of damage. For example, an attack might deal 4 (1d4 + 2) damage on a hit. The GM deter - mines whether you use the static number or the die expression in parentheses; you don t use both.When you take the Study action, you make an Intel - ligence check to study your memory, a book, a clue, or another source of knowledge and call to mind an important piece of information about it. The Areas of Knowledge table suggests which skills are applicable to various areas of knowledge.Areas of KnowledgeSkill AreasArcana Spells, magic items, eldritch symbols, magical traditions, planes of existence, and certain creatures (Aberrations, Constructs, Elementals, Fey, and Monstrosities) History Historic events and people, ancient civilizations, wars, and certain creatures (Giants and Humanoids) Investigation Traps, ciphers, riddles, and gadgetry Nature creatures (Beasts, Dragons, Oozes, and Plants) Religion Deities, religious hierarchies and rites, holy symbols, cults, and certain crea - tures (Celestials, Fiends, and Undead)While you have the Stunned condition, you experi - ence the following effects."
+    "text": "A stat block usually provides both a static number and a die expression for each instance of damage. For example, an attack might deal 4 (1d4 + 2) damage on a hit. The GM deter - mines whether you use the static number or the die expression in parentheses; you don’t use both.When you take the Study action, you make an Intel - ligence check to study your memory, a book, a clue, or another source of knowledge and call to mind an important piece of information about it. The Areas of Knowledge table suggests which skills are applicable to various areas of knowledge.Areas of KnowledgeSkill AreasArcana Spells, magic items, eldritch symbols, magical traditions, planes of existence, and certain creatures (Aberrations, Constructs, Elementals, Fey, and Monstrosities) History Historic events and people, ancient civilizations, wars, and certain creatures (Giants and Humanoids) Investigation Traps, ciphers, riddles, and gadgetry Nature creatures (Beasts, Dragons, Oozes, and Plants) Religion Deities, religious hierarchies and rites, holy symbols, cults, and certain crea - tures (Celestials, Fiends, and Undead)While you have the Stunned condition, you experi - ence the following effects."
    },
    {
     "name": "Incapacitated",
@@ -1589,15 +1449,15 @@ const RAW = [
    },
    {
     "name": "Attacks Affected",
-    "text": "Attack rolls against you have Advantage.A creature can hold its breath for a number of (minimum of 30 seconds) before suffocation begins. When a creature runs out of breath or is choking, it gains 1 Exhaustion level at the end of each of its turns. When a creature can breathe again, it removes all levels of Exhaustion it gained from suffocating.SurpriseIf a creature is caught unawares by the start of combat, that creature is surprised, which causes it to have Disadvantage on its Initiative roll. See also Playing the Game ( Combat ).SwimmingWhile you re swimming, each foot of movement You ignore this extra cost if you have a Swim Speed and use it to swim. At the GM s option, moving any distance in rough water might require a successful DC 15 Strength (Athletics) check.Swim SpeedA Swim Speed can be used to swim without expend - ing the extra movement normally associated with swimming. See also Swimming and Speed. 190TargetA target is the creature or object targeted by an attack roll, forced to make a saving throw by an effect, or selected to receive the effects of a spell or another phenomenon.TelepathyTelepathy is a magical ability that allows a creature to communicate mentally with another creature - wise, the contacted creature doesn t need to share a language with the telepath to understand this com - munication, but the contacted creature must be able to understand at least one language or be telepathic itself to understand. A telepath doesn t need to see a contacted crea- ture, and the telepath can start or end the telepathic contact at any time (no action required). Telepathic contact can t be initiated and is immediately broken if either the telepath or the other creature has the Incapacitated condition. Telepathic contact is also broken if the contacted creature is no longer within the telepathy s range or if the telepath contacts a different creature within range. A creature without telepathy can receive tele - pathic messages but can t initiate a telepathic con - versation. Once a telepathic conversation starts, the non-telepath can communicate mentally to the telepath until the telepathic connection ends.TeleportationTeleportation is a special kind of magical transpor - tation. If you teleport, you disappear and reappear elsewhere instantly, without moving through the intervening space. This transportation doesn t ex - pend movement unless a rule tells you otherwise, and teleportation never provokes Opportunity"
+    "text": "Attack rolls against you have Advantage.A creature can hold its breath for a number of (minimum of 30 seconds) before suffocation begins. When a creature runs out of breath or is choking, it gains 1 Exhaustion level at the end of each of its turns. When a creature can breathe again, it removes all levels of Exhaustion it gained from suffocating.SurpriseIf a creature is caught unawares by the start of combat, that creature is surprised, which causes it to have Disadvantage on its Initiative roll. See also “Playing the Game” (“Combat”).SwimmingWhile you’re swimming, each foot of movement You ignore this extra cost if you have a Swim Speed and use it to swim. At the GM’s option, moving any distance in rough water might require a successful DC 15 Strength (Athletics) check.Swim SpeedA Swim Speed can be used to swim without expend - ing the extra movement normally associated with swimming. See also “Swimming” and “Speed.” 190TargetA target is the creature or object targeted by an attack roll, forced to make a saving throw by an effect, or selected to receive the effects of a spell or another phenomenon.TelepathyTelepathy is a magical ability that allows a creature to communicate mentally with another creature - wise, the contacted creature doesn’t need to share a language with the telepath to understand this com - munication, but the contacted creature must be able to understand at least one language or be telepathic itself to understand. A telepath doesn’t need to see a contacted crea- ture, and the telepath can start or end the telepathic contact at any time (no action required). Telepathic contact can’t be initiated and is immediately broken if either the telepath or the other creature has the Incapacitated condition. Telepathic contact is also broken if the contacted creature is no longer within the telepathy’s range or if the telepath contacts a different creature within range. A creature without telepathy can receive tele - pathic messages but can’t initiate a telepathic con - versation. Once a telepathic conversation starts, the non-telepath can communicate mentally to the telepath until the telepathic connection ends.TeleportationTeleportation is a special kind of magical transpor - tation. If you teleport, you disappear and reappear elsewhere instantly, without moving through the intervening space. This transportation doesn’t ex - pend movement unless a rule tells you otherwise, and teleportation never provokes Opportunity"
    },
    {
     "name": "Attacks",
-    "text": "When you teleport, all the equipment you re wearing and carrying teleports with you. If you re touching another creature when you teleport, that creature doesn t teleport with you unless the tele - portation effect says otherwise. If the destination space of your teleportation is occupied by another creature or blocked by a solid obstacle, you instead appear in the nearest unoccu - pied space of your choice. The description of a teleportation effect tells you if you must see the teleportation s destination.Temporary Hit PointsTemporary Hit Points are granted by certain effects and act as a buffer against losing real"
+    "text": "When you teleport, all the equipment you’re wearing and carrying teleports with you. If you’re touching another creature when you teleport, that creature doesn’t teleport with you unless the tele - portation effect says otherwise. If the destination space of your teleportation is occupied by another creature or blocked by a solid obstacle, you instead appear in the nearest unoccu - pied space of your choice. The description of a teleportation effect tells you if you must see the teleportation’s destination.Temporary Hit PointsTemporary Hit Points are granted by certain effects and act as a buffer against losing real"
    },
    {
     "name": "Hit Points",
-    "text": "See also Playing the Game ( Damage and Healing ).TremorsenseA creature with Tremorsense can pinpoint the loca- tion of creatures and moving objects within a spe - - orsense and anything it is detecting are both in contact with the same surface (such as the ground, a wall, or a ceiling) or the same liquid. Tremorsense can t detect creatures or objects in the air, and it doesn t count as a form of sight.TruesightIf you have Truesight, your vision is enhanced vision pierces through the following:"
+    "text": "See also “Playing the Game” (“Damage and Healing”).TremorsenseA creature with Tremorsense can pinpoint the loca- tion of creatures and moving objects within a spe - - orsense and anything it is detecting are both in contact with the same surface (such as the ground, a wall, or a ceiling) or the same liquid. Tremorsense can’t detect creatures or objects in the air, and it doesn’t count as a form of sight.TruesightIf you have Truesight, your vision is enhanced vision pierces through the following:"
    },
    {
     "name": "Darkness",
@@ -1629,7 +1489,7 @@ const RAW = [
    },
    {
     "name": "Grapple",
-    "text": "The target must succeed on a Strength or Dexterity saving throw (it chooses which), or it has the Grappled condition. The DC for the saving throw and any escape attempts equals 8 plus your - ple is possible only if the target is no more than one size larger than you and if you have a hand free to grab it. See also"
+    "text": "The target must succeed on a Strength or Dexterity saving throw (it chooses which), or it has the Grappled condition. The DC for the saving throw and any escape attempts equals 8 plus your - ple is possible only if the target is no more than one size larger than you and if you have a hand free to grab it. See also “Grappling.”"
    },
    {
     "name": "Shove",
@@ -1637,11 +1497,11 @@ const RAW = [
    },
    {
     "name": "Inert",
-    "text": "You have the Incapacitated and Prone conditions, and you drop whatever you re holding. When this condition ends, you remain"
+    "text": "You have the Incapacitated and Prone conditions, and you drop whatever you’re holding. When this condition ends, you remain"
    },
    {
     "name": "Prone",
-    "text": "Speed 0. Your Speed is 0 and can t increase."
+    "text": "Speed 0. Your Speed is 0 and can’t increase."
    },
    {
     "name": "Attacks Affected",
@@ -1657,27 +1517,19 @@ const RAW = [
    },
    {
     "name": "Unaware",
-    "text": "You re unaware of your surroundings.Unoccupied SpaceA space is unoccupied if no creatures are in it and it You normally interact with an object while doing something else, such as when you draw a sword as part of the Attack action. When an object requires an action for its use, you take the Utilize action.VulnerabilityIf you have Vulnerability to a damage type, damage of that type is doubled against you. Vulnerability is applied only once to an instance of damage. See also Playing the Game ( Damage and Healing ).WeaponA weapon is an object that is in the Simple or Martial weapon category. See also Equipment ( Weapons ).Weapon AttackA weapon attack is an attack roll made with a weapon. See also Weapon. 192Gameplay ToolboxTravel PaceA group of characters can travel overland at a Nor - mal, Fast, or Slow pace, as described in Playing the"
-   },
-   {
-    "name": "Game",
-    "text": "During any journey stage, the predominant terrain determines the characters maximum travel pace, as shown in the Maximum Pace column of the Travel Terrain table. Certain factors can affect a group s travel pace.Good RoadsThe presence of a good road increases the group s maximum pace by one step (from Slow to Normal or from Normal to Fast).Slower TravelersThe group must move at a Slow pace if any group member s Speed is reduced to half or less of normal.Extended TravelCharacters can push themselves to travel for more than 8 hours per day, at the risk of tiring. At the end of each additional hour of travel beyond 8 hours, each character must succeed on a Constitution sav - ing throw or gain 1 Exhaustion level. The DC is 10 plus 1 for each hour past 8 hours.Special MovementIf a party can travel at a high Speed for an extended time, as with a spell such as Wind Walk or a magic item such as a Carpet of Flying , translate the party s Speed into travel rates using these rules:Miles per hour = Speed ÷ 10 Miles per day (Normal pace) = Miles per hour × number of hours traveled (typically 8) Fast pace = Slow pace = Miles per day × 2/3 (round down) - can move at a Fast pace regardless of the terrain.VehiclesCharacters traveling in a vehicle use the vehicle s speed in miles per hour (as shown in Equipment ) to determine their rate of travel, and they don t choose a travel pace.Creating a BackgroundA character s background represents what the char - acter did prior to becoming an adventurer. Creating a unique background or customizing an existing - paign or elements of your world. You can also create a background to help a player craft the story they have in mind for their character. This section describes, step by step, how you can create backgrounds tailored for your world and the heroes in it.1: Choose AbilitiesChoose three abilities that seem appropriate for the background:"
+    "text": "You’re unaware of your surroundings.Unoccupied SpaceA space is unoccupied if no creatures are in it and it You normally interact with an object while doing something else, such as when you draw a sword as part of the Attack action. When an object requires an action for its use, you take the Utilize action.VulnerabilityIf you have Vulnerability to a damage type, damage of that type is doubled against you. Vulnerability is applied only once to an instance of damage. See also “Playing the Game” (“Damage and Healing”).WeaponA weapon is an object that is in the Simple or Martial weapon category. See also “Equipment” (“Weapons”).Weapon AttackA weapon attack is an attack roll made with a weapon. See also “Weapon.” 192Gameplay ToolboxTravel PaceA group of characters can travel overland at a Nor - mal, Fast, or Slow pace, as described in “Playing the Game.” During any journey stage, the predominant terrain determines the characters’ maximum travel pace, as shown in the Maximum Pace column of the Travel Terrain table. Certain factors can affect a group’s travel pace.Good RoadsThe presence of a good road increases the group’s maximum pace by one step (from Slow to Normal or from Normal to Fast).Slower TravelersThe group must move at a Slow pace if any group member’s Speed is reduced to half or less of normal.Extended TravelCharacters can push themselves to travel for more than 8 hours per day, at the risk of tiring. At the end of each additional hour of travel beyond 8 hours, each character must succeed on a Constitution sav - ing throw or gain 1 Exhaustion level. The DC is 10 plus 1 for each hour past 8 hours.Special MovementIf a party can travel at a high Speed for an extended time, as with a spell such as Wind Walk or a magic item such as a Carpet of Flying , translate the party’s Speed into travel rates using these rules:Miles per hour = Speed ÷ 10 Miles per day (Normal pace) = Miles per hour × number of hours traveled (typically 8) Fast pace = Slow pace = Miles per day × 2/3 (round down) - can move at a Fast pace regardless of the terrain.VehiclesCharacters traveling in a vehicle use the vehicle’s speed in miles per hour (as shown in “Equipment”) to determine their rate of travel, and they don’t choose a travel pace.Creating a BackgroundA character’s background represents what the char - acter did prior to becoming an adventurer. Creating a unique background or customizing an existing - paign or elements of your world. You can also create a background to help a player craft the story they have in mind for their character. This section describes, step by step, how you can create backgrounds tailored for your world and the heroes in it.1: Choose AbilitiesChoose three abilities that seem appropriate for the background:"
    },
    {
     "name": "Strength or Dexterity",
-    "text": "These abilities are ideal for a background involving physical exertion. Constitution. This ability is ideal for a background that involves endurance or long hours of activity.Travel TerrainTerrain Maximum PaceEncounter Distance Foraging DC Navigation DC Search DC Arctic Fast* 6d6 × 10 feet 20 10 10 Coastal Normal 2d10 × 10 feet 10 5 15 Desert Normal 6d6 × 10 feet 20 10 10 Forest Normal 2d8 × 10 feet 10 15 15 Grassland Fast 6d6 × 10 feet 15 5 15 Hill Normal 2d10 × 10 feet 15 10 15 Mountain Slow 4d10 × 10 feet 20 15 20 Swamp Slow 2d8 × 10 feet 10 15 20 Underdark Normal 2d6 × 10 feet 20 10 20 Urban Normal 2d6 × 10 feet 20 15 15 Waterborne Special 6d6 × 10 feet 15 10 15*Appropriate equipment (such as skis) is necessary to keep up a Fast pace in Arctic terrain. Characters rate of travel while waterborne depends on the vehicle carrying them; see Vehicles. 193Intelligence or Wisdom. One or both abilities are ideal for a background that focuses on cerebral or spiritual matters. Charisma. This ability is ideal for a background that involves performance or social interaction.2: Choose a FeatChoose one feat from the Origin category. See Ori - gin Feats for examples of Origin feats.3: Choose Skill ProficienciesChoose two skills appropriate for the background. There needn t be a relationship between the skill scores it increases.4: Choose a Tool ProficiencyChoose one tool used in the practice of the back - ground or often associated with it.5: Choose EquipmentAssemble a package of equipment worth 50"
+    "text": "These abilities are ideal for a background involving physical exertion. Constitution. This ability is ideal for a background that involves endurance or long hours of activity.Travel TerrainTerrain Maximum PaceEncounter Distance Foraging DC Navigation DC Search DC Arctic Fast* 6d6 × 10 feet 20 10 10 Coastal Normal 2d10 × 10 feet 10 5 15 Desert Normal 6d6 × 10 feet 20 10 10 Forest Normal 2d8 × 10 feet 10 15 15 Grassland Fast 6d6 × 10 feet 15 5 15 Hill Normal 2d10 × 10 feet 15 10 15 Mountain Slow 4d10 × 10 feet 20 15 20 Swamp Slow 2d8 × 10 feet 10 15 20 Underdark Normal 2d6 × 10 feet 20 10 20 Urban Normal 2d6 × 10 feet 20 15 15 Waterborne Special†6d6 × 10 feet 15 10 15*Appropriate equipment (such as skis) is necessary to keep up a Fast pace in Arctic terrain.†Characters’ rate of travel while waterborne depends on the vehicle carrying them; see “Vehicles.” 193Intelligence or Wisdom. One or both abilities are ideal for a background that focuses on cerebral or spiritual matters. Charisma. This ability is ideal for a background that involves performance or social interaction.2: Choose a FeatChoose one feat from the Origin category. See “Ori - gin Feats” for examples of Origin feats.3: Choose Skill ProficienciesChoose two skills appropriate for the background. There needn’t be a relationship between the skill scores it increases.4: Choose a Tool ProficiencyChoose one tool used in the practice of the back - ground or often associated with it.5: Choose EquipmentAssemble a package of equipment worth 50"
    },
    {
     "name": "GP (in\n-\ncluding unspent gold)",
-    "text": "Don t include Martial weap - ons or armor, as characters get them from their class choices.Curses and Magical Contagions time or until it is ended by some means. A magical contagion is an adverse effect of magical origin that The following sections discuss curses and magical contagions in detail.CursesA curse typically takes one of the forms detailed below.Bestow CurseThe simplest curses are created by the Bestow Curse spell. The effects of such curses are limited and can be ended by the Remove Curse spell. Bestow Curse provides useful benchmarks for gauging the potency of other curses. A curse that lasts for 1 minute equates to a level 3 spell, while one that lasts until dispelled equates to a level 9 spell.Cursed CreaturesSome monsters are associated with curses, whether as part of their origins or due to their ability to spread curses werewolves being a prime example. You decide how a spell like Remove Curse affects a creature with accursed origins. For example, you might decide that a mummy was created through a curse and it can be destroyed permanently only by casting Remove Curse on its corpse.Cursed Magic ItemsCursed magic items are created deliberately or originate as the result of supernatural events. Such items are detailed in"
-   },
-   {
-    "name": "Magic Items",
-    "text": "Narrative CursesA curse might manifest during an adventure when a creature s violation of a taboo warrants supernat - tomb, or murdering an innocent. Such a curse can have any effects you design, or it might be a custom - ized version of another type of curse discussed in this section. A creature affected by such a curse should know why they re being punished and be able to learn how to end their curse, likely by symbolically righting the wrong they committed. How a spell like Remove Curse affects a curse that s part of your adventure is up to you the spell might merely sup - press the effects of the curse for a time. Regardless, narrative curses should feel like rare, potent magic rooted in the lore of your campaign.Environmental CursesSome locations are so suffused with evil that any - one who lingers there is burdened with a curse. Demonic Possession is one example of an environ - mental curse. Demonic Possession."
+    "text": "Don’t include Martial weap - ons or armor, as characters get them from their class choices.Curses and Magical Contagions time or until it is ended by some means. A magical contagion is an adverse effect of magical origin that The following sections discuss curses and magical contagions in detail.CursesA curse typically takes one of the forms detailed below.Bestow CurseThe simplest curses are created by the Bestow Curse spell. The effects of such curses are limited and can be ended by the Remove Curse spell. Bestow Curse provides useful benchmarks for gauging the potency of other curses. A curse that lasts for 1 minute equates to a level 3 spell, while one that lasts until dispelled equates to a level 9 spell.Cursed CreaturesSome monsters are associated with curses, whether as part of their origins or due to their ability to spread curses—werewolves being a prime example. You decide how a spell like Remove Curse affects a creature with accursed origins. For example, you might decide that a mummy was created through a curse and it can be destroyed permanently only by casting Remove Curse on its corpse.Cursed Magic ItemsCursed magic items are created deliberately or originate as the result of supernatural events. Such items are detailed in “Magic Items.”Narrative CursesA curse might manifest during an adventure when a creature’s violation of a taboo warrants supernat - tomb, or murdering an innocent. Such a curse can have any effects you design, or it might be a custom - ized version of another type of curse discussed in this section. A creature affected by such a curse should know why they’re being punished and be able to learn how to end their curse, likely by symbolically righting the wrong they committed. How a spell like Remove Curse affects a curse that’s part of your adventure is up to you—the spell might merely sup - press the effects of the curse for a time. Regardless, narrative curses should feel like rare, potent magic rooted in the lore of your campaign.Environmental CursesSome locations are so suffused with evil that any - one who lingers there is burdened with a curse. Demonic Possession is one example of an environ - mental curse. Demonic Possession."
    },
    {
     "name": "Demonic Possession",
-    "text": "Demonic Possession arises from the chaos and evil of the Abyss and commonly besets creatures that interact with demonic objects or linger in desecrated locations, where demonic spirits await victims. A creature that becomes the target of Demonic Possession must succeed on a DC 15 Charisma sav - ing throw or be possessed by a bodiless demonic entity. Whenever the possessed creature rolls a 1 on a D20 Test, the demonic entity takes control of the creature and determines the creature s behav - ior thereafter. At the end of each of the possessed creature s later turns, the creature makes a DC 15 Charisma saving throw, regaining control of itself on a success. - monic Possession makes a DC 15 Charisma saving throw. On a successful save, the effect ends on the creature. A Dispel Evil and Good spell or any magic that removes a curse also ends the effect on it. 194Magical ContagionsAlchemists, potion brewers, and areas of wild magic - tagions. An outbreak of such a contagion can form the basis of an adventure as characters search for a cure and try to stop the contagion s spread.Rest and RecuperationIf a creature infected with a magical contagion spends 3 days recuperating engaging in no creature makes a DC 15 Constitution saving throw at the end of the recuperation period. On a suc - cessful save, the creature has Advantage on saving next 24 hours.Example ContagionsThe following examples show how magical conta- gions can work. Feel free to alter the saving throw DCs, effects, and other characteristics of these con - tagions to suit your campaign.Cackle FeverMagical Contagion Cheaply made potions and elixirs are sometimes tainted by Cackle Fever, which affects Humanoids only (gnomes are strangely immune). A crea- ture suffers the following effects 1d4 days after infection:"
+    "text": "Demonic Possession arises from the chaos and evil of the Abyss and commonly besets creatures that interact with demonic objects or linger in desecrated locations, where demonic spirits await victims. A creature that becomes the target of Demonic Possession must succeed on a DC 15 Charisma sav - ing throw or be possessed by a bodiless demonic entity. Whenever the possessed creature rolls a 1 on a D20 Test, the demonic entity takes control of the creature and determines the creature’s behav - ior thereafter. At the end of each of the possessed creature’s later turns, the creature makes a DC 15 Charisma saving throw, regaining control of itself on a success. - monic Possession makes a DC 15 Charisma saving throw. On a successful save, the effect ends on the creature. A Dispel Evil and Good spell or any magic that removes a curse also ends the effect on it. 194Magical ContagionsAlchemists, potion brewers, and areas of wild magic - tagions. An outbreak of such a contagion can form the basis of an adventure as characters search for a cure and try to stop the contagion’s spread.Rest and RecuperationIf a creature infected with a magical contagion spends 3 days recuperating—engaging in no creature makes a DC 15 Constitution saving throw at the end of the recuperation period. On a suc - cessful save, the creature has Advantage on saving next 24 hours.Example ContagionsThe following examples show how magical conta- gions can work. Feel free to alter the saving throw DCs, effects, and other characteristics of these con - tagions to suit your campaign.Cackle FeverMagical Contagion Cheaply made potions and elixirs are sometimes tainted by Cackle Fever, which affects Humanoids only (gnomes are strangely immune). A crea- ture suffers the following effects 1d4 days after infection:"
    },
    {
     "name": "Fever",
@@ -1693,7 +1545,7 @@ const RAW = [
    },
    {
     "name": "Spreading the Contagion",
-    "text": "Any Humanoid (other than a gnome) that starts its turn within a 10-foot Emanation originating from a creature infected with Cackle Fever must succeed on a DC 10 Consti - tution saving throw or also become infected with the contagion. On a successful save, the Humanoid can t catch the contagion from that particular in - fected creature for the next 24 hours.Sewer PlagueMagical Contagion Fouled potions and alchemical waste can give rise to Sewer Plague, which incubates in sewers and refuse heaps and is sometimes transmitted by creatures that dwell in such areas, including otyu - ghs and rats. Any Humanoid that is wounded by a creature that carries the contagion or that comes succeed on a DC 11 Constitution saving throw or be - come infected with"
+    "text": "Any Humanoid (other than a gnome) that starts its turn within a 10-foot Emanation originating from a creature infected with Cackle Fever must succeed on a DC 10 Consti - tution saving throw or also become infected with the contagion. On a successful save, the Humanoid can’t catch the contagion from that particular in - fected creature for the next 24 hours.Sewer PlagueMagical Contagion Fouled potions and alchemical waste can give rise to Sewer Plague, which incubates in sewers and refuse heaps and is sometimes transmitted by creatures that dwell in such areas, including otyu - ghs and rats. Any Humanoid that is wounded by a creature that carries the contagion or that comes succeed on a DC 11 Constitution saving throw or be - come infected with"
    },
    {
     "name": "Sewer Plague",
@@ -1709,11 +1561,11 @@ const RAW = [
    },
    {
     "name": "Restlessness",
-    "text": "While the creature has any Exhaus - lost Hit Points nor reduces the creature s Exhaus - tion level."
+    "text": "While the creature has any Exhaus - lost Hit Points nor reduces the creature’s Exhaus - tion level."
    },
    {
     "name": "Fighting the Contagion",
-    "text": "Daily at dawn, an in - fected creature makes a DC 11 Constitution saving throw. On a failed save, the creature gains 1 Ex - haustion level as its fatigue worsens. On a success - ful save, the creature s Exhaustion level decreases by 1. If the creature s Exhaustion level is reduced to 0, the contagion ends on the creature.Sight RotMagical Contagion Any Beast or Humanoid that drinks water tainted by Sight Rot must succeed on a DC 15 Constitution saving throw or have the Blinded condition until the contagion ends."
+    "text": "Daily at dawn, an in - fected creature makes a DC 11 Constitution saving throw. On a failed save, the creature gains 1 Ex - haustion level as its fatigue worsens. On a success - ful save, the creature’s Exhaustion level decreases by 1. If the creature’s Exhaustion level is reduced to 0, the contagion ends on the creature.Sight RotMagical Contagion Any Beast or Humanoid that drinks water tainted by Sight Rot must succeed on a DC 15 Constitution saving throw or have the Blinded condition until the contagion ends."
    },
    {
     "name": "Fighting the Contagion",
@@ -1721,11 +1573,7 @@ const RAW = [
    },
    {
     "name": "Spreading the Contagion",
-    "text": "Any Humanoid that makes skin contact with a creature infected with Sight Rot must succeed on a DC 15 Constitution saving throw or also become infected with the con - tagion. On a successful save, the Humanoid can t catch the contagion from that particular infected creature for the next 24 hours. 195Environmental EffectsDeep WaterSwimming through deep water (more than 100 feet deep) presents additional challenges because of the water s pressure and cold temperature. After each hour of swimming in deep water, a creature that lacks a Swim Speed must succeed on a DC 10 Consti - tution saving throw or gain 1 Exhaustion level.Extreme ColdWhen the temperature is 0 degrees Fahrenheit or lower, a creature exposed to the extreme cold must succeed on a DC 10 Constitution saving throw at the end of each hour or gain 1 Exhaustion level. Creatures that have Resistance or Immunity to Cold damage automatically succeed on the save.Extreme HeatWhen the temperature is 100 degrees Fahrenheit or higher, a creature exposed to the extreme heat and without access to drinkable water must succeed on a Constitution saving throw at the end of each hour hour and increases by 1 for each additional hour. Creatures wearing Medium or Heavy armor have Disadvantage on the save. Creatures that have Re - sistance or Immunity to Fire damage automatically succeed on the save.Frigid WaterA creature can be immersed in frigid water for a number of minutes equal to its Constitution score before suffering any ill effects. Each additional minute spent in frigid water requires the creature to succeed on a DC 10 Constitution saving throw or gain 1 Exhaustion level. Creatures with Resistance or Immunity to Cold damage automatically suc - ceed on the save, as do creatures that are naturally adapted to living in ice-cold water.Heavy PrecipitationEverything within an area of heavy rain or heavy area have Disadvantage on all Wisdom (Perception) High AltitudeTraveling at altitudes of 10,000 feet or higher above sea level is taxing for most creatures because of the reduced amount of oxygen in the air. Each hour such a creature spends traveling at high altitude counts as 2 hours for the purpose of determining how long that creature can travel (see Travel Pace ). Creatures can become acclimated to a high alti - tude by spending 30 days or more at this elevation. Creatures can t become acclimated to elevations above 20,000 feet unless they are native to such environments.Slippery Ice or starts its turn there must succeed on a DC 10 Dexterity saving throw or have the Prone condition.Strong WindStrong wind imposes Disadvantage on ranged at - tack rolls with weapons. It also extinguishes open strong wind must land at the end of its turn or fall. A strong wind in a desert can create a sandstorm that imposes Disadvantage on Wisdom (Perception) checks.Thin IceThin ice has a weight tolerance of 3d10 × 10 pounds per 10-foot-square area. Whenever the total weight on an area of thin ice exceeds its tolerance, the ice in that area breaks. All creatures on broken ice fall through. Below the ice is frigid water (see Frigid Water above). 196Fear and Mental StressDue to the nature of their vocation, adventurers tend to be less susceptible to fear and mental stress terror from a bear or an apparition, adventurers are made of sterner stuff. That said, certain creatures and game effects can terrify or fray the mind of even the most stalwart adventurer. If you plan to use any of these rules, discuss them with your players at the start of the campaign.Fear EffectsWhenever the characters encounter something that is supernaturally frightful, use the Frightened con - dition as the baseline effect. Fear effects typically require a Wisdom saving throw, with a save DC based on how terrifying the situation is. The Sample Fear DCs table provides some examples.Sample Fear DCsExample Save DCWhen the characters open a sarcophagus, a harmless yet terrifying apparition appears. 10 A character triggers a magical trap that creates an illusory manifestation of that character s worst fears, visible only to that character. 15 A portal to the Abyss opens, revealing a nightmarish realm of torment and slaughter. 20Typically, a Frightened creature repeats the saving throw at the end of each of its turns, ending the ef - fect on itself on a success. At your discretion, a Frightened creature might be subject to other effects as long as the Frightened condition lasts. Consider these examples: The Frightened creature must take the Dash ac - tion on each of its turns and uses its movement to get farther away from the source of its fear. Attack rolls against the Frightened creature have"
-   },
-   {
-    "name": "Advantage",
-    "text": "The Frightened creature can do only one of the following on each of its turns: move, take an ac - tion, or take a Bonus Action.Mental Stress EffectsWhen a character is subjected to an effect that causes intense mental stress, Psychic damage is the best way to emulate that effect. The Sample Mental Stress Effects table provides a few examples of such effects, with suggested saving throw DCs and damage. Mental stress can usually be resisted with a successful Wisdom save, but sometimes an Intelligence or Charisma save is more appropriate. On a successful save, a character might take half as much damage instead of no damage, at your discretion.Sample Mental Stress EffectsExample Save DC Psychic DamageA character ingests a hallucinogenic substance that distorts the charac - ter s perception of reality. 10 1d6 that tears at the character s mind, threatening to shatter it. 15 3d6 the Far Realm until the end of that character s next turn. 20 9d6Prolonged EffectsExposure to mental stress can cause prolonged ef - fects. Consider the following possibilities."
+    "text": "Any Humanoid that makes skin contact with a creature infected with Sight Rot must succeed on a DC 15 Constitution saving throw or also become infected with the con - tagion. On a successful save, the Humanoid can’t catch the contagion from that particular infected creature for the next 24 hours. 195Environmental EffectsDeep WaterSwimming through deep water (more than 100 feet deep) presents additional challenges because of the water’s pressure and cold temperature. After each hour of swimming in deep water, a creature that lacks a Swim Speed must succeed on a DC 10 Consti - tution saving throw or gain 1 Exhaustion level.Extreme ColdWhen the temperature is 0 degrees Fahrenheit or lower, a creature exposed to the extreme cold must succeed on a DC 10 Constitution saving throw at the end of each hour or gain 1 Exhaustion level. Creatures that have Resistance or Immunity to Cold damage automatically succeed on the save.Extreme HeatWhen the temperature is 100 degrees Fahrenheit or higher, a creature exposed to the extreme heat and without access to drinkable water must succeed on a Constitution saving throw at the end of each hour hour and increases by 1 for each additional hour. Creatures wearing Medium or Heavy armor have Disadvantage on the save. Creatures that have Re - sistance or Immunity to Fire damage automatically succeed on the save.Frigid WaterA creature can be immersed in frigid water for a number of minutes equal to its Constitution score before suffering any ill effects. Each additional minute spent in frigid water requires the creature to succeed on a DC 10 Constitution saving throw or gain 1 Exhaustion level. Creatures with Resistance or Immunity to Cold damage automatically suc - ceed on the save, as do creatures that are naturally adapted to living in ice-cold water.Heavy PrecipitationEverything within an area of heavy rain or heavy area have Disadvantage on all Wisdom (Perception) High AltitudeTraveling at altitudes of 10,000 feet or higher above sea level is taxing for most creatures because of the reduced amount of oxygen in the air. Each hour such a creature spends traveling at high altitude counts as 2 hours for the purpose of determining how long that creature can travel (see “Travel Pace”). Creatures can become acclimated to a high alti - tude by spending 30 days or more at this elevation. Creatures can’t become acclimated to elevations above 20,000 feet unless they are native to such environments.Slippery Ice or starts its turn there must succeed on a DC 10 Dexterity saving throw or have the Prone condition.Strong WindStrong wind imposes Disadvantage on ranged at - tack rolls with weapons. It also extinguishes open strong wind must land at the end of its turn or fall. A strong wind in a desert can create a sandstorm that imposes Disadvantage on Wisdom (Perception) checks.Thin IceThin ice has a weight tolerance of 3d10 × 10 pounds per 10-foot-square area. Whenever the total weight on an area of thin ice exceeds its tolerance, the ice in that area breaks. All creatures on broken ice fall through. Below the ice is frigid water (see “Frigid Water” above). 196Fear and Mental StressDue to the nature of their vocation, adventurers tend to be less susceptible to fear and mental stress terror from a bear or an apparition, adventurers are made of sterner stuff. That said, certain creatures and game effects can terrify or fray the mind of even the most stalwart adventurer. If you plan to use any of these rules, discuss them with your players at the start of the campaign.Fear EffectsWhenever the characters encounter something that is supernaturally frightful, use the Frightened con - dition as the baseline effect. Fear effects typically require a Wisdom saving throw, with a save DC based on how terrifying the situation is. The Sample Fear DCs table provides some examples.Sample Fear DCsExample Save DCWhen the characters open a sarcophagus, a harmless yet terrifying apparition appears. 10 A character triggers a magical trap that creates an illusory manifestation of that character’s worst fears, visible only to that character. 15 A portal to the Abyss opens, revealing a nightmarish realm of torment and slaughter. 20Typically, a Frightened creature repeats the saving throw at the end of each of its turns, ending the ef - fect on itself on a success. At your discretion, a Frightened creature might be subject to other effects as long as the Frightened condition lasts. Consider these examples: • The Frightened creature must take the Dash ac - tion on each of its turns and uses its movement to get farther away from the source of its fear. • Attack rolls against the Frightened creature have Advantage. • The Frightened creature can do only one of the following on each of its turns: move, take an ac - tion, or take a Bonus Action.Mental Stress EffectsWhen a character is subjected to an effect that causes intense mental stress, Psychic damage is the best way to emulate that effect. The Sample Mental Stress Effects table provides a few examples of such effects, with suggested saving throw DCs and damage. Mental stress can usually be resisted with a successful Wisdom save, but sometimes an Intelligence or Charisma save is more appropriate. On a successful save, a character might take half as much damage instead of no damage, at your discretion.Sample Mental Stress EffectsExample Save DC Psychic DamageA character ingests a hallucinogenic substance that distorts the charac - ter’s perception of reality. 10 1d6 that tears at the character’s mind, threatening to shatter it. 15 3d6 the Far Realm until the end of that character’s next turn. 20 9d6Prolonged EffectsExposure to mental stress can cause prolonged ef - fects. Consider the following possibilities."
    },
    {
     "name": "Short-Term Effects",
@@ -1745,19 +1593,19 @@ const RAW = [
    },
    {
     "name": "Inhaled",
-    "text": "Poisonous powders and gases take effect when inhaled. Blowing the powder or releasing the gas subjects creatures in a 5-foot Cube to its effect. The resulting cloud dissipates immediately afterward. Holding one s breath is ineffective against inhaled poisons, as they affect nasal mem - branes, tear ducts, and other parts of the body. Injury."
+    "text": "Poisonous powders and gases take effect when inhaled. Blowing the powder or releasing the gas subjects creatures in a 5-foot Cube to its effect. The resulting cloud dissipates immediately afterward. Holding one’s breath is ineffective against inhaled poisons, as they affect nasal mem - branes, tear ducts, and other parts of the body. Injury."
    },
    {
     "name": "Injury",
-    "text": "Injury poison can be applied as a Bonus Action to a weapon, a piece of ammunition, or similar object. The poison remains potent until delivered through a wound or washed off. A crea- ture that takes Piercing or Slashing damage from an object coated with the poison is exposed to its effects.Purchasing PoisonIn some settings, laws prohibit the possession and use of poison, but an illicit dealer or unscrupulous apothecary might keep a hidden stash. Characters with criminal contacts might be able to acquire poi - son easily. Other characters might have to make ex - tensive inquiries and pay bribes before they acquire the poison they seek.Harvesting PoisonA character can attempt to harvest poison from a venomous creature that is dead or has the Incapaci - tated condition. The effort takes 1d6 minutes, after which the character makes a DC 20 Intelligence (Nature) check using a Poisoner s"
+    "text": "Injury poison can be applied as a Bonus Action to a weapon, a piece of ammunition, or similar object. The poison remains potent until delivered through a wound or washed off. A crea- ture that takes Piercing or Slashing damage from an object coated with the poison is exposed to its effects.Purchasing PoisonIn some settings, laws prohibit the possession and use of poison, but an illicit dealer or unscrupulous apothecary might keep a hidden stash. Characters with criminal contacts might be able to acquire poi - son easily. Other characters might have to make ex - tensive inquiries and pay bribes before they acquire the poison they seek.Harvesting PoisonA character can attempt to harvest poison from a venomous creature that is dead or has the Incapaci - tated condition. The effort takes 1d6 minutes, after which the character makes a DC 20 Intelligence (Nature) check using a"
    },
    {
-    "name": "Kit",
-    "text": "On a success - ful check, the character harvests enough poison for a single dose, and no additional poison can be harvested from that creature. On a failed check, the character is unable to extract any poison. If the character fails the check by 5 or more, the character is subjected to the creature s poison.Sample PoisonsExample poisons are detailed here in alphabetical order. Each poison s description includes the sug - gested price for a single dose of the poison, its type (contact, ingested, inhaled, or injury), and a descrip - tion of the poison s debilitating effects.Assassin s Blood (150 GP)Ingested Poison A creature subjected to Assassin s Blood makes a DC 10 Constitution saving throw. On a failed save, the creature takes 6 (1d12) Poison damage and has the Poisoned condition for 24 hours. On a successful save, the creature takes half as much damage only.Burnt Othur Fumes (500 GP)Inhaled Poison A creature subjected to Burnt Othur Fumes must succeed on a DC 13 Constitution saving throw or take 10 (3d6) Poison damage, and it must repeat the save at the start of each of its turns. On each succes - sive failed save, the creature takes 3 (1d6) Poison damage. After three successful saves, the poison ends.Crawler Mucus (200 GP)Contact Poison A creature subjected to Crawler Mucus must suc - ceed on a DC 13 Constitution saving throw or have the Poisoned condition for 1 minute. The creature also has the Paralyzed condition while Poisoned in this way. The creature repeats the save at the end of each of its turns, ending the effect on itself on a success.Essence of Ether (300 GP)Inhaled Poison A creature subjected to Essence of Ether must suc - ceed on a DC 15 Constitution saving throw or have the Poisoned condition for 8 hours. The creature also has the Unconscious condition while Poisoned in this way. The creature wakes up if it takes dam - age or if another creature takes an action to shake it awake.Malice (250 GP)Inhaled Poison A creature subjected to Malice must succeed on a DC 15 Constitution saving throw or have the Poi - soned condition for 1 hour. The creature also has the Blinded condition while Poisoned in this way.Midnight Tears (1,500 GP)Ingested Poison A creature that ingests Midnight Tears suffers no effect until the stroke of midnight. Any effect that 198ends the Poisoned condition neutralizes this poi - son. If the poison hasn t been neutralized before midnight, the creature makes a DC 17 Constitution saving throw, taking 31 (9d6) Poison damage on a failed save or half as much damage on a successful one.Oil of Taggit (400 GP)Contact Poison A creature subjected to Oil of Taggit must succeed on a DC 13 Constitution saving throw or have the Poisoned condition for 24 hours. The creature also has the Unconscious condition while Poisoned in this way. It wakes up if it takes damage.Pale Tincture (250 GP)Ingested Poison A creature subjected to Pale Tincture must succeed on a DC 16 Constitution saving throw or take 3 (1d6) Poison damage and have the Poisoned condi - tion. The Poisoned creature repeats the save every 24 hours, taking 3 (1d6) Poison damage on a failed save. The damage the poison deals can t be healed by any means while the creature remains"
+    "name": "Poisoner’s Kit",
+    "text": "On a success - ful check, the character harvests enough poison for a single dose, and no additional poison can be harvested from that creature. On a failed check, the character is unable to extract any poison. If the character fails the check by 5 or more, the character is subjected to the creature’s poison.Sample PoisonsExample poisons are detailed here in alphabetical order. Each poison’s description includes the sug - gested price for a single dose of the poison, its type (contact, ingested, inhaled, or injury), and a descrip - tion of the poison’s debilitating effects.Assassin’s Blood (150 GP)Ingested Poison A creature subjected to Assassin’s Blood makes a DC 10 Constitution saving throw. On a failed save, the creature takes 6 (1d12) Poison damage and has the Poisoned condition for 24 hours. On a successful save, the creature takes half as much damage only.Burnt Othur Fumes (500 GP)Inhaled Poison A creature subjected to Burnt Othur Fumes must succeed on a DC 13 Constitution saving throw or take 10 (3d6) Poison damage, and it must repeat the save at the start of each of its turns. On each succes - sive failed save, the creature takes 3 (1d6) Poison damage. After three successful saves, the poison ends.Crawler Mucus (200 GP)Contact Poison A creature subjected to Crawler Mucus must suc - ceed on a DC 13 Constitution saving throw or have the Poisoned condition for 1 minute. The creature also has the Paralyzed condition while Poisoned in this way. The creature repeats the save at the end of each of its turns, ending the effect on itself on a success.Essence of Ether (300 GP)Inhaled Poison A creature subjected to Essence of Ether must suc - ceed on a DC 15 Constitution saving throw or have the Poisoned condition for 8 hours. The creature also has the Unconscious condition while Poisoned in this way. The creature wakes up if it takes dam - age or if another creature takes an action to shake it awake.Malice (250 GP)Inhaled Poison A creature subjected to Malice must succeed on a DC 15 Constitution saving throw or have the Poi - soned condition for 1 hour. The creature also has the Blinded condition while Poisoned in this way.Midnight Tears (1,500 GP)Ingested Poison A creature that ingests Midnight Tears suffers no effect until the stroke of midnight. Any effect that 198ends the Poisoned condition neutralizes this poi - son. If the poison hasn’t been neutralized before midnight, the creature makes a DC 17 Constitution saving throw, taking 31 (9d6) Poison damage on a failed save or half as much damage on a successful one.Oil of Taggit (400 GP)Contact Poison A creature subjected to Oil of Taggit must succeed on a DC 13 Constitution saving throw or have the Poisoned condition for 24 hours. The creature also has the Unconscious condition while Poisoned in this way. It wakes up if it takes damage.Pale Tincture (250 GP)Ingested Poison A creature subjected to Pale Tincture must succeed on a DC 16 Constitution saving throw or take 3 (1d6) Poison damage and have the Poisoned condi - tion. The Poisoned creature repeats the save every 24 hours, taking 3 (1d6) Poison damage on a failed save. The damage the poison deals can’t be healed by any means while the creature remains"
    },
    {
     "name": "Poisoned",
-    "text": "After seven successful saves against the poison, the creature is no longer Poisoned.Purple Worm Poison (2,000 GP)Injury Poison A creature subjected to Purple Worm Poison makes a DC 21 Constitution saving throw, taking 35 (10d6) Poison damage on a failed save or half as much dam - age on a successful one.Serpent Venom (200 GP)Injury Poison A creature subjected to Serpent Venom must suc - ceed on a DC 11 Constitution saving throw, taking 10 (3d6) Poison damage on a failed save or half as much damage on a successful one.Spider s Sting (200 GP)Injury Poison A creature subjected to Spider s Sting must succeed on a DC 13 Constitution saving throw or have the Poisoned condition for 1 hour. If the creature fails the save by 5 or more, the creature also has the Un - conscious condition while Poisoned in this way. The creature wakes up if it takes damage or if another creature takes an action to shake it awake.Torpor (600 GP)Ingested Poison A creature subjected to Torpor poison must succeed on a DC 15 Constitution saving throw or have the Poisoned condition for 4d6 hours. The creature s Speed is halved while the creature is Poisoned in this way.Truth Serum (150 GP)Ingested Poison A creature subjected to Truth Serum must succeed on a DC 11 Constitution saving throw or have the Poisoned condition for 1 hour. The Poisoned crea - ture can t knowingly communicate a lie.Wyvern Poison (1,200 GP)Injury Poison A creature subjected to Wyvern Poison makes a DC 14 Constitution saving throw, taking 24 (7d6) Poi - son damage on a failed save or half as much damage on a successful one. 199TrapsTraps should be used sparingly, lest they lose their charm. A hidden pit can be a fun surprise, but too many traps in an adventure can lead players to be - come overly cautious, which slows down the game. skilled characters can overcome in a short amount of time or deadly puzzles that require quick think - ing and teamwork to overcome. Traps that are un - detectable and inescapable are rarely fun.Parts of a TrapThe description of a trap includes the following parts after the trap s name:"
+    "text": "After seven successful saves against the poison, the creature is no longer Poisoned.Purple Worm Poison (2,000 GP)Injury Poison A creature subjected to Purple Worm Poison makes a DC 21 Constitution saving throw, taking 35 (10d6) Poison damage on a failed save or half as much dam - age on a successful one.Serpent Venom (200 GP)Injury Poison A creature subjected to Serpent Venom must suc - ceed on a DC 11 Constitution saving throw, taking 10 (3d6) Poison damage on a failed save or half as much damage on a successful one.Spider’s Sting (200 GP)Injury Poison A creature subjected to Spider’s Sting must succeed on a DC 13 Constitution saving throw or have the Poisoned condition for 1 hour. If the creature fails the save by 5 or more, the creature also has the Un - conscious condition while Poisoned in this way. The creature wakes up if it takes damage or if another creature takes an action to shake it awake.Torpor (600 GP)Ingested Poison A creature subjected to Torpor poison must succeed on a DC 15 Constitution saving throw or have the Poisoned condition for 4d6 hours. The creature’s Speed is halved while the creature is Poisoned in this way.Truth Serum (150 GP)Ingested Poison A creature subjected to Truth Serum must succeed on a DC 11 Constitution saving throw or have the Poisoned condition for 1 hour. The Poisoned crea - ture can’t knowingly communicate a lie.Wyvern Poison (1,200 GP)Injury Poison A creature subjected to Wyvern Poison makes a DC 14 Constitution saving throw, taking 24 (7d6) Poi - son damage on a failed save or half as much damage on a successful one. 199TrapsTraps should be used sparingly, lest they lose their charm. A hidden pit can be a fun surprise, but too many traps in an adventure can lead players to be - come overly cautious, which slows down the game. skilled characters can overcome in a short amount of time or deadly puzzles that require quick think - ing and teamwork to overcome. Traps that are un - detectable and inescapable are rarely fun.Parts of a TrapThe description of a trap includes the following parts after the trap’s name:"
    },
    {
     "name": "Severity and Levels",
@@ -1769,7 +1617,7 @@ const RAW = [
    },
    {
     "name": "Duration",
-    "text": "Some traps have durations expressed in rounds, minutes, or hours. Others specify that their effects last until the trap is destroyed or dispelled. If a trap s duration is instantaneous, its effect is resolved instantly. If a trap resets after activating, that fact is noted in this entry. A trap is otherwise inert after activation. Use caution when introducing a trap to characters of a level lower than the trap s level range. A trap that is a nuisance at one level range could be deadly to characters of a lower level range.Example TrapsTraps are presented in alphabetical order.Collapsing RoofDeadly Trap (Levels 1 4)Trigger: A creature crosses a trip wire Duration: InstantaneousThis trap uses a trip wire to collapse an unstable section of ceiling. The trip wire is 3 inches off the ground and stretches between two weak supports that topple when the trip wire is pulled. causes the supports to topple and the unstable sec - tion of ceiling to collapse. Each creature beneath the unstable section of ceiling must succeed on a DC 13 Dexterity saving throw, taking 11 (2d10) Bludgeon - ing damage on a failed save or half as much damage on a successful one. Rubble from the collapse turns"
+    "text": "Some traps have durations expressed in rounds, minutes, or hours. Others specify that their effects last until the trap is destroyed or dispelled. If a trap’s duration is instantaneous, its effect is resolved instantly. If a trap resets after activating, that fact is noted in this entry. A trap is otherwise inert after activation. Use caution when introducing a trap to characters of a level lower than the trap’s level range. A trap that is a nuisance at one level range could be deadly to characters of a lower level range.Example TrapsTraps are presented in alphabetical order.Collapsing RoofDeadly Trap (Levels 1–4)Trigger: A creature crosses a trip wire Duration: InstantaneousThis trap uses a trip wire to collapse an unstable section of ceiling. The trip wire is 3 inches off the ground and stretches between two weak supports that topple when the trip wire is pulled. causes the supports to topple and the unstable sec - tion of ceiling to collapse. Each creature beneath the unstable section of ceiling must succeed on a DC 13 Dexterity saving throw, taking 11 (2d10) Bludgeon - ing damage on a failed save or half as much damage on a successful one. Rubble from the collapse turns"
    },
    {
     "name": "Detect and Disarm",
@@ -1777,7 +1625,7 @@ const RAW = [
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing the damage and the save DC, as shown in the following table. Levels Bludgeoning Damage Save DC5 10 22 (4d10) 15 11 16 55 (10d10) 17 17 20 99 (18d10) 19Falling NetNuisance Trap (Levels 1 4)Trigger: A creature crosses a trip wire Duration: InstantaneousA falling net trap uses a trip wire to release a weighted, 10-foot-square Net suspended from the ceiling. The trip wire is 3 inches off the ground and stretches between two columns or trees. causes the Net to fall on it. The target must suc - ceed on a DC 10 Dexterity saving throw or have the Restrained condition until it escapes. The target succeeds automatically if it s Huge or larger. A crea- ture can take an action to make a DC 10 Strength (Athletics) check, freeing itself or another creature within its reach from the Net on a successful check."
+    "text": "You can scale the trap for higher levels by increasing the damage and the save DC, as shown in the following table. Levels Bludgeoning Damage Save DC5–10 22 (4d10) 15 11–16 55 (10d10) 17 17–20 99 (18d10) 19Falling NetNuisance Trap (Levels 1–4)Trigger: A creature crosses a trip wire Duration: InstantaneousA falling net trap uses a trip wire to release a weighted, 10-foot-square Net suspended from the ceiling. The trip wire is 3 inches off the ground and stretches between two columns or trees. causes the Net to fall on it. The target must suc - ceed on a DC 10 Dexterity saving throw or have the Restrained condition until it escapes. The target succeeds automatically if it’s Huge or larger. A crea- ture can take an action to make a DC 10 Strength (Athletics) check, freeing itself or another creature within its reach from the Net on a successful check."
    },
    {
     "name": "Detect and Disarm",
@@ -1785,15 +1633,15 @@ const RAW = [
    },
    {
     "name": "Destroy the Net",
-    "text": "Reducing the Net to 0 Hit Points frees any creature trapped in it (see Adventuring Gear for the Net s statistics)."
+    "text": "Reducing the Net to 0 Hit Points frees any creature trapped in it (see “Adventuring Gear” for the Net’s statistics)."
    },
    {
     "name": "Set the Trap",
-    "text": "A creature that has Thieves Tools and all the trap s components (including a Net) can try to set a falling net trap, doing so with a success - ful DC 13 Dexterity (Sleight of Hand) check. Each attempt to set this trap takes 10 minutes."
+    "text": "A creature that has Thieves’ Tools and all the trap’s components (including a Net) can try to set a falling net trap, doing so with a success - ful DC 13 Dexterity (Sleight of Hand) check. Each attempt to set this trap takes 10 minutes."
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing the weight of the Net, which increases the save DC and the DC of the Strength (Athletics) check as follows: DC 12 at levels 5 10, DC 14 at levels 11 16, or DC 16 at levels 17 20. Fire-Casting StatueDeadly Trap (Levels 1 4)Trigger: A creature moves onto a pressure plate 200Duration: Instantaneous, and the trap resets at the start of the next turnWhen a creature moves onto this trap s pressure there, a nearby statue exhales a 15-foot Cone of such as a dragon or a wizard. Each creature in the Cone must succeed on a DC 15 Dexterity saving throw, taking 11 (2d10) Fire damage on a failed save or half as much damage on a successful one."
+    "text": "You can scale the trap for higher levels by increasing the weight of the Net, which increases the save DC and the DC of the Strength (Athletics) check as follows: DC 12 at levels 5–10, DC 14 at levels 11–16, or DC 16 at levels 17–20. Fire-Casting StatueDeadly Trap (Levels 1–4)Trigger: A creature moves onto a pressure plate 200Duration: Instantaneous, and the trap resets at the start of the next turnWhen a creature moves onto this trap’s pressure there, a nearby statue exhales a 15-foot Cone of such as a dragon or a wizard. Each creature in the Cone must succeed on a DC 15 Dexterity saving throw, taking 11 (2d10) Fire damage on a failed save or half as much damage on a successful one."
    },
    {
     "name": "Detect and Disarm",
@@ -1801,19 +1649,19 @@ const RAW = [
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing the damage and the area of ef - fect, as shown in the following table.Levels Fire Damage Area of Effect5 10 22 (4d10) 30-foot Cone 11 16 55 (10d10) 60-foot Cone 17 20 99 (18d10) 120-foot ConeHidden PitNuisance Trap (Levels 1 4)Trigger: A creature moves onto the pit s lid Duration: InstantaneousThis 10-foot-deep pit has a hinged lid constructed When a creature moves onto the lid, it swings open like a trapdoor, causing the creature to fall into the pit. The lid remains open thereafter. A creature that falls into the pit takes 3 (1d6) Bludgeoning damage from the fall."
+    "text": "You can scale the trap for higher levels by increasing the damage and the area of ef - fect, as shown in the following table.Levels Fire Damage Area of Effect5–10 22 (4d10) 30-foot Cone 11–16 55 (10d10) 60-foot Cone 17–20 99 (18d10) 120-foot ConeHidden PitNuisance Trap (Levels 1–4)Trigger: A creature moves onto the pit’s lid Duration: InstantaneousThis 10-foot-deep pit has a hinged lid constructed When a creature moves onto the lid, it swings open like a trapdoor, causing the creature to fall into the pit. The lid remains open thereafter. A creature that falls into the pit takes 3 (1d6) Bludgeoning damage from the fall."
    },
    {
     "name": "Detect and Disarm",
-    "text": "As a Study action, a creature pit s lid and make a DC 15 Intelligence (Investiga- tion) check, detecting the pit on a successful check. Once the pit is detected, an Iron Spike or a similar object can be wedged between the pit s lid and the thereby making it safe to cross. The cover can also be held shut using Arcane Lock or similar magic."
+    "text": "As a Study action, a creature pit’s lid and make a DC 15 Intelligence (Investiga- tion) check, detecting the pit on a successful check. Once the pit is detected, an Iron Spike or a similar object can be wedged between the pit’s lid and the thereby making it safe to cross. The cover can also be held shut using Arcane Lock or similar magic."
    },
    {
     "name": "Escape",
-    "text": "A creature needs a Climb Speed, climbing gear, or magic such as Spider Climb to scale the pit s smooth walls. You can make the pit easier to escape by adding cracks in the walls big enough to serve as handholds and footholds."
+    "text": "A creature needs a Climb Speed, climbing gear, or magic such as Spider Climb to scale the pit’s smooth walls. You can make the pit easier to escape by adding cracks in the walls big enough to serve as handholds and footholds."
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing the pit s depth and damage, as shown in the following table. Levels Pit Depth Bludgeoning Damage5 10 30 feet 10 (3d6) 11 16 60 feet 21 (6d6) 17 20 120 feet 42 (12d6)Poisoned DartsDeadly Trap (Levels 1 4)Trigger: A creature moves onto a pressure plate Duration: Instantaneous, and the trap resets at the start of the next turn if it has activated fewer than three timesWhen a creature moves onto this trap s pressure shoot from tubes embedded in the surrounding walls. The holes that house these tubes are ob - scured by dust and cobwebs or skillfully hidden amid bas-reliefs, murals, or frescoes. Each creature in the darts path must succeed on a DC 13 Dexterity saving throw or be struck by 1d3 darts, taking 3 (1d6) Poison damage per dart."
+    "text": "You can scale the trap for higher levels by increasing the pit’s depth and damage, as shown in the following table. Levels Pit Depth Bludgeoning Damage5–10 30 feet 10 (3d6) 11–16 60 feet 21 (6d6) 17–20 120 feet 42 (12d6)Poisoned DartsDeadly Trap (Levels 1–4)Trigger: A creature moves onto a pressure plate Duration: Instantaneous, and the trap resets at the start of the next turn if it has activated fewer than three timesWhen a creature moves onto this trap’s pressure shoot from tubes embedded in the surrounding walls. The holes that house these tubes are ob - scured by dust and cobwebs or skillfully hidden amid bas-reliefs, murals, or frescoes. Each creature in the darts’ path must succeed on a DC 13 Dexterity saving throw or be struck by 1d3 darts, taking 3 (1d6) Poison damage per dart."
    },
    {
     "name": "Detect and Disarm",
@@ -1821,11 +1669,11 @@ const RAW = [
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing each dart s Poison damage as follows: 7 (2d6) at levels 5 10, 14 (4d6) at levels 11 16, or 24 (7d6) at levels 17 20.Poisoned NeedleNuisance Trap (Levels 1 4)Trigger: A creature opens the trap s lock improperly or fails to disarm the trap Duration: InstantaneousA poisoned needle is hidden in a lock. When a crea- ture opens the lock with any object other than the proper key, the needle springs out and stabs the creature. The creature makes a DC 11 Constitution saving throw. On a failed save, the creature takes 5 (1d10) Poison damage and has the Poisoned 201condition for 1 hour. On a successful save, the crea- ture takes half as much damage only."
+    "text": "You can scale the trap for higher levels by increasing each dart’s Poison damage as follows: 7 (2d6) at levels 5–10, 14 (4d6) at levels 11–16, or 24 (7d6) at levels 17–20.Poisoned NeedleNuisance Trap (Levels 1–4)Trigger: A creature opens the trap’s lock improperly or fails to disarm the trap Duration: InstantaneousA poisoned needle is hidden in a lock. When a crea- ture opens the lock with any object other than the proper key, the needle springs out and stabs the creature. The creature makes a DC 11 Constitution saving throw. On a failed save, the creature takes 5 (1d10) Poison damage and has the Poisoned 201condition for 1 hour. On a successful save, the crea- ture takes half as much damage only."
    },
    {
     "name": "Avoid",
-    "text": "The trap doesn t trigger if the lock is opened using a Knock spell or similar magic."
+    "text": "The trap doesn’t trigger if the lock is opened using a Knock spell or similar magic."
    },
    {
     "name": "Detect and Disarm",
@@ -1833,27 +1681,27 @@ const RAW = [
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing the damage and the save DC, as shown in the following table. Levels Poison Damage Save DC5 10 11 (2d10) 13 11 16 22 (4d10) 15 17 20 55 (10d10) 17Rolling StoneDeadly Trap (Levels 11 16) or Nuisance Trap (Levels 17 20)Trigger: A creature moves onto a pressure plate Duration: Until the stone stops rollingWhen a creature moves onto a hidden pressure plate, a 5-foot-radius orb of solid stone is released from a secret compartment and begins to roll. The stone and all creatures nearby roll Initiative; the stone gets a +8 bonus on its Initiative roll. On its turn, the stone moves 60 feet in one direc - tion, changing course if redirected by an obstacle. The stone can move through creatures spaces, and creatures can move through the stone s space, or a creature enters the stone s space while the stone is rolling, that creature must succeed on a DC 15 Dexterity saving throw or take 55 (10d10) Blud - geoning damage and have the Prone condition. The stone stops when it hits a wall or similar barrier. It can t go around corners, but creative dungeon builders incorporate curving turns into nearby passages that allow the stone to keep moving."
+    "text": "You can scale the trap for higher levels by increasing the damage and the save DC, as shown in the following table. Levels Poison Damage Save DC5–10 11 (2d10) 13 11–16 22 (4d10) 15 17–20 55 (10d10) 17Rolling StoneDeadly Trap (Levels 11–16) or Nuisance Trap (Levels 17–20)Trigger: A creature moves onto a pressure plate Duration: Until the stone stops rollingWhen a creature moves onto a hidden pressure plate, a 5-foot-radius orb of solid stone is released from a secret compartment and begins to roll. The stone and all creatures nearby roll Initiative; the stone gets a +8 bonus on its Initiative roll. On its turn, the stone moves 60 feet in one direc - tion, changing course if redirected by an obstacle. The stone can move through creatures’ spaces, and creatures can move through the stone’s space, or a creature enters the stone’s space while the stone is rolling, that creature must succeed on a DC 15 Dexterity saving throw or take 55 (10d10) Blud - geoning damage and have the Prone condition. The stone stops when it hits a wall or similar barrier. It can’t go around corners, but creative dungeon builders incorporate curving turns into nearby passages that allow the stone to keep moving."
    },
    {
     "name": "Detect and Disarm",
-    "text": "As a Study action, a creature pressure plate and make a DC 15 Intelligence (In - vestigation) check, deducing the pressure plate s function on a successful check. Wedging an Iron Spike or a similar object under the pressure plate prevents the trap from triggering. Destroy the Stone. that has AC 17, HP 100, a Damage Threshold of 10, and Immunity to Poison and Psychic damage."
+    "text": "As a Study action, a creature pressure plate and make a DC 15 Intelligence (In - vestigation) check, deducing the pressure plate’s function on a successful check. Wedging an Iron Spike or a similar object under the pressure plate prevents the trap from triggering. Destroy the Stone. that has AC 17, HP 100, a Damage Threshold of 10, and Immunity to Poison and Psychic damage."
    },
    {
     "name": "Slow the Stone",
-    "text": "As an action, a creature can try to slow down the stone with a DC 20 Strength (Athlet - ics) check. If the check is successful, the distance the stone moves on its turn is reduced by 15 feet. If that distance drops to 0, it stops moving and is no longer a threat.Spiked PitDeadly Trap (Levels 1 4)Trigger: A creature moves onto the pit s lid Duration: InstantaneousA 10-foot-deep pit has a hinged lid constructed from a creature moves onto the lid, it swings open like a trapdoor, causing the creature to fall into the pit, which has sharpened wooden or metal spikes at the bottom. The lid remains open thereafter. A creature that falls into the pit lands at the bottom and takes 3 (1d6) Bludgeoning damage from the fall plus 9 (2d8) Piercing damage from the spikes."
+    "text": "As an action, a creature can try to slow down the stone with a DC 20 Strength (Athlet - ics) check. If the check is successful, the distance the stone moves on its turn is reduced by 15 feet. If that distance drops to 0, it stops moving and is no longer a threat.Spiked PitDeadly Trap (Levels 1–4)Trigger: A creature moves onto the pit’s lid Duration: InstantaneousA 10-foot-deep pit has a hinged lid constructed from a creature moves onto the lid, it swings open like a trapdoor, causing the creature to fall into the pit, which has sharpened wooden or metal spikes at the bottom. The lid remains open thereafter. A creature that falls into the pit lands at the bottom and takes 3 (1d6) Bludgeoning damage from the fall plus 9 (2d8) Piercing damage from the spikes."
    },
    {
     "name": "Detect and Disarm",
-    "text": "As a Study action, a creature lid and make a DC 15 Intelligence (Investigation) check, detecting the pit on a successful check. Once the hidden pit is detected, an Iron Spike or a similar object can be wedged between the pit s lid and the thereby making it safe to cross. The cover can also be held shut using an Arcane Lock spell or similar magic."
+    "text": "As a Study action, a creature lid and make a DC 15 Intelligence (Investigation) check, detecting the pit on a successful check. Once the hidden pit is detected, an Iron Spike or a similar object can be wedged between the pit’s lid and the thereby making it safe to cross. The cover can also be held shut using an Arcane Lock spell or similar magic."
    },
    {
     "name": "Escape",
-    "text": "A creature needs a Climb Speed, climbing gear, or magic such as a Spider Climb spell to scale the pit s smooth walls. You can make the pit easier to escape by adding cracks in the walls big enough to serve as handholds and footholds."
+    "text": "A creature needs a Climb Speed, climbing gear, or magic such as a Spider Climb spell to scale the pit’s smooth walls. You can make the pit easier to escape by adding cracks in the walls big enough to serve as handholds and footholds."
    },
    {
     "name": "At Higher Levels",
-    "text": "You can scale the trap for higher levels by increasing the pit s depth and damage, as shown in the following table. Levels Pit Depth Damage5 10 30 feet 10 (3d6) Bludgeoning plus 13 (3d8) Piercing 11 16 60 feet 21 (6d6) Bludgeoning plus 36 (8d8) Piercing 17 20 120 feet 42 (12d6) Bludgeoning plus 57 (13d8) Piercing 202Combat EncountersThe following features can make a combat encoun - ter more interesting or challenging:"
+    "text": "You can scale the trap for higher levels by increasing the pit’s depth and damage, as shown in the following table. Levels Pit Depth Damage5–10 30 feet 10 (3d6) Bludgeoning plus 13 (3d8) Piercing 11–16 60 feet 21 (6d6) Bludgeoning plus 36 (8d8) Piercing 17–20 120 feet 42 (12d6) Bludgeoning plus 57 (13d8) Piercing 202Combat EncountersThe following features can make a combat encoun - ter more interesting or challenging:"
    },
    {
     "name": "Changes in Elevation",
@@ -1865,31 +1713,27 @@ const RAW = [
    },
    {
     "name": "Mixed Monster Groups",
-    "text": "When different types of monsters work together, they can combine their abilities just like characters with differ - ent classes and origins. A diverse force is more powerful."
+    "text": "When different types of monsters work together, they can combine their abilities—just like characters with differ - ent classes and origins. A diverse force is more powerful."
    },
    {
     "name": "Reasons to Move",
-    "text": "Use features that encourage characters and their enemies to move around, such as chandeliers, kegs of gunpowder or oil, and rolling stone traps.Combat Encounter DifficultyUse the following guidelines to create a combat en - Three categories describe the range of encounter likely to have one or two scary moments for the players, but their characters should emerge vic - torious with no casualties. One or more of them might need to use healing resources, however. As a rough guideline, a single monster generally four characters whose level equals the monster s"
+    "text": "Use features that encourage characters and their enemies to move around, such as chandeliers, kegs of gunpowder or oil, and rolling stone traps.Combat Encounter DifficultyUse the following guidelines to create a combat en - Three categories describe the range of encounter likely to have one or two scary moments for the players, but their characters should emerge vic - torious with no casualties. One or more of them might need to use healing resources, however. As a rough guideline, a single monster generally four characters whose level equals the monster’s"
    },
    {
     "name": "Challenge Rating",
-    "text": "Absent healing and other re - go badly for the adventurers. Weaker characters chance that one or more characters might die. be lethal for one or more characters. To survive it, the characters will need smart tactics, quick thinking, and maybe even a little luck.Step 2: Determine Your XP BudgetUsing the XP Budget per Character table, cross-ref - erence the party s level with the desired encounter number of characters in the party to get your XP budget for the encounter.XP Budget per CharacterParty s Level Low Moderate High1 50 75 100 2 100 150 200 3 150 225 400 4 250 375 500 5 500 750 1,100 6 600 1,000 1,400 7 750 1,300 1,700 8 1,000 1,700 2,100 9 1,300 2,000 2,600 10 1,600 2,300 3,100 11 1,900 2,900 4,100 12 2,200 3,700 4,700 13 2,600 4,200 5,400 14 2,900 4,900 6,200 15 3,300 5,400 7,800 16 3,800 6,100 9,800 17 4,500 7,200 11,700 18 5,000 8,700 14,200 19 5,500 10,700 17,200 20 6,400 13,200 22,000Step 3: Spend Your BudgetEvery creature has an XP value in its stat block. When you add a creature to your combat encounter, deduct its XP from your XP budget to determine how many XP you have left to spend. Spend as much of your XP budget as you can without going over. It s OK if you have a few unspent XP left over. Examples are given below: Example 1. 1 characters has an XP budget of 50 × 4, for a total of 200"
+    "text": "Absent healing and other re - go badly for the adventurers. Weaker characters chance that one or more characters might die. be lethal for one or more characters. To survive it, the characters will need smart tactics, quick thinking, and maybe even a little luck.Step 2: Determine Your XP BudgetUsing the XP Budget per Character table, cross-ref - erence the party’s level with the desired encounter number of characters in the party to get your XP budget for the encounter.XP Budget per CharacterParty’s Level Low Moderate High1 50 75 100 2 100 150 200 3 150 225 400 4 250 375 500 5 500 750 1,100 6 600 1,000 1,400 7 750 1,300 1,700 8 1,000 1,700 2,100 9 1,300 2,000 2,600 10 1,600 2,300 3,100 11 1,900 2,900 4,100 12 2,200 3,700 4,700 13 2,600 4,200 5,400 14 2,900 4,900 6,200 15 3,300 5,400 7,800 16 3,800 6,100 9,800 17 4,500 7,200 11,700 18 5,000 8,700 14,200 19 5,500 10,700 17,200 20 6,400 13,200 22,000Step 3: Spend Your BudgetEvery creature has an XP value in its stat block. When you add a creature to your combat encounter, deduct its XP from your XP budget to determine how many XP you have left to spend. Spend as much of your XP budget as you can without going over. It’s OK if you have a few unspent XP left over. Examples are given below: Example 1. 1 characters has an XP budget of 50 × 4, for a total of 200"
    },
    {
     "name": "XP",
-    "text": "With that, you could build any of the fol - lowing encounters: 1 Bugbear Warrior (200 XP) 2 Giant Wasps (100 XP each), for 200 XP total 6 Giant Rats (25 XP each), for 150 XP total Example 2. for a total of 1,125"
+    "text": "With that, you could build any of the fol - lowing encounters: • 1 Bugbear Warrior (200 XP) • 2 Giant Wasps (100 XP each), for 200 XP total • 6 Giant Rats (25 XP each), for 150 XP total Example 2. for a total of 1,125"
    },
    {
     "name": "XP",
-    "text": "With that, you could build either of these encounters: 2 Druids (450 XP each) and 9 Stirges (25 XP each), for 1,125 XP total 1 Wight (700 XP), 1 Warhorse Skeleton (100 XP), and 6 Skeletons (50 XP each), for 1,100 XP total 203Example 3. 15 characters has an XP budget of 7,800 × 6, for a total of 46,800"
+    "text": "With that, you could build either of these encounters: • 2 Druids (450 XP each) and 9 Stirges (25 XP each), for 1,125 XP total • 1 Wight (700 XP), 1 Warhorse Skeleton (100 XP), and 6 Skeletons (50 XP each), for 1,100 XP total 203Example 3. 15 characters has an XP budget of 7,800 × 6, for a total of 46,800"
    },
    {
     "name": "XP",
-    "text": "With that, you could build this encounter: 2 Adult Red Dragons (18,000 XP each) and 2 Fire Giants (5,000 XP each), for 46,000 XP totalTroubleshootingWhen creating and running combat encounters, keep the following in mind.Many CreaturesThe more creatures in an encounter, the higher the risk that a lucky streak on their part could deal more damage to the characters than you expect. If your encounter includes more than two creatures per character, include fragile creatures that can be defeated quickly. This guideline is especially im - portant for characters of level 1 or 2.AdjustmentsA player s absence might warrant removing crea- tures from an encounter to keep it at the intended in an encounter being easier or harder than in - easier) or adding reinforcements (making the en - counter harder).CR 0 CreaturesCreatures that have a CR of 0, particularly ones that are worth 0 XP, should be used sparingly. If you want to include many CR 0 critters in an encounter, use swarms instead.Number of Stat BlocksThe best combat encounters often pair one kind of with hell hounds. Be mindful of the number of stat blocks you need to run the encounter. Referencing more than two or three stat blocks for a single en - counter can be daunting, particularly if the crea- tures are complex.Powerful CreaturesIf your combat encounter includes a creature whose CR is higher than the party s level, be aware that such a creature might deal enough damage with a single action to take out one or more characters. For example, an Ogre (CR 2) can kill a level 1 Wizard with a single blow.Unusual FeaturesIf a monster has a feature that lower-level charac - ters can t easily overcome, consider not adding that monster to an encounter for characters whose level is lower than the monster s Challenge Rating. 204Magic ItemsMagic items are gleaned from the hoards of felled monsters or discovered in long-lost vaults. Such items grant capabilities a character could rarely have otherwise, or they complement their owner s capabilities in wondrous ways.Magic Item CategoriesEvery magic item belongs to a category. The Magic Item Categories table lists the nine categories and provides examples. Rules for the categories appear after the table.Magic Item CategoriesCategory ExamplesArmor +1 Leather Armor , +1 Shield Potions Potion of Healing Rings Ring of Invisibility Rods Immovable Rod Scrolls Spell Scroll Staffs Staff of Striking Wands Wand of Fireballs Weapons +1 Ammunition , +1 Longsword Wondrous Items Bag of Holding , Boots of ElvenkindArmorAn item in the Armor category is typically a magical version of armor from"
-   },
-   {
-    "name": "Equipment",
-    "text": "Unless an ar - mor s description notes otherwise, the armor must be worn for its magic to function. Some suits of magic armor specify the type of ar - mor they are, such as"
+    "text": "With that, you could build this encounter: • 2 Adult Red Dragons (18,000 XP each) and 2 Fire Giants (5,000 XP each), for 46,000 XP totalTroubleshootingWhen creating and running combat encounters, keep the following in mind.Many CreaturesThe more creatures in an encounter, the higher the risk that a lucky streak on their part could deal more damage to the characters than you expect. If your encounter includes more than two creatures per character, include fragile creatures that can be defeated quickly. This guideline is especially im - portant for characters of level 1 or 2.AdjustmentsA player’s absence might warrant removing crea- tures from an encounter to keep it at the intended in an encounter being easier or harder than in - easier) or adding reinforcements (making the en - counter harder).CR 0 CreaturesCreatures that have a CR of 0, particularly ones that are worth 0 XP, should be used sparingly. If you want to include many CR 0 critters in an encounter, use swarms instead.Number of Stat BlocksThe best combat encounters often pair one kind of with hell hounds. Be mindful of the number of stat blocks you need to run the encounter. Referencing more than two or three stat blocks for a single en - counter can be daunting, particularly if the crea- tures are complex.Powerful CreaturesIf your combat encounter includes a creature whose CR is higher than the party’s level, be aware that such a creature might deal enough damage with a single action to take out one or more characters. For example, an Ogre (CR 2) can kill a level 1 Wizard with a single blow.Unusual FeaturesIf a monster has a feature that lower-level charac - ters can’t easily overcome, consider not adding that monster to an encounter for characters whose level is lower than the monster’s Challenge Rating. 204Magic ItemsMagic items are gleaned from the hoards of felled monsters or discovered in long-lost vaults. Such items grant capabilities a character could rarely have otherwise, or they complement their owner’s capabilities in wondrous ways.Magic Item CategoriesEvery magic item belongs to a category. The Magic Item Categories table lists the nine categories and provides examples. Rules for the categories appear after the table.Magic Item CategoriesCategory ExamplesArmor +1 Leather Armor , +1 Shield Potions Potion of Healing Rings Ring of Invisibility Rods Immovable Rod Scrolls Spell Scroll Staffs Staff of Striking Wands Wand of Fireballs Weapons +1 Ammunition , +1 Longsword Wondrous Items Bag of Holding , Boots of ElvenkindArmorAn item in the Armor category is typically a magical version of armor from “Equipment.” Unless an ar - mor’s description notes otherwise, the armor must be worn for its magic to function. Some suits of magic armor specify the type of ar - mor they are, such as"
    },
    {
     "name": "Chain Mail or Plate Armor",
@@ -1905,11 +1749,7 @@ const RAW = [
    },
    {
     "name": "Mixing Potions",
-    "text": "A character might drink one po - tion while still under the effects of another or pour several potions into a single container. The strange ingredients used in creating potions can result in unpredictable interactions. When a character mixes two potions together, roll on the Potion Miscibility table. If more than two are combined, roll again for each subsequent potion, combining the results. Unless the effects are imme - diately obvious, reveal them only when they become evident.Potion Miscibility1d100 Result01 Both potions lose their effects, and the mixture creates a magical explosion in a 5-foot-radius Sphere centered on itself. Each creature in that area takes 4d10 Force damage. 02 08 Both potions lose their effects, and the mix - ture becomes an ingested poison of your choice (see Poison in Gameplay Toolbox ). 09 15 Both potions lose their effects. 16 25 One potion loses its effect. 26 35 Both potions work, but with their numerical effects and durations halved. If a potion has no numerical effect and no duration, it instead loses its effect. 36 90 Both potions work normally. 91 99 Both potions work, but the numerical effects and duration of one potion are doubled. If nei - ther potion has anything to double in this way, they work normally. 00 Only one potion works, but its effects are permanent. Choose the simplest effect to make permanent or the one that seems the most fun. For example, a Potion of Healing might increase the drinker s Hit Point maxi - mum by 2d4 + 2, or a Potion of Invisibility might - nitely. At your discretion, a Dispel Magic spell or similar magic might end this lasting effect.RingsFor its magic to function, an item in the Ring cate - - less its description notes otherwise.RodsAn item in the Rod category is a scepter usually made of metal, wood, or bone. A typical rod weighs 2 to 5 pounds. Unless its description notes otherwise, a rod can be used as an Arcane Focus. 205MAGIC ITE M RULESRules for identifying, attuning to, and using magic items appear in"
-   },
-   {
-    "name": "Equipment",
-    "text": "Additional rules are presented below."
+    "text": "A character might drink one po - tion while still under the effects of another or pour several potions into a single container. The strange ingredients used in creating potions can result in unpredictable interactions. When a character mixes two potions together, roll on the Potion Miscibility table. If more than two are combined, roll again for each subsequent potion, combining the results. Unless the effects are imme - diately obvious, reveal them only when they become evident.Potion Miscibility1d100 Result01 Both potions lose their effects, and the mixture creates a magical explosion in a 5-foot-radius Sphere centered on itself. Each creature in that area takes 4d10 Force damage. 02–08 Both potions lose their effects, and the mix - ture becomes an ingested poison of your choice (see “Poison” in “Gameplay Toolbox”). 09–15 Both potions lose their effects. 16–25 One potion loses its effect. 26–35 Both potions work, but with their numerical effects and durations halved. If a potion has no numerical effect and no duration, it instead loses its effect. 36–90 Both potions work normally. 91–99 Both potions work, but the numerical effects and duration of one potion are doubled. If nei - ther potion has anything to double in this way, they work normally. 00 Only one potion works, but its effects are permanent. Choose the simplest effect to make permanent or the one that seems the most fun. For example, a Potion of Healing might increase the drinker’s Hit Point maxi - mum by 2d4 + 2, or a Potion of Invisibility might - nitely. At your discretion, a Dispel Magic spell or similar magic might end this lasting effect.RingsFor its magic to function, an item in the Ring cate - - less its description notes otherwise.RodsAn item in the Rod category is a scepter usually made of metal, wood, or bone. A typical rod weighs 2 to 5 pounds. Unless its description notes otherwise, a rod can be used as an Arcane Focus. 205MAGIC ITE M RULESRules for identifying, attuning to, and using magic items appear in “Equipment.” Additional rules are presented below."
    },
    {
     "name": "Attunement Prerequisites",
@@ -1917,7 +1757,7 @@ const RAW = [
    },
    {
     "name": "Unusual Anatomy",
-    "text": "Use your discretion to decide whether a creature can wear an item not made for its anatomy. A ring placed on a tentacle might work, but a yuan-ti with a snakelike tail instead of legs can t wear magic boots."
+    "text": "Use your discretion to decide whether a creature can wear an item not made for its anatomy. A ring placed on a tentacle might work, but a yuan-ti with a snakelike tail instead of legs can’t wear magic boots."
    },
    {
     "name": "Paired Items",
@@ -1925,23 +1765,19 @@ const RAW = [
    },
    {
     "name": "Scroll",
-    "text": "Scrolls are consumable items. Un - leashing the magic in a scroll requires the user to read the scroll. When its magic has been invoked, the scroll can t be used again. Its words fade, or it crumbles into dust. Any creature that can understand a written lan - guage can read a scroll and attempt to activate it unless its description notes otherwise.StaffsItems in the Staff category vary widely in appear - ance: some are of nearly equal diameter throughout and smooth, others are gnarled and twisted, some are made of wood, and others are composed of pol - ished metal or crystal. A staff weighs between 2 and 7 pounds and serves well as a walking stick or cane. Unless its description notes otherwise, a staff can be used as a nonmagical Quarterstaff and an Arcane Focus.WandsAn item in the Wand category is typically 12 to 15 inches long and crafted of metal, bone, or wood. It is tipped with metal, crystal, stone, or some other material. Unless its description notes otherwise, a wand can be used as an Arcane Focus.WeaponsA magic weapon is typically a magical version of a weapon from"
-   },
-   {
-    "name": "Equipment",
-    "text": "Some magic weapons specify the type of weapon they are in their de - or determine it randomly."
+    "text": "Scrolls are consumable items. Un - leashing the magic in a scroll requires the user to read the scroll. When its magic has been invoked, the scroll can’t be used again. Its words fade, or it crumbles into dust. Any creature that can understand a written lan - guage can read a scroll and attempt to activate it unless its description notes otherwise.StaffsItems in the Staff category vary widely in appear - ance: some are of nearly equal diameter throughout and smooth, others are gnarled and twisted, some are made of wood, and others are composed of pol - ished metal or crystal. A staff weighs between 2 and 7 pounds and serves well as a walking stick or cane. Unless its description notes otherwise, a staff can be used as a nonmagical Quarterstaff and an Arcane Focus.WandsAn item in the Wand category is typically 12 to 15 inches long and crafted of metal, bone, or wood. It is tipped with metal, crystal, stone, or some other material. Unless its description notes otherwise, a wand can be used as an Arcane Focus.WeaponsA magic weapon is typically a magical version of a weapon from “Equipment.” Some magic weapons specify the type of weapon they are in their de - or determine it randomly."
    },
    {
     "name": "Ammunition",
-    "text": "If a magic weapon has the Ammu - - ered magical for the purpose of any rule that cares whether a weapon is magical or not.Wondrous ItemsWondrous Items include wearable items such as boots, belts, capes, amulets, brooches, and instruments, and more also fall into this category.Magic Item RarityEvery magic item has a rarity, which provides a rough measure of an item s power relative to other magic items. The rarities are shown in the Magic Item Rarities and Values table. Common magic items, such as a Potion of Healing , are the most plentiful. Artifacts, such as the Dragon Orb Magic Item Values by RarityCommon magic items can often be bought in a town or city. Uncommon and Rare magic items are usually found only in cities, and rarer magic items might be sold only in wondrous locations, such as a city on another plane of existence. If you allow char - acters to buy and sell magic items in your campaign, rarity can help you set prices for those items. Gold Piece values are provided in the Magic Item Rarities and Values table, though a seller might ask for a ser - vice rather than coin as payment. If a magic item incorporates an item that has a purchase cost in Equipment (such as a weapon or a suit of armor), add that item s cost to the magic item s value. For example, +1 Armor (Plate Armor) 206has a value of 5,500 GP, which is the sum of a Rare magic item s value (4,000 GP) and the cost of Plate Armor (1,500 GP).Magic Item Rarities and ValuesRarityValue*RarityValue* Common 100 GP Very Rare 40,000 GP Uncommon 400 GP Legendary 200,000 GP Rare 4,000 GP Artifact Priceless*Halve the value for a consumable item other than a Spell Scroll . The value of a Spell Scroll is double what it costs to scribe the scroll Activating a Magic ItemIt usually takes a Magic action to activate a magic item. The item s user might also need to do some - thing special. The description of each item category or individual item details how an item is activated. Certain items use the following rules for their activation.Command WordA command word is a word or short phrase that must be spoken or signed for an item to work. Spo - ken command words must be audible and fail to work in areas where all sound is suppressed, as in the area of the Silence spell.Consumable ItemsSome items are consumed used up, in other words when they are activated. A Potion of Healing must be swallowed, for example, while the writing vanishes from a scroll when it is read. Once used, a consumable item loses its magic.Spells Cast from ItemsSome magic items allow the user to cast a spell from the item. The spell is cast at the lowest possible spell and caster level, doesn t expend any of the us - er s spell slots, and requires no components unless the item s description notes otherwise. The spell uses its normal casting time, range, and duration, and the user of the item must concentrate if the spell requires"
+    "text": "If a magic weapon has the Ammu - - ered magical for the purpose of any rule that cares whether a weapon is magical or not.Wondrous ItemsWondrous Items include wearable items such as boots, belts, capes, amulets, brooches, and instruments, and more also fall into this category.Magic Item RarityEvery magic item has a rarity, which provides a rough measure of an item’s power relative to other magic items. The rarities are shown in the Magic Item Rarities and Values table. Common magic items, such as a Potion of Healing , are the most plentiful. Artifacts, such as the Dragon Orb Magic Item Values by RarityCommon magic items can often be bought in a town or city. Uncommon and Rare magic items are usually found only in cities, and rarer magic items might be sold only in wondrous locations, such as a city on another plane of existence. If you allow char - acters to buy and sell magic items in your campaign, rarity can help you set prices for those items. Gold Piece values are provided in the Magic Item Rarities and Values table, though a seller might ask for a ser - vice rather than coin as payment. If a magic item incorporates an item that has a purchase cost in “Equipment” (such as a weapon or a suit of armor), add that item’s cost to the magic item’s value. For example, +1 Armor (Plate Armor) 206has a value of 5,500 GP, which is the sum of a Rare magic item’s value (4,000 GP) and the cost of Plate Armor (1,500 GP).Magic Item Rarities and ValuesRarityValue*RarityValue* Common 100 GP Very Rare 40,000 GP Uncommon 400 GP Legendary 200,000 GP Rare 4,000 GP Artifact Priceless*Halve the value for a consumable item other than a Spell Scroll . The value of a Spell Scroll is double what it costs to scribe the scroll Activating a Magic ItemIt usually takes a Magic action to activate a magic item. The item’s user might also need to do some - thing special. The description of each item category or individual item details how an item is activated. Certain items use the following rules for their activation.Command WordA command word is a word or short phrase that must be spoken or signed for an item to work. Spo - ken command words must be audible and fail to work in areas where all sound is suppressed, as in the area of the Silence spell.Consumable ItemsSome items are consumed—used up, in other words—when they are activated. A Potion of Healing must be swallowed, for example, while the writing vanishes from a scroll when it is read. Once used, a consumable item loses its magic.Spells Cast from ItemsSome magic items allow the user to cast a spell from the item. The spell is cast at the lowest possible spell and caster level, doesn’t expend any of the us - er’s spell slots, and requires no components unless the item’s description notes otherwise. The spell uses its normal casting time, range, and duration, and the user of the item must concentrate if the spell requires"
    },
    {
     "name": "Concentration",
-    "text": "Many items, such as Potions, bypass the casting of a spell and confer the spell s effects with its usual duration. Certain items make exceptions to these rules, changing the cast - ing time, duration, or other parts of a spell. A magic item may require the user to use their own spellcasting ability when casting a spell from the item. If the user has more than one spellcasting ability, the user chooses which one to use with the item. If the user doesn t have a spellcasting ability, ChargesSome magic items have charges that must be ex - pended to activate their properties. The number of charges an item has remaining is revealed when the Identify spell is cast on it. A creature attuned to an item knows how many charges the item has and how many it regains. The Next Dawn Magic items often have charges or properties that time. If such an item is on a world or plane of exis - GM determines when the item recharges.Cursed Items bears a curse. Most methods of identifying items, in - cluding the Identify spell, fail to reveal such a curse. Attunement to a cursed item can t be ended volun - Remove Curse spell.Magic Item ResilienceA magic item is at least as durable as a nonmagical item of its kind. Most magic items, other than Po - tions and Scrolls, have Resistance to all damage. An Artifact can be destroyed only in some special - ing how to destroy an Artifact usually requires research or the completion of a quest.Crafting Magic Items Equipment contains rules on brewing Potions of Healing and scribing Spell Scrolls . To create other magic items, follow the rules below. In these rules, you refers to the character crafting the magic item.Arcana ProficiencyTo craft a magic item, you and any assistants must ToolsThe Magic Item Tools table lists which tool is re - quired to make a magic item of each category. You must use the required tool to make an item and on the tools, see Equipment. 207Magic Item ToolsItem Category Required ToolArmor Leatherworker s Tools, Smith s Tools, or Weaver s Tools depend - ing on the kind of armor as noted in the tools descriptions Potion Alchemist s Supplies or Herbalism Kit Ring Jeweler s Tools Rod Woodcarver s Tools Scroll Calligrapher s Supplies Staff Woodcarver s Tools Wand Woodcarver s Tools Weapon Leatherworker s Tools, Smith s Tools, or Woodcarver s Tools de - pending on the kind of weapon as noted in the tools descriptions Wondrous Item Tinker s Tools or the tool required to make the nonmagical item on which the magic item is basedSpellsIf a magic item allows its user to cast any spells from it, you must have all those spells prepared ev - ery day you spend crafting the item.Time and CostCrafting a magic item takes an amount of time and money based on the item s rarity as shown in the Magic Item Crafting Time and Cost table. Work per"
+    "text": "Many items, such as Potions, bypass the casting of a spell and confer the spell’s effects with its usual duration. Certain items make exceptions to these rules, changing the cast - ing time, duration, or other parts of a spell. A magic item may require the user to use their own spellcasting ability when casting a spell from the item. If the user has more than one spellcasting ability, the user chooses which one to use with the item. If the user doesn’t have a spellcasting ability, ChargesSome magic items have charges that must be ex - pended to activate their properties. The number of charges an item has remaining is revealed when the Identify spell is cast on it. A creature attuned to an item knows how many charges the item has and how many it regains.“The Next Dawn”Magic items often have charges or properties that time. If such an item is on a world or plane of exis - GM determines when the item recharges.Cursed Items bears a curse. Most methods of identifying items, in - cluding the Identify spell, fail to reveal such a curse. Attunement to a cursed item can’t be ended volun - Remove Curse spell.Magic Item ResilienceA magic item is at least as durable as a nonmagical item of its kind. Most magic items, other than Po - tions and Scrolls, have Resistance to all damage. An Artifact can be destroyed only in some special - ing how to destroy an Artifact usually requires research or the completion of a quest.Crafting Magic Items“Equipment” contains rules on brewing Potions of Healing and scribing Spell Scrolls . To create other magic items, follow the rules below. In these rules, “you” refers to the character crafting the magic item.Arcana ProficiencyTo craft a magic item, you and any assistants must ToolsThe Magic Item Tools table lists which tool is re - quired to make a magic item of each category. You must use the required tool to make an item and on the tools, see “Equipment.” 207Magic Item ToolsItem Category Required ToolArmor Leatherworker’s Tools, Smith’s Tools, or Weaver’s Tools depend - ing on the kind of armor as noted in the tools’ descriptions Potion Alchemist’s Supplies or Herbalism Kit Ring Jeweler’s Tools Rod Woodcarver’s Tools Scroll Calligrapher’s Supplies Staff Woodcarver’s Tools Wand Woodcarver’s Tools Weapon Leatherworker’s Tools, Smith’s Tools, or Woodcarver’s Tools de - pending on the kind of weapon as noted in the tools’ descriptions Wondrous Item Tinker’s Tools or the tool required to make the nonmagical item on which the magic item is basedSpellsIf a magic item allows its user to cast any spells from it, you must have all those spells prepared ev - ery day you spend crafting the item.Time and CostCrafting a magic item takes an amount of time and money based on the item’s rarity as shown in the Magic Item Crafting Time and Cost table. Work per"
    },
    {
     "name": "Day",
-    "text": "For each day of crafting, you must work for 8 hours. If an item requires multiple days, those days needn t be consecutive."
+    "text": "For each day of crafting, you must work for 8 hours. If an item requires multiple days, those days needn’t be consecutive."
    },
    {
     "name": "Assistants",
@@ -1949,15 +1785,7 @@ const RAW = [
    },
    {
     "name": "Raw Materials",
-    "text": "The cost in the table represents the raw materials needed to make a magic item. The GM determines whether appropriate raw materials are available. In a city, there is a 75 percent chance that the materials are available, and in any other settlement, that chance is 25 percent. If materials aren t available, you must wait at least 7 days before checking on the availability again. If a magic item incorporates an item that has a purchase cost (such as a weapon or a suit of armor), you must also pay that entire cost or craft that item using the rules in"
-   },
-   {
-    "name": "Equipment",
-    "text": "For example, to make +1 Armor (Plate Armor), you must pay 3,500 GP or pay 2,000 GP and craft the armor.Magic Item Crafting Time and CostItem Rarity Time* Cost*Common 5 days 50 GP Uncommon 10 days 200 GP Rare 50 days 2,000 GP Very Rare 125 days 20,000 GP Legendary 250 days 100,000 GP*The time and cost are halved for a consumable item other than a Spell Scroll , whose crafting time and cost are given in"
-   },
-   {
-    "name": "Equipment",
-    "text": "Sentient Magic ItemsSome magic items have sentience and personality. Such an item might be possessed, haunted by the spirit of a previous owner, or self-aware thanks to the magic used to create it. A sentient item might be a cherished ally to its wielder or a continual thorn in the side. Most sentient items are weapons, but other kinds of items can manifest sentience. Single-use items such as potions and scrolls are never sentient. The GM controls sentient magic items and their activated properties. A bearer who maintains a good relationship with the item can access those Sentient Magic Item"
+    "text": "The cost in the table represents the raw materials needed to make a magic item. The GM determines whether appropriate raw materials are available. In a city, there is a 75 percent chance that the materials are available, and in any other settlement, that chance is 25 percent. If materials aren’t available, you must wait at least 7 days before checking on the availability again. If a magic item incorporates an item that has a purchase cost (such as a weapon or a suit of armor), you must also pay that entire cost or craft that item using the rules in “Equipment.” For example, to make +1 Armor (Plate Armor), you must pay 3,500 GP or pay 2,000 GP and craft the armor.Magic Item Crafting Time and CostItem Rarity Time* Cost*Common 5 days 50 GP Uncommon 10 days 200 GP Rare 50 days 2,000 GP Very Rare 125 days 20,000 GP Legendary 250 days 100,000 GP*The time and cost are halved for a consumable item other than a Spell Scroll , whose crafting time and cost are given in “Equipment.”Sentient Magic ItemsSome magic items have sentience and personality. Such an item might be possessed, haunted by the spirit of a previous owner, or self-aware thanks to the magic used to create it. A sentient item might be a cherished ally to its wielder or a continual thorn in the side. Most sentient items are weapons, but other kinds of items can manifest sentience. Single-use items such as potions and scrolls are never sentient. The GM controls sentient magic items and their activated properties. A bearer who maintains a good relationship with the item can access those Sentient Magic Item"
    }
   ],
   "legendaryActions": [],
@@ -1995,9 +1823,9 @@ const RAW = [
   "hp": 20,
   "hpFormula": null,
   "speed": "60 ft., Fly 60 ft. (hover)MODSAVEMODSAVEMODSAVESTR 16",
-  "cr": "10",
-  "xp": 5900,
-  "proficiencyBonus": 4,
+  "cr": null,
+  "xp": null,
+  "proficiencyBonus": null,
   "senses": "Truesight 60 ft., Passive Perception 13",
   "languages": "All languages known to its summoner",
   "traits": [
@@ -2017,15 +1845,15 @@ const RAW = [
    },
    {
     "name": "Reaping Scythe",
-    "text": "Melee Attack Roll: Automatic hit, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage plus 4 (1d8) Necrotic damage.Necklace of AdaptationWondrous Item, Uncommon (Requires Attunement) While wearing this necklace, you can breathe nor - mally in any environment, and you have Advantage on saving throws made to avoid or end the Poisoned condition. 233Necklace of FireballsWondrous Item, Rare This necklace has 1d6 + 3 beads hanging from it. You can take a Magic action to detach a bead and throw it up to 60 feet away. When it reaches the end of its trajectory, the bead detonates as a level 3 Fire - ball (save DC 15). You can hurl multiple beads, or even the whole necklace, at one time. When you do so, increase the damage of the Fireball by 1d6 for each bead after Necklace of Prayer BeadsWondrous Item, Rare (Requires Attunement by a Cleric, Druid, or Paladin) This necklace has 1d4 + 2 magic beads made from aquamarine, black pearl, or topaz. It also has many nonmagical beads made from stones such as amber, bloodstone, citrine, coral, jade, pearl, or quartz. If a magic bead is removed from the necklace, that bead loses its magic. Six types of magic beads exist. The GM decides the type of each bead on the necklace or determines it randomly by rolling on the table below. A necklace can have more than one bead of the same type. To use one, you must be wearing the necklace. Each bead contains a spell that you can cast from it as a Bonus Action (using your spell save DC if a save is necessary). Once a magic bead s spell is cast, that bead can t be used again until the next dawn.1d20 Bead Spell1 6 Bead of Blessing Bless 7 12 Bead of Curing Cure Wounds (level 2 version) 13 16 Bead of Favor Greater Restoration 17 18 Bead of Smiting Shining Smite 19 Bead of Summons Guardian of Faith 20 Bead of Wind Walking Wind WalkNine Lives StealerWeapon (Any Simple or Martial), Very Rare (Requires Attunement) You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon."
+    "text": "Melee Attack Roll: Automatic hit, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage plus 4 (1d8) Necrotic damage.Necklace of AdaptationWondrous Item, Uncommon (Requires Attunement) While wearing this necklace, you can breathe nor - mally in any environment, and you have Advantage on saving throws made to avoid or end the Poisoned condition. 233Necklace of FireballsWondrous Item, Rare This necklace has 1d6 + 3 beads hanging from it. You can take a Magic action to detach a bead and throw it up to 60 feet away. When it reaches the end of its trajectory, the bead detonates as a level 3 Fire - ball (save DC 15). You can hurl multiple beads, or even the whole necklace, at one time. When you do so, increase the damage of the Fireball by 1d6 for each bead after Necklace of Prayer BeadsWondrous Item, Rare (Requires Attunement by a Cleric, Druid, or Paladin) This necklace has 1d4 + 2 magic beads made from aquamarine, black pearl, or topaz. It also has many nonmagical beads made from stones such as amber, bloodstone, citrine, coral, jade, pearl, or quartz. If a magic bead is removed from the necklace, that bead loses its magic. Six types of magic beads exist. The GM decides the type of each bead on the necklace or determines it randomly by rolling on the table below. A necklace can have more than one bead of the same type. To use one, you must be wearing the necklace. Each bead contains a spell that you can cast from it as a Bonus Action (using your spell save DC if a save is necessary). Once a magic bead’s spell is cast, that bead can’t be used again until the next dawn.1d20 Bead Spell1–6 Bead of Blessing Bless 7–12 Bead of Curing Cure Wounds (level 2 version) 13–16 Bead of Favor Greater Restoration 17–18 Bead of Smiting Shining Smite 19 Bead of Summons Guardian of Faith 20 Bead of Wind Walking Wind WalkNine Lives StealerWeapon (Any Simple or Martial), Very Rare (Requires Attunement) You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon."
    },
    {
     "name": "Life Stealing",
-    "text": "The weapon has 1d8 + 1 charges. When you attack a creature that has fewer than 100 Hit Points with this weapon and roll a 20 on the d20 for the attack roll, the creature must succeed on a DC 15 Constitution saving throw or be slain instantly as the sword tears its life force from its body. Constructs and Undead succeed on the save automatically. The weapon loses 1 charge if the creature is slain. When the weapon has no charges remaining, it loses this property.OathbowWeapon (Longbow or Shortbow), Very Rare (Requires Attunement) When you nock an arrow on this bow, it whispers in Elvish, Swift defeat to my enemies. When you use this weapon to make a ranged attack, you can utter or sign the following command words: Swift death to you who have wronged me. The target of your attack becomes your sworn enemy until it dies or until dawn 7 days later. You can have only one such sworn enemy at a time. When your sworn enemy dies, you can choose a new one after the next dawn. When you make a ranged attack roll with this weapon against your sworn enemy, you have Ad - vantage on the roll. In addition, your target gains no and you suffer no Disadvantage due to long range. If the attack hits, your sworn enemy takes an extra 3d6 Piercing damage. While your sworn enemy lives, you have Disad - vantage on attack rolls with all other weapons.Oil of EtherealnessPotion, Rare One vial of this oil can cover one Medium or smaller creature, along with the equipment it s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the Etherealness spell for 1 hour. Beads of this cloudy, gray oil form on the outside of its container and quickly evaporate.Oil of SharpnessPotion, Very Rare One vial of this oil can coat one Melee weapon or twenty pieces of ammunition, but only ammunition and Melee weapons that are nonmagical and deal Slashing or Piercing damage are affected. Applying the oil takes 1 minute, after which the oil magically seeps into whatever it coats, turning the coated weapon into a +3 Weapon or the coated ammunition into +3 Ammunition . This clear, gelatinous oil sparkles with tiny, ultrathin silver shards.Oil of SlipperinessPotion, Uncommon One vial of this oil can cover one Medium or smaller creature, along with the equipment it s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the ef - fect of the Freedom of Movement spell for 8 hours. Alternatively, the oil can be poured on the ground as a Magic action, where it covers a 10-foot square, 234duplicating the effect of the Grease spell in that area for 8 hours. This sticky, black unguent is thick and heavy, but Pearl of PowerWondrous Item, Uncommon (Requires Attunement by a Spellcaster) While this pearl is on your person, you can take a Magic action to regain one expended spell slot of level 3 or lower. Once you use the pearl, it can t be used again until the next dawn.Periapt of HealthWondrous Item, Uncommon (Requires Attunement) While wearing this pendant, you can take a Magic action to regain 2d4 + 2"
+    "text": "The weapon has 1d8 + 1 charges. When you attack a creature that has fewer than 100 Hit Points with this weapon and roll a 20 on the d20 for the attack roll, the creature must succeed on a DC 15 Constitution saving throw or be slain instantly as the sword tears its life force from its body. Constructs and Undead succeed on the save automatically. The weapon loses 1 charge if the creature is slain. When the weapon has no charges remaining, it loses this property.OathbowWeapon (Longbow or Shortbow), Very Rare (Requires Attunement) When you nock an arrow on this bow, it whispers in Elvish, “Swift defeat to my enemies.” When you use this weapon to make a ranged attack, you can utter or sign the following command words: “Swift death to you who have wronged me.” The target of your attack becomes your sworn enemy until it dies or until dawn 7 days later. You can have only one such sworn enemy at a time. When your sworn enemy dies, you can choose a new one after the next dawn. When you make a ranged attack roll with this weapon against your sworn enemy, you have Ad - vantage on the roll. In addition, your target gains no and you suffer no Disadvantage due to long range. If the attack hits, your sworn enemy takes an extra 3d6 Piercing damage. While your sworn enemy lives, you have Disad - vantage on attack rolls with all other weapons.Oil of EtherealnessPotion, Rare One vial of this oil can cover one Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the Etherealness spell for 1 hour. Beads of this cloudy, gray oil form on the outside of its container and quickly evaporate.Oil of SharpnessPotion, Very Rare One vial of this oil can coat one Melee weapon or twenty pieces of ammunition, but only ammunition and Melee weapons that are nonmagical and deal Slashing or Piercing damage are affected. Applying the oil takes 1 minute, after which the oil magically seeps into whatever it coats, turning the coated weapon into a +3 Weapon or the coated ammunition into +3 Ammunition . This clear, gelatinous oil sparkles with tiny, ultrathin silver shards.Oil of SlipperinessPotion, Uncommon One vial of this oil can cover one Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the ef - fect of the Freedom of Movement spell for 8 hours. Alternatively, the oil can be poured on the ground as a Magic action, where it covers a 10-foot square, 234duplicating the effect of the Grease spell in that area for 8 hours. This sticky, black unguent is thick and heavy, but Pearl of PowerWondrous Item, Uncommon (Requires Attunement by a Spellcaster) While this pearl is on your person, you can take a Magic action to regain one expended spell slot of level 3 or lower. Once you use the pearl, it can’t be used again until the next dawn.Periapt of HealthWondrous Item, Uncommon (Requires Attunement) While wearing this pendant, you can take a Magic action to regain 2d4 + 2"
    },
    {
     "name": "Hit Points",
-    "text": "Once used, this property can t be used again until the next dawn. In addition, you have Advantage on saving throws to avoid or end the Poisoned condition while you wear this pendant.Periapt of Proof against PoisonWondrous Item, Rare (Requires Attunement) This delicate silver chain has a brilliant-cut black gem pendant. While you wear it, you have Immunity to the Poisoned condition and Poison damage.Periapt of Wound ClosureWondrous Item, Uncommon (Requires Attunement) While wearing this pendant, you gain the following"
+    "text": "Once used, this property can’t be used again until the next dawn. In addition, you have Advantage on saving throws to avoid or end the Poisoned condition while you wear this pendant.Periapt of Proof against PoisonWondrous Item, Rare (Requires Attunement) This delicate silver chain has a brilliant-cut black gem pendant. While you wear it, you have Immunity to the Poisoned condition and Poison damage.Periapt of Wound ClosureWondrous Item, Uncommon (Requires Attunement) While wearing this pendant, you gain the following"
    },
    {
     "name": "Life Preservation",
@@ -2033,7 +1861,7 @@ const RAW = [
    },
    {
     "name": "Natural Healing Boost",
-    "text": "Whenever you roll a Hit Point Die to regain Hit Points, double the number of Hit Points it restores.Philter of LovePotion, Uncommon The next time you see a creature within 10 minutes after drinking this philter, you are charmed by that creature and have the Charmed condition for 1 hour. This rose-hued, effervescent liquid contains one easy-to-miss bubble shaped like a heart.Pipes of HauntingWondrous Item, Uncommon These pipes have 3 charges and regain 1d3 ex - pended charges daily at dawn. You can take a Magic action to play them and expend 1 charge to create an eerie, spellbinding tune. Each creature of your choice within 30 feet of you must succeed on a DC 15 Wisdom saving throw or have the Frightened condition for 1 minute. A creature that fails the save repeats it at the end of each of its turns, ending the effect on itself on a success. A creature that suc - ceeds on its save is immune to the effect of these pipes for 24 hours.Pipes of the SewersWondrous Item, Uncommon (Requires Attunement) While these pipes are on your person, ordinary rats and giant rats are Indifferent toward you and won t attack you unless you threaten or harm them. The pipes have 3 charges and regain 1d3 ex - pended charges daily at dawn. If you play the pipes as a Magic action, you can take a Bonus Action to expend 1 to 3 charges, calling forth one Swarm of Rats with each expended charge if enough rats are within half a mile of you to be called in this fashion (as determined by the GM). If there aren t enough rats to form a swarm, the charge is wasted. Called swarms move toward the music by the short - est available route but aren t under your control otherwise. Whenever a Swarm of Rats that isn t under an - other creature s control comes within 30 feet of you while you are playing the pipes, the swarm makes a DC 15 Wisdom saving throw. On a successful save, the swarm behaves as it normally would and can t be swayed by the pipes music for the next 24 hours. On a failed save, the swarm is swayed by the pipes music and becomes Friendly to you and your allies for as long as you continue to play the pipes each round as a Magic action. A Friendly swarm obeys your commands. If you issue no commands to a Friendly swarm, it defends itself but otherwise takes no actions. If a Friendly swarm starts its turn more than 30 feet away from you, your control over that swarm ends, and the swarm behaves as it nor - mally would and can t be swayed by the pipes mu - sic for the next 24 hours.Plate Armor of EtherealnessArmor (Half Plate Armor or Plate Armor), Legendary (Requires Attunement) While you re wearing this armor, you can take a Magic action and use a command word to gain the effect of the Etherealness spell. The spell ends imme - diately if you remove the armor or take a Magic ac - tion to repeat the command word. This property of the armor can t be used again until the next dawn.Portable HoleWondrous Item, Rare dimensions of a handkerchief. It unfolds into a cir - cular sheet 6 feet in diameter. You can take a Magic action to unfold a Por - table Hole and place it on or against a solid sur - face, whereupon the Portable Hole creates an 235extradimensional hole 10 feet deep. The cylindrical space within the hole exists on a different plane of existence, so it can t be used to create open pas - sages. Any creature inside an open Portable Hole can exit the hole by climbing out of it. You can take a Magic action to close a Portable Hole by taking hold of the edges of the cloth and folding it up. Folding the cloth closes the hole, and any creatures or objects within remain in the ex - tradimensional space. No matter what s in it, the hole weighs next to nothing. If the hole is folded up, a creature within the hole s extradimensional space can take an action to make a DC 10 Strength (Athletics) check. On a successful check, the creature forces its way out and appears within 5 feet of the Portable Hole . A closed Portable Hole holds enough air for 1 hour of breathing, di - vided by the number of breathing creatures inside. Placing a Portable Hole inside an extradimensional space created by a Bag of Holding , Handy Haversack , or similar item instantly destroys both items and opens a gate to the"
+    "text": "Whenever you roll a Hit Point Die to regain Hit Points, double the number of Hit Points it restores.Philter of LovePotion, Uncommon The next time you see a creature within 10 minutes after drinking this philter, you are charmed by that creature and have the Charmed condition for 1 hour. This rose-hued, effervescent liquid contains one easy-to-miss bubble shaped like a heart.Pipes of HauntingWondrous Item, Uncommon These pipes have 3 charges and regain 1d3 ex - pended charges daily at dawn. You can take a Magic action to play them and expend 1 charge to create an eerie, spellbinding tune. Each creature of your choice within 30 feet of you must succeed on a DC 15 Wisdom saving throw or have the Frightened condition for 1 minute. A creature that fails the save repeats it at the end of each of its turns, ending the effect on itself on a success. A creature that suc - ceeds on its save is immune to the effect of these pipes for 24 hours.Pipes of the SewersWondrous Item, Uncommon (Requires Attunement) While these pipes are on your person, ordinary rats and giant rats are Indifferent toward you and won’t attack you unless you threaten or harm them. The pipes have 3 charges and regain 1d3 ex - pended charges daily at dawn. If you play the pipes as a Magic action, you can take a Bonus Action to expend 1 to 3 charges, calling forth one Swarm of Rats with each expended charge if enough rats are within half a mile of you to be called in this fashion (as determined by the GM). If there aren’t enough rats to form a swarm, the charge is wasted. Called swarms move toward the music by the short - est available route but aren’t under your control otherwise. Whenever a Swarm of Rats that isn’t under an - other creature’s control comes within 30 feet of you while you are playing the pipes, the swarm makes a DC 15 Wisdom saving throw. On a successful save, the swarm behaves as it normally would and can’t be swayed by the pipes’ music for the next 24 hours. On a failed save, the swarm is swayed by the pipes’ music and becomes Friendly to you and your allies for as long as you continue to play the pipes each round as a Magic action. A Friendly swarm obeys your commands. If you issue no commands to a Friendly swarm, it defends itself but otherwise takes no actions. If a Friendly swarm starts its turn more than 30 feet away from you, your control over that swarm ends, and the swarm behaves as it nor - mally would and can’t be swayed by the pipes’ mu - sic for the next 24 hours.Plate Armor of EtherealnessArmor (Half Plate Armor or Plate Armor), Legendary (Requires Attunement) While you’re wearing this armor, you can take a Magic action and use a command word to gain the effect of the Etherealness spell. The spell ends imme - diately if you remove the armor or take a Magic ac - tion to repeat the command word. This property of the armor can’t be used again until the next dawn.Portable HoleWondrous Item, Rare dimensions of a handkerchief. It unfolds into a cir - cular sheet 6 feet in diameter. You can take a Magic action to unfold a Por - table Hole and place it on or against a solid sur - face, whereupon the Portable Hole creates an 235extradimensional hole 10 feet deep. The cylindrical space within the hole exists on a different plane of existence, so it can’t be used to create open pas - sages. Any creature inside an open Portable Hole can exit the hole by climbing out of it. You can take a Magic action to close a Portable Hole by taking hold of the edges of the cloth and folding it up. Folding the cloth closes the hole, and any creatures or objects within remain in the ex - tradimensional space. No matter what’s in it, the hole weighs next to nothing. If the hole is folded up, a creature within the hole’s extradimensional space can take an action to make a DC 10 Strength (Athletics) check. On a successful check, the creature forces its way out and appears within 5 feet of the Portable Hole . A closed Portable Hole holds enough air for 1 hour of breathing, di - vided by the number of breathing creatures inside. Placing a Portable Hole inside an extradimensional space created by a Bag of Holding , Handy Haversack , or similar item instantly destroys both items and opens a gate to the"
    },
    {
     "name": "Astral Plane",
@@ -2041,23 +1869,23 @@ const RAW = [
    },
    {
     "name": "Astral Plane",
-    "text": "The gate then closes. The gate is one-way only and can t be reopened.Potion of Animal FriendshipPotion, Uncommon When you drink this potion, you can cast the level 3 version of the Animal Friendship spell (save DC 13). Agitating this potion s muddy liquid brings little cat claw, or a squirrel hair.Potion of ClairvoyancePotion, Rare When you drink this potion, you gain the effect of the Clairvoyance spell (no Concentration required). An eyeball bobs in this potion s yellowish liquid but vanishes when the potion is opened.Potion of ClimbingPotion, Common When you drink this potion, you gain a Climb Speed equal to your Speed for 1 hour. During this time, you have Advantage on Strength (Athletics) checks to climb. This potion is separated into brown, silver, and gray layers resembling bands of stone. Shaking the bottle fails to mix the colors.Potion of DiminutionPotion, Rare When you drink this potion, you gain the reduce effect of the Enlarge/Reduce spell for 1d4 hours (no Concentration required). The red in the potion s liquid continuously con - tracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to in - terrupt this process.Potion of FlyingPotion, Very Rare When you drink this potion, you gain a Fly Speed equal to your Speed for 1 hour and can hover. If you re in the air when the potion wears off, you fall unless you have some other means of staying aloft. container and has cloudy white impurities drifting in it.Potion of Gaseous FormPotion, Rare When you drink this potion, you gain the effect of the Gaseous Form spell for 1 hour (no Concentration required) or until you end the effect as a Bonus"
+    "text": "The gate then closes. The gate is one-way only and can’t be reopened.Potion of Animal FriendshipPotion, Uncommon When you drink this potion, you can cast the level 3 version of the Animal Friendship spell (save DC 13). Agitating this potion’s muddy liquid brings little cat claw, or a squirrel hair.Potion of ClairvoyancePotion, Rare When you drink this potion, you gain the effect of the Clairvoyance spell (no Concentration required). An eyeball bobs in this potion’s yellowish liquid but vanishes when the potion is opened.Potion of ClimbingPotion, Common When you drink this potion, you gain a Climb Speed equal to your Speed for 1 hour. During this time, you have Advantage on Strength (Athletics) checks to climb. This potion is separated into brown, silver, and gray layers resembling bands of stone. Shaking the bottle fails to mix the colors.Potion of DiminutionPotion, Rare When you drink this potion, you gain the “reduce” effect of the Enlarge/Reduce spell for 1d4 hours (no Concentration required). The red in the potion’s liquid continuously con - tracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to in - terrupt this process.Potion of FlyingPotion, Very Rare When you drink this potion, you gain a Fly Speed equal to your Speed for 1 hour and can hover. If you’re in the air when the potion wears off, you fall unless you have some other means of staying aloft. container and has cloudy white impurities drifting in it.Potion of Gaseous FormPotion, Rare When you drink this potion, you gain the effect of the Gaseous Form spell for 1 hour (no Concentration required) or until you end the effect as a Bonus"
    },
    {
     "name": "Action",
-    "text": "This potion s container seems to hold fog that moves and pours like water.Potion of Giant StrengthPotion, Rarity Varies When you drink this potion, your Strength score changes for 1 hour. The type of giant determines the score (see the table below). The potion has no effect on you if your Strength is equal to or greater than that score. Potion"
+    "text": "This potion’s container seems to hold fog that moves and pours like water.Potion of Giant StrengthPotion, Rarity Varies When you drink this potion, your Strength score changes for 1 hour. The type of giant determines the score (see the table below). The potion has no effect on you if your Strength is equal to or greater than that score. Potion"
    },
    {
     "name": "Str",
-    "text": "RarityPotion of Giant Strength (hill) 21 Uncommon Potion of Giant Strength (frost or stone) 23 Rare Potion of Giant Strength 25 Rare Potion of Giant Strength (cloud) 27 Very Rare Potion of Giant Strength (storm) 29 LegendaryPotion of GrowthPotion, Uncommon When you drink this potion, you gain the enlarge effect of the Enlarge/Reduce spell for 10 minutes (no Concentration required). The red in the potion s liquid continuously ex - pands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process. 236Potions of HealingPotion, Rarity Varies You regain Hit Points when you drink this potion. The number of Hit Points depends on the potion s rarity, as shown in the table below. Whatever its potency, the potion s red liquid glim - mers when agitated.Potion HP Regained RarityPotion of Healing 2d4 + 2 Common Potion of Healing (greater) 4d4 + 4 Uncommon Potion of Healing (superior) 8d4 + 8 Rare Potion of Healing (supreme) 10d4 + 20 Very RarePotion of HeroismPotion, Rare When you drink this potion, you gain 10 Temporary Hit Points that last for 1 hour. For the same dura- tion, you are under the effect of the Bless spell (no Concentration required). This potion s blue liquid bubbles and steams as if boiling.Potion of InvisibilityPotion, Rare This potion s container looks empty but feels as though it holds liquid. When you drink the potion, you have the Invisible condition for 1 hour. The effect ends early if you make an attack roll, deal damage, or cast a spell.Potion of InvulnerabilityPotion, Rare For 1 minute after you drink this potion, you have Resistance to all damage. iron.Potion of LongevityPotion, Very Rare When you drink this potion, your physical age is reduced by 1d6 + 6 years, to a minimum of 13 years. Each time you subsequently drink a Potion of Lon - gevity , there is 10 percent cumulative chance that you instead age by 1d6 + 6 years. Suspended in this amber liquid is a tiny heart that, against all reason, is still beating. These ingredients vanish when the potion is opened.Potion of Mind ReadingPotion, Rare When you drink this potion, you gain the effect of the Detect Thoughts spell (save DC 13) for 10 min - utes (no Concentration required). This potion s dense, purple liquid has an ovoid Potion of PoisonPotion, Uncommon This concoction looks, smells, and tastes like a Potion of Healing - ever, it is actually poison masked by illusion magic. Identify reveals its true nature. If you drink this potion, you take 4d6 Poison dam - age and must succeed on a DC 13 Constitution sav - ing throw or have the Poisoned condition for 1 hour.Potion of ResistancePotion, Uncommon When you drink this potion, you have Resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly by rolling on the following table.1d10 Damage Type 1d10 Damage Type1 Acid 6 Necrotic 2 Cold 7 Poison 3 Fire 8 Psychic 4 Force 9 Radiant 5 Lightning 10 ThunderPotion of SpeedPotion, Very Rare When you drink this potion, you gain the effect of the Haste spell for 1 minute (no Concentration re - quired) without suffering the wave of lethargy that typically occurs when the effect ends. and swirls on its own.Potion of VitalityPotion, Very Rare When you drink this potion, it removes any Exhaustion levels you have and ends the Poisoned condition on you. For the next 24 hours, you regain the maximum number of Hit Points for any Hit Point Die you spend. This potion s crimson liquid regularly pulses with dull light, calling to mind a heartbeat.Potion of Water BreathingPotion, Uncommon You can breathe underwater for 24 hours after drinking this potion. 237 Weapon (Quarterstaff), Very Rare (Requires Attunement) You have a +2 bonus to attack rolls and damage rolls made with this magic weapon. While holding this weapon, you can cause it to - nus Action or after you roll Initiative, or you can extinguish the light as a"
+    "text": "RarityPotion of Giant Strength (hill) 21 Uncommon Potion of Giant Strength (frost or stone) 23 Rare Potion of Giant Strength 25 Rare Potion of Giant Strength (cloud) 27 Very Rare Potion of Giant Strength (storm) 29 LegendaryPotion of GrowthPotion, Uncommon When you drink this potion, you gain the “enlarge” effect of the Enlarge/Reduce spell for 10 minutes (no Concentration required). The red in the potion’s liquid continuously ex - pands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process. 236Potions of HealingPotion, Rarity Varies You regain Hit Points when you drink this potion. The number of Hit Points depends on the potion’s rarity, as shown in the table below. Whatever its potency, the potion’s red liquid glim - mers when agitated.Potion HP Regained RarityPotion of Healing 2d4 + 2 Common Potion of Healing (greater) 4d4 + 4 Uncommon Potion of Healing (superior) 8d4 + 8 Rare Potion of Healing (supreme) 10d4 + 20 Very RarePotion of HeroismPotion, Rare When you drink this potion, you gain 10 Temporary Hit Points that last for 1 hour. For the same dura- tion, you are under the effect of the Bless spell (no Concentration required). This potion’s blue liquid bubbles and steams as if boiling.Potion of InvisibilityPotion, Rare This potion’s container looks empty but feels as though it holds liquid. When you drink the potion, you have the Invisible condition for 1 hour. The effect ends early if you make an attack roll, deal damage, or cast a spell.Potion of InvulnerabilityPotion, Rare For 1 minute after you drink this potion, you have Resistance to all damage. iron.Potion of LongevityPotion, Very Rare When you drink this potion, your physical age is reduced by 1d6 + 6 years, to a minimum of 13 years. Each time you subsequently drink a Potion of Lon - gevity , there is 10 percent cumulative chance that you instead age by 1d6 + 6 years. Suspended in this amber liquid is a tiny heart that, against all reason, is still beating. These ingredients vanish when the potion is opened.Potion of Mind ReadingPotion, Rare When you drink this potion, you gain the effect of the Detect Thoughts spell (save DC 13) for 10 min - utes (no Concentration required). This potion’s dense, purple liquid has an ovoid Potion of PoisonPotion, Uncommon This concoction looks, smells, and tastes like a Potion of Healing - ever, it is actually poison masked by illusion magic. Identify reveals its true nature. If you drink this potion, you take 4d6 Poison dam - age and must succeed on a DC 13 Constitution sav - ing throw or have the Poisoned condition for 1 hour.Potion of ResistancePotion, Uncommon When you drink this potion, you have Resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly by rolling on the following table.1d10 Damage Type 1d10 Damage Type1 Acid 6 Necrotic 2 Cold 7 Poison 3 Fire 8 Psychic 4 Force 9 Radiant 5 Lightning 10 ThunderPotion of SpeedPotion, Very Rare When you drink this potion, you gain the effect of the Haste spell for 1 minute (no Concentration re - quired) without suffering the wave of lethargy that typically occurs when the effect ends. and swirls on its own.Potion of VitalityPotion, Very Rare When you drink this potion, it removes any Exhaustion levels you have and ends the Poisoned condition on you. For the next 24 hours, you regain the maximum number of Hit Points for any Hit Point Die you spend. This potion’s crimson liquid regularly pulses with dull light, calling to mind a heartbeat.Potion of Water BreathingPotion, Uncommon You can breathe underwater for 24 hours after drinking this potion. 237 Weapon (Quarterstaff), Very Rare (Requires Attunement) You have a +2 bonus to attack rolls and damage rolls made with this magic weapon. While holding this weapon, you can cause it to - nus Action or after you roll Initiative, or you can extinguish the light as a"
    },
    {
     "name": "Bonus Action",
-    "text": "While holding this weapon, you can take a Bonus Action to alter its form, turning it into a 6-inch rod (for ease of storage) or a 10-foot pole, or reverting it a Quarterstaff; the weapon will elongate only as far as the surrounding space allows. In certain forms, the weapon has the following ad - ditional properties. Acrobatic Assist (Quarterstaff and 10-Foot Pole Forms Only). While holding this weapon, you have Advantage on Dexterity (Acrobatics) checks. When you are hit by an attack while holding the weapon, you can take a Reaction to twirl the weapon around you, gaining a +5 bonus to your Ar - mor Class against the triggering attack, potentially causing the attack to miss you. You can t use this"
+    "text": "While holding this weapon, you can take a Bonus Action to alter its form, turning it into a 6-inch rod (for ease of storage) or a 10-foot pole, or reverting it a Quarterstaff; the weapon will elongate only as far as the surrounding space allows. In certain forms, the weapon has the following ad - ditional properties. Acrobatic Assist (Quarterstaff and 10-Foot Pole Forms Only). While holding this weapon, you have Advantage on Dexterity (Acrobatics) checks. When you are hit by an attack while holding the weapon, you can take a Reaction to twirl the weapon around you, gaining a +5 bonus to your Ar - mor Class against the triggering attack, potentially causing the attack to miss you. You can’t use this"
    },
    {
     "name": "Ranged Weapon (Quarterstaff Form Only)",
-    "text": "This weapon has the Thrown property with a normal range of 30 feet and a long range of 120 feet. Im - mediately after you make a ranged attack with the Ring, Rare This ring has 3 charges, and it regains 1d3 ex - pended charges daily at dawn. While wearing the ring, you can expend 1 charge to cast one of the fol - lowing spells (save DC 13) from it: Animal Friendship Fear (affects Beasts only) Speak with AnimalsRing of Djinni SummoningRing, Legendary (Requires Attunement) While wearing this ring, you can take a Magic action to summon a particular Djinni from the Elemental"
+    "text": "This weapon has the Thrown property with a normal range of 30 feet and a long range of 120 feet. Im - mediately after you make a ranged attack with the Ring, Rare This ring has 3 charges, and it regains 1d3 ex - pended charges daily at dawn. While wearing the ring, you can expend 1 charge to cast one of the fol - lowing spells (save DC 13) from it: • Animal Friendship • Fear (affects Beasts only) • Speak with AnimalsRing of Djinni SummoningRing, Legendary (Requires Attunement) While wearing this ring, you can take a Magic action to summon a particular Djinni from the Elemental"
    },
    {
     "name": "Plane of Air",
@@ -2065,7 +1893,7 @@ const RAW = [
    },
    {
     "name": "Hit Points",
-    "text": "While summoned, the djinni is Friendly to you and your allies, and it obeys your commands. If you fail to command it, the djinni defends itself against at - tackers but takes no other actions. After the djinni departs, it can t be summoned again for 24 hours, and the ring becomes nonmagi - cal if the djinni dies. Rings of Djinni Summoning are often created by the djinn they summon and given to mortals as gifts of friendship or tokens of esteem. Ring of Elemental CommandRing, Legendary (Requires Attunement) Each Ring of Elemental Command is linked to one of the four"
+    "text": "While summoned, the djinni is Friendly to you and your allies, and it obeys your commands. If you fail to command it, the djinni defends itself against at - tackers but takes no other actions. After the djinni departs, it can’t be summoned again for 24 hours, and the ring becomes nonmagi - cal if the djinni dies. Rings of Djinni Summoning are often created by the djinn they summon and given to mortals as gifts of friendship or tokens of esteem. Ring of Elemental CommandRing, Legendary (Requires Attunement) Each Ring of Elemental Command is linked to one of the four"
    },
    {
     "name": "Elemental Planes",
@@ -2085,7 +1913,7 @@ const RAW = [
    },
    {
     "name": "Elemental Focus",
-    "text": "While wearing the ring, you the ring s linked Elemental Plane: Air. - ning damage, and you have a Fly Speed equal to your Speed and can hover."
+    "text": "While wearing the ring, you the ring’s linked Elemental Plane: Air. - ning damage, and you have a Fly Speed equal to your Speed and can hover."
    },
    {
     "name": "Earth",
@@ -2101,7 +1929,7 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "The ring has 5 charges and re - gains 1d4 + 1 expended charges daily at dawn. While wearing the ring, you can cast a spell from it. Choose the spell from the list of available spells based on the Elemental Plane the ring is linked to, as shown in the following table. The table indicates how many charges you must expend to cast the spell, which has a save DC of 18. 238Plane Spells (Charges)Air Chain Lightning (3 charges), Feather Fall (0 charges), Gust of Wind (2 charges), Wind Wall (1 charge) Earth Earthquake (5 charges), Stone Shape (2 charges), Stoneskin (3 charges), Wall of Stone (3 charges) Fire Burning Hands (1 charge), Fireball (2 charges), Fire Storm (4 charges), Wall of Fire (3 charges) Water Create or Destroy Water (1 charge), Ice Storm (2 charges), Tsunami (5 charges), Wall of Ice (3 charges), Water Walk (2 charges)Ring of EvasionRing, Rare (Requires Attunement) This ring has 3 charges, and it regains 1d3 ex - pended charges daily at dawn. When you fail a Dex - terity saving throw while wearing the ring, you can take a Reaction to expend 1 charge to succeed on that save instead.Ring of Feather FallingRing, Rare (Requires Attunement) When you fall while wearing this ring, you descend 60 feet per round and take no damage from falling.Ring of Free ActionRing, Rare (Requires Attunement) cost you extra movement. In addition, magic can neither reduce any of your Speeds nor cause you to have the Paralyzed or Restrained condition.Ring of InvisibilityRing, Legendary (Requires Attunement) While wearing this ring, you can take a Magic action to give yourself the Invisible condition. You remain Invisible until the ring is removed or until you take a Bonus Action to become visible again.Ring of JumpingRing, Uncommon (Requires Attunement) While wearing this ring, you can cast Jump from it, but can target only yourself when you do so.Ring of Mind ShieldingRing, Uncommon (Requires Attunement) While wearing this ring, you are immune to magic that allows other creatures to read your thoughts, determine whether you are lying, know your align - ment, or know your creature type. Creatures can telepathically communicate with you only if you allow it. You can take a Magic action to cause the ring to become imperceptible until you take another Magic action to make it perceptible, until you remove the ring, or until you die. If you die while wearing the ring, your soul enters it, unless it already houses a soul. You can remain in the ring or depart for the afterlife. As long as your soul is in the ring, you can telepathically commu - nicate with any creature wearing it. A wearer can t prevent this telepathic communication.Ring of ProtectionRing, Rare (Requires Attunement) You gain a +1 bonus to Armor Class and saving throws while wearing this ring.Ring of RegenerationRing, Very Rare (Requires Attunement) While wearing this ring, you regain 1d6 Hit Points every 10 minutes if you have at least 1"
+    "text": "The ring has 5 charges and re - gains 1d4 + 1 expended charges daily at dawn. While wearing the ring, you can cast a spell from it. Choose the spell from the list of available spells based on the Elemental Plane the ring is linked to, as shown in the following table. The table indicates how many charges you must expend to cast the spell, which has a save DC of 18. 238Plane Spells (Charges)Air Chain Lightning (3 charges), Feather Fall (0 charges), Gust of Wind (2 charges), Wind Wall (1 charge) Earth Earthquake (5 charges), Stone Shape (2 charges), Stoneskin (3 charges), Wall of Stone (3 charges) Fire Burning Hands (1 charge), Fireball (2 charges), Fire Storm (4 charges), Wall of Fire (3 charges) Water Create or Destroy Water (1 charge), Ice Storm (2 charges), Tsunami (5 charges), Wall of Ice (3 charges), Water Walk (2 charges)Ring of EvasionRing, Rare (Requires Attunement) This ring has 3 charges, and it regains 1d3 ex - pended charges daily at dawn. When you fail a Dex - terity saving throw while wearing the ring, you can take a Reaction to expend 1 charge to succeed on that save instead.Ring of Feather FallingRing, Rare (Requires Attunement) When you fall while wearing this ring, you descend 60 feet per round and take no damage from falling.Ring of Free ActionRing, Rare (Requires Attunement) cost you extra movement. In addition, magic can neither reduce any of your Speeds nor cause you to have the Paralyzed or Restrained condition.Ring of InvisibilityRing, Legendary (Requires Attunement) While wearing this ring, you can take a Magic action to give yourself the Invisible condition. You remain Invisible until the ring is removed or until you take a Bonus Action to become visible again.Ring of JumpingRing, Uncommon (Requires Attunement) While wearing this ring, you can cast Jump from it, but can target only yourself when you do so.Ring of Mind ShieldingRing, Uncommon (Requires Attunement) While wearing this ring, you are immune to magic that allows other creatures to read your thoughts, determine whether you are lying, know your align - ment, or know your creature type. Creatures can telepathically communicate with you only if you allow it. You can take a Magic action to cause the ring to become imperceptible until you take another Magic action to make it perceptible, until you remove the ring, or until you die. If you die while wearing the ring, your soul enters it, unless it already houses a soul. You can remain in the ring or depart for the afterlife. As long as your soul is in the ring, you can telepathically commu - nicate with any creature wearing it. A wearer can’t prevent this telepathic communication.Ring of ProtectionRing, Rare (Requires Attunement) You gain a +1 bonus to Armor Class and saving throws while wearing this ring.Ring of RegenerationRing, Very Rare (Requires Attunement) While wearing this ring, you regain 1d6 Hit Points every 10 minutes if you have at least 1"
    },
    {
     "name": "Hit Point",
@@ -2113,7 +1941,7 @@ const RAW = [
    },
    {
     "name": "Lightning Spheres",
-    "text": "You can expend 2 charges as a Magic action to create up to four 3-foot-diameter spheres of lightning. Each sphere appears in an unoccupied space you can see within 120 feet of yourself. The spheres 239last as long as you maintain Concentration, up to 1 radius. As a Bonus Action, you can move each sphere up to 30 feet, but no farther than 120 feet away from feet of a creature other than you that isn t behind Total Cover, the sphere discharges lightning at that creature and disappears. That creature makes a DC 15 Dexterity saving throw. On a failed save, the - ber of spheres you created, as shown in the follow - ing table. On a successful save, the creature takes half as much damage.Number of Spheres Lightning Damage Number of Spheres Lightning Damage1 4d12 3 2d6 2 5d4 4 2d4"
+    "text": "You can expend 2 charges as a Magic action to create up to four 3-foot-diameter spheres of lightning. Each sphere appears in an unoccupied space you can see within 120 feet of yourself. The spheres 239last as long as you maintain Concentration, up to 1 radius. As a Bonus Action, you can move each sphere up to 30 feet, but no farther than 120 feet away from feet of a creature other than you that isn’t behind Total Cover, the sphere discharges lightning at that creature and disappears. That creature makes a DC 15 Dexterity saving throw. On a failed save, the - ber of spheres you created, as shown in the follow - ing table. On a successful save, the creature takes half as much damage.Number of Spheres Lightning Damage Number of Spheres Lightning Damage1 4d12 3 2d6 2 5d4 4 2d4"
    },
    {
     "name": "Shooting Stars",
@@ -2121,7 +1949,7 @@ const RAW = [
    },
    {
     "name": "GM",
-    "text": "Any creature can cast a spell of level 1 through 5 into the ring by touching the ring as the spell is cast. The spell has no effect other than to be stored in the ring. If the ring can t hold the spell, the spell is ex - pended without effect. The level of the slot used to cast the spell determines how much space it uses. While wearing this ring, you can cast any spell stored in it. The spell uses the slot level, spell save DC, spell attack bonus, and spellcasting ability of the original caster but is otherwise treated as if you cast the spell. The spell cast from the ring is no lon - ger stored in it, freeing up space.Ring of Spell TurningRing, Legendary (Requires Attunement) While wearing this ring, you have Advantage on saving throws against spells. If you succeed on the save for a spell of level 7 or lower, the spell has no effect on you. If that spell targeted only you and didn t create an area of effect, you can take a Reac - caster must make a saving throw against the spell using their own spell save DC.Ring of SwimmingRing, Uncommon You have a Swim Speed of 40 feet while wearing this ring.Ring of TelekinesisRing, Very Rare (Requires Attunement) While wearing this ring, you can cast Telekinesis from it.Ring of the RamRing, Rare (Requires Attunement) This ring has 3 charges and regains 1d3 expended charges daily at dawn. While wearing the ring, you can take a Magic action to expend 1 to 3 charges to make a ranged spell attack against one creature you can see within 60 feet of yourself. The ring produces a spectral ram s head and makes its attack roll with a +7 bonus. On a hit, for each charge you spend, the target takes 2d10 Force damage and is pushed 5 feet away from you. Alternatively, you can expend 1 to 3 of the ring s charges as a Magic action to try to break a nonmag - ical object you can see within 60 feet of yourself that isn t being worn or carried. The ring makes a Strength check with a +5 bonus for each charge you spend.Ring of Three WishesRing, Legendary While wearing this ring, you can expend 1 of its 3 charges to cast Wish from it. The ring becomes non- magical when you use the last charge.Ring of WarmthRing, Uncommon (Requires Attunement) If you take Cold damage while wearing this ring, the ring reduces the damage you take by 2d8. In addition, while wearing this ring, you and everything you wear and carry are unharmed by temperatures of 0 degrees Fahrenheit or lower.Ring of Water WalkingRing, Uncommon While wearing this ring, you cast Water Walk from it, targeting only yourself.Ring of X-ray VisionRing, Rare (Requires Attunement) While wearing this ring, you can take a Magic ac - tion to gain X-ray vision with a range of 30 feet for 1 minute. To you, solid objects within that radius appear transparent and don t prevent light from passing through them. The vision can penetrate 1 240foot of stone, 1 inch of common metal, or up to 3 feet of wood or dirt. Thicker substances or a thin sheet of lead block the vision. Whenever you use the ring again before taking a - tion saving throw or gain 1 Exhaustion level.Robe of EyesWondrous Item, Rare (Requires Attunement) This robe is adorned with eyelike patterns. While"
+    "text": "Any creature can cast a spell of level 1 through 5 into the ring by touching the ring as the spell is cast. The spell has no effect other than to be stored in the ring. If the ring can’t hold the spell, the spell is ex - pended without effect. The level of the slot used to cast the spell determines how much space it uses. While wearing this ring, you can cast any spell stored in it. The spell uses the slot level, spell save DC, spell attack bonus, and spellcasting ability of the original caster but is otherwise treated as if you cast the spell. The spell cast from the ring is no lon - ger stored in it, freeing up space.Ring of Spell TurningRing, Legendary (Requires Attunement) While wearing this ring, you have Advantage on saving throws against spells. If you succeed on the save for a spell of level 7 or lower, the spell has no effect on you. If that spell targeted only you and didn’t create an area of effect, you can take a Reac - caster must make a saving throw against the spell using their own spell save DC.Ring of SwimmingRing, Uncommon You have a Swim Speed of 40 feet while wearing this ring.Ring of TelekinesisRing, Very Rare (Requires Attunement) While wearing this ring, you can cast Telekinesis from it.Ring of the RamRing, Rare (Requires Attunement) This ring has 3 charges and regains 1d3 expended charges daily at dawn. While wearing the ring, you can take a Magic action to expend 1 to 3 charges to make a ranged spell attack against one creature you can see within 60 feet of yourself. The ring produces a spectral ram’s head and makes its attack roll with a +7 bonus. On a hit, for each charge you spend, the target takes 2d10 Force damage and is pushed 5 feet away from you. Alternatively, you can expend 1 to 3 of the ring’s charges as a Magic action to try to break a nonmag - ical object you can see within 60 feet of yourself that isn’t being worn or carried. The ring makes a Strength check with a +5 bonus for each charge you spend.Ring of Three WishesRing, Legendary While wearing this ring, you can expend 1 of its 3 charges to cast Wish from it. The ring becomes non- magical when you use the last charge.Ring of WarmthRing, Uncommon (Requires Attunement) If you take Cold damage while wearing this ring, the ring reduces the damage you take by 2d8. In addition, while wearing this ring, you and everything you wear and carry are unharmed by temperatures of 0 degrees Fahrenheit or lower.Ring of Water WalkingRing, Uncommon While wearing this ring, you cast Water Walk from it, targeting only yourself.Ring of X-ray VisionRing, Rare (Requires Attunement) While wearing this ring, you can take a Magic ac - tion to gain X-ray vision with a range of 30 feet for 1 minute. To you, solid objects within that radius appear transparent and don’t prevent light from passing through them. The vision can penetrate 1 240foot of stone, 1 inch of common metal, or up to 3 feet of wood or dirt. Thicker substances or a thin sheet of lead block the vision. Whenever you use the ring again before taking a - tion saving throw or gain 1 Exhaustion level.Robe of EyesWondrous Item, Rare (Requires Attunement) This robe is adorned with eyelike patterns. While"
    },
    {
     "name": "All-Around Vision",
@@ -2133,11 +1961,11 @@ const RAW = [
    },
    {
     "name": "Drawbacks",
-    "text": "A Light spell cast on the robe or a Daylight spell cast within 5 feet of the robe gives you the Blinded condition for 1 minute. At the end of each of your turns, you make a Constitution saving throw (DC 11 for Light or DC 15 for Daylight ), ending the condition on yourself on a success.Robe of Scintillating ColorsWondrous Item, Very Rare (Requires Attunement) This robe has 3 charges, and it regains 1d3 ex - pended charges daily at dawn. While you wear it, you can take a Magic action and expend 1 charge to cause the garment to display a shifting pattern of dazzling hues until the end of your next turn. feet, and creatures that can see you have Disadvan - tage on attack rolls against you. Any creature in the is activated must succeed on a DC 15 Wisdom sav - ing throw or have the Stunned condition until the effect ends. Robe of StarsWondrous Item, Very Rare (Requires Attunement) This black or dark-blue robe is embroidered with small white or silver stars. You gain a +1 bonus to saving throws while you wear it. Six stars, located on the robe s upper-front por - tion, are particularly large. While wearing this robe, you can take a Magic action to remove one of the stars and expend it to cast the level 5 version of Magic Missile . Daily at dusk, 1d6 removed stars re - appear on the robe. While you wear the robe, you can take a Magic ac - tion to enter the Astral Plane along with everything you are wearing and carrying. You remain there until you take a Magic action to return to the plane you were on. You reappear in the last space you occupied or, if that space is occupied, the nearest unoccupied space.Robe of the ArchmagiWondrous Item, Legendary (Requires Attunement by a Sorcerer, Warlock, or Wizard) This elegant garment is made from exquisite cloth and adorned with runes."
+    "text": "A Light spell cast on the robe or a Daylight spell cast within 5 feet of the robe gives you the Blinded condition for 1 minute. At the end of each of your turns, you make a Constitution saving throw (DC 11 for Light or DC 15 for Daylight ), ending the condition on yourself on a success.Robe of Scintillating ColorsWondrous Item, Very Rare (Requires Attunement) This robe has 3 charges, and it regains 1d3 ex - pended charges daily at dawn. While you wear it, you can take a Magic action and expend 1 charge to cause the garment to display a shifting pattern of dazzling hues until the end of your next turn. feet, and creatures that can see you have Disadvan - tage on attack rolls against you. Any creature in the is activated must succeed on a DC 15 Wisdom sav - ing throw or have the Stunned condition until the effect ends. Robe of StarsWondrous Item, Very Rare (Requires Attunement) This black or dark-blue robe is embroidered with small white or silver stars. You gain a +1 bonus to saving throws while you wear it. Six stars, located on the robe’s upper-front por - tion, are particularly large. While wearing this robe, you can take a Magic action to remove one of the stars and expend it to cast the level 5 version of Magic Missile . Daily at dusk, 1d6 removed stars re - appear on the robe. While you wear the robe, you can take a Magic ac - tion to enter the Astral Plane along with everything you are wearing and carrying. You remain there until you take a Magic action to return to the plane you were on. You reappear in the last space you occupied or, if that space is occupied, the nearest unoccupied space.Robe of the ArchmagiWondrous Item, Legendary (Requires Attunement by a Sorcerer, Warlock, or Wizard) This elegant garment is made from exquisite cloth and adorned with runes."
    },
    {
     "name": "Armor",
-    "text": "If you aren t wearing armor, your base"
+    "text": "If you aren’t wearing armor, your base"
    },
    {
     "name": "Magic Resistance",
@@ -2145,7 +1973,7 @@ const RAW = [
    },
    {
     "name": "War Mage",
-    "text": "Your spell save DC and spell attack bo - nus each increase by 2.Robe of Useful ItemsWondrous Item, Uncommon This robe has cloth patches of various shapes and colors covering it. While wearing the robe, you can take a Magic action to detach one of the patches, causing it to become the object or creature it rep - resents. Once the last patch is removed, the robe becomes an ordinary garment. The robe has two of each of the following patches: Dagger Mirror Pole Rope (coiled) Sack In addition, the robe has 4d4 other patches. The GM chooses the patches or determines them randomly by rolling on the following table.1d100 Patch01 08 Bag of 100 GP 09 15 Silver coffer (1 foot long, 6 inches wide and deep) worth 500 GP 16 22 Iron door (up to 10 feet wide and 10 feet high, barred on one side of your choice), which you can place in an opening you can reach; it con - itself 23 30 10 gems worth 100 GP each 31 44 Wooden ladder (24 feet long) 45 51 Riding Horse with a Riding Saddle 52 59 Open pit (a 10-foot Cube), which you can place on the ground within 10 feet of yourself 60 68 4 Potions of Healing 69 75 Rowboat (12 feet long) 76 83 Spell Scroll containing one spell of level 1, 2, or 3 (your choice) 2411d100 Patch84 90 2 Mastiffs 91 96 Window (2 feet by 4 feet, up to 2 feet deep), which you can place on a vertical surface you can reach 97 00 Portable RamRod of AbsorptionRod, Very Rare (Requires Attunement) While holding this rod, you can take a Reaction to absorb a spell that is targeting only you and doesn t create an area of effect. The absorbed spell s effect is canceled, and the spell s energy not the spell it - self is stored in the rod. The energy has the same level as the spell when it was cast. A canceled spell dissipates with no effect, and any resources used to cast it are wasted. The rod can absorb and store up to 50 levels of energy over the course of its existence. Once the rod absorbs 50 levels of energy, it can t ab - sorb more. If you are targeted by a spell that the rod can t store, the rod has no effect on that spell. When you become attuned to the rod, you know how many levels of energy the rod has absorbed over the course of its existence and how many levels of spell energy it currently has stored. If you are a spellcaster holding the rod, you can convert energy stored in it into spell slots to cast spells you have prepared or know. You can create spell slots only of a level equal to or lower than your own spell slots, up to a maximum of level 5. You use the stored levels in place of your slots but otherwise cast the spell as normal. For example, you can use 3 levels stored in the rod as a level 3 spell slot. A newly found rod typically has 1d10 levels of spell energy stored in it. A rod that can no longer absorb spell energy and has no energy remaining becomes nonmagical.Rod of AlertnessRod, Very Rare (Requires Attunement) This rod has the following properties."
+    "text": "Your spell save DC and spell attack bo - nus each increase by 2.Robe of Useful ItemsWondrous Item, Uncommon This robe has cloth patches of various shapes and colors covering it. While wearing the robe, you can take a Magic action to detach one of the patches, causing it to become the object or creature it rep - resents. Once the last patch is removed, the robe becomes an ordinary garment. The robe has two of each of the following patches: • • Dagger • Mirror • Pole • Rope (coiled) • Sack In addition, the robe has 4d4 other patches. The GM chooses the patches or determines them randomly by rolling on the following table.1d100 Patch01–08 Bag of 100 GP 09–15 Silver coffer (1 foot long, 6 inches wide and deep) worth 500 GP 16–22 Iron door (up to 10 feet wide and 10 feet high, barred on one side of your choice), which you can place in an opening you can reach; it con - itself 23–30 10 gems worth 100 GP each 31–44 Wooden ladder (24 feet long) 45–51 Riding Horse with a Riding Saddle 52–59 Open pit (a 10-foot Cube), which you can place on the ground within 10 feet of yourself 60–68 4 Potions of Healing 69–75 Rowboat (12 feet long) 76–83 Spell Scroll containing one spell of level 1, 2, or 3 (your choice) 2411d100 Patch84–90 2 Mastiffs 91–96 Window (2 feet by 4 feet, up to 2 feet deep), which you can place on a vertical surface you can reach 97–00 Portable RamRod of AbsorptionRod, Very Rare (Requires Attunement) While holding this rod, you can take a Reaction to absorb a spell that is targeting only you and doesn’t create an area of effect. The absorbed spell’s effect is canceled, and the spell’s energy—not the spell it - self—is stored in the rod. The energy has the same level as the spell when it was cast. A canceled spell dissipates with no effect, and any resources used to cast it are wasted. The rod can absorb and store up to 50 levels of energy over the course of its existence. Once the rod absorbs 50 levels of energy, it can’t ab - sorb more. If you are targeted by a spell that the rod can’t store, the rod has no effect on that spell. When you become attuned to the rod, you know how many levels of energy the rod has absorbed over the course of its existence and how many levels of spell energy it currently has stored. If you are a spellcaster holding the rod, you can convert energy stored in it into spell slots to cast spells you have prepared or know. You can create spell slots only of a level equal to or lower than your own spell slots, up to a maximum of level 5. You use the stored levels in place of your slots but otherwise cast the spell as normal. For example, you can use 3 levels stored in the rod as a level 3 spell slot. A newly found rod typically has 1d10 levels of spell energy stored in it. A rod that can no longer absorb spell energy and has no energy remaining becomes nonmagical.Rod of AlertnessRod, Very Rare (Requires Attunement) This rod has the following properties."
    },
    {
     "name": "Alertness",
@@ -2153,35 +1981,35 @@ const RAW = [
    },
    {
     "name": "Spells",
-    "text": "While holding the rod, you can cast the fol - lowing spells from it: Detect Evil and Good Detect Magic Detect Poison and Disease See Invisibility"
+    "text": "While holding the rod, you can cast the fol - lowing spells from it: • Detect Evil and Good • Detect Magic • Detect Poison and Disease • See Invisibility"
    },
    {
     "name": "Protective Aura",
-    "text": "As a Magic action, you can plant the haft end of the rod in the ground, whereupon bonus to Armor Class and saving throws and can sense the location of any Invisible creature that is The rod s head stops glowing and the effect ends after 10 minutes or when a creature takes a Magic action to pull the rod from the ground. Once used, this property can t be used again until the next dawn.Rod of Lordly MightRod, Legendary (Requires Attunement) magic Mace that grants a +3 bonus to attack rolls and damage rolls made with it. The rod has proper - ties associated with six different buttons that are set in a row along the haft. It has three other prop - erties as well, detailed below."
+    "text": "As a Magic action, you can plant the haft end of the rod in the ground, whereupon bonus to Armor Class and saving throws and can sense the location of any Invisible creature that is The rod’s head stops glowing and the effect ends after 10 minutes or when a creature takes a Magic action to pull the rod from the ground. Once used, this property can’t be used again until the next dawn.Rod of Lordly MightRod, Legendary (Requires Attunement) magic Mace that grants a +3 bonus to attack rolls and damage rolls made with it. The rod has proper - ties associated with six different buttons that are set in a row along the haft. It has three other prop - erties as well, detailed below."
    },
    {
     "name": "Buttons",
-    "text": "You can press one of the following but - tons as a Bonus Action; a button s effect lasts until you push a different button or until you push the same button again, which causes the rod to revert to its normal form: Button 1. - an additional 40 feet, and the blade functions as that deals an extra 2d6 Fire damage on a hit. Button 2. two crescent-shaped blades spring out, trans - forming the rod into a magic Battleaxe that grants a +3 bonus to attack rolls and damage rolls made with it. Button 3. spear point springs from the rod s tip, and the rod s handle lengthens into a 6-foot haft, trans - forming the rod into a magic Spear that grants a +3 bonus to attack rolls and damage rolls made with it. Button 4. The rod transforms into a climbing pole up to 50 feet long (you specify the length), though the rod s buttons remain within your reach. In surfaces as hard as granite, a spike at the bot - tom and three hooks at the top anchor the pole. Horizontal bars 3 inches long fold out from the sides, 1 foot apart, forming a ladder. The pole can bear up to 4,000 pounds. More weight or lack of solid anchoring causes the rod to revert to its normal form. Button 5. The rod transforms into a handheld battering ram and grants its user a +10 bonus to Strength (Athletics) checks made to break through doors, barricades, and other barriers. Button 6. The rod assumes or remains in its nor - mal form and indicates magnetic north. (Nothing happens if this function of the rod is used in a 242location that has no magnetic north.) The rod also gives you knowledge of your approximate depth beneath the ground or your height above it."
+    "text": "You can press one of the following but - tons as a Bonus Action; a button’s effect lasts until you push a different button or until you push the same button again, which causes the rod to revert to its normal form: Button 1. - an additional 40 feet, and the blade functions as that deals an extra 2d6 Fire damage on a hit. Button 2. two crescent-shaped blades spring out, trans - forming the rod into a magic Battleaxe that grants a +3 bonus to attack rolls and damage rolls made with it. Button 3. spear point springs from the rod’s tip, and the rod’s handle lengthens into a 6-foot haft, trans - forming the rod into a magic Spear that grants a +3 bonus to attack rolls and damage rolls made with it. Button 4. The rod transforms into a climbing pole up to 50 feet long (you specify the length), though the rod’s buttons remain within your reach. In surfaces as hard as granite, a spike at the bot - tom and three hooks at the top anchor the pole. Horizontal bars 3 inches long fold out from the sides, 1 foot apart, forming a ladder. The pole can bear up to 4,000 pounds. More weight or lack of solid anchoring causes the rod to revert to its normal form. Button 5. The rod transforms into a handheld battering ram and grants its user a +10 bonus to Strength (Athletics) checks made to break through doors, barricades, and other barriers. Button 6. The rod assumes or remains in its nor - mal form and indicates magnetic north. (Nothing happens if this function of the rod is used in a 242location that has no magnetic north.) The rod also gives you knowledge of your approximate depth beneath the ground or your height above it."
    },
    {
     "name": "Drain Life",
-    "text": "When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw. On a failed save, the target takes an extra 4d6 Necrotic dam - age, and you regain a number of Hit Points equal to half that Necrotic damage. Once used, this property can t be used again until the next dawn."
+    "text": "When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw. On a failed save, the target takes an extra 4d6 Necrotic dam - age, and you regain a number of Hit Points equal to half that Necrotic damage. Once used, this property can’t be used again until the next dawn."
    },
    {
     "name": "Paralyze",
-    "text": "When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw. On a failed save, the target has the Paralyzed condition for 1 minute. The target repeats the save at the end of each of its turns, ending the effect on a success. Once used, this property can t be used again until the next dawn."
+    "text": "When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw. On a failed save, the target has the Paralyzed condition for 1 minute. The target repeats the save at the end of each of its turns, ending the effect on a success. Once used, this property can’t be used again until the next dawn."
    },
    {
     "name": "Terrify",
-    "text": "While holding the rod, you can take a Magic action to force each creature you can see within 30 feet of yourself to make a DC 17 Wisdom saving throw. On a failed save, a target has the Frightened condition for 1 minute. A Frightened target repeats the save at the end of each of its turns, ending the effect on itself on a success. Once used, this property can t be used again until the next dawn.Rod of ResurrectionRod, Legendary (Requires Attunement) The rod has 5 charges. While you hold it, you can cast one of the following spells from it: Heal (ex - pends 1 charge) or Resurrection (expends 5 charges). The rod regains 1 expended charge daily at dawn. If you expend the last charge, roll 1d20. On a 1, the rod disappears in a harmless burst of radiance.Rod of RulershipRod, Rare (Requires Attunement) You can take a Magic action to present the rod and command obedience from each creature of your choice that you can see within 120 feet of your - self. Each target must succeed on a DC 15 Wisdom saving throw or have the Charmed condition for 8 hours. While Charmed in this way, the creature re - gards you as its trusted leader. If harmed by you or your allies or commanded to do something contrary to its nature, a target ceases to be Charmed in this way. Once used, this property can t be used again until the next dawn.Rod of SecurityRod, Very Rare While holding this rod, you can take a Magic action to activate it. The rod then instantly transports you and up to 199 other willing creatures you can see to a demiplane. You choose the form the demiplane takes. It could be a tranquil garden, a cheery tavern, an immense palace, a tropical island, a fantastic car - nival, or whatever else you can imagine. Regardless of its nature, the demiplane contains enough water and food to sustain its visitors, and the demiplane s environment can t harm its occupants. Everything else that can be interacted with there can exist garden there disappears if it is taken outside the demiplane. For each hour spent in the demiplane, a visitor regains Hit Points as if it had spent 1"
+    "text": "While holding the rod, you can take a Magic action to force each creature you can see within 30 feet of yourself to make a DC 17 Wisdom saving throw. On a failed save, a target has the Frightened condition for 1 minute. A Frightened target repeats the save at the end of each of its turns, ending the effect on itself on a success. Once used, this property can’t be used again until the next dawn.Rod of ResurrectionRod, Legendary (Requires Attunement) The rod has 5 charges. While you hold it, you can cast one of the following spells from it: Heal (ex - pends 1 charge) or Resurrection (expends 5 charges). The rod regains 1 expended charge daily at dawn. If you expend the last charge, roll 1d20. On a 1, the rod disappears in a harmless burst of radiance.Rod of RulershipRod, Rare (Requires Attunement) You can take a Magic action to present the rod and command obedience from each creature of your choice that you can see within 120 feet of your - self. Each target must succeed on a DC 15 Wisdom saving throw or have the Charmed condition for 8 hours. While Charmed in this way, the creature re - gards you as its trusted leader. If harmed by you or your allies or commanded to do something contrary to its nature, a target ceases to be Charmed in this way. Once used, this property can’t be used again until the next dawn.Rod of SecurityRod, Very Rare While holding this rod, you can take a Magic action to activate it. The rod then instantly transports you and up to 199 other willing creatures you can see to a demiplane. You choose the form the demiplane takes. It could be a tranquil garden, a cheery tavern, an immense palace, a tropical island, a fantastic car - nival, or whatever else you can imagine. Regardless of its nature, the demiplane contains enough water and food to sustain its visitors, and the demiplane’s environment can’t harm its occupants. Everything else that can be interacted with there can exist garden there disappears if it is taken outside the demiplane. For each hour spent in the demiplane, a visitor regains Hit Points as if it had spent 1"
    },
    {
     "name": "Hit Point Die",
-    "text": "Also, creatures don t age while there, although time passes normally. Visitors can remain there for up to 200 days divided by the number of creatures pres - ent (round down). When the time runs out or you take a Magic action to end the effect, all visitors reappear in the loca- tion they occupied when you activated the rod or an unoccupied space nearest that location. Once used, this property can t be used again until 10 days have passed.Rope of ClimbingWondrous Item, Uncommon This 60-foot length of rope can hold up to 3,000 pounds. While holding one end of the rope, you can take a Magic action to command the other end of the rope to animate and move toward a destination you choose, up to the rope s length away from you. That - mand it and 10 feet at the start of each of your sub - sequent turns until reaching its destination or until you tell it to stop. You can also tell the rope to fasten itself securely to an object or to unfasten itself, to knot or unknot itself, or to coil itself for carrying. If you tell the rope to knot, large knots appear at 1-foot intervals along the rope. While knotted, the rope shortens to a 50-foot length and grants Advan - tage on ability checks made to climb using the rope. The rope has AC 20, HP 20, and Immunity to Poi - son and Psychic damage. It regains 1 Hit Point every 5 minutes as long as it has at least 1"
+    "text": "Also, creatures don’t age while there, although time passes normally. Visitors can remain there for up to 200 days divided by the number of creatures pres - ent (round down). When the time runs out or you take a Magic action to end the effect, all visitors reappear in the loca- tion they occupied when you activated the rod or an unoccupied space nearest that location. Once used, this property can’t be used again until 10 days have passed.Rope of ClimbingWondrous Item, Uncommon This 60-foot length of rope can hold up to 3,000 pounds. While holding one end of the rope, you can take a Magic action to command the other end of the rope to animate and move toward a destination you choose, up to the rope’s length away from you. That - mand it and 10 feet at the start of each of your sub - sequent turns until reaching its destination or until you tell it to stop. You can also tell the rope to fasten itself securely to an object or to unfasten itself, to knot or unknot itself, or to coil itself for carrying. If you tell the rope to knot, large knots appear at 1-foot intervals along the rope. While knotted, the rope shortens to a 50-foot length and grants Advan - tage on ability checks made to climb using the rope. The rope has AC 20, HP 20, and Immunity to Poi - son and Psychic damage. It regains 1 Hit Point every 5 minutes as long as it has at least 1"
    },
    {
     "name": "Hit Point",
-    "text": "If the rope drops to 0 Hit Points, it is destroyed.Rope of EntanglementWondrous Item, Rare This rope is 30 feet long. While holding one end of the rope, you can take a Magic action to command the other end to dart forward and entangle one creature you can see within 20 feet of yourself. The target must succeed on a DC 15 Dexterity saving throw or have the Restrained condition. You can re - lease the target by letting go of your end of the rope (causing the rope to coil up in the target s space) or by using a Bonus Action to repeat the command (causing the rope to coil up in your hand). 243 A target Restrained by the rope can take an action to make its choice of a DC 15 Strength (Athletics) or Dexterity (Acrobatics) check. On a successful check, the target is no longer Restrained by the rope. If you re still holding onto the rope when a target es - capes from it, you can take a Reaction to command the rope to coil up in your hand; otherwise, the rope coils up in the target s space. The rope has AC 20, HP 20, and Immunity to Poi - son and Psychic damage. It regains 1 Hit Point every 5 minutes as long as it has at least 1"
+    "text": "If the rope drops to 0 Hit Points, it is destroyed.Rope of EntanglementWondrous Item, Rare This rope is 30 feet long. While holding one end of the rope, you can take a Magic action to command the other end to dart forward and entangle one creature you can see within 20 feet of yourself. The target must succeed on a DC 15 Dexterity saving throw or have the Restrained condition. You can re - lease the target by letting go of your end of the rope (causing the rope to coil up in the target’s space) or by using a Bonus Action to repeat the command (causing the rope to coil up in your hand). 243 A target Restrained by the rope can take an action to make its choice of a DC 15 Strength (Athletics) or Dexterity (Acrobatics) check. On a successful check, the target is no longer Restrained by the rope. If you’re still holding onto the rope when a target es - capes from it, you can take a Reaction to command the rope to coil up in your hand; otherwise, the rope coils up in the target’s space. The rope has AC 20, HP 20, and Immunity to Poi - son and Psychic damage. It regains 1 Hit Point every 5 minutes as long as it has at least 1"
    },
    {
     "name": "Hit Point",
@@ -2197,7 +2025,7 @@ const RAW = [
    },
    {
     "name": "Spell Resistance",
-    "text": "You have Advantage on saving throws against spells.Scimitar of SpeedWeapon (Scimitar), Very Rare (Requires Attunement) You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon. In addition, you can make one attack with it as a Bonus Action on each of your turns.Sending StonesWondrous Item, Uncommon Sending Stones come in pairs, with each stone carved to match the other so the pairing is easily recognized. While you touch one stone, you can cast Sending from it. The target is the bearer of the other stone. If no creature bears the other stone, you know that fact as soon as you use the stone, and you don t cast the spell. Once Sending is cast using either stone, the stones can t be used again until the next dawn. If one of the stones in a pair is destroyed, the other one becomes nonmagical.Sentinel ShieldArmor (Shield), Uncommon While holding this Shield, you have Advantage on Initiative rolls and Wisdom (Perception) checks. The Shield is emblazoned with a symbol of an eye.Shield, +1, +2, or +3Armor (Shield), Uncommon (+1), Rare (+2), or Very Rare (+3) While holding this Shield, you have a bonus to Ar - mor Class determined by the Shield s rarity, in addi - tion to the Shield s normal bonus to AC.Shield of Missile AttractionArmor (Shield), Rare (Requires Attunement) While holding this Shield, you have Resistance to damage from attacks made with Ranged weapons."
+    "text": "You have Advantage on saving throws against spells.Scimitar of SpeedWeapon (Scimitar), Very Rare (Requires Attunement) You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon. In addition, you can make one attack with it as a Bonus Action on each of your turns.Sending StonesWondrous Item, Uncommon Sending Stones come in pairs, with each stone carved to match the other so the pairing is easily recognized. While you touch one stone, you can cast Sending from it. The target is the bearer of the other stone. If no creature bears the other stone, you know that fact as soon as you use the stone, and you don’t cast the spell. Once Sending is cast using either stone, the stones can’t be used again until the next dawn. If one of the stones in a pair is destroyed, the other one becomes nonmagical.Sentinel ShieldArmor (Shield), Uncommon While holding this Shield, you have Advantage on Initiative rolls and Wisdom (Perception) checks. The Shield is emblazoned with a symbol of an eye.Shield, +1, +2, or +3Armor (Shield), Uncommon (+1), Rare (+2), or Very Rare (+3) While holding this Shield, you have a bonus to Ar - mor Class determined by the Shield’s rarity, in addi - tion to the Shield’s normal bonus to AC.Shield of Missile AttractionArmor (Shield), Rare (Requires Attunement) While holding this Shield, you have Resistance to damage from attacks made with Ranged weapons."
    },
    {
     "name": "Curse",
@@ -2205,7 +2033,7 @@ const RAW = [
    },
    {
     "name": "Armor Class",
-    "text": "This bonus is in addition to the Shield s normal bonus to"
+    "text": "This bonus is in addition to the Shield’s normal bonus to"
    },
    {
     "name": "AC",
@@ -2213,27 +2041,27 @@ const RAW = [
    },
    {
     "name": "Protective Field",
-    "text": "As a Reaction, when you or an ally you can see within 5 feet of you is targeted by an attack or makes a saving throw against an area of effect, you can use the Shield to create an immo - bile 5-foot Emanation originating from you. When the Emanation appears, any creatures or objects not fully contained within it are pushed into the nearest unoccupied spaces outside it. The attack or area of effect that triggered the Reaction has no effect on creatures and objects inside the Emanation, which lasts as long as you maintain Concentration, up to 1 minute. Nothing can pass into or out of the Emana- tion. A creature or object inside the Emanation can t be damaged by attacks or effects originating from outside, nor can a creature inside the Emanation damage anything outside it. Once this property is used, it can t be used again until the next dawn. 244Slippers of Spider ClimbingWondrous Item, Uncommon (Requires Attunement) While you wear these light shoes, you can move up, down, and across vertical surfaces and along ceilings, while leaving your hands free. You have a Climb Speed equal to your"
+    "text": "As a Reaction, when you or an ally you can see within 5 feet of you is targeted by an attack or makes a saving throw against an area of effect, you can use the Shield to create an immo - bile 5-foot Emanation originating from you. When the Emanation appears, any creatures or objects not fully contained within it are pushed into the nearest unoccupied spaces outside it. The attack or area of effect that triggered the Reaction has no effect on creatures and objects inside the Emanation, which lasts as long as you maintain Concentration, up to 1 minute. Nothing can pass into or out of the Emana- tion. A creature or object inside the Emanation can’t be damaged by attacks or effects originating from outside, nor can a creature inside the Emanation damage anything outside it. Once this property is used, it can’t be used again until the next dawn. 244Slippers of Spider ClimbingWondrous Item, Uncommon (Requires Attunement) While you wear these light shoes, you can move up, down, and across vertical surfaces and along ceilings, while leaving your hands free. You have a Climb Speed equal to your"
    },
    {
     "name": "Speed",
-    "text": "However, the slip - pers don t allow you to move this way on a slippery surface, such as one covered by ice or oil.Sovereign GlueWondrous Item, Legendary This viscous, milky-white substance can form a per - manent adhesive bond between any two objects. It inside with Oil of Slipperiness . When found, a con - tainer contains 1d6 + 1 ounces. One ounce of the glue can cover a 1-foot square surface. Applying an ounce of Sovereign Glue takes a Utilize action, and the applied glue takes 1 minute to set. Once it has done so, the bond it creates can be broken only by the application of Universal Solvent or Oil of Etherealness , or with a Wish spell.Spellguard ShieldArmor (Shield), Very Rare (Requires Attunement) While holding this Shield, you have Advantage on saving throws against spells and other magical effects, and spell attack rolls have Disadvantage against you.Spell ScrollScroll, Rarity Varies A Spell Scroll bears the words of a single spell, writ - ten in a mystical cipher. If the spell is on your spell list, you can read the scroll and cast its spell with - out Material components. Otherwise, the scroll is unintelligible. Casting the spell by reading the scroll requires the spell s normal casting time. Once the spell is cast, the scroll crumbles to dust. If the cast - ing is interrupted, the scroll isn t lost. If the spell is on your spell list but of a higher level than you can normally cast, you make an ability check using your spellcasting ability to determine whether you cast the spell. The DC equals 10 plus the spell s level. On a failed check, the spell disap - pears from the scroll with no other effect. The level of the spell on the scroll determines the spell s saving throw DC and attack bonus, as well as the scroll s rarity, as shown in the following table.Spell Level Rarity Save DC Attack BonusCantrip Common 13 +5 1 Common 13 +5 2 Uncommon 13 +5 3 Uncommon 15 +7Spell Level Rarity Save DC Attack Bonus4 Rare 15 +7 5 Rare 17 +9 6 Very Rare 17 +9 7 Very Rare 18 +10 8 Very Rare 18 +10 9 Legendary 19 +11 Copying a Scroll into a"
+    "text": "However, the slip - pers don’t allow you to move this way on a slippery surface, such as one covered by ice or oil.Sovereign GlueWondrous Item, Legendary This viscous, milky-white substance can form a per - manent adhesive bond between any two objects. It inside with Oil of Slipperiness . When found, a con - tainer contains 1d6 + 1 ounces. One ounce of the glue can cover a 1-foot square surface. Applying an ounce of Sovereign Glue takes a Utilize action, and the applied glue takes 1 minute to set. Once it has done so, the bond it creates can be broken only by the application of Universal Solvent or Oil of Etherealness , or with a Wish spell.Spellguard ShieldArmor (Shield), Very Rare (Requires Attunement) While holding this Shield, you have Advantage on saving throws against spells and other magical effects, and spell attack rolls have Disadvantage against you.Spell ScrollScroll, Rarity Varies A Spell Scroll bears the words of a single spell, writ - ten in a mystical cipher. If the spell is on your spell list, you can read the scroll and cast its spell with - out Material components. Otherwise, the scroll is unintelligible. Casting the spell by reading the scroll requires the spell’s normal casting time. Once the spell is cast, the scroll crumbles to dust. If the cast - ing is interrupted, the scroll isn’t lost. If the spell is on your spell list but of a higher level than you can normally cast, you make an ability check using your spellcasting ability to determine whether you cast the spell. The DC equals 10 plus the spell’s level. On a failed check, the spell disap - pears from the scroll with no other effect. The level of the spell on the scroll determines the spell’s saving throw DC and attack bonus, as well as the scroll’s rarity, as shown in the following table.Spell Level Rarity Save DC Attack BonusCantrip Common 13 +5 1 Common 13 +5 2 Uncommon 13 +5 3 Uncommon 15 +7Spell Level Rarity Save DC Attack Bonus4 Rare 15 +7 5 Rare 17 +9 6 Very Rare 17 +9 7 Very Rare 18 +10 8 Very Rare 18 +10 9 Legendary 19 +11 Copying a Scroll into a"
    },
    {
     "name": "Spellbook",
-    "text": "A Wizard spell on a Spell Scroll can be copied into a spellbook. When a spell is copied in this way, the copier must succeed on an Intelligence (Arcana) check with a DC equal to 10 plus the spell s level. On a successful check, the spell is copied. Whether the check suc - ceeds or fails, the Spell Scroll is destroyed.Sphere of AnnihilationWondrous Item, Legendary This 2-foot-diameter black sphere is a hole in the multiverse, hovering in space and stabilized by a The sphere obliterates all matter it passes through and all matter that passes through it. Ar - tifacts are the exception. Unless an Artifact is sus - ceptible to damage from a Sphere of Annihilation , it passes through the sphere unscathed. Anything else that touches the sphere but isn t wholly engulfed and obliterated by it takes 8d10 Force damage."
+    "text": "A Wizard spell on a Spell Scroll can be copied into a spellbook. When a spell is copied in this way, the copier must succeed on an Intelligence (Arcana) check with a DC equal to 10 plus the spell’s level. On a successful check, the spell is copied. Whether the check suc - ceeds or fails, the Spell Scroll is destroyed.Sphere of AnnihilationWondrous Item, Legendary This 2-foot-diameter black sphere is a hole in the multiverse, hovering in space and stabilized by a The sphere obliterates all matter it passes through and all matter that passes through it. Ar - tifacts are the exception. Unless an Artifact is sus - ceptible to damage from a Sphere of Annihilation , it passes through the sphere unscathed. Anything else that touches the sphere but isn’t wholly engulfed and obliterated by it takes 8d10 Force damage."
    },
    {
     "name": "Controlling the Sphere",
-    "text": "A Sphere of Annihilation is stationary until someone takes control of it. If you are within 60 feet of a sphere, you can take a Magic action to make a DC 25 Intelligence (Arcana) check. On a successful check, you control the sphere until the start of your next turn, and if it was under an - other creature s control, that creature loses control of the sphere. On a failed check, the sphere moves 10 feet toward you in a straight line. While in control of the sphere, you can take a Bonus Action to cause it to move in one direction of your choice, up to a number of feet equal to feet). Any creature whose space the sphere enters must succeed on a DC 19 Dexterity saving throw or be touched by it, taking 8d10 Force damage. A creature reduced to 0 Hit Points by this damage is obliterated, leaving its possessions behind but no other physical remains."
+    "text": "A Sphere of Annihilation is stationary until someone takes control of it. If you are within 60 feet of a sphere, you can take a Magic action to make a DC 25 Intelligence (Arcana) check. On a successful check, you control the sphere until the start of your next turn, and if it was under an - other creature’s control, that creature loses control of the sphere. On a failed check, the sphere moves 10 feet toward you in a straight line. While in control of the sphere, you can take a Bonus Action to cause it to move in one direction of your choice, up to a number of feet equal to feet). Any creature whose space the sphere enters must succeed on a DC 19 Dexterity saving throw or be touched by it, taking 8d10 Force damage. A creature reduced to 0 Hit Points by this damage is obliterated, leaving its possessions behind but no other physical remains."
    },
    {
     "name": "Sphere Interactions",
-    "text": "If the sphere comes into contact with a planar portal (such as that created by the Gate spell) or an extradimensional space (such as that within a Portable Hole ), the GM determines randomly what happens using the following table. 2451d100 Result01 50 The sphere is destroyed. 51 85 The sphere moves through the portal or into the extradimensional space. 86 00 A spatial rift sends the sphere and each crea - ture and object within 180 feet of the sphere to a random plane of existence.Staff of CharmingStaff, Rare (Requires Attunement by a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard) This staff has 10 charges. While holding the staff, you can use any of its properties:"
+    "text": "If the sphere comes into contact with a planar portal (such as that created by the Gate spell) or an extradimensional space (such as that within a Portable Hole ), the GM determines randomly what happens using the following table. 2451d100 Result01–50 The sphere is destroyed. 51–85 The sphere moves through the portal or into the extradimensional space. 86–00 A spatial rift sends the sphere and each crea - ture and object within 180 feet of the sphere to a random plane of existence.Staff of CharmingStaff, Rare (Requires Attunement by a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard) This staff has 10 charges. While holding the staff, you can use any of its properties:"
    },
    {
     "name": "Cast Spell",
-    "text": "You can expend 1 of the staff s charges to cast Charm Person , Command , or Comprehend Languages from it using your spell save"
+    "text": "You can expend 1 of the staff’s charges to cast Charm Person , Command , or Comprehend Languages from it using your spell save"
    },
    {
     "name": "DC",
@@ -2241,7 +2069,7 @@ const RAW = [
    },
    {
     "name": "Resist Enchantment",
-    "text": "If you fail a saving throw against an Enchantment spell that targets only you, you can turn your failed save into a success - ful one. You can t use this property of the staff again until the next dawn."
+    "text": "If you fail a saving throw against an Enchantment spell that targets only you, you can turn your failed save into a success - ful one. You can’t use this property of the staff again until the next dawn."
    },
    {
     "name": "Regaining Charges",
@@ -2309,7 +2137,7 @@ const RAW = [
    },
    {
     "name": "Spell Absorption",
-    "text": "While holding the staff, you have Advantage on saving throws against spells. In addition, you can take a Reaction when another creature casts a spell that targets only you. If you do, the staff absorbs the magic of the spell, cancel - ing its effect and gaining a number of charges equal to the absorbed spell s level. However, if doing so brings the staff s total number of charges above 50, the staff explodes as if you activated its Retributive"
+    "text": "While holding the staff, you have Advantage on saving throws against spells. In addition, you can take a Reaction when another creature casts a spell that targets only you. If you do, the staff absorbs the magic of the spell, cancel - ing its effect and gaining a number of charges equal to the absorbed spell’s level. However, if doing so brings the staff’s total number of charges above 50, the staff explodes as if you activated its Retributive"
    },
    {
     "name": "Spells",
@@ -2325,7 +2153,7 @@ const RAW = [
    },
    {
     "name": "Retributive Strike",
-    "text": "You can take a Magic action to break the staff over your knee or against a solid sur - face. The staff is destroyed and releases its magic in - ing from itself. You have a 50 percent chance to in - stantly travel to a random plane of existence, avoid - ing the explosion. If you fail to avoid the effect, you take Force damage equal to 16 times the number of charges in the staff. Each other creature in the area makes a DC 17 Dexterity saving throw. On a failed save, a creature takes Force damage equal to 6 times the number of charges in the staff. On a suc - cessful save, a creature takes half as much damage.Staff of the PythonStaff, Uncommon (Requires Attunement) As a Magic action, you can throw this staff so that it lands in an unoccupied space within 10 feet of you, causing the staff to become a Giant Constrictor Snake in that space. The snake is under your con - trol and shares your Initiative count, taking its turn immediately after yours. On your turn, you can mentally command the snake (no action required) if it is within 60 feet of you and you don t have the Incapacitated condition. You decide what action the snake takes and where it moves during its turn, or you can issue it a general command, such as to attack your enemies or guard a location. Absent commands from you, the snake defends itself. As a Bonus Action, you can command the snake to revert to staff form in its current space, and you can t use the staff s property again for 1 hour. If the snake is reduced to 0 Hit Points, it dies and reverts to its staff form; the staff then shatters and is de - stroyed. If the snake reverts to staff form before losing all its Hit Points, it regains all of them. Staff of the WoodlandsStaff, Rare (Requires Attunement by a Druid) This staff has 6 charges and can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. While holding it, you have a +2 bonus to spell attack rolls."
+    "text": "You can take a Magic action to break the staff over your knee or against a solid sur - face. The staff is destroyed and releases its magic in - ing from itself. You have a 50 percent chance to in - stantly travel to a random plane of existence, avoid - ing the explosion. If you fail to avoid the effect, you take Force damage equal to 16 times the number of charges in the staff. Each other creature in the area makes a DC 17 Dexterity saving throw. On a failed save, a creature takes Force damage equal to 6 times the number of charges in the staff. On a suc - cessful save, a creature takes half as much damage.Staff of the PythonStaff, Uncommon (Requires Attunement) As a Magic action, you can throw this staff so that it lands in an unoccupied space within 10 feet of you, causing the staff to become a Giant Constrictor Snake in that space. The snake is under your con - trol and shares your Initiative count, taking its turn immediately after yours. On your turn, you can mentally command the snake (no action required) if it is within 60 feet of you and you don’t have the Incapacitated condition. You decide what action the snake takes and where it moves during its turn, or you can issue it a general command, such as to attack your enemies or guard a location. Absent commands from you, the snake defends itself. As a Bonus Action, you can command the snake to revert to staff form in its current space, and you can’t use the staff’s property again for 1 hour. If the snake is reduced to 0 Hit Points, it dies and reverts to its staff form; the staff then shatters and is de - stroyed. If the snake reverts to staff form before losing all its Hit Points, it regains all of them. Staff of the WoodlandsStaff, Rare (Requires Attunement by a Druid) This staff has 6 charges and can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. While holding it, you have a +2 bonus to spell attack rolls."
    },
    {
     "name": "Spells",
@@ -2341,7 +2169,7 @@ const RAW = [
    },
    {
     "name": "Regaining Charges",
-    "text": "The staff regains 1d6 ex - pended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff loses its proper - ties and becomes a nonmagical Quarterstaff.Staff of Thunder and LightningStaff, Very Rare (Requires Attunement) This staff can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. It also has the following addi - tional properties. Once one of these properties is used, it can t be used again until the next dawn."
+    "text": "The staff regains 1d6 ex - pended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff loses its proper - ties and becomes a nonmagical Quarterstaff.Staff of Thunder and LightningStaff, Very Rare (Requires Attunement) This staff can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. It also has the following addi - tional properties. Once one of these properties is used, it can’t be used again until the next dawn."
    },
    {
     "name": "Lightning",
@@ -2353,11 +2181,11 @@ const RAW = [
    },
    {
     "name": "Thunder and Lightning",
-    "text": "Immediately after you hit with a melee attack using the staff, you can take properties (see above) at the same time. Doing so doesn t expend the daily use of those properties, only the use of this one."
+    "text": "Immediately after you hit with a melee attack using the staff, you can take properties (see above) at the same time. Doing so doesn’t expend the daily use of those properties, only the use of this one."
    },
    {
     "name": "Lightning Strike",
-    "text": "You can take a Magic action to cause a bolt of lightning to leap from the staff s tip - save or half as much damage on a successful one."
+    "text": "You can take a Magic action to cause a bolt of lightning to leap from the staff’s tip - save or half as much damage on a successful one."
    },
    {
     "name": "Thunderclap",
@@ -2369,7 +2197,7 @@ const RAW = [
    },
    {
     "name": "Bonus Action",
-    "text": "The stone can t be used this way again until the next dawn.Stone of Good Luck (Luckstone)Wondrous Item, Uncommon (Requires Attunement) While this polished agate is on your person, you gain a +1 bonus to ability checks and saving throws.Sun BladeWeapon (Longsword), Rare (Requires Attunement) This item appears to be a sword hilt."
+    "text": "The stone can’t be used this way again until the next dawn.Stone of Good Luck (Luckstone)Wondrous Item, Uncommon (Requires Attunement) While this polished agate is on your person, you gain a +1 bonus to ability checks and saving throws.Sun BladeWeapon (Longsword), Rare (Requires Attunement) This item appears to be a sword hilt."
    },
    {
     "name": "Blade of Radiance",
@@ -2377,7 +2205,7 @@ const RAW = [
    },
    {
     "name": "Sunlight",
-    "text": "The sword s luminous blade emits an additional 15 feet. The light is sunlight. While the blade persists, you can take a Magic action to or a minimum of 10 feet each.Sword of Life StealingWeapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Rare (Requires Attunement) When you attack a creature with this magic weapon and roll a 20 on the d20 for the attack roll, that target takes an extra 15 Necrotic damage if it isn t a Construct or an Undead, and you gain Temporary Hit Points equal to the amount of Necrotic damage taken.Sword of SharpnessWeapon (Glaive, Greatsword, Longsword, or Scimitar), Very Rare (Requires Attunement) When you attack an object with this magic weapon and hit, maximize your weapon damage dice against the target. When you attack a creature with this weapon and roll a 20 on the d20 for the attack roll, that tar - get takes an extra 14 Slashing damage and gains 1 Exhaustion level.Sword of WoundingWeapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Rare (Requires Attunement) When you hit a creature with an attack using this magic weapon, the target takes an extra 2d6 Necrotic damage and must succeed on a DC 15 Constitution saving throw or be unable to regain Hit Points for 1 hour. The target repeats the save at the end of each of its turns, ending the effect on itself on a success.Talisman of Pure GoodWondrous Item, Legendary (Requires Attunement by a Cleric or Paladin) This talisman is a mighty symbol of goodness. A Fiend or an Undead that touches the talisman takes 8d6 Radiant damage and takes the damage again each time it ends its turn holding or carrying the talisman. 249"
+    "text": "The sword’s luminous blade emits an additional 15 feet. The light is sunlight. While the blade persists, you can take a Magic action to or a minimum of 10 feet each.Sword of Life StealingWeapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Rare (Requires Attunement) When you attack a creature with this magic weapon and roll a 20 on the d20 for the attack roll, that target takes an extra 15 Necrotic damage if it isn’t a Construct or an Undead, and you gain Temporary Hit Points equal to the amount of Necrotic damage taken.Sword of SharpnessWeapon (Glaive, Greatsword, Longsword, or Scimitar), Very Rare (Requires Attunement) When you attack an object with this magic weapon and hit, maximize your weapon damage dice against the target. When you attack a creature with this weapon and roll a 20 on the d20 for the attack roll, that tar - get takes an extra 14 Slashing damage and gains 1 Exhaustion level.Sword of WoundingWeapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Rare (Requires Attunement) When you hit a creature with an attack using this magic weapon, the target takes an extra 2d6 Necrotic damage and must succeed on a DC 15 Constitution saving throw or be unable to regain Hit Points for 1 hour. The target repeats the save at the end of each of its turns, ending the effect on itself on a success.Talisman of Pure GoodWondrous Item, Legendary (Requires Attunement by a Cleric or Paladin) This talisman is a mighty symbol of goodness. A Fiend or an Undead that touches the talisman takes 8d6 Radiant damage and takes the damage again each time it ends its turn holding or carrying the talisman. 249"
    },
    {
     "name": "Holy Symbol",
@@ -2389,7 +2217,7 @@ const RAW = [
    },
    {
     "name": "Pure Rebuke",
-    "text": "The talisman has 7 charges. While wearing or holding the talisman, you can take a Magic action to expend 1 charge and target one creature you can see on the ground within 120 feet - get, and the target makes a DC 20 Dexterity saving throw. If the target is a Fiend or an Undead, it has Disadvantage on the save. On a failed save, the tar - remains. On a successful save, the target isn t cast leaving no trace of its existence. When you expend the last charge, the talisman disperses into motes of golden light and is destroyed.Talisman of the SphereWondrous Item, Legendary (Requires Attunement) While holding or wearing this talisman, you have Advantage on any Intelligence (Arcana) check you make to control a Sphere of Annihilation . In addition, when you start your turn in control of a Sphere of Annihilation , you can take a Magic action to move it 10 feet plus a number of additional feet equal to 10 doesn t have to be in a straight line.Talisman of Ultimate EvilWondrous Item, Legendary (Requires Attunement) This item symbolizes unrepentant evil. A creature that isn t a Fiend or an Undead that touches the talisman takes 8d6 Necrotic damage and takes the damage again each time it ends its turn holding or carrying the talisman."
+    "text": "The talisman has 7 charges. While wearing or holding the talisman, you can take a Magic action to expend 1 charge and target one creature you can see on the ground within 120 feet - get, and the target makes a DC 20 Dexterity saving throw. If the target is a Fiend or an Undead, it has Disadvantage on the save. On a failed save, the tar - remains. On a successful save, the target isn’t cast leaving no trace of its existence. When you expend the last charge, the talisman disperses into motes of golden light and is destroyed.Talisman of the SphereWondrous Item, Legendary (Requires Attunement) While holding or wearing this talisman, you have Advantage on any Intelligence (Arcana) check you make to control a Sphere of Annihilation . In addition, when you start your turn in control of a Sphere of Annihilation , you can take a Magic action to move it 10 feet plus a number of additional feet equal to 10 doesn’t have to be in a straight line.Talisman of Ultimate EvilWondrous Item, Legendary (Requires Attunement) This item symbolizes unrepentant evil. A creature that isn’t a Fiend or an Undead that touches the talisman takes 8d6 Necrotic damage and takes the damage again each time it ends its turn holding or carrying the talisman."
    },
    {
     "name": "Holy Symbol",
@@ -2401,15 +2229,15 @@ const RAW = [
    },
    {
     "name": "Ultimate End",
-    "text": "The talisman has 6 charges. While wearing or holding the talisman, you can take a Magic action to expend 1 charge and target one creature you can see on the ground within 120 target, and the target makes a DC 20 Dexterity saving throw. If the target is a Celestial, it has Dis - advantage on the save. On a failed save, the target - mains. On a successful save, the target isn t cast into - ing no trace of its existence. When you expend the last charge, the talisman dissolves into foul-smell - ing slime and is destroyed.Thunderous GreatclubWeapon (Greatclub), Very Rare (Requires Attunement) While you are attuned to this magic weapon, your Strength is 20 unless your Strength is already equal to or greater than that score. The weapon deals an extra 1d8 Thunder damage to any creature it hits and an extra 3d8 Thunder damage to objects it hits that aren t being worn or carried. The weapon has the following additional properties."
+    "text": "The talisman has 6 charges. While wearing or holding the talisman, you can take a Magic action to expend 1 charge and target one creature you can see on the ground within 120 target, and the target makes a DC 20 Dexterity saving throw. If the target is a Celestial, it has Dis - advantage on the save. On a failed save, the target - mains. On a successful save, the target isn’t cast into - ing no trace of its existence. When you expend the last charge, the talisman dissolves into foul-smell - ing slime and is destroyed.Thunderous GreatclubWeapon (Greatclub), Very Rare (Requires Attunement) While you are attuned to this magic weapon, your Strength is 20 unless your Strength is already equal to or greater than that score. The weapon deals an extra 1d8 Thunder damage to any creature it hits and an extra 3d8 Thunder damage to objects it hits that aren’t being worn or carried. The weapon has the following additional properties."
    },
    {
     "name": "Clap of Thunder",
-    "text": "As a Magic action, you can strike the weapon against a hard surface to create a loud clap of thunder audible out to 300 feet. You also cre - ate a 30-foot Cone of thunderous energy. Each crea- ture in the Cone must succeed on a DC 15 Strength saving throw or have the Prone condition. Nonmag - ical objects in the Cone that aren t being worn or carried take 3d8 Thunder damage."
+    "text": "As a Magic action, you can strike the weapon against a hard surface to create a loud clap of thunder audible out to 300 feet. You also cre - ate a 30-foot Cone of thunderous energy. Each crea- ture in the Cone must succeed on a DC 15 Strength saving throw or have the Prone condition. Nonmag - ical objects in the Cone that aren’t being worn or carried take 3d8 Thunder damage."
    },
    {
     "name": "Earthquake",
-    "text": "As a Magic action, you can strike the weapon against the ground to create an intense seismic disturbance in a 50-foot-radius circle cen - tered on the point of impact. Structures in contact with the ground in that area take 50 Bludgeoning damage, and each creature on the ground in that area must succeed on a DC 20 Dexterity saving throw or have the Prone condition. If that creature is also concentrating, it must succeed on a DC 20 Constitution saving throw, or its Concentration is broken. In addition, you can cause a 30-foot-deep, - where in the area. Any creature on a spot where the - can t be used again until the next dawn.Tome of Clear ThoughtWondrous Item, Very Rare This book contains memory and logic exercises, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book s contents and practicing its guidelines, your Intelligence increases by 2, to a maximum of 30. The manual then loses its magic but regains it in a century.Wondrous Item, Very Rare charming others, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book s contents and practic - ing its guidelines, your Charisma increases by 2, to 250a maximum of 30. The manual then loses its magic but regains it in a century.Tome of UnderstandingWondrous Item, Very Rare This book contains intuition and insight exercises, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book s contents and practicing its guidelines, your Wisdom increases by 2, to a maximum of 30. The manual then loses its magic, but regains it in a century.Trident of Fish CommandWeapon (Trident), Uncommon (Requires Attunement) This magic weapon has 3 charges, and it regains 1d3 expended charges daily at dawn. While you carry it, you can expend 1 charge to cast Dominate Beast (save DC 15) from it on a Beast that has a Swim Speed.Universal SolventWondrous Item, Legendary This tube holds milky liquid with a strong alcohol smell. When found, a tube contains 1d6 + 1 ounces. You can take a Utilize action to pour 1 or more ounces of solvent from the tube onto a surface within reach. Each ounce instantly dissolves up to 1 square foot of adhesive it touches, including Sover - eign Glue .Vicious WeaponWeapon (Any Simple or Martial), Rare This magic weapon deals an extra 2d6 damage to any creature it hits. This extra damage is of the same type as the weapon s normal damage.Vorpal SwordWeapon (Glaive, Greatsword, Longsword, or Scimitar), Legendary (Requires Attunement) You gain a +3 bonus to attack rolls and damage rolls made with this magic weapon. In addition, the weapon ignores Resistance to Slashing damage. When you use this weapon to attack a creature that has at least one head and roll a 20 on the d20 for the attack roll, you cut off one of the creature s heads. The creature dies if it can t survive without the lost head. A creature is immune to this effect if it has Immunity to Slashing damage, if it doesn t have or need a head, or if the GM decides that the creature is too big for its head to be cut off with this weapon. Such a creature instead takes an extra 30 Slashing damage from the hit. If the creature has of that trait to avoid losing its head, taking the extra damage instead.Wand of BindingWand, Rare (Requires Attunement) This wand has 7 charges."
+    "text": "As a Magic action, you can strike the weapon against the ground to create an intense seismic disturbance in a 50-foot-radius circle cen - tered on the point of impact. Structures in contact with the ground in that area take 50 Bludgeoning damage, and each creature on the ground in that area must succeed on a DC 20 Dexterity saving throw or have the Prone condition. If that creature is also concentrating, it must succeed on a DC 20 Constitution saving throw, or its Concentration is broken. In addition, you can cause a 30-foot-deep, - where in the area. Any creature on a spot where the - can’t be used again until the next dawn.Tome of Clear ThoughtWondrous Item, Very Rare This book contains memory and logic exercises, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Intelligence increases by 2, to a maximum of 30. The manual then loses its magic but regains it in a century.Wondrous Item, Very Rare charming others, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practic - ing its guidelines, your Charisma increases by 2, to 250a maximum of 30. The manual then loses its magic but regains it in a century.Tome of UnderstandingWondrous Item, Very Rare This book contains intuition and insight exercises, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Wisdom increases by 2, to a maximum of 30. The manual then loses its magic, but regains it in a century.Trident of Fish CommandWeapon (Trident), Uncommon (Requires Attunement) This magic weapon has 3 charges, and it regains 1d3 expended charges daily at dawn. While you carry it, you can expend 1 charge to cast Dominate Beast (save DC 15) from it on a Beast that has a Swim Speed.Universal SolventWondrous Item, Legendary This tube holds milky liquid with a strong alcohol smell. When found, a tube contains 1d6 + 1 ounces. You can take a Utilize action to pour 1 or more ounces of solvent from the tube onto a surface within reach. Each ounce instantly dissolves up to 1 square foot of adhesive it touches, including Sover - eign Glue .Vicious WeaponWeapon (Any Simple or Martial), Rare This magic weapon deals an extra 2d6 damage to any creature it hits. This extra damage is of the same type as the weapon’s normal damage.Vorpal SwordWeapon (Glaive, Greatsword, Longsword, or Scimitar), Legendary (Requires Attunement) You gain a +3 bonus to attack rolls and damage rolls made with this magic weapon. In addition, the weapon ignores Resistance to Slashing damage. When you use this weapon to attack a creature that has at least one head and roll a 20 on the d20 for the attack roll, you cut off one of the creature’s heads. The creature dies if it can’t survive without the lost head. A creature is immune to this effect if it has Immunity to Slashing damage, if it doesn’t have or need a head, or if the GM decides that the creature is too big for its head to be cut off with this weapon. Such a creature instead takes an extra 30 Slashing damage from the hit. If the creature has of that trait to avoid losing its head, taking the extra damage instead.Wand of BindingWand, Rare (Requires Attunement) This wand has 7 charges."
    },
    {
     "name": "Spells",
@@ -2417,11 +2245,11 @@ const RAW = [
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of Enemy DetectionWand, Rare (Requires Attunement) This wand has 7 charges. While holding it, you can take a Magic action to expend 1 charge. For 1 min - ute, you know the direction of the nearest creature Hostile to you within 60 feet, but not its distance from you. The wand can sense the presence of Hos - tile creatures that are Invisible, ethereal, disguised, or hidden, as well as those in plain sight. The effect ends if you stop holding the wand."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of Enemy DetectionWand, Rare (Requires Attunement) This wand has 7 charges. While holding it, you can take a Magic action to expend 1 charge. For 1 min - ute, you know the direction of the nearest creature Hostile to you within 60 feet, but not its distance from you. The wand can sense the presence of Hos - tile creatures that are Invisible, ethereal, disguised, or hidden, as well as those in plain sight. The effect ends if you stop holding the wand."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of FearWand, Rare (Requires Attunement) This wand has 7 charges."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of FearWand, Rare (Requires Attunement) This wand has 7 charges."
    },
    {
     "name": "Spells",
@@ -2429,43 +2257,43 @@ const RAW = [
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of FireballsWand, Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend no more than 3 charges to cast Fireball (save DC 15) from it. For 1 charge, you cast the level 3 ver - sion of the spell. You can increase the spell s level by 1 for each additional charge you expend. 251"
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of FireballsWand, Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend no more than 3 charges to cast Fireball (save DC 15) from it. For 1 charge, you cast the level 3 ver - sion of the spell. You can increase the spell’s level by 1 for each additional charge you expend. 251"
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of Lightning BoltsWand, Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend no more than 3 charges to cast Lightning Bolt (save DC 15) from it. For 1 charge, you cast the level 3 version of the spell. You can increase the spell s level by 1 for each additional charge you expend."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of Lightning BoltsWand, Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend no more than 3 charges to cast Lightning Bolt (save DC 15) from it. For 1 charge, you cast the level 3 version of the spell. You can increase the spell’s level by 1 for each additional charge you expend."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of Magic DetectionWand, Uncommon This wand has 3 charges. While holding it, you can expend 1 charge to cast Detect Magic from it. The wand regains 1d3 expended charges daily at dawn.Wand of Magic MissilesWand, Uncommon This wand has 7 charges. While holding it, you can expend no more than 3 charges to cast Magic Missile from it. For 1 charge, you cast the level 1 version of the spell. You can increase the spell s level by 1 for each additional charge you expend."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of Magic DetectionWand, Uncommon This wand has 3 charges. While holding it, you can expend 1 charge to cast Detect Magic from it. The wand regains 1d3 expended charges daily at dawn.Wand of Magic MissilesWand, Uncommon This wand has 7 charges. While holding it, you can expend no more than 3 charges to cast Magic Missile from it. For 1 charge, you cast the level 1 version of the spell. You can increase the spell’s level by 1 for each additional charge you expend."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of ParalysisWand, Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can take a Magic action to expend 1 charge to cause a thin blue ray to streak from the tip toward a crea- ture you can see within 60 feet of yourself. The target must succeed on a DC 15 Constitution saving throw or have the Paralyzed condition for 1 minute. At the end of each of the target s turns, it repeats the save, ending the effect on itself on a success."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of ParalysisWand, Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can take a Magic action to expend 1 charge to cause a thin blue ray to streak from the tip toward a crea- ture you can see within 60 feet of yourself. The target must succeed on a DC 15 Constitution saving throw or have the Paralyzed condition for 1 minute. At the end of each of the target’s turns, it repeats the save, ending the effect on itself on a success."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of PolymorphWand, Very Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend 1 charge to cast Polymorph (save DC 15) from it."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of PolymorphWand, Very Rare (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend 1 charge to cast Polymorph (save DC 15) from it."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of SecretsWand, Uncommon This wand has 3 charges and regains 1d3 expended charges daily at dawn. While holding it, you can take a Magic action to expend 1 charge, and if a se - cret door or trap is within 60 feet of you, the wand pulses and points at the one nearest to you.Wand of the War Mage, +1, +2, or +3Wand, Uncommon (+1), Rare (+2), or Very Rare (+3) (Requires Attunement by a Spellcaster) While holding this wand, you gain a bonus to spell attack rolls determined by the wand s rarity. In ad - dition, you ignore Half Cover when making a spell attack roll.Wand of WebWand, Uncommon (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend 1 charge to cast Web (save DC 13) from it."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of SecretsWand, Uncommon This wand has 3 charges and regains 1d3 expended charges daily at dawn. While holding it, you can take a Magic action to expend 1 charge, and if a se - cret door or trap is within 60 feet of you, the wand pulses and points at the one nearest to you.Wand of the War Mage, +1, +2, or +3Wand, Uncommon (+1), Rare (+2), or Very Rare (+3) (Requires Attunement by a Spellcaster) While holding this wand, you gain a bonus to spell attack rolls determined by the wand’s rarity. In ad - dition, you ignore Half Cover when making a spell attack roll.Wand of WebWand, Uncommon (Requires Attunement by a Spellcaster) This wand has 7 charges. While holding it, you can expend 1 charge to cast Web (save DC 13) from it."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of WonderWand, Rare (Requires Attunement) This wand has 7 charges. While holding it, you can take a Magic action to expend 1 charge while choos - ing a point within 120 feet of yourself. That loca- tion becomes the point of origin of a spell or other magical effect determined by rolling on the Wand of Wonder Effects table. Spells cast from the wand have a save DC of 15. If a spell s maximum range is normally less than 120 feet, it becomes 120 feet when cast from the wand. If an effect has multiple possible subjects, the GM determines randomly which among them are affected."
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed.Wand of WonderWand, Rare (Requires Attunement) This wand has 7 charges. While holding it, you can take a Magic action to expend 1 charge while choos - ing a point within 120 feet of yourself. That loca- tion becomes the point of origin of a spell or other magical effect determined by rolling on the Wand of Wonder Effects table. Spells cast from the wand have a save DC of 15. If a spell’s maximum range is normally less than 120 feet, it becomes 120 feet when cast from the wand. If an effect has multiple possible subjects, the GM determines randomly which among them are affected."
    },
    {
     "name": "Regaining Charges",
-    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand s last charge, roll 1d20. On a 1, the wand crumbles into dust and is destroyed. 252Wand of Wonder Effects1d100 Effect01 20 You cast a spell originating from the chosen point. Roll 1d10 to determine the spell: on a 1 2, Darkness ; on a 3 4, Faerie Fire ; on a 5 6, Fireball; on a 7 8, Slow ; on a 9 10, Stinking Cloud . 21 25 Nothing happens at the chosen point of origin. Instead, you have the Stunned condition until the start of your next turn, believing some - thing awesome just happened. 26 30 You cast Gust of Wind . The Line created by the spell extends from you to the chosen point of origin. 31 35 Nothing happens at the chosen point of origin. Instead, you take 1d6 Psychic damage. 36 40 Heavy rain falls for 1 minute in a 120-foot- high, 60-foot-radius Cylinder centered on the chosen point of origin. During that time, the area of effect is Lightly Obscured. 41 45 60-foot-high, 30-foot-radius Cylinder centered remain for 10 minutes, during which time the area of effect is Heavily Obscured. 46 50 You cast Lightning Bolt . The Line created by the spell extends from you to the chosen point of origin. 51 55 The creature closest to the chosen point of origin is enlarged as if you had cast Enlarge/ Reduce on it. If the target isn t you and can t be affected by that spell, you become the target instead. 56 60 A magically formed creature appears in an unoccupied space as close to the chosen point of origin as possible. The creature isn t under your control, acts as it normally would, and disappears after 1 hour or when it drops to 0"
+    "text": "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into dust and is destroyed. 252Wand of Wonder Effects1d100 Effect01–20 You cast a spell originating from the chosen point. Roll 1d10 to determine the spell: on a 1–2, Darkness ; on a 3–4, Faerie Fire ; on a 5–6, Fireball; on a 7–8, Slow ; on a 9–10, Stinking Cloud . 21–25 Nothing happens at the chosen point of origin. Instead, you have the Stunned condition until the start of your next turn, believing some - thing awesome just happened. 26–30 You cast Gust of Wind . The Line created by the spell extends from you to the chosen point of origin. 31–35 Nothing happens at the chosen point of origin. Instead, you take 1d6 Psychic damage. 36–40 Heavy rain falls for 1 minute in a 120-foot- high, 60-foot-radius Cylinder centered on the chosen point of origin. During that time, the area of effect is Lightly Obscured. 41–45 60-foot-high, 30-foot-radius Cylinder centered remain for 10 minutes, during which time the area of effect is Heavily Obscured. 46–50 You cast Lightning Bolt . The Line created by the spell extends from you to the chosen point of origin. 51–55 The creature closest to the chosen point of origin is enlarged as if you had cast Enlarge/ Reduce on it. If the target isn’t you and can’t be affected by that spell, you become the target instead. 56–60 A magically formed creature appears in an unoccupied space as close to the chosen point of origin as possible. The creature isn’t under your control, acts as it normally would, and disappears after 1 hour or when it drops to 0"
    },
    {
     "name": "Hit Points",
-    "text": "Roll 1d4 to determine which crea - ture appears. On a 1, a Rhinoceros appears; on a 2, an Elephant appears; and on a 3 4, a Rat appears. 61 64 Grass covers a 60-foot-radius circle of ground, with the center of that circle as close to the chosen point of origin as possible. Grass that s already there grows to ten times its normal size and remains overgrown for 1 minute.1d100 Effect65 68 An object of the GM s choice disappears into the"
+    "text": "Roll 1d4 to determine which crea - ture appears. On a 1, a Rhinoceros appears; on a 2, an Elephant appears; and on a 3–4, a Rat appears. 61–64 Grass covers a 60-foot-radius circle of ground, with the center of that circle as close to the chosen point of origin as possible. Grass that’s already there grows to ten times its normal size and remains overgrown for 1 minute.1d100 Effect65–68 An object of the GM’s choice disappears into the"
    },
    {
     "name": "Ethereal Plane",
-    "text": "The object must be neither worn nor carried, within 120 feet of the cho - sen point of origin, and no larger than 10 feet in any dimension. If there are no such objects in range, nothing happens. 69 72 Nothing happens at the chosen point of origin. Instead, you shrink as if you had cast Enlarge/ Reduce on yourself and remain in that state for 1 minute. 73 77 Leaves grow from the creature nearest to the chosen point of origin. Unless they are picked off, the leaves turn brown and fall off after 24 hours. 78 82 Nothing happens at the chosen point of origin. Instead, a burst of colorful, shimmering light extends from you in a 30-foot Emanation. Each creature in the area must succeed on a DC 15 Constitution saving throw or have the Blinded condition for 1 minute. A creature re - peats the save at the end of each of its turns, ending the effect on itself on a success. 83 87 Nothing happens at the chosen point of origin. Instead, you cast Invisibility on yourself. 88 92 Nothing happens at the chosen point of ori - gin. Instead, a stream of 1d4 × 10 gems, each worth 1 GP, shoots from the wand s tip in a Line 30 feet long and 5 feet wide toward the chosen point of origin. Each gem deals 1 Blud - geoning damage, and the total damage of the gems is divided equally among all creatures in the Line. 93 97 You cast Polymorph , targeting the creature closest to the chosen point of origin. Roll 1d4 to determine the target s new form. On a 1, the new form is a Black Bear; on a 2, the new form is a Giant Wasp; on a 3 4, the new form is a Frog. 98 00 The creature closest to the chosen point of origin makes a DC 15 Constitution saving throw. On a failed save, the creature has the Restrained condition and begins to turn to stone. While Restrained in this way, the crea - ture repeats the save at the end of its next turn. On a successful save, the effect ends. condition instead of the Restrained condition. freed by the Greater Restoration spell or similar magic. 253Weapon, +1, +2, or +3Weapon (Any Simple or Martial), Uncommon (+1), Rare (+2), or Very Rare (+3) You have a bonus to attack rolls and damage rolls made with this magic weapon. The bonus is deter - mined by the weapon s rarity.Weapon of WarningWeapon (Any Simple or Martial), Uncommon (Requires Attunement) As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you"
+    "text": "The object must be neither worn nor carried, within 120 feet of the cho - sen point of origin, and no larger than 10 feet in any dimension. If there are no such objects in range, nothing happens. 69–72 Nothing happens at the chosen point of origin. Instead, you shrink as if you had cast Enlarge/ Reduce on yourself and remain in that state for 1 minute. 73–77 Leaves grow from the creature nearest to the chosen point of origin. Unless they are picked off, the leaves turn brown and fall off after 24 hours. 78–82 Nothing happens at the chosen point of origin. Instead, a burst of colorful, shimmering light extends from you in a 30-foot Emanation. Each creature in the area must succeed on a DC 15 Constitution saving throw or have the Blinded condition for 1 minute. A creature re - peats the save at the end of each of its turns, ending the effect on itself on a success. 83–87 Nothing happens at the chosen point of origin. Instead, you cast Invisibility on yourself. 88–92 Nothing happens at the chosen point of ori - gin. Instead, a stream of 1d4 × 10 gems, each worth 1 GP, shoots from the wand’s tip in a Line 30 feet long and 5 feet wide toward the chosen point of origin. Each gem deals 1 Blud - geoning damage, and the total damage of the gems is divided equally among all creatures in the Line. 93–97 You cast Polymorph , targeting the creature closest to the chosen point of origin. Roll 1d4 to determine the target’s new form. On a 1, the new form is a Black Bear; on a 2, the new form is a Giant Wasp; on a 3–4, the new form is a Frog. 98–00 The creature closest to the chosen point of origin makes a DC 15 Constitution saving throw. On a failed save, the creature has the Restrained condition and begins to turn to stone. While Restrained in this way, the crea - ture repeats the save at the end of its next turn. On a successful save, the effect ends. condition instead of the Restrained condition. freed by the Greater Restoration spell or similar magic. 253Weapon, +1, +2, or +3Weapon (Any Simple or Martial), Uncommon (+1), Rare (+2), or Very Rare (+3) You have a bonus to attack rolls and damage rolls made with this magic weapon. The bonus is deter - mined by the weapon’s rarity.Weapon of WarningWeapon (Any Simple or Martial), Uncommon (Requires Attunement) As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you"
    },
    {
     "name": "Alarm",
@@ -2473,7 +2301,7 @@ const RAW = [
    },
    {
     "name": "Supernatural Readiness",
-    "text": "Each subject has Advan - tage on its Initiative rolls.Well of Many WorldsWondrous Item, Legendary dimensions of a handkerchief. It unfolds into a cir - cular sheet 6 feet in diameter. You can take a Magic action to unfold the Well of Many Worlds and place it on a solid surface, where - upon it forms a two-way, 6-foot-diameter, circular portal to another world or plane of existence. Each time the item opens a portal, the GM decides where it leads. The portal remains open until a creature within 5 feet of it takes a Magic action to close it by taking hold of the edges of the cloth and folding it up. Once the Well of Many Worlds has opened a portal, it can t do so again for 1d8 hours.Wind FanWondrous Item, Uncommon While holding this fan, you can cast Gust of Wind (save DC 13) from it. Each subsequent time the fan is used before the next dawn, it has a cumulative 20 percent chance of not working; if the fan fails to work, it tears into useless, nonmagical tatters.Winged BootsWondrous Item, Uncommon (Requires Attunement) These boots have 4 charges and regain 1d4 ex - pended charges daily at dawn. While wearing the boots, you can take a Magic action to expend 1 charge, gaining a Fly Speed of 30 feet for 1 hour. If - scend at a rate of 30 feet per round until you land.Wings of FlyingWondrous Item, Rare (Requires Attunement) While wearing this cloak, you can take a Magic ac - tion to turn the cloak into a pair of wings on your back. The wings lasts for 1 hour or until you end the effect early as a Magic action. The wings give you a Fly Speed of 60 feet. If you are aloft when the wings disappear, you fall. When the wings disappear, you can t use them again for 1d12 hours. 255RUNNING A MONSTE RTo ensure a monster acts in accordance with its Challenge Rating, follow these rules during combat:Special"
+    "text": "Each subject has Advan - tage on its Initiative rolls.Well of Many WorldsWondrous Item, Legendary dimensions of a handkerchief. It unfolds into a cir - cular sheet 6 feet in diameter. You can take a Magic action to unfold the Well of Many Worlds and place it on a solid surface, where - upon it forms a two-way, 6-foot-diameter, circular portal to another world or plane of existence. Each time the item opens a portal, the GM decides where it leads. The portal remains open until a creature within 5 feet of it takes a Magic action to close it by taking hold of the edges of the cloth and folding it up. Once the Well of Many Worlds has opened a portal, it can’t do so again for 1d8 hours.Wind FanWondrous Item, Uncommon While holding this fan, you can cast Gust of Wind (save DC 13) from it. Each subsequent time the fan is used before the next dawn, it has a cumulative 20 percent chance of not working; if the fan fails to work, it tears into useless, nonmagical tatters.Winged BootsWondrous Item, Uncommon (Requires Attunement) These boots have 4 charges and regain 1d4 ex - pended charges daily at dawn. While wearing the boots, you can take a Magic action to expend 1 charge, gaining a Fly Speed of 30 feet for 1 hour. If - scend at a rate of 30 feet per round until you land.Wings of FlyingWondrous Item, Rare (Requires Attunement) While wearing this cloak, you can take a Magic ac - tion to turn the cloak into a pair of wings on your back. The wings lasts for 1 hour or until you end the effect early as a Magic action. The wings give you a Fly Speed of 60 feet. If you are aloft when the wings disappear, you fall. When the wings disappear, you can’t use them again for 1d12 hours. 255RUNNING A MONSTE RTo ensure a monster acts in accordance with its Challenge Rating, follow these rules during combat:Special"
    },
    {
     "name": "Abilities",
@@ -2481,12 +2309,78 @@ const RAW = [
    },
    {
     "name": "Multiattack",
-    "text": "If the monster has Multiattack, have it use Multiattack on any of its turns in which it s not using one of its more powerful abilities."
+    "text": "If the monster has Multiattack, have it use Multiattack on any of its turns in which it’s not using one of its more powerful abilities."
    }
   ],
   "bonusActions": [],
   "reactions": [],
   "legendaryActions": [],
+  "missing": [
+   "CR"
+  ]
+ },
+ {
+  "name": "Aboleth",
+  "size": "Large",
+  "creatureType": "Aberration",
+  "alignment": "Lawful Evil",
+  "ac": 17,
+  "hp": 150,
+  "hpFormula": "20d10 + 40",
+  "speed": "10 ft., Swim 40 ft.MODSAVEMODSAVEMODSAVESTR 21",
+  "cr": "10",
+  "xp": 5900,
+  "proficiencyBonus": 4,
+  "senses": "Darkvision 120 ft.; Passive Perception 20",
+  "languages": "Deep Speech; telepathy 120 ft.",
+  "traits": [
+   {
+    "name": "Amphibious",
+    "text": "The aboleth can breathe air and water."
+   },
+   {
+    "name": "Eldritch Restoration",
+    "text": "If destroyed, the aboleth gains a new body in 5d10 days, reviving with all its Hit Points in the Far Realm or another location chosen by the"
+   },
+   {
+    "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+    "text": "If the aboleth fails a saving throw, it can choose to suc - ceed instead."
+   },
+   {
+    "name": "Mucus Cloud",
+    "text": "While underwater, the aboleth is sur - rounded by mucus. Constitution Saving Throw: DC 14, each creature in a 5-foot Emanation originating from the aboleth at the end of the aboleth’s turn. Failure: The target is cursed. Until the curse ends, the target’s skin becomes slimy, the target can breathe air and water, and it can’t regain Hit Points unless it is underwater. While the cursed creature is outside a body of water, the creature takes 6 (1d12) Acid damage at the end of every 10 minutes unless moisture is applied to its skin before those minutes have passed."
+   },
+   {
+    "name": "Probing Telepathy",
+    "text": "If a creature the aboleth can see communicates telepathically with the aboleth, the abo - leth learns the creature’s greatest desires."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The aboleth makes two Tentacle attacks and uses either Consume Memories or Dominate Mind if available."
+   },
+   {
+    "name": "Tentacle",
+    "text": "Melee Attack Roll: +9, reach 15 ft. Hit: 12 (2d6 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (es - cape DC 14) from one of four tentacles."
+   },
+   {
+    "name": "Consume Memories",
+    "text": "Intelligence Saving Throw: DC 16, one creature within 30 feet that is Charmed or Grap - pled by the aboleth. Failure: 10 (3d6) Psychic damage. Success: Half damage. Failure or Success: The aboleth gains the target’s memories if the target is a Humanoid and is reduced to 0 Hit Points by this action."
+   },
+   {
+    "name": "Dominate Mind (2/Day)",
+    "text": "Wisdom Saving Throw: DC 16, one creature the aboleth can see within 30 feet. Failure: The target has the Charmed condition until the aboleth dies or is on a different plane of existence from the target. While Charmed, the target acts as an ally to the aboleth and is under its control while within 60 feet of it. In addition, the aboleth and the target can communicate telepathically with each other over any distance. The target repeats the save whenever it takes damage as well as after every 24 hours it spends at least 1 mile away from the aboleth, ending the effect on itself on a success."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [
+   {
+    "name": "Psychic Drain",
+    "text": "If the aboleth has at least one creature Charmed or Grappled, it uses Consume Memories and regains 5 (1d10) Hit Points."
+   }
+  ],
   "missing": []
  },
  {
@@ -2506,7 +2400,7 @@ const RAW = [
   "traits": [
    {
     "name": "Air Form",
-    "text": "The elemental can enter a creature s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
+    "text": "The elemental can enter a creature’s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
    }
   ],
   "actions": [
@@ -2516,7 +2410,7 @@ const RAW = [
    },
    {
     "name": "Thunderous Slam",
-    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 14 (2d8 + 5) Thunder damage. 259Whirlwind (Recharge 4 6). Strength Saving Throw: DC 13, one Medium or smaller creature in the elemental s space. Failure: 24 (4d10 + 2) Thunder damage, and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition. Success: Half damage only.Animated Objects"
+    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 14 (2d8 + 5) Thunder damage. 259Whirlwind (Recharge 4–6). Strength Saving Throw: DC 13, one Medium or smaller creature in the elemental’s space. Failure: 24 (4d10 + 2) Thunder damage, and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition. Success: Half damage only.Animated Objects"
    }
   ],
   "bonusActions": [],
@@ -2598,7 +2492,7 @@ const RAW = [
   "actions": [
    {
     "name": "Smother",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, the rug can give it the Grappled con - dition (escape DC 13) instead of dealing damage. Until the grapple ends, the target has the Blinded and Re - strained conditions, is suffocating, and takes 10 (2d6 + 3) Bludgeoning damage at the start of each of its turns. The rug can smother only one creature at a time. While grappling the target, the rug can t take this ac - tion, the rug halves the damage it takes (round down), and the target takes the same amount of damage.Ankheg"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, the rug can give it the Grappled con - dition (escape DC 13) instead of dealing damage. Until the grapple ends, the target has the Blinded and Re - strained conditions, is suffocating, and takes 10 (2d6 + 3) Bludgeoning damage at the start of each of its turns. The rug can smother only one creature at a time. While grappling the target, the rug can’t take this ac - tion, the rug halves the damage it takes (round down), and the target takes the same amount of damage."
    }
   ],
   "bonusActions": [],
@@ -2633,7 +2527,46 @@ const RAW = [
    },
    {
     "name": "Acid Spray (Recharge 6)",
-    "text": "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 14 (4d6) Acid damage. Success: Half damage. 260AssassinAssassinMedium or Small Humanoid, Neutral AC 16 Initiative +10 (20) HP 97 (15d8 + 30) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 11 +0 +0DEX 18 +4 +7CON 14 +2 +2INT 16 +3 +6WIS 11 +0 +0CHA 10 +0 +0Skills Acrobatics +7, Perception +6, Stealth +10 Resistances Poison Gear Light Crossbow, Shortsword, Studded Leather Armor Senses Passive Perception 16 Languages Common, Thieves Cant CR 8 (XP 3,900; PB +3)"
+    "text": "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 14 (4d6) Acid damage. Success: Half damage. 260"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Assassin",
+  "size": "Medium or Small",
+  "creatureType": "Humanoid",
+  "alignment": "Neutral",
+  "ac": 16,
+  "hp": 97,
+  "hpFormula": "15d8 + 30",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR 11",
+  "cr": "8",
+  "xp": 3900,
+  "proficiencyBonus": 3,
+  "senses": "Passive Perception 16",
+  "languages": "Common, Thieves’ Cant",
+  "traits": [
+   {
+    "name": "Evasion",
+    "text": "If the assassin is subjected to an effect that allows it to make a Dexterity saving throw to take only half damage, the assassin instead takes no damage if it succeeds on the save and only half damage if it fails. It can’t use this trait if it has the Incapacitated condition."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The assassin makes three attacks, using Shortsword or Light Crossbow in any combination."
+   },
+   {
+    "name": "Shortsword",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 7 (1d6 + 4) Piercing damage plus 17 (5d6) Poison dam - age, and the target has the Poisoned condition until the start of the assassin’s next turn."
+   },
+   {
+    "name": "Light Crossbow",
+    "text": "Ranged Attack Roll: +7, range 80/320 ft. Hit: 8 (1d8 + 4) Piercing damage plus 21 (6d6) Poison damage."
    }
   ],
   "bonusActions": [
@@ -2690,7 +2623,7 @@ const RAW = [
   "actions": [
    {
     "name": "Slam",
-    "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 14 (3d6 + 4) Bludgeoning damage.Axe Beak"
+    "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 14 (3d6 + 4) Bludgeoning damage."
    }
   ],
   "bonusActions": [],
@@ -2712,10 +2645,36 @@ const RAW = [
   "proficiencyBonus": 2,
   "senses": "Passive Perception 10",
   "languages": "None",
+  "traits": [],
+  "actions": [
+   {
+    "name": "Beak",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Azer Sentinel",
+  "size": "Medium",
+  "creatureType": "Elemental",
+  "alignment": "Lawful Neutral",
+  "ac": 17,
+  "hp": 39,
+  "hpFormula": "6d8 + 12",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "2",
+  "xp": 450,
+  "proficiencyBonus": 2,
+  "senses": "Passive Perception 11",
+  "languages": "Primordial (Ignan)",
   "traits": [
    {
     "name": "Fire Aura",
-    "text": "At the end of each of the azer s turns, each creature of the azer s choice in a 5-foot Emanation orig - inating from the azer takes 5 (1d10) Fire damage unless the azer has the Incapacitated condition."
+    "text": "At the end of each of the azer’s turns, each creature of the azer’s choice in a 5-foot Emanation orig - inating from the azer takes 5 (1d10) Fire damage unless the azer has the Incapacitated condition."
    },
    {
     "name": "Illumination",
@@ -2724,8 +2683,8 @@ const RAW = [
   ],
   "actions": [
    {
-    "name": "Beak",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage. 261AzerAzer SentinelMedium Elemental, Lawful Neutral AC 17 Initiative +1 (11) HP 39 (6d8 + 12) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 17 +3 +3DEX 12 +1 +1CON 15 +2 +4INT 12 +1 +1WIS 13 +1 +1CHA 10 +0 +0Immunities Fire, Poison; Poisoned Senses Passive Perception 11 Languages Primordial (Ignan) CR 2 (XP 450; PB +2)"
+    "name": "Burning Hammer",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Bludgeoning damage plus 3 (1d6) Fire damage."
    }
   ],
   "bonusActions": [],
@@ -2754,7 +2713,7 @@ const RAW = [
    },
    {
     "name": "Aura",
-    "text": "At the end of each of the balor s turns, each creature in a 5-foot Emanation originating from the ba - lor takes 13 (3d8) Fire damage."
+    "text": "At the end of each of the balor’s turns, each creature in a 5-foot Emanation originating from the ba - lor takes 13 (3d8) Fire damage."
    },
    {
     "name": "Legendary Resistance (3/Day)",
@@ -2776,7 +2735,7 @@ const RAW = [
    },
    {
     "name": "Lightning Blade",
-    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 21 (3d8 + 8) Force damage plus 22 (4d10) Light - ning damage, and the target can t take"
+    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 21 (3d8 + 8) Force damage plus 22 (4d10) Light - ning damage, and the target can’t take"
    }
   ],
   "bonusActions": [
@@ -2802,7 +2761,7 @@ const RAW = [
   "xp": 25,
   "proficiencyBonus": 2,
   "senses": "Passive Perception 10",
-  "languages": "Common, Thieves Cant",
+  "languages": "Common, Thieves’ Cant",
   "traits": [],
   "actions": [
    {
@@ -2832,7 +2791,7 @@ const RAW = [
   "xp": 450,
   "proficiencyBonus": 2,
   "senses": "Passive Perception 10",
-  "languages": "Common, Thieves Cant",
+  "languages": "Common, Thieves’ Cant",
   "traits": [],
   "actions": [
    {
@@ -2852,7 +2811,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Parry",
-    "text": "Trigger: The bandit is hit by a melee attack roll while holding a weapon. Response: The bandit adds 2 to its AC against that attack, possibly causing it to miss.Barbed Devil"
+    "text": "Trigger: The bandit is hit by a melee attack roll while holding a weapon. Response: The bandit adds 2 to its AC against that attack, possibly causing it to miss."
    }
   ],
   "legendaryActions": [],
@@ -2897,7 +2856,7 @@ const RAW = [
    },
    {
     "name": "Hurl Flame",
-    "text": "Ranged Attack Roll: +5, range 150 ft. Hit: that isn t being worn or carried, it starts burning.Basilisk"
+    "text": "Ranged Attack Roll: +5, range 150 ft. Hit: that isn’t being worn or carried, it starts burning."
    }
   ],
   "bonusActions": [],
@@ -2928,8 +2887,8 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Petrifying Gaze (Recharge 4 6)",
-    "text": "Constitution Saving Throw: DC 12, each creature in a 30-foot Cone. If must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Bearded Devil"
+    "name": "Petrifying Gaze (Recharge 4–6)",
+    "text": "Constitution Saving Throw: DC 12, each creature in a 30-foot Cone. If must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the"
    }
   ],
   "reactions": [],
@@ -2963,11 +2922,11 @@ const RAW = [
    },
    {
     "name": "Beard",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the target has the Poisoned condition until the start of the devil s next turn. Until this poison ends, the target can t regain"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the target has the Poisoned condition until the start of the devil’s next turn. Until this poison ends, the target can’t regain"
    },
    {
     "name": "Infernal Glaive",
-    "text": "Melee Attack Roll: +5, reach 10 ft. Hit: 8 (1d10 + 3) Slashing damage. If the target is a crea - ture and doesn t already have an infernal wound, it is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target receives an infernal wound. While wounded, the target loses 5 (1d10) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by suc - ceeding on a DC 12 Wisdom (Medicine) check.Behir"
+    "text": "Melee Attack Roll: +5, reach 10 ft. Hit: 8 (1d10 + 3) Slashing damage. If the target is a crea - ture and doesn’t already have an infernal wound, it is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target receives an infernal wound. While wounded, the target loses 5 (1d10) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by suc - ceeding on a DC 12 Wisdom (Medicine) check."
    }
   ],
   "bonusActions": [],
@@ -3004,14 +2963,14 @@ const RAW = [
     "text": "Strength Saving Throw: DC 18, one Large or smaller creature the behir can see within 5 feet. Failure: 28 (5d8 + 6) Bludgeoning damage. The target has the Grappled condition (escape DC 16), and it has the Re - strained condition until the grapple ends."
    },
    {
-    "name": "Lightning Breath (Recharge 5 6)",
+    "name": "Lightning Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 16, each creature in a 90-foot-long, 5-foot- wide Line. Failure: 66 (12d10) Lightning damage. Suc - cess: Half damage."
    }
   ],
   "bonusActions": [
    {
     "name": "Swallow",
-    "text": "Dexterity Saving Throw: DC 18, one Large or smaller creature Grappled by the behir (the behir can have only one creature swallowed at a time). Failure: The behir swallows the target, which is no longer Grap - pled. While swallowed, a creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the behir, and takes 21 (6d6) Acid damage at the start of each of the behir s turns. If the behir takes 30 damage or more on a single turn from the swallowed creature, the behir must succeed on a DC 14 Constitution saving throw at the end of that turn or regurgitate the creature, which falls in a space within 10 feet of the behir and has the Prone condition. If the behir dies, a swallowed creature is no longer Re - strained and can escape from the corpse by using 15 feet of movement, exiting Prone.Berserker"
+    "text": "Dexterity Saving Throw: DC 18, one Large or smaller creature Grappled by the behir (the behir can have only one creature swallowed at a time). Failure: The behir swallows the target, which is no longer Grap - pled. While swallowed, a creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the behir, and takes 21 (6d6) Acid damage at the start of each of the behir’s turns. If the behir takes 30 damage or more on a single turn from the swallowed creature, the behir must succeed on a DC 14 Constitution saving throw at the end of that turn or regurgitate the creature, which falls in a space within 10 feet of the behir and has the Prone condition. If the behir dies, a swallowed creature is no longer Re - strained and can escape from the corpse by using 15 feet of movement, exiting Prone."
    }
   ],
   "reactions": [],
@@ -3079,7 +3038,7 @@ const RAW = [
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage plus 2 (1d4) Acid damage."
    },
    {
-    "name": "Acid Breath (Recharge 5 6)",
+    "name": "Acid Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 11, each creature in a 15-foot-long, 5-foot- wide Line. Failure: 22 (5d8) Acid damage. Success: Half damage."
    }
   ],
@@ -3118,7 +3077,7 @@ const RAW = [
     "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 9 (2d4 + 4) Slashing damage plus 3 (1d6) Acid damage."
    },
    {
-    "name": "Acid Breath (Recharge 5 6)",
+    "name": "Acid Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 14, each creature in a 30-foot-long, 5-foot- wide Line. Failure: 49 (14d6) Acid damage. Success: Half damage."
    }
   ],
@@ -3161,7 +3120,7 @@ const RAW = [
     "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 13 (2d6 + 6) Slashing damage plus 4 (1d8) Acid damage."
    },
    {
-    "name": "Acid Breath (Recharge 5 6)",
+    "name": "Acid Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 18, each creature in a 60-foot-long, 5-foot- wide Line. Failure: 54 (12d8) Acid damage. Success: Half damage."
    },
    {
@@ -3174,15 +3133,71 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Insects",
-    "text": "Dexterity Saving Throw: DC 17, one creature the dragon can see within 120 feet. Failure: 22 (4d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Dexterity Saving Throw: DC 17, one creature the dragon can see within 120 feet. Failure: 22 (4d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Frightful Presence",
-    "text": "The dragon uses Spellcasting to cast Fear . The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast Fear . The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
-    "text": "The dragon moves up to half its Speed, and it makes one Rend attack. 265Ancient Black DragonGargantuan Dragon (Chromatic), Chaotic Evil AC 22 Initiative +16 (26) HP 367 (21d20 + 147) Speed 40 ft., Fly 80 ft., Swim 40 ft.MODSAVEMODSAVEMODSAVESTR 27 +8 +8DEX 14 +2 +9CON 25 +7 +7INT 16 +3 +3WIS 15 +2 +9CHA 22 +6 +6Skills Perception +16, Stealth +9 Immunities Acid Senses Blindsight 60 ft., Darkvision 120 ft.; Passive Perception 26 Languages Common, Draconic CR 21 (XP 33,000, or 41,000 in lair; PB +7)"
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack. 265"
+   }
+  ],
+  "missing": []
+ },
+ {
+  "name": "Ancient Black Dragon",
+  "size": "Gargantuan",
+  "creatureType": "Dragon",
+  "alignment": "Chaotic Evil",
+  "ac": 22,
+  "hp": 367,
+  "hpFormula": "21d20 + 147",
+  "speed": "40 ft., Fly 80 ft., Swim 40 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "21",
+  "xp": 33000,
+  "proficiencyBonus": 7,
+  "senses": "Blindsight 60 ft., Darkvision 120 ft.;",
+  "languages": "Common, Draconic",
+  "traits": [
+   {
+    "name": "Amphibious",
+    "text": "The dragon can breathe air and water."
+   },
+   {
+    "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
+    "text": "If the dragon fails a saving throw, it can choose to suc - ceed instead."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The dragon makes three Rend attacks. It can replace one attack with a use of Spellcasting to cast Acid Arrow (level 4 version)."
+   },
+   {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +15, reach 15 ft. Hit: 17 (2d8 + 8) Slashing damage plus 9 (2d8) Acid damage."
+   },
+   {
+    "name": "Acid Breath (Recharge 5–6)",
+    "text": "Dexterity Saving Throw: DC 22, each creature in a 90-foot-long, 10-foot- wide Line. Failure: 67 (15d8) Acid damage. Success: Half damage."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21, +13 to hit with spell attacks): At Will: Acid Arrow (level 4 version), Detect Magic , Fear 1/Day Each: Create Undead , Speak with Dead , Vitriolic Sphere (level 5 version)"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [
+   {
+    "name": "Insects",
+    "text": "Dexterity Saving Throw: DC 21, one creature the dragon can see within 120 feet. Failure: 33 (6d10) Poison damage, and the target has Disadvantage on saving throws to maintain Concentration until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
+   },
+   {
+    "name": "Frightful Presence",
+    "text": "The dragon uses Spellcasting to cast Fear . The dragon can’t take this action again until the start of its next turn.Pounce. The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -3225,7 +3240,7 @@ const RAW = [
    },
    {
     "name": "Initiative",
-    "text": "The original pudding s Hit 266Points are divided evenly between the new puddings (round down).Blink Dog"
+    "text": "The original pudding’s Hit 266Points are divided evenly between the new puddings (round down)."
    }
   ],
   "legendaryActions": [],
@@ -3254,7 +3269,7 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Teleport (Recharge 4 6)",
+    "name": "Teleport (Recharge 4–6)",
     "text": "The dog teleports up to 40 feet to an unoccupied space it can see.Blue Dragons"
    }
   ],
@@ -3287,7 +3302,7 @@ const RAW = [
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Slashing damage plus 3 (1d6) Lightning damage."
    },
    {
-    "name": "Lightning Breath (Recharge 5 6)",
+    "name": "Lightning Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot- wide Line. Failure: 21 (6d6) Lightning damage. Success: Half damage."
    }
   ],
@@ -3321,7 +3336,7 @@ const RAW = [
     "text": "Melee Attack Roll: +9, reach 10 ft. Hit: 12 (2d6 + 5) Slashing damage plus 5 (1d10) Lightning damage."
    },
    {
-    "name": "Lightning Breath (Recharge 5 6)",
+    "name": "Lightning Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 16, each creature in a 60-foot-long, 5-foot- wide Line. Failure: 55 (10d10) Lightning damage. Suc - cess: Half damage."
    }
   ],
@@ -3360,7 +3375,7 @@ const RAW = [
     "text": "Melee Attack Roll: +12, reach 10 ft. Hit: 16 (2d8 + 7) Slashing damage plus 5 (1d10) Lightning damage."
    },
    {
-    "name": "Lightning Breath (Recharge 5 6)",
+    "name": "Lightning Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 19, each creature in a 90-foot-long, 5-foot- 267wide Line. Failure: 60 (11d10) Lightning damage. Suc - cess: Half damage."
    },
    {
@@ -3373,11 +3388,11 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Flight",
-    "text": "The dragon uses Spellcasting to cast In- visibility The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast In- visibility The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Sonic Boom",
-    "text": "The dragon uses Spellcasting to cast Shat - ter . The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast Shat - ter . The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Tail Swipe",
@@ -3416,7 +3431,7 @@ const RAW = [
     "text": "Melee Attack Roll: +16, reach 15 ft. Hit: 18 (2d8 + 9) Slashing damage plus 11 (2d10) Lightning damage."
    },
    {
-    "name": "Lightning Breath (Recharge 5 6)",
+    "name": "Lightning Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 23, each creature in a 120-foot-long, 10-foot-wide Line. Failure: 88 (16d10) Lightning dam - age. Success: Half damage.Spellcasting. The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 22): At Will: Detect Magic , Invisibility , Mage Hand , Shatter (level 3 version) 1/Day Each: Scrying , Sending"
    }
   ],
@@ -3425,15 +3440,15 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Flight",
-    "text": "The dragon uses Spellcasting to cast In- visibility The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast In- visibility The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Sonic Boom",
-    "text": "The dragon uses Spellcasting to cast Shat - ter (level 3 version). The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast Shat - ter (level 3 version). The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Tail Swipe",
-    "text": "The dragon makes one Rend attack.Bone Devil"
+    "text": "The dragon makes one Rend attack."
    }
   ],
   "missing": []
@@ -3473,7 +3488,7 @@ const RAW = [
    },
    {
     "name": "Infernal Sting",
-    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 15 (2d10 + 4) Piercing damage plus 18 (4d8) Poison 268damage, and the target has the Poisoned condition until the start of the devil s next turn. While Poisoned, the target can t regain Hit Points.Brass Dragons"
+    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 15 (2d10 + 4) Piercing damage plus 18 (4d8) Poison 268damage, and the target has the Poisoned condition until the start of the devil’s next turn. While Poisoned, the target can’t regain Hit Points.Brass Dragons"
    }
   ],
   "bonusActions": [],
@@ -3502,7 +3517,7 @@ const RAW = [
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage."
    },
    {
-    "name": "Fire Breath (Recharge 5 6)",
+    "name": "Fire Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 11, each creature in a 20-foot-long, 5-foot- wide Line. Failure: 14 (4d6) Fire damage. Success: Half damage."
    },
    {
@@ -3533,7 +3548,7 @@ const RAW = [
   "actions": [
    {
     "name": "Multiattack",
-    "text": "The dragon makes three Rend attacks. It can replace two attacks with a use of Sleep Breath.Rend. Melee Attack Roll: +7, reach 10 ft. Hit: 15 (2d10 + 4) Slashing damage. Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 14, each creature in a 40-foot-long, 5-foot- wide Line. Failure: 38 (11d6) Fire damage. Success: Half damage."
+    "text": "The dragon makes three Rend attacks. It can replace two attacks with a use of Sleep Breath.Rend. Melee Attack Roll: +7, reach 10 ft. Hit: 15 (2d10 + 4) Slashing damage. Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 14, each creature in a 40-foot-long, 5-foot- wide Line. Failure: 38 (11d6) Fire damage. Success: Half damage."
    },
    {
     "name": "Sleep Breath",
@@ -3572,7 +3587,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 17 (2d10 + 6) Slashing damage plus 4 (1d8) Fire damage. Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 18, each creature in a 60-foot-long, 5-foot- wide Line. Failure: 45 (10d8) Fire damage. Success: Half damage."
+    "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 17 (2d10 + 6) Slashing damage plus 4 (1d8) Fire damage. Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 18, each creature in a 60-foot-long, 5-foot- wide Line. Failure: 45 (10d8) Fire damage. Success: Half damage."
    },
    {
     "name": "Sleep Breath",
@@ -3592,7 +3607,7 @@ const RAW = [
    },
    {
     "name": "Scorching Sands",
-    "text": "Dexterity Saving Throw: DC 16, one creature the dragon can see within 120 feet. Failure: 27 (6d8) Fire damage, and the target s Speed is halved until the end of its next turn. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Dexterity Saving Throw: DC 16, one creature the dragon can see within 120 feet. Failure: 27 (6d8) Fire damage, and the target’s Speed is halved until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    }
   ],
   "missing": []
@@ -3624,7 +3639,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +14, reach 15 ft. Hit: 19 (2d10 + 8) Slashing damage plus 7 (2d6) Fire damage.Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 21, each creature in a 90-foot-long, 5-foot- wide Line. Failure: 58 (13d8) Fire damage. Success: Half damage."
+    "text": "Melee Attack Roll: +14, reach 15 ft. Hit: 19 (2d10 + 8) Slashing damage plus 7 (2d6) Fire damage.Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 21, each creature in a 90-foot-long, 5-foot- wide Line. Failure: 58 (13d8) Fire damage. Success: Half damage."
    },
    {
     "name": "Sleep Breath",
@@ -3648,7 +3663,7 @@ const RAW = [
    },
    {
     "name": "Scorching Sands",
-    "text": "Dexterity Saving Throw: DC 20, one creature the dragon can see within 120 feet. Failure: 36 (8d8) Fire damage, and the target s Speed is halved until the end of its next turn. Failure or Success: The dragon can t take this action again until the start of its next turn.Bronze Dragons"
+    "text": "Dexterity Saving Throw: DC 20, one creature the dragon can see within 120 feet. Failure: 36 (8d8) Fire damage, and the target’s Speed is halved until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn.Bronze Dragons"
    }
   ],
   "missing": []
@@ -3680,7 +3695,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Slashing damage. Lightning Breath (Recharge 5 6) . Dexterity Saving Throw: DC 12, each creature in a 40-foot-long, 5-foot- wide Line. Failure: 16 (3d10) Lightning damage. Suc - cess: Half damage."
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Slashing damage. Lightning Breath (Recharge 5–6) . Dexterity Saving Throw: DC 12, each creature in a 40-foot-long, 5-foot- wide Line. Failure: 16 (3d10) Lightning damage. Suc - cess: Half damage."
    },
    {
     "name": "Repulsion Breath",
@@ -3719,7 +3734,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 16 (2d10 + 5) Slashing damage. Lightning Breath (Recharge 5 6) . Dexterity Saving Throw: DC 15, each creature in a 60-foot-long, 5-foot- wide Line. Failure: 49 (9d10) Lightning damage. Suc - cess: Half damage."
+    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 16 (2d10 + 5) Slashing damage. Lightning Breath (Recharge 5–6) . Dexterity Saving Throw: DC 15, each creature in a 60-foot-long, 5-foot- wide Line. Failure: 49 (9d10) Lightning damage. Suc - cess: Half damage."
    },
    {
     "name": "Repulsion Breath",
@@ -3762,7 +3777,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +12, reach 10 ft. Hit: 16 (2d8 + 7) Slashing damage plus 5 (1d10) Lightning damage. Lightning Breath (Recharge 5 6) . Dexterity Saving Throw: DC 19, each creature in a 90-foot-long, 5-foot- wide Line. Failure: 55 (10d10) Lightning damage. Suc - cess: Half damage."
+    "text": "Melee Attack Roll: +12, reach 10 ft. Hit: 16 (2d8 + 7) Slashing damage plus 5 (1d10) Lightning damage. Lightning Breath (Recharge 5–6) . Dexterity Saving Throw: DC 19, each creature in a 90-foot-long, 5-foot- wide Line. Failure: 55 (10d10) Lightning damage. Suc - cess: Half damage."
    },
    {
     "name": "Repulsion Breath",
@@ -3822,7 +3837,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +16, reach 15 ft. Hit: 18 (2d8 + 9) Slashing damage plus 9 (2d8) Lightning damage. Lightning Breath (Recharge 5 6) . Dexterity Saving Throw: DC 23, each creature in a 120-foot-long, 10-foot-wide Line. Failure: 82 (15d10) Lightning dam - age. Success: Half damage."
+    "text": "Melee Attack Roll: +16, reach 15 ft. Hit: 18 (2d8 + 9) Slashing damage plus 9 (2d8) Lightning damage. Lightning Breath (Recharge 5–6) . Dexterity Saving Throw: DC 23, each creature in a 120-foot-long, 10-foot-wide Line. Failure: 82 (15d10) Lightning dam - age. Success: Half damage."
    },
    {
     "name": "Repulsion Breath",
@@ -3868,7 +3883,7 @@ const RAW = [
   "traits": [
    {
     "name": "Abduct",
-    "text": "The bugbear needn t spend extra movement to move a creature it is grappling."
+    "text": "The bugbear needn’t spend extra movement to move a creature it is grappling."
    }
   ],
   "actions": [
@@ -3888,9 +3903,44 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Quick Grapple",
-    "text": "Dexterity Saving Throw: DC 13, one Medium or smaller creature the bugbear can see within 10 feet. Failure: The target has the Grappled condition (escape DC 13). 272Bugbear WarriorMedium Fey (Goblinoid), Chaotic Evil AC 14 Initiative +2 (12) HP 33 (6d8 + 6) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 15 +2 +2DEX 14 +2 +2CON 13 +1 +1INT 8 WIS 11 +0 +0CHA 9 Skills Stealth +6, Survival +2 Gear Hide Armor, Light Hammers (3) Senses Darkvision 60 ft.; Passive Perception 10 Languages Common, Goblin CR 1 (XP 200; PB +2)"
+    "text": "Dexterity Saving Throw: DC 13, one Medium or smaller creature the bugbear can see within 10 feet. Failure: The target has the Grappled condition (escape DC 13). 272"
    }
   ],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Bugbear Warrior",
+  "size": "Medium",
+  "creatureType": "Fey",
+  "alignment": "Chaotic Evil",
+  "ac": 14,
+  "hp": 33,
+  "hpFormula": "6d8 + 6",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "1",
+  "xp": 200,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 10",
+  "languages": "Common, Goblin",
+  "traits": [
+   {
+    "name": "Abduct",
+    "text": "The bugbear needn’t spend extra movement to move a creature it is grappling."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Grab",
+    "text": "Melee Attack Roll: +4, reach 10 ft. Hit: 9 (2d6 + 2) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Grappled condition (es - cape DC 12)."
+   },
+   {
+    "name": "Light Hammer",
+    "text": "Melee or Ranged Attack Roll: +4 (with Advantage if the target is Grappled by the bugbear), reach 10 ft. or range 20/60 ft. Hit: 9 (3d4 + 2) Blud - geoning damage."
+   }
+  ],
+  "bonusActions": [],
   "reactions": [],
   "legendaryActions": [],
   "missing": []
@@ -3921,7 +3971,7 @@ const RAW = [
    },
    {
     "name": "Deadly Leap",
-    "text": "The bulette spends 5 feet of movement to jump to a space within 15 feet that contains one or more Large or smaller creatures. Dexterity Saving Throw: DC 15, each creature in the bulette s destina - tion space. Failure: 19 (3d12) Bludgeoning damage, and the target has the Prone condition. Success: Half dam - age, and the target is pushed 5 feet straight away from the bulette."
+    "text": "The bulette spends 5 feet of movement to jump to a space within 15 feet that contains one or more Large or smaller creatures. Dexterity Saving Throw: DC 15, each creature in the bulette’s destina - tion space. Failure: 19 (3d12) Bludgeoning damage, and the target has the Prone condition. Success: Half dam - age, and the target is pushed 5 feet straight away from the bulette."
    }
   ],
   "bonusActions": [
@@ -3965,8 +4015,8 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Trampling Charge (Recharge 5 6)",
-    "text": "The centaur moves up to its Speed without provoking Opportunity Attacks and can move through the spaces of Medium or smaller creatures. Each creature whose space the centaur en - ters is targeted once by the following effect. Strength Saving Throw: DC 14. Failure: 7 (1d6 + 4) Bludgeoning damage, and the target has the Prone condition.Chain Devil"
+    "name": "Trampling Charge (Recharge 5–6)",
+    "text": "The centaur moves up to its Speed without provoking Opportunity Attacks and can move through the spaces of Medium or smaller creatures. Each creature whose space the centaur en - ters is targeted once by the following effect. Strength Saving Throw: DC 14. Failure: 7 (1d6 + 4) Bludgeoning damage, and the target has the Prone condition."
    }
   ],
   "reactions": [],
@@ -4004,14 +4054,14 @@ const RAW = [
    },
    {
     "name": "Chain",
-    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Slashing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14) from one of two chains, and it has the Restrained con - dition until the grapple ends. Conjure Infernal Chain. chain to bind a creature. Dexterity Saving Throw: DC 15, one creature the devil can see within 60 feet. Failure: 9 (2d4 + 4) Fire damage, and the target has the Restrained condition until the end of the devil s next turn, at which point the chain disappears. If the target is Large or smaller, the devil moves the target up to 30 feet straight toward itself. Success: The chain disappears."
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Slashing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14) from one of two chains, and it has the Restrained con - dition until the grapple ends. Conjure Infernal Chain. chain to bind a creature. Dexterity Saving Throw: DC 15, one creature the devil can see within 60 feet. Failure: 9 (2d4 + 4) Fire damage, and the target has the Restrained condition until the end of the devil’s next turn, at which point the chain disappears. If the target is Large or smaller, the devil moves the target up to 30 feet straight toward itself. Success: The chain disappears."
    }
   ],
   "bonusActions": [],
   "reactions": [
    {
     "name": "Unnerving Gaze",
-    "text": "Trigger: A creature the devil can see starts its turn within 30 feet of the devil and can see the devil. Response Wisdom Saving Throw: DC 15, the triggering creature. Failure: The target has the Frightened condition until the end of its turn. Success: The target is immune to this devil s Unnerving Gaze for 24 hours.Chimera"
+    "text": "Trigger: A creature the devil can see starts its turn within 30 feet of the devil and can see the devil. Response—Wisdom Saving Throw: DC 15, the triggering creature. Failure: The target has the Frightened condition until the end of its turn. Success: The target is immune to this devil’s Unnerving Gaze for 24 hours."
    }
   ],
   "legendaryActions": [],
@@ -4030,7 +4080,7 @@ const RAW = [
   "xp": 2300,
   "proficiencyBonus": 3,
   "senses": "Darkvision 60 ft.; Passive Perception 18",
-  "languages": "Understands Draconic but can t speak",
+  "languages": "Understands Draconic but can’t speak",
   "traits": [],
   "actions": [
    {
@@ -4050,8 +4100,8 @@ const RAW = [
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 10 (1d12 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition."
    },
    {
-    "name": "Fire Breath (Recharge 5 6)",
-    "text": "Dexterity Saving Throw: DC 15, each creature in a 15-foot Cone. Failure: 31 (7d8) Fire damage. Success: Half damage.Chuul"
+    "name": "Fire Breath (Recharge 5–6)",
+    "text": "Dexterity Saving Throw: DC 15, each creature in a 15-foot Cone. Failure: 31 (7d8) Fire damage. Success: Half damage."
    }
   ],
   "bonusActions": [],
@@ -4072,7 +4122,7 @@ const RAW = [
   "xp": 1100,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 14",
-  "languages": "Understands Deep Speech but can t speak",
+  "languages": "Understands Deep Speech but can’t speak",
   "traits": [
    {
     "name": "Amphibious",
@@ -4080,7 +4130,7 @@ const RAW = [
    },
    {
     "name": "Sense Magic",
-    "text": "The chuul senses magic within 120 feet of itself. This trait otherwise works like the Detect Magic spell but isn t itself magical."
+    "text": "The chuul senses magic within 120 feet of itself. This trait otherwise works like the Detect Magic spell but isn’t itself magical."
    }
   ],
   "actions": [
@@ -4094,7 +4144,7 @@ const RAW = [
    },
    {
     "name": "Tentacles",
-    "text": "Constitution Saving Throw: DC 13, one creature Grappled by the chuul. Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically. While Poisoned, the target has the Paralyzed condition.Clay Golem"
+    "text": "Constitution Saving Throw: DC 13, one creature Grappled by the chuul. Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically. While Poisoned, the target has the Paralyzed condition."
    }
   ],
   "bonusActions": [],
@@ -4127,7 +4177,7 @@ const RAW = [
    },
    {
     "name": "Immutable Form",
-    "text": "The golem can t shape-shift."
+    "text": "The golem can’t shape-shift."
    },
    {
     "name": "Magic Resistance",
@@ -4141,13 +4191,13 @@ const RAW = [
    },
    {
     "name": "Slam",
-    "text": "Melee Attack Roll: +9, reach 5 ft. Hit: 10 (1d10 + 5) Bludgeoning damage plus 6 (1d12) Acid damage, and the target s Hit Point maximum decreases by an amount equal to the Acid damage taken."
+    "text": "Melee Attack Roll: +9, reach 5 ft. Hit: 10 (1d10 + 5) Bludgeoning damage plus 6 (1d12) Acid damage, and the target’s Hit Point maximum decreases by an amount equal to the Acid damage taken."
    }
   ],
   "bonusActions": [
    {
-    "name": "Hasten (Recharge 5 6)",
-    "text": "The golem takes the Dash and Disengage actions.Cloaker"
+    "name": "Hasten (Recharge 5–6)",
+    "text": "The golem takes the Dash and Disengage actions."
    }
   ],
   "reactions": [],
@@ -4181,7 +4231,7 @@ const RAW = [
    },
    {
     "name": "Attach",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (3d6 + 3) Piercing damage. If the target is a Large or smaller creature, the cloaker attaches to it. While the cloaker is attached, the target has the Blinded condition, and the cloaker can t make Attach attacks against other tar - gets. In addition, the cloaker halves the damage it takes (round down), and the target takes the same amount of damage. The cloaker can detach itself by spending 5 feet of movement. The target or a creature within 5 feet of it can take an action to try to detach the cloaker, doing so by succeeding on a DC 14 Strength (Athletics) check."
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (3d6 + 3) Piercing damage. If the target is a Large or smaller creature, the cloaker attaches to it. While the cloaker is attached, the target has the Blinded condition, and the cloaker can’t make Attach attacks against other tar - gets. In addition, the cloaker halves the damage it takes (round down), and the target takes the same amount of damage. The cloaker can detach itself by spending 5 feet of movement. The target or a creature within 5 feet of it can take an action to try to detach the cloaker, doing so by succeeding on a DC 14 Strength (Athletics) check."
    },
    {
     "name": "Tail",
@@ -4191,7 +4241,50 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Moan",
-    "text": "Wisdom Saving Throw: DC 13, each creature in a 60-foot Emanation originating from the cloaker. Failure: The target has the Frightened condition until the end of the cloaker s next turn. Success: The target is immune to this cloaker s Moan for the next 24 hours. Phantasms (Recharge after a Short or Long Rest). The cloaker casts the Mirror Image spell, requiring no spell components and using Wisdom as the spellcasting abil - ity. The spell ends early if the cloaker starts or ends its turn in Bright Light. 275Cloud GiantCloud GiantHuge Giant, Neutral AC 14 Initiative +4 (14) HP 200 (16d12 + 96) Speed 40 ft., Fly 20 ft. (hover)MODSAVEMODSAVEMODSAVESTR 27 +8 +8DEX 10 +0 +0CON 22 +6 +10INT 12 +1 +1WIS 16 +3 +7CHA 16 +3 +3Skills Insight +7, Perception +11 Senses Passive Perception 21 Languages Common, Giant CR 9 (XP 5,000; PB +4)"
+    "text": "Wisdom Saving Throw: DC 13, each creature in a 60-foot Emanation originating from the cloaker. Failure: The target has the Frightened condition until the end of the cloaker’s next turn. Success: The target is immune to this cloaker’s Moan for the next 24 hours. Phantasms (Recharge after a Short or Long Rest). The cloaker casts the Mirror Image spell, requiring no spell components and using Wisdom as the spellcasting abil - ity. The spell ends early if the cloaker starts or ends its turn in Bright Light. 275"
+   }
+  ],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Cloud Giant",
+  "size": "Huge",
+  "creatureType": "Giant",
+  "alignment": "Neutral",
+  "ac": 14,
+  "hp": 200,
+  "hpFormula": "16d12 + 96",
+  "speed": "40 ft., Fly 20 ft. (hover)MODSAVEMODSAVEMODSAVESTR",
+  "cr": "9",
+  "xp": 5000,
+  "proficiencyBonus": 4,
+  "senses": "Passive Perception 21",
+  "languages": "Common, Giant",
+  "traits": [],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The giant makes two attacks, using Thun - derous Mace or Thundercloud in any combination. It can replace one attack with a use of Spellcasting to cast Fog Cloud ."
+   },
+   {
+    "name": "Thunderous Mace",
+    "text": "Melee Attack Roll: +12, reach 10 ft. Hit: 21 (3d8 + 8) Bludgeoning damage plus 7 (2d6) Thunder damage."
+   },
+   {
+    "name": "Thundercloud",
+    "text": "Ranged Attack Roll: +12, range 240 ft. Hit: 18 (3d6 + 8) Thunder damage, and the target has the Incapacitated condition until the end of its next turn."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The giant casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): At Will: Detect Magic , Fog Cloud , Light 1/Day Each: Control Weather , Gaseous Form , Telekinesis"
+   }
+  ],
+  "bonusActions": [
+   {
+    "name": "Misty Step",
+    "text": "The giant casts the Misty Step spell, using the same spellcasting ability as Spellcasting."
    }
   ],
   "reactions": [],
@@ -4216,7 +4309,7 @@ const RAW = [
   "actions": [
    {
     "name": "Petrifying Bite",
-    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure: The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target condition, for 24 hours.Commoner"
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure: The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target condition, for 24 hours."
    }
   ],
   "bonusActions": [],
@@ -4268,11 +4361,11 @@ const RAW = [
   "actions": [
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage. Acid Breath (Recharge 5 6) . Dexterity Saving Throw: DC 11, each creature in a 20-foot-long, 5-foot- wide Line. Failure: 18 (4d8) Acid damage. Success: Half damage."
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage. Acid Breath (Recharge 5–6) . Dexterity Saving Throw: DC 11, each creature in a 20-foot-long, 5-foot- wide Line. Failure: 18 (4d8) Acid damage. Success: Half damage."
    },
    {
     "name": "Slowing Breath",
-    "text": "Constitution Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: The target can t take"
+    "text": "Constitution Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: The target can’t take"
    }
   ],
   "bonusActions": [],
@@ -4305,12 +4398,12 @@ const RAW = [
     "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 15 (2d10 + 4) Slashing damage."
    },
    {
-    "name": "Acid Breath (Recharge 5 6)",
+    "name": "Acid Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 14, each creature in a 40-foot-long, 5-foot- wide Line. Failure: 40 (9d8) Acid damage. Success: Half damage."
    },
    {
     "name": "Slowing Breath",
-    "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: The target can t take"
+    "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: The target can’t take"
    }
   ],
   "bonusActions": [],
@@ -4345,11 +4438,11 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 17 (2d10 + 6) Slashing damage plus 4 (1d8) Acid damage. Acid Breath (Recharge 5 6) . Dexterity Saving Throw: DC 18, each creature in an 60-foot-long, 5-foot- wide Line. Failure: 54 (12d8) Acid damage. Success: Half damage."
+    "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 17 (2d10 + 6) Slashing damage plus 4 (1d8) Acid damage. Acid Breath (Recharge 5–6) . Dexterity Saving Throw: DC 18, each creature in an 60-foot-long, 5-foot- wide Line. Failure: 54 (12d8) Acid damage. Success: Half damage."
    },
    {
     "name": "Slowing Breath",
-    "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Failure: The target can t take"
+    "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Failure: The target can’t take"
    }
   ],
   "bonusActions": [],
@@ -4366,7 +4459,7 @@ const RAW = [
    },
    {
     "name": "Test",
-    "text": "Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Mind Jolt",
@@ -4374,7 +4467,7 @@ const RAW = [
    },
    {
     "name": "Spike (level 4 version)",
-    "text": "The dragon can t take this action again until the start of its next turn. 277Pounce. The dragon moves up to half its Speed, and it makes one Rend attack."
+    "text": "The dragon can’t take this action again until the start of its next turn. 277Pounce. The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -4406,11 +4499,11 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +15, reach 15 ft. Hit: 19 (2d10 + 8) Slashing damage plus 9 (2d8) Acid damage. Acid Breath (Recharge 5 6) . Dexterity Saving Throw: DC 22, each creature in an 90-foot-long, 10-foot- wide Line. Failure: 63 (14d8) Acid damage. Success: Half damage."
+    "text": "Melee Attack Roll: +15, reach 15 ft. Hit: 19 (2d10 + 8) Slashing damage plus 9 (2d8) Acid damage. Acid Breath (Recharge 5–6) . Dexterity Saving Throw: DC 22, each creature in an 90-foot-long, 10-foot- wide Line. Failure: 63 (14d8) Acid damage. Success: Half damage."
    },
    {
     "name": "Slowing Breath",
-    "text": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Failure: The target can t take"
+    "text": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Failure: The target can’t take"
    }
   ],
   "bonusActions": [],
@@ -4427,7 +4520,7 @@ const RAW = [
    },
    {
     "name": "Test",
-    "text": "Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Mind Jolt",
@@ -4435,11 +4528,11 @@ const RAW = [
    },
    {
     "name": "Spike (level 5 version)",
-    "text": "The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
-    "text": "The dragon moves up to half its Speed, and it makes one Rend attack.Couatl"
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -4461,13 +4554,13 @@ const RAW = [
   "traits": [
    {
     "name": "Shielded Mind",
-    "text": "The couatl s thoughts can t be read by any means, and other creatures can communicate with it telepathically only if it allows them."
+    "text": "The couatl’s thoughts can’t be read by any means, and other creatures can communicate with it telepathically only if it allows them."
    }
   ],
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (1d12 + 5) Piercing damage, and the target has the Poisoned condition until the end of the couatl s next turn."
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (1d12 + 5) Piercing damage, and the target has the Poisoned condition until the end of the couatl’s next turn."
    },
    {
     "name": "Constrict",
@@ -4481,7 +4574,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Divine Aid (2/Day)",
-    "text": "The couatl casts Bless , Lesser Res - toration , or Sanctuary , requiring no spell components and using the same spellcasting ability as Spellcasting.Crawling ClawSwarm of Crawling ClawsM"
+    "text": "The couatl casts Bless , Lesser Res - toration , or Sanctuary , requiring no spell components and using the same spellcasting ability as Spellcasting.Crawling Claw"
    }
   ],
   "reactions": [],
@@ -4489,7 +4582,7 @@ const RAW = [
   "missing": []
  },
  {
-  "name": "Medium Swarm of",
+  "name": "Swarm of Crawling Claws",
   "size": "Tiny",
   "creatureType": "Undead",
   "alignment": "Neutral Evil",
@@ -4501,11 +4594,11 @@ const RAW = [
   "xp": 700,
   "proficiencyBonus": 2,
   "senses": "Blindsight 30 ft.; Passive Perception 10",
-  "languages": "Understands Common but can t speak",
+  "languages": "Understands Common but can’t speak",
   "traits": [
    {
     "name": "Swarm",
-    "text": "The swarm can occupy another creature s space and vice versa, and the swarm can move through any opening large enough for a Tiny creature. The swarm can t regain Hit Points or gain Temporary Hit Points."
+    "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny creature. The swarm can’t regain Hit Points or gain Temporary Hit Points."
    }
   ],
   "actions": [
@@ -4577,7 +4670,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Spiritual Weapon (2/Day)",
-    "text": "The cultist casts the Spiritual Weapon spell, using the same spellcasting ability as Spellcasting.Darkmantle"
+    "text": "The cultist casts the Spiritual Weapon spell, using the same spellcasting ability as Spellcasting."
    }
   ],
   "reactions": [],
@@ -4606,7 +4699,7 @@ const RAW = [
    },
    {
     "name": "Darkness Aura (1/Day)",
-    "text": "Emanation originating from the darkmantle. This effect lasts while the darkmantle maintains Concentration on it, up to 10 minutes. Darkvision can t penetrate this area, and no light can illuminate it.Death Dog"
+    "text": "Emanation originating from the darkmantle. This effect lasts while the darkmantle maintains Concentration on it, up to 10 minutes. Darkvision can’t penetrate this area, and no light can illuminate it."
    }
   ],
   "bonusActions": [],
@@ -4636,7 +4729,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 12. First Failure: The target has the Poisoned condition. While Poisoned, the target s Hit Point max - Rest, and it repeats the save every 24 hours that elapse, ending the effect on itself on a success. Subsequent Failures: The Poisoned target s Hit Point maximum de - creases by 5 (1d10).Deva"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 12. First Failure: The target has the Poisoned condition. While Poisoned, the target’s Hit Point max - Rest, and it repeats the save every 24 hours that elapse, ending the effect on itself on a success. Subsequent Failures: The Poisoned target’s Hit Point maximum de - creases by 5 (1d10)."
    }
   ],
   "bonusActions": [],
@@ -4685,9 +4778,150 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Divine Aid (2/Day)",
-    "text": "The deva casts Cure Wounds , Lesser Restoration , or Remove Curse , using the same spellcasting ability as Spellcasting. 280DjinniDjinniLarge Elemental (Genie), Neutral AC 17 Initiative +2 (12) HP 218 (19d10 + 114) Speed 30 ft., Fly 90 ft. (hover)MODSAVEMODSAVEMODSAVESTR 21 +5 +5DEX 15 +2 +6CON 22 +6 +6INT 15 +2 +2WIS 16 +3 +7CHA 20 +5 +5Immunities Lightning, Thunder Senses Darkvision 120 ft.; Passive Perception 13 Languages Primordial (Auran) CR 11 (XP 7,200; PB +4)"
+    "text": "The deva casts Cure Wounds , Lesser Restoration , or Remove Curse , using the same spellcasting ability as Spellcasting. 280"
    }
   ],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Djinni",
+  "size": "Large",
+  "creatureType": "Elemental",
+  "alignment": "Neutral",
+  "ac": 17,
+  "hp": 218,
+  "hpFormula": "19d10 + 114",
+  "speed": "30 ft., Fly 90 ft. (hover)MODSAVEMODSAVEMODSAVESTR 21",
+  "cr": "11",
+  "xp": 7200,
+  "proficiencyBonus": 4,
+  "senses": "Darkvision 120 ft.; Passive Perception 13",
+  "languages": "Primordial (Auran)",
+  "traits": [
+   {
+    "name": "Elemental Restoration",
+    "text": "If the djinni dies outside the Elemental Plane of Air, its body dissolves into mist, and it gains a new body in 1d4 days, reviving with all its Hit Points somewhere on the"
+   },
+   {
+    "name": "Magic Resistance",
+    "text": "The djinni has Advantage on saving throws against spells and other magical effects."
+   },
+   {
+    "name": "Wishes",
+    "text": "The djinni has a 30 percent chance of knowing the Wish spell. If the djinni knows it, the djinni can cast it only on behalf of a non-genie creature who commu - nicates a wish in a way the djinni can understand. If the djinni casts the spell for the creature, the djinni suffers none of the spell’s stress. Once the djinni has cast it three times, the djinni can’t do so again for 365 days."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The djinni makes three attacks, using Storm Blade or Storm Bolt in any combination."
+   },
+   {
+    "name": "Storm Blade",
+    "text": "Melee Attack Roll: +9, reach 5 feet. Hit: 12 (2d6 + 5) Slashing damage plus 7 (2d6) Light - ning damage."
+   },
+   {
+    "name": "Storm Bolt",
+    "text": "Ranged Attack Roll: +9, range 120 feet. Hit: 13 (3d8) Thunder damage. If the target is a Large or smaller creature, it has the Prone condition."
+   },
+   {
+    "name": "Create Whirlwind",
+    "text": "The djinni conjures a whirlwind at 20-foot-radius, 60-foot-high Cylinder centered on that point. The whirlwind lasts until the djinni’s Concentra - tion on it ends. The djinni can move the whirlwind up to 20 feet at the start of each of its turns. Whenever the whirlwind enters a creature’s space or a creature enters the whirlwind, that creature is sub - jected to the following effect. Strength Saving Throw: DC 17 (a creature makes this save only once per turn, and the djinni is unaffected). Failure: While in the whirlwind, the target has the Restrained condition and moves with the whirlwind. At the start of each of its turns, the Restrained target takes 21 (6d6) Thunder damage. At the end of each of its turns, the target re - peats the save, ending the effect on itself on a success."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Evil and Good , Detect Magic 2/Day Each: Create Food and Water (can create wine instead of water), Tongues , Wind Walk 1/Day Each: Creation , Gaseous Form , Invisibility , Major Image , Plane Shift"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Doppelganger",
+  "size": "Medium",
+  "creatureType": "Monstrosity",
+  "alignment": "Neutral",
+  "ac": 14,
+  "hp": 52,
+  "hpFormula": "8d8 + 16",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR 11",
+  "cr": "3",
+  "xp": 700,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 11",
+  "languages": "Common plus three other languages",
+  "traits": [],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The doppelganger makes two Slam attacks and uses Unsettling Visage if available."
+   },
+   {
+    "name": "Slam",
+    "text": "Melee Attack Roll: +6 (with Advantage during the Hit: 11 (2d6 + 4) Bludgeoning damage."
+   },
+   {
+    "name": "Read Thoughts",
+    "text": "The doppelganger casts Detect Thoughts , requiring no spell components and using Charisma as the spellcasting ability (spell save DC 12)."
+   },
+   {
+    "name": "Unsettling Visage (Recharge 6)",
+    "text": "Wisdom Saving Throw: DC 12, each creature in a 15-foot Emanation originating from the doppelganger that can see the doppelganger. Failure: The target has the Frightened condition and re - peats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
+   }
+  ],
+  "bonusActions": [
+   {
+    "name": "Shape-Shift",
+    "text": "The doppelganger shape-shifts into a Me - dium or Small Humanoid, or it returns to its true form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed. 281"
+   }
+  ],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Dragon Turtle",
+  "size": "Gargantuan",
+  "creatureType": "Dragon",
+  "alignment": "Neutral",
+  "ac": 20,
+  "hp": 356,
+  "hpFormula": "23d20 + 115",
+  "speed": "20 ft., Swim 50 ft.MODSAVEMODSAVEMODSAVESTR 25",
+  "cr": "17",
+  "xp": 18000,
+  "proficiencyBonus": 6,
+  "senses": "Darkvision 120 ft.; Passive Perception 11",
+  "languages": "Draconic, Primordial (Aquan)",
+  "traits": [
+   {
+    "name": "Amphibious",
+    "text": "The dragon can breathe air and water."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The dragon makes three Bite attacks. It can replace one attack with a Tail attack."
+   },
+   {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +13, reach 15 ft. Hit: 23 (3d10 + 7) Piercing damage plus 7 (2d6) Fire damage. Being underwater doesn’t grant Resistance to this Fire damage."
+   },
+   {
+    "name": "Tail",
+    "text": "Melee Attack Roll: +13, reach 15 ft. Hit: 18 (2d10 + 7) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition."
+   },
+   {
+    "name": "Steam Breath (Recharge 5–6)",
+    "text": "Constitution Saving Throw: DC 19, each creature in a 60-foot Cone. Failure: 56 (16d6) Fire damage. Success: Half damage. Failure or Success: Being underwater doesn’t grant Resistance to this Fire damage."
+   }
+  ],
+  "bonusActions": [],
   "reactions": [],
   "legendaryActions": [],
   "missing": []
@@ -4714,7 +4948,7 @@ const RAW = [
    },
    {
     "name": "Fetid Cloud (1/Day)",
-    "text": "Constitution Saving Throw: DC 11, each creature in a 10-foot Emanation originating from the dretch. Failure: The target has the Poisoned condi - tion until the end of its next turn. While Poisoned, the creature can take either an action or a Bonus Action on its turn, not both, and it can t take"
+    "text": "Constitution Saving Throw: DC 11, each creature in a 10-foot Emanation originating from the dretch. Failure: The target has the Poisoned condi - tion until the end of its next turn. While Poisoned, the creature can take either an action or a Bonus Action on its turn, not both, and it can’t take"
    }
   ],
   "bonusActions": [],
@@ -4762,8 +4996,98 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Magic of the Spider Queen (Recharge 5 6)",
-    "text": "The drider casts Darkness , Faerie Fire , or Web , requiring no Mate - rial components and using Wisdom as the spellcasting ability (spell save DC 14). 282DruidDruidMedium or Small Humanoid (Druid), Neutral AC 13 Initiative +1 (11) HP 44 (8d8 + 8) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 10 +0 +0DEX 12 +1 +1CON 13 +1 +1INT 12 +1 +1WIS 16 +3 +3CHA 11 +0 +0Skills Medicine +5, Nature +3, Perception +5 Gear Studded Leather Armor Senses Passive Perception 15 Languages Common, Druidic, Sylvan CR 2 (XP 450; PB +2)"
+    "name": "Magic of the Spider Queen (Recharge 5–6)",
+    "text": "The drider casts Darkness , Faerie Fire , or Web , requiring no Mate - rial components and using Wisdom as the spellcasting ability (spell save DC 14). 282"
+   }
+  ],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Druid",
+  "size": "Medium or Small",
+  "creatureType": "Humanoid",
+  "alignment": "Neutral",
+  "ac": 13,
+  "hp": 44,
+  "hpFormula": "8d8 + 8",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "2",
+  "xp": 450,
+  "proficiencyBonus": 2,
+  "senses": "Passive Perception 15",
+  "languages": "Common, Druidic, Sylvan",
+  "traits": [],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The druid makes two attacks, using Vine Staff or Verdant Wisp in any combination."
+   },
+   {
+    "name": "Vine Staff",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage plus 2 (1d4) Poison damage."
+   },
+   {
+    "name": "Verdant Wisp",
+    "text": "Ranged Attack Roll: +5, range 90 ft. Hit: 10 (3d6) Radiant damage."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): At Will: Druidcraft , Speak with Animals 2/Day Each: Entangle , Thunderwave 1/Day Each: Animal Messenger , Long - strider , Moonbeam"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Dryad",
+  "size": "Medium",
+  "creatureType": "Fey",
+  "alignment": "Neutral",
+  "ac": 16,
+  "hp": 22,
+  "hpFormula": "5d8",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "1",
+  "xp": 200,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 14",
+  "languages": "Elvish, Sylvan",
+  "traits": [
+   {
+    "name": "Magic Resistance",
+    "text": "The dryad has Advantage on saving throws against spells and other magical effects."
+   },
+   {
+    "name": "Speak with Beasts and Plants",
+    "text": "The dryad can com - municate with Beasts and Plants as if they shared a language."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The dryad makes one Vine Lash or Thorn Burst attack, and it can use Spellcasting to cast Charm Monster ."
+   },
+   {
+    "name": "Vine Lash",
+    "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 8 (1d8 + 4) Slashing damage."
+   },
+   {
+    "name": "Thorn Burst",
+    "text": "Ranged Attack Roll: +6, range 60 ft. Hit: 7 (1d6 + 4) Piercing damage."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The dryad casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 14): At Will: Animal Friendship , Charm Monster (lasts 24 hours; ends early if the dryad casts the spell again), Druidcraft 1/Day Each: Entangle , Pass without Trace"
+   }
+  ],
+  "bonusActions": [
+   {
+    "name": "Tree Stride",
+    "text": "If within 5 feet of a Large or bigger tree, the dryad teleports to an unoccupied space within 5 feet of a second Large or bigger tree that is within 60 feet of the previous tree."
    }
   ],
   "reactions": [],
@@ -4787,7 +5111,7 @@ const RAW = [
   "traits": [
    {
     "name": "Earth Glide",
-    "text": "The elemental can burrow through nonmagical, unworked earth and stone. While do - ing so, the elemental doesn t disturb the material it moves through."
+    "text": "The elemental can burrow through nonmagical, unworked earth and stone. While do - ing so, the elemental doesn’t disturb the material it moves through."
    },
    {
     "name": "Siege Monster",
@@ -4805,7 +5129,7 @@ const RAW = [
    },
    {
     "name": "Launch",
-    "text": "Ranged Attack Roll: +8, range 60 ft. Hit: 8 (1d6 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition.Efreeti"
+    "text": "Ranged Attack Roll: +8, range 60 ft. Hit: 8 (1d6 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition."
    }
   ],
   "bonusActions": [],
@@ -4838,7 +5162,7 @@ const RAW = [
    },
    {
     "name": "Wishes",
-    "text": "The efreeti has a 30 percent chance of know - ing the Wish spell. If the efreeti knows it, the efreeti can cast it only on behalf of a non-genie creature who communicates a wish in a way the efreeti can under - stand. If the efreeti casts the spell for the creature, the efreeti suffers none of the spell s stress. Once the efreeti has cast it three times, the efreeti can t do so again for 365 days."
+    "text": "The efreeti has a 30 percent chance of know - ing the Wish spell. If the efreeti knows it, the efreeti can cast it only on behalf of a non-genie creature who communicates a wish in a way the efreeti can under - stand. If the efreeti casts the spell for the creature, the efreeti suffers none of the spell’s stress. Once the efreeti has cast it three times, the efreeti can’t do so again for 365 days."
    }
   ],
   "actions": [
@@ -4856,7 +5180,7 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic , Elementalism 1/Day Each: Gaseous Form , Invisibility , Major Image , Plane Shift , Tongues , Wall of Fire (level 7 version)Erinyes"
+    "text": "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic , Elementalism 1/Day Each: Gaseous Form , Invisibility , Major Image , Plane Shift , Tongues , Wall of Fire (level 7 version)"
    }
   ],
   "bonusActions": [],
@@ -4906,18 +5230,61 @@ const RAW = [
     "text": "Strength Saving Throw: DC 16, one creature the erinyes can see within 120 feet. Failure: 14 (4d6) Force damage, and the target has the Restrained condition until the rope is de - stroyed, the erinyes uses a Bonus Action to release the target, or the erinyes uses Entangling Rope again."
    }
   ],
-  "bonusActions": [
-   {
-    "name": "Reel",
-    "text": "The ettercap pulls one creature within 30 feet of itself that is Restrained by its Web Strand up to 25 feet straight toward itself.Ettin"
-   }
-  ],
+  "bonusActions": [],
   "reactions": [
    {
     "name": "Parry",
-    "text": "Trigger: The erinyes is hit by a melee attack roll while holding a weapon. Response: The erinyes adds 4 to its AC against that attack, possibly causing it to miss. 284EttercapEttercapMedium Monstrosity, Neutral Evil AC 13 Initiative +2 (12) HP 44 (8d8 + 8) Speed 30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 14 +2 +2DEX 15 +2 +2CON 13 +1 +1INT 7 WIS 12 +1 +1CHA 8 Skills Perception +3, Stealth +4, Survival +3 Senses Darkvision 60 ft.; Passive Perception 13 Languages None CR 2 (XP 450; PB +2)"
+    "text": "Trigger: The erinyes is hit by a melee attack roll while holding a weapon. Response: The erinyes adds 4 to its AC against that attack, possibly causing it to miss. 284"
    }
   ],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Ettercap",
+  "size": "Medium",
+  "creatureType": "Monstrosity",
+  "alignment": "Neutral Evil",
+  "ac": 13,
+  "hp": 44,
+  "hpFormula": "8d8 + 8",
+  "speed": "30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "2",
+  "xp": 450,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 13",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Web Walker",
+    "text": "The ettercap ignores movement re - strictions caused by webs, and the ettercap knows the location of any other creature in contact with the same web."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The ettercap makes one Bite attack and one Claw attack."
+   },
+   {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 2 (1d4) Poison damage, and the target has the Poisoned condition until the start of the ettercap’s next turn."
+   },
+   {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Slashing damage."
+   },
+   {
+    "name": "Web Strand (Recharge 5–6)",
+    "text": "Dexterity Saving Throw: DC 12, one Large or smaller creature the ettercap can see within 30 feet. Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Bludgeoning, Poison, and Psychic damage)."
+   }
+  ],
+  "bonusActions": [
+   {
+    "name": "Reel",
+    "text": "The ettercap pulls one creature within 30 feet of itself that is Restrained by its Web Strand up to 25 feet straight toward itself."
+   }
+  ],
+  "reactions": [],
   "legendaryActions": [],
   "missing": []
  },
@@ -4947,7 +5314,7 @@ const RAW = [
    },
    {
     "name": "Morningstar",
-    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage, and the target has Disad - vantage on the next attack roll it makes before the end of its next turn.Fire Elemental"
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage, and the target has Disad - vantage on the next attack roll it makes before the end of its next turn."
    }
   ],
   "bonusActions": [],
@@ -4972,11 +5339,11 @@ const RAW = [
   "traits": [
    {
     "name": "Fire Aura",
-    "text": "At the end of each of the elemental s turns, each creature in a 10-foot Emanation originating from the elemental takes 5 (1d10) Fire damage. Creatures and"
+    "text": "At the end of each of the elemental’s turns, each creature in a 10-foot Emanation originating from the elemental takes 5 (1d10) Fire damage. Creatures and"
    },
    {
     "name": "Fire Form",
-    "text": "The elemental can move through a space as narrow as 1 inch without expending extra movement to do so, and it can enter a creature s space and stop turn, that creature takes 5 (1d10) Fire damage."
+    "text": "The elemental can move through a space as narrow as 1 inch without expending extra movement to do so, and it can enter a creature’s space and stop turn, that creature takes 5 (1d10) Fire damage."
    },
    {
     "name": "Illumination",
@@ -4994,7 +5361,7 @@ const RAW = [
    },
    {
     "name": "Burn",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + object, it starts burning.Fire Giant"
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + object, it starts burning."
    }
   ],
   "bonusActions": [],
@@ -5028,7 +5395,7 @@ const RAW = [
    },
    {
     "name": "Hammer Throw",
-    "text": "Ranged Attack Roll: +11, range 60/240 ft. Hit: 23 (3d10 + 7) Bludgeoning damage plus 4 (1d8) Fire damage, and the target is pushed up to 15 feet straight away from the giant and has Disadvantage on the next attack roll it makes before the end of its next turn.Flesh Golem"
+    "text": "Ranged Attack Roll: +11, range 60/240 ft. Hit: 23 (3d10 + 7) Bludgeoning damage plus 4 (1d8) Fire damage, and the target is pushed up to 15 feet straight away from the giant and has Disadvantage on the next attack roll it makes before the end of its next turn."
    }
   ],
   "bonusActions": [],
@@ -5061,11 +5428,11 @@ const RAW = [
    },
    {
     "name": "Bloodied",
-    "text": "The golem s creator, if within 60 feet of the berserk golem, can try to calm it by taking an action to make a DC 15 Charisma (Persuasion) check; the golem must be able to hear its creator. If this check succeeds, the go - lem ceases being berserk until the start of its next turn, at which point it resumes rolling for the Berserk trait again if it is still"
+    "text": "The golem’s creator, if within 60 feet of the berserk golem, can try to calm it by taking an action to make a DC 15 Charisma (Persuasion) check; the golem must be able to hear its creator. If this check succeeds, the go - lem ceases being berserk until the start of its next turn, at which point it resumes rolling for the Berserk trait again if it is still"
    },
    {
     "name": "Immutable Form",
-    "text": "The golem can t shape-shift. Lightning Absorption . Whenever the golem is sub - jected to Lightning damage, it regains a number of Hit Points equal to the Lightning damage dealt."
+    "text": "The golem can’t shape-shift. Lightning Absorption . Whenever the golem is sub - jected to Lightning damage, it regains a number of Hit Points equal to the Lightning damage dealt."
    },
    {
     "name": "Magic Resistance",
@@ -5079,7 +5446,7 @@ const RAW = [
    },
    {
     "name": "Slam",
-    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage plus 4 (1d8) Lightning damage.Frost Giant"
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage plus 4 (1d8) Lightning damage."
    }
   ],
   "bonusActions": [],
@@ -5113,13 +5480,13 @@ const RAW = [
    },
    {
     "name": "Great Bow",
-    "text": "Ranged Attack Roll: +9, range 150/600 ft. Hit: 17 (2d10 + 6) Piercing damage plus 7 (2d6) Cold damage, and the target s Speed decreases by 10 feet until the end of its next turn."
+    "text": "Ranged Attack Roll: +9, range 150/600 ft. Hit: 17 (2d10 + 6) Piercing damage plus 7 (2d6) Cold damage, and the target’s Speed decreases by 10 feet until the end of its next turn."
    }
   ],
   "bonusActions": [
    {
-    "name": "War Cry (Recharge 5 6)",
-    "text": "The giant or one creature of its choice that can see or hear it gains 16 (2d10 + 5) Temporary Hit Points and has Advantage on attack rolls until the start of the giant s next turn."
+    "name": "War Cry (Recharge 5–6)",
+    "text": "The giant or one creature of its choice that can see or hear it gains 16 (2d10 + 5) Temporary Hit Points and has Advantage on attack rolls until the start of the giant’s next turn.Fungi"
    }
   ],
   "reactions": [],
@@ -5127,7 +5494,7 @@ const RAW = [
   "missing": []
  },
  {
-  "name": "FungiShrieker Fungus",
+  "name": "Shrieker Fungus",
   "size": "Medium",
   "creatureType": "Plant",
   "alignment": "Unaligned",
@@ -5174,7 +5541,7 @@ const RAW = [
    },
    {
     "name": "Rotting Touch",
-    "text": "Melee Attack Roll: +2, reach 10 ft. Hit: 4 (1d8) Necrotic damage.Gargoyle"
+    "text": "Melee Attack Roll: +2, reach 10 ft. Hit: 4 (1d8) Necrotic damage."
    }
   ],
   "bonusActions": [],
@@ -5199,7 +5566,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The gargoyle doesn t provoke an Opportunity"
+    "text": "The gargoyle doesn’t provoke an Opportunity"
    }
   ],
   "actions": [
@@ -5209,7 +5576,7 @@ const RAW = [
    },
    {
     "name": "Claw",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Slashing damage.Gelatinous Cube"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Slashing damage."
    }
   ],
   "bonusActions": [],
@@ -5234,7 +5601,7 @@ const RAW = [
   "traits": [
    {
     "name": "Transparent",
-    "text": "Even when the cube is in plain sight, a creature must succeed on a DC 15 Wisdom (Percep - tion) check to notice the cube if the creature hasn t wit - nessed the cube move or otherwise act."
+    "text": "Even when the cube is in plain sight, a creature must succeed on a DC 15 Wisdom (Percep - tion) check to notice the cube if the creature hasn’t wit - nessed the cube move or otherwise act."
    }
   ],
   "actions": [
@@ -5248,7 +5615,7 @@ const RAW = [
    },
    {
     "name": "Opportunity Attacks",
-    "text": "The cube can move through the spaces of Large or smaller creatures if it has room inside itself to contain them (see the Ooze Cube trait). Dexterity Saving Throw: DC 12, each creature this move. Failure: 10 (3d6) Acid damage, and the target is engulfed. An engulfed target is suffocating, can t cast spells with a Verbal component, has the Restrained condition, and takes 10 (3d6) Acid damage at the start of each of the cube s turns. When the cube moves, the engulfed target moves with it. An engulfed target can try to escape by taking an action to make a DC 12 Strength (Athletics) check. On a successful check, the target escapes and enters the nearest unoccupied space. Success: Half damage, and the target moves to an unoccupied space within 5 feet of the cube. If there is no unoccupied space, the target fails the save instead.Ghast"
+    "text": "The cube can move through the spaces of Large or smaller creatures if it has room inside itself to contain them (see the Ooze Cube trait). Dexterity Saving Throw: DC 12, each creature this move. Failure: 10 (3d6) Acid damage, and the target is engulfed. An engulfed target is suffocating, can’t cast spells with a Verbal component, has the Restrained condition, and takes 10 (3d6) Acid damage at the start of each of the cube’s turns. When the cube moves, the engulfed target moves with it. An engulfed target can try to escape by taking an action to make a DC 12 Strength (Athletics) check. On a successful check, the target escapes and enters the nearest unoccupied space. Success: Half damage, and the target moves to an unoccupied space within 5 feet of the cube. If there is no unoccupied space, the target fails the save instead."
    }
   ],
   "bonusActions": [],
@@ -5273,7 +5640,7 @@ const RAW = [
   "traits": [
    {
     "name": "Stench",
-    "text": "Constitution Saving Throw: DC 10, any creature that starts its turn in a 5-foot Emanation originating from the ghast. Failure: The target has the Poisoned condi - tion until the start of its next turn. Success: The target is immune to this ghast s Stench for 24 hours."
+    "text": "Constitution Saving Throw: DC 10, any creature that starts its turn in a 5-foot Emanation originating from the ghast. Failure: The target has the Poisoned condi - tion until the start of its next turn. Success: The target is immune to this ghast’s Stench for 24 hours."
    }
   ],
   "actions": [
@@ -5283,7 +5650,7 @@ const RAW = [
    },
    {
     "name": "Claw",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage. If the target is a non-Undead creature, it is subjected to the following effect. Consti - tution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn.Ghost"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage. If the target is a non-Undead creature, it is subjected to the following effect. Consti - tution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn."
    }
   ],
   "bonusActions": [],
@@ -5330,19 +5697,19 @@ const RAW = [
    },
    {
     "name": "Etherealness",
-    "text": "The ghost casts the Etherealness spell, requiring no spell components and using Charisma as the spellcasting ability. The ghost is visible on the Mate - rial Plane while on the Border Ethereal and vice versa, but it can t affect or be affected by anything on the other plane. Wisdom Saving Throw: DC 13, each creature in a 60-foot Cone that can see the ghost and isn t an"
+    "text": "The ghost casts the Etherealness spell, requiring no spell components and using Charisma as the spellcasting ability. The ghost is visible on the Mate - rial Plane while on the Border Ethereal and vice versa, but it can’t affect or be affected by anything on the other plane. Wisdom Saving Throw: DC 13, each creature in a 60-foot Cone that can see the ghost and isn’t an"
    },
    {
     "name": "Undead",
-    "text": "Failure: 10 (2d6 + 3) Psychic damage, and the target has the Frightened condition until the start of the ghost s next turn. Success: The target is im -"
+    "text": "Failure: 10 (2d6 + 3) Psychic damage, and the target has the Frightened condition until the start of the ghost’s next turn. Success: The target is im -"
    },
    {
     "name": "Possession (Recharge 6)",
-    "text": "Charisma Saving Throw: DC 13, one Humanoid the ghost can see within 5 feet. Fail - ure: The target is possessed by the ghost; the ghost dis - appears, and the target has the Incapacitated condition and loses control of its body. The ghost now controls the body, but the target retains awareness. The ghost can t be targeted by any attack, spell, or other effect, game statistics are the same, except it uses the pos - sessed target s Speed, as well as the target s Strength, The possession lasts until the body drops to 0 Hit Points or the ghost leaves as a"
+    "text": "Charisma Saving Throw: DC 13, one Humanoid the ghost can see within 5 feet. Fail - ure: The target is possessed by the ghost; the ghost dis - appears, and the target has the Incapacitated condition and loses control of its body. The ghost now controls the body, but the target retains awareness. The ghost can’t be targeted by any attack, spell, or other effect, game statistics are the same, except it uses the pos - sessed target’s Speed, as well as the target’s Strength, The possession lasts until the body drops to 0 Hit Points or the ghost leaves as a"
    },
    {
     "name": "Bonus Action",
-    "text": "When the possession ends, the ghost appears in an unoccupied space within 5 feet of the target, and the target is im - mune to this ghost s Possession for 24 hours. Success: The target is immune to this ghost s Posses - sion for 24 hours.Ghoul"
+    "text": "When the possession ends, the ghost appears in an unoccupied space within 5 feet of the target, and the target is im - mune to this ghost’s Possession for 24 hours. Success: The target is immune to this ghost’s Posses - sion for 24 hours."
    }
   ],
   "bonusActions": [],
@@ -5372,7 +5739,7 @@ const RAW = [
    },
    {
     "name": "Claw",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Slashing damage. If the target is a creature that isn t an Undead or elf, it is subjected to the following effect. Constitution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn.Gibbering Mouther"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Slashing damage. If the target is a creature that isn’t an Undead or elf, it is subjected to the following effect. Constitution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn."
    }
   ],
   "bonusActions": [],
@@ -5401,7 +5768,7 @@ const RAW = [
    },
    {
     "name": "Gibbering",
-    "text": "The mouther babbles incoherently while it doesn t have the Incapacitated condition. Wisdom Saving Throw: DC 10, any creature that starts its turn within 20 feet of the mouther while it is babbling. Failure: The target rolls 1d8 to determine what it does during the current turn: 1 4. The target does nothing. 5 6. The target takes no action or Bonus Action and uses all its movement to move in a random direction. 7 8. The target makes a melee attack against a ran - domly determined creature within its reach or does nothing if it can t make such an attack."
+    "text": "The mouther babbles incoherently while it doesn’t have the Incapacitated condition. Wisdom Saving Throw: DC 10, any creature that starts its turn within 20 feet of the mouther while it is babbling. Failure: The target rolls 1d8 to determine what it does during the current turn: 1–4. The target does nothing. 5–6. The target takes no action or Bonus Action and uses all its movement to move in a random direction. 7–8. The target makes a melee attack against a ran - domly determined creature within its reach or does nothing if it can’t make such an attack."
    }
   ],
   "actions": [
@@ -5410,8 +5777,89 @@ const RAW = [
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 7 (2d6) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition. The target dies if it is reduced to 0 Hit Points by this attack. Its body is then absorbed into the mouther, leaving only equip - ment behind."
    },
    {
-    "name": "Blinding Spittle (Recharge 5 6)",
-    "text": "Dexterity Saving Throw: DC 10, each creature in a 10-foot-radius Sphere centered on a point within 30 feet. Failure: 7 (2d6) Ra - diant damage, and the target has the Blinded condition until the end of the mouther s next turn. 289GlabrezuGlabrezuLarge Fiend (Demon), Chaotic Evil AC 17 Initiative +6 (16) HP 189 (18d10 + 90) Speed 40 ft.MODSAVEMODSAVEMODSAVESTR 20 +5 +9DEX 15 +2 +2CON 21 +5 +9INT 19 +4 +4WIS 17 +3 +7CHA 16 +3 +7Skills Deception +7, Perception +7 Resistances Cold, Fire, Lightning Immunities Poison; Poisoned Senses Truesight 120 ft.; Passive Perception 17 Languages Abyssal; telepathy 120 ft. CR 9 (XP 5,000; PB +4)"
+    "name": "Blinding Spittle (Recharge 5–6)",
+    "text": "Dexterity Saving Throw: DC 10, each creature in a 10-foot-radius Sphere centered on a point within 30 feet. Failure: 7 (2d6) Ra - diant damage, and the target has the Blinded condition until the end of the mouther’s next turn. 289"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Glabrezu",
+  "size": "Large",
+  "creatureType": "Fiend",
+  "alignment": "Chaotic Evil",
+  "ac": 17,
+  "hp": 189,
+  "hpFormula": "18d10 + 90",
+  "speed": "40 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "9",
+  "xp": 5000,
+  "proficiencyBonus": 4,
+  "senses": "Truesight 120 ft.; Passive Perception 17",
+  "languages": "Abyssal; telepathy 120 ft.",
+  "traits": [
+   {
+    "name": "Demonic Restoration",
+    "text": "If the glabrezu dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points some - where in the"
+   },
+   {
+    "name": "Magic Resistance",
+    "text": "The glabrezu has Advantage on sav - ing throws against spells and other magical effects."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The glabrezu makes two Pincer attacks and uses"
+   },
+   {
+    "name": "Pincer",
+    "text": "Melee Attack Roll: +9, reach 10 ft. Hit: 16 (2d10 + 5) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 15) from one of two pincers."
+   },
+   {
+    "name": "Pummel",
+    "text": "Dexterity Saving Throw: DC 17, one creature Grappled by the glabrezu. Failure: 15 (3d6 + 5) Blud - geoning damage. Success: Half damage."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The glabrezu casts one of the following spells, requiring no Material components and using In - telligence as the spellcasting ability (spell save DC 16): At Will: Darkness , Detect Magic , Dispel Magic 1/Day Each: Confusion , Fly , Power Word Stun"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Gladiator",
+  "size": "Medium or Small",
+  "creatureType": "Humanoid",
+  "alignment": "Neutral",
+  "ac": 16,
+  "hp": 112,
+  "hpFormula": "15d8 + 45",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR 18",
+  "cr": "5",
+  "xp": 1800,
+  "proficiencyBonus": 3,
+  "senses": "Passive Perception 11",
+  "languages": "Common",
+  "traits": [],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The gladiator makes three Spear attacks. It can replace one attack with a use of"
+   },
+   {
+    "name": "Spear",
+    "text": "Melee or Ranged Attack Roll: +7, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage."
+   },
+   {
+    "name": "Shield Bash",
+    "text": "Strength Saving Throw: DC 15, one crea - ture within 5 feet that the gladiator can see. Failure: 9 (2d4 + 4) Bludgeoning damage. If the target is a Me - dium or smaller creature, it has the Prone condition."
    }
   ],
   "bonusActions": [],
@@ -5596,11 +6044,11 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Slashing damage. Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 22 (4d10) Fire damage. Success: Half damage."
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Slashing damage. Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 22 (4d10) Fire damage. Success: Half damage."
    },
    {
     "name": "Weakening Breath",
-    "text": "Strength Saving Throw: DC 13, each creature that isn t currently affected by this breath in a 15-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 2 (1d4) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. Af - ter 1 minute, it succeeds automatically."
+    "text": "Strength Saving Throw: DC 13, each creature that isn’t currently affected by this breath in a 15-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 2 (1d4) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. Af - ter 1 minute, it succeeds automatically."
    }
   ],
   "bonusActions": [],
@@ -5637,11 +6085,11 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 17 (2d10 + 6) Slashing damage. Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 55 (10d10) Fire damage. Success: Half damage."
+    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 17 (2d10 + 6) Slashing damage. Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 55 (10d10) Fire damage. Success: Half damage."
    },
    {
     "name": "Weakening Breath",
-    "text": "Strength Saving Throw: DC 17, each creature that isn t currently affected by this breath in a 30-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. Af - ter 1 minute, it succeeds automatically."
+    "text": "Strength Saving Throw: DC 17, each creature that isn’t currently affected by this breath in a 30-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. Af - ter 1 minute, it succeeds automatically."
    }
   ],
   "bonusActions": [],
@@ -5680,7 +6128,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 17 (2d8 + 8) Slashing damage plus 4 (1d8) Fire damage. Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 21, each creature in a 60-foot Cone. Failure: 66 (12d10) Fire damage. Success: Half damage."
+    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 17 (2d8 + 8) Slashing damage plus 4 (1d8) Fire damage. Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 21, each creature in a 60-foot Cone. Failure: 66 (12d10) Fire damage. Success: Half damage."
    },
    {
     "name": "Spellcasting",
@@ -5688,7 +6136,7 @@ const RAW = [
    },
    {
     "name": "Weakening Breath",
-    "text": "Strength Saving Throw: DC 21, each creature that isn t currently affected by this breath in a 60-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. Af - ter 1 minute, it succeeds automatically. 292"
+    "text": "Strength Saving Throw: DC 21, each creature that isn’t currently affected by this breath in a 60-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. Af - ter 1 minute, it succeeds automatically. 292"
    }
   ],
   "bonusActions": [],
@@ -5736,7 +6184,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +17 to hit, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 9 (2d8) Fire damage. Fire Breath (Recharge 5 6) . Dexterity Saving Throw: DC 24, each creature in a 90-foot Cone. Failure: 71 (13d10) Fire damage. Success: Half damage."
+    "text": "Melee Attack Roll: +17 to hit, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 9 (2d8) Fire damage. Fire Breath (Recharge 5–6) . Dexterity Saving Throw: DC 24, each creature in a 90-foot Cone. Failure: 71 (13d10) Fire damage. Success: Half damage."
    },
    {
     "name": "Spellcasting",
@@ -5744,7 +6192,7 @@ const RAW = [
    },
    {
     "name": "Weakening Breath",
-    "text": "Strength Saving Throw: DC 24, each creature that isn t currently affected by this breath in a 90-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 5 (1d10) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a suc - cess. After 1 minute, it succeeds automatically."
+    "text": "Strength Saving Throw: DC 24, each creature that isn’t currently affected by this breath in a 90-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 5 (1d10) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a suc - cess. After 1 minute, it succeeds automatically."
    }
   ],
   "bonusActions": [],
@@ -5756,7 +6204,7 @@ const RAW = [
    },
    {
     "name": "Pounce",
-    "text": "The dragon moves up to half its Speed, and it makes one Rend attack.Gorgon"
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -5782,14 +6230,14 @@ const RAW = [
     "text": "Melee Attack Roll: +8, reach 5 ft. Hit: 18 (2d12 + 5) Piercing damage. If the target is a Large or smaller creature and the gorgon moved 20+ feet straight toward it immediately before the hit, the target has the Prone condition."
    },
    {
-    "name": "Petrifying Breath (Recharge 5 6)",
+    "name": "Petrifying Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 15, each creature in a 30-foot Cone. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: instead of the Restrained condition."
    }
   ],
   "bonusActions": [
    {
     "name": "Trample",
-    "text": "Dexterity Saving Throw: DC 16, one creature within 5 feet that has the Prone condition. Failure: 16 (2d10 + 5) Bludgeoning damage. Success: Half damage.Gray OozeGray"
+    "text": "Dexterity Saving Throw: DC 16, one creature within 5 feet that has the Prone condition. Failure: 16 (2d10 + 5) Bludgeoning damage. Success: Half damage."
    }
   ],
   "reactions": [],
@@ -5797,7 +6245,7 @@ const RAW = [
   "missing": []
  },
  {
-  "name": "Ooze",
+  "name": "Gray Ooze",
   "size": "Medium",
   "creatureType": "Ooze",
   "alignment": "Unaligned",
@@ -5861,7 +6309,7 @@ const RAW = [
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage plus 3 (1d6) Poison damage."
    },
    {
-    "name": "Poison Breath (Recharge 5 6)",
+    "name": "Poison Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: 21 (6d6) Poison damage. Success: Half damage."
    }
   ],
@@ -5900,7 +6348,7 @@ const RAW = [
     "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Slashing damage plus 7 (2d6) Poison damage."
    },
    {
-    "name": "Poison Breath (Recharge 5 6)",
+    "name": "Poison Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: 42 (12d6) Poison damage. Success: Half damage."
    }
   ],
@@ -5943,7 +6391,7 @@ const RAW = [
     "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 15 (2d8 + 6) Slashing damage plus 7 (2d6) Poison damage."
    },
    {
-    "name": "Poison Breath (Recharge 5 6)",
+    "name": "Poison Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Fail - ure: 56 (16d6) Poison damage. Success: Half damage."
    },
    {
@@ -5960,7 +6408,7 @@ const RAW = [
    },
    {
     "name": "Miasma",
-    "text": "Constitution Saving Throw: DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. Failure: 7 (2d6) until the end of its next turn. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Constitution Saving Throw: DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. Failure: 7 (2d6) until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
@@ -6003,7 +6451,7 @@ const RAW = [
     "text": "Melee Attack Roll: +15, reach 15 ft. Hit: 17 (2d8 + 8) Slashing damage plus 10 (3d6) Poison damage."
    },
    {
-    "name": "Poison Breath (Recharge 5 6)",
+    "name": "Poison Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Fail - ure: 77 (22d6) Poison damage. Success: Half damage."
    },
    {
@@ -6020,11 +6468,11 @@ const RAW = [
    },
    {
     "name": "Noxious Miasma",
-    "text": "Constitution Saving Throw: DC 21, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 90 feet. Failure: 17 to AC until the end of its next turn. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Constitution Saving Throw: DC 21, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 90 feet. Failure: 17 to AC until the end of its next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
-    "text": "The dragon moves up to half its Speed, and it makes one Rend attack.Green Hag"
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -6050,7 +6498,7 @@ const RAW = [
    },
    {
     "name": "Coven Magic",
-    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell s normal casting time, and using Intelligence as the spell - casting ability (spell save DC 11): Augury , Find Familiar , Identify , Locate Object , Scrying , or Unseen Servant . cast that spell again."
+    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell’s normal casting time, and using Intelligence as the spell - casting ability (spell save DC 11): Augury , Find Familiar , Identify , Locate Object , Scrying , or Unseen Servant . cast that spell again."
    },
    {
     "name": "Mimicry",
@@ -6068,7 +6516,7 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Dancing Lights , Disguise Self (24-hour du - ration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion , Ray of Sickness (level 3 version)Grick"
+    "text": "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Dancing Lights , Disguise Self (24-hour du - ration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion , Ray of Sickness (level 3 version)"
    }
   ],
   "bonusActions": [],
@@ -6102,7 +6550,7 @@ const RAW = [
    },
    {
     "name": "Tentacles",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12) from all four tentacles.Griffon"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12) from all four tentacles."
    }
   ],
   "bonusActions": [],
@@ -6132,11 +6580,33 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 14) from both of the griffon s front claws. 296GrimlockGrimlockMedium Aberration, Neutral Evil AC 11 Initiative +1 (11) HP 11 (2d8 + 2) Speed 30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 16 +3 +3DEX 12 +1 +1CON 12 +1 +1INT 9 WIS 8 CHA 6 Skills Athletics +5, Perception +3, Stealth +5 Senses Blindsight 30 ft.; Passive Perception 13 Languages None CR 1/4 (XP 50; PB +2)"
-   },
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 14) from both of the griffon’s front claws. 296"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Grimlock",
+  "size": "Medium",
+  "creatureType": "Aberration",
+  "alignment": "Neutral Evil",
+  "ac": 11,
+  "hp": 11,
+  "hpFormula": "2d8 + 2",
+  "speed": "30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 16",
+  "cr": "1/4",
+  "xp": 50,
+  "proficiencyBonus": 2,
+  "senses": "Blindsight 30 ft.; Passive Perception 13",
+  "languages": "None",
+  "traits": [],
+  "actions": [
    {
-    "name": "ActionsBone Cudgel",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage plus 2 (1d4) Psy - chic damage.Guardian Naga"
+    "name": "Bone Cudgel",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage plus 2 (1d4) Psy - chic damage."
    }
   ],
   "bonusActions": [],
@@ -6175,7 +6645,7 @@ const RAW = [
    },
    {
     "name": "Poisonous Spittle",
-    "text": "Constitution Saving Throw: DC 16, one creature the naga can see within 60 feet. Failure: 31 (7d8) Poison damage, and the target has the Blinded condition until the start of the naga s next turn. Success: Half damage only.Spellcasting. The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): At Will: Thaumaturgy 1/Day Each: Clairvoyance , Cure Wounds (level 6 ver - sion), Flame Strike (level 6 version), Geas , True SeeingGuards"
+    "text": "Constitution Saving Throw: DC 16, one creature the naga can see within 60 feet. Failure: 31 (7d8) Poison damage, and the target has the Blinded condition until the start of the naga’s next turn. Success: Half damage only.Spellcasting. The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): At Will: Thaumaturgy 1/Day Each: Clairvoyance , Cure Wounds (level 6 ver - sion), Flame Strike (level 6 version), Geas , True SeeingGuards"
    }
   ],
   "bonusActions": [],
@@ -6223,12 +6693,7 @@ const RAW = [
   "proficiencyBonus": 2,
   "senses": "Passive Perception 14",
   "languages": "Common",
-  "traits": [
-   {
-    "name": "Draconic Origin",
-    "text": "The half-dragon is related to a type of dragon associated with one of the following damage types (GM s choice): Acid, Cold, Fire, Lightning, or Poi - son. This choice affects other aspects of the stat block."
-   }
-  ],
+  "traits": [],
   "actions": [
    {
     "name": "Multiattack",
@@ -6240,13 +6705,52 @@ const RAW = [
    },
    {
     "name": "Longsword",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Slashing damage. 297Half-DragonHalf-DragonMedium Dragon, Neutral AC 18 Initiative +5 (15) HP 105 (14d8 + 42) Speed 40 ft.MODSAVEMODSAVEMODSAVESTR 19 +4 +4DEX 14 +2 +5CON 16 +3 +3INT 10 +0 +0WIS 15 +2 +5CHA 14 +2 +2Skills Athletics +7, Perception +5, Stealth +5 Resistances Damage type chosen for the Draconic Origin trait below Senses Blindsight 10 ft., Darkvision 60 ft.; Passive Perception 15 Languages Common, Draconic CR 5 (XP 1,800; PB +3)"
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Slashing damage. 297"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Half-Dragon",
+  "size": "Medium",
+  "creatureType": "Dragon",
+  "alignment": "Neutral",
+  "ac": 18,
+  "hp": 105,
+  "hpFormula": "14d8 + 42",
+  "speed": "40 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "5",
+  "xp": 1800,
+  "proficiencyBonus": 3,
+  "senses": "Blindsight 10 ft., Darkvision 60 ft.;",
+  "languages": "Common, Draconic",
+  "traits": [
+   {
+    "name": "Draconic Origin",
+    "text": "The half-dragon is related to a type of dragon associated with one of the following damage types (GM’s choice): Acid, Cold, Fire, Lightning, or Poi - son. This choice affects other aspects of the stat block."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The half-dragon makes two Claw attacks."
+   },
+   {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 6 (1d4 + 4) Slashing damage plus 7 (2d6) damage of the type chosen for the Draconic Origin trait."
+   },
+   {
+    "name": "Dragon’s Breath (Recharge 5–6)",
+    "text": "Dexterity Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: 28 (8d6) damage of the type chosen for the Draconic Origin trait. Success: Half damage."
    }
   ],
   "bonusActions": [
    {
     "name": "Leap",
-    "text": "The half-dragon jumps up to 30 feet by spending 10 feet of movement.Harpy"
+    "text": "The half-dragon jumps up to 30 feet by spending 10 feet of movement."
    }
   ],
   "reactions": [],
@@ -6275,7 +6779,7 @@ const RAW = [
    },
    {
     "name": "Luring Song",
-    "text": "The harpy sings a magical melody, which lasts until the harpy s Concentration ends on it. Wisdom Saving Throw: DC 11, each Humanoid and Giant in a 300-foot Emanation originating from the harpy when the song starts. Failure: The target has the Charmed condition until the song ends and repeats the save at the end of each of its turns. While Charmed, the target has the Incapacitated condition and ignores the Luring Song of other harpies. If the target is more than 5 feet from the harpy, the target moves on its turn toward the harpy by the most direct route, trying to get within 5 feet of the harpy. It doesn t avoid Opportunity Attacks; however, before moving into damaging terrain (such as lava or a pit) and whenever it takes damage from a source other than the harpy, the target repeats the save. Success: The target is immune to this harpy s Luring Song for 24 hours.Hell Hound"
+    "text": "The harpy sings a magical melody, which lasts until the harpy’s Concentration ends on it. Wisdom Saving Throw: DC 11, each Humanoid and Giant in a 300-foot Emanation originating from the harpy when the song starts. Failure: The target has the Charmed condition until the song ends and repeats the save at the end of each of its turns. While Charmed, the target has the Incapacitated condition and ignores the Luring Song of other harpies. If the target is more than 5 feet from the harpy, the target moves on its turn toward the harpy by the most direct route, trying to get within 5 feet of the harpy. It doesn’t avoid Opportunity Attacks; however, before moving into damaging terrain (such as lava or a pit) and whenever it takes damage from a source other than the harpy, the target repeats the save. Success: The target is immune to this harpy’s Luring Song for 24 hours."
    }
   ],
   "bonusActions": [],
@@ -6296,11 +6800,11 @@ const RAW = [
   "xp": 700,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 15",
-  "languages": "Understands Infernal but can t speak",
+  "languages": "Understands Infernal but can’t speak",
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The hound has Advantage on an attack roll against a creature if at least one of the hound s al - lies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The hound has Advantage on an attack roll against a creature if at least one of the hound’s al - lies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -6313,14 +6817,57 @@ const RAW = [
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage plus 3 (1d6) Fire damage."
    },
    {
-    "name": "Fire Breath (Recharge 5 6)",
-    "text": "Dexterity Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 17 (5d6) Fire damage. Success: Half damage. 298HezrouHezrouLarge Fiend (Demon), Chaotic Evil AC 18 Initiative +6 (16) HP 157 (15d10 + 75) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 19 +4 +7DEX 17 +3 +3CON 20 +5 +8INT 5 WIS 12 +1 +4CHA 13 +1 +1Resistances Cold, Fire, Lightning Immunities Poison; Poisoned Senses Darkvision 120 ft.; Passive Perception 11 Languages Abyssal; telepathy 120 ft. CR 8 (XP 3,900; PB +3)"
+    "name": "Fire Breath (Recharge 5–6)",
+    "text": "Dexterity Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 17 (5d6) Fire damage. Success: Half damage. 298"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Hezrou",
+  "size": "Large",
+  "creatureType": "Fiend",
+  "alignment": "Chaotic Evil",
+  "ac": 18,
+  "hp": 157,
+  "hpFormula": "15d10 + 75",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "8",
+  "xp": 3900,
+  "proficiencyBonus": 3,
+  "senses": "Darkvision 120 ft.; Passive Perception 11",
+  "languages": "Abyssal; telepathy 120 ft.",
+  "traits": [
+   {
+    "name": "Demonic Restoration",
+    "text": "If the hezrou dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points some - where in the"
+   },
+   {
+    "name": "Magic Resistance",
+    "text": "The hezrou has Advantage on saving throws against spells and other magical effects."
+   },
+   {
+    "name": "Stench",
+    "text": "Constitution Saving Throw: DC 16, any creature that starts its turn in a 10-foot Emanation originating from the hezrou. Failure: The target has the Poisoned condition until the start of its next turn."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The hezrou makes three Rend attacks."
+   },
+   {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 6 (1d4 + 4) Slashing damage plus 9 (2d8) Poison damage."
    }
   ],
   "bonusActions": [
    {
     "name": "Leap",
-    "text": "The hezrou jumps up to 30 feet by spending 10 feet of movement.Hill Giant"
+    "text": "The hezrou jumps up to 30 feet by spending 10 feet of movement."
    }
   ],
   "reactions": [],
@@ -6353,7 +6900,7 @@ const RAW = [
    },
    {
     "name": "Trash Lob",
-    "text": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn.Hippogriff"
+    "text": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn."
    }
   ],
   "bonusActions": [],
@@ -6378,7 +6925,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The hippogriff doesn t provoke an Opportunity"
+    "text": "The hippogriff doesn’t provoke an Opportunity"
    }
   ],
   "actions": [
@@ -6413,7 +6960,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The hobgoblin has Advantage on an at - tack roll against a creature if at least one of the hobgob - lin s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The hobgoblin has Advantage on an at - tack roll against a creature if at least one of the hobgob - lin’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -6448,7 +6995,7 @@ const RAW = [
   "traits": [
    {
     "name": "Aura of Authority",
-    "text": "While in a 10-foot Emanation origi - nating from the hobgoblin, the hobgoblin and its allies have Advantage on attack rolls and saving throws, provided the hobgoblin doesn t have the Incapacitated condition."
+    "text": "While in a 10-foot Emanation origi - nating from the hobgoblin, the hobgoblin and its allies have Advantage on attack rolls and saving throws, provided the hobgoblin doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -6462,7 +7009,7 @@ const RAW = [
    },
    {
     "name": "Longbow",
-    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage plus 5 (2d4) Poi - son damage.Homunculus"
+    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage plus 5 (2d4) Poi - son damage."
    }
   ],
   "bonusActions": [],
@@ -6493,7 +7040,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus s next turn. Failure by 5 or More: The tar - get has the Poisoned condition for 1 minute. While Poi - soned, the target has the Unconscious condition, which ends early if the target takes any damage.Horned Devil"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus’s next turn. Failure by 5 or More: The tar - get has the Poisoned condition for 1 minute. While Poi - soned, the target has the Unconscious condition, which ends early if the target takes any damage."
    }
   ],
   "bonusActions": [],
@@ -6536,11 +7083,11 @@ const RAW = [
    },
    {
     "name": "Hurl Flame",
-    "text": "Ranged Attack Roll: +8, range 150 ft. Hit: object that isn t being worn or carried, it starts burning."
+    "text": "Ranged Attack Roll: +8, range 150 ft. Hit: object that isn’t being worn or carried, it starts burning."
    },
    {
     "name": "Infernal Tail",
-    "text": "Dexterity Saving Throw: DC 17, one crea - ture the devil can see within 10 feet. Failure: 10 (1d8 + 6) Necrotic damage, and the target receives an infer - nal wound if it doesn t have one. While wounded, the target loses 10 (3d6) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by succeeding on a DC 17 Wisdom (Medicine) check.Hydra"
+    "text": "Dexterity Saving Throw: DC 17, one crea - ture the devil can see within 10 feet. Failure: 10 (1d8 + 6) Necrotic damage, and the target receives an infer - nal wound if it doesn’t have one. While wounded, the target loses 10 (3d6) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by succeeding on a DC 17 Wisdom (Medicine) check."
    }
   ],
   "bonusActions": [],
@@ -6579,7 +7126,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 10 (1d10 + 5) Piercing damage.Ice Devil"
+    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 10 (1d10 + 5) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -6618,7 +7165,7 @@ const RAW = [
    },
    {
     "name": "Ice Spear",
-    "text": "Melee or Ranged Attack Roll: +10, reach 5 ft. or range 30/120 ft. Hit: 14 (2d8 + 5) Piercing damage plus 10 (3d6) Cold damage. Until the end of its next turn, the target can t take a Bonus Action or Reaction, its Speed decreases by 10 feet, and it can move or take one action on its turn, not both. Hit or Miss: The spear magically returns to the devil s hand immediately after a ranged attack."
+    "text": "Melee or Ranged Attack Roll: +10, reach 5 ft. or range 30/120 ft. Hit: 14 (2d8 + 5) Piercing damage plus 10 (3d6) Cold damage. Until the end of its next turn, the target can’t take a Bonus Action or Reaction, its Speed decreases by 10 feet, and it can move or take one action on its turn, not both. Hit or Miss: The spear magically returns to the devil’s hand immediately after a ranged attack."
    },
    {
     "name": "Tail",
@@ -6626,7 +7173,7 @@ const RAW = [
    },
    {
     "name": "Ice Wall (Recharge 6)",
-    "text": "The devil casts Wall of Ice (level 8 version), requiring no spell components and using In - telligence as the spellcasting ability (spell save DC 17).Imp"
+    "text": "The devil casts Wall of Ice (level 8 version), requiring no spell components and using In - telligence as the spellcasting ability (spell save DC 17)."
    }
   ],
   "bonusActions": [],
@@ -6669,7 +7216,7 @@ const RAW = [
    },
    {
     "name": "Speed",
-    "text": "Any equipment it is wearing or carrying isn t transformed.Incubus"
+    "text": "Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "bonusActions": [],
@@ -6694,7 +7241,7 @@ const RAW = [
   "traits": [
    {
     "name": "Succubus Form",
-    "text": "Rest, it can shape-shift into a Succubus , using that stat block instead of this one. Any equipment it is wearing or carrying isn t transformed."
+    "text": "Rest, it can shape-shift into a Succubus , using that stat block instead of this one. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "actions": [
@@ -6714,7 +7261,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Nightmare (Recharge 6)",
-    "text": "Wisdom Saving Throw: DC 15, one creature the incubus can see within 60 feet. Failure: If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it. Otherwise, the target takes 18 (4d8) Psychic damage.Invisible Stalker"
+    "text": "Wisdom Saving Throw: DC 15, one creature the incubus can see within 60 feet. Failure: If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it. Otherwise, the target takes 18 (4d8) Psychic damage."
    }
   ],
   "reactions": [],
@@ -6738,7 +7285,7 @@ const RAW = [
   "traits": [
    {
     "name": "Air Form",
-    "text": "The stalker can enter an enemy s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
+    "text": "The stalker can enter an enemy’s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
    },
    {
     "name": "Invisibility",
@@ -6756,7 +7303,66 @@ const RAW = [
    },
    {
     "name": "Vortex",
-    "text": "Constitution Saving Throw: DC 14, one Large or smaller creature in the stalker s space. Failure: 7 (1d8 + 3) Thunder damage, and the target has the Grappled condition (escape DC 13). Until the grapple ends, the target can t cast spells with a Verbal component and 303KrakenKrakenGargantuan Monstrosity (Titan), Chaotic Evil AC 18 Initiative +14 (24) HP 481 (26d20 + 208) Speed 30 ft., Swim 120 ft.MODSAVEMODSAVEMODSAVESTR 30 +10 +17DEX 11 +0 +7CON 26 +8 +15INT 22 +6 +6WIS 18 +4 +11CHA 20 +5 +5Skills History +13, Perception +11 Immunities Cold, Lightning; Frightened, Grappled, Paralyzed, Restrained Senses Truesight 120 ft.; Passive Perception 21 Languages Understands Abyssal, Celestial, Infernal, and Primordial but can t speak; telepathy 120 ft. CR 23 (XP 50,000, or 62,000 in lair; PB +7)"
+    "text": "Constitution Saving Throw: DC 14, one Large or smaller creature in the stalker’s space. Failure: 7 (1d8 + 3) Thunder damage, and the target has the Grappled condition (escape DC 13). Until the grapple ends, the target can’t cast spells with a Verbal component and 303"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Kraken",
+  "size": "Gargantuan",
+  "creatureType": "Monstrosity",
+  "alignment": "Chaotic Evil",
+  "ac": 18,
+  "hp": 481,
+  "hpFormula": "26d20 + 208",
+  "speed": "30 ft., Swim 120 ft.MODSAVEMODSAVEMODSAVESTR 30",
+  "cr": "23",
+  "xp": 50000,
+  "proficiencyBonus": 7,
+  "senses": "Truesight 120 ft.; Passive Perception 21",
+  "languages": "Understands Abyssal, Celestial, Infernal, and",
+  "traits": [
+   {
+    "name": "Amphibious",
+    "text": "The kraken can breathe air and water."
+   },
+   {
+    "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
+    "text": "If the kraken fails a saving throw, it can choose to suc - ceed instead."
+   },
+   {
+    "name": "Siege Monster",
+    "text": "The kraken deals double damage to ob - jects and structures."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The kraken makes two Tentacle attacks and uses Fling, Lightning Strike, or"
+   },
+   {
+    "name": "Tentacle",
+    "text": "Melee Attack Roll: +17, reach 30 ft. Hit: 24 (4d6 + 10) Bludgeoning damage. The target has the Grappled condition (escape DC 20) from one of ten tentacles, and it has the Restrained condition until the grapple ends."
+   },
+   {
+    "name": "Fling",
+    "text": "The kraken throws a Large or smaller creature Grappled by it to a space it can see within 60 feet of itself that isn’t in the air. Dexterity Saving Throw: DC 25, the creature thrown and each creature in the des - tination space. Failure: 18 (4d8) Bludgeoning damage, and the target has the Prone condition. Success: Half damage only."
+   },
+   {
+    "name": "Lightning Strike",
+    "text": "Dexterity Saving Throw: DC 23, one creature the kraken can see within 120 feet. Failure: 33 (6d10) Lightning damage. Success: Half damage."
+   },
+   {
+    "name": "Swallow",
+    "text": "Dexterity Saving Throw: DC 25, one creature Grappled by the kraken (it can have up to four crea - tures swallowed at a time). Failure: 23 (3d8 + 10) Pierc - ing damage. If the target is Large or smaller, it is swal - lowed and no longer"
+   },
+   {
+    "name": "Grappled",
+    "text": "A swallowed creature has the Restrained condition, has Total Cover against attacks and other effects outside the kraken, and takes 24 (7d6) Acid damage at the start of each of its turns. If the kraken takes 50 damage or more on a single turn from a creature inside it, the kraken must succeed on a DC 25 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the kraken with the Prone condition. If the kraken dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 15 feet of movement, exiting Prone."
    }
   ],
   "bonusActions": [],
@@ -6768,11 +7374,11 @@ const RAW = [
    },
    {
     "name": "Toxic Ink",
-    "text": "Constitution Saving Throw: DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. Failure: The target has the Blinded and Poisoned conditions until the end of the kraken s next turn. The kraken then moves up to its"
+    "text": "Constitution Saving Throw: DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. Failure: The target has the Blinded and Poisoned conditions until the end of the kraken’s next turn. The kraken then moves up to its"
    },
    {
     "name": "Speed",
-    "text": "Failure or Success: The kraken can t take this action again until the start of its next turn.Lamia"
+    "text": "Failure or Success: The kraken can’t take this action again until the start of its next turn."
    }
   ],
   "missing": []
@@ -6813,7 +7419,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Leap",
-    "text": "The lamia jumps up to 30 feet by spending 10 feet of movement.Lemure"
+    "text": "The lamia jumps up to 30 feet by spending 10 feet of movement."
    }
   ],
   "reactions": [],
@@ -6833,7 +7439,7 @@ const RAW = [
   "xp": 10,
   "proficiencyBonus": 2,
   "senses": "Darkvision 120 ft. (unimpeded by magical",
-  "languages": "Understands Infernal but can t speak",
+  "languages": "Understands Infernal but can’t speak",
   "traits": [
    {
     "name": "Hellish Restoration",
@@ -6843,7 +7449,7 @@ const RAW = [
   "actions": [
    {
     "name": "Vile Slime",
-    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Poison damage.Lich"
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Poison damage."
    }
   ],
   "bonusActions": [],
@@ -6876,7 +7482,7 @@ const RAW = [
    },
    {
     "name": "Hit Points",
-    "text": "The new body appears in an unoccupied space within the lich s lair."
+    "text": "The new body appears in an unoccupied space within the lich’s lair."
    }
   ],
   "actions": [
@@ -6890,7 +7496,7 @@ const RAW = [
    },
    {
     "name": "Paralyzing Touch",
-    "text": "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich s next turn."
+    "text": "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich’s next turn."
    },
    {
     "name": "Spellcasting",
@@ -6901,7 +7507,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Protective Magic",
-    "text": "The lich casts Counterspell or Shield in response to the spell s trigger, using the same spell - casting ability as Spellcasting."
+    "text": "The lich casts Counterspell or Shield in response to the spell’s trigger, using the same spell - casting ability as Spellcasting."
    }
   ],
   "legendaryActions": [
@@ -6911,7 +7517,7 @@ const RAW = [
    },
    {
     "name": "Disrupt Life",
-    "text": "Constitution Saving Throw: DC 20, each creature that isn t an Undead in a 20-foot Emanation originating from the lich. Failure: 31 (9d6) Necrotic damage. Success: Half damage. Failure or Success: The lich can t take this action again until the start of its next turn."
+    "text": "Constitution Saving Throw: DC 20, each creature that isn’t an Undead in a 20-foot Emanation originating from the lich. Failure: 31 (9d6) Necrotic damage. Success: Half damage. Failure or Success: The lich can’t take this action again until the start of its next turn."
    },
    {
     "name": "Frightening Gaze",
@@ -6919,7 +7525,7 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "The lich can t take this action again until the start of its next turn."
+    "text": "The lich can’t take this action again until the start of its next turn."
    }
   ],
   "missing": []
@@ -6962,7 +7568,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Protective Magic (3/Day)",
-    "text": "The mage casts Counterspell or Shield in response to the spell s trigger, using the same spellcasting ability as Spellcasting."
+    "text": "The mage casts Counterspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting."
    }
   ],
   "legendaryActions": [],
@@ -7011,7 +7617,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Protective Magic (3/Day)",
-    "text": "The archmage casts Coun - terspell or Shield in response to the spell s trigger, using the same spellcasting ability as Spellcasting.Magmin"
+    "text": "The archmage casts Coun - terspell or Shield in response to the spell’s trigger, using the same spellcasting ability as Spellcasting."
    }
   ],
   "legendaryActions": [],
@@ -7040,13 +7646,13 @@ const RAW = [
   "actions": [
    {
     "name": "Touch",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + object that isn t being worn or carried, it starts burning. 306"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + object that isn’t being worn or carried, it starts burning. 306"
    }
   ],
   "bonusActions": [
    {
     "name": "Ignited Illumination",
-    "text": "The magmin sets itself ablaze sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.Manticore"
+    "text": "The magmin sets itself ablaze sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet."
    }
   ],
   "reactions": [],
@@ -7079,7 +7685,7 @@ const RAW = [
    },
    {
     "name": "Tail Spike",
-    "text": "Ranged Attack Roll: +5, range 100/200 ft. Hit: 7 (1d8 + 3) Piercing damage.Marilith"
+    "text": "Ranged Attack Roll: +5, range 100/200 ft. Hit: 7 (1d8 + 3) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -7127,14 +7733,14 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Teleport (Recharge 5 6)",
+    "name": "Teleport (Recharge 5–6)",
     "text": "The marilith teleports up to 120 feet to an unoccupied space it can see."
    }
   ],
   "reactions": [
    {
     "name": "Parry",
-    "text": "Trigger: The marilith is hit by a melee attack roll while holding a weapon. Response: The marilith adds 5 to its AC against that attack, possibly causing it to miss.Medusa"
+    "text": "Trigger: The marilith is hit by a melee attack roll while holding a weapon. Response: The marilith adds 5 to its AC against that attack, possibly causing it to miss."
    }
   ],
   "legendaryActions": [],
@@ -7175,7 +7781,7 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Petrifying Gaze (Recharge 5 6)",
+    "name": "Petrifying Gaze (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 13, each creature in a 30-foot Cone. If the must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Mephits"
    }
   ],
@@ -7210,7 +7816,7 @@ const RAW = [
    },
    {
     "name": "Blinding Breath (Recharge 6)",
-    "text": "Dexterity Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: The target has the Blinded condition until the end of the mephit s next turn."
+    "text": "Dexterity Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: The target has the Blinded condition until the end of the mephit’s next turn."
    },
    {
     "name": "Sleep (1/Day)",
@@ -7288,7 +7894,46 @@ const RAW = [
    },
    {
     "name": "Fire Breath (Recharge 6)",
-    "text": "Dexterity Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: 7 (2d6) Fire damage. Success: Half damage. 308Steam MephitSmall Elemental, Neutral Evil AC 10 Initiative +0 (10) HP 17 (5d6) Speed 30 ft., Fly 30 ft.MODSAVEMODSAVEMODSAVESTR 5 DEX 11 +0 +0CON 10 +0 +0INT 11 +0 +0WIS 10 +0 +0CHA 12 +1 +1Skills Stealth +2 Immunities Fire, Poison; Exhaustion, Poisoned Senses Darkvision 60 ft.; Passive Perception 10 Languages Primordial (Aquan, Ignan) CR 1/4 (XP 50; PB +2)"
+    "text": "Dexterity Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: 7 (2d6) Fire damage. Success: Half damage. 308"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Steam Mephit",
+  "size": "Small",
+  "creatureType": "Elemental",
+  "alignment": "Neutral Evil",
+  "ac": 10,
+  "hp": 17,
+  "hpFormula": "5d6",
+  "speed": "30 ft., Fly 30 ft.MODSAVEMODSAVEMODSAVESTR 5",
+  "cr": "1/4",
+  "xp": 50,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 10",
+  "languages": "Primordial (Aquan, Ignan)",
+  "traits": [
+   {
+    "name": "Blurred Form",
+    "text": "Attack rolls against the mephit are made with Disadvantage unless the mephit has the Incapaci - tated condition."
+   },
+   {
+    "name": "Death Burst",
+    "text": "The mephit explodes when it dies. Dex - terity Saving Throw: DC 10, each creature in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Fire damage. Success: Half damage."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Slashing damage plus 2 (1d4) Fire damage."
+   },
+   {
+    "name": "Steam Breath (Recharge 6)",
+    "text": "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 (2d4) Fire damage, and the target’s Speed decreases by 10 feet until the end of the mephit’s next turn. Success: Half damage only. Failure or Success: Being underwater doesn’t grant Resistance to this Fire damage.Merfolk"
    }
   ],
   "bonusActions": [],
@@ -7319,7 +7964,7 @@ const RAW = [
   "actions": [
    {
     "name": "Ocean Spear",
-    "text": "Melee or Ranged Attack Roll: +2, reach 5 ft. or range 20/60 ft. Hit: 3 (1d6) Piercing damage plus 2 (1d4) Cold damage. If the target is a creature, its Speed decreases by 10 feet until the end of its next turn. Hit or Miss: The spear magically returns to the merfolk s hand immediately after a ranged attack.Merrow"
+    "text": "Melee or Ranged Attack Roll: +2, reach 5 ft. or range 20/60 ft. Hit: 3 (1d6) Piercing damage plus 2 (1d4) Cold damage. If the target is a creature, its Speed decreases by 10 feet until the end of its next turn. Hit or Miss: The spear magically returns to the merfolk’s hand immediately after a ranged attack."
    }
   ],
   "bonusActions": [],
@@ -7354,7 +7999,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned con - dition until the end of the merrow s next turn."
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned con - dition until the end of the merrow’s next turn."
    },
    {
     "name": "Claw",
@@ -7362,7 +8007,7 @@ const RAW = [
    },
    {
     "name": "Harpoon",
-    "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, the merrow pulls the target up to 15 feet straight toward itself.Mimic"
+    "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, the merrow pulls the target up to 15 feet straight toward itself."
    }
   ],
   "bonusActions": [],
@@ -7393,7 +8038,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the mimic), reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic plus 4 (1d8) Acid damage."
+    "text": "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the mimic), reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic—plus 4 (1d8) Acid damage."
    },
    {
     "name": "Pseudopod",
@@ -7403,7 +8048,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The mimic shape-shifts to resemble a Me - dium or Small object while retaining its game statistics, or it returns to its true blob form. Any equipment it is wearing or carrying isn t transformed.Minotaur of Baphomet"
+    "text": "The mimic shape-shifts to resemble a Me - dium or Small object while retaining its game statistics, or it returns to its true blob form. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "reactions": [],
@@ -7431,7 +8076,7 @@ const RAW = [
     "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 10 (1d12 + 4) Slashing damage plus 10 (3d6) Ne - crotic damage."
    },
    {
-    "name": "Gore (Recharge 5 6)",
+    "name": "Gore (Recharge 5–6)",
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 18 (4d6 + 4) Piercing damage. If the target is a Large or smaller creature and the minotaur moved 10+ feet straight toward it immediately before the hit, the target takes an extra 10 (3d6) Piercing damage and has the Prone condition.Mummies"
    }
   ],
@@ -7462,11 +8107,11 @@ const RAW = [
    },
    {
     "name": "Rotting Fist",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can t regain Hit Points, its Hit Point Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can’t regain Hit Points, its Hit Point Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
    },
    {
     "name": "Dreadful Glare",
-    "text": "Wisdom Saving Throw: DC 11, one creature the mummy can see within 60 feet. Failure: The target has the Frightened condition until the end of the mummy s next turn. Success: The target is immune to this mummy s Dreadful Glare for 24 hours."
+    "text": "Wisdom Saving Throw: DC 11, one creature the mummy can see within 60 feet. Failure: The target has the Frightened condition until the end of the mummy’s next turn. Success: The target is immune to this mummy’s Dreadful Glare for 24 hours."
    }
   ],
   "bonusActions": [],
@@ -7503,7 +8148,7 @@ const RAW = [
    },
    {
     "name": "Hit Points",
-    "text": "The new body appears in an unoccu - pied space within the mummy s lair. The heart is a Tiny object that has AC 17, HP 10, and Immunity to all dam - age except Fire."
+    "text": "The new body appears in an unoccu - pied space within the mummy’s lair. The heart is a Tiny object that has AC 17, HP 10, and Immunity to all dam - age except Fire."
    }
   ],
   "actions": [
@@ -7513,7 +8158,7 @@ const RAW = [
    },
    {
     "name": "Rotting Fist",
-    "text": "Melee Attack Roll: +9, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can t regain Hit Points, it gains no maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
+    "text": "Melee Attack Roll: +9, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can’t regain Hit Points, it gains no maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
    },
    {
     "name": "Channel Negative Energy",
@@ -7521,7 +8166,7 @@ const RAW = [
    },
    {
     "name": "Dreadful Glare",
-    "text": "Wisdom Saving Throw: DC 17, one creature the mummy can see within 60 feet. Failure: 25 (6d6 + 4) Psychic damage, and the target has the Para - lyzed condition until the end of the mummy s next turn."
+    "text": "Wisdom Saving Throw: DC 17, one creature the mummy can see within 60 feet. Failure: 25 (6d6 + 4) Psychic damage, and the target has the Para - lyzed condition until the end of the mummy’s next turn."
    },
    {
     "name": "Spellcasting",
@@ -7532,13 +8177,13 @@ const RAW = [
   "reactions": [
    {
     "name": "Whirlwind of Sand",
-    "text": "Trigger: The mummy is hit by an attack roll. Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccu - pied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy s next turn."
+    "text": "Trigger: The mummy is hit by an attack roll. Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccu - pied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy’s next turn."
    }
   ],
   "legendaryActions": [
    {
     "name": "Command",
-    "text": "The mummy casts Command (level 2 version), using the same spellcasting ability as Spell - casting. The mummy can t take this action again until the start of its next turn."
+    "text": "The mummy casts Command (level 2 version), using the same spellcasting ability as Spell - casting. The mummy can’t take this action again until the start of its next turn."
    },
    {
     "name": "Glare",
@@ -7546,11 +8191,11 @@ const RAW = [
    },
    {
     "name": "Dreadful Glare",
-    "text": "The mummy can t take this action again until the start of its next turn."
+    "text": "The mummy can’t take this action again until the start of its next turn."
    },
    {
     "name": "Necrotic Strike",
-    "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack.Nalfeshnee"
+    "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack."
    }
   ],
   "missing": []
@@ -7595,14 +8240,14 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Horror Nimbus (Recharge 5 6)",
-    "text": "Wisdom Saving Throw: DC 15, each creature in a 15-foot Emanation originating from the nalfeshnee. Failure: 28 (8d6) Psy - chic damage, and the target has the Frightened condi - tion for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight. Success: 311The target is immune to this nalfeshnee s Horror Nim - bus for 24 hours."
+    "name": "Horror Nimbus (Recharge 5–6)",
+    "text": "Wisdom Saving Throw: DC 15, each creature in a 15-foot Emanation originating from the nalfeshnee. Failure: 28 (8d6) Psy - chic damage, and the target has the Frightened condi - tion for 1 minute, until it takes damage, or until it ends its turn with the nalfeshnee out of line of sight. Success: 311The target is immune to this nalfeshnee’s Horror Nim - bus for 24 hours."
    }
   ],
   "reactions": [
    {
     "name": "Pursuit",
-    "text": "Trigger: Another creature the nalfeshnee can see ends its move within 120 feet of the nalfeshnee. Response: The nalfeshnee uses Teleport, but its des - tination space must be within 10 feet of the trigger - ing creature.Night Hag"
+    "text": "Trigger: Another creature the nalfeshnee can see ends its move within 120 feet of the nalfeshnee. Response: The nalfeshnee uses Teleport, but its des - tination space must be within 10 feet of the trigger - ing creature."
    }
   ],
   "legendaryActions": [],
@@ -7625,7 +8270,7 @@ const RAW = [
   "traits": [
    {
     "name": "Coven Magic",
-    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell s normal casting time, and using Intelligence as the spell - casting ability (spell save DC 14): Augury , Find Familiar , Identify , Locate Object , Scrying , or Unseen Servant . cast that spell again."
+    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell’s normal casting time, and using Intelligence as the spell - casting ability (spell save DC 14): Augury , Find Familiar , Identify , Locate Object , Scrying , or Unseen Servant . cast that spell again."
    },
    {
     "name": "Magic Resistance",
@@ -7655,11 +8300,11 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "Only the hag can serve as the spell s messenger, and the tar -get must be a creature the hag can see on the Material"
+    "text": "Only the hag can serve as the spell’s messenger, and the tar -get must be a creature the hag can see on the Material"
    },
    {
     "name": "Plane",
-    "text": "The spell fails and is wasted if the target is under the effect of the Protection from Evil and Good spell or within a Magic Circle spell. If the target takes damage from the Dream spell, the target s Hit Point maximum decreases by an amount equal to that damage. If the spell kills the target, its soul is trapped in the hag s soul bag, and the target can t be raised from the dead until its soul is released."
+    "text": "The spell fails and is wasted if the target is under the effect of the Protection from Evil and Good spell or within a Magic Circle spell. If the target takes damage from the Dream spell, the target’s Hit Point maximum decreases by an amount equal to that damage. If the spell kills the target, its soul is trapped in the hag’s soul bag, and the target can’t be raised from the dead until its soul is released."
    },
    {
     "name": "Spellcasting",
@@ -7669,7 +8314,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The hag shape-shifts into a Small or Me - dium Humanoid, or it returns to its true form. Other than its size, its game statistics are the same in each form. Any equipment it is wearing or carrying isn t transformed.Nightmare"
+    "text": "The hag shape-shifts into a Small or Me - dium Humanoid, or it returns to its true form. Other than its size, its game statistics are the same in each form. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "reactions": [],
@@ -7707,10 +8352,32 @@ const RAW = [
    },
    {
     "name": "Ethereal Stride",
-    "text": "The nightmare and up to three willing creatures within 5 feet of it teleport to the Ethereal Plane from the Material Plane or vice versa. 312NobleNobleMedium or Small Humanoid, Neutral AC 15 Initiative +1 (11) HP 9 (2d8) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 11 +0 +0DEX 12 +1 +1CON 11 +0 +0INT 12 +1 +1WIS 14 +2 +2CHA 16 +3 +3Skills Deception +5, Insight +4, Persuasion +5 Gear Breastplate, Rapier Senses Passive Perception 12 Languages Common plus two other languages CR 1/8 (XP 25; PB +2)"
-   },
+    "text": "The nightmare and up to three willing creatures within 5 feet of it teleport to the Ethereal Plane from the Material Plane or vice versa. 312"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Noble",
+  "size": "Medium or Small",
+  "creatureType": "Humanoid",
+  "alignment": "Neutral",
+  "ac": 15,
+  "hp": 9,
+  "hpFormula": "2d8",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR 11",
+  "cr": "1/8",
+  "xp": 25,
+  "proficiencyBonus": 2,
+  "senses": "Passive",
+  "languages": "Common plus two other languages",
+  "traits": [],
+  "actions": [
    {
-    "name": "ActionsRapier",
+    "name": "Rapier",
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 5 (1d8 + 1) Piercing damage."
    }
   ],
@@ -7718,7 +8385,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Parry",
-    "text": "Trigger: The noble is hit by a melee attack roll while holding a weapon. Response: The noble adds 2 to its AC against that attack, possibly causing it to miss.Ochre Jelly"
+    "text": "Trigger: The noble is hit by a melee attack roll while holding a weapon. Response: The noble adds 2 to its AC against that attack, possibly causing it to miss."
    }
   ],
   "legendaryActions": [],
@@ -7754,7 +8421,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Split",
-    "text": "Trigger: While the jelly is Large or Medium and has 10+ Hit Points, it becomes Bloodied or is subjected to Lightning or Slashing damage. Response: The jelly splits into two new Ochre Jellies . Each new jelly is one size smaller than the original jelly and acts on its Initia - tive. The original jelly s Hit Points are divided evenly between the new jellies (round down).Ogre"
+    "text": "Trigger: While the jelly is Large or Medium and has 10+ Hit Points, it becomes Bloodied or is subjected to Lightning or Slashing damage. Response: The jelly splits into two new Ochre Jellies . Each new jelly is one size smaller than the original jelly and acts on its Initia - tive. The original jelly’s Hit Points are divided evenly between the new jellies (round down)."
    }
   ],
   "legendaryActions": [],
@@ -7782,7 +8449,7 @@ const RAW = [
    },
    {
     "name": "Javelin",
-    "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 30/120 ft. Hit: 11 (2d6 + 4) Piercing damage.Oni"
+    "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 30/120 ft. Hit: 11 (2d6 + 4) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -7817,11 +8484,11 @@ const RAW = [
    },
    {
     "name": "Nightmare Ray",
-    "text": "Ranged Attack Roll: +5, range 60 ft. Hit: 9 (2d6 + 2) Psychic damage, and the target has the Frightened condition until the start of the oni s next turn."
+    "text": "Ranged Attack Roll: +5, range 60 ft. Hit: 9 (2d6 + 2) Psychic damage, and the target has the Frightened condition until the start of the oni’s next turn."
    },
    {
     "name": "Shape-Shift",
-    "text": "The oni shape-shifts into a Small or Me - dium Humanoid or a Large Giant, or it returns to its true form. Other than its size, its game statistics are the same in each form. Any equipment it is wearing or car - rying isn t transformed."
+    "text": "The oni shape-shifts into a Small or Me - dium Humanoid or a Large Giant, or it returns to its true form. Other than its size, its game statistics are the same in each form. Any equipment it is wearing or car - rying isn’t transformed."
    },
    {
     "name": "Spellcasting",
@@ -7831,7 +8498,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Invisibility",
-    "text": "The oni casts Invisibility on itself, requiring no spell components and using the same spellcasting ability as Spellcasting.Otyugh"
+    "text": "The oni casts Invisibility on itself, requiring no spell components and using the same spellcasting ability as Spellcasting."
    }
   ],
   "reactions": [],
@@ -7851,7 +8518,7 @@ const RAW = [
   "xp": 1800,
   "proficiencyBonus": 3,
   "senses": "Darkvision 120 ft.; Passive Perception 11",
-  "languages": "Otyugh; telepathy 120 ft. (doesn t allow the",
+  "languages": "Otyugh; telepathy 120 ft. (doesn’t allow the",
   "traits": [],
   "actions": [
    {
@@ -7860,7 +8527,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage, and the target has the Poisoned con - Rest, it is subjected to the following effect. Constitution Saving Throw: DC 15. Failure: The target s Hit Point maximum decreases by 5 (1d10) and doesn t return to normal until the Poisoned condition ends on the target. Success: The Poisoned condition ends."
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage, and the target has the Poisoned con - Rest, it is subjected to the following effect. Constitution Saving Throw: DC 15. Failure: The target’s Hit Point maximum decreases by 5 (1d10) and doesn’t return to normal until the Poisoned condition ends on the target. Success: The Poisoned condition ends."
    },
    {
     "name": "Tentacle",
@@ -7868,7 +8535,7 @@ const RAW = [
    },
    {
     "name": "Slam",
-    "text": "Constitution Saving Throw: DC 14, each creature Grappled by the otyugh. Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh s next turn. Suc - cess: Half damage only.Owlbear"
+    "text": "Constitution Saving Throw: DC 14, each creature Grappled by the otyugh. Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh’s next turn. Suc - cess: Half damage only."
    }
   ],
   "bonusActions": [],
@@ -7898,7 +8565,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Slashing damage.Pegasus"
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Slashing damage."
    }
   ],
   "bonusActions": [],
@@ -7924,7 +8591,7 @@ const RAW = [
   "actions": [
    {
     "name": "Hooves",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 7 (1d6 + 4) Bludgeoning damage plus 5 (2d4) Radiant damage.Phase Spider"
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 7 (1d6 + 4) Bludgeoning damage plus 5 (2d4) Radiant damage."
    }
   ],
   "bonusActions": [],
@@ -8002,7 +8669,7 @@ const RAW = [
    },
    {
     "name": "Panache",
-    "text": "Wisdom Saving Throw: DC 12, one creature the pirate can see within 30 feet. Failure: The target has the Charmed condition until the start of the pirate s next turn."
+    "text": "Wisdom Saving Throw: DC 12, one creature the pirate can see within 30 feet. Failure: The target has the Charmed condition until the start of the pirate’s next turn."
    }
   ],
   "bonusActions": [],
@@ -8041,14 +8708,14 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Charm",
-    "text": "Wisdom Saving Throw: DC 14, one creature the pirate can see within 30 feet. Failure: The target has the Charmed condition until the start of the pirate s next turn."
+    "name": "Captain’s Charm",
+    "text": "Wisdom Saving Throw: DC 14, one creature the pirate can see within 30 feet. Failure: The target has the Charmed condition until the start of the pirate’s next turn."
    }
   ],
   "reactions": [
    {
     "name": "Riposte",
-    "text": "Trigger: The pirate is hit by a melee attack roll while holding a weapon. Response: The pirate adds 3 to its AC against that attack, possibly causing it to miss. On a miss, the pirate makes one Rapier attack against the triggering creature if within range.Pit Fiend"
+    "text": "Trigger: The pirate is hit by a melee attack roll while holding a weapon. Response: The pirate adds 3 to its AC against that attack, possibly causing it to miss. On a miss, the pirate makes one Rapier attack against the triggering creature if within range."
    }
   ],
   "legendaryActions": [],
@@ -8075,7 +8742,7 @@ const RAW = [
    },
    {
     "name": "Nine Hells",
-    "text": "Fear Aura. foot Emanation while it doesn t have the Incapacitated condition. Wisdom Saving Throw: DC 21, any enemy that starts its turn in the aura. Failure: The target has the Frightened condition until the start of its next turn. Success: for 24 hours. Legendary Resistance (4/Day). saving throw, it can choose to succeed instead. Magic Resistance. - ing throws against spells and other magical effects."
+    "text": "Fear Aura. foot Emanation while it doesn’t have the Incapacitated condition. Wisdom Saving Throw: DC 21, any enemy that starts its turn in the aura. Failure: The target has the Frightened condition until the start of its next turn. Success: for 24 hours. Legendary Resistance (4/Day). saving throw, it can choose to succeed instead. Magic Resistance. - ing throws against spells and other magical effects."
    }
   ],
   "actions": [
@@ -8085,7 +8752,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 18 (3d6 + 8) Piercing damage. If the target is a creature, it must make the following saving throw. Constitution Saving Throw: DC 21. Failure: The target has the Poisoned condition. While Poisoned, the target can t regain Hit Points and takes 21 (6d6) Poison damage at the start of each of its turns, and it repeats the save at the end of each of its turns, ending the effect on itself on a suc - cess. After 1 minute, it succeeds automatically."
+    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 18 (3d6 + 8) Piercing damage. If the target is a creature, it must make the following saving throw. Constitution Saving Throw: DC 21. Failure: The target has the Poisoned condition. While Poisoned, the target can’t regain Hit Points and takes 21 (6d6) Poison damage at the start of each of its turns, and it repeats the save at the end of each of its turns, ending the effect on itself on a suc - cess. After 1 minute, it succeeds automatically."
    },
    {
     "name": "Devilish Claw",
@@ -8093,7 +8760,7 @@ const RAW = [
    },
    {
     "name": "Fiery Mace",
-    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 22 (4d6 + 8) Force damage plus 21 (6d6) Fire damage. casts Fireball (level 5 version) twice, requiring no Mate - rial components and using Charisma as the spellcasting ability (spell save DC 21). It can replace one Fireball with Hold Monster (level 7 version) or Wall of Fire.Planetar"
+    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 22 (4d6 + 8) Force damage plus 21 (6d6) Fire damage. casts Fireball (level 5 version) twice, requiring no Mate - rial components and using Charisma as the spellcasting ability (spell save DC 21). It can replace one Fireball with Hold Monster (level 7 version) or Wall of Fire."
    }
   ],
   "bonusActions": [],
@@ -8228,7 +8895,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Divine Aid (3/Day)",
-    "text": "The priest casts Bless , Dispel Magic , Healing Word , or Lesser Restoration , using the same spellcasting ability as Spellcasting.Pseudodragon"
+    "text": "The priest casts Bless , Dispel Magic , Healing Word , or Lesser Restoration , using the same spellcasting ability as Spellcasting."
    }
   ],
   "reactions": [],
@@ -8248,7 +8915,7 @@ const RAW = [
   "xp": 50,
   "proficiencyBonus": 2,
   "senses": "Blindsight 10 ft., Darkvision 60 ft.;",
-  "languages": "Understands Common and Draconic but can t",
+  "languages": "Understands Common and Draconic but can’t",
   "traits": [
    {
     "name": "Magic Resistance",
@@ -8266,7 +8933,7 @@ const RAW = [
    },
    {
     "name": "Sting",
-    "text": "Constitution Saving Throw: DC 12, one creature the pseudodragon can see within 5 feet. Failure: 5 (2d4) Poison damage, and the target has the Poisoned condi - tion for 1 hour. Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it.Purple Worm"
+    "text": "Constitution Saving Throw: DC 12, one creature the pseudodragon can see within 5 feet. Failure: 5 (2d4) Poison damage, and the target has the Poisoned condi - tion for 1 hour. Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it."
    }
   ],
   "bonusActions": [],
@@ -8311,7 +8978,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Swallow",
-    "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the worm (it can have up to three creatures swallowed at a time). Failure: The tar - get is swallowed by the worm, and the Grappled con - dition ends. A swallowed creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the worm, and takes 17 (5d6) Acid damage at the start of each of the worm s turns. If the worm takes 30 damage or more on a single turn from a creature inside it, the worm must succeed on a DC 21 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the worm and has the Prone condition. If the worm dies, any swallowed crea - ture no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone.Quasit"
+    "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the worm (it can have up to three creatures swallowed at a time). Failure: The tar - get is swallowed by the worm, and the Grappled con - dition ends. A swallowed creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the worm, and takes 17 (5d6) Acid damage at the start of each of the worm’s turns. If the worm takes 30 damage or more on a single turn from a creature inside it, the worm must succeed on a DC 21 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the worm and has the Prone condition. If the worm dies, any swallowed crea - ture no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone."
    }
   ],
   "reactions": [],
@@ -8341,7 +9008,7 @@ const RAW = [
   "actions": [
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned con - dition until the start of the quasit s next turn."
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned con - dition until the start of the quasit’s next turn."
    },
    {
     "name": "Invisibility",
@@ -8357,7 +9024,7 @@ const RAW = [
    },
    {
     "name": "Speed",
-    "text": "Any equipment it is wearing or carrying isn t transformed.Rakshasa"
+    "text": "Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "bonusActions": [],
@@ -8382,7 +9049,7 @@ const RAW = [
   "traits": [
    {
     "name": "Greater Magic Resistance",
-    "text": "The rakshasa automatically succeeds on saving throws against spells and other magical effects, and the attack rolls of spells automat - ically miss it. Without the rakshasa s permission, no spell can observe the rakshasa remotely or detect its thoughts, creature type, or alignment."
+    "text": "The rakshasa automatically succeeds on saving throws against spells and other magical effects, and the attack rolls of spells automat - ically miss it. Without the rakshasa’s permission, no spell can observe the rakshasa remotely or detect its thoughts, creature type, or alignment."
    },
    {
     "name": "Fiendish Restoration",
@@ -8399,8 +9066,8 @@ const RAW = [
     "text": "Melee Attack Roll: +10, reach 5 ft. Hit: 12 (2d6 + 5) Slashing damage plus 19 (3d12) Necrotic damage. If the target is a creature, it is cursed. While"
    },
    {
-    "name": "Baleful Command (Recharge 5 6)",
-    "text": "Wisdom Saving Throw: DC 18, each enemy in a 30-foot Emanation orig - inating from the rakshasa. Failure: 28 (8d6) Psychic dam - age, and the target has the Frightened and Incapacitated conditions until the start of the rakshasa s next turn."
+    "name": "Baleful Command (Recharge 5–6)",
+    "text": "Wisdom Saving Throw: DC 18, each enemy in a 30-foot Emanation orig - inating from the rakshasa. Failure: 28 (8d6) Psychic dam - age, and the target has the Frightened and Incapacitated conditions until the start of the rakshasa’s next turn."
    },
    {
     "name": "Spellcasting",
@@ -8437,7 +9104,7 @@ const RAW = [
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Slashing damage plus 3 (1d6) Fire damage.Fire"
    },
    {
-    "name": "Breath (Recharge 5 6)",
+    "name": "Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 24 (7d6) Fire damage. Success: Half damage."
    }
   ],
@@ -8471,7 +9138,7 @@ const RAW = [
     "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 13 (2d6 + 6) Slashing damage plus 3 (1d6) Fire damage."
    },
    {
-    "name": "Fire Breath (Recharge 5 6)",
+    "name": "Fire Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 56 (16d6) Fire damage. Success: Half damage."
    }
   ],
@@ -8510,7 +9177,7 @@ const RAW = [
     "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 13 (1d10 + 8) Slashing damage plus 5 (2d4) Fire damage."
    },
    {
-    "name": "Breath (Recharge 5 6)",
+    "name": "Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 21, each creature in a 60-foot Cone. Failure: 59 (17d6) Fire damage. Success: Half damage."
    },
    {
@@ -8523,11 +9190,11 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Presence",
-    "text": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast Command (level 2 version). The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Fiery Rays",
-    "text": "The dragon uses Spellcasting to cast Scorch - ing Ray . The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast Scorch - ing Ray . The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
@@ -8566,7 +9233,7 @@ const RAW = [
     "text": "Melee Attack Roll: +17, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 10 (3d6) Fire damage."
    },
    {
-    "name": "Fire Breath (Recharge 5 6)",
+    "name": "Fire Breath (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 24, each creature in a 90-foot Cone. Failure: 91 (26d6) Fire damage. Success: Half damage.Spellcasting. The dragon casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 23, +15 to hit with spell attacks): At Will: Command (level 2 version), Detect Magic , Scorching Ray (level 3 version) 1/Day Each: Fireball (level 6 version), Scrying"
    }
   ],
@@ -8579,15 +9246,15 @@ const RAW = [
    },
    {
     "name": "Command (level 2 version)",
-    "text": "The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Fiery Rays",
-    "text": "The dragon uses Spellcasting to cast Scorch - ing Ray (level 3 version). The dragon can t take this ac - tion again until the start of its next turn."
+    "text": "The dragon uses Spellcasting to cast Scorch - ing Ray (level 3 version). The dragon can’t take this ac - tion again until the start of its next turn."
    },
    {
     "name": "Pounce",
-    "text": "The dragon moves up to half its Speed, and it makes one Rend attack.Remorhaz"
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -8609,7 +9276,7 @@ const RAW = [
   "traits": [
    {
     "name": "Heat Aura",
-    "text": "At the end of each of the remorhaz s turns, each creature in a 5-foot Emanation originating from the remorhaz takes 16 (3d10) Fire damage."
+    "text": "At the end of each of the remorhaz’s turns, each creature in a 5-foot Emanation originating from the remorhaz takes 16 (3d10) Fire damage."
    }
   ],
   "actions": [
@@ -8621,7 +9288,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Swallow",
-    "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the remorhaz (it can have up to two creatures swallowed at a time). Failure: The target is swallowed by the remorhaz, and the Grappled condition ends. A swallowed creature has the Blinded 320and Restrained conditions, it has Total Cover against attacks and other effects outside the remorhaz, and it takes 10 (3d6) Acid damage plus 10 (3d6) Fire damage at the start of each of the remorhaz s turns. If the remorhaz takes 30 damage or more on a single turn from a creature inside it, the remorhaz must suc - ceed on a DC 15 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the remorhaz and has the Prone condition. If the remorhaz dies, any swallowed creature no longer has the Restrained condi - tion and can escape from the corpse by using 15 feet of movement, exiting Prone.Roc"
+    "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the remorhaz (it can have up to two creatures swallowed at a time). Failure: The target is swallowed by the remorhaz, and the Grappled condition ends. A swallowed creature has the Blinded 320and Restrained conditions, it has Total Cover against attacks and other effects outside the remorhaz, and it takes 10 (3d6) Acid damage plus 10 (3d6) Fire damage at the start of each of the remorhaz’s turns. If the remorhaz takes 30 damage or more on a single turn from a creature inside it, the remorhaz must suc - ceed on a DC 15 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the remorhaz and has the Prone condition. If the remorhaz dies, any swallowed creature no longer has the Restrained condi - tion and can escape from the corpse by using 15 feet of movement, exiting Prone."
    }
   ],
   "reactions": [],
@@ -8659,8 +9326,8 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Swoop (Recharge 5 6)",
-    "text": "If the roc has a creature Grap - - voking Opportunity Attacks and drops that creature.Roper"
+    "name": "Swoop (Recharge 5–6)",
+    "text": "If the roc has a creature Grap - - voking Opportunity Attacks and drops that creature."
    }
   ],
   "reactions": [],
@@ -8693,11 +9360,11 @@ const RAW = [
    },
    {
     "name": "Tentacle",
-    "text": "Melee Attack Roll: +7, reach 60 ft. Hit: The target has the Grappled condition (escape DC 14) from one of six tentacles, and the target has the Poisoned condition until the grapple ends. The tentacle can be damaged, freeing a creature it has Grappled when destroyed (AC 20, HP 10, Immunity to Poison and Psychic damage). Damaging the tentacle deals no damage to the roper, and a destroyed tentacle regrows at the start of the roper s next turn."
+    "text": "Melee Attack Roll: +7, reach 60 ft. Hit: The target has the Grappled condition (escape DC 14) from one of six tentacles, and the target has the Poisoned condition until the grapple ends. The tentacle can be damaged, freeing a creature it has Grappled when destroyed (AC 20, HP 10, Immunity to Poison and Psychic damage). Damaging the tentacle deals no damage to the roper, and a destroyed tentacle regrows at the start of the roper’s next turn."
    },
    {
     "name": "Reel",
-    "text": "The roper pulls each creature Grappled by it up to 30 feet straight toward it.Rust Monster"
+    "text": "The roper pulls each creature Grappled by it up to 30 feet straight toward it."
    }
   ],
   "bonusActions": [],
@@ -8732,11 +9399,11 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 5 (1d8 + 1) Piercing damage. 321Antennae. The rust monster targets one nonmagical metal object armor or a weapon worn or carried by a creature within 5 feet of itself. Dexterity Saving Throw: DC 11, the creature with the object. Failure: - mor) or to its attack rolls (weapon). Armor is destroyed if the penalty reduces its AC to 10, and a weapon is removed by casting the Mending spell on the armor or weapon."
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 5 (1d8 + 1) Piercing damage. 321Antennae. The rust monster targets one nonmagical metal object—armor or a weapon—worn or carried by a creature within 5 feet of itself. Dexterity Saving Throw: DC 11, the creature with the object. Failure: - mor) or to its attack rolls (weapon). Armor is destroyed if the penalty reduces its AC to 10, and a weapon is removed by casting the Mending spell on the armor or weapon."
    },
    {
     "name": "Destroy Metal",
-    "text": "The rust monster touches a nonmagi - cal metal object within 5 feet of itself that isn t being worn or carried. The touch destroys a 1-foot Cube of the object."
+    "text": "The rust monster touches a nonmagi - cal metal object within 5 feet of itself that isn’t being worn or carried. The touch destroys a 1-foot Cube of the object."
    }
   ],
   "bonusActions": [],
@@ -8761,7 +9428,7 @@ const RAW = [
   "traits": [
    {
     "name": "Blood Frenzy",
-    "text": "The sahuagin has Advantage on at - tack rolls against any creature that doesn t have all its"
+    "text": "The sahuagin has Advantage on at - tack rolls against any creature that doesn’t have all its"
    },
    {
     "name": "Limited Amphibiousness",
@@ -8785,7 +9452,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Aquatic Charge",
-    "text": "The sahuagin swims up to its Swim Speed straight toward an enemy it can see.Salamander"
+    "text": "The sahuagin swims up to its Swim Speed straight toward an enemy it can see."
    }
   ],
   "reactions": [],
@@ -8809,7 +9476,7 @@ const RAW = [
   "traits": [
    {
     "name": "Fire Aura",
-    "text": "At the end of each of the salamander s turns, each creature of the salamander s choice in a 5-foot Emanation originating from the salamander takes 7 (2d6) Fire damage."
+    "text": "At the end of each of the salamander’s turns, each creature of the salamander’s choice in a 5-foot Emanation originating from the salamander takes 7 (2d6) Fire damage."
    }
   ],
   "actions": [
@@ -8819,11 +9486,11 @@ const RAW = [
    },
    {
     "name": "Flame Spear",
-    "text": "Melee or Ranged Attack Roll: +7, reach 5 ft. or range 20/60 ft. Hit: 13 (2d8 + 4) Piercing damage plus 7 (2d6) Fire damage. Hit or Miss: The spear magi - cally returns to the salamander s hand immediately after a ranged attack."
+    "text": "Melee or Ranged Attack Roll: +7, reach 5 ft. or range 20/60 ft. Hit: 13 (2d8 + 4) Piercing damage plus 7 (2d6) Fire damage. Hit or Miss: The spear magi - cally returns to the salamander’s hand immediately after a ranged attack."
    },
    {
     "name": "Constrict",
-    "text": "Strength Saving Throw: DC 15, one Large or smaller creature the salamander can see within 10 feet. Failure: 11 (2d6 + 4) Bludgeoning damage plus 7 (2d6) Fire damage. The target has the Grappled condition (es - cape DC 14), and it has the Restrained condition until the grapple ends.Satyr"
+    "text": "Strength Saving Throw: DC 15, one Large or smaller creature the salamander can see within 10 feet. Failure: 11 (2d6 + 4) Bludgeoning damage plus 7 (2d6) Fire damage. The target has the Grappled condition (es - cape DC 14), and it has the Restrained condition until the grapple ends."
    }
   ],
   "bonusActions": [],
@@ -8858,7 +9525,7 @@ const RAW = [
    },
    {
     "name": "Mockery",
-    "text": "Wisdom Saving Throw: DC 12, one creature the satyr can see within 90 feet. Failure: 5 (1d6 + 2) Psychic damage.Scout"
+    "text": "Wisdom Saving Throw: DC 12, one creature the satyr can see within 90 feet. Failure: 5 (1d6 + 2) Psychic damage."
    }
   ],
   "bonusActions": [],
@@ -8892,7 +9559,7 @@ const RAW = [
    },
    {
     "name": "Longbow",
-    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage.Sea Hag"
+    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -8921,11 +9588,11 @@ const RAW = [
    },
    {
     "name": "Magic",
-    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell s normal casting time, and using Intelligence as the spell - casting ability (spell save DC 11): Augury , Find Familiar , Identify , Locate Object , Scrying , or Unseen Servant . cast that spell again."
+    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell’s normal casting time, and using Intelligence as the spell - casting ability (spell save DC 11): Augury , Find Familiar , Identify , Locate Object , Scrying , or Unseen Servant . cast that spell again."
    },
    {
     "name": "Vile Appearance",
-    "text": "Wisdom Saving Throw: DC 11, any Beast or Humanoid that starts its turn within 30 feet of the hag and can see the hag s true form. Failure: The target has the Frightened condition until the start of its next turn. Success: The target is immune to this hag s Vile Appearance for 24 hours."
+    "text": "Wisdom Saving Throw: DC 11, any Beast or Humanoid that starts its turn within 30 feet of the hag and can see the hag’s true form. Failure: The target has the Frightened condition until the start of its next turn. Success: The target is immune to this hag’s Vile Appearance for 24 hours."
    }
   ],
   "actions": [
@@ -8934,7 +9601,7 @@ const RAW = [
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage."
    },
    {
-    "name": "Death Glare (Recharge 5 6)",
+    "name": "Death Glare (Recharge 5–6)",
     "text": "Wisdom Saving Throw: DC 11, one Frightened creature the hag can see within 30 feet. Failure: If the target has 20 Hit Points or fewer, it drops to 0"
    },
    {
@@ -8943,7 +9610,7 @@ const RAW = [
    },
    {
     "name": "Illusory Appearance",
-    "text": "The hag casts Disguise Self , using Constitution as the spellcasting ability (spell save DC 13). The spell s duration is 24 hours.Shadow"
+    "text": "The hag casts Disguise Self , using Constitution as the spellcasting ability (spell save DC 13). The spell’s duration is 24 hours."
    }
   ],
   "bonusActions": [],
@@ -8978,13 +9645,13 @@ const RAW = [
   "actions": [
    {
     "name": "Draining Swipe",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Necrotic damage, and the target s Strength score decreases by 1d4. The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later."
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Necrotic damage, and the target’s Strength score decreases by 1d4. The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later."
    }
   ],
   "bonusActions": [
    {
     "name": "Shadow Stealth",
-    "text": "While in Dim Light or Darkness, the shadow takes the Hide action.Shambling Mound"
+    "text": "While in Dim Light or Darkness, the shadow takes the Hide action."
    }
   ],
   "reactions": [],
@@ -9017,7 +9684,7 @@ const RAW = [
    },
    {
     "name": "Engulf",
-    "text": "Strength Saving Throw: DC 15, one Medium or smaller creature within 5 feet. Failure: The target is pulled into the shambling mound s space and has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Blinded and Restrained con - ditions, and it takes 10 (3d6) Lightning damage at the start of each of its turns. When the shambling mound moves, the Grappled target moves with it, costing it no extra movement. The shambling mound can have only one creature Grappled by this action at a time.Shield Guardian"
+    "text": "Strength Saving Throw: DC 15, one Medium or smaller creature within 5 feet. Failure: The target is pulled into the shambling mound’s space and has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Blinded and Restrained con - ditions, and it takes 10 (3d6) Lightning damage at the start of each of its turns. When the shambling mound moves, the Grappled target moves with it, costing it no extra movement. The shambling mound can have only one creature Grappled by this action at a time."
    }
   ],
   "bonusActions": [],
@@ -9042,7 +9709,7 @@ const RAW = [
   "traits": [
    {
     "name": "Bound",
-    "text": "The guardian is magically bound to an amulet. While the guardian and its amulet are on the same plane of existence, the amulet s wearer can telepathi - cally call the guardian to travel to it, and the guardian knows the distance and direction to the amulet. If the guardian is within 60 feet of the amulet s wearer, half of any damage the wearer takes (round up) is transferred to the guardian."
+    "text": "The guardian is magically bound to an amulet. While the guardian and its amulet are on the same plane of existence, the amulet’s wearer can telepathi - cally call the guardian to travel to it, and the guardian knows the distance and direction to the amulet. If the guardian is within 60 feet of the amulet’s wearer, half of any damage the wearer takes (round up) is transferred to the guardian."
    },
    {
     "name": "Regeneration",
@@ -9050,7 +9717,7 @@ const RAW = [
    },
    {
     "name": "Spell Storing",
-    "text": "A spellcaster who wears the guardian s amulet can cause the guardian to store one spell of level 4 or lower. To do so, the wearer must cast the spell on the guardian while within 5 feet of it. The spell has no effect but is stored within the guardian. Any previously stored spell is lost when a new spell is stored. The guardian can cast the spell stored with any parameters set by the original caster, requiring no spell components and using the caster s spellcasting ability. The stored spell is then lost."
+    "text": "A spellcaster who wears the guardian’s amulet can cause the guardian to store one spell of level 4 or lower. To do so, the wearer must cast the spell on the guardian while within 5 feet of it. The spell has no effect but is stored within the guardian. Any previously stored spell is lost when a new spell is stored. The guardian can cast the spell stored with any parameters set by the original caster, requiring no spell components and using the caster’s spellcasting ability. The stored spell is then lost."
    }
   ],
   "actions": [
@@ -9067,7 +9734,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Protection",
-    "text": "Trigger: An attack roll hits the wearer of the guardian s amulet while the wearer is within 5 feet of the guardian. Response: The wearer gains a +5 bonus to AC, including against the triggering attack and pos - sibly causing it to miss, until the start of the guardian s next turn."
+    "text": "Trigger: An attack roll hits the wearer of the guardian’s amulet while the wearer is within 5 feet of the guardian. Response: The wearer gains a +5 bonus to AC, including against the triggering attack and pos - sibly causing it to miss, until the start of the guardian’s next turn."
    }
   ],
   "legendaryActions": [],
@@ -9095,7 +9762,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Piercing damage. Cold Breath (Recharge 5 6) . Constitution Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage."
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Piercing damage. Cold Breath (Recharge 5–6) . Constitution Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage."
    },
    {
     "name": "Paralyzing Breath",
@@ -9127,7 +9794,7 @@ const RAW = [
   "actions": [
    {
     "name": "Multiattack",
-    "text": "The dragon makes three Rend attacks. It can replace one attack with a use of Paralyzing Breath.Rend. Melee Attack Roll: +10, reach 10 ft. Hit: 15 (2d8 + 6) Slashing damage. Cold Breath (Recharge 5 6) . Constitution Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 49 (11d8) Cold damage. Success: Half damage."
+    "text": "The dragon makes three Rend attacks. It can replace one attack with a use of Paralyzing Breath.Rend. Melee Attack Roll: +10, reach 10 ft. Hit: 15 (2d8 + 6) Slashing damage. Cold Breath (Recharge 5–6) . Constitution Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 49 (11d8) Cold damage. Success: Half damage."
    },
    {
     "name": "Paralyzing Breath",
@@ -9166,7 +9833,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +13, reach 10 ft. Hit: 17 (2d8 + 8) Slashing damage plus 4 (1d8) Cold damage. Cold Breath (Recharge 5 6) . Constitution Saving Throw: DC 20, each creature in a 60-foot Cone. Fail - ure: 54 (12d8) Cold damage. Success: Half damage."
+    "text": "Melee Attack Roll: +13, reach 10 ft. Hit: 17 (2d8 + 8) Slashing damage plus 4 (1d8) Cold damage. Cold Breath (Recharge 5–6) . Constitution Saving Throw: DC 20, each creature in a 60-foot Cone. Fail - ure: 54 (12d8) Cold damage. Success: Half damage."
    },
    {
     "name": "Paralyzing Breath",
@@ -9182,7 +9849,7 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Cold Gale",
-    "text": "Dexterity Saving Throw: DC 19, each crea - ture in a 60-foot-long, 10-foot-wide Line. Failure: 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. Success: Half dam - age only. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Dexterity Saving Throw: DC 19, each crea - ture in a 60-foot-long, 10-foot-wide Line. Failure: 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. Success: Half dam - age only. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
@@ -9218,7 +9885,7 @@ const RAW = [
    },
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +17, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 9 (2d8) Cold damage. Cold Breath (Recharge 5 6) . Constitution Saving Throw: DC 24, each creature in a 90-foot Cone. Fail - ure: 67 (15d8) Cold damage. Success: Half damage.Paralyzing"
+    "text": "Melee Attack Roll: +17, reach 15 ft. Hit: 19 (2d8 + 10) Slashing damage plus 9 (2d8) Cold damage. Cold Breath (Recharge 5–6) . Constitution Saving Throw: DC 24, each creature in a 90-foot Cone. Fail - ure: 67 (15d8) Cold damage. Success: Half damage.Paralyzing"
    },
    {
     "name": "Breath",
@@ -9234,7 +9901,7 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Cold Gale",
-    "text": "Dexterity Saving Throw: DC 23, each crea - ture in a 60-foot-long, 10-foot-wide Line. Failure: 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. Success: Half dam - age only. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Dexterity Saving Throw: DC 23, each crea - ture in a 60-foot-long, 10-foot-wide Line. Failure: 14 (4d6) Cold damage, and the target is pushed up to 30 feet straight away from the dragon. Success: Half dam - age only. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
@@ -9312,7 +9979,7 @@ const RAW = [
   "xp": 450,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 9",
-  "languages": "Understands Abyssal but can t speak",
+  "languages": "Understands Abyssal but can’t speak",
   "traits": [],
   "actions": [
    {
@@ -9321,7 +9988,7 @@ const RAW = [
    },
    {
     "name": "Slam",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage.Solar"
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage."
    }
   ],
   "bonusActions": [],
@@ -9368,7 +10035,7 @@ const RAW = [
    },
    {
     "name": "Flying Sword",
-    "text": "Melee or Ranged Attack Roll: +15, reach 10 ft. or range 120 ft. Hit: 22 (4d6 + 8) Slashing damage plus 36 (8d8) Radiant damage. Hit or Miss: The sword magically returns to the solar s hand or hovers within 5 feet of the solar immediately after a ranged attack."
+    "text": "Melee or Ranged Attack Roll: +15, reach 10 ft. or range 120 ft. Hit: 22 (4d6 + 8) Slashing damage plus 36 (8d8) Radiant damage. Hit or Miss: The sword magically returns to the solar’s hand or hovers within 5 feet of the solar immediately after a ranged attack."
    },
    {
     "name": "Slaying Bow",
@@ -9389,11 +10056,11 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Gaze",
-    "text": "Constitution Saving Throw: DC 25, one creature the solar can see within 120 feet. Failure: The target has the Blinded condition for 1 minute. Failure or Success: The solar can t take this action again until the start of its next turn."
+    "text": "Constitution Saving Throw: DC 25, one creature the solar can see within 120 feet. Failure: The target has the Blinded condition for 1 minute. Failure or Success: The solar can’t take this action again until the start of its next turn."
    },
    {
     "name": "Radiant Teleport",
-    "text": "The solar teleports up to 60 feet to an unoccupied space it can see. Dexterity Saving Throw: DC 25, each creature in a 10-foot Emanation originat - ing from the solar at its destination space. Failure: 11 (2d10) Radiant damage. Success: Half damage.Specter"
+    "text": "The solar teleports up to 60 feet to an unoccupied space it can see. Dexterity Saving Throw: DC 25, each creature in a 10-foot Emanation originat - ing from the solar at its destination space. Failure: 11 (2d10) Radiant damage. Success: Half damage."
    }
   ],
   "missing": []
@@ -9507,8 +10174,8 @@ const RAW = [
     "text": "Melee Attack Roll: +8, reach 5 ft. Hit: 14 (3d6 + 4) Slashing damage."
    },
    {
-    "name": "Mind-Rending Roar (Recharge 5 6)",
-    "text": "Wisdom Saving Throw: DC 16, each enemy in a 300-foot Emanation originating from the sphinx. Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx s next turn."
+    "name": "Mind-Rending Roar (Recharge 5–6)",
+    "text": "Wisdom Saving Throw: DC 16, each enemy in a 300-foot Emanation originating from the sphinx. Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx’s next turn."
    },
    {
     "name": "Spellcasting",
@@ -9524,7 +10191,7 @@ const RAW = [
    },
    {
     "name": "Weight of Years",
-    "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Fail - ure or Success: The sphinx can t take this action again until the start of its next turn."
+    "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Fail - ure or Success: The sphinx can’t take this action again until the start of its next turn."
    }
   ],
   "missing": []
@@ -9580,7 +10247,7 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good , Thaumaturgy 1/Day Each: Detect Magic , Dispel Magic , Greater Res - toration , Heroes Feast , Zone of Truth"
+    "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good , Thaumaturgy 1/Day Each: Detect Magic , Dispel Magic , Greater Res - toration , Heroes’ Feast , Zone of Truth"
    }
   ],
   "bonusActions": [],
@@ -9592,9 +10259,56 @@ const RAW = [
    },
    {
     "name": "Weight of Years",
-    "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Fail - ure or Success: The sphinx can t take this action again until the start of its next turn. 329Spirit NagaSpirit NagaLarge Fiend, Chaotic Evil AC 17 Initiative +3 (13) HP 135 (18d10 + 36) Speed 40 ft.MODSAVEMODSAVEMODSAVESTR 18 +4 +4DEX 17 +3 +6CON 14 +2 +5INT 16 +3 +3WIS 15 +2 +5CHA 16 +3 +6Immunities Poison; Charmed, Poisoned Senses Darkvision 60 ft.; Passive Perception 12 Languages Abyssal, Common CR 8 (XP 3,900; PB +3)"
+    "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Fail - ure or Success: The sphinx can’t take this action again until the start of its next turn. 329"
    }
   ],
+  "missing": []
+ },
+ {
+  "name": "Spirit Naga",
+  "size": "Large",
+  "creatureType": "Fiend",
+  "alignment": "Chaotic Evil",
+  "ac": 17,
+  "hp": 135,
+  "hpFormula": "18d10 + 36",
+  "speed": "40 ft.MODSAVEMODSAVEMODSAVESTR 18",
+  "cr": "8",
+  "xp": 3900,
+  "proficiencyBonus": 3,
+  "senses": "Darkvision 60 ft.; Passive Perception 12",
+  "languages": "Abyssal, Common",
+  "traits": [
+   {
+    "name": "Fiendish Restoration",
+    "text": "If it dies, the naga returns to life in 1d6 days and regains all its"
+   },
+   {
+    "name": "Hit Points",
+    "text": "Only a Wish spell can prevent this trait from functioning."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The naga makes three attacks, using Bite or Necrotic Ray in any combination."
+   },
+   {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 7 (1d6 + 4) Piercing damage plus 14 (4d6) Poison damage."
+   },
+   {
+    "name": "Necrotic Ray",
+    "text": "Ranged Attack Roll: +6, range 60 ft. Hit: 21 (6d6) Necrotic damage."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic , Mage Hand , Minor Illusion , Wa - ter Breathing 2/Day Each: Detect Thoughts , Dimension Door , Hold Person (level 3 version), Lightning Bolt (level 4 version)"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
   "missing": []
  },
  {
@@ -9619,15 +10333,15 @@ const RAW = [
    },
    {
     "name": "Enchanting Bow",
-    "text": "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite s next turn."
+    "text": "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite’s next turn."
    },
    {
     "name": "Heart Sight",
-    "text": "Charisma Saving Throw: DC 10, one crea - ture within 5 feet the sprite can see (Celestials, Fiends, and Undead automatically fail the save). Failure: The sprite knows the target s emotions and alignment."
+    "text": "Charisma Saving Throw: DC 10, one crea - ture within 5 feet the sprite can see (Celestials, Fiends, and Undead automatically fail the save). Failure: The sprite knows the target’s emotions and alignment."
    },
    {
     "name": "Invisibility",
-    "text": "The sprite casts Invisibility on itself, requir - ing no spell components and using Charisma as the spellcasting ability.Spy"
+    "text": "The sprite casts Invisibility on itself, requir - ing no spell components and using Charisma as the spellcasting ability."
    }
   ],
   "bonusActions": [],
@@ -9663,7 +10377,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Cunning Action",
-    "text": "The spy takes the Dash, Disengage, or Hide action.Stirge"
+    "text": "The spy takes the Dash, Disengage, or Hide action."
    }
   ],
   "reactions": [],
@@ -9688,7 +10402,7 @@ const RAW = [
   "actions": [
    {
     "name": "Proboscis",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage, and the stirge attaches to the target. While attached, the stirge can t make Proboscis attacks, and the target takes 5 (2d4) Necrotic damage at the start of each of the stirge s turns. The stirge can detach itself by spending 5 feet of its movement. The target or a creature within 5 feet of it can detach the stirge as an action.Stone Giant"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage, and the stirge attaches to the target. While attached, the stirge can’t make Proboscis attacks, and the target takes 5 (2d4) Necrotic damage at the start of each of the stirge’s turns. The stirge can detach itself by spending 5 feet of its movement. The target or a creature within 5 feet of it can detach the stirge as an action."
    }
   ],
   "bonusActions": [],
@@ -9747,7 +10461,7 @@ const RAW = [
   "traits": [
    {
     "name": "Immutable Form",
-    "text": "The golem can t shape-shift."
+    "text": "The golem can’t shape-shift."
    },
    {
     "name": "Magic Resistance",
@@ -9770,8 +10484,8 @@ const RAW = [
   ],
   "bonusActions": [
    {
-    "name": "Slow (Recharge 5 6)",
-    "text": "The golem casts the Slow spell, requiring no spell components and using Constitution as the spellcasting ability (spell save DC 17).Storm Giant"
+    "name": "Slow (Recharge 5–6)",
+    "text": "The golem casts the Slow spell, requiring no spell components and using Constitution as the spellcasting ability (spell save DC 17)."
    }
   ],
   "reactions": [],
@@ -9809,15 +10523,15 @@ const RAW = [
    },
    {
     "name": "Thunderbolt",
-    "text": "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the target has the Blinded and Deafened conditions until the start of the giant s next turn."
+    "text": "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the target has the Blinded and Deafened conditions until the start of the giant’s next turn."
    },
    {
-    "name": "Lightning Storm (Recharge 5 6)",
+    "name": "Lightning Storm (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 18, each creature in a 10-foot-radius, 40-foot-high Cylinder originating from a point the giant can see within 500 feet. Failure: 55 (10d10) Lightning damage. Success: Half damage."
    },
    {
     "name": "Spellcasting",
-    "text": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18): At Will: Detect Magic , Light 1/Day: Control WeatherSuccubus"
+    "text": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18): At Will: Detect Magic , Light 1/Day: Control Weather"
    }
   ],
   "bonusActions": [],
@@ -9856,13 +10570,13 @@ const RAW = [
    },
    {
     "name": "Draining Kiss",
-    "text": "Constitution Saving Throw: DC 15, one creature Charmed by the succubus within 5 feet. Fail - ure: 13 (3d8) Psychic damage. Success: Half damage. Failure or Success: The target s Hit Point maximum de - creases by an amount equal to the damage taken."
+    "text": "Constitution Saving Throw: DC 15, one creature Charmed by the succubus within 5 feet. Fail - ure: 13 (3d8) Psychic damage. Success: Half damage. Failure or Success: The target’s Hit Point maximum de - creases by an amount equal to the damage taken."
    }
   ],
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The succubus shape-shifts into a Medium or Small Humanoid, or it returns to its true form. Its game statistics are the same in each form, except its Fly Speed is available only in its true form. Any equipment it is wearing or carrying isn t transformed.Tarrasque"
+    "text": "The succubus shape-shifts into a Medium or Small Humanoid, or it returns to its true form. Its game statistics are the same in each form, except its Fly Speed is available only in its true form. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "reactions": [],
@@ -9890,7 +10604,7 @@ const RAW = [
    },
    {
     "name": "Magic Resistance",
-    "text": "The tarrasque has Advantage on sav - ing throws against spells and other magical effects. If the tarrasque is targeted by a Magic Missile spell or a spell that requires a ranged attack roll, roll 1d6. On a 1 5 , the tarrasque is unaf - fected. On a 6 the spell, turning the caster into the target."
+    "text": "The tarrasque has Advantage on sav - ing throws against spells and other magical effects. If the tarrasque is targeted by a Magic Missile spell or a spell that requires a ranged attack roll, roll 1d6. On a 1–5 , the tarrasque is unaf - fected. On a 6 the spell, turning the caster into the target."
    },
    {
     "name": "Siege Monster",
@@ -9904,7 +10618,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +19, reach 15 ft. Hit: 36 (4d12 + 10) Piercing damage, and the target has the Grappled 332condition (escape DC 20). Until the grapple ends, the target has the Restrained condition and can t teleport."
+    "text": "Melee Attack Roll: +19, reach 15 ft. Hit: 36 (4d12 + 10) Piercing damage, and the target has the Grappled 332condition (escape DC 20). Until the grapple ends, the target has the Restrained condition and can’t teleport."
    },
    {
     "name": "Claw",
@@ -9915,14 +10629,14 @@ const RAW = [
     "text": "Melee Attack Roll: +19, reach 30 ft. Hit: 23 (3d8 + 10) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition."
    },
    {
-    "name": "Thunderous Bellow (Recharge 5 6)",
-    "text": "Constitution Sav - ing Throw: DC 27, each creature and each object that isn t being worn or carried in a 150-foot Cone. Failure: 78 (12d12) Thunder damage, and the target has the Deafened and Frightened conditions until the end of its next turn. Success: Half damage only."
+    "name": "Thunderous Bellow (Recharge 5–6)",
+    "text": "Constitution Sav - ing Throw: DC 27, each creature and each object that isn’t being worn or carried in a 150-foot Cone. Failure: 78 (12d12) Thunder damage, and the target has the Deafened and Frightened conditions until the end of its next turn. Success: Half damage only."
    }
   ],
   "bonusActions": [
    {
     "name": "Swallow",
-    "text": "Strength Saving Throw: DC 27, one Large or smaller creature Grappled by the tarrasque (it can have up to six creatures swallowed at a time). Failure: The target is swallowed, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions and can t teleport, it has Total Cover against attacks and other effects outside the tarrasque, and it takes 56 (16d6) Acid damage at the start of each of the tarrasque s turns. If the tarrasque takes 60 damage or more on a single turn from a creature inside it, the tarrasque must suc - ceed on a DC 20 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the tarrasque and has the Prone condition. If the tarrasque dies, any swallowed creature no longer has the Restrained con - dition and can escape from the corpse using 20 feet of movement, exiting Prone."
+    "text": "Strength Saving Throw: DC 27, one Large or smaller creature Grappled by the tarrasque (it can have up to six creatures swallowed at a time). Failure: The target is swallowed, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions and can’t teleport, it has Total Cover against attacks and other effects outside the tarrasque, and it takes 56 (16d6) Acid damage at the start of each of the tarrasque’s turns. If the tarrasque takes 60 damage or more on a single turn from a creature inside it, the tarrasque must suc - ceed on a DC 20 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the tarrasque and has the Prone condition. If the tarrasque dies, any swallowed creature no longer has the Restrained con - dition and can escape from the corpse using 20 feet of movement, exiting Prone."
    }
   ],
   "reactions": [],
@@ -9933,7 +10647,7 @@ const RAW = [
    },
    {
     "name": "Speed",
-    "text": "At the end of this movement, the tarrasque creates an instantaneous shock wave in a 60-foot Em - anation originating from itself. Creatures in that area lose Concentration and, if Medium or smaller, have the Prone condition. The tarrasque can t take this action again until the start of its next turn.Toughs"
+    "text": "At the end of this movement, the tarrasque creates an instantaneous shock wave in a 60-foot Em - anation originating from itself. Creatures in that area lose Concentration and, if Medium or smaller, have the Prone condition. The tarrasque can’t take this action again until the start of its next turn.Toughs"
    }
   ],
   "missing": []
@@ -9955,7 +10669,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The tough has Advantage on an attack roll against a creature if at least one of the tough s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The tough has Advantage on an attack roll against a creature if at least one of the tough’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -9990,7 +10704,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The tough has Advantage on an attack roll against a creature if at least one of the tough s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The tough has Advantage on an attack roll against a creature if at least one of the tough’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -10004,7 +10718,50 @@ const RAW = [
    },
    {
     "name": "Heavy Crossbow",
-    "text": "Ranged Attack Roll: +4, range 100/400 ft. Hit: 13 (2d10 + 2) Piercing damage. 333TreantTreantHuge Plant, Chaotic Good AC 16 Initiative +3 (13) HP 138 (12d12 + 60) Speed 30 ft.MODSAVEMODSAVEMODSAVESTR 23 +6 +6DEX 8 CON 21 +5 +5INT 12 +1 +1WIS 16 +3 +3CHA 12 +1 +1Vulnerabilities Fire Resistances Bludgeoning, Piercing Senses Passive Perception 13 Languages Common, Druidic, Elvish, Sylvan CR 9 (XP 5,000; PB +4)"
+    "text": "Ranged Attack Roll: +4, range 100/400 ft. Hit: 13 (2d10 + 2) Piercing damage. 333"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Treant",
+  "size": "Huge",
+  "creatureType": "Plant",
+  "alignment": "Chaotic Good",
+  "ac": 16,
+  "hp": 138,
+  "hpFormula": "12d12 + 60",
+  "speed": "30 ft.MODSAVEMODSAVEMODSAVESTR 23",
+  "cr": "9",
+  "xp": 5000,
+  "proficiencyBonus": 4,
+  "senses": "Passive Perception 13",
+  "languages": "Common, Druidic, Elvish, Sylvan",
+  "traits": [
+   {
+    "name": "Siege Monster",
+    "text": "The treant deals double damage to ob - jects and structures."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The treant makes two Slam attacks."
+   },
+   {
+    "name": "Slam",
+    "text": "Melee Attack Roll: +10, reach 5 ft. Hit: 16 (3d6 + 6) Bludgeoning damage."
+   },
+   {
+    "name": "Hail of Bark",
+    "text": "Ranged Attack Roll: +10, range 180 ft. Hit: 28 (4d10 + 6) Piercing damage."
+   },
+   {
+    "name": "Animate Trees (1/Day)",
+    "text": "The treant magically animates up to two trees it can see within 60 feet of itself. Each tree uses the Treant stat block, except it has Intelligence and Charisma scores of 1, it can’t speak, and it lacks this action. The tree takes its turn immediately after the treant on the same Initiative count, and it obeys the tre - ant. A tree remains animate for 1 day or until it dies, the treant dies, or it is more than 120 feet from the treant. The tree then takes root if possible."
    }
   ],
   "bonusActions": [],
@@ -10029,11 +10786,11 @@ const RAW = [
   "traits": [
    {
     "name": "Loathsome Limbs (4/Day)",
-    "text": "If the troll ends any turn Bloodied and took 15+ Slashing damage during that turn, one of the troll s limbs is severed, falls into the troll s space, and becomes a Troll Limb . The limb acts immediately after the troll s turn. The troll has 1 Exhaus - tion level for each missing limb, and it grows replace - ment limbs the next time it regains"
+    "text": "If the troll ends any turn Bloodied and took 15+ Slashing damage during that turn, one of the troll’s limbs is severed, falls into the troll’s space, and becomes a Troll Limb . The limb acts immediately after the troll’s turn. The troll has 1 Exhaus - tion level for each missing limb, and it grows replace - ment limbs the next time it regains"
    },
    {
     "name": "Regeneration",
-    "text": "The troll regains 15 Hit Points at the start of each of its turns. If the troll takes Acid or Fire dam - age, this trait doesn t function on the troll s next turn. The troll dies only if it starts its turn with 0 Hit Points and doesn t regenerate."
+    "text": "The troll regains 15 Hit Points at the start of each of its turns. If the troll takes Acid or Fire dam - age, this trait doesn’t function on the troll’s next turn. The troll dies only if it starts its turn with 0 Hit Points and doesn’t regenerate."
    }
   ],
   "actions": [
@@ -10073,22 +10830,65 @@ const RAW = [
   "traits": [
    {
     "name": "Regeneration",
-    "text": "The limb regains 5 Hit Points at the start of each of its turns. If the limb takes Acid or Fire dam - age, this trait doesn t function on the limb s next turn. The limb dies only if it starts its turn with 0 Hit Points and doesn t regenerate."
+    "text": "The limb regains 5 Hit Points at the start of each of its turns. If the limb takes Acid or Fire dam - age, this trait doesn’t function on the limb’s next turn. The limb dies only if it starts its turn with 0 Hit Points and doesn’t regenerate."
    },
    {
     "name": "Troll Spawn",
-    "text": "The limb uncannily has the same senses as a whole troll. If the limb isn t destroyed within 24 hours, roll 1d12. On a 12, the limb turns into a Troll . Otherwise, the limb withers away."
+    "text": "The limb uncannily has the same senses as a whole troll. If the limb isn’t destroyed within 24 hours, roll 1d12. On a 12, the limb turns into a Troll . Otherwise, the limb withers away."
    }
   ],
   "actions": [
    {
     "name": "Rend",
-    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Slashing damage. 334UnicornUnicornLarge Celestial, Lawful Good AC 12 Initiative +8 (18) HP 97 (13d10 + 26) Speed 50 ft.MODSAVEMODSAVEMODSAVESTR 18 +4 +4DEX 14 +2 +2CON 15 +2 +2INT 11 +0 +0WIS 17 +3 +3CHA 16 +3 +3Immunities Poison; Charmed, Paralyzed, Poisoned Senses Darkvision 60 ft.; Passive Perception 13 Languages Celestial, Elvish, Sylvan; telepathy 120 ft. CR 5 (XP 1,800; PB +3)"
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Slashing damage. 334"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Unicorn",
+  "size": "Large",
+  "creatureType": "Celestial",
+  "alignment": "Lawful Good",
+  "ac": 12,
+  "hp": 97,
+  "hpFormula": "13d10 + 26",
+  "speed": "50 ft.MODSAVEMODSAVEMODSAVESTR 18",
+  "cr": "5",
+  "xp": 1800,
+  "proficiencyBonus": 3,
+  "senses": "Darkvision 60 ft.; Passive Perception 13",
+  "languages": "Celestial, Elvish, Sylvan; telepathy 120 ft.",
+  "traits": [
+   {
+    "name": "Legendary Resistance (3/Day)",
+    "text": "If the unicorn fails a sav - ing throw, it can choose to succeed instead. Magic Resistance . The unicorn has Advantage on sav - ing throws against spells and other magical effects."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The unicorn makes one Hooves attack and one Radiant Horn attack."
+   },
+   {
+    "name": "Hooves",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (2d6 + 4) Bludgeoning damage."
+   },
+   {
+    "name": "Radiant Horn",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 9 (1d10 + 4) Radiant damage."
+   },
+   {
+    "name": "Spellcasting",
+    "text": "The unicorn casts one of the following spells, requiring no spell components and using Cha - risma as the spellcasting ability (spell save DC 14): At Will: Detect Evil and Good , Druidcraft 1/Day Each: Calm Emotions , Dispel Evil and Good , En - tangle , Pass without Trace , Word of Recall"
    }
   ],
   "bonusActions": [
    {
-    "name": "Blessing (3/Day)",
+    "name": "Unicorn’s Blessing (3/Day)",
     "text": "The unicorn touches an - other creature with its horn and casts Cure Wounds or Lesser Restoration on that creature, using the same spellcasting ability as Spellcasting."
    }
   ],
@@ -10100,7 +10900,7 @@ const RAW = [
    },
    {
     "name": "Shimmering Shield",
-    "text": "The unicorn targets itself or one creature it can see within 60 feet of itself. The target gains 10 (3d6) Temporary Hit Points, and its AC in - creases by 2 until the end of the unicorn s next turn. The unicorn can t take this action again until the start of its next turn.Vampires"
+    "text": "The unicorn targets itself or one creature it can see within 60 feet of itself. The target gains 10 (3d6) Temporary Hit Points, and its AC in - creases by 2 until the end of the unicorn’s next turn. The unicorn can’t take this action again until the start of its next turn.Vampires"
    }
   ],
   "missing": []
@@ -10122,7 +10922,7 @@ const RAW = [
   "traits": [
    {
     "name": "Vampiric Connection",
-    "text": "While the familiar and its vam - pire master are on the same plane of existence, the vampire can communicate with the familiar telepathi - cally, and the vampire can perceive through the famil - iar s senses."
+    "text": "While the familiar and its vam - pire master are on the same plane of existence, the vampire can communicate with the familiar telepathi - cally, and the vampire can perceive through the famil - iar’s senses."
    }
   ],
   "actions": [
@@ -10166,7 +10966,7 @@ const RAW = [
    },
    {
     "name": "Forbiddance",
-    "text": "The vampire can t enter a residence with - out an invitation from an occupant."
+    "text": "The vampire can’t enter a residence with - out an invitation from an occupant."
    },
    {
     "name": "Running Water",
@@ -10174,7 +10974,7 @@ const RAW = [
    },
    {
     "name": "Stake to the Heart",
-    "text": "The vampire is destroyed if a weapon that deals Piercing damage is driven into the vampire s heart while the vampire has the Incapaci - tated condition."
+    "text": "The vampire is destroyed if a weapon that deals Piercing damage is driven into the vampire’s heart while the vampire has the Incapaci - tated condition."
    },
    {
     "name": "Sunlight",
@@ -10192,7 +10992,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Constitution Saving Throw: DC 14, one creature within 5 feet that is willing or that has the Grappled, Incapacitated, or Restrained condition. Failure: 5 (1d4 + 3) Piercing damage plus 10 (3d6) Necrotic dam - age. The target s Hit Point maximum decreases by an amount equal to the Necrotic damage taken, and the vampire regains Hit Points equal to that amount."
+    "text": "Constitution Saving Throw: DC 14, one creature within 5 feet that is willing or that has the Grappled, Incapacitated, or Restrained condition. Failure: 5 (1d4 + 3) Piercing damage plus 10 (3d6) Necrotic dam - age. The target’s Hit Point maximum decreases by an amount equal to the Necrotic damage taken, and the vampire regains Hit Points equal to that amount."
    }
   ],
   "bonusActions": [
@@ -10226,7 +11026,7 @@ const RAW = [
    },
    {
     "name": "Misty Escape",
-    "text": "If the vampire drops to 0 Hit Points out - side its resting place, the vampire uses Shape-Shift to become mist (no action required). If it can t use Shape- Shift, it is destroyed. While it has 0 Hit Points in mist form, it can t return to its vampire form, and it must reach its resting place within 2 hours or be destroyed. Once in its resting place, it returns to its vampire form and has the Para - lyzed condition until it regains any Hit Points, and it regains 1 Hit Point after spending 1 hour there. Spider Climb. including along ceilings, without needing to make an ability check."
+    "text": "If the vampire drops to 0 Hit Points out - side its resting place, the vampire uses Shape-Shift to become mist (no action required). If it can’t use Shape- Shift, it is destroyed. While it has 0 Hit Points in mist form, it can’t return to its vampire form, and it must reach its resting place within 2 hours or be destroyed. Once in its resting place, it returns to its vampire form and has the Para - lyzed condition until it regains any Hit Points, and it regains 1 Hit Point after spending 1 hour there. Spider Climb. including along ceilings, without needing to make an ability check."
    },
    {
     "name": "Vampire Weakness",
@@ -10234,7 +11034,7 @@ const RAW = [
    },
    {
     "name": "Forbiddance",
-    "text": "The vampire can t enter a residence with - out an invitation from an occupant."
+    "text": "The vampire can’t enter a residence with - out an invitation from an occupant."
    },
    {
     "name": "Running Water",
@@ -10242,7 +11042,7 @@ const RAW = [
    },
    {
     "name": "Stake to the Heart",
-    "text": "If a weapon that deals Piercing damage is driven into the vampire s heart while the vampire has the Incapacitated condition in its resting place, the vampire has the Paralyzed condition until the weapon is removed."
+    "text": "If a weapon that deals Piercing damage is driven into the vampire’s heart while the vampire has the Incapacitated condition in its resting place, the vampire has the Paralyzed condition until the weapon is removed."
    },
    {
     "name": "Sunlight",
@@ -10260,24 +11060,24 @@ const RAW = [
    },
    {
     "name": "Bite (Bat or Vampire Form Only)",
-    "text": "Constitution Saving Throw: DC 17, one creature within 5 feet that is willing or that has the Grappled, Incapacitated, or Restrained condition. Failure: 6 (1d4 + 4) Piercing damage plus 13 (3d8) Necrotic damage. The target s Hit Point maximum 336decreases by an amount equal to the Necrotic damage taken, and the vampire regains Hit Points equal to that amount. A Humanoid reduced to 0 Hit Points by this damage and then buried rises the following sunset as a Vampire Spawn under the vampire s control."
+    "text": "Constitution Saving Throw: DC 17, one creature within 5 feet that is willing or that has the Grappled, Incapacitated, or Restrained condition. Failure: 6 (1d4 + 4) Piercing damage plus 13 (3d8) Necrotic damage. The target’s Hit Point maximum 336decreases by an amount equal to the Necrotic damage taken, and the vampire regains Hit Points equal to that amount. A Humanoid reduced to 0 Hit Points by this damage and then buried rises the following sunset as a Vampire Spawn under the vampire’s control."
    }
   ],
   "bonusActions": [
    {
-    "name": "Charm (Recharge 5 6)",
-    "text": "The vampire casts Charm Per - son , requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17), and the duration is 24 hours. The Charmed target is a willing recipient of the vampire s Bite, the damage of which doesn t end the spell. When the spell ends, the target is unaware it was Charmed by the vampire."
+    "name": "Charm (Recharge 5–6)",
+    "text": "The vampire casts Charm Per - son , requiring no spell components and using Charisma as the spellcasting ability (spell save DC 17), and the duration is 24 hours. The Charmed target is a willing recipient of the vampire’s Bite, the damage of which doesn’t end the spell. When the spell ends, the target is unaware it was Charmed by the vampire."
    },
    {
     "name": "Shape-Shift",
-    "text": "If the vampire isn t in sunlight or running water, it shape-shifts into a Tiny bat (Speed 5 ft., Fly Speed 30 ft.) or a Medium cloud of mist (Speed 5 ft., form. Anything it is wearing transforms with it. While in bat form, the vampire can t speak. Its game statistics, other than its size and Speed, are unchanged. While in mist form, the vampire can t take any ac - tions, speak, or manipulate objects. It is weightless and can enter an enemy s space and stop there. If air can pass through a space, the mist can do so, but it can t pass through liquid. It has Resistance to all damage, ex - cept the damage it takes from sunlight."
+    "text": "If the vampire isn’t in sunlight or running water, it shape-shifts into a Tiny bat (Speed 5 ft., Fly Speed 30 ft.) or a Medium cloud of mist (Speed 5 ft., form. Anything it is wearing transforms with it. While in bat form, the vampire can’t speak. Its game statistics, other than its size and Speed, are unchanged. While in mist form, the vampire can’t take any ac - tions, speak, or manipulate objects. It is weightless and can enter an enemy’s space and stop there. If air can pass through a space, the mist can do so, but it can’t pass through liquid. It has Resistance to all damage, ex - cept the damage it takes from sunlight."
    }
   ],
   "reactions": [],
   "legendaryActions": [
    {
     "name": "Deathless Strike",
-    "text": "The vampire moves up to half its Speed, and it makes one Grave Strike attack.Vrock"
+    "text": "The vampire moves up to half its Speed, and it makes one Grave Strike attack."
    }
   ],
   "missing": []
@@ -10321,7 +11121,7 @@ const RAW = [
    },
    {
     "name": "Stunning Screech (1/Day)",
-    "text": "Constitution Saving Throw: DC 15, each creature in a 20-foot Emanation originating from the vrock (demons succeed automatically). Fail - ure: 10 (3d6) Thunder damage, and the target has the Stunned condition until the end of the vrock s next turn.Warriors"
+    "text": "Constitution Saving Throw: DC 15, each creature in a 20-foot Emanation originating from the vrock (demons succeed automatically). Fail - ure: 10 (3d6) Thunder damage, and the target has the Stunned condition until the end of the vrock’s next turn.Warriors"
    }
   ],
   "bonusActions": [],
@@ -10346,7 +11146,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The warrior has Advantage on an attack roll against a creature if at least one of the warrior s al - lies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The warrior has Advantage on an attack roll against a creature if at least one of the warrior’s al - lies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -10393,7 +11193,7 @@ const RAW = [
   "reactions": [
    {
     "name": "Parry",
-    "text": "Trigger: The warrior is hit by a melee attack roll while holding a weapon. Response: The warrior adds 2 to its AC against that attack, possibly causing it to miss.Water Elemental"
+    "text": "Trigger: The warrior is hit by a melee attack roll while holding a weapon. Response: The warrior adds 2 to its AC against that attack, possibly causing it to miss."
    }
   ],
   "legendaryActions": [],
@@ -10420,7 +11220,7 @@ const RAW = [
    },
    {
     "name": "Water Form",
-    "text": "The elemental can enter an enemy s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
+    "text": "The elemental can enter an enemy’s space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
    }
   ],
   "actions": [
@@ -10433,12 +11233,12 @@ const RAW = [
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition."
    },
    {
-    "name": "Whelm (Recharge 4 6)",
-    "text": "Strength Saving Throw: DC 15, each creature in the elemental s space. Failure: 22 (4d8 + 4) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Re - strained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental s turns. The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with"
+    "name": "Whelm (Recharge 4–6)",
+    "text": "Strength Saving Throw: DC 15, each creature in the elemental’s space. Failure: 22 (4d8 + 4) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Re - strained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental’s turns. The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with"
    },
    {
     "name": "Whelm",
-    "text": "As an ac - tion, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check. Success: Half damage only.Werebear"
+    "text": "As an ac - tion, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check. Success: Half damage only."
    }
   ],
   "bonusActions": [],
@@ -10459,7 +11259,7 @@ const RAW = [
   "xp": 1800,
   "proficiencyBonus": 3,
   "senses": "Darkvision 60 ft.; Passive Perception 17",
-  "languages": "Common (can t speak in bear form)",
+  "languages": "Common (can’t speak in bear form)",
   "traits": [],
   "actions": [
    {
@@ -10468,11 +11268,11 @@ const RAW = [
    },
    {
     "name": "Bite (Bear or Hybrid Form Only)",
-    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 17 (2d12 + 4) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 14. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Werebear under the GM s 338control and has 10"
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 17 (2d12 + 4) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 14. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Werebear under the GM’s 338control and has 10"
    },
    {
     "name": "Hit Points",
-    "text": "Success: The target is im - mune to this werebear s curse for 24 hours."
+    "text": "Success: The target is im - mune to this werebear’s curse for 24 hours."
    },
    {
     "name": "Handaxe (Humanoid or Hybrid Form Only)",
@@ -10486,7 +11286,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The werebear shape-shifts into a Large bear-humanoid hybrid form or a Large bear, or it re - turns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn t transformed.Wereboar"
+    "text": "The werebear shape-shifts into a Large bear-humanoid hybrid form or a Large bear, or it re - turns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "reactions": [],
@@ -10506,7 +11306,7 @@ const RAW = [
   "xp": 1100,
   "proficiencyBonus": 2,
   "senses": "Passive Perception 12",
-  "languages": "Common (can t speak in boar form)",
+  "languages": "Common (can’t speak in boar form)",
   "traits": [],
   "actions": [
    {
@@ -10515,11 +11315,11 @@ const RAW = [
    },
    {
     "name": "Gore (Boar or Hybrid Form Only)",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 12. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Wereboar under the GM s control and has 10"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 12. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Wereboar under the GM’s control and has 10"
    },
    {
     "name": "Hit Points",
-    "text": "Success: The target is im - mune to this wereboar s curse for 24 hours."
+    "text": "Success: The target is im - mune to this wereboar’s curse for 24 hours."
    },
    {
     "name": "Javelin (Humanoid or Hybrid Form Only)",
@@ -10533,7 +11333,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The wereboar shape-shifts into a Medium boar-humanoid hybrid or a Small boar, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn t transformed.Wererat"
+    "text": "The wereboar shape-shifts into a Medium boar-humanoid hybrid or a Small boar, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "reactions": [],
@@ -10553,7 +11353,7 @@ const RAW = [
   "xp": 450,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 14",
-  "languages": "Common (can t speak in rat form)",
+  "languages": "Common (can’t speak in rat form)",
   "traits": [],
   "actions": [
    {
@@ -10562,11 +11362,11 @@ const RAW = [
    },
    {
     "name": "Bite (Rat or Hybrid Form Only)",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the following effect. Constitution Saving Throw: DC 11. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Wererat under the GM s control and has 10"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the following effect. Constitution Saving Throw: DC 11. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Wererat under the GM’s control and has 10"
    },
    {
     "name": "Hit Points",
-    "text": "Success: The target is im - mune to this wererat s curse for 24 hours."
+    "text": "Success: The target is im - mune to this wererat’s curse for 24 hours."
    },
    {
     "name": "Scratch",
@@ -10580,7 +11380,62 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The wererat shape-shifts into a Medium rat-humanoid hybrid or a Small rat, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn t transformed. 339WeretigerWeretigerMedium or Small Monstrosity (Lycanthrope), Neutral AC 12 Initiative +2 (12) HP 120 (16d8 + 48) Speed 30 ft., 40 ft. (tiger form only)MODSAVEMODSAVEMODSAVESTR 17 +3 +3DEX 15 +2 +2CON 16 +3 +3INT 10 +0 +0WIS 13 +1 +1CHA 11 +0 +0Skills Perception +5, Stealth +4 Gear Longbow Senses Darkvision 60 ft.; Passive Perception 15 Languages Common (can t speak in tiger form) CR 4 (XP 1,100; PB +2)"
+    "text": "The wererat shape-shifts into a Medium rat-humanoid hybrid or a Small rat, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed. 339"
+   }
+  ],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Weretiger",
+  "size": "Medium or Small",
+  "creatureType": "Monstrosity",
+  "alignment": "Neutral",
+  "ac": 12,
+  "hp": 120,
+  "hpFormula": "16d8 + 48",
+  "speed": "30 ft., 40 ft. (tiger form only)MODSAVEMODSAVEMODSAVESTR",
+  "cr": "4",
+  "xp": 1100,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 15",
+  "languages": "Common (can’t speak in tiger form)",
+  "traits": [],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The weretiger makes two attacks, using Scratch or Longbow in any combination. It can replace one attack with a Bite attack."
+   },
+   {
+    "name": "Bite (Tiger or Hybrid Form Only)",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 13. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Weretiger under the GM’s control and has 10"
+   },
+   {
+    "name": "Hit Points",
+    "text": "Success: The target is im - mune to this weretiger’s curse for 24 hours."
+   },
+   {
+    "name": "Scratch",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage."
+   },
+   {
+    "name": "Longbow (Humanoid or Hybrid Form Only)",
+    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 11 (2d8 + 2) Piercing damage."
+   }
+  ],
+  "bonusActions": [
+   {
+    "name": "Prowl (Tiger or Hybrid Form Only)",
+    "text": "The weretiger moves up to its Speed without provoking Opportunity"
+   },
+   {
+    "name": "Attacks",
+    "text": "At the end of this movement, the weretiger can take the Hide action."
+   },
+   {
+    "name": "Shape-Shift",
+    "text": "The weretiger shape-shifts into a Large tiger-humanoid hybrid or a Large tiger, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed."
    }
   ],
   "reactions": [],
@@ -10600,11 +11455,11 @@ const RAW = [
   "xp": 700,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 14",
-  "languages": "Common (can t speak in wolf form)",
+  "languages": "Common (can’t speak in wolf form)",
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The werewolf has Advantage on an attack roll against a creature if at least one of the werewolf s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The werewolf has Advantage on an attack roll against a creature if at least one of the werewolf’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -10614,11 +11469,11 @@ const RAW = [
    },
    {
     "name": "Bite (Wolf or Hybrid Form Only)",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 12. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Werewolf under the GM s control and has 10"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the follow - ing effect. Constitution Saving Throw: DC 12. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Werewolf under the GM’s control and has 10"
    },
    {
     "name": "Hit Points",
-    "text": "Success: The target is im - mune to this werewolf s curse for 24 hours."
+    "text": "Success: The target is im - mune to this werewolf’s curse for 24 hours."
    },
    {
     "name": "Scratch",
@@ -10632,7 +11487,7 @@ const RAW = [
   "bonusActions": [
    {
     "name": "Shape-Shift",
-    "text": "The werewolf shape-shifts into a Large wolf-humanoid hybrid or a Medium wolf, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn t transformed.White Dragons"
+    "text": "The werewolf shape-shifts into a Large wolf-humanoid hybrid or a Medium wolf, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn’t transformed.White Dragons"
    }
   ],
   "reactions": [],
@@ -10656,7 +11511,7 @@ const RAW = [
   "traits": [
    {
     "name": "Ice Walk",
-    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn t cost it extra movement."
+    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn’t cost it extra movement."
    }
   ],
   "actions": [
@@ -10669,7 +11524,7 @@ const RAW = [
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage plus 2 (1d4) Cold damage."
    },
    {
-    "name": "Cold Breath (Recharge 5 6)",
+    "name": "Cold Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 22 (5d8) Cold damage. Success: Half damage."
    }
   ],
@@ -10697,7 +11552,7 @@ const RAW = [
   "traits": [
    {
     "name": "Ice Walk",
-    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn t cost it extra movement."
+    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn’t cost it extra movement."
    }
   ],
   "actions": [
@@ -10710,7 +11565,7 @@ const RAW = [
     "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 9 (2d4 + 4) Slashing damage plus 2 (1d4) Cold damage."
    },
    {
-    "name": "Cold Breath (Recharge 5 6)",
+    "name": "Cold Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 15, each creature in a 30-foot Cone. Failure: 40 (9d8) Cold damage. Success: Half damage."
    }
   ],
@@ -10738,7 +11593,7 @@ const RAW = [
   "traits": [
    {
     "name": "Ice Walk",
-    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn t cost it extra movement."
+    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn’t cost it extra movement."
    },
    {
     "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
@@ -10755,7 +11610,7 @@ const RAW = [
     "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 13 (2d6 + 6) Slashing damage plus 4 (1d8) Cold damage."
    },
    {
-    "name": "Cold Breath (Recharge 5 6)",
+    "name": "Cold Breath (Recharge 5–6)",
     "text": "Constitution Saving Throw: DC 19, each creature in a 60-foot Cone. Failure: 54 (12d8) Cold damage. Success: Half damage."
    }
   ],
@@ -10764,15 +11619,71 @@ const RAW = [
   "legendaryActions": [
    {
     "name": "Burst",
-    "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. Failure: 7 (2d6) Cold damage, and the target s Speed is 0 until the end of the target s next turn. Failure or Success: The dragon can t take this action again until the start of its next turn."
+    "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. Failure: 7 (2d6) Cold damage, and the target’s Speed is 0 until the end of the target’s next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Frightful Presence",
-    "text": "The dragon casts Fear , requiring no Material components and using Charisma as the spell - casting ability (spell save DC 14). The dragon can t take this action again until the start of its next turn."
+    "text": "The dragon casts Fear , requiring no Material components and using Charisma as the spell - casting ability (spell save DC 14). The dragon can’t take this action again until the start of its next turn."
    },
    {
     "name": "Pounce",
-    "text": "The dragon moves up to half its Speed, and it makes one Rend attack. 341Ancient White DragonGargantuan Dragon (Chromatic), Chaotic Evil AC 20 Initiative +12 (22) HP 333 (18d20 + 144) Speed 40 ft., Burrow 40 ft., Fly 80 ft., Swim 40 ft.MODSAVEMODSAVEMODSAVESTR 26 +8 +8DEX 10 +0 +6CON 26 +8 +8INT 10 +0 +0WIS 13 +1 +7CHA 18 +4 +4Skills Perception +13, Stealth +6 Immunities Cold Senses Blindsight 60 ft., Darkvision 120 ft.; Passive Perception 23 Languages Common, Draconic CR 20 (XP 25,000, or 33,000 in lair; PB +6)"
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack. 341"
+   }
+  ],
+  "missing": []
+ },
+ {
+  "name": "Ancient White Dragon",
+  "size": "Gargantuan",
+  "creatureType": "Dragon",
+  "alignment": "Chaotic Evil",
+  "ac": 20,
+  "hp": 333,
+  "hpFormula": "18d20 + 144",
+  "speed": "40 ft., Burrow 40 ft., Fly 80 ft., Swim 40 ft.MODSAVEMODSAVEMODSAVESTR 26",
+  "cr": "20",
+  "xp": 25000,
+  "proficiencyBonus": 6,
+  "senses": "Blindsight 60 ft., Darkvision 120 ft.;",
+  "languages": "Common, Draconic",
+  "traits": [
+   {
+    "name": "Ice Walk",
+    "text": "The dragon can move across and climb icy surfaces without needing to make an ability check. doesn’t cost it extra movement."
+   },
+   {
+    "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
+    "text": "If the dragon fails a saving throw, it can choose to suc - ceed instead."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Multiattack",
+    "text": "The dragon makes three Rend attacks."
+   },
+   {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +14, reach 15 ft. Hit: 17 (2d8 + 8) Slashing damage plus 7 (2d6) Cold damage."
+   },
+   {
+    "name": "Cold Breath (Recharge 5–6)",
+    "text": "Constitution Saving Throw: DC 22, each creature in a 90-foot Cone. Fail - ure: 63 (14d8) Cold damage. Success: Half damage."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [
+   {
+    "name": "Burst",
+    "text": "Constitution Saving Throw: DC 20, each creature in a 30-foot-radius Sphere centered on a point the dragon can see within 120 feet. Failure: 14 (4d6) Cold damage, and the target’s Speed is 0 until the end of the target’s next turn. Failure or Success: The dragon can’t take this action again until the start of its next turn."
+   },
+   {
+    "name": "Frightful Presence",
+    "text": "The dragon casts Fear , requiring no Material components and using Charisma as the spell - casting ability (spell save DC 18). The dragon can’t take this action again until the start of its next turn."
+   },
+   {
+    "name": "Pounce",
+    "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
    }
   ],
   "missing": []
@@ -10812,7 +11723,7 @@ const RAW = [
    },
    {
     "name": "Life Drain",
-    "text": "Constitution Saving Throw: DC 13, one creature within 5 feet. Failure: 6 (1d8 + 2) Necrotic damage, and the target s Hit Point maximum decreases by an amount equal to the damage taken. A Humanoid slain by this attack rises 24 hours later as a Zombie under the wight s control, unless the Hu - manoid is restored to life or its body is destroyed. The wight can have no more than twelve zombies under its control at a time.Will-o -Wisp"
+    "text": "Constitution Saving Throw: DC 13, one creature within 5 feet. Failure: 6 (1d8 + 2) Necrotic damage, and the target’s Hit Point maximum decreases by an amount equal to the damage taken. A Humanoid slain by this attack rises 24 hours later as a Zombie under the wight’s control, unless the Hu - manoid is restored to life or its body is destroyed. The wight can have no more than twelve zombies under its control at a time."
    }
   ],
   "bonusActions": [],
@@ -10821,7 +11732,7 @@ const RAW = [
   "missing": []
  },
  {
-  "name": "Will-o -Wisp",
+  "name": "Will-o’-Wisp",
   "size": "Tiny",
   "creatureType": "Undead",
   "alignment": "Chaotic Evil",
@@ -10837,7 +11748,7 @@ const RAW = [
   "traits": [
    {
     "name": "Ephemeral",
-    "text": "The wisp can t wear or carry anything."
+    "text": "The wisp can’t wear or carry anything."
    },
    {
     "name": "Illumination",
@@ -10869,7 +11780,7 @@ const RAW = [
    },
    {
     "name": "Vanish",
-    "text": "The wisp and its light have the Invisible condi - tion until the wisp s Concentration ends on this effect, which ends early immediately after the wisp makes an attack roll or uses Consume Life.Winter Wolf"
+    "text": "The wisp and its light have the Invisible condi - tion until the wisp’s Concentration ends on this effect, which ends early immediately after the wisp makes an attack roll or uses Consume Life."
    }
   ],
   "reactions": [],
@@ -10893,7 +11804,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -10902,8 +11813,8 @@ const RAW = [
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller crea - ture, it has the Prone condition."
    },
    {
-    "name": "Cold Breath (Recharge 5 6)",
-    "text": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage.Worg"
+    "name": "Cold Breath (Recharge 5–6)",
+    "text": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage."
    }
   ],
   "bonusActions": [],
@@ -10929,7 +11840,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the next attack roll made against the target before the start of the worg s next turn has Advantage.Wraith"
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the next attack roll made against the target before the start of the worg’s next turn has Advantage."
    }
   ],
   "bonusActions": [],
@@ -10972,7 +11883,7 @@ const RAW = [
    },
    {
     "name": "Create Specter",
-    "text": "The wraith targets a Humanoid corpse within 10 feet of itself that has been dead for no longer than 1 minute. The target s spirit rises as a Specter in the space of its corpse or in the nearest unoccupied space. The specter is under the wraith s control. The wraith can have no more than seven specters under its control at a time.Wyvern"
+    "text": "The wraith targets a Humanoid corpse within 10 feet of itself that has been dead for no longer than 1 minute. The target’s spirit rises as a Specter in the space of its corpse or in the nearest unoccupied space. The specter is under the wraith’s control. The wraith can have no more than seven specters under its control at a time."
    }
   ],
   "bonusActions": [],
@@ -11006,7 +11917,7 @@ const RAW = [
    },
    {
     "name": "Sting",
-    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern s next turn.Xorn"
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern’s next turn."
    }
   ],
   "bonusActions": [],
@@ -11031,7 +11942,7 @@ const RAW = [
   "traits": [
    {
     "name": "Earth Glide",
-    "text": "The xorn can burrow through nonmagical, unworked earth and stone. While doing so, the xorn doesn t disturb the material it moves through."
+    "text": "The xorn can burrow through nonmagical, unworked earth and stone. While doing so, the xorn doesn’t disturb the material it moves through."
    },
    {
     "name": "Treasure Sense",
@@ -11110,7 +12021,7 @@ const RAW = [
   "xp": 450,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 8",
-  "languages": "Understands Common and Giant but can t",
+  "languages": "Understands Common and Giant but can’t",
   "traits": [
    {
     "name": "Undead Fortitude",
@@ -11278,7 +12189,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The baboon has Advantage on an attack roll against a creature if at least one of the baboon s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The baboon has Advantage on an attack roll against a creature if at least one of the baboon’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -11393,7 +12304,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The hawk has Advantage on an attack roll against a creature if at least one of the hawk s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The hawk has Advantage on an attack roll against a creature if at least one of the hawk’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -11507,7 +12418,7 @@ const RAW = [
   "traits": [
    {
     "name": "Jumper",
-    "text": "The cat s jump distance is determined using its Dexterity rather than its Strength."
+    "text": "The cat’s jump distance is determined using its Dexterity rather than its Strength."
    }
   ],
   "actions": [
@@ -11630,7 +12541,7 @@ const RAW = [
   "traits": [
    {
     "name": "Agile",
-    "text": "The deer doesn t provoke an Opportunity Attack when it moves out of an enemy s reach."
+    "text": "The deer doesn’t provoke an Opportunity Attack when it moves out of an enemy’s reach."
    }
   ],
   "actions": [
@@ -11661,7 +12572,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The wolf has Advantage on an attack roll against a creature if at least one of the wolf’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -11801,7 +12712,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The snake doesn t provoke an Opportunity At -"
+    "text": "The snake doesn’t provoke an Opportunity At -"
    }
   ],
   "actions": [
@@ -11836,7 +12747,7 @@ const RAW = [
    },
    {
     "name": "Standing Leap",
-    "text": "The frog s Long Jump is up to 10 feet and its High Jump is up to 5 feet with or without a run - ning start."
+    "text": "The frog’s Long Jump is up to 10 feet and its High Jump is up to 5 feet with or without a run - ning start."
    }
   ],
   "actions": [
@@ -11992,7 +12903,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned con - dition until the start of the centipede s next turn."
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned con - dition until the start of the centipede’s next turn."
    }
   ],
   "bonusActions": [],
@@ -12092,7 +13003,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +8, reach 5 ft. Hit: 21 (3d10 + 5) Piercing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 15). While Grappled, the target has the Restrained condition and can t be targeted by the crocodile s Tail."
+    "text": "Melee Attack Roll: +8, reach 5 ft. Hit: 21 (3d10 + 5) Piercing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 15). While Grappled, the target has the Restrained condition and can’t be targeted by the crocodile’s Tail."
    },
    {
     "name": "Tail",
@@ -12208,7 +13119,7 @@ const RAW = [
    },
    {
     "name": "Standing Leap",
-    "text": "The frog s Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start."
+    "text": "The frog’s Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start."
    }
   ],
   "actions": [
@@ -12218,7 +13129,7 @@ const RAW = [
    },
    {
     "name": "Swallow",
-    "text": "The frog swallows a Small or smaller target it is grappling. While swallowed, the target isn t Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the frog. While swallowing the target, the frog can t use Bite, and if the frog dies, the swallowed target is no lon - ger Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition. At the end of the frog s next turn, the swallowed target takes 5 (2d4) Acid damage. If that damage doesn t kill it, the frog disgorges it, causing it to exit Prone."
+    "text": "The frog swallows a Small or smaller target it is grappling. While swallowed, the target isn’t Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the frog. While swallowing the target, the frog can’t use Bite, and if the frog dies, the swallowed target is no lon - ger Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition. At the end of the frog’s next turn, the swallowed target takes 5 (2d4) Acid damage. If that damage doesn’t kill it, the frog disgorges it, causing it to exit Prone."
    }
   ],
   "bonusActions": [],
@@ -12244,10 +13155,32 @@ const RAW = [
   "actions": [
    {
     "name": "Ram",
-    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature and the goat moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition. 352Giant HyenaLarge Beast, Unaligned AC 12 Initiative +2 (12) HP 45 (6d10 + 12) Speed 50 ft.MODSAVEMODSAVEMODSAVESTR 16 +3 +3DEX 14 +2 +2CON 14 +2 +2INT 2 WIS 12 +1 +1CHA 7 Skills Perception +3 Senses Darkvision 60 ft.; Passive Perception 13 Languages None CR 1 (XP 200; PB +2)"
-   },
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature and the goat moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition. 352"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Giant Hyena",
+  "size": "Large",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 12,
+  "hp": 45,
+  "hpFormula": "6d10 + 12",
+  "speed": "50 ft.MODSAVEMODSAVEMODSAVESTR 16",
+  "cr": "1",
+  "xp": 200,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 13",
+  "languages": "None",
+  "traits": [],
+  "actions": [
    {
-    "name": "ActionsBite",
+    "name": "Bite",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage."
    }
   ],
@@ -12344,7 +13277,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The owl doesn t provoke an Opportunity Attack"
+    "text": "The owl doesn’t provoke an Opportunity Attack"
    }
   ],
   "actions": [
@@ -12354,7 +13287,38 @@ const RAW = [
    },
    {
     "name": "Spellcasting",
-    "text": "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability: At Will: Detect Evil and Good , Detect Magic 1/Day: Clairvoyance 353Giant RatSmall Beast, Unaligned AC 13 Initiative +3 (13) HP 7 (2d6) Speed 30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 7 DEX 16 +3 +5CON 11 +0 +0INT 2 WIS 10 +0 +0CHA 4 Skills Perception +2 Senses Darkvision 60 ft.; Passive Perception 12 Languages None CR 1/8 (XP 25; PB +2)"
+    "text": "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability: At Will: Detect Evil and Good , Detect Magic 1/Day: Clairvoyance 353"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Giant Rat",
+  "size": "Small",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 13,
+  "hp": 7,
+  "hpFormula": "2d6",
+  "speed": "30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 7",
+  "cr": "1/8",
+  "xp": 25,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 60 ft.; Passive Perception 12",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Pack Tactics",
+    "text": "The rat has Advantage on an attack roll against a creature if at least one of the rat’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +5, reach 5 feet. Hit: 5 (1d4 + 3) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -12459,7 +13423,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +9 (with Advantage if the target doesn t have all its Hit Points), reach 5 ft. Hit: 22 (3d10 + 6) Piercing damage."
+    "text": "Melee Attack Roll: +9 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 22 (3d10 + 6) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -12493,7 +13457,7 @@ const RAW = [
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage plus 7 (2d6) Poison damage."
    },
    {
-    "name": "Web (Recharge 5 6)",
+    "name": "Web (Recharge 5–6)",
     "text": "Dexterity Saving Throw: DC 13, one creature the spider can see within 60 feet. Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage)."
    }
   ],
@@ -12523,7 +13487,7 @@ const RAW = [
    },
    {
     "name": "Standing Leap",
-    "text": "The toad s Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start."
+    "text": "The toad’s Long Jump is up to 20 feet and its High Jump is up to 10 feet with or without a running start."
    }
   ],
   "actions": [
@@ -12533,7 +13497,7 @@ const RAW = [
    },
    {
     "name": "Swallow",
-    "text": "The toad swallows a Medium or smaller target it is grappling. While swallowed, the target isn t Grap - pled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the toad. In addition, the target takes 10 (3d6) Acid damage at the end of each of the toad s turns. The toad can have only one target swallowed at a time, and it can t use Bite while it has a swallowed target. If the toad dies, a swallowed creature is no longer Restrained and can escape from the corpse using 5 feet of move - ment, exiting with the Prone condition."
+    "text": "The toad swallows a Medium or smaller target it is grappling. While swallowed, the target isn’t Grap - pled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the toad. In addition, the target takes 10 (3d6) Acid damage at the end of each of the toad’s turns. The toad can have only one target swallowed at a time, and it can’t use Bite while it has a swallowed target. If the toad dies, a swallowed creature is no longer Restrained and can escape from the corpse using 5 feet of move - ment, exiting with the Prone condition."
    }
   ],
   "bonusActions": [],
@@ -12580,11 +13544,11 @@ const RAW = [
   "xp": 200,
   "proficiencyBonus": 2,
   "senses": "Darkvision 60 ft.; Passive Perception 13",
-  "languages": "Understands Common but can t speak",
+  "languages": "Understands Common but can’t speak",
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture s al - lies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The vulture has Advantage on an attack roll against a creature if at least one of the vulture’s al - lies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -12615,7 +13579,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The wasp doesn t provoke an Opportunity At -"
+    "text": "The wasp doesn’t provoke an Opportunity At -"
    }
   ],
   "actions": [
@@ -12793,7 +13757,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +6 (with Advantage if the tar - get doesn t have all its Hit Points), reach 5 ft. Hit: 14 (3d6 + 4) Piercing damage."
+    "text": "Melee Attack Roll: +6 (with Advantage if the tar - get doesn’t have all its Hit Points), reach 5 ft. Hit: 14 (3d6 + 4) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -12818,7 +13782,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The hyena has Advantage on an attack roll against a creature if at least one of the hyena s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The hyena has Advantage on an attack roll against a creature if at least one of the hyena’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -12850,7 +13814,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 (1d4 1) Piercing damage."
+    "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 (1d4 – 1) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -12907,24 +13871,16 @@ const RAW = [
   "actions": [
    {
     "name": "Spell Components",
-    "text": "The Spellcasting trait notes whether the monster s spellcasting ignores the need for certain spell components. If any spell com - ponents are required, describe the monster s use of Verbal, Somatic, or Material components to signal to characters that it is casting a spell. A monster that requires Material components has them. Casting Times of 1+"
+    "text": "The Spellcasting trait notes whether the monster’s spellcasting ignores the need for certain spell components. If any spell com - ponents are required, describe the monster’s use of Verbal, Somatic, or Material components to signal to characters that it is casting a spell. A monster that requires Material components has them. Casting Times of 1+"
    },
    {
     "name": "Minutes",
-    "text": "If a spell has a cast - ing time of 1 minute or more yet is listed in a spell - casting action, the monster doesn t cast the spell in just one action unless the action s description states otherwise; the monster must take the Magic action on each of its turns and maintain Concentration to cast the spell, as described in"
-   },
-   {
-    "name": "Rules Glossary",
-    "text": "Bonus ActionIf a monster has Bonus Action options, they are listed in this section. See Playing the Game for de - tails on"
+    "text": "If a spell has a cast - ing time of 1 minute or more yet is listed in a spell - casting action, the monster doesn’t cast the spell in just one action unless the action’s description states otherwise; the monster must take the Magic action on each of its turns and maintain Concentration to cast the spell, as described in “Rules Glossary.”Bonus ActionIf a monster has Bonus Action options, they are listed in this section. See “Playing the Game” for de - tails on"
    }
   ],
   "bonusActions": [],
   "reactions": [],
   "legendaryActions": [
-   {
-    "name": "Recharge X Y",
-    "text": "This notation means a monster can use the stat block part once. At the start of each of the monster s turns, roll 1d6. If the roll is within the number range given in the notation (represented by X Y), the monster regains the use of that part, which also recharges when the mon - Recharge 5 6 in an action means a monster can take the action once. Then, at the start of each of the monster s turns, it regains the use of that ac - tion if it rolls a 5 or 6 on 1d6. Recharge after a"
-   },
    {
     "name": "Short or Long Rest",
     "text": "This nota - tion means the monster can use the stat block Rest to use it again. System Reference Document 5.2.1 254MonstersStat Block OverviewA monster has a stat block that contains the rules necessary to use it in the game. Stat blocks are di - vided into the following parts:"
@@ -12939,15 +13895,15 @@ const RAW = [
    },
    {
     "name": "Ability Scores",
-    "text": "A monster s ability scores, ability"
+    "text": "A monster’s ability scores, ability"
    },
    {
     "name": "Other Details",
-    "text": "The monster s Senses, Languages, and CR entries appear here. Additional details ap - Resistances, Immunities, and"
+    "text": "The monster’s Senses, Languages, and CR entries appear here. Additional details ap - Resistances, Immunities, and"
    },
    {
     "name": "Gear",
-    "text": "If a monster lacks those details, entries for them don t appear."
+    "text": "If a monster lacks those details, entries for them don’t appear."
    }
   ],
   "missing": []
@@ -12973,7 +13929,7 @@ const RAW = [
    },
    {
     "name": "Immutable Form",
-    "text": "The golem can t shape-shift."
+    "text": "The golem can’t shape-shift."
    },
    {
     "name": "Magic Resistance",
@@ -12995,7 +13951,7 @@ const RAW = [
    },
    {
     "name": "Poison Breath (Recharge 6)",
-    "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Fail - ure: 55 (10d10) Poison damage. Success: Half damage.Knight"
+    "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Fail - ure: 55 (10d10) Poison damage. Success: Half damage."
    }
   ],
   "bonusActions": [],
@@ -13059,7 +14015,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold s al - lies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold’s al - lies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    },
    {
     "name": "Sunlight Sensitivity",
@@ -13069,7 +14025,7 @@ const RAW = [
   "actions": [
    {
     "name": "Dagger",
-    "text": "Melee or Ranged Attack Roll: +4, reach 5 ft. or range 20/60 ft. Hit: 4 (1d4 + 2) Piercing damage. System Reference Document 5.2.1 4Piranha .......................................................... 358 Pirate ............................................................... 314 Pirate Captain ............................................. 314 Pit Fiend ......................................................... 314 Planetar ......................................................... 315 Plesiosaurus ................................................ 358 Polar Bear ..................................................... 359 Pony ................................................................. 359 Priest ............................................................... 316 Priest Acolyte ............................................. 316 Pseudodragon ............................................ 316 Pteranodon .................................................. 359 Purple Worm ............................................... 316 Quasit ............................................................... 317 Rakshasa ........................................................ 317 Rat .................................................................... 359 Raven .............................................................. 359 Red Dragon Wyrmling ........................... 318 Reef Shark .................................................... 360 Remorhaz ......................................................319 Rhinoceros ................................................... 360 Riding Horse ............................................... 360 Roc .................................................................... 320 Roper .............................................................. 320 Rust Monster .............................................. 320 Saber-Toothed Tiger ................................ 360 Sahuagin Warrior ..................................... 321 Salamander .................................................. 321 Satyr ................................................................ 321 Scorpion ........................................................ 360 Scout ................................................................ 322 Sea Hag ........................................................... 322 Seahorse ........................................................ 361 Shadow .......................................................... 322 Shambling Mound .................................... 323 Shield Guardian ......................................... 323 Shrieker Fungus ........................................ 286 Silver Dragon Wyrmling ....................... 324 Skeleton ......................................................... 325 Solar ................................................................ 326 Specter ........................................................... 327 Sphinx of Lore ............................................ 327 Sphinx of Valor ........................................... 328 Sphinx of Wonder ..................................... 327 Spider .............................................................. 361 Spirit Naga .................................................... 329 Sprite ............................................................... 329 Spy .................................................................... 329 Steam Mephit .............................................. 308 Stirge ............................................................... 329 Stone Giant ................................................... 330 Stone Golem ................................................. 330 Storm Giant .................................................. 330 Succubus ....................................................... 331 Swarm of Bats ............................................ 361 Swarm of Crawling Claws .................... 278 Swarm of Insects ...................................... 361 Swarm of Piranhas .................................. 362 Swarm of Rats ............................................ 362 Swarm of Ravens ...................................... 362 Swarm of Venomous Snakes ............... 362 Tarrasque ..................................................... 331 Tiger ................................................................ 363 Tough .............................................................. 332 Tough Boss ................................................... 332 Treant ............................................................. 333 Triceratops ................................................... 363 Troll ................................................................. 333 Troll Limb ..................................................... 333 Tyrannosaurus Rex ................................. 363 Unicorn .......................................................... 334 Vampire ......................................................... 335 Vampire Familiar ...................................... 334 Vampire Spawn .......................................... 334 Venomous Snake ....................................... 363 Violet Fungus .............................................. 286 Vrock ............................................................... 336 Vulture ........................................................... 363 Warhorse ...................................................... 364 Warhorse Skeleton ................................... 326 Warrior Infantry ....................................... 336 Warrior Veteran ........................................ 337 Water Elemental ....................................... 337 Weasel ............................................................ 364 Werebear ...................................................... 337 Wereboar ...................................................... 338 Wererat .......................................................... 338 Weretiger ...................................................... 339 Werewolf ....................................................... 339 White Dragon Wyrmling ...................... 339 Wight .............................................................. 341 Will-o -Wisp ................................................. 341 Winter Wolf ................................................. 342 Wolf .................................................................. 364 Worg ................................................................ 342 Wraith ............................................................ 342 Wyvern .......................................................... 343 Xorn ................................................................. 343 Young Black Dragon ................................ 264 Young Blue Dragon ................................... 266 Young Brass Dragon ................................ 268 Young Bronze Dragon ............................. 270 Young Copper Dragon .............................. 276 Young Gold Dragon .................................. 291 Young Green Dragon ............................... 293 Young Red Dragon .................................... 318 Young Silver Dragon ................................ 324 Young White Dragon ............................... 340 Zombie ........................................................... 343 System Reference Document 5.2.1 3Ankheg ........................................................... 259 Ankylosaurus ............................................. 344 Ape ................................................................... 344 Archelon ........................................................ 344 Archmage ..................................................... 305 Assassin ......................................................... 260 Awakened Shrub ....................................... 260 Awakened Tree .......................................... 260 Axe Beak ........................................................ 260 Azer Sentinel ............................................... 261 Baboon ........................................................... 345 Badger ............................................................ 345 Balor ................................................................ 261 Bandit ............................................................. 261 Bandit Captain ........................................... 261 Barbed Devil ............................................... 262 Basilisk ........................................................... 262 Bat .................................................................... 345 Bearded Devil ............................................. 262 Behir ................................................................ 263 Berserker ...................................................... 263 Black Bear ..................................................... 345 Black Dragon Wyrmling ........................ 263 Black Pudding ............................................. 265 Blink Dog ....................................................... 266 Blood Hawk .................................................. 345 Blue Dragon Wyrmling .......................... 266 Boar ................................................................. 346 Bone Devil .................................................... 267 Brass Dragon Wyrmling ....................... 268 Bronze Dragon Wyrmling .................... 269 Brown Bear .................................................. 346 Bugbear Stalker ......................................... 271 Bugbear Warrior ....................................... 272 Bulette ............................................................ 272 Camel .............................................................. 346 Cat ..................................................................... 346 Centaur Trooper ........................................ 272 Chain Devil ................................................... 272 Chimera ......................................................... 273 Chuul ............................................................... 273 Clay Golem ..................................................... 274 Cloaker ............................................................ 274 Cloud Giant ................................................... 275 Cockatrice .................................................... 275 Commoner .................................................... 275 Constrictor Snake ..................................... 346 Copper Dragon Wyrmling .................... 275 Couatl .............................................................. 277 Crab ................................................................. 347 Crocodile ....................................................... 347 Cultist ............................................................. 278 Cultist Fanatic ............................................ 278 Darkmantle .................................................. 278 Death Dog ..................................................... 279 Deer ................................................................. 347 Deva ................................................................. 279 Dire Wolf ....................................................... 347 Djinni .............................................................. 280 Doppelganger ............................................. 280 Draft Horse .................................................. 347 Dragon Turtle ............................................. 281 Dretch ............................................................. 281 Drider ............................................................. 281 Druid ............................................................... 282 Dryad .............................................................. 282 Dust Mephit ................................................. 307 Eagle ................................................................ 348 Earth Elemental ........................................ 282 Efreeti ............................................................. 283 Elephant ........................................................ 348 Elk ..................................................................... 348 Erinyes ........................................................... 283 Ettercap ......................................................... 284 Ettin ................................................................. 284 Fire Elemental ............................................ 284 Fire Giant ...................................................... 285 Flesh Golem ................................................. 285 Flying Snake ................................................ 348 Frog .................................................................. 348 Frost Giant .................................................... 285 Gargoyle ........................................................ 286 Gelatinous Cube ......................................... 286 Ghast ............................................................... 287 Ghost ............................................................... 287 Ghoul ............................................................... 288 Giant Ape ....................................................... 349 Giant Badger ................................................ 349 Giant Bat ........................................................ 349 Giant Boar ..................................................... 349 Giant Centipede ......................................... 349 Giant Constrictor Snake ........................ 350 Giant Crab ..................................................... 350 Giant Crocodile .......................................... 350 Giant Eagle ................................................... 350 Giant Elk ........................................................ 351 Giant Fire Beetle ....................................... 351 Giant Frog ..................................................... 351 Giant Goat ..................................................... 351 Giant Hyena ................................................. 352 Giant Lizard ................................................. 352 Giant Octopus ............................................. 352 Giant Owl ...................................................... 352 Giant Rat ........................................................ 353 Giant Scorpion ............................................ 353 Giant Seahorse ........................................... 353 Giant Shark .................................................. 353 Giant Spider ................................................. 353 Giant Toad .................................................... 354 Giant Venomous Snake ........................... 354 Giant Vulture .............................................. 354 Giant Wasp ................................................... 354 Giant Weasel ................................................ 355 Giant Wolf Spider ...................................... 355 Gibbering Mouther ................................... 288 Glabrezu ........................................................ 289 Gladiator ....................................................... 289 Gnoll Warrior .............................................. 289 Goat .................................................................. 355 Goblin Boss .................................................. 290 Goblin Minion ............................................. 290 Goblin Warrior ........................................... 290 Gold Dragon Wyrmling .......................... 290 Gorgon ............................................................ 292 Gray Ooze ...................................................... 293 Green Dragon Wyrmling ....................... 293 Green Hag ..................................................... 295 Grick ................................................................ 295 Griffon ............................................................ 295 Grimlock ........................................................ 296 Guard .............................................................. 296 Guard Captain ............................................ 296 Guardian Naga ........................................... 296 Half-Dragon ................................................. 297 Harpy .............................................................. 297 Hawk ............................................................... 355 Hell Hound ................................................... 297 Hezrou ............................................................ 298 Hill Giant ....................................................... 298 Hippogriff ..................................................... 298 Hippopotamus ........................................... 355 Hobgoblin Captain ................................... 299 Hobgoblin Warrior ................................... 298 Homunculus ................................................ 299 Horned Devil ............................................... 299 Hunter Shark ............................................... 356 Hydra .............................................................. 300 Hyena .............................................................. 356 Ice Devil ......................................................... 300 Ice Mephit ..................................................... 307 Imp ................................................................... 300 Incubus .......................................................... 301 Invisible Stalker ........................................ 301 Iron Golem .................................................... 302 Jackal ............................................................... 356 Killer Whale ................................................ 356 Knight ............................................................. 302 Kobold Warrior .......................................... 302 Kraken ............................................................ 303 Lamia .............................................................. 303 Lemure ........................................................... 304 Lich .................................................................. 304 Lion .................................................................. 356 Lizard ............................................................. 357 Mage ................................................................ 305 Magma Mephit ........................................... 307 Magmin .......................................................... 305 Mammoth ..................................................... 357 Manticore ..................................................... 306 Marilith .......................................................... 306 Mastiff ............................................................ 357 Medusa ........................................................... 306 Merfolk Skirmisher ................................. 308 Merrow .......................................................... 308 Mimic .............................................................. 308 Minotaur of Baphomet ........................... 309 Minotaur Skeleton .................................... 326 Mule ................................................................. 357 Mummy .......................................................... 309 Mummy Lord .............................................. 309 Nalfeshnee .................................................... 310 Night Hag ...................................................... 311 Nightmare .................................................... 311 Noble ............................................................... 312 Ochre Jelly .................................................... 312 Octopus .......................................................... 357 Ogre ................................................................. 312 Ogre Zombie ................................................ 344 Oni .................................................................... 312 Otyugh ........................................................... 313 Owl ................................................................... 358 Owlbear ......................................................... 313 Panther .......................................................... 358 Pegasus .......................................................... 313 Phase Spider ................................................ 313 364MODSAVEMODSAVEMODSAVESTR 7 DEX 10 +0 +0CON 13 +1 +1INT 2 WIS 12 +1 +1CHA Skills Perception +3 Senses Passive Perception 13 Languages None CR 0 (XP 10; PB +2)"
+    "text": "Melee or Ranged Attack Roll: +4, reach 5 ft. or range 20/60 ft. Hit: 4 (1d4 + 2) Piercing damage. System Reference Document 5.2.1 4Piranha .......................................................... 358 Pirate ............................................................... 314 Pirate Captain ............................................. 314 Pit Fiend ......................................................... 314 Planetar ......................................................... 315 Plesiosaurus ................................................ 358 Polar Bear ..................................................... 359 Pony ................................................................. 359 Priest ............................................................... 316 Priest Acolyte ............................................. 316 Pseudodragon ............................................ 316 Pteranodon .................................................. 359 Purple Worm ............................................... 316 Quasit ............................................................... 317 Rakshasa ........................................................ 317 Rat .................................................................... 359 Raven .............................................................. 359 Red Dragon Wyrmling ........................... 318 Reef Shark .................................................... 360 Remorhaz ......................................................319 Rhinoceros ................................................... 360 Riding Horse ............................................... 360 Roc .................................................................... 320 Roper .............................................................. 320 Rust Monster .............................................. 320 Saber-Toothed Tiger ................................ 360 Sahuagin Warrior ..................................... 321 Salamander .................................................. 321 Satyr ................................................................ 321 Scorpion ........................................................ 360 Scout ................................................................ 322 Sea Hag ........................................................... 322 Seahorse ........................................................ 361 Shadow .......................................................... 322 Shambling Mound .................................... 323 Shield Guardian ......................................... 323 Shrieker Fungus ........................................ 286 Silver Dragon Wyrmling ....................... 324 Skeleton ......................................................... 325 Solar ................................................................ 326 Specter ........................................................... 327 Sphinx of Lore ............................................ 327 Sphinx of Valor ........................................... 328 Sphinx of Wonder ..................................... 327 Spider .............................................................. 361 Spirit Naga .................................................... 329 Sprite ............................................................... 329 Spy .................................................................... 329 Steam Mephit .............................................. 308 Stirge ............................................................... 329 Stone Giant ................................................... 330 Stone Golem ................................................. 330 Storm Giant .................................................. 330 Succubus ....................................................... 331 Swarm of Bats ............................................ 361 Swarm of Crawling Claws .................... 278 Swarm of Insects ...................................... 361 Swarm of Piranhas .................................. 362 Swarm of Rats ............................................ 362 Swarm of Ravens ...................................... 362 Swarm of Venomous Snakes ............... 362 Tarrasque ..................................................... 331 Tiger ................................................................ 363 Tough .............................................................. 332 Tough Boss ................................................... 332 Treant ............................................................. 333 Triceratops ................................................... 363 Troll ................................................................. 333 Troll Limb ..................................................... 333 Tyrannosaurus Rex ................................. 363 Unicorn .......................................................... 334 Vampire ......................................................... 335 Vampire Familiar ...................................... 334 Vampire Spawn .......................................... 334 Venomous Snake ....................................... 363 Violet Fungus .............................................. 286 Vrock ............................................................... 336 Vulture ........................................................... 363 Warhorse ...................................................... 364 Warhorse Skeleton ................................... 326 Warrior Infantry ....................................... 336 Warrior Veteran ........................................ 337 Water Elemental ....................................... 337 Weasel ............................................................ 364 Werebear ...................................................... 337 Wereboar ...................................................... 338 Wererat .......................................................... 338 Weretiger ...................................................... 339 Werewolf ....................................................... 339 White Dragon Wyrmling ...................... 339 Wight .............................................................. 341 Will-o’-Wisp ................................................. 341 Winter Wolf ................................................. 342 Wolf .................................................................. 364 Worg ................................................................ 342 Wraith ............................................................ 342 Wyvern .......................................................... 343 Xorn ................................................................. 343 Young Black Dragon ................................ 264 Young Blue Dragon ................................... 266 Young Brass Dragon ................................ 268 Young Bronze Dragon ............................. 270 Young Copper Dragon .............................. 276 Young Gold Dragon .................................. 291 Young Green Dragon ............................... 293 Young Red Dragon .................................... 318 Young Silver Dragon ................................ 324 Young White Dragon ............................... 340 Zombie ........................................................... 343 System Reference Document 5.2.1 3Ankheg ........................................................... 259 Ankylosaurus ............................................. 344 Ape ................................................................... 344 Archelon ........................................................ 344 Archmage ..................................................... 305 Assassin ......................................................... 260 Awakened Shrub ....................................... 260 Awakened Tree .......................................... 260 Axe Beak ........................................................ 260 Azer Sentinel ............................................... 261 Baboon ........................................................... 345 Badger ............................................................ 345 Balor ................................................................ 261 Bandit ............................................................. 261 Bandit Captain ........................................... 261 Barbed Devil ............................................... 262 Basilisk ........................................................... 262 Bat .................................................................... 345 Bearded Devil ............................................. 262 Behir ................................................................ 263 Berserker ...................................................... 263 Black Bear ..................................................... 345 Black Dragon Wyrmling ........................ 263 Black Pudding ............................................. 265 Blink Dog ....................................................... 266 Blood Hawk .................................................. 345 Blue Dragon Wyrmling .......................... 266 Boar ................................................................. 346 Bone Devil .................................................... 267 Brass Dragon Wyrmling ....................... 268 Bronze Dragon Wyrmling .................... 269 Brown Bear .................................................. 346 Bugbear Stalker ......................................... 271 Bugbear Warrior ....................................... 272 Bulette ............................................................ 272 Camel .............................................................. 346 Cat ..................................................................... 346 Centaur Trooper ........................................ 272 Chain Devil ................................................... 272 Chimera ......................................................... 273 Chuul ............................................................... 273 Clay Golem ..................................................... 274 Cloaker ............................................................ 274 Cloud Giant ................................................... 275 Cockatrice .................................................... 275 Commoner .................................................... 275 Constrictor Snake ..................................... 346 Copper Dragon Wyrmling .................... 275 Couatl .............................................................. 277 Crab ................................................................. 347 Crocodile ....................................................... 347 Cultist ............................................................. 278 Cultist Fanatic ............................................ 278 Darkmantle .................................................. 278 Death Dog ..................................................... 279 Deer ................................................................. 347 Deva ................................................................. 279 Dire Wolf ....................................................... 347 Djinni .............................................................. 280 Doppelganger ............................................. 280 Draft Horse .................................................. 347 Dragon Turtle ............................................. 281 Dretch ............................................................. 281 Drider ............................................................. 281 Druid ............................................................... 282 Dryad .............................................................. 282 Dust Mephit ................................................. 307 Eagle ................................................................ 348 Earth Elemental ........................................ 282 Efreeti ............................................................. 283 Elephant ........................................................ 348 Elk ..................................................................... 348 Erinyes ........................................................... 283 Ettercap ......................................................... 284 Ettin ................................................................. 284 Fire Elemental ............................................ 284 Fire Giant ...................................................... 285 Flesh Golem ................................................. 285 Flying Snake ................................................ 348 Frog .................................................................. 348 Frost Giant .................................................... 285 Gargoyle ........................................................ 286 Gelatinous Cube ......................................... 286 Ghast ............................................................... 287 Ghost ............................................................... 287 Ghoul ............................................................... 288 Giant Ape ....................................................... 349 Giant Badger ................................................ 349 Giant Bat ........................................................ 349 Giant Boar ..................................................... 349 Giant Centipede ......................................... 349 Giant Constrictor Snake ........................ 350 Giant Crab ..................................................... 350 Giant Crocodile .......................................... 350 Giant Eagle ................................................... 350 Giant Elk ........................................................ 351 Giant Fire Beetle ....................................... 351 Giant Frog ..................................................... 351 Giant Goat ..................................................... 351 Giant Hyena ................................................. 352 Giant Lizard ................................................. 352 Giant Octopus ............................................. 352 Giant Owl ...................................................... 352 Giant Rat ........................................................ 353 Giant Scorpion ............................................ 353 Giant Seahorse ........................................... 353 Giant Shark .................................................. 353 Giant Spider ................................................. 353 Giant Toad .................................................... 354 Giant Venomous Snake ........................... 354 Giant Vulture .............................................. 354 Giant Wasp ................................................... 354 Giant Weasel ................................................ 355 Giant Wolf Spider ...................................... 355 Gibbering Mouther ................................... 288 Glabrezu ........................................................ 289 Gladiator ....................................................... 289 Gnoll Warrior .............................................. 289 Goat .................................................................. 355 Goblin Boss .................................................. 290 Goblin Minion ............................................. 290 Goblin Warrior ........................................... 290 Gold Dragon Wyrmling .......................... 290 Gorgon ............................................................ 292 Gray Ooze ...................................................... 293 Green Dragon Wyrmling ....................... 293 Green Hag ..................................................... 295 Grick ................................................................ 295 Griffon ............................................................ 295 Grimlock ........................................................ 296 Guard .............................................................. 296 Guard Captain ............................................ 296 Guardian Naga ........................................... 296 Half-Dragon ................................................. 297 Harpy .............................................................. 297 Hawk ............................................................... 355 Hell Hound ................................................... 297 Hezrou ............................................................ 298 Hill Giant ....................................................... 298 Hippogriff ..................................................... 298 Hippopotamus ........................................... 355 Hobgoblin Captain ................................... 299 Hobgoblin Warrior ................................... 298 Homunculus ................................................ 299 Horned Devil ............................................... 299 Hunter Shark ............................................... 356 Hydra .............................................................. 300 Hyena .............................................................. 356 Ice Devil ......................................................... 300 Ice Mephit ..................................................... 307 Imp ................................................................... 300 Incubus .......................................................... 301 Invisible Stalker ........................................ 301 Iron Golem .................................................... 302 Jackal ............................................................... 356 Killer Whale ................................................ 356 Knight ............................................................. 302 Kobold Warrior .......................................... 302 Kraken ............................................................ 303 Lamia .............................................................. 303 Lemure ........................................................... 304 Lich .................................................................. 304 Lion .................................................................. 356 Lizard ............................................................. 357 Mage ................................................................ 305 Magma Mephit ........................................... 307 Magmin .......................................................... 305 Mammoth ..................................................... 357 Manticore ..................................................... 306 Marilith .......................................................... 306 Mastiff ............................................................ 357 Medusa ........................................................... 306 Merfolk Skirmisher ................................. 308 Merrow .......................................................... 308 Mimic .............................................................. 308 Minotaur of Baphomet ........................... 309 Minotaur Skeleton .................................... 326 Mule ................................................................. 357 Mummy .......................................................... 309 Mummy Lord .............................................. 309 Nalfeshnee .................................................... 310 Night Hag ...................................................... 311 Nightmare .................................................... 311 Noble ............................................................... 312 Ochre Jelly .................................................... 312 Octopus .......................................................... 357 Ogre ................................................................. 312 Ogre Zombie ................................................ 344 Oni .................................................................... 312 Otyugh ........................................................... 313 Owl ................................................................... 358 Owlbear ......................................................... 313 Panther .......................................................... 358 Pegasus .......................................................... 313 Phase Spider ................................................ 313 364MODSAVEMODSAVEMODSAVESTR 7 DEX 10 +0 +0CON 13 +1 +1INT 2 WIS 12 +1 +1CHA Skills Perception +3 Senses Passive Perception 13 Languages None CR 0 (XP 10; PB +2)"
    }
   ],
   "bonusActions": [],
@@ -13150,7 +14106,7 @@ const RAW = [
   "traits": [
    {
     "name": "Pack Tactics",
-    "text": "The wolf has Advantage on attack rolls against a creature if at least one of the wolf s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The wolf has Advantage on attack rolls against a creature if at least one of the wolf’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    }
   ],
   "actions": [
@@ -13247,7 +14203,7 @@ const RAW = [
    },
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 33 (4d12 + 7) Piercing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17). While Grappled, the target has the Restrained condition and can t be targeted by the tyrannosaurus s Tail."
+    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 33 (4d12 + 7) Piercing damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17). While Grappled, the target has the Restrained condition and can’t be targeted by the tyrannosaurus’s Tail."
    },
    {
     "name": "Tail",
@@ -13294,6 +14250,29 @@ const RAW = [
   "hp": 5,
   "hpFormula": "1d8 + 1",
   "speed": "10 ft., Fly 50 ft.",
+  "cr": null,
+  "xp": null,
+  "proficiencyBonus": null,
+  "senses": null,
+  "languages": null,
+  "traits": [],
+  "actions": [],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": [
+   "CR"
+  ]
+ },
+ {
+  "name": "Swarm of Piranhas",
+  "size": "Tiny",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 13,
+  "hp": null,
+  "hpFormula": null,
+  "speed": "5 ft., Swim 40 ft.MODSAVEMODSAVEMODSAVESTR 13",
   "cr": "1",
   "xp": 200,
   "proficiencyBonus": 2,
@@ -13302,7 +14281,7 @@ const RAW = [
   "traits": [
    {
     "name": "Swarm",
-    "text": "The swarm can occupy another creature s space and vice versa, and the swarm can move through any opening large enough for a Tiny piranha. The swarm can t regain Hit Points or gain Temporary"
+    "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny piranha. The swarm can’t regain Hit Points or gain Temporary"
    },
    {
     "name": "Water Breathing",
@@ -13312,13 +14291,137 @@ const RAW = [
   "actions": [
    {
     "name": "Bites",
-    "text": "Melee Attack Roll: +5 (with Advantage if the target doesn t have all its Hit Points), reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage, or 5 (1d4 + 3) Piercing dam - age if the swarm is Bloodied.Swarm of RatsMedium Swarm of Tiny Beasts, Unaligned AC 10 Initiative +0 (10) HP Speed 30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 9 DEX 11 +0 +2CON 9 INT 2 WIS 10 +0 +0CHA 3 Resistances Bludgeoning, Piercing, Slashing Immunities Charmed, Frightened, Grappled, Paralyzed, Senses Darkvision 30 ft.; Passive Perception 10 Languages None CR 1/4 (XP 50; PB +2)"
+    "text": "Melee Attack Roll: +5 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage, or 5 (1d4 + 3) Piercing dam - age if the swarm is Bloodied."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": [
+   "HP"
+  ]
+ },
+ {
+  "name": "Swarm of Rats",
+  "size": "Tiny",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 10,
+  "hp": null,
+  "hpFormula": null,
+  "speed": "30 ft., Climb 30 ft.MODSAVEMODSAVEMODSAVESTR 9",
+  "cr": "1/4",
+  "xp": 50,
+  "proficiencyBonus": 2,
+  "senses": "Darkvision 30 ft.; Passive Perception 10",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny rat. The swarm can’t regain Hit Points or gain Temporary Hit Points."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Bites",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": [
+   "HP"
+  ]
+ },
+ {
+  "name": "Swarm of Ravens",
+  "size": "Tiny",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 12,
+  "hp": 11,
+  "hpFormula": "2d8 + 2",
+  "speed": "10 ft., Fly 50 ft.MODSAVEMODSAVEMODSAVESTR 6",
+  "cr": "1/4",
+  "xp": 50,
+  "proficiencyBonus": 2,
+  "senses": "Passive Perception 15",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny raven. The swarm can’t regain Hit Points or gain Temporary Hit Points."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Beaks",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage, or 2 (1d4) Piercing damage if the swarm is"
+   },
+   {
+    "name": "Cacophony (Recharge 6)",
+    "text": "Wisdom Saving Throw: DC 10, one creature in the swarm’s space. Failure: The target has the Deafened condition until the start of the swarm’s next turn. While Deafened, the target also has Disadvantage on ability checks and attack rolls."
    }
   ],
   "bonusActions": [],
   "reactions": [],
   "legendaryActions": [],
   "missing": []
+ },
+ {
+  "name": "Swarm of Venomous Snakes",
+  "size": "Tiny",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 14,
+  "hp": 36,
+  "hpFormula": "8d8",
+  "speed": "30 ft., Swim 30 ft.MODSAVEMODSAVEMODSAVESTR 8",
+  "cr": "2",
+  "xp": 450,
+  "proficiencyBonus": 2,
+  "senses": "Blindsight 10 ft.; Passive Perception 10",
+  "languages": "None",
+  "traits": [],
+  "actions": [],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Seahorse",
+  "size": "Tiny",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 12,
+  "hp": null,
+  "hpFormula": null,
+  "speed": "5 ft., Swim 20 ft.MODSAVEMODSAVEMODSAVESTR 1",
+  "cr": "0",
+  "xp": 0,
+  "proficiencyBonus": 2,
+  "senses": "Passive Perception 12",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Water Breathing",
+    "text": "The seahorse can breathe only underwater."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Bubble Dash",
+    "text": "While underwater, the seahorse moves up to its Swim Speed without provoking Opportu - nity Attacks."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": [
+   "HP"
+  ]
  },
  {
   "name": "Spider",
@@ -13343,7 +14446,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 2 (1d4) Poison damage.Swarm of BatsL"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 2 (1d4) Poison damage."
    }
   ],
   "bonusActions": [],
@@ -13354,7 +14457,7 @@ const RAW = [
   ]
  },
  {
-  "name": "Large Swarm of",
+  "name": "Swarm of Bats",
   "size": "Tiny",
   "creatureType": "Beast",
   "alignment": "Unaligned",
@@ -13370,13 +14473,83 @@ const RAW = [
   "traits": [
    {
     "name": "Swarm",
-    "text": "The swarm can occupy another creature s space and vice versa, and the swarm can move through any opening large enough for a Tiny bat. The swarm can t regain Hit Points or gain Temporary Hit Points."
+    "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny bat. The swarm can’t regain Hit Points or gain Temporary Hit Points."
    }
   ],
   "actions": [
    {
     "name": "Bites",
-    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied.Swarm of InsectsMedium Swarm of Tiny Beasts, Unaligned AC 11 Initiative +1 (11) HP 19 (3d8 + 6) Speed 20 ft., Climb or Fly 20 ft. (GM s choice)MODSAVEMODSAVEMODSAVESTR 3 DEX 13 +1 +1CON +2 +2INT 1 WIS 7 CHA 1 Resistances Bludgeoning, Piercing, Slashing Immunities Charmed, Frightened, Grappled, Paralyzed, Senses Blindsight 30 ft.; Passive Perception 8 Languages None CR 1/2 (XP 100; PB +2)"
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Swarm of Insects",
+  "size": "Tiny",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 11,
+  "hp": 19,
+  "hpFormula": "3d8 + 6",
+  "speed": "20 ft., Climb or Fly 20 ft. (GM’s choice)MODSAVEMODSAVEMODSAVESTR 3",
+  "cr": "1/2",
+  "xp": 100,
+  "proficiencyBonus": 2,
+  "senses": "Blindsight 30 ft.; Passive Perception 8",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Spider Climb",
+    "text": "If the swarm has a Climb Speed, the - ings, without needing to make an ability check."
+   },
+   {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature’s space and vice versa, and the swarm can move through any opening large enough for a Tiny insect. The swarm can’t regain Hit Points or gain Temporary Hit Points."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Bites",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 6 (2d4 + 1) Poison damage, or 3 (1d4 + 1) Poison damage if the swarm is Bloodied. 360"
+   }
+  ],
+  "bonusActions": [],
+  "reactions": [],
+  "legendaryActions": [],
+  "missing": []
+ },
+ {
+  "name": "Reef Shark",
+  "size": "Medium",
+  "creatureType": "Beast",
+  "alignment": "Unaligned",
+  "ac": 12,
+  "hp": 22,
+  "hpFormula": "4d8 + 4",
+  "speed": "5 ft., Swim 30 ft.MODSAVEMODSAVEMODSAVESTR",
+  "cr": "1/2",
+  "xp": 100,
+  "proficiencyBonus": 2,
+  "senses": "Blindsight 30 ft.; Passive Perception 12",
+  "languages": "None",
+  "traits": [
+   {
+    "name": "Pack Tactics",
+    "text": "The shark has Advantage on an attack roll against a creature if at least one of the shark’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
+   },
+   {
+    "name": "Water Breathing",
+    "text": "The shark can breathe only underwater."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Piercing damage."
    }
   ],
   "bonusActions": [],
@@ -13581,7 +14754,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The pteranodon doesn t provoke an Opportunity"
+    "text": "The pteranodon doesn’t provoke an Opportunity"
    }
   ],
   "actions": [
@@ -13612,7 +14785,7 @@ const RAW = [
   "traits": [
    {
     "name": "Agile",
-    "text": "The rat doesn t provoke an Opportunity Attack when it moves out of an enemy s reach."
+    "text": "The rat doesn’t provoke an Opportunity Attack when it moves out of an enemy’s reach."
    }
   ],
   "actions": [
@@ -13685,7 +14858,7 @@ const RAW = [
   "traits": [
    {
     "name": "Flyby",
-    "text": "The owl doesn t provoke an Opportunity Attack"
+    "text": "The owl doesn’t provoke an Opportunity Attack"
    }
   ],
   "actions": [
@@ -13755,7 +14928,7 @@ const RAW = [
   "actions": [
    {
     "name": "Bite",
-    "text": "Melee Attack Roll: +5 (with Advantage if the target doesn t have all its Hit Points), reach 5 ft. Hit: 1 Pierc - ing damage."
+    "text": "Melee Attack Roll: +5 (with Advantage if the target doesn’t have all its Hit Points), reach 5 ft. Hit: 1 Pierc - ing damage."
    }
   ],
   "bonusActions": [],
@@ -13786,7 +14959,7 @@ const RAW = [
    },
    {
     "name": "Pack Tactics",
-    "text": "The lion has Advantage on an attack roll against a creature if at least one of the lion s allies is within 5 feet of the creature and the ally doesn t have the Incapacitated condition."
+    "text": "The lion has Advantage on an attack roll against a creature if at least one of the lion’s allies is within 5 feet of the creature and the ally doesn’t have the Incapacitated condition."
    },
    {
     "name": "Running Leap",
@@ -13804,7 +14977,7 @@ const RAW = [
    },
    {
     "name": "Roar",
-    "text": "Wisdom Saving Throw: DC 11, one creature within 15 feet. Failure: The target has the Frightened condition until the start of the lion s next turn."
+    "text": "Wisdom Saving Throw: DC 11, one creature within 15 feet. Failure: The target has the Frightened condition until the start of the lion’s next turn."
    }
   ],
   "bonusActions": [],
