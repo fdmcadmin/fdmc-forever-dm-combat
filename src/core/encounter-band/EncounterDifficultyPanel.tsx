@@ -34,6 +34,7 @@ import {
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
+import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
@@ -220,6 +221,18 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       });
     } catch { return null; }
   }, [partyLevel, partySize, equipmentMode, arrivingSpent]);
+
+  /**
+   * ⚠ FEATS LAND ON THE LINES THAT ALREADY EXIST, not on a panel of their own.
+   *
+   * Christopher: *"the feats should show next to the dpr as a increase or in the healing if it
+   * increases sustain above the party line"*, and *"i didnt ask for a new party estimator."*
+   *
+   * Read from the characters' own feats/features tabs — the same pair `deriveActorStats` reads —
+   * and priced with every `resolved*` flag TRUE, because the entered sheet already contains the
+   * AC and HP a feat grants. That guard is what stops the app recalculating what a DM typed in.
+   */
+  const partyFeats = useMemo(() => partyFeatsFromActors(chosen as unknown[]), [chosen]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -503,7 +516,26 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                         {partySize}P · L{partyLevel} · {equipmentMode === "brokenChain" ? "Broken Chain" : "Standard"}
                         {" · party "}{profile.dpr.round1.toFixed(0)}/{profile.dpr.round2.toFixed(0)}/
                         {profile.dpr.round3.toFixed(0)}/{profile.dpr.round4Plus.toFixed(0)} DPR
+                        {partyFeats.dpr > 0 && (
+                          <span style={{ color: "#e0b070" }} title={partyFeats.matched.map(m => `${m.actor}: ${m.feats.join(", ")}`).join(" · ")}>
+                            {" +"}{partyFeats.dpr.toFixed(1)}{" from feats"}
+                          </span>
+                        )}
                         {" · sustain "}{profile.sustain.toFixed(0)}
+                        {partyFeats.partyEhp > 0 && (
+                          <span style={{ color: "#7be08a" }} title={partyFeats.matched.map(m => `${m.actor}: ${m.feats.join(", ")}`).join(" · ")}>
+                            {" +"}{partyFeats.partyEhp.toFixed(0)}{" healing from feats"}
+                          </span>
+                        )}
+                        {partyFeats.needsInput.length > 0 && (
+                          /* ⚠ SAID, NOT SWALLOWED. A feat that could not be priced is a question,
+                             excluded from the two figures above rather than added as zero. */
+                          <span style={{ color: "#c0a060" }}
+                            title={partyFeats.needsInput.map(n => `${n.feat} · ${n.channel} — needs ${n.missing.join(", ")}`).join("\n")}>
+                            {" · "}{partyFeats.needsInput.length}{" feat channel"}
+                            {partyFeats.needsInput.length === 1 ? "" : "s"}{" need input"}
+                          </span>
+                        )}
                       </div>
                       {/*
                         ⚠ UNDER SUSTAIN, NOT INSIDE IT — and that is the whole point.

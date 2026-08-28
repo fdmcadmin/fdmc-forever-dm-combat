@@ -629,8 +629,14 @@ const MOVE_TARGETS: Array<{ id: TabId; label: string }> = [
   { id: "main", label: "Actions" },
   { id: "bonus", label: "Bonus" },
   { id: "bond", label: "Bonds" },
+  /**
+   * ⚠ FEATURES IS A DESTINATION; FEATS IS NO LONGER OFFERED AS ONE.
+   *
+   * Moving an entry INTO Feats would undo the merge one row at a time. Reading that tab still
+   * works everywhere and `migrateFeatsIntoFeatures` empties it once, so the only direction left
+   * is the one Christopher asked for: *"fix the feats to be movable to the features tab."*
+   */
   { id: "features", label: "Class Actions" },
-  { id: "feats", label: "Feats" },
   { id: "checks", label: "Checks" },
   { id: "resources", label: "Resources" },
   { id: "outOfCombat", label: "Out of Combat" },

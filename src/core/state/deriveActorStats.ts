@@ -165,8 +165,9 @@ export function deriveActorStats(
   // equipment. Each feat in the Feats tab that carries metadata.statEffects becomes a
   // pseudo-item (Tough → +HP, an ASI feat → +STR, etc.). Initiative bonuses are picked
   // up separately by getTraitInitiativeBonus, which already scans every tab.
-  // Both tabs: `features` is being retired into `feats`, and a mechanical entry must keep
-  // feeding derived stats regardless of which one it currently sits on.
+  // Both tabs: `feats` is being retired into `features` (the editor no longer offers a Feats
+  // step), and a mechanical entry must keep feeding derived stats regardless of which one it
+  // currently sits on — a character that has not migrated yet must price identically.
   const featItems: EquipmentItem[] = [...(actor.tabs.feats ?? []), ...(actor.tabs.features ?? [])]
     .filter(f => f.metadata?.statEffects?.length)
     .map(f => ({

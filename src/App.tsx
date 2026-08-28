@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
+import { migrateFeatsIntoFeatures } from "./core/campaign/migrateFeatsIntoFeatures";
 import appManifest from "../public/manifest.json";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
@@ -853,6 +854,15 @@ export default function App() {
      * the failure this codebase has already paid for twice.
      */
     repairDuplicateResistance(BROKEN_CHAIN_MONSTER_LIBRARY);
+    /**
+     * ⚠ ONE TAB FOR FEATS AND CLASS FEATURES, AND IT IS FEATURES.
+     *
+     * Christopher: *"make sure features tab is what is shown on new dnd mod actors as well as
+     * existing actors."* New actors get it because the editor no longer offers a Feats step;
+     * existing ones get it here. The readers still accept both, so a character that has not
+     * migrated keeps working — the migration moves the DATA, it is not a precondition.
+     */
+    migrateFeatsIntoFeatures(loadActorLibrary, saveActorLibrary);
   }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).

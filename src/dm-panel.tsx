@@ -16,6 +16,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
+import { migrateFeatsIntoFeatures } from "./core/campaign/migrateFeatsIntoFeatures";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 
@@ -39,7 +40,6 @@ import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
-import { PartyEstimatorPanel } from "./core/encounter-band/PartyEstimatorPanel";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
 import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -202,6 +202,15 @@ function DmPanelApp() {
      * the failure this codebase has already paid for twice.
      */
     repairDuplicateResistance(BROKEN_CHAIN_MONSTER_LIBRARY);
+    /**
+     * ⚠ ONE TAB FOR FEATS AND CLASS FEATURES, AND IT IS FEATURES.
+     *
+     * Christopher: *"make sure features tab is what is shown on new dnd mod actors as well as
+     * existing actors."* New actors get it because the editor no longer offers a Feats step;
+     * existing ones get it here. The readers still accept both, so a character that has not
+     * migrated keeps working — the migration moves the DATA, it is not a precondition.
+     */
+    migrateFeatsIntoFeatures(loadActorLibrary, saveActorLibrary);
   }, []);
 
   // ── Token panel: monster roster from localStorage ─────────────────────────
@@ -961,10 +970,6 @@ function DmPanelApp() {
               actors={actors}
             />
             <CreatureEstimatorPanel monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library} />
-            {/* The PC side of the same question. The creature estimator prices one MONSTER;
-                this prices the PARTY — its feats and the healing it actually brings. The healing
-                reader is the same one the difficulty panel uses, not a second implementation. */}
-            <PartyEstimatorPanel actors={actors} />
           </div>
         )}
         {panelId === "monsters" && (

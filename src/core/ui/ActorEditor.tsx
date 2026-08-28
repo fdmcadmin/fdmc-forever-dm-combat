@@ -123,7 +123,18 @@ const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   notes: "Notes",
 };
 
-const EDITOR_TABS: EditorTab[] = ["profile", "combat", "features", "bonds", "spells", "resources", "feats", "equipment", "notes"];
+/**
+ * ⚠ NO FEATS STEP. Feats and class features are ONE tab now, and it is Features.
+ *
+ * Christopher: *"they are suppose to be shown on the actor under features [...] one needs to go
+ * away"*. Removing the step is what makes that true for a NEW actor; `migrateFeatsIntoFeatures`
+ * does it for existing ones.
+ *
+ * ⚠ THE `feats` TAB ID STAYS IN THE TYPE. Stored characters still carry the key, every reader
+ * still accepts it, and an entry can still be MOVED to Features by hand from the move menu. What
+ * goes away is the editor step that invites a DM to put something there in the first place.
+ */
+const EDITOR_TABS: EditorTab[] = ["profile", "combat", "features", "bonds", "spells", "resources", "equipment", "notes"];
 
 // Distinct color accent per creator step (P-UX1). Derived from the shared
 // `tabVisuals` source of truth so the creator's tabs match the character sheet's

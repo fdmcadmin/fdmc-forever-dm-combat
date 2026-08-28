@@ -1,5 +1,5 @@
 import appManifest from "../../../public/manifest.json";
-import { applyAuthorModeFromUrl, verifyAuthorKey } from "../campaign/authorMode";
+import { applyAuthorModeFromUrl } from "../campaign/authorMode";
 import { chassisSources } from "../content/contentScope";
 import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
@@ -562,12 +562,19 @@ export function EncounterLibraryPanel({
    * frame where a native prompt can be suppressed outright — a gate that silently never opens
    * is as bad as one that never closes.
    */
-  const [keyChallenge, setKeyChallenge] = useState<{ label: string; run: () => void } | null>(null);
-  const [keyEntry, setKeyEntry] = useState("");
-  const [keyError, setKeyError] = useState(false);
-  const askAuthorKey = (label: string, run: () => void) => {
-    setKeyEntry(""); setKeyError(false); setKeyChallenge({ label, run });
-  };
+  /**
+   * ⚠ THE KEY IS ENTERED ONCE, NOT PER USE. Christopher: *"i enter the key once and it doesnt
+   * need to be enter again [...] i want the first one."*
+   *
+   * An earlier pass challenged on every download, reasoning that a stored grant travels where
+   * knowing a key does not. True, and not worth it: the author publishes and exports constantly,
+   * and a gate that interrupts a routine action is one that gets worked around. The `?author=`
+   * grant is the gate, and the GitHub token is still what actually stops a stranger publishing.
+   *
+   * Kept as a seam rather than deleted: if a single action ever needs re-confirmation, it asks
+   * here and nothing else changes.
+   */
+  const askAuthorKey = (_label: string, run: () => void) => { run(); };
   // The Broken Chain section is a click-to-open drawer. Collapsed by default; clicking it
   // reveals the lock prompt (if locked) or the campaign encounters (if unlocked).
   const [brokenChainOpen, setBrokenChainOpen] = useState(false);
@@ -1361,43 +1368,6 @@ export function EncounterLibraryPanel({
 
       {/* The fold command is part of the result, because an export that is never folded has
           changed nothing — the file in the downloads folder is not yet in the build. */}
-      {/*
-        ⚠ NOTHING RUNS UNTIL THE KEY IS TYPED. This is not a confirmation dialog — the action is
-        held in `keyChallenge.run` and is only ever invoked from the verified branch below, so a
-        dismissed or mistyped challenge cannot fall through into the export.
-      */}
-      {keyChallenge && (
-        <div style={{ padding: "7px 14px", background: "#161228", borderBottom: "1px solid #3a3160", fontSize: 11, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ color: "#c3b7ff" }}>{keyChallenge.label} — author key required</span>
-          <input
-            type="password"
-            autoFocus
-            value={keyEntry}
-            onChange={e => { setKeyEntry(e.target.value); setKeyError(false); }}
-            onKeyDown={e => { if (e.key === "Enter") (document.getElementById("fdmc-author-key-go") as HTMLButtonElement | null)?.click(); }}
-            style={{ fontSize: 11, padding: "3px 7px", borderRadius: 3, border: `1px solid ${keyError ? "#a3424a" : "#444"}`, background: "#111", color: "#fff", width: 150 }}
-          />
-          <button
-            id="fdmc-author-key-go"
-            type="button"
-            onClick={() => {
-              if (!verifyAuthorKey(keyEntry)) { setKeyError(true); return; }
-              const run = keyChallenge.run;
-              setKeyChallenge(null); setKeyEntry("");
-              run();
-            }}
-            style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
-          >
-            Confirm
-          </button>
-          <button type="button" onClick={() => { setKeyChallenge(null); setKeyEntry(""); setKeyError(false); }}
-            style={{ fontSize: 11, padding: "3px 8px", background: "transparent", color: "#888", border: "1px solid #3a3a52", borderRadius: 3, cursor: "pointer" }}>
-            Cancel
-          </button>
-          {keyError && <span style={{ color: "#e07b8a" }}>That is not the author key.</span>}
-        </div>
-      )}
-
       {authorExportMsg && (
         <div style={{ padding: "5px 14px", background: "#12101f", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#9d8cff", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <span style={{ flex: 1, minWidth: 0 }}>{authorExportMsg}</span>

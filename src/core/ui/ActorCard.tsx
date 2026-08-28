@@ -3504,7 +3504,7 @@ export function ActorCard({
 
     // The style gives the modifier back; without it the off-hand adds none.
     //
-    // Scans BOTH tabs. `features` is being retired into `feats`, and this label match was the
+    // Scans BOTH tabs. `feats` is being retired into `features`, and this label match was the
     // single thing still reading it — pinned to one tab, moving a fighting style across would
     // have silently stripped the modifier from every off-hand attack, with nothing to show
     // why. Reading both means the entry works wherever it currently lives.
