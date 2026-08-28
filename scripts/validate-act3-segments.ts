@@ -24,7 +24,26 @@ import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonst
 
 const lib = BROKEN_CHAIN_MONSTER_LIBRARY as MainMonsterTemplate[];
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+/**
+ * ⚠ THE AUTHORED ID IS THE REFERENCE. A NAME IS NOT.
+ *
+ * This validator crashed with `not in library: Veil-Torn Wyrmling`, because the authored entry for
+ * `broken-chain:act3:veil-torn-wyrmling:v1` is now named "Veilbound Drake Guard". The creature never
+ * moved; only its label did, which is what authoring is for.
+ *
+ * Christopher: *"there should be no 'snapshot' only my authored id, because snapshot means it
+ * reverts to things from before the changes."* So this does NOT keep a table of old names. A roster
+ * entry may be written as the authored templateId, and where a name has drifted the id is what this
+ * file records — nothing here remembers what a creature used to be called, because remembering that
+ * is how a validator quietly starts measuring the wrong creature.
+ *
+ * ⚠ AND NOTHING CAUGHT THE CRASH, because this validator is not in `.github/workflows/gates.yml`.
+ * A gate that is never run is not a gate — one step earlier than the `check:summons` exit-code
+ * fault MASTER records: that one could not fail, this one could not be reached.
+ */
 const find = (n: string) => {
+  const byId = lib.find(m => m.templateId === n);
+  if (byId) return byId;
   const t = lib.find(m => norm(m.name) === norm(n));
   if (!t) throw new Error(`not in library: ${n}`);
   return t;
@@ -71,7 +90,7 @@ const SEGMENTS: Array<{ label: string; level: number; fights: Fight[] }> = [
     label: "Level 8 + 2 Gifts", level: 8, fights: [
       { id: "F7", label: "(redesign)", level: 8, blocked: "Not in v3_15 — the document jumps from FIGHT 6 to FIGHT 9." },
       { id: "F8", label: "(rough redesign)", level: 8, blocked: "Not in v3_15 — the document jumps from FIGHT 6 to FIGHT 9." },
-      { id: "F9", label: "Dragon", level: 8, roster: [["Veil-Torn Dragon", 1], ["Veil-Torn Wyrmling", 2]],
+      { id: "F9", label: "Dragon", level: 8, roster: [["Veil-Torn Dragon", 1], ["broken-chain:act3:veil-torn-wyrmling:v1", 2]],
         ref: { completion: "R4", monsterDamage: 204, usedPct: 46, leftPct: 5 } },
     ],
   },

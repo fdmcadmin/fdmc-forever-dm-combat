@@ -1,4 +1,5 @@
 import appManifest from "../../../public/manifest.json";
+import { applyAuthorModeFromUrl } from "../campaign/authorMode";
 import { chassisSources } from "../content/contentScope";
 import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
@@ -530,6 +531,21 @@ export function EncounterLibraryPanel({
   // Campaign-library unlock state + snap-back watcher (shared module). The panel itself
   // is NEVER gated — only the Broken Chain (campaign) section reads `unlocked`.
   const { unlocked, unlock, lock } = useModuleUnlock();
+  /**
+   * ⚠ TWO DIFFERENT QUESTIONS, TWO DIFFERENT GATES.
+   *
+   *   unlocked   may this install READ the campaign content?
+   *   authorMode is this the author's own install?
+   *
+   * The publish/export controls were gated on `unlocked` alone, which every campaign owner
+   * passes — so every owner was shown the tools that publish the campaign, export the author
+   * payload and dump the whole creature library. Christopher: *"these should only be working
+   * for my version of this app."*
+   *
+   * Read once: the grant lives in storage, and `applyAuthorModeFromUrl` consumes the parameter
+   * and strips it from the address bar so it cannot be copied out of a shared screen.
+   */
+  const [authorMode] = useState(applyAuthorModeFromUrl);
   // The Broken Chain section is a click-to-open drawer. Collapsed by default; clicking it
   // reveals the lock prompt (if locked) or the campaign encounters (if unlocked).
   const [brokenChainOpen, setBrokenChainOpen] = useState(false);
@@ -1135,7 +1151,7 @@ export function EncounterLibraryPanel({
                 title="Create new encounter in My Library">
                 + Encounter
               </button>
-              {unlocked && (
+              {unlocked && authorMode && (
                 <button type="button" onClick={() => handleCreateNew("campaign")}
                   style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", color: "#7b68ee", border: "1px solid #7b68ee55", borderRadius: 3, cursor: "pointer" }}
                   title="Create new encounter in Campaign Library">
@@ -1170,7 +1186,7 @@ export function EncounterLibraryPanel({
             unreachable, or the DM simply wants the file — and because a publish path with no
             offline fallback is one outage away from losing an act.
           */}
-          {unlocked && (
+          {unlocked && authorMode && (
             <button type="button"
               disabled={publishing}
               onClick={() => {
@@ -1189,7 +1205,7 @@ export function EncounterLibraryPanel({
               {publishing ? "⋯ Publishing" : "↑ Publish"}
             </button>
           )}
-          {unlocked && (
+          {unlocked && authorMode && (
             <button type="button"
               onClick={() => setAuthorExportMsg(exportCampaignAuthoring().message)}
               style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee11", color: "#7b68ee99", border: "1px solid #7b68ee33", borderRadius: 3, cursor: "pointer" }}
@@ -1210,7 +1226,7 @@ export function EncounterLibraryPanel({
             consumes. Encounters and equipment ride along untouched, because the fold REPLACES
             encounters and an empty array would delete every authored fight.
           */}
-          {unlocked && (
+          {unlocked && authorMode && (
             <button type="button"
               onClick={() => setAuthorExportMsg(
                 exportFullCreatureLibrary(resolvedLibrary.filter(t => isCampaignTemplate(t.templateId))).message,

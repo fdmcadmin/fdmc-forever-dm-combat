@@ -12,7 +12,8 @@
 #   3. the checks      — behaviour: bonds, storage, slots, monsters, act run
 #   4. trait coverage  — every multiplier can say where it came from
 #   5. trait reader    — the prose reader disagrees with nobody
-#   6. baseline        — no published number moved without being accepted
+#   6. validators     — control pricing, encounter invariants, Act 3 segments
+#   7. baseline        — no published number moved without being accepted
 #
 # The baseline is last because it is the one that fails on a CHANGE rather than a fault. Read
 # its diff, and if every line is intended, run `npm run baseline:accept` and commit the result
@@ -114,6 +115,27 @@ jobs:
 
       - name: check timed bodies
         run: npm run check:timed
+
+      # ⚠ THREE VALIDATORS EXISTED AND CI NEVER RAN THEM. `validate:segments` had been crashing
+      # outright — `not in library: Veil-Torn Wyrmling`, because the authored entry for that
+      # templateId is now named "Veilbound Drake Guard" and the validator matched on the NAME.
+      # Nothing noticed, because a gate that is never reached cannot report anything. That is one
+      # step earlier than the `check:summons` exit-code fault MASTER records: that gate could not
+      # fail, this one could not run.
+      - name: validate control pricing
+        run: npm run validate:control
+
+      - name: validate encounter invariants
+        run: npm run validate:invariants
+
+      # ⚠ REPORTS, DOES NOT YET FAIL. This prints per-fight deviations from the published Act 3
+      # reference figures and still exits 0, so in CI it currently catches crashes and import
+      # breakage rather than drift. Making it fail on deviation needs those figures re-measured
+      # against the authored library first: they were published before 0.7.32, which deliberately
+      # raised the Veil-Torn Dragon and Thought Harrower, and that accounts for most of the gap it
+      # prints today. The authored creature is right; the printed figure is old.
+      - name: validate act 3 segments
+        run: npm run validate:segments
 
       # Fails on any published number that moved. Not a bug report — read the diff.
       - name: check baseline

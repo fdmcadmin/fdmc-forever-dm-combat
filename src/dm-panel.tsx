@@ -15,6 +15,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
+import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 
@@ -188,6 +189,18 @@ function DmPanelApp() {
     seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS);
     seedBaseWeapons();
     migrateEncounterNames();
+    /**
+     * ⚠ A FIX TO THE SHIPPED LIBRARY DOES NOT REACH A CREATURE THE DM HAS SAVED.
+     *
+     * 0.7.60.7 removed a resistance row that was being counted twice. A stored copy outranks the
+     * shipped template by design, so every creature the DM had already edited kept the doubled row
+     * and kept being priced with it — the build reported the bug fixed while the table still ran it.
+     *
+     * Runs here with the other migrations, once, keyed by version. It removes ONE row and leaves
+     * every other edit alone; reverting the creature would have thrown away the DM's work, which is
+     * the failure this codebase has already paid for twice.
+     */
+    repairDuplicateResistance(BROKEN_CHAIN_MONSTER_LIBRARY);
   }, []);
 
   // ── Token panel: monster roster from localStorage ─────────────────────────
