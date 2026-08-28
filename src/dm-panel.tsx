@@ -40,6 +40,10 @@ import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
+import { EngineDiagnosticsPanel } from "./core/encounter-band/EngineDiagnosticsPanel";
+import { isAuthorMode } from "./core/campaign/authorMode";
+import { isModuleUnlocked } from "./core/campaign/moduleUnlock";
+import { WhatsNewPopup } from "./core/ui/WhatsNewPopup";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
 import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -706,9 +710,18 @@ function DmPanelApp() {
    * be chatty.
    */
   const newBuild = useNewBuildAvailable(APP_VERSION);
+  /**
+   * ⚠ ONCE PER VERSION, and only for an unlocked install. Everything the notes describe belongs to
+   * the campaign side, so a locked install has nothing to be told about.
+   */
+  const readmeUnlocked = isModuleUnlocked();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "#0d0d14", color: "#fff" }}>
+      {/* ⚠ ONCE PER VERSION. The read-me opens itself when the build changes and not again,
+          because a notice that reappears every reload is one nobody reads. Unlock-gated: what it
+          documents is all campaign-side. */}
+      <WhatsNewPopup version={APP_VERSION} unlocked={readmeUnlocked} />
       {/* ── A NEWER BUILD IS LIVE ────────────────────────────────────────────────────────
           Christopher: *"why do i have to reload the app every time i publish, shouldnt a cache
           buster make it to where it updates the mod library."*
@@ -970,6 +983,10 @@ function DmPanelApp() {
               actors={actors}
             />
             <CreatureEstimatorPanel monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library} />
+            {/* Gate 7 of the portability spec, as a control rather than a hand-edited build.
+                Author-only: deliberately breaking a capability is not something a player should
+                be able to do to their own table. */}
+            <EngineDiagnosticsPanel enabled={isAuthorMode()} />
           </div>
         )}
         {panelId === "monsters" && (

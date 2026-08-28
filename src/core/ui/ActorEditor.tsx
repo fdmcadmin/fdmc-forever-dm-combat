@@ -159,11 +159,20 @@ const RECOMMENDED_STEPS = new Set<EditorTab>(["combat"]);
 const STEP_HINT: Record<EditorTab, string> = {
   profile: "Required — name, level, and core stats. Everything else builds on this.",
   combat: "Recommended — add the character's actions, bonus actions, and reactions. Choose each entry's type; it's filed automatically.",
-  features: "Optional — class actions & passive features (the card's 'Class Actions' tab). Edit or remove stale entries here.",
+  features:
+    "Class actions, passive features AND feats — feats live here now. "
+    + "Only add a feat that changes something the app CALCULATES: damage, party healing, "
+    + "reach or accuracy. HP, ability scores and granted spells are values you type in, so a "
+    + "feat whose only effect is +HP, an ASI or an extra spell does NOT need an entry — it is "
+    + "already on the sheet, and adding it would price it twice.",
   bonds: "Optional — bonds & primed additives (Rage, Focus, Pressure, Dark Bargain…).",
   spells: "Optional — spells and slot levels.",
   resources: "Optional — resource pools and class features.",
-  feats: "Optional — feats. Add statEffects in data to feed derived stats (Tough → +HP, ASI → +stat).",
+  /**
+   * ⚠ UNREACHABLE — the Feats step was removed and feats live on Features. Kept only because
+   * `EditorTab` still includes the id, so this record must stay total.
+   */
+  feats: "Retired — feats are on the Features tab.",
   equipment: "Optional — equipment bag and attached gear.",
   notes: "Optional — freeform notes. Finish to save the character.",
 };

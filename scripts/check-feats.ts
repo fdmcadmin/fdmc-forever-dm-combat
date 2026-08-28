@@ -8,6 +8,7 @@
 
 import { FEAT_PRICING, featPricing } from "../src/modules/dnd-5e/featPricing.generated";
 import { priceFeat, priceFeats, evaluateExpression } from "../src/modules/dnd-5e/featEvaluator";
+import { partyFeatsFromActors } from "../src/modules/dnd-5e/featsFromActors";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -112,6 +113,66 @@ console.log("\nWhole-table parse");
   }
   ok("every expression in the table parses", unparseable === 0,
     unparseable ? broken.slice(0, 5).join(", ") : `${FEAT_PRICING.length * 3} expressions`);
+}
+
+/* ── A feat added on the FEATURES tab is counted ───────────────────────────────────────── */
+console.log("\nFeats on the Features tab");
+{
+  /**
+   * ⚠ MAGIC INITIATE, NOT HEALER. Healer's expression needs `availableUsesPerRestCycle`, which the
+   * app does not track, so it correctly reports NEEDS_INPUT — an earlier version of this test read
+   * that as the tab not working. Magic Initiate prices from `level` and `round` alone, so it is the
+   * one that can prove counting happens at all.
+   */
+  const onFeatures = partyFeatsFromActors([
+    { name: "Lights Stone", level: 8, tabs: { features: [{ label: "Magic Initiate" }], feats: [] } },
+  ]);
+  ok("a feat on the Features tab is priced", onFeatures.dpr > 0, onFeatures.dpr.toFixed(3));
+  ok("and is attributed to its character",
+    onFeatures.matched.some(m => m.actor === "Lights Stone" && m.feats.includes("Magic Initiate")));
+
+  // ⚠ THE MIGRATION MOVES RATHER THAN COPIES — the same feat on both tabs would count twice.
+  const onBoth = partyFeatsFromActors([
+    { name: "Double", level: 8, tabs: { features: [{ label: "Magic Initiate" }], feats: [{ label: "Magic Initiate" }] } },
+  ]);
+  ok("the same feat on both tabs doubles — which is why the migration moves",
+    Math.abs(onBoth.dpr - onFeatures.dpr * 2) < 1e-9,
+    `${onBoth.dpr.toFixed(3)} vs ${onFeatures.dpr.toFixed(3)}`);
+
+  // A class feature sharing the tab is not a feat: ignored, and reported rather than failing.
+  const mixed = partyFeatsFromActors([
+    { name: "Mixed", level: 8, tabs: { features: [{ label: "Second Wind" }, { label: "Magic Initiate" }] } },
+  ]);
+  ok("a class feature on the tab is not priced", Math.abs(mixed.dpr - onFeatures.dpr) < 1e-9);
+  ok("and is listed as unmatched", mixed.unmatched.includes("Second Wind"));
+
+  // ⚠ A FEAT THE APP CANNOT PRICE IS A QUESTION, NOT A ZERO — and it is still recognised.
+  const healer = partyFeatsFromActors([
+    { name: "Medic", level: 8, tabs: { features: [{ label: "Healer" }] } },
+  ]);
+  ok("Healer is recognised as a feat", healer.matched.some(m => m.feats.includes("Healer")));
+  ok("and reports NEEDS_INPUT rather than counting as zero",
+    healer.needsInput.some(n => n.feat === "Healer" && n.missing.includes("availableUsesPerRestCycle")),
+    healer.needsInput.map(n => n.missing.join(",")).join(" | "));
+
+  // The party profile supplies baseDpr, so share-of-output feats price instead of asking.
+  const alertBlind = partyFeatsFromActors([{ name: "A", level: 8, tabs: { features: [{ label: "Alert" }] } }]);
+  const alertKnown = partyFeatsFromActors([{ name: "A", level: 8, tabs: { features: [{ label: "Alert" }] } }], { baseDpr: 100 });
+  ok("Alert needs baseDpr when the panel has none", alertBlind.needsInput.some(n => n.feat === "Alert"));
+  ok("and prices once the party profile supplies it", alertKnown.dpr > 0 && alertKnown.needsInput.length === 0,
+    alertKnown.dpr.toFixed(3));
+}
+/* ── Static benefits are NOT recalculated ──────────────────────────────────────────────── */
+console.log("\nEntered values are never recomputed");
+{
+  // Christopher: HP, ASI and granted spells are typed in, so a feat whose only effect is one of
+  // those must price at zero — the sheet already contains it.
+  const tough = partyFeatsFromActors([
+    { name: "Tank", level: 10, tabs: { features: [{ label: "Tough" }] } },
+  ]);
+  ok("Tough adds no EHP, because the entered HP already has it",
+    tough.partyEhp === 0 && tough.dpr === 0,
+    `dpr ${tough.dpr} partyEhp ${tough.partyEhp}`);
 }
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);

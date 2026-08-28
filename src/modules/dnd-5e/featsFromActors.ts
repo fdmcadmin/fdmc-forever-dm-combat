@@ -65,7 +65,15 @@ function featEntries(actor: ActorLike): string[] {
  * accuracy inputs belong to one attack against one enemy and are absent, so any feat needing them
  * reports NEEDS_INPUT rather than being priced off a plausible-looking guess.
  */
-export function partyFeatsFromActors(actors: unknown[]): PartyFeatContribution {
+/**
+ * @param known values the app genuinely has. `baseDpr` and `baseEhp` come from the resolved party
+ *              profile, so feats expressed as a share of party output (Alert, Musician) can price
+ *              instead of asking for a number the panel is already showing.
+ */
+export function partyFeatsFromActors(
+  actors: unknown[],
+  known: { baseDpr?: number; baseEhp?: number } = {},
+): PartyFeatContribution {
   const party = (actors as ActorLike[]).filter(Boolean);
   const out: PartyFeatContribution = { dpr: 0, partyEhp: 0, matched: [], unmatched: [], needsInput: [] };
 
@@ -74,16 +82,18 @@ export function partyFeatsFromActors(actors: unknown[]): PartyFeatContribution {
     if (entries.length === 0) continue;
 
     // Only entries the workbook knows are feats. A class feature on the same tab is not one.
-    const known = entries.filter(e => featPricing(e));
+    const knownFeats = entries.filter(e => featPricing(e));
     for (const e of entries) if (!featPricing(e)) out.unmatched.push(e);
-    if (known.length === 0) continue;
+    if (knownFeats.length === 0) continue;
 
     const level = actor.level ?? 1;
-    const totals = priceFeats(known, {
+    const totals = priceFeats(knownFeats, {
       level,
       PB: Math.floor((level - 1) / 4) + 2,
       partySize: party.length,
       round: 1,
+      ...(known.baseDpr !== undefined ? { baseDpr: known.baseDpr } : {}),
+      ...(known.baseEhp !== undefined ? { baseEhp: known.baseEhp } : {}),
       /**
        * ⚠ THE SHEET IS FINAL. Every static benefit is already inside the entered AC, HP, attack
        * bonus and saves, so the expressions' own guards return zero for them. This is the line

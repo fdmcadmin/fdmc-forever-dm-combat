@@ -232,7 +232,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * and priced with every `resolved*` flag TRUE, because the entered sheet already contains the
    * AC and HP a feat grants. That guard is what stops the app recalculating what a DM typed in.
    */
-  const partyFeats = useMemo(() => partyFeatsFromActors(chosen as unknown[]), [chosen]);
+  const partyFeats = useMemo(() => partyFeatsFromActors(chosen as unknown[], {
+    baseDpr: profile?.dpr.round1, baseEhp: profile?.sustain,
+  }), [chosen, profile]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
