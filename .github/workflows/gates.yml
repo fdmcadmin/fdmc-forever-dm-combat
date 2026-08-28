@@ -122,6 +122,13 @@ jobs:
       # Nothing noticed, because a gate that is never reached cannot report anything. That is one
       # step earlier than the `check:summons` exit-code fault MASTER records: that gate could not
       # fail, this one could not run.
+      # ⚠ THE ENGINE BOUNDARY, INCLUDING FAULT INJECTION. Proves the wrapper changes no number,
+      # that a NaN which does not throw is still caught, that breaking one capability leaves the
+      # others active, and that a quarantined capability with no recovery artifact FAILS CLOSED
+      # rather than returning a zero.
+      - name: check engine
+        run: npm run check:engine
+
       - name: validate control pricing
         run: npm run validate:control
 
