@@ -1,4 +1,5 @@
 import type { LairSpec } from "../lair";
+import type { ContentProvenance } from "../../content/contentScope";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "../MonsterJconScanner";
 
 /**
@@ -275,6 +276,15 @@ export type MainMonsterTemplate = {
    * archetype, bond and action-set picks. Marking it says the creature is never used raw.
    */
   isTemplate?: boolean;
+  /**
+   * WHERE THIS RECORD CAME FROM, and therefore what may be done with it.
+   *
+   * Absent means the DM's own content — see `core/content/contentScope.ts` for why that default
+   * is the safe one. A mod stamps this on records it ships as read-only reference, which is how
+   * the chassis picker and the export path learn to leave them alone without either of them
+   * knowing what edition or publisher is involved.
+   */
+  provenance?: ContentProvenance;
   /**
    * Pools of candidate actions and how many of each a body takes. Empty/absent = every action
    * on the creature is simply on it, which is the normal case.

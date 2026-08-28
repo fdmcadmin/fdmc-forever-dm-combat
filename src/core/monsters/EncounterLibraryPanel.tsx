@@ -1,4 +1,5 @@
 import appManifest from "../../../public/manifest.json";
+import { chassisSources } from "../content/contentScope";
 import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
@@ -880,7 +881,19 @@ export function EncounterLibraryPanel({
       return (
         <MonsterTemplateEditor
           template={template}
-          chassisOptions={resolvedLibrary.filter(t => t.templateId !== template.templateId)}
+          /**
+           * ⚠ THE CHASSIS PICKER NEVER SEES REFERENCE CONTENT.
+           *
+           * Christopher: *"the template picker should never even query the [system] runtime
+           * library"*, and *"That restriction should be implemented in the data model, not just
+           * by hiding buttons."*
+           *
+           * So this is a NARROWER LIST, not the library with rows hidden. A picker handed
+           * everything and told to hide some of it is one refactor from showing them again, and
+           * a keyboard selection can reach a row that was only visually suppressed.
+           * `chassisSources` is the engine's answer; it does not know what an SRD is.
+           */
+          chassisOptions={chassisSources(resolvedLibrary.filter(t => t.templateId !== template.templateId))}
           bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
           onSave={handleSaveMonsterTemplate}
           canSaveToCampaign={unlocked}

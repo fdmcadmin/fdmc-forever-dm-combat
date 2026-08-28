@@ -37,6 +37,7 @@
  */
 
 import { loadMonsterLibrary } from "../monsters/dmMonsterLibrary";
+import { exportableRecords } from "../content/contentScope";
 import { loadEncounterLibrary, type EncounterDefinition } from "../monsters/encounterLibrary";
 import { loadEquipmentLibrary, type EquipmentItem } from "../ui/EquipmentBagEditor";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -230,7 +231,17 @@ export function exportCampaignAuthoring(): { ok: boolean; message: string } {
  * The caller passes the resolved library because only it holds the bundled set the resolution is
  * measured against — the same reason `collectCampaignAuthoring` never guesses at it.
  */
+/**
+ * ⚠ AN EXPORT IS REDISTRIBUTION, so reference content does not travel in one.
+ *
+ * Content the app merely DISPLAYS under someone else's terms is not the app's to hand onward
+ * inside a DM's export — that is the case attribution exists to prevent. `exportableRecords`
+ * drops it; the engine decides from provenance and never asks whose reference content it is.
+ *
+ * Campaign and homebrew content still travel in full. Carrying those is the point of the export.
+ */
 export function exportFullCreatureLibrary(library: MainMonsterTemplate[]): { ok: boolean; message: string } {
+  library = exportableRecords(library);
   if (library.length === 0) {
     return { ok: false, message: "No campaign creatures to export — unlock the module first." };
   }

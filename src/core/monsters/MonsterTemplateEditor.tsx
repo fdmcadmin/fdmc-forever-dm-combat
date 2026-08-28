@@ -19,6 +19,7 @@
  */
 
 import React, { useMemo, useState } from "react";
+import { canBeChassis } from "../content/contentScope";
 import type { MainMonsterTemplate, MainMonsterVisibilityState, MonsterArchetype, MonsterClassification, MonsterActionSet } from "./runtime/mainMonsterRuntime";
 import { MONSTER_KINDS } from "./runtime/mainMonsterRuntime";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
@@ -491,7 +492,14 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
   }
 
   function loadChassis(templateId: string) {
+    /**
+     * ⚠ DEFENCE IN DEPTH, ON PURPOSE. `chassisOptions` is already filtered before it arrives,
+     * so this can only fire if a stale id survives a re-render or a future caller forgets. That
+     * is exactly when a data-model rule has to hold: the restriction must not depend on every
+     * caller remembering it.
+     */
     const source = chassisOptions.find(t => t.templateId === templateId);
+    if (source && !canBeChassis(source)) return;
     if (!source) return;
     const payload = chassisFromTemplate(source);
     setDraft(d => ({
