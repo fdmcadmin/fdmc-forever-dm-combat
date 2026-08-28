@@ -782,7 +782,18 @@ export function resolveChassisItem(item: EquipmentItem): EquipmentItem {
   };
 }
 
-export function itemToAction(item: EquipmentItem, equipped = true): ActorAction {
+/**
+ * ⚠ `equipped` IS REQUIRED, AND THAT IS THE POINT.
+ *
+ * It defaulted to TRUE, so `attachItem` — the DM putting a library item on a character — omitted
+ * it and the item arrived WORN: its AC and stat effects applied unasked, and it walked past both
+ * equip caps, which are only checked when something is toggled on. Giving an item is not equipping
+ * it; it goes in the bag and the player decides.
+ *
+ * Every other caller already passed the flag. Making it required means the next one cannot get a
+ * silent default wrong.
+ */
+export function itemToAction(item: EquipmentItem, equipped: boolean): ActorAction {
   item = resolveChassisItem(item);
   // A TO-HIT is what makes something a weapon — not the presence of dice.
   //
@@ -1586,7 +1597,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
 
   function attachItem(item: EquipmentItem) {
     if (equippedIds.has(item.id)) return; // already equipped
-    const newEquipment = [...equippedActions, itemToAction(item)];
+    const newEquipment = [...equippedActions, itemToAction(item, false)];
     const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
     // Weapons also get a rollable attack action in the main (Actions) tab
     if (item.attack || item.damage) {

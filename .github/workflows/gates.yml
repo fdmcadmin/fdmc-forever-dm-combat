@@ -132,6 +132,12 @@ jobs:
       - name: check feats
         run: npm run check:feats
 
+      # The two equip caps and the layer each lives in: attunement is the D&D mod's, T4 Singular is
+      # the Broken Chain's, and the engine asks without knowing either. Written three times before
+      # 0.8.7.3 — two surfaces disagreeing and one (attachItem) silent, attaching items already worn.
+      - name: check equip caps
+        run: npm run check:equip
+
       # ⚠ PACKAGE BEFORE CHECKING. check:engine asserts the candidate is packaged and carries a
       # hash; without this step it would be testing a source checkout that reports "unpackaged".
       - name: package engine

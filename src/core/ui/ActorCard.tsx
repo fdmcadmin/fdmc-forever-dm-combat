@@ -62,7 +62,8 @@ import { loadEquipmentLibrary } from "./EquipmentBagEditor";
 import { findForm, isVersatileForm, offHandBlocker } from "../constants/chassis";
 import { PinnedReactions } from "./PinnedReactions";
 import { CriticalFailureReference } from "./CriticalFailureReference";
-import { isT4Singular } from "../constants/itemTypeCapabilities";
+import { attunementUsage } from "../../modules/dnd-5e/attunementRule";
+import { isT4Singular, singularUsage } from "../../modules/the-broken-chain/singularRule";
 
 /** DM preference: let a player roll a monster's Nat 1 d6. Off unless the DM turns it on. */
 const SEAT_ROLLS_NAT1_KEY = "fdmc.dm.seatRollsMonsterNat1";
@@ -1525,32 +1526,22 @@ export function ActorCard({
   const [sendItemId, setSendItemId] = useState("");
   const [sendToId, setSendToId] = useState("");
 
-  // Attunement is capped at three, and it is EQUIPPED items that hold a slot — an attuned
-  // item sitting in the bag is just cargo. So the count reads `equipped !== false`, the same
-  // test deriveActorStats uses to decide whether an item's bonuses apply.
-  const ATTUNEMENT_LIMIT = 3;
-  const attunedItems = sendableItems.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false);
-  const attunementFull = attunedItems.length >= ATTUNEMENT_LIMIT;
-
   /**
-   * ONE T4 SINGULAR PER CHARACTER — a SECOND cap, on top of attunement.
+   * THE CAPS COME FROM THE MODS — this card does not own either number.
    *
-   * Christopher, 2026-08-17: *"a t4 per character would be a easy fix because it still takes a
-   * attunment slot and we just add a t4=1percharacter."* So a T4 spends one of the three
-   * attunement slots like anything else, AND no character may hold two. The two limits are
-   * independent: a character with one T4 and two ordinary attuned items is legal and full; a
-   * character with one T4 and nothing else still cannot take a second T4.
-   *
-   * ⚠ The tier ladder is the forge's own, documented in `EquipmentLibraryStandalone`: A1+A1 and
-   * A1+A2 make Tier 1, A1+A3/A2+A2/A2+A3 make Tier 2, A3+A3 reaches Tier 3 — and A4 tempered by
-   * a Catalyst is Tier 4. The field is free text in the editor, so "4", "T4" and "Tier 4" are all
-   * read; anything else is not a T4.
-   *
-   * No T4 exists in the campaign library yet (it tops out at tier 2), so this guards a shape the
-   * data has not reached rather than one it currently breaks.
+   * Attunement is 5e's (three, and it is EQUIPPED items that hold a slot — one in the bag is just
+   * cargo). T4 Singular is the Broken Chain's. Both used to be written out here as well as in the
+   * GM-side equip handler, and two implementations of one rule drift. The card now reads the same
+   * answer the writer will give, so a disabled button and a refused write can never disagree.
    */
+  const attunement = attunementUsage(sendableItems);
+  const ATTUNEMENT_LIMIT = attunement.limit;
+  const attunedItems = sendableItems.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false);
+  const attunementFull = attunement.full;
+
+  const t4 = singularUsage(sendableItems);
   const t4Items = sendableItems.filter(a => isT4Singular(a.metadata?.tier) && a.metadata?.equipped !== false);
-  const t4Full = t4Items.length >= 1;
+  const t4Full = t4.full;
 
   const activeActions = useMemo(
     () => tabContents(actor, activeTab)

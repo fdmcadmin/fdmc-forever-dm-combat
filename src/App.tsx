@@ -70,7 +70,8 @@ import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
 import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
 import { offHandBlocker } from "./core/constants/chassis";
-import { isT4Singular } from "./core/constants/itemTypeCapabilities";
+import { checkEquip } from "./core/equipment/equipRules";
+import { ACTIVE_EQUIP_RULES } from "./modules/equipRuleRoster";
 import { safeStorage } from "./core/utils/safeStorage";
 import { initiativeRollFormula, getActorInitiativeModifier } from "./core/state/initiative";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
@@ -1519,38 +1520,23 @@ export default function App() {
         : { ...used, unequipped: used.unequipped + 1 };
     }
 
-    if (willEquip && target.metadata?.attunementRequired) {
-      const attuned = equipment.filter(a => a.metadata?.attunementRequired && a.metadata?.equipped !== false).length;
-      if (attuned >= 3) {
-        addEntry({
-          actorName: actor.name, actionName: "Attunement Full", tabId: "system",
-          message: `⚠ ${actor.name} is already attuned to 3 items — ${target.label} stays unequipped until one is removed.`,
-        });
-        return;
-      }
-    }
-
     /**
-     * T4 SINGULAR — ONE PER CHARACTER, INDEPENDENTLY OF ATTUNEMENT.
+     * THE CAPS ARE THE MODS' RULES, AND THIS IS WHERE THEY ARE ENFORCED.
      *
-     * A convergence Tier 4 is the top of the A1-A4 + Catalyst ladder, and one is the limit even
-     * when attunement slots remain — the two caps are separate rules and a T4 that needs no
-     * attunement is still capped.
+     * Attunement is 5e's (modules/dnd-5e), T4 Singular is the Broken Chain's
+     * (modules/the-broken-chain), and this handler asks without knowing either. Both used to be
+     * written out inline here AND again in ActorCard, which is two implementations of one rule.
      *
-     * ⚠ THE CARD ALREADY DISABLES THE BUTTON (`t4Full` in ActorCard), AND THAT IS NOT THE RULE.
-     * This handler is the single writer, and it deliberately accepts a seat that is a push out of
-     * date — it matches on the ITEM id so a stale card still works. A stale card is also the one
-     * whose `t4Full` was computed from an old equipment list, so the surface that disables the
-     * button is exactly the surface that cannot be trusted to have counted. Enforce where the
-     * write happens; the card's version is a courtesy that saves a round trip.
+     * ⚠ THE CARD DISABLING THE BUTTON IS NOT ENFORCEMENT. This handler is the single writer, and
+     * it deliberately accepts a seat that is a push out of date — it matches on the ITEM id so a
+     * stale card still works. A stale card is also the one whose counts came from an old
+     * equipment list. The card's answer is a courtesy that saves a round trip; this one is the
+     * rule.
      */
-    if (willEquip && isT4Singular(target.metadata?.tier)) {
-      const t4Equipped = equipment.filter(a => isT4Singular(a.metadata?.tier) && a.metadata?.equipped !== false).length;
-      if (t4Equipped >= 1) {
-        addEntry({
-          actorName: actor.name, actionName: "T4 Limit", tabId: "system",
-          message: `⚠ ${actor.name} already carries a Tier 4 Singular — ${target.label} stays unequipped until that one is removed. One T4 per character, on top of the attunement cap.`,
-        });
+    if (willEquip) {
+      const denial = checkEquip(ACTIVE_EQUIP_RULES, { actorName: actor.name, target, equipment });
+      if (denial) {
+        addEntry({ actorName: actor.name, actionName: denial.rule, tabId: "system", message: denial.message });
         return;
       }
     }

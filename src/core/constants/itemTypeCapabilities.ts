@@ -175,20 +175,3 @@ export function effectKindLabel(kind: string | undefined): string | undefined {
   return EFFECT_KINDS.find(k => k.id === kind)?.label;
 }
 
-/**
- * Is this item a T4 SINGULAR — the tempered top of the Convergence ladder?
- *
- * *"one T4 Singular bound per creature"* (A3/T4 packet), and Christopher: *"it still takes a
- * attunment slot and we just add a t4=1percharacter."* So a T4 is capped BOTH by attunement and
- * by a limit of one per character.
- *
- * The tier field is free text in the item editor, so every way a DM would write it is accepted.
- * Anything unparseable is NOT treated as a T4 — an over-eager match here would silently block a
- * legal item from being equipped, which is worse than missing the cap.
- */
-export function isT4Singular(tier: string | number | undefined): boolean {
-  if (tier === undefined || tier === null) return false;
-  // Anchored at the START so "14" and "Tier 3" can never match, but trailing words are allowed
-  // because "Tier 4 Singular" is the packet's own phrasing and a DM will write it that way.
-  return /^\s*(?:t(?:ier)?\s*)?4(?![\d.])/i.test(String(tier));
-}
