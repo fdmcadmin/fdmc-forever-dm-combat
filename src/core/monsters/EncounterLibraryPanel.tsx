@@ -1,5 +1,5 @@
 import appManifest from "../../../public/manifest.json";
-import { applyAuthorModeFromUrl } from "../campaign/authorMode";
+import { applyAuthorModeFromUrl, verifyAuthorKey } from "../campaign/authorMode";
 import { chassisSources } from "../content/contentScope";
 import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
@@ -546,6 +546,28 @@ export function EncounterLibraryPanel({
    * and strips it from the address bar so it cannot be copied out of a shared screen.
    */
   const [authorMode] = useState(applyAuthorModeFromUrl);
+
+  /**
+   * ⚠ THE KEY IS ASKED FOR AT THE MOMENT OF USE, not once at start-up.
+   *
+   * Christopher: *"cant we lock the download buttons behind need[ing] the same key [...] since
+   * it cant be a copied key."*
+   *
+   * A stored grant travels — a localStorage value copies between browsers, or comes back with a
+   * backup, and carries a permission nobody granted. Knowing the key does not travel that way.
+   * So `authorMode` decides only whether these controls are worth SHOWING; the key decides
+   * whether they RUN, every time.
+   *
+   * An inline field rather than `window.prompt`, because this panel runs inside an embedded
+   * frame where a native prompt can be suppressed outright — a gate that silently never opens
+   * is as bad as one that never closes.
+   */
+  const [keyChallenge, setKeyChallenge] = useState<{ label: string; run: () => void } | null>(null);
+  const [keyEntry, setKeyEntry] = useState("");
+  const [keyError, setKeyError] = useState(false);
+  const askAuthorKey = (label: string, run: () => void) => {
+    setKeyEntry(""); setKeyError(false); setKeyChallenge({ label, run });
+  };
   // The Broken Chain section is a click-to-open drawer. Collapsed by default; clicking it
   // reveals the lock prompt (if locked) or the campaign encounters (if unlocked).
   const [brokenChainOpen, setBrokenChainOpen] = useState(false);
@@ -1194,11 +1216,13 @@ export function EncounterLibraryPanel({
                   setAuthorExportMsg("No GitHub token saved yet — add a fine-grained token (Contents: read and write, this repository only) in the publish settings, or use ↓ Author to download the file instead.");
                   return;
                 }
+                askAuthorKey("Publish the campaign to GitHub", () => {
                 setPublishing(true);
                 setAuthorExportMsg("Publishing to GitHub…");
                 void publishCampaignAuthoring()
                   .then(r => setAuthorExportMsg(r.ok ? `${r.message} ${r.url ?? ""}`.trim() : r.message))
                   .finally(() => setPublishing(false));
+                });
               }}
               style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee22", color: "#7b68ee", border: "1px solid #7b68ee55", borderRadius: 3, cursor: publishing ? "wait" : "pointer", opacity: publishing ? 0.6 : 1 }}
               title="Publish everything authored on this machine straight to the repo. CI folds it, runs every gate, and commits the result — nothing merges until the gates pass. No download, no hand-off.">
@@ -1207,7 +1231,8 @@ export function EncounterLibraryPanel({
           )}
           {unlocked && authorMode && (
             <button type="button"
-              onClick={() => setAuthorExportMsg(exportCampaignAuthoring().message)}
+              onClick={() => askAuthorKey("Download the author payload",
+                () => setAuthorExportMsg(exportCampaignAuthoring().message))}
               style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee11", color: "#7b68ee99", border: "1px solid #7b68ee33", borderRadius: 3, cursor: "pointer" }}
               title="Download the same payload as a file, for folding by hand with scripts/fold-authoring.mjs. The fallback for when publishing is unavailable. Local picks (a chassis's chosen weapon form) are stripped: the template ships, the pick does not.">
               ↓ Author
@@ -1228,9 +1253,10 @@ export function EncounterLibraryPanel({
           */}
           {unlocked && authorMode && (
             <button type="button"
-              onClick={() => setAuthorExportMsg(
-                exportFullCreatureLibrary(resolvedLibrary.filter(t => isCampaignTemplate(t.templateId))).message,
-              )}
+              onClick={() => askAuthorKey("Download the whole campaign creature library", () =>
+                setAuthorExportMsg(
+                  exportFullCreatureLibrary(resolvedLibrary.filter(t => isCampaignTemplate(t.templateId))).message,
+                ))}
               style={{ fontSize: 11, padding: "3px 8px", background: "#7b68ee11", color: "#7b68ee99", border: "1px solid #7b68ee33", borderRadius: 3, cursor: "pointer" }}
               title="Download EVERY campaign creature, not just the ones edited on this machine — the full library as the app resolves it, in the same format the fold script consumes. Use this when reconciling the library against an encounter document.">
               ↓ Library
@@ -1335,6 +1361,43 @@ export function EncounterLibraryPanel({
 
       {/* The fold command is part of the result, because an export that is never folded has
           changed nothing — the file in the downloads folder is not yet in the build. */}
+      {/*
+        ⚠ NOTHING RUNS UNTIL THE KEY IS TYPED. This is not a confirmation dialog — the action is
+        held in `keyChallenge.run` and is only ever invoked from the verified branch below, so a
+        dismissed or mistyped challenge cannot fall through into the export.
+      */}
+      {keyChallenge && (
+        <div style={{ padding: "7px 14px", background: "#161228", borderBottom: "1px solid #3a3160", fontSize: 11, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ color: "#c3b7ff" }}>{keyChallenge.label} — author key required</span>
+          <input
+            type="password"
+            autoFocus
+            value={keyEntry}
+            onChange={e => { setKeyEntry(e.target.value); setKeyError(false); }}
+            onKeyDown={e => { if (e.key === "Enter") (document.getElementById("fdmc-author-key-go") as HTMLButtonElement | null)?.click(); }}
+            style={{ fontSize: 11, padding: "3px 7px", borderRadius: 3, border: `1px solid ${keyError ? "#a3424a" : "#444"}`, background: "#111", color: "#fff", width: 150 }}
+          />
+          <button
+            id="fdmc-author-key-go"
+            type="button"
+            onClick={() => {
+              if (!verifyAuthorKey(keyEntry)) { setKeyError(true); return; }
+              const run = keyChallenge.run;
+              setKeyChallenge(null); setKeyEntry("");
+              run();
+            }}
+            style={{ fontSize: 11, padding: "3px 9px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 3, cursor: "pointer" }}
+          >
+            Confirm
+          </button>
+          <button type="button" onClick={() => { setKeyChallenge(null); setKeyEntry(""); setKeyError(false); }}
+            style={{ fontSize: 11, padding: "3px 8px", background: "transparent", color: "#888", border: "1px solid #3a3a52", borderRadius: 3, cursor: "pointer" }}>
+            Cancel
+          </button>
+          {keyError && <span style={{ color: "#e07b8a" }}>That is not the author key.</span>}
+        </div>
+      )}
+
       {authorExportMsg && (
         <div style={{ padding: "5px 14px", background: "#12101f", borderBottom: "1px solid #2a2a3e", fontSize: 11, color: "#9d8cff", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <span style={{ flex: 1, minWidth: 0 }}>{authorExportMsg}</span>

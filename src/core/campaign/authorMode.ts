@@ -58,6 +58,22 @@ export function isAuthorMode(): boolean {
   }
 }
 
+/**
+ * Does this string match the author key?
+ *
+ * ⚠ ASKED AT THE MOMENT OF USE, not once at start-up. The stored grant decides what is VISIBLE;
+ * this decides what actually runs. Christopher: *"cant we lock the download buttons behind need[ing]
+ * the same key [...] since it cant be a copied key."*
+ *
+ * The difference matters because a stored flag travels. Anyone can copy a localStorage value between
+ * browsers, or restore one from a backup, and inherit a grant they were never given. Knowing the key
+ * does not travel that way — so the irreversible actions ask for it every time, and the flag is
+ * demoted to deciding whether the button is worth showing at all.
+ */
+export function verifyAuthorKey(code: string): boolean {
+  try { return btoa(code.trim()) === AUTHOR_CODE_HASH; } catch { return false; }
+}
+
 export function clearAuthorMode(): void {
   try { safeStorage().removeItem(AUTHOR_KEY); } catch { /* ok */ }
 }
