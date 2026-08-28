@@ -23,7 +23,8 @@
 import { useState } from "react";
 import {
   engineDirect, engineDiagnostics, resetCapability,
-  ENGINE_CAPABILITIES, ENGINE_VERSION, type EngineCapability,
+  ENGINE_CAPABILITIES, ENGINE_VERSION, ENGINE_MANIFEST, FALLBACK_REGISTRATION,
+  type EngineCapability,
 } from "../encounter-engine";
 import { registerActive } from "../encounter-engine/safeExecute";
 
@@ -81,7 +82,7 @@ export function EngineDiagnosticsPanel({ enabled = false }: { enabled?: boolean 
         <span style={{ fontSize: 11, width: 12 }}>{open ? "▼" : "▶"}</span>
         <span style={{ fontSize: 12, fontWeight: 600 }}>Engine Diagnostics</span>
         <span style={{ fontSize: 10, color: "#667" }}>
-          v{ENGINE_VERSION} · {broken.length === 0 ? "all healthy" : `${broken.length} quarantined`}
+          v{ENGINE_VERSION} · {ENGINE_MANIFEST.candidate.hash} · {broken.length === 0 ? "all healthy" : `${broken.length} quarantined`}
         </span>
         <span style={{ marginLeft: "auto", fontSize: 9, color: "#7b68ee99", letterSpacing: 0.4 }}>
           AUTHOR ONLY
@@ -90,6 +91,18 @@ export function EngineDiagnosticsPanel({ enabled = false }: { enabled?: boolean 
 
       {open && (
         <div style={{ marginTop: 8, fontSize: 11 }}>
+          {/* ⚠ WHICH BYTES ARE RUNNING. "0.8.6.0" is not an answer when two builds can carry it
+              with different engine code — the hash is what makes a bug report actionable. */}
+          <div style={{ marginBottom: 7, padding: "4px 7px", background: "#16162a", borderRadius: 3,
+            fontSize: 10, color: "#8a8aa0", lineHeight: 1.6 }}>
+            <div>candidate <strong style={{ color: "#c9d0e8" }}>{ENGINE_MANIFEST.candidate.engineVersion} · {ENGINE_MANIFEST.candidate.hash}</strong>
+              {" "}<span style={{ color: "#667" }}>built {ENGINE_MANIFEST.candidate.builtAt.slice(0, 10) || "—"} from app {ENGINE_MANIFEST.candidate.appVersion}</span></div>
+            <div>certified LKG{" "}
+              {ENGINE_MANIFEST.lkg
+                ? <strong style={{ color: "#7be08a" }}>{ENGINE_MANIFEST.lkg.engineVersion} · {ENGINE_MANIFEST.lkg.hash}</strong>
+                : <span style={{ color: "#e0b070" }}>none bundled — capabilities fail closed</span>}
+              {" "}<span style={{ color: "#667" }}>({FALLBACK_REGISTRATION.registered.length}/{ENGINE_CAPABILITIES.length} registered · stored on {ENGINE_MANIFEST.authority})</span></div>
+          </div>
           <p style={{ margin: "0 0 7px", color: "#8a8aa0", lineHeight: 1.5 }}>
             Break a capability to prove the rest of the app keeps working. The injected fault returns
             a normal-looking result with <code>NaN</code> in it rather than throwing — the failure a

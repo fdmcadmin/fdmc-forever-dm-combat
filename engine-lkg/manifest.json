@@ -1,0 +1,13 @@
+{
+  "engineVersion": "1.0.0",
+  "hash": "dcfc23d3c99d",
+  "builtAt": "2026-08-28T17:15:37.189Z",
+  "appVersion": "0.8.6.0",
+  "capabilities": [
+    "estimateCreature",
+    "resolvePartyProfile",
+    "checkEncounter",
+    "aggregateAudit",
+    "auditCoverage"
+  ]
+}

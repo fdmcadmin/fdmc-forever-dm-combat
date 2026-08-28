@@ -46,6 +46,8 @@ import {
   type PartyProfile,
 } from "./contracts";
 import { registerActive, safeExecute, engineDiagnostics, resetCapability } from "./safeExecute";
+import { registerBundledFallback } from "./loadFallback";
+import { ENGINE_MANIFEST, engineProvenance } from "./fallbackManifest";
 
 /* ── Registration. One place, at load, so the registry can never disagree with the exports. ── */
 registerActive("estimateCreature", estimateCreatureImpl as never);
@@ -53,6 +55,19 @@ registerActive("resolvePartyProfile", resolvePartyProfileImpl as never);
 registerActive("checkEncounter", simulateEncounterImpl as never);
 registerActive("aggregateAudit", aggregateAuditImpl as never);
 registerActive("auditCoverage", auditCoverageImpl as never);
+
+/**
+ * ⚠ THE BUNDLED RECOVERY ARTIFACT, REGISTERED AT LOAD.
+ *
+ * Christopher: *"The adapter/runtime registry loads the candidate first and switches to the
+ * bundled LKG artifact only when the candidate throws, fails its result/schema/invariant
+ * validation, or otherwise meets the defined runtime-failure condition."* This is the line that
+ * puts the LKG within reach; `safeExecute` decides when to use it.
+ *
+ * Registers nothing before the first certification, and that is correct — the capability then
+ * fails closed rather than recovering into a stand-in.
+ */
+export const FALLBACK_REGISTRATION = registerBundledFallback();
 
 /* ── The raw surface. Same functions, named as capabilities. ────────────────────────────────── */
 export const engineDirect = {
@@ -83,5 +98,6 @@ export const engine = {
 } as const;
 
 export { ENGINE_VERSION, ENGINE_CAPABILITIES, engineDiagnostics, resetCapability };
+export { ENGINE_MANIFEST, engineProvenance };
 export type { EngineCapability, EngineOutcome };
 export * from "./contracts";

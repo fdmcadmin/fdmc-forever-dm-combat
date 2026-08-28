@@ -16,7 +16,8 @@ import {
   engine, engineDirect, engineDiagnostics, resetCapability,
   ENGINE_VERSION, ENGINE_CAPABILITIES, isOk,
 } from "../src/core/encounter-engine";
-import { registerActive } from "../src/core/encounter-engine/safeExecute";
+import { registerActive, capabilityState } from "../src/core/encounter-engine/safeExecute";
+import { ENGINE_MANIFEST, FALLBACK_REGISTRATION } from "../src/core/encounter-engine";
 import { PARTY_CURVE_V2 } from "../src/core/encounter-band/partyCurveV2";
 
 let failures = 0;
@@ -66,12 +67,23 @@ console.log("\nContract validation");
     baseDefensiveCr: 1, acAdjustedDefensiveCr: 1, baseOffensiveCr: 1, deliveryAdjustedOffensiveCr: 1,
   })) as never);
   const nan = engine.estimateCreature({ rawHp: 1, ac: 1, r1Dpr: 1, r2PlusDpr: 1 });
-  ok("NaN output is a CONTRACT_VIOLATION", !nan.ok && nan.reason === "CONTRACT_VIOLATION",
-    nan.ok ? "accepted it" : nan.detail);
+  /**
+   * ⚠ DETECTION IS THE INVARIANT, not the outcome. With an LKG bundled the fallback answers, so
+   * the call SUCCEEDS — from `fallback`. The proof that the NaN was caught is on the capability's
+   * own record, not in the return value.
+   */
+  ok("NaN output is detected as a CONTRACT_VIOLATION",
+    (capabilityState("estimateCreature").lastFailure ?? "").includes("violated its contract"),
+    capabilityState("estimateCreature").lastFailure ?? "nothing recorded");
+  ok("and the caller is told which implementation answered",
+    !nan.ok ? nan.from === "active" || nan.from === "none" : nan.from === "fallback",
+    nan.ok ? `ok from ${nan.from}` : `failed from ${nan.from}`);
 
   registerActive("estimateCreature", (() => { throw new Error("boom"); }) as never);
-  const threw = engine.estimateCreature({ rawHp: 1, ac: 1, r1Dpr: 1, r2PlusDpr: 1 });
-  ok("a throw is caught and reported", !threw.ok && threw.reason === "THREW");
+  engine.estimateCreature({ rawHp: 1, ac: 1, r1Dpr: 1, r2PlusDpr: 1 });
+  ok("a throw is caught and recorded",
+    (capabilityState("estimateCreature").lastFailure ?? "").includes("threw"),
+    capabilityState("estimateCreature").lastFailure ?? "nothing recorded");
 }
 
 /* ── 3. Fault isolation: only the broken capability degrades. ───────────────────────────────── */
@@ -96,8 +108,16 @@ console.log("\nFault isolation — Gate 4");
   // ⚠ FAIL CLOSED. With no last-known-good artifact registered there is nothing to fall back to,
   // and the answer must be a failure rather than a zero.
   const closed = engine.estimateCreature({ rawHp: 50, ac: 14, r1Dpr: 10, r2PlusDpr: 8 });
-  ok("quarantined with no fallback fails closed", !closed.ok && closed.from === "none",
-    closed.ok ? "returned a value" : closed.detail);
+  if (FALLBACK_REGISTRATION.registered.includes("estimateCreature")) {
+    // ⚠ AFTER CERTIFICATION the quarantined capability RECOVERS. That is the point of Gate 6.
+    ok("quarantined with an LKG bundled recovers rather than failing",
+      isOk(closed) && closed.from === "fallback",
+      isOk(closed) ? `from ${closed.from}` : closed.detail);
+  } else {
+    // ⚠ BEFORE CERTIFICATION it must fail loudly rather than return a zero.
+    ok("quarantined with no fallback fails closed", !closed.ok && closed.from === "none",
+      isOk(closed) ? "returned a value" : closed.detail);
+  }
 }
 
 /* ── 4. Recovery restores the real implementation. ──────────────────────────────────────────── */
@@ -111,6 +131,56 @@ console.log("\nRecovery");
   });
   ok("capability recovers after reset", isOk(back) && back.value.estimatedCr === 5);
   ok("diagnostics clear", !engineDiagnostics().estimateCreature.quarantined);
+}
+
+/* ── Gate 6 — artifact packaging, version identification, candidate→LKG recovery ────────── */
+console.log("\nGate 6 — packaging and recovery");
+{
+  const m = ENGINE_MANIFEST;
+  ok("the candidate is packaged, not a source checkout", m.candidate.hash !== "unpackaged",
+    `${m.candidate.engineVersion} ${m.candidate.hash}`);
+  ok("the hash identifies the build", /^[0-9a-f]{12}$/.test(m.candidate.hash), m.candidate.hash);
+  ok("every capability is declared in the artifact",
+    ENGINE_CAPABILITIES.every(c => m.candidate.capabilities.includes(c)),
+    m.candidate.capabilities.join(","));
+  ok("GitHub Release is the authority of record", m.authority === "github-release");
+
+  /**
+   * ⚠ THE RECOVERY TEST IS THE POINT OF GATE 6. Everything above proves the artifact EXISTS;
+   * this proves it RUNS when the candidate does not. Without it, the packaging is filing.
+   */
+  if (FALLBACK_REGISTRATION.registered.length === 0) {
+    ok("no LKG bundled yet — fails closed, which is the correct pre-certification state",
+      FALLBACK_REGISTRATION.missing.length === ENGINE_CAPABILITIES.length);
+  } else {
+    ok("the bundled LKG registered every capability",
+      FALLBACK_REGISTRATION.missing.length === 0,
+      `missing ${FALLBACK_REGISTRATION.missing.join(",") || "none"}`);
+    ok("the LKG is identified by version and hash",
+      !!m.lkg && /^[0-9a-f]{12}$/.test(m.lkg.hash),
+      m.lkg ? `${m.lkg.engineVersion} ${m.lkg.hash}` : "none");
+
+    // Break the candidate, then confirm the ANSWER still arrives — from the fallback.
+    registerActive("aggregateAudit", (() => { throw new Error("candidate down"); }) as never);
+    const recovered = engine.aggregateAudit({
+      level: 9, partySize: 4, mode: "wotcStandard",
+      groups: [{ quantity: 1, groupEhp: 300, round1DprPerBody: 66, round2PlusDprPerBody: 55 }],
+    });
+    ok("a broken candidate recovers to the bundled LKG",
+      isOk(recovered) && recovered.from === "fallback",
+      isOk(recovered) ? `from ${recovered.from}` : recovered.detail);
+    ok("and the recovered answer is the real one",
+      isOk(recovered) && recovered.value.encounterEhp === 300,
+      isOk(recovered) ? String(recovered.value.encounterEhp) : "");
+
+    registerActive("aggregateAudit", engineDirect.aggregateAudit as never);
+    resetCapability("aggregateAudit");
+    ok("and the candidate comes back after reset",
+      isOk(engine.aggregateAudit({
+        level: 9, partySize: 4, mode: "wotcStandard",
+        groups: [{ quantity: 1, groupEhp: 300, round1DprPerBody: 66, round2PlusDprPerBody: 55 }],
+      })));
+  }
 }
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);

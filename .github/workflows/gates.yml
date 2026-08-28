@@ -132,6 +132,11 @@ jobs:
       - name: check feats
         run: npm run check:feats
 
+      # ⚠ PACKAGE BEFORE CHECKING. check:engine asserts the candidate is packaged and carries a
+      # hash; without this step it would be testing a source checkout that reports "unpackaged".
+      - name: package engine
+        run: npm run engine:package
+
       - name: check engine
         run: npm run check:engine
 
