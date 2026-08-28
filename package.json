@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.7.3",
+  "version": "0.8.7.4",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -52,6 +52,7 @@
     "check:engine": "npx tsx scripts/check-engine.ts",
     "check:feats": "npx tsx scripts/check-feats.ts",
     "check:equip": "npx tsx scripts/check-equip.ts",
+    "check:reshape": "npx tsx scripts/check-reshape.ts",
     "gen:feats": "node scripts/gen-feats.mjs",
     "engine:package": "node scripts/package-engine.mjs",
     "engine:certify": "node scripts/package-engine.mjs --certify"

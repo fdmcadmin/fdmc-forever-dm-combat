@@ -138,6 +138,13 @@ jobs:
       - name: check equip caps
         run: npm run check:equip
 
+      # All six archetype packages and the budget the Reshape may not move: swapping archetype
+      # changes a creature's SHAPE, never its total. The Elemental Mirror was gated for HP, save
+      # DCs and damage; the Reshape that produces the six spreads was hand-verified once at 0.8.0
+      # and never gated, so it could drift in silence.
+      - name: check archetype reshape
+        run: npm run check:reshape
+
       # ⚠ PACKAGE BEFORE CHECKING. check:engine asserts the candidate is packaged and carries a
       # hash; without this step it would be testing a source checkout that reports "unpackaged".
       - name: package engine
