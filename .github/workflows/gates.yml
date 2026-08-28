@@ -126,6 +126,12 @@ jobs:
       # that a NaN which does not throw is still caught, that breaking one capability leaves the
       # others active, and that a quarantined capability with no recovery artifact FAILS CLOSED
       # rather than returning a zero.
+      # The feat contract: lookup by edition:name, the resolved-actor double-count guard, three
+      # channels kept separate, and NEEDS_INPUT rather than a zero. Also parses every one of the
+      # 351 expressions the workbook ships, so a grammar the evaluator cannot read fails here.
+      - name: check feats
+        run: npm run check:feats
+
       - name: check engine
         run: npm run check:engine
 

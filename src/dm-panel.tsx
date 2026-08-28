@@ -39,6 +39,7 @@ import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
+import { PartyEstimatorPanel } from "./core/encounter-band/PartyEstimatorPanel";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
 import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
 import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
@@ -960,6 +961,10 @@ function DmPanelApp() {
               actors={actors}
             />
             <CreatureEstimatorPanel monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library} />
+            {/* The PC side of the same question. The creature estimator prices one MONSTER;
+                this prices the PARTY — its feats and the healing it actually brings. The healing
+                reader is the same one the difficulty panel uses, not a second implementation. */}
+            <PartyEstimatorPanel actors={actors} />
           </div>
         )}
         {panelId === "monsters" && (
