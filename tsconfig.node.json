@@ -8,7 +8,8 @@
     "lib": [
       "ES2022"
     ],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "outDir": "./node_modules/.tmp/vite-config"
   },
   "include": [
     "vite.config.ts"

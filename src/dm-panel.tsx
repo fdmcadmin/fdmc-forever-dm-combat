@@ -772,7 +772,11 @@ function DmPanelApp() {
           >
             ⚡ Force Push
           </button>
-          <span style={{ fontSize: 10, color: "#444" }}>FDMC 0.7.10 DM Tools</span>
+          {/* ⚠ READ THE MANIFEST, NEVER TYPE THE NUMBER. This read "FDMC 0.7.10 DM Tools" while the
+              app was on 0.8.8.2 — sixty-odd versions stale, on the one line a DM would quote in a
+              bug report. `APP_VERSION` was already imported at the top of this file. A version
+              typed into a string stops being the version the moment anything ships. */}
+          <span style={{ fontSize: 10, color: "#444" }}>FDMC {APP_VERSION} DM Tools</span>
           <button
             type="button"
             onClick={() => {
@@ -845,8 +849,17 @@ function DmPanelApp() {
                     {/* One-time import button — seeds from bundled 0.5.5b source files */}
                     <div style={{ background: "#1a1a2e", borderRadius: 8, padding: 16, border: "1px solid #7b68ee33", maxWidth: 340 }}>
                       <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 500, color: "#7b68ee" }}>Import Broken Chain Party</p>
+                      {/* ⚠ THIS PROMISED FIVE ACTORS THAT NO LONGER EXIST. `59b9dd9` deleted the
+                          bundled party on purpose — actor data is not shipped in the public build
+                          (`modules/the-broken-chain/actors/index.ts` returns an empty array and
+                          says so). The panel kept advertising it, so the button seeded nothing and
+                          then reported success. A control must describe what it will actually do
+                          in THIS build, not what it did in an older one. */}
                       <p style={{ margin: "0 0 12px", fontSize: 11, color: "#666" }}>
-                        Imports all 5 party actors from the bundled source files with correct actions, spells, bonds and features. Equipment is extracted to the equipment library. Actions are validated on a double pass.
+                        Seeds the party from actors bundled in this build — with their actions, spells, bonds and features, equipment extracted to the equipment library, and actions validated on a double pass.
+                      </p>
+                      <p style={{ margin: "0 0 12px", fontSize: 11, color: "#7b68ee99" }}>
+                        Public builds ship no actor data. If nothing is imported, use <strong>↑ Import</strong> with an actor export file instead.
                       </p>
                       <button
                         type="button"
@@ -859,13 +872,21 @@ function DmPanelApp() {
 
                     {/* Seed result report */}
                     {seedResult && (
-                      <div style={{ background: "#0d1a0d", borderRadius: 8, padding: 12, border: "1px solid #2a6e2a44", maxWidth: 340, textAlign: "left" }}>
-                        <p style={{ margin: "0 0 6px", fontSize: 12, color: "#4caf50", fontWeight: 500 }}>
-                          ✓ Import complete
+                      /* ⚠ A NO-OP IS NOT A SUCCESS. This header was unconditional, so an import that
+                         created ZERO actors still announced "✓ Import complete" in green above an
+                         empty list — the DM is told it worked and left with nothing. The result
+                         reports what actually happened. */
+                      <div style={{ background: seedResult.actorsCreated.length ? "#0d1a0d" : "#1a1408", borderRadius: 8, padding: 12, border: `1px solid ${seedResult.actorsCreated.length ? "#2a6e2a44" : "#6e5a2a44"}`, maxWidth: 340, textAlign: "left" }}>
+                        <p style={{ margin: "0 0 6px", fontSize: 12, color: seedResult.actorsCreated.length ? "#4caf50" : "#e8b64c", fontWeight: 500 }}>
+                          {seedResult.actorsCreated.length
+                            ? `✓ Imported ${seedResult.actorsCreated.length} character${seedResult.actorsCreated.length === 1 ? "" : "s"}`
+                            : "Nothing was imported"}
                         </p>
-                        <p style={{ margin: "0 0 4px", fontSize: 11, color: "#888" }}>
-                          Actors: {seedResult.actorsCreated.join(", ")}
-                        </p>
+                        {seedResult.actorsCreated.length > 0 && (
+                          <p style={{ margin: "0 0 4px", fontSize: 11, color: "#888" }}>
+                            Actors: {seedResult.actorsCreated.join(", ")}
+                          </p>
+                        )}
                         <p style={{ margin: "0 0 4px", fontSize: 11, color: "#888" }}>
                           Equipment items: {seedResult.equipmentItemsCreated}
                         </p>
@@ -884,9 +905,14 @@ function DmPanelApp() {
                             ⚠ {seedResult.warnings.join(" ")}
                           </p>
                         )}
-                        <p style={{ margin: "8px 0 0", fontSize: 11, color: "#4caf50" }}>
-                          Close this window → click ↺ Sync Library on the main panel.
-                        </p>
+                        {/* The next step only exists if there IS something to sync. Printing it
+                            after a zero-actor import sends the DM to a button that will do
+                            nothing, which reads as a second failure. */}
+                        {seedResult.actorsCreated.length > 0 && (
+                          <p style={{ margin: "8px 0 0", fontSize: 11, color: "#4caf50" }}>
+                            Close this window → click ↺ Sync Library on the main panel.
+                          </p>
+                        )}
                       </div>
                     )}
 

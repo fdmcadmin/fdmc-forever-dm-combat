@@ -72,6 +72,30 @@ export type VersionNotes = {
  */
 export const RELEASE_HISTORY: VersionNotes[] = [
   {
+    version: "0.8.8.2",
+    notes: [
+      {
+        area: "This panel",
+        points: [
+          "The DM Tools header shows the version you are actually running. It had been reading 0.7.10 for sixty-odd releases — the one line you would quote in a bug report.",
+          "\"Import Party from Source Files\" no longer claims to import five characters it does not have, and no longer reports success when it imported nothing.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.8.8.0",
+    notes: [
+      {
+        area: "Estimators",
+        points: [
+          "The creature estimator rates up to CR 30. It stopped at CR 25 and sent anything above it to manual review, which caught every genuine titan.",
+          "SRD creature stats were corrected against the published pages — challenge ratings for four dragons, hit points for ten small beasts, and the Vulture's CR.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.8.7.1",
     notes: [
       {
