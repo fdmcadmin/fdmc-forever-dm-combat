@@ -687,9 +687,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Rending Talon",
         "kind": "attack",
         "roll": "1d20 +@ATK",
-        "damage": "1d10+@MAIN slashing + 2d6 fire",
-        "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks.",
-        "riders": [
+        "damage": "1d10+@MAIN",
+        "text": "Multiattack: the Reaver makes two Rending Talon attacks.",
+        "riders": [{ "name": "Fire rider", "damage": "2d6", "damageType": "Fire", "cadence": "per-hit" }, 
           {
             "name": "Scent the Expense",
             "damage": "4d4",
@@ -697,7 +697,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
             "chance": 1,
             "note": "marked target"
           }
-        ]
+        ], "damageType": "Slashing"
       }
     ],
     "reactions": [],
@@ -1317,8 +1317,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Razor Quill",
         "kind": "attack",
         "roll": "1d20 + @ATK",
-        "damage": "1d12 + @MAIN slashing + 1d6",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn."
+        "damage": "1d12 + @MAIN", "damageType": "Slashing", "riders": [{ "name": "Psychic rider", "damage": "1d6", "damageType": "Psychic", "cadence": "once-per-turn" }]
       },
       {
         "name": "Black Fan (Recharge 5–6)",
@@ -1803,9 +1802,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Bite",
         "kind": "attack",
         "roll": "1d20+@ATK",
-        "damage": "2d10+@STR piercing + 2d6 radiant",
-        "text": "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 14 (2d10 + 3) piercing damage plus 7 (2d6) cold damage.",
-        "routineSlots": 2
+        "damage": "2d10+@STR",
+        "routineSlots": 2, "damageType": "Piercing", "riders": [{ "name": "Cold rider", "damage": "2d6", "damageType": "Cold", "cadence": "per-hit" }]
       },
       {
         "name": "Claw",
@@ -1935,10 +1933,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Claw",
         "kind": "action",
         "roll": "1d20+@STR+@PB",
-        "damage": "2d6+@STR+1d6",
-        "text": "Melee Weapon Attack: +4 to hit, reach 5 ft.; Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
+        "damage": "2d6+@STR",
         "save": "",
-        "routineSlots": 1
+        "routineSlots": 1, "damageType": "Slashing", "riders": [{ "name": "Fire rider", "damage": "1d6", "damageType": "Fire", "cadence": "per-hit" }]
       },
       {
         "name": "Tail",

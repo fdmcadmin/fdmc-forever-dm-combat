@@ -332,7 +332,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * "1 down, 1 badly hurt", never lethal). The cadence does not move the meter, because a
        * Charge turn is a Multiattack turn the Stalker does not get.
        */
-      { name: "Phantom Charge", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", save: "STR DC 14", recharge: "4-6", text: "Recharges after a Multiattack turn. Full Action — replaces Multiattack. Move up to its speed in a straight line and make one Gore attack at any point. If it moved 20+ ft. and hits, DC 14 STR save or the target is knocked prone and pushed 10 ft." },
+      { name: "Phantom Charge", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", save: "STR DC 14", recharge: "4-6", text: "Recharges after a Multiattack turn. Full Action — replaces Multiattack. Move up to its speed in a straight line and make one Gore attack at any point. If it moved 20+ ft. and hits, DC 14 STR save or the target is knocked prone and pushed 10 ft.", damageType: "Piercing" },
       { name: "Phase Shift (Bonus Action)", kind: "action", text: "Flickers up to 15 ft., no opportunity attacks. The afterimage stays in its old space. This does NOT reset Phantom Step's disadvantage — it stacks a stale image on top of the displacement." },
     ],
     reactions: [
@@ -383,7 +383,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Exploit Weakness", kind: "trait", text: "When attacking a prone target, a target with reduced speed, or a creature damaged by another creature this round, add cold damage on hit." },
     ],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "STR DC 14", text: "Target is knocked prone on a failed Strength save." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "STR DC 14", text: "Target is knocked prone on a failed Strength save.", damageType: "Piercing" },
       { name: "Cold Breath", kind: "action", damage: "4d8", save: "DEX DC 12", text: "Recharge 5-6; locked while both Pack Hunters are alive. Each creature in a 15-foot cone takes cold damage on a failed save, or half on success." },
     ],
     reactions: [],
@@ -414,7 +414,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [{ name: "Pack Tactics", kind: "trait", text: "Advantage on attack rolls against a creature if at least one ally is within 5 feet of it and not incapacitated." }],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "STR DC 12", text: "Target is knocked prone on a failed Strength save." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "STR DC 12", text: "Target is knocked prone on a failed Strength save.", damageType: "Piercing" },
     ],
     reactions: [],
     resources: [],
@@ -447,7 +447,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Wendigo-Drained", kind: "trait", text: "Does not bleed. Speed reduction on hit does not affect it unless magical." },
     ],
     actions: [
-      { name: "Slam", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "1d6 + @STR bludgeoning + 1d6 cold", text: "+3 to hit. Hit: 4 (1d6 + 1) bludgeoning plus 3 (1d6) cold." },
+      { name: "Slam", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "1d6 + @STR", damageType: "Bludgeoning", riders: [{ name: "Cold rider", damage: "1d6", damageType: "Cold", cadence: "per-hit" }] },
     ],
     reactions: [],
     resources: [],
@@ -480,8 +480,8 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [{ name: "Hungry Dead", kind: "trait", text: "Advantage on attack rolls against any creature that has not yet taken a turn this combat, or that is paralyzed." }],
     actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + @CON+@PROF", damage: "2d6 + @MAIN", text: "One incapacitated target only." },
-      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "CON DC 10", text: "If target is not undead, it is paralyzed until the end of its next turn on a failed save." },
+      { name: "Bite", kind: "attack", roll: "1d20 + @CON+@PROF", damage: "2d6 + @MAIN", text: "One incapacitated target only.", damageType: "Piercing" },
+      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "CON DC 10", text: "If target is not undead, it is paralyzed until the end of its next turn on a failed save.", damageType: "Slashing" },
     ],
     reactions: [],
     resources: [],
@@ -514,7 +514,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Bite", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", damageType: "Piercing" },
-      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "CON DC 10", text: "Non-undead target must make the Constitution save or be paralyzed until end of its next turn." },
+      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", save: "CON DC 10", text: "Non-undead target must make the Constitution save or be paralyzed until end of its next turn.", damageType: "Slashing" },
     ],
     reactions: [],
     resources: [],
@@ -744,7 +744,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Wrong Silhouette", kind: "trait", text: "The first attack each creature makes against it has disadvantage — its true position is a step from where it appears." },
     ],
     actions: [
-      { name: "Gloamknife", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN + 1d4", text: "+5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing plus 2 (1d4) cold — a cold that takes warmth out rather than putting chill in." },
+      { name: "Gloamknife", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", damageType: "Piercing", riders: [{ name: "Cold rider", damage: "1d4", damageType: "Cold", cadence: "per-hit" }] },
       { name: "Slip Between", kind: "action", text: "Bonus Action. Teleport up to 15 ft between dim light or darkness areas it can see." },
     ],
     reactions: [],
@@ -804,7 +804,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * ⚠ A +1/+1 increase on a creature the table has already fought. Small, and it is the
        * correct value rather than a retune.
        */
-      { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4 + 1d6", text: "+6 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 4) slashing plus 3 (1d6) cold." },
+      { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4", damageType: "Slashing", riders: [{ name: "Cold rider", damage: "1d6", damageType: "Cold", cadence: "per-hit" }] },
       /**
        * MIGHTY LEAP is a BONUS-ACTION Claw, not a passive trait: "If the Wendigo moves at
        * least 20 feet in a straight line toward a creature, it can make one Claw attack
@@ -821,7 +821,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // note on Grab. They are listed so they are visible, and excluded so they do not inflate.
       // Mighty Leap needs a 20+ ft straight-line approach, which is a first-round condition,
       // not a per-turn one.
-      { name: "Mighty Leap Claw (Bonus Action)", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4 + 1d6", gated: true, text: "Bonus action after moving 20+ ft. in a straight line toward a creature: one Claw. On a hit, DC 13 STR save or prone." },
+      { name: "Mighty Leap Claw (Bonus Action)", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4", gated: true, text: "Bonus action after moving 20+ ft. in a straight line toward a creature: one Claw. On a hit, DC 13 STR save or prone.", damageType: "Slashing", riders: [{ name: "Cold rider", damage: "1d6", damageType: "Cold", cadence: "per-hit" }] },
       // Rend needs BOTH Claws to hit the same creature AND the recharge to be up — roughly a
       // 10% turn, not a 33% one.
       { name: "Rend", kind: "action", recharge: "5-6", damage: "2d6", save: "STR DC 12", gated: true, text: "Recharge 5-6. If both Claws hit the same creature this turn: +2d6 slashing, DC 12 STR save or knocked prone." },
@@ -911,7 +911,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Rime Claw", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + 3", damageType: "Cold", range: "reach 5 ft.", text: "The wound crusts over with black frost." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + 3 + 1d8", save: "STR DC 15", text: "Ranged spell attack, +6 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success." },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + 3", save: "STR DC 15", text: "FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "once-per-turn" }] },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance; it is not a reduced copy of the raised body). One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
       { name: "Rimestep (Bonus Action, 1st slot)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, holding the line." },
     ],
@@ -1085,7 +1085,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", spellSlotLevel: 4, save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + @MAIN + 1d8", save: "STR DC 15", text: "Ranged spell attack, +7 to hit, range 120 ft., one target. Hit: 12 (2d8 + 3) cold plus 4 (1d8) necrotic. EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it." },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + @MAIN", save: "STR DC 15", text: "EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "per-hit" }] },
       { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", damage: "4d6", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
       { name: "Rimestep (Bonus Action)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
@@ -1210,7 +1210,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Light-Struck", kind: "trait", text: "In bright light, the Cloak has disadvantage on attack rolls and ability checks. A lantern is a weapon against it — and against Reknit in the Cold." },
     ],
     actions: [
-      { name: "Frostshadow Claw", kind: "attack", roll: "1d20 + @ATK", damage: "3d8 + @MAIN", text: "+6 to hit, reach 5 ft., one target. Hit: 17 (3d8 + 4) psychic — the cold of being unmade, not the cold of weather. It does not bleed you; it thins you." },
+      { name: "Frostshadow Claw", kind: "attack", roll: "1d20 + @ATK", damage: "3d8 + @MAIN", text: "It does not bleed you; it thins you.", damageType: "Psychic" },
       { name: "Fold Into the Cold (Bonus Action)", kind: "action", text: "While in dim light or darkness, the Cloak takes the Hide action. The Pale Drifter's Pale Aura sheds dim light in a 20-ft radius — the Drifter IS its cover. Run them together or the Cloak loses half its kit." },
     ],
     reactions: [],
@@ -1471,7 +1471,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Snap to the Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
-      { name: "Razor Quill", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN slashing + 1d6", text: "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing plus 3 (1d6) psychic once per turn." },
+      { name: "Razor Quill", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", damageType: "Slashing", riders: [{ name: "Psychic rider", damage: "1d6", damageType: "Psychic", cadence: "once-per-turn" }] },
       { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
     reactions: [
@@ -2218,7 +2218,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Scent the Expense", kind: "trait", text: "Whenever a hostile creature the Reaver can see within 60 ft. expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class-feature uses, item charges, and similar resources count; recurring once-per-turn riders and other effects that do not consume a limited use do not. At the start of the Reaver’s turn, its current quarry locks until the end of that turn and cannot be replaced during that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage." },
     ],
     actions: [
-      { name: "Rending Talon", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN slashing + 2d6 fire", text: "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks." },
+      { name: "Rending Talon", kind: "attack", roll: "1d20 + @ATK", damage: "1d10+@MAIN", text: "Multiattack: the Reaver makes two Rending Talon attacks.", damageType: "Slashing", riders: [{ name: "Fire rider", damage: "2d6", damageType: "Fire", cadence: "per-hit" }] },
     ],
     reactions: [
     ],
@@ -2339,7 +2339,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Broken Lift (Recharge 5–6)", kind: "action", economyCost: "bonus", recharge: "5-6", text: "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed." },
-      { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10 + 5 piercing + 2d6 radiant", text: "Melee Weapon Attack: +9 to hit, reach 10 ft.; Hit: 16 (2d10 + 5) piercing plus 7 (2d6) radiant." },
+      { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10+@STR", damageType: "Piercing", riders: [{ name: "Cold rider", damage: "2d6", damageType: "Cold", cadence: "per-hit" }] },
       { name: "Claw", kind: "attack", roll: "1d20 + 9", damage: "2d6 + 5", damageType: "Slashing", range: "reach 5 ft." },
       { name: "Fractured Dream Breath (Recharge 5–6)", kind: "action", save: "CON DC 17", recharge: "5-6", text: "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends." },
       { name: "Moonfall Breath (Recharge 5–6)", kind: "action", save: "DEX DC 17", recharge: "5-6", damage: "8d8", text: "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge." },

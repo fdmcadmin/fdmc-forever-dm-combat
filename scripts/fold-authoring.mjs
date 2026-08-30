@@ -56,7 +56,62 @@ if (payload.schema !== SCHEMA) {
   process.exit(1);
 }
 
-const monsters = Array.isArray(payload.monsters) ? payload.monsters : [];
+
+/**
+ * ⚠ NORMALISE ON INGEST, OR THE NEXT EXPORT UNDOES THE LAST MIGRATION.
+ *
+ * Christopher, 2026-08-28: *"everything is dnd compliant so that means when i export the next time
+ * it shouldnt change what you just did."*
+ *
+ * The app's author export carries whatever prose an action was written with. 0.8.9.0 moved damage
+ * type and reach OUT of that prose and into fields across both campaign libraries — and a fold is
+ * a WHOLESALE regeneration, so without this the very next export would put the prose back and the
+ * app would be reading two dialects again.
+ *
+ * This is the boundary where outside content enters the codebase, so it is where the house style
+ * is applied. Same rules as `statBlockGrammar`: the numbers are fields, the sentence is the rider.
+ *
+ * ⚠ IT NEVER GUESSES A TYPE. A clause that does not STATE its damage type is passed through
+ * untouched — inventing one here would write a resistance decision into a DM's campaign silently.
+ * ⚠ AND IT LEAVES TWO TYPES ALONE, because one `damageType` cannot hold them.
+ */
+const DAMAGE_TYPES = ["acid","bludgeoning","cold","fire","force","lightning","necrotic",
+  "piercing","poison","psychic","radiant","slashing","thunder"];
+const ATTACK_PREFIX = /\b(?:Melee|Ranged|Melee or Ranged)\s+(?:Weapon\s+|Spell\s+)?Attack(?:\s+Roll)?\s*:?\s*/i;
+const TOHIT = /[+-]\s*\d+\s*to hit\s*[.,;]?\s*/i;
+const RANGE = /\b(reach\s+\d+\s*ft\.?|ranged?\s+\d+(?:\/\d+)?\s*ft\.?|melee or thrown\s+\d+(?:\/\d+)?\s*ft\.?)\s*[.,;]?\s*/i;
+const TARGET = /\bone\s+(?:target|creature|incapacitated target)\b[^.,;]*[.,;]?\s*/i;
+const HIT_CLAUSE = /Hit\s*:\s*\d+\s*\(([^)]*)\)\s*([^.;]*)[.;]?\s*/i;
+
+function normaliseAction(a) {
+  if (!a || typeof a !== "object" || a.damageType) return a;
+  const text = typeof a.text === "string" ? a.text : "";
+  const hit = text.match(HIT_CLAUSE);
+  if (!hit) return a;
+
+  const found = [...new Set(DAMAGE_TYPES.filter(t =>
+    new RegExp("\\b" + t + "\\b", "i").test(hit[1] + " " + (hit[2] || ""))))];
+  if (found.length !== 1) return a;                      // none stated, or two — leave it
+
+  const rangeM = text.match(RANGE);
+  let rest = text.replace(hit[0], " ").replace(ATTACK_PREFIX, " ").replace(TOHIT, " ");
+  if (rangeM) rest = rest.replace(RANGE, " ");
+  rest = rest.replace(TARGET, " ").replace(/^\s*damage\s*[.;]?/i, " ")
+             .replace(/\s{2,}/g, " ").replace(/^[\s,.;:]+/, "").trim();
+
+  const out = { ...a, damageType: found[0][0].toUpperCase() + found[0].slice(1) };
+  if (rangeM && !out.range) out.range = rangeM[1].replace(/\s+/g, " ").replace(/[,;]$/, "").trim();
+  if (rest) out.text = rest; else delete out.text;
+  return out;
+}
+
+function normaliseMonster(m) {
+  if (!m || typeof m !== "object") return m;
+  const pass = list => (Array.isArray(list) ? list.map(normaliseAction) : list);
+  return { ...m, traits: pass(m.traits), actions: pass(m.actions), reactions: pass(m.reactions) };
+}
+
+const monsters = (Array.isArray(payload.monsters) ? payload.monsters : []).map(normaliseMonster);
 const equipment = Array.isArray(payload.equipment) ? payload.equipment : [];
 // Older exports predate encounters. Absent is legal and folds to an empty array rather than
 // failing — a file made before the field existed is not a corrupt file.

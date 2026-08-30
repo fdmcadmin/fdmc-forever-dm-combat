@@ -31,8 +31,16 @@ export type RiderCadence = "per-hit" | "once-per-turn";
 export type MonsterRider = {
   /** What the block calls it, so the trace can name what it is billing. */
   name: string;
-  /** The extra dice — `"1d6"`, `"2d6 radiant"`. Read the same way any damage field is. */
+  /** The extra dice — `"1d6"`. Read the same way any damage field is. */
   damage: string;
+  /**
+   * ⚠ THE RIDER CARRIES ITS OWN DAMAGE TYPE, because a second type is the whole reason it is a
+   * rider and not just more dice on the main line. "9 (2d6+2) Slashing plus 3 (1d6) Fire" is two
+   * types, and folding them into one string loses the one the resistances need.
+   *
+   * Capitalised as the SRD prints it. See `statBlockGrammar`.
+   */
+  damageType?: string;
   /**
    * `per-hit` rides every hit this action lands. `once-per-turn` fires at most once across the
    * whole turn however many attacks connect — the workbook's "first hit or once per turn".

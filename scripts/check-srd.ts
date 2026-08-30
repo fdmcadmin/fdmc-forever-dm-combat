@@ -223,16 +223,16 @@ console.log("\nThe Broken Chain reads the same way");
    * payload that overrides it — one migration, two files, because mergeAuthored layers them): the type was stated in the prose, so moving it to a
    * field invented nothing. These two lists are what a codemod MUST NOT decide.
    *
-   * MULTI-TYPE — the action deals two damage types ("11 (2d6 + 4) piercing plus 3 (1d6) radiant").
-   * `damageType` holds ONE type, so these cannot be expressed yet. They keep their prose until the
-   * schema carries a second damage channel. Converting them would silently drop a damage type.
+   * MULTI-TYPE — ONE damage roll carrying TWO types at once: "10 (1d10 + 5) cold and psychic
+   * damage". That is not a rider (there are no extra dice) and not a single type, so neither field
+   * expresses it. Two actions, both awaiting a decision on how a dual-typed roll should resist.
    *
-   * UNTYPED — the action never named a type at all. A Bite is almost certainly Piercing and a Slam
-   * almost certainly Bludgeoning, but "almost certainly" is exactly where a script must not write
-   * to a DM's campaign: damage type decides what resists it. These need Christopher, not a regex.
+   * UNTYPED — the two above, plus the Elemental Mirror's Claw and Bolt, whose damage is the
+   * placeholder `{primary}`: their type IS the chosen elemental package, so a fixed field would be
+   * wrong for five of the six mirrors.
    */
-  const MULTI_TYPE = 12;
-  const UNTYPED = 20;
+  const MULTI_TYPE = 2;
+  const UNTYPED = 4;
 
   const restating = acts.filter(a => /\bHit\s*:/i.test(a.text ?? ""));
   const untyped = acts.filter(a => a.kind === "attack" && a.damage && !a.damageType);
