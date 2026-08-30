@@ -152,6 +152,12 @@ jobs:
       - name: check SRD against the audit
         run: npm run check:srd
 
+      # The read-me panel: only what changed since the DM last read it, and a player is shown
+      # only the notes that reach a player — a version whose changes were all GM-side does not
+      # open the panel for them at all.
+      - name: check release notes
+        run: npm run check:notes
+
       # ⚠ THE OTHER HALF OF RULE 0: does anything CALL it? A module with no importer still
       # compiles and its own test still passes, so only the import GRAPH finds this. Classifies every
       # module LIVE / BUILD INPUT / SCRIPT-ONLY / ORPHAN and pins the last two, so debt cannot grow

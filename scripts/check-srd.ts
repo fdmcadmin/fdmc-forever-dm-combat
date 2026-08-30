@@ -255,11 +255,14 @@ console.log("\nThe Broken Chain reads the same way");
 
   // A rider carries its OWN type — that is the whole reason it is a rider.
   const riders = acts.flatMap(a => (a.riders ?? []).map(r => ({ ...r, where: a.where })));
-  // ⚠ ONE PRE-EXISTING RIDER NEVER STATED A TYPE — the Reaver's "Scent the Expense" (4d4). Same
+  // Every rider names its type. The Reaver's "Scent the Expense" was the last one without —
+  // Christopher: *"the scent is a fire rider"*, and its own trait text says "extra 10 (4d4) fire
+  // damage", so the type was stated all along, just not where the data could reach it.
+  // (was) ⚠ ONE PRE-EXISTING RIDER NEVER STATED A TYPE — the Reaver's "Scent the Expense" (4d4). Same
   // rule as the untyped attacks: a script does not decide what resists a DM's campaign content.
   const untypedRiders = riders.filter(r => !r.damageType);
-  ok("every rider added for a second damage type names it",
-    riders.length > 0 && untypedRiders.length === 1,
+  ok("every damage rider names its type",
+    riders.length > 0 && untypedRiders.length === 0,
     `${riders.length} riders; still untyped: ${untypedRiders.map(r => r.where).join(", ")}`);
 
   const claw = acts.find(a => a.where === "Mosshide Owlbear — Claw");

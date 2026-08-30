@@ -1,6 +1,6 @@
 import appManifest from "../../../public/manifest.json";
 import { applyAuthorModeFromUrl } from "../campaign/authorMode";
-import { chassisSources } from "../content/contentScope";
+import { chassisSources, provenanceOf } from "../content/contentScope";
 import OBR from "@owlbear-rodeo/sdk";
 import { useState, useEffect, useCallback } from "react";
 import type { MainMonsterTemplate, MainEncounterMonsterInstance, MainMonsterVisibilityState } from "./runtime/mainMonsterRuntime";
@@ -670,12 +670,25 @@ export function EncounterLibraryPanel({
    * What stays here is what is genuinely UI: the unlock gate, the acknowledge filter on stale-seed
    * notices, and the in-session override layer.
    */
+  const [showReference, setShowReference] = useState(false);
   const isCampaignTemplate = (id: string) => isCampaignTemplateId(id, monsterLibrary);
   const resolution = resolveMonsterLibrary(monsterLibrary, { stored: dmLibrary, includeCampaign: unlocked });
   const overriddenCampaignTemplates = resolution.overridden;
   // A notice the DM has already acknowledged stays gone until the numbers move again.
-  const myMonsters = resolution.library.filter(t => !isCampaignTemplate(t.templateId));
-  const campaignBase = resolution.library.filter(t => isCampaignTemplate(t.templateId));
+  /**
+   * ⚠ "MINE" WAS DEFINED AS "NOT CAMPAIGN", AND A THIRD SCOPE BROKE IT.
+   *
+   * When the library had two sources that binary was fine. 0.8.9.0 added SRD reference creatures
+   * and every one of them landed in MY MONSTERS — 329 rows with Edit and Delete buttons, burying
+   * the DM's own work and offering to edit content the data model forbids editing.
+   *
+   * The scope is on the record. Ask it, rather than inferring ownership from what something is not.
+   */
+  const isReference = (m: MainMonsterTemplate) => provenanceOf(m).scope === "system";
+  const referenceMonsters = resolution.library.filter(isReference);
+  const myMonsters = resolution.library.filter(
+    m => !isCampaignTemplate(m.templateId) && !isReference(m));
+  const campaignBase = resolution.library.filter(m => isCampaignTemplate(m.templateId));
   const baseLibrary = [...myMonsters, ...campaignBase];
   const resolvedLibrary = [
     ...baseLibrary.map(t => monsterOverrides[t.templateId] ?? t),
@@ -1340,6 +1353,16 @@ export function EncounterLibraryPanel({
                   <span style={{ color: "#8a8aa0" }}>
                     {o.name}: yours {o.mine} · this build {o.campaign}
                     {o.at && <span style={{ color: "#555" }}> · edited {new Date(o.at).toLocaleDateString()}</span>}
+                    {/*
+                      ⚠ HP AND AC ARE OFTEN IDENTICAL ON BOTH SIDES, and printing only those made the
+                      notice unreadable — seven creatures reporting "39 HP / AC 17 · 39 HP / AC 17".
+                      The difference is usually in an ACTION, so name it.
+                    */}
+                    {o.differences.length > 0 && (
+                      <span style={{ display: "block", color: "#7bb0e0", fontSize: 10, marginTop: 2 }}>
+                        {o.differences.join(" · ")}
+                      </span>
+                    )}
                   </span>
                   {o.mine !== o.campaign && (
                     <button type="button" onClick={() => revertCampaignOverride(o.id)}
@@ -1646,6 +1669,35 @@ export function EncounterLibraryPanel({
                     No encounters yet. Use <strong style={{ color: "#aaa" }}>+ Encounter</strong> to build your own —
                     or <strong style={{ color: "#aaa" }}>+ Create Monster</strong> to make a creature first.
                   </p>
+                )}
+
+                {/*
+                  REFERENCE CREATURES — read-only, collapsed, and deliberately last.
+
+                  ⚠ NO EDIT AND NO DELETE, because the data model already refuses both and a button
+                  that cannot work is worse than no button. They are here to be FOUND — the design's
+                  "Creature Search / Filter" and "Stat-block Viewer" — and they belong in an
+                  encounter, not in the DM's own library.
+                */}
+                {referenceMonsters.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <button type="button" onClick={() => setShowReference(v => !v)}
+                      style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer",
+                        fontSize: 10, color: "#7bb0e0", textTransform: "uppercase", letterSpacing: 1 }}>
+                      {showReference ? "▾" : "▸"} Reference · SRD 5.2.1 · {referenceMonsters.length}
+                    </button>
+                    <p style={{ margin: "4px 0 0", fontSize: 10, color: "#556" }}>
+                      Usable in an encounter. Never a chassis, never saved to your library, never in an export.
+                    </p>
+                    {showReference && referenceMonsters.map(m => (
+                      <div key={m.templateId} style={{ background: "#0e0e16", border: "1px solid #23233a", borderRadius: 6, padding: "5px 10px", marginTop: 5 }}>
+                        <span style={{ fontSize: 12, color: "#c9d0e8" }}>{m.name}</span>
+                        <span style={{ fontSize: 10, color: "#667", marginLeft: 6 }}>
+                          {m.stats.kind} · {m.stats.maxHp} HP · AC {m.stats.ac}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {/* My Monsters — the DM's own creatures (so they show outside the encounter picker). */}

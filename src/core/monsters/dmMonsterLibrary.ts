@@ -147,7 +147,12 @@ export type MonsterLibraryResolution = {
    * `library`. `source` says which store it came from: `"campaign"` is authored content,
    * `"dm"` is a deliberate private override.
    */
-  overridden: { id: string; name: string; mine: string; campaign: string; at?: string; source?: "campaign" | "dm" }[];
+  overridden: {
+    id: string; name: string; mine: string; campaign: string;
+    at?: string; source?: "campaign" | "dm";
+    /** Field-level summary — what to look at. Empty only if nothing differs, which cannot happen. */
+    differences: string[];
+  }[];
   /**
    * Stored copies whose HP or AC disagrees with the shipped creature. They are IN `library` —
    * this is what the table is running, not what was overruled.
@@ -158,6 +163,47 @@ export type MonsterLibraryResolution = {
 /** A creature belongs to the campaign if the bundle ships it, or it uses the reserved namespace. */
 export function isCampaignTemplateId(id: string, bundled: MainMonsterTemplate[]): boolean {
   return bundled.some(t => t.templateId === id) || id.startsWith("broken-chain:");
+}
+
+
+/**
+ * WHAT ACTUALLY DIFFERS BETWEEN A STORED COPY AND THE SHIPPED CREATURE.
+ *
+ * Christopher, 2026-08-28: *"with changes that i dont know what changed on those."* The banner
+ * printed `shape()` — HP and AC — on both sides, so a copy that differed only in an ACTION read
+ * as "yours 39 HP / AC 17 · this build 39 HP / AC 17" and told him nothing. Seven creatures at
+ * once, all of them identical on the two numbers shown.
+ *
+ * ⚠ THE COMPARISON WAS ALREADY WHOLE-OBJECT; ONLY THE REPORT WAS TWO NUMBERS. `signature` decides
+ * whether something differs and has since 0.7.51. This names the difference so the notice can be
+ * acted on rather than only noticed.
+ */
+function describeDifferences(mine: MainMonsterTemplate, theirs: MainMonsterTemplate): string[] {
+  const out: string[] = [];
+
+  const s1 = mine.stats as Record<string, unknown>;
+  const s2 = theirs.stats as Record<string, unknown>;
+  for (const key of new Set([...Object.keys(s1), ...Object.keys(s2)])) {
+    if (JSON.stringify(s1[key]) !== JSON.stringify(s2[key])) {
+      out.push(`${key} ${JSON.stringify(s2[key]) ?? "—"} → ${JSON.stringify(s1[key]) ?? "—"}`);
+    }
+  }
+
+  // Named entries, so the DM is told WHICH action moved rather than that something did.
+  for (const list of ["traits", "actions", "reactions"] as const) {
+    const a = (mine[list] ?? []) as { name?: string }[];
+    const b = (theirs[list] ?? []) as { name?: string }[];
+    const names = new Set([...a, ...b].map(x => x?.name).filter(Boolean) as string[]);
+    for (const name of names) {
+      const x = a.find(i => i?.name === name);
+      const y = b.find(i => i?.name === name);
+      if (!y) out.push(`+ ${name}`);
+      else if (!x) out.push(`− ${name}`);
+      else if (JSON.stringify(x) !== JSON.stringify(y)) out.push(`~ ${name}`);
+    }
+  }
+
+  return out;
 }
 
 export function resolveMonsterLibrary(
@@ -271,6 +317,7 @@ export function resolveMonsterLibrary(
       overridden.push({
         id: t.templateId, name: t.name, mine: shape(copy), campaign: shape(t),
         at: copy.dmEdited?.at, source: isAuthored ? "campaign" : "dm",
+        differences: describeDifferences(copy, t),
       });
       // Still reported when the headline numbers disagree — but as information, not a takeover.
       if (copy.stats.maxHp !== t.stats.maxHp || String(copy.stats.ac) !== String(t.stats.ac)) {

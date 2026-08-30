@@ -42,11 +42,28 @@ import { safeStorage } from "../utils/safeStorage";
 const SEEN_KEY = "fdmc.whatsNew.seen.v2";
 const SEEN_KEY_V1 = "fdmc.whatsNew.seen.v1";
 
+/**
+ * WHO A CHANGE IS FOR.
+ *
+ * Christopher, 2026-08-28: *"ensure that if the pop up for the non GM should only show if it
+ * something that effects them."*
+ *
+ *   `gm`        the DM's tools — estimators, the encounter builder, diagnostics, this panel.
+ *   `everyone`  something a PLAYER meets: their character sheet, their card, their equipment.
+ *
+ * ⚠ THE DEFAULT IS `gm`, DELIBERATELY. A note that forgets to say who it is for is shown to the
+ * DM only — the failure mode of a wrong default should be a DM reading one extra line, never a
+ * table of players interrupted by a note about the creature estimator.
+ */
+export type NoteAudience = "gm" | "everyone";
+
 export type ReleaseNote = {
   /** Section heading, e.g. "Estimators". */
   area: string;
   /** One line per change, written for a DM rather than a developer. */
   points: string[];
+  /** Omitted means `gm`. See NoteAudience. */
+  audience?: NoteAudience;
 };
 
 export type VersionNotes = {
@@ -71,6 +88,24 @@ export type VersionNotes = {
  * this panel is not allowed to carry.
  */
 export const RELEASE_HISTORY: VersionNotes[] = [
+  {
+    version: "0.8.9.3",
+    notes: [
+      {
+        area: "My Library",
+        points: [
+          "SRD reference creatures no longer sit in My Monsters with Edit and Delete buttons. They have their own collapsed Reference section, read-only — usable in an encounter, never a chassis, never saved into your library, never in an export.",
+          "The \"changes not in this build\" notice names WHAT differs now — the stat or the action — instead of printing HP and AC that were usually identical on both sides.",
+        ],
+      },
+      {
+        area: "Creatures",
+        points: [
+          "Attacks carry their damage TYPE as a field instead of only in their description, so a resistance can be answered against what the attack actually deals. A few attacks deal one roll of two types at once, and those carry both.",
+        ],
+      },
+    ],
+  },
   {
     version: "0.8.8.2",
     notes: [
@@ -125,6 +160,7 @@ export const RELEASE_HISTORY: VersionNotes[] = [
     notes: [
       {
         area: "Character sheets",
+        audience: "everyone",
         points: [
           "The Features tab hint now says what belongs on the tab, feats included.",
         ],
@@ -142,6 +178,7 @@ export const RELEASE_HISTORY: VersionNotes[] = [
     notes: [
       {
         area: "Character sheets",
+        audience: "everyone",
         points: [
           "Feats and class features are ONE tab now, and it is Features. The Feats step is gone from the editor and existing characters were migrated automatically — nothing was lost, the entries moved.",
           "Only add a feat that changes something the app CALCULATES: damage, party healing, reach or accuracy. HP, ability scores and granted spells are values you type in, so a feat whose only effect is +HP, an ASI or an extra spell needs no entry — it is already on the sheet, and adding it would count it twice.",
@@ -221,6 +258,20 @@ export function unseenNotes(seen: string | null): VersionNotes[] {
 }
 
 /**
+ * Keep only what this audience should see, dropping versions left with nothing.
+ *
+ * A GM sees everything — they own the tools the notes are about. A player sees only the areas
+ * marked `everyone`, and a version whose changes were all GM-side disappears from their list
+ * entirely rather than appearing as an empty heading.
+ */
+export function forAudience(versions: VersionNotes[], audience: NoteAudience): VersionNotes[] {
+  if (audience === "gm") return versions;
+  return versions
+    .map(v => ({ ...v, notes: v.notes.filter(n => n.audience === "everyone") }))
+    .filter(v => v.notes.length > 0);
+}
+
+/**
  * Open the full read-me in its own window.
  *
  * ⚠ SELF-CONTAINED HTML, NOT A ROUTE. The DM panel runs inside an embedded frame; a popup that
@@ -260,13 +311,27 @@ ${body}`);
   w.document.close();
 }
 
-export function WhatsNewPopup({ version, unlocked }: { version: string; unlocked: boolean }) {
+/**
+ * ⚠ A PLAYER IS SHOWN ONLY WHAT REACHES THEM, AND IF THAT IS NOTHING THE PANEL DOES NOT OPEN.
+ *
+ * Filtering the LIST but still opening the modal would be worse than not filtering: an empty
+ * notice interrupts a player mid-session to tell them nothing. So the audience filter runs first
+ * and an empty result is the same as having nothing unseen.
+ *
+ * `audience` defaults to "gm" because the only surface mounting this today is the DM panel. When
+ * a player surface mounts it, it passes "everyone" and the rule is already here.
+ */
+export function WhatsNewPopup({ version, unlocked, audience = "gm" }: {
+  version: string;
+  unlocked: boolean;
+  audience?: NoteAudience;
+}) {
   const [pending, setPending] = useState<VersionNotes[]>([]);
 
   useEffect(() => {
     if (!unlocked) return;
-    setPending(unseenNotes(seenVersion()));
-  }, [version, unlocked]);
+    setPending(forAudience(unseenNotes(seenVersion()), audience));
+  }, [version, unlocked, audience]);
 
   if (!unlocked || pending.length === 0) return null;
 

@@ -695,6 +695,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           {
             "name": "Scent the Expense",
             "damage": "4d4",
+            "damageType": "Fire",
             "cadence": "once-per-turn",
             "chance": 1,
             "note": "marked target"
