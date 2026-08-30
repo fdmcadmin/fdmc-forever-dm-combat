@@ -26,7 +26,20 @@ export type MonsterReaderAction = {
   kind: "action" | "attack" | "reaction" | "spell" | "trait";
   roll?: string;
   damage?: string;
+  /**
+   * ⚠ THE DAMAGE TYPE IS A FIELD, NOT A WORD IN A SENTENCE.
+   *
+   * Christopher, 2026-08-28: *"the text for something like claw shouldnt have to read hit: do X
+   * damage, it should just say on hit this is the damage it does and the type."* It lived only in
+   * prose, so the app could roll the dice and still not know what kind of damage it had dealt —
+   * and resistances read a string. Capitalised as the SRD prints it: "Slashing", "Fire".
+   */
+  damageType?: string;
   save?: string;
+  /**
+   * The RIDER, and nothing the fields already carry. Never "Hit: 11 (2d6 + 4) slashing" — that is
+   * `damage` + `damageType`, and repeating it is how the two drift apart.
+   */
   text?: string;
   attackCount?: number;
   /** Recharge range e.g. "6", "5-6", "4-6" — ability re-enables on successful 1d6 roll */

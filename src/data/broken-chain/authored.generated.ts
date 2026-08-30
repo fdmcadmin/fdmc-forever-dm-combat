@@ -108,7 +108,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d8 + @MAIN",
-        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) slashing damage. Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each.",
+        "damageType": "Slashing",
+        "range": "reach 5 ft.",
+        "text": "Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each.",
         "routineSlots": 2
       },
       {
@@ -116,7 +118,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d8 + @MAIN",
-        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 10 (1d8 + 5) slashing damage. The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
+        "damageType": "Slashing",
+        "range": "reach 5 ft.",
+        "text": "The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
         "routineSlots": 2
       }
     ],
@@ -323,7 +327,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20 + @ATK",
         "damage": "1d6 + @MAIN",
         "routineSlots": 2,
-        "text": "Melee Weapon Attack: +9 to hit, reach 10 ft., one Medium or smaller creature. Hit: 8 (1d6 + 5) bludgeoning damage, and the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
+        "damageType": "Bludgeoning",
+        "range": "reach 10 ft.",
+        "text": "one Medium or smaller creature. Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
       },
       {
         "name": "Heavy Blow",
@@ -331,7 +337,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20 + @ATK",
         "damage": "1d8 + @MAIN",
         "routineSlots": 2,
-        "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 9 (1d8 + 5) bludgeoning damage."
+        "damageType": "Bludgeoning",
+        "range": "reach 5 ft.",
+        "text": ""
       },
       {
         "name": "Cast Aside",
@@ -443,7 +451,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + 8",
         "damage": "2d8 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage.",
+        "damageType": "Cold",
+        "range": "reach 5 ft.",
+        "text": "",
         "routineSlots": 1
       },
       {
@@ -451,7 +461,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + 8",
         "damage": "2d6 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage.",
+        "damageType": "Bludgeoning",
+        "range": "reach 5 ft.",
+        "text": "",
         "routineSlots": 1
       },
       {
@@ -560,7 +572,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d10 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
+        "damageType": "Bludgeoning",
+        "range": "reach 5 ft.",
+        "text": "one Large or smaller creature. Until the grapple ends, the target is restrained. The Knight can restrain only"
       }
     ],
     "reactions": [
@@ -781,7 +795,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d10 + @MAIN",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 9 (1d10 + 4) bludgeoning. Multiattack: two Heavy Slam attacks."
+        "damageType": "Bludgeoning",
+        "range": "reach 5 ft.",
+        "text": "Multiattack: two Heavy Slam attacks."
       }
     ],
     "reactions": [
@@ -985,7 +1001,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @STR+PB",
         "damage": "4d10+@STR",
-        "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 28 (4d10 + 6) bludgeoning damage.",
+        "damageType": "Bludgeoning",
+        "range": "reach 10 ft.",
+        "text": "",
         "routineSlots": 2
       },
       {
@@ -1098,7 +1116,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d10 + @MAIN",
-        "text": "Melee Weapon Attack: +7 to hit, reach 10 ft.; Hit: 9 (1d10 + 4) slashing."
+        "damageType": "Slashing",
+        "range": "reach 10 ft.",
+        "text": ""
       },
       {
         "name": "Crushing Cast (Recharge 5–6)",
@@ -1195,7 +1215,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d8 + @MAIN",
-        "text": "Ranged Spell Attack: +8 to hit, range 90 ft.; Hit: 14 (2d8 + 5) force."
+        "damageType": "Force",
+        "range": "range 90 ft.",
+        "text": ""
       },
       {
         "name": "Hammer the Border (Recharge 5–6)",
@@ -1398,7 +1420,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d12 + @MAIN",
-        "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 11 (1d12 + 5) slashing."
+        "damageType": "Slashing",
+        "range": "reach 5 ft.",
+        "text": ""
       },
       {
         "name": "Warping Cut (Recharge 5–6)",
@@ -1496,7 +1520,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d6 + @MAIN",
-        "text": "Ranged Spell Attack: +8 to hit, range 100 ft.; Hit: 12 (2d6 + 5) force."
+        "damageType": "Force",
+        "range": "range 100 ft.",
+        "text": ""
       },
       {
         "name": "Refracted Lance (Recharge 5–6)",
@@ -1639,7 +1665,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@INT+@PB",
         "damage": "4d8+@INT",
-        "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 24 (4d8 + 6) psychic damage.",
+        "damageType": "Psychic",
+        "range": "range 120 ft.",
+        "text": "",
         "routineSlots": 3
       },
       {
@@ -1784,7 +1812,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d6 + @STR",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 10 (2d6 + 3) slashing damage.",
+        "damageType": "Slashing",
+        "range": "reach 5 ft.",
+        "text": "",
         "routineSlots": 1
       },
       {
@@ -1802,7 +1832,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20 + @ATK",
         "damage": "1d8 + @STR",
         "legendaryCost": 1,
-        "text": "Once per round at the end of another creature’s turn, make one Tail attack: +7 to hit, reach 15 ft.; Hit: 7 (1d8 + 3) bludgeoning damage, and the dragon may move 5 ft. without provoking from the target hit."
+        "damageType": "Bludgeoning",
+        "range": "reach 15 ft.",
+        "text": "Once per round at the end of another creature’s turn, make one Tail attack: without provoking from the target hit."
       }
     ],
     "reactions": [],
@@ -1884,7 +1916,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 +@STR+@PB",
         "damage": "2d6+@STR",
-        "text": "Melee Weapon Attack: +4 to hit, reach 5 ft.; Hit: 9 (2d6 + 2) piercing damage.",
+        "damageType": "Piercing",
+        "range": "reach 5 ft.",
+        "text": "",
         "routineSlots": 1
       },
       {
@@ -1909,7 +1943,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Tail",
         "kind": "action",
-        "text": "Melee Weapon Attack: +4 to hit, reach 10 ft.; Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller it must succeed on a DC 12 Strength save or be knocked prone.",
+        "damageType": "Bludgeoning",
+        "range": "reach 10 ft.",
+        "text": "",
         "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR",
         "save": "",
@@ -2028,7 +2064,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @STR+@PROF",
         "damage": "2d8 + @STR",
-        "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage."
+        "damageType": "Slashing",
+        "range": "reach 5 ft.",
+        "text": ""
       },
       {
         "name": "Blighted Vitality (Recharge 4–6)",

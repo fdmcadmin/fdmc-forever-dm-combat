@@ -22,6 +22,11 @@ import {
 } from "../src/modules/dnd-5e/srdLibrary";
 import { SRD_AUDIT_CHASSIS, SRD_AUDIT_CR_ROWS } from "../src/modules/dnd-5e/srdAuditChassis.generated";
 import { estimateCreature } from "../src/core/encounter-band/creatureEstimator";
+import { SRD_TEMPLATES } from "../src/modules/dnd-5e/srdToTemplate";
+import { parseStatBlockClause } from "../src/modules/dnd-5e/statBlockGrammar";
+import { resolveMonsterLibrary } from "../src/core/monsters/dmMonsterLibrary";
+import { chassisSources, exportableRecords } from "../src/core/content/contentScope";
+import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -171,6 +176,135 @@ console.log("\nM28 — the estimator reaches CR 30");
   const row26 = SRD_AUDIT_CR_ROWS.find(r => r.cr === 26)!;
   ok("the audit's CR 26 HP band opens where CR 25 closed", row26.hpLow === 626, String(row26.hpLow));
   ok("and its DPR band likewise", row26.dprLow === 231, String(row26.dprLow));
+}
+
+/* ── ONE GRAMMAR ────────────────────────────────────────────────────────────────────────── */
+console.log("\nThe stat block reads one way");
+{
+  // The SRD's own wording, and the shape every campaign action is authored in.
+  const rend = parseStatBlockClause("Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Slashing damage.");
+  ok("attack roll becomes a d20 expression", rend.roll === "1d20 + 7", String(rend.roll));
+  ok("damage is the DICE, not the printed average", rend.damage === "2d8 + 5", String(rend.damage));
+  ok("the damage TYPE is a field", rend.damageType === "Slashing", String(rend.damageType));
+  ok("reach is a field", rend.range === "reach 5 ft.", String(rend.range));
+  // ⚠ THE POINT OF ALL OF IT: nothing is left saying "Hit: do X damage".
+  ok("and the text is EMPTY, because the clause was only numbers", rend.text === "", `"${rend.text}"`);
+
+  const wolf = parseStatBlockClause(
+    "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition.");
+  ok("a rider survives as the text", wolf.text.startsWith("If the target is a Medium"), wolf.text);
+  ok("and the rider does not repeat the damage", !/\bHit\b|\bd6\b|Piercing/i.test(wolf.text), wolf.text);
+
+  const save = parseStatBlockClause(
+    "Intelligence Saving Throw: DC 16, one creature within 30 feet. Failure: 10 (3d6) Psychic damage. Success: Half damage.");
+  ok("a save clause reads its DC", save.save === "INT DC 16", String(save.save));
+  ok("and its damage and type", save.damage === "3d6" && save.damageType === "Psychic",
+    `${save.damage} / ${save.damageType}`);
+  ok("\"Success: Half damage\" is the default, not a rider", !/Success/i.test(save.text), save.text);
+
+  // ⚠ COLUMN BREAKS AND THE PAGE FOOTER ARE NOT CONTENT.
+  const messy = parseStatBlockClause(
+    "Melee Attack Roll: +9, reach 15 ft. Hit: 12 (2d6 + 5) Bludgeoning damage. It has the Grappled condi - tion (es - cape DC 14). System Reference Document 5.2.1 259");
+  ok("hyphenation across a column is repaired", /condition \(escape DC 14\)/.test(messy.text), messy.text);
+  ok("the running footer is stripped", !/System Reference Document/.test(messy.text), messy.text);
+}
+
+/* ── THE CAMPAIGN IS WRITTEN IN THE SAME LANGUAGE ───────────────────────────────────────── */
+console.log("\nThe Broken Chain reads the same way");
+{
+  const acts = BROKEN_CHAIN_MONSTER_LIBRARY.flatMap(c =>
+    [...(c.actions ?? []), ...(c.reactions ?? []), ...(c.traits ?? [])]
+      .map(a => ({ ...a, where: `${c.name} — ${a.name}` })));
+
+  /**
+   * ⚠ TWO LEDGERS, AND NEITHER IS A PERMISSION SLIP.
+   *
+   * 73 attack clauses converted mechanically (54 in the hand-written library, 19 in the authored
+   * payload that overrides it — one migration, two files, because mergeAuthored layers them): the type was stated in the prose, so moving it to a
+   * field invented nothing. These two lists are what a codemod MUST NOT decide.
+   *
+   * MULTI-TYPE — the action deals two damage types ("11 (2d6 + 4) piercing plus 3 (1d6) radiant").
+   * `damageType` holds ONE type, so these cannot be expressed yet. They keep their prose until the
+   * schema carries a second damage channel. Converting them would silently drop a damage type.
+   *
+   * UNTYPED — the action never named a type at all. A Bite is almost certainly Piercing and a Slam
+   * almost certainly Bludgeoning, but "almost certainly" is exactly where a script must not write
+   * to a DM's campaign: damage type decides what resists it. These need Christopher, not a regex.
+   */
+  const MULTI_TYPE = 12;
+  const UNTYPED = 20;
+
+  const restating = acts.filter(a => /\bHit\s*:/i.test(a.text ?? ""));
+  const untyped = acts.filter(a => a.kind === "attack" && a.damage && !a.damageType);
+
+  ok(`only the ${MULTI_TYPE} multi-type actions still restate their damage`,
+    restating.length === MULTI_TYPE,
+    `${restating.length}: ${restating.slice(0, 4).map(a => a.where).join(", ")}`);
+  ok("and every one of them really does carry two damage types",
+    restating.every(a => {
+      const t = (a.text ?? "").toLowerCase();
+      const types = ["acid","bludgeoning","cold","fire","force","lightning","necrotic",
+        "piercing","poison","psychic","radiant","slashing","thunder"].filter(x => t.includes(x));
+      return types.length > 1 || /\bplus\b|\band\b/.test(t);
+    }),
+    "a single-type action left unconverted is a miss, not a decision");
+
+  ok(`${UNTYPED} attacks still have no damage type`, untyped.length === UNTYPED,
+    `${untyped.length}: ${untyped.slice(0, 4).map(a => a.where).join(", ")}`);
+
+  // Everything the codemod DID touch has to be complete — fields, and no prose repeating them.
+  const converted = acts.filter(a => a.damageType);
+  ok("every converted attack has a type, and no 'Hit:' left in its text",
+    converted.length > 40 && converted.every(a => !/\bHit\s*:/i.test(a.text ?? "")),
+    `${converted.length} converted`);
+
+  const claw = acts.find(a => a.where === "Mosshide Owlbear — Claw");
+  ok("the Owlbear's Claw is fields only, with no text at all",
+    Boolean(claw) && claw!.damageType === "Slashing" && claw!.range === "reach 5 ft." && !claw!.text,
+    JSON.stringify(claw));
+
+  // The point of the exercise: one shape, whichever library a creature came from.
+  const srdRend = SRD_TEMPLATES.flatMap(t => t.actions).find(a => a.name === "Rend" && a.damageType);
+  ok("a campaign Claw and an SRD Rend carry the same fields",
+    Boolean(srdRend) && Boolean(claw)
+      && ["roll", "damage", "damageType", "range"].every(k =>
+        k in (claw as Record<string, unknown>) && k in (srdRend as unknown as Record<string, unknown>)),
+    JSON.stringify(srdRend));
+}
+
+/* ── THE THIRD SOURCE ───────────────────────────────────────────────────────────────────── */
+console.log("\nReference creatures reach the panels");
+{
+  ok("the adapter produced templates", SRD_TEMPLATES.length > 250, `${SRD_TEMPLATES.length}`);
+  ok("every template carries system scope",
+    SRD_TEMPLATES.every(t => t.provenance?.scope === "system"));
+  ok("every template has at least one action — a zero-DPR body is never offered",
+    SRD_TEMPLATES.every(t => (t.actions?.length ?? 0) > 0));
+
+  const owlbear = SRD_TEMPLATES.find(t => t.name === "Owlbear");
+  ok("the Owlbear's Rend is structured, not prose",
+    owlbear?.actions.some(a => a.name === "Rend" && a.damage === "2d8 + 5" && a.damageType === "Slashing"),
+    JSON.stringify(owlbear?.actions.find(a => a.name === "Rend")));
+
+  // The whole point of the third source: one resolver, so every listing surface gets them at once.
+  const withSrd = resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY, { stored: [] });
+  const withoutSrd = resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY, { stored: [], system: [] });
+  ok("resolveMonsterLibrary includes them by DEFAULT",
+    withSrd.library.length > withoutSrd.library.length,
+    `${withSrd.library.length} vs ${withoutSrd.library.length}`);
+  ok("a Kraken is findable", withSrd.library.some(t => t.name === "Kraken"));
+  ok("they can be switched off for a test", !withoutSrd.library.some(t => t.name === "Kraken"));
+
+  // ⚠ THESE TWO PASSED VACUOUSLY UNTIL TODAY, BECAUSE NOTHING QUERIED THE LIBRARY AT ALL.
+  const chassis = chassisSources(withSrd.library as never[]);
+  ok("NO reference creature can be used as a chassis",
+    !chassis.some((t: { name: string }) => t.name === "Kraken"),
+    `${chassis.length} chassis sources`);
+  const exportable = exportableRecords(withSrd.library as never[]);
+  ok("NO reference creature can be carried in an export",
+    !exportable.some((t: { name: string }) => t.name === "Kraken"),
+    `${exportable.length} exportable`);
+  ok("the DM's own campaign creatures are still chassis-eligible", chassis.length > 0);
 }
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);

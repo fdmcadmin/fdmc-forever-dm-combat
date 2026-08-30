@@ -10,6 +10,7 @@ import type { MainMonsterTemplate } from "./runtime/mainMonsterRuntime";
 import { MONSTER_KINDS, type MonsterKind } from "./runtime/mainMonsterRuntime";
 import type { NormalizedMonsterActor, MonsterAction as NMonsterAction } from "../types/monsterTypes";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
+import { SYSTEM_MONSTER_TEMPLATES } from "../../modules/monsterSourceRoster";
 import { safeStorage } from "../utils/safeStorage";
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
@@ -167,6 +168,21 @@ export function resolveMonsterLibrary(
     /** Campaign content is gated on the module unlock in the UI. Defaults to included. */
     includeCampaign?: boolean;
     /**
+     * ⚠ THE THIRD SOURCE, AND IT DEFAULTS ON.
+     *
+     * Reference creatures a mod supplies — SRD 5.2.1 today. This function composed exactly TWO
+     * sources (the bundled campaign library and the DM's stored one), and because EVERY
+     * creature-listing surface resolves through here, one missing source meant the Encounter
+     * Builder, the Estimator and creature search all came up empty at once.
+     *
+     * It defaults to INCLUDED rather than asking six call sites to opt in. An opt-in would have
+     * been forgotten at one of them, and a source that reaches five surfaces out of six is a bug
+     * that looks like a preference. Tests pass `system: []` to isolate.
+     */
+    includeSystem?: boolean;
+    /** Override the reference set — tests pass `[]`, or a fixture. */
+    system?: readonly MainMonsterTemplate[];
+    /**
      * Which stored ids came from the CAMPAIGN store — rule 2. Defaults to reading it, because
      * every caller that passes `stored` passes the MERGED list and cannot tell them apart.
      */
@@ -175,6 +191,7 @@ export function resolveMonsterLibrary(
 ): MonsterLibraryResolution {
   const stored = opts.stored ?? loadMonsterLibrary();
   const includeCampaign = opts.includeCampaign ?? true;
+  const system = (opts.includeSystem ?? true) ? (opts.system ?? SYSTEM_MONSTER_TEMPLATES) : [];
   const authored = opts.authoredIds ?? new Set(loadMonsterLibrary("campaign").map(t => t.templateId));
   const isCampaign = (id: string) => isCampaignTemplateId(id, bundled);
 
@@ -271,7 +288,17 @@ export function resolveMonsterLibrary(
     })
     : [];
 
-  return { library: [...mine, ...campaign], overridden, shadowed };
+  /**
+   * ⚠ REFERENCE CREATURES ARE APPENDED, NEVER MERGED.
+   *
+   * They take no part in the override/shadow logic above, because a DM cannot edit one: there is
+   * no stored copy to outrank, nothing to report as diverging, and an id collision with a campaign
+   * creature is impossible — SRD ids live in the reserved `dnd:srd521:` namespace. Running them
+   * through that machinery would invent a conflict that cannot happen.
+   *
+   * They go LAST so a DM's own work and the campaign's content read first in every list.
+   */
+  return { library: [...mine, ...campaign, ...system], overridden, shadowed };
 }
 
 export function deleteMonsterTemplate(templateId: string): void {

@@ -159,13 +159,9 @@ const KNOWN_SCRIPT_ONLY: readonly string[] = [
   "core/encounter-band/encounterDiagnostics.ts",       // validate:invariants only
   "core/ui/reactionEconomyAudit.ts",                   // check:reactions only
   "modules/the-broken-chain/actors/actorHelpers.ts",   // check:partyfit / check:healing only
-  // ⚠ THE HEADLINE. 335 corrected SRD creatures, proven by check:srd, reachable by no surface —
-  // the five the design marks as allowed (Encounter Builder, Estimator, Random/Rest Tables,
-  // Creature Search/Filter, Stat-block Viewer) were never built.
-  "modules/dnd-5e/srdAuditChassis.generated.ts",
-  "modules/dnd-5e/srdContent.ts",
-  "modules/dnd-5e/srdLibrary.ts",
-  "modules/dnd-5e/srdMonsters.generated.ts",
+  // The SRD modules used to sit here — 335 creatures proven by a gate and reachable by nothing.
+  // 0.8.9.0 added the third source to resolveMonsterLibrary and they are LIVE. Left as a note
+  // rather than a blank: the ledger shrinking is the only visible record that debt was paid.
 ];
 
 console.log(`Wiring — ${files.length} modules, ${entries.length} entry points, ${scripts.length} scripts\n`);
