@@ -34,7 +34,7 @@ export type MonsterReaderAction = {
    * prose, so the app could roll the dice and still not know what kind of damage it had dealt —
    * and resistances read a string. Capitalised as the SRD prints it: "Slashing", "Fire".
    */
-  damageType?: string;
+  damageType?: string | readonly string[];
   save?: string;
   /**
    * The RIDER, and nothing the fields already carry. Never "Hit: 11 (2d6 + 4) slashing" — that is

@@ -62,3 +62,26 @@ export function firstDamageTypeIn(text: string | undefined): DamageType | undefi
   if (!hay) return undefined;
   return DAMAGE_TYPES.find(t => new RegExp(String.raw`\b${t}\b`).test(hay));
 }
+
+/**
+ * EVERY damage type a value carries, normalised — one, or several.
+ *
+ * Christopher, 2026-08-28: *"it should stay duel typing for the possible resist windows."* A few
+ * actions deal ONE roll of TWO types — "10 (1d10 + 5) cold and psychic damage" — and which types
+ * those are is the whole question a resistance has to answer. So the field holds a list when it
+ * needs to, and this is the one place that reads it either way.
+ *
+ * ⚠ NOT THE SAME AS A RIDER. A rider is EXTRA DICE with their own type. This is a single damage
+ * instance that is both types at once, which is why it cannot be modelled as two damage entries.
+ */
+export function damageTypesOf(value: string | readonly string[] | undefined): string[] {
+  if (!value) return [];
+  const list = Array.isArray(value) ? value : [value as string];
+  return list.map(normalizeDamageType).filter(Boolean);
+}
+
+/** How a damage type reads on screen, however many it carries. */
+export function describeDamageTypes(value: string | readonly string[] | undefined): string {
+  const list = Array.isArray(value) ? [...value] : value ? [value as string] : [];
+  return list.join(" and ");
+}

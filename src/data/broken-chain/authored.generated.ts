@@ -226,7 +226,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "2d10 + @MAIN",
-        "text": "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks."
+        "text": "Multiattack: Brandwing makes two Ember Lance attacks.",
+        "damageType": ["Fire","Psychic"],
+        "range": "range 120 ft."
       }
     ],
     "reactions": [
@@ -893,7 +895,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d10 + @MAIN",
-        "text": "Ranged Spell Attack: +8 to hit, range 90 ft., one target. Hit: 10 (1d10 + 5) cold and psychic damage."
+        "damageType": ["Cold","Psychic"],
+        "range": "range 90 ft."
       },
       {
         "name": "Winter’s Toll",

@@ -23,13 +23,18 @@
  * Campaign content is AUTHORED in the fields directly; it never round-trips through prose.
  */
 
-/** The damage types the 2024 stat blocks use, capitalised as they are printed. */
-export const DAMAGE_TYPES = [
-  "Acid", "Bludgeoning", "Cold", "Fire", "Force", "Lightning", "Necrotic",
-  "Piercing", "Poison", "Psychic", "Radiant", "Slashing", "Thunder",
-] as const;
+import { DAMAGE_TYPES as DAMAGE_TYPES_CANONICAL } from "../../core/constants/damageTypes";
 
-export type DamageType = (typeof DAMAGE_TYPES)[number];
+/**
+ * ⚠ THE VOCABULARY IS NOT DEFINED HERE. `core/constants/damageTypes` has held it since the weapon
+ * table needed it, and this file briefly kept a second capitalised copy — two lists for one
+ * concept, which is the fault this whole change exists to remove. The canonical list is lowercase;
+ * the SRD prints them capitalised, so that is a DISPLAY form derived from it, not another list.
+ */
+const CANONICAL = DAMAGE_TYPES_CANONICAL;
+export const DAMAGE_TYPES = CANONICAL.map(t => t[0].toUpperCase() + t.slice(1)) as readonly string[];
+
+export type DamageType = string;
 
 const ABILITY_BY_NAME: Record<string, string> = {
   Strength: "STR", Dexterity: "DEX", Constitution: "CON",
@@ -68,7 +73,7 @@ export function cleanStatBlockText(raw: string): string {
     .trim();
 }
 
-const TYPE_ALT = DAMAGE_TYPES.join("|");
+const TYPE_ALT = CANONICAL.join("|");
 
 /** "Hit: 14 (2d8 + 5) Slashing damage." / "Failure: 10 (3d6) Psychic damage." */
 const DAMAGE_RE = new RegExp(
@@ -84,8 +89,10 @@ const ATTACK_RE = /(?:Melee|Ranged|Melee or Ranged)\s+Attack\s+Roll\s*:\s*([+-]?
 const SAVE_RE = /(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+Saving\s+Throw\s*:\s*DC\s*(\d+)\s*,?\s*/i;
 const RANGE_RE = /\b(reach\s+\d+\s*ft\.?|range\s+\d+(?:\/\d+)?\s*ft\.?)/i;
 
-const properType = (s: string): DamageType =>
-  (DAMAGE_TYPES.find(t => t.toLowerCase() === s.toLowerCase()) ?? "Bludgeoning");
+const properType = (s: string): DamageType => {
+  const hit = CANONICAL.find(t => t === s.toLowerCase());
+  return hit ? hit[0].toUpperCase() + hit.slice(1) : "Bludgeoning";
+};
 
 /**
  * Read one printed clause into fields.

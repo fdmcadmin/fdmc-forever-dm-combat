@@ -26,6 +26,7 @@ import { SRD_TEMPLATES } from "../src/modules/dnd-5e/srdToTemplate";
 import { parseStatBlockClause } from "../src/modules/dnd-5e/statBlockGrammar";
 import { resolveMonsterLibrary } from "../src/core/monsters/dmMonsterLibrary";
 import { chassisSources, exportableRecords } from "../src/core/content/contentScope";
+import { damageTypesOf } from "../src/core/constants/damageTypes";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 
 let failures = 0;
@@ -216,54 +217,63 @@ console.log("\nThe Broken Chain reads the same way");
     [...(c.actions ?? []), ...(c.reactions ?? []), ...(c.traits ?? [])]
       .map(a => ({ ...a, where: `${c.name} — ${a.name}` })));
 
-  /**
-   * ⚠ TWO LEDGERS, AND NEITHER IS A PERMISSION SLIP.
-   *
-   * 73 attack clauses converted mechanically (54 in the hand-written library, 19 in the authored
-   * payload that overrides it — one migration, two files, because mergeAuthored layers them): the type was stated in the prose, so moving it to a
-   * field invented nothing. These two lists are what a codemod MUST NOT decide.
-   *
-   * MULTI-TYPE — ONE damage roll carrying TWO types at once: "10 (1d10 + 5) cold and psychic
-   * damage". That is not a rider (there are no extra dice) and not a single type, so neither field
-   * expresses it. Two actions, both awaiting a decision on how a dual-typed roll should resist.
-   *
-   * UNTYPED — the two above, plus the Elemental Mirror's Claw and Bolt, whose damage is the
-   * placeholder `{primary}`: their type IS the chosen elemental package, so a fixed field would be
-   * wrong for five of the six mirrors.
-   */
-  const MULTI_TYPE = 2;
-  const UNTYPED = 4;
-
+  // No action may restate its own damage: the numbers are fields, the sentence is the rider.
   const restating = acts.filter(a => /\bHit\s*:/i.test(a.text ?? ""));
-  const untyped = acts.filter(a => a.kind === "attack" && a.damage && !a.damageType);
+  ok("no campaign action restates its damage in prose", restating.length === 0,
+    restating.slice(0, 4).map(a => a.where).join(", "));
 
-  ok(`only the ${MULTI_TYPE} multi-type actions still restate their damage`,
-    restating.length === MULTI_TYPE,
-    `${restating.length}: ${restating.slice(0, 4).map(a => a.where).join(", ")}`);
-  ok("and every one of them really does carry two damage types",
-    restating.every(a => {
-      const t = (a.text ?? "").toLowerCase();
-      const types = ["acid","bludgeoning","cold","fire","force","lightning","necrotic",
-        "piercing","poison","psychic","radiant","slashing","thunder"].filter(x => t.includes(x));
-      return types.length > 1 || /\bplus\b|\band\b/.test(t);
-    }),
-    "a single-type action left unconverted is a miss, not a decision");
+  // ⚠ EXCEPT WHERE THE TYPE IS CHOSEN AT BUILD TIME. A {primary}/{secondary} placeholder means the
+  // elemental package decides, so a fixed field would be wrong — see the Mirror ruling below.
+  const placeholder = (a: { damage?: string }) => /{(primary|secondary)}/.test(a.damage ?? "");
+  const attacks = acts.filter(a => a.kind === "attack" && a.damage && !placeholder(a));
+  ok("every campaign attack carries a damage type", attacks.every(a => a.damageType),
+    attacks.filter(a => !a.damageType).map(a => a.where).join(", "));
 
-  ok(`${UNTYPED} attacks still have no damage type`, untyped.length === UNTYPED,
-    `${untyped.length}: ${untyped.slice(0, 4).map(a => a.where).join(", ")}`);
+  /**
+   * ⚠ ONE ROLL OF TWO TYPES IS A LIST, NOT PROSE AND NOT TWO ENTRIES.
+   *
+   * Christopher: *"it should stay duel typing for the possible resist windows."* A resistance has
+   * to be answered against every type the roll carries, so the field holds them all. A RIDER is
+   * the other thing — extra dice with their own type — and the two must not be conflated.
+   */
+  const dual = acts.filter(a => Array.isArray(a.damageType));
+  ok("the dual-typed rolls are expressed as a list", dual.length === 2,
+    dual.map(a => `${a.where} ${JSON.stringify(a.damageType)}`).join("; "));
+  ok("and damageTypesOf reads every type off them",
+    dual.every(a => damageTypesOf(a.damageType as string[]).length === 2),
+    dual.map(a => damageTypesOf(a.damageType as string[]).join("+")).join(", "));
 
-  // Everything the codemod DID touch has to be complete — fields, and no prose repeating them.
-  const converted = acts.filter(a => a.damageType);
-  ok("every converted attack has a type, and no 'Hit:' left in its text",
-    converted.length > 40 && converted.every(a => !/\bHit\s*:/i.test(a.text ?? "")),
-    `${converted.length} converted`);
+  /**
+   * ⚠ THE ELEMENTAL MIRROR IS NOT TOUCHED, BY RULING. Christopher: *"dont touch the mirror."* Its
+   * Claw and Bolt carry the placeholder `{primary}` because their damage type IS the elemental
+   * package chosen at build time — a fixed field would be wrong for five of the six mirrors.
+   */
+  const mirror = acts.filter(placeholder);
+  ok("the Elemental Mirror keeps its {primary} placeholder and no fixed type",
+    mirror.length >= 2 && mirror.every(a => !a.damageType),
+    mirror.map(a => `${a.where} ${a.damage}`).join("; "));
+
+  // A rider carries its OWN type — that is the whole reason it is a rider.
+  const riders = acts.flatMap(a => (a.riders ?? []).map(r => ({ ...r, where: a.where })));
+  // ⚠ ONE PRE-EXISTING RIDER NEVER STATED A TYPE — the Reaver's "Scent the Expense" (4d4). Same
+  // rule as the untyped attacks: a script does not decide what resists a DM's campaign content.
+  const untypedRiders = riders.filter(r => !r.damageType);
+  ok("every rider added for a second damage type names it",
+    riders.length > 0 && untypedRiders.length === 1,
+    `${riders.length} riders; still untyped: ${untypedRiders.map(r => r.where).join(", ")}`);
 
   const claw = acts.find(a => a.where === "Mosshide Owlbear — Claw");
   ok("the Owlbear's Claw is fields only, with no text at all",
     Boolean(claw) && claw!.damageType === "Slashing" && claw!.range === "reach 5 ft." && !claw!.text,
     JSON.stringify(claw));
 
-  // The point of the exercise: one shape, whichever library a creature came from.
+  const dragon = acts.find(a => a.where === "Veil-Torn Dragon — Bite");
+  ok("the dragon's second type is COLD, and lives in one place only",
+    Boolean(dragon) && dragon!.damageType === "Piercing"
+      && (dragon!.riders ?? []).some(r => r.damageType === "Cold")
+      && !/radiant/i.test(JSON.stringify(dragon)),
+    JSON.stringify(dragon));
+
   const srdRend = SRD_TEMPLATES.flatMap(t => t.actions).find(a => a.name === "Rend" && a.damageType);
   ok("a campaign Claw and an SRD Rend carry the same fields",
     Boolean(srdRend) && Boolean(claw)

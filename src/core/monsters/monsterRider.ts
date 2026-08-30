@@ -40,7 +40,7 @@ export type MonsterRider = {
    *
    * Capitalised as the SRD prints it. See `statBlockGrammar`.
    */
-  damageType?: string;
+  damageType?: string | readonly string[];
   /**
    * `per-hit` rides every hit this action lands. `once-per-turn` fires at most once across the
    * whole turn however many attacks connect — the workbook's "first hit or once per turn".

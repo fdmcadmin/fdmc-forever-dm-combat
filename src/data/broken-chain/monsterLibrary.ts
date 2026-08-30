@@ -2054,7 +2054,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Fey Mind", kind: "trait", text: "Gloam Harrow has advantage on saving throws against being Charmed, and magic cannot put her to sleep." },
     ],
     actions: [
-      { name: "Winter Needle", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", text: "Ranged Spell Attack: +8 to hit, range 90 ft., one target. Hit: 10 (1d10 + 5) cold and psychic damage." },
+      { name: "Winter Needle", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: ["Cold", "Psychic"], range: "range 90 ft." },
       { name: "Winter’s Toll", kind: "action", text: "Choose a point within 60 ft. Until the start of Harrow’s next turn, a 15-ft.-radius area is steeped in biting Fey glamour. Harrow’s allies in the area gain +3 to attack rolls and saving throws. Hostile creatures in the area take -3 to attack rolls and saving throws. The area ends early if Harrow is incapacitated." },
     ],
     reactions: [
@@ -2095,7 +2095,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Red Script", kind: "action", economyCost: "bonus", damage: "1d8", text: "Bonus Action: choose one creature within 90 ft. Clear Angle: ignore half and three-quarters cover against it, and the first Ember Lance this turn gains +2 to hit. Closing Stroke: the first Ember Lance that hits it this turn deals an extra 4 (1d8) fire damage. Only one Red Script can be active at a time." },
-      { name: "Ember Lance", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", text: "Ranged Spell Attack: +9 to hit, range 120 ft., one target. Hit: 16 (2d10 + 5) fire and psychic damage. Multiattack: Brandwing makes two Ember Lance attacks." },
+      { name: "Ember Lance", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", text: "Multiattack: Brandwing makes two Ember Lance attacks.", damageType: ["Fire", "Psychic"], range: "range 120 ft." },
     ],
     reactions: [
       { name: "Cinder Skip", kind: "reaction", text: "When Brandwing is hit by an attack or targeted by a spell, the triggering attack or spell resolves completely. Brandwing then teleports up to 15 ft. to an unoccupied space it can see." },
