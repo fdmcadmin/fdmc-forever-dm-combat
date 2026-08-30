@@ -56,7 +56,6 @@ import {
   seedLibraryFromBundled,
   resolveActorFromLibrary,
 } from "./core/seats/dmActorLibrary";
-import { seedBrokenChainParty, type SeedResult } from "./core/seats/seedBrokenChainParty";
 import { exportActorLibrary, importActorLibrary, type ImportResult } from "./core/seats/actorLibraryExport";
 
 import { useDmSeatSystem } from "./core/seats/useSeatSystem";
@@ -566,7 +565,6 @@ function DmPanelApp() {
   // ── Actor editor state ────────────────────────────────────────────────────
   // create=actor opens the guided Party Character creator immediately.
   const [editingActorId, setEditingActorId] = useState<string | null>(createParam === "actor" ? "__new__" : null);
-  const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   // lootEncounter= arrives when the monster panel's "Create loot for encounter" button
   // reopens the panel on the equipment tab pre-tagged to that loot pool.
@@ -597,13 +595,6 @@ function DmPanelApp() {
     getPanelFromUrl() === "tokens" || getPanelFromUrl() === "seatTokens"
       ? "tokens" : "seats"
   );
-
-  function handleSeedParty() {
-    const result = seedBrokenChainParty(brokenChainActors);
-    setActorLibrary(loadActorLibrary());
-    setSeedResult(result);
-    broadcastLibraryUpdate();
-  }
 
   /**
    * Every actor's purse, for the backup file.
@@ -846,76 +837,20 @@ function DmPanelApp() {
                   <div style={{ textAlign: "center", marginTop: 40, display: "flex", flexDirection: "column", gap: 14, alignItems: "center" }}>
                     <p style={{ fontSize: 12, color: "#555", margin: 0 }}>No Party Characters in your library.</p>
 
-                    {/* One-time import button — seeds from bundled 0.5.5b source files */}
-                    <div style={{ background: "#1a1a2e", borderRadius: 8, padding: 16, border: "1px solid #7b68ee33", maxWidth: 340 }}>
-                      <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 500, color: "#7b68ee" }}>Import Broken Chain Party</p>
-                      {/* ⚠ THIS PROMISED FIVE ACTORS THAT NO LONGER EXIST. `59b9dd9` deleted the
-                          bundled party on purpose — actor data is not shipped in the public build
-                          (`modules/the-broken-chain/actors/index.ts` returns an empty array and
-                          says so). The panel kept advertising it, so the button seeded nothing and
-                          then reported success. A control must describe what it will actually do
-                          in THIS build, not what it did in an older one. */}
-                      <p style={{ margin: "0 0 12px", fontSize: 11, color: "#666" }}>
-                        Seeds the party from actors bundled in this build — with their actions, spells, bonds and features, equipment extracted to the equipment library, and actions validated on a double pass.
-                      </p>
-                      <p style={{ margin: "0 0 12px", fontSize: 11, color: "#7b68ee99" }}>
-                        Public builds ship no actor data. If nothing is imported, use <strong>↑ Import</strong> with an actor export file instead.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleSeedParty}
-                        style={{ width: "100%", padding: "8px 16px", background: "#7b68ee", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}
-                      >
-                        ▶ Import Party from Source Files
-                      </button>
-                    </div>
+                    {/*
+                      ⚠ THERE IS NO "IMPORT BROKEN CHAIN PARTY" BUTTON, AND THERE SHOULD NEVER BE ONE.
+                      Christopher, 2026-08-28: *"this should never be a thing."*
 
-                    {/* Seed result report */}
-                    {seedResult && (
-                      /* ⚠ A NO-OP IS NOT A SUCCESS. This header was unconditional, so an import that
-                         created ZERO actors still announced "✓ Import complete" in green above an
-                         empty list — the DM is told it worked and left with nothing. The result
-                         reports what actually happened. */
-                      <div style={{ background: seedResult.actorsCreated.length ? "#0d1a0d" : "#1a1408", borderRadius: 8, padding: 12, border: `1px solid ${seedResult.actorsCreated.length ? "#2a6e2a44" : "#6e5a2a44"}`, maxWidth: 340, textAlign: "left" }}>
-                        <p style={{ margin: "0 0 6px", fontSize: 12, color: seedResult.actorsCreated.length ? "#4caf50" : "#e8b64c", fontWeight: 500 }}>
-                          {seedResult.actorsCreated.length
-                            ? `✓ Imported ${seedResult.actorsCreated.length} character${seedResult.actorsCreated.length === 1 ? "" : "s"}`
-                            : "Nothing was imported"}
-                        </p>
-                        {seedResult.actorsCreated.length > 0 && (
-                          <p style={{ margin: "0 0 4px", fontSize: 11, color: "#888" }}>
-                            Actors: {seedResult.actorsCreated.join(", ")}
-                          </p>
-                        )}
-                        <p style={{ margin: "0 0 4px", fontSize: 11, color: "#888" }}>
-                          Equipment items: {seedResult.equipmentItemsCreated}
-                        </p>
-                        {seedResult.validationFixes.length > 0 && (
-                          <details style={{ marginTop: 6 }}>
-                            <summary style={{ fontSize: 11, color: "#7b68ee", cursor: "pointer" }}>
-                              {seedResult.validationFixes.length} action fix{seedResult.validationFixes.length === 1 ? "" : "es"} applied
-                            </summary>
-                            <div style={{ marginTop: 4, fontSize: 10, color: "#555" }}>
-                              {seedResult.validationFixes.map((f, i) => <p key={i} style={{ margin: "1px 0" }}>{f}</p>)}
-                            </div>
-                          </details>
-                        )}
-                        {seedResult.warnings.length > 0 && (
-                          <p style={{ margin: "4px 0 0", fontSize: 11, color: "#ff9999" }}>
-                            ⚠ {seedResult.warnings.join(" ")}
-                          </p>
-                        )}
-                        {/* The next step only exists if there IS something to sync. Printing it
-                            after a zero-actor import sends the DM to a button that will do
-                            nothing, which reads as a second failure. */}
-                        {seedResult.actorsCreated.length > 0 && (
-                          <p style={{ margin: "8px 0 0", fontSize: 11, color: "#4caf50" }}>
-                            Close this window → click ↺ Sync Library on the main panel.
-                          </p>
-                        )}
-                      </div>
-                    )}
-
+                      Actor data is not bundled — `59b9dd9` deleted the party from the module on
+                      purpose, and a public build ships none. A control that seeds from bundled
+                      actors therefore cannot ever do anything, so rewording it was the wrong fix:
+                      the honest change is that it does not exist. The party arrives the one way it
+                      actually can — an export file through ↑ Import, or built here from scratch.
+                    */}
+                    <p style={{ fontSize: 12, color: "#666", margin: 0, maxWidth: 340 }}>
+                      Use <strong style={{ color: "#7b68ee" }}>↑ Import</strong> to load an actor export file,
+                      or <strong style={{ color: "#7b68ee" }}>+ Create Party Character</strong> to build one here.
+                    </p>
                     <p style={{ fontSize: 11, color: "#444", margin: 0 }}>
                       — or — use Create Party Character to build from scratch
                     </p>
