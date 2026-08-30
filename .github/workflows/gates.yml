@@ -179,12 +179,12 @@ jobs:
       - name: validate encounter invariants
         run: npm run validate:invariants
 
-      # ⚠ REPORTS, DOES NOT YET FAIL. This prints per-fight deviations from the published Act 3
-      # reference figures and still exits 0, so in CI it currently catches crashes and import
-      # breakage rather than drift. Making it fail on deviation needs those figures re-measured
-      # against the authored library first: they were published before 0.7.32, which deliberately
-      # raised the Veil-Torn Dragon and Thought Harrower, and that accounts for most of the gap it
-      # prints today. The authored creature is right; the printed figure is old.
+      # ⚠ IT FAILS NOW. This printed deviations and returned 0 for months — CI reported success
+      # no matter what it found. The Act 3 reference figures were re-measured against the current
+      # library at 0.8.9.4, so DRIFT from those measured values fails the build. Two other sections
+      # are reported and do NOT fail: typed resistances that price at nothing because the script has
+      # no party actors, and the gap against Christopher's Act 3 document, which predates 0.7.32
+      # deliberately raising the Veil-Torn Dragon and Thought Harrower.
       - name: validate act 3 segments
         run: npm run validate:segments
 

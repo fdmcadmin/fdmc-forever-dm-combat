@@ -55,12 +55,15 @@ type Fight = {
   /** Set when the fight cannot be priced, with the reason. */
   blocked?: string;
   /** Reference row from Christopher's table, for comparison only — never an input. */
-  ref?: { completion: string; monsterDamage: number; usedPct: number; leftPct: number };
+  doc?: { completion: string; monsterDamage: number; usedPct: number; leftPct: number };
   /** A second kill order to report separately, where order materially changes the trace. */
   altOrder?: Array<[string, number]>;
   altLabel?: string;
   /** F6 only: the roster is four built Mirrors rather than library creatures. */
   mirrors?: boolean;
+  altDoc?: { completion: string; monsterDamage: number; usedPct: number; leftPct: number };
+  /** What the CURRENT library actually produces. Drift from this fails the gate. */
+  ref?: { completion: string; monsterDamage: number; usedPct: number; leftPct: number };
   altRef?: { completion: string; monsterDamage: number; usedPct: number; leftPct: number };
 };
 
@@ -69,21 +72,27 @@ const SEGMENTS: Array<{ label: string; level: number; fights: Fight[] }> = [
   {
     label: "Level 6", level: 6, fights: [
       { id: "F1", label: "First Court", level: 6, roster: [["Snarlroot", 1], ["Hollow Warden", 1], ["Larkskein", 1]],
-        ref: { completion: "R3", monsterDamage: 44, usedPct: 13, leftPct: 87 } },
+        doc: { completion: "R3", monsterDamage: 44, usedPct: 13, leftPct: 87 },
+        ref: { completion: "R3", monsterDamage: 45, usedPct: 13, leftPct: 87 } },
       { id: "F2", label: "Cut Below", level: 6, roster: [["Quillshrike", 1], ["Marrowstalk", 1], ["Shardbound", 1]],
-        ref: { completion: "R3", monsterDamage: 93, usedPct: 27, leftPct: 60 } },
+        doc: { completion: "R3", monsterDamage: 93, usedPct: 27, leftPct: 60 },
+        ref: { completion: "R2", monsterDamage: 82, usedPct: 24, leftPct: 62 } },
       { id: "F3", label: "Crone + Mare", level: 6, roster: [["Veilwood Crone", 1], ["Darkmare", 1]],
-        ref: { completion: "R4", monsterDamage: 113, usedPct: 33, leftPct: 26 } },
+        doc: { completion: "R4", monsterDamage: 113, usedPct: 33, leftPct: 26 },
+        ref: { completion: "R3", monsterDamage: 124, usedPct: 37, leftPct: 26 } },
     ],
   },
   {
     label: "Level 7", level: 7, fights: [
       { id: "F4", label: "Hollow Feast", level: 7, roster: [["Briar Regent", 1], ["Velvet Host", 1], ["Folded Bulwark", 1]],
-        ref: { completion: "R3", monsterDamage: 59, usedPct: 15, leftPct: 85 } },
+        doc: { completion: "R3", monsterDamage: 59, usedPct: 15, leftPct: 85 },
+        ref: { completion: "R3", monsterDamage: 55, usedPct: 14, leftPct: 86 } },
       { id: "F5", label: "Scar Line", level: 7, roster: [["Moss-Crowned Charger", 1], ["Rift-Slick", 1], ["Nail Saint", 1]],
-        ref: { completion: "R3", monsterDamage: 86, usedPct: 22, leftPct: 63 } },
+        doc: { completion: "R3", monsterDamage: 86, usedPct: 22, leftPct: 63 },
+        ref: { completion: "R3", monsterDamage: 91, usedPct: 23, leftPct: 63 } },
       { id: "F6", label: "Mirrors (4 built)", level: 7, mirrors: true,
-        ref: { completion: "R5", monsterDamage: 135, usedPct: 34, leftPct: 29 } },
+        doc: { completion: "R5", monsterDamage: 135, usedPct: 34, leftPct: 29 },
+        ref: { completion: "R5", monsterDamage: 70, usedPct: 18, leftPct: 45 } },
     ],
   },
   {
@@ -91,17 +100,20 @@ const SEGMENTS: Array<{ label: string; level: number; fights: Fight[] }> = [
       { id: "F7", label: "(redesign)", level: 8, blocked: "Not in v3_15 — the document jumps from FIGHT 6 to FIGHT 9." },
       { id: "F8", label: "(rough redesign)", level: 8, blocked: "Not in v3_15 — the document jumps from FIGHT 6 to FIGHT 9." },
       { id: "F9", label: "Dragon", level: 8, roster: [["Veil-Torn Dragon", 1], ["broken-chain:act3:veil-torn-wyrmling:v1", 2]],
-        ref: { completion: "R4", monsterDamage: 204, usedPct: 46, leftPct: 5 } },
+        doc: { completion: "R4", monsterDamage: 204, usedPct: 46, leftPct: 5 },
+        ref: { completion: "R4", monsterDamage: 238, usedPct: 54, leftPct: 46 } },
     ],
   },
   {
     label: "Level 9 + 4 Gifts", level: 9, fights: [
       { id: "F10", label: "The Center", level: 9,
         roster: [["Thought Harrower", 1], ["Grief Colossus", 1]],
-        ref: { completion: "R5", monsterDamage: 208, usedPct: 41, leftPct: 59 },
+        doc: { completion: "R5", monsterDamage: 208, usedPct: 41, leftPct: 59 },
+        ref: { completion: "R4", monsterDamage: 249, usedPct: 50, leftPct: 50 },
         altOrder: [["Grief Colossus", 1], ["Thought Harrower", 1]],
         altLabel: "Colossus first",
-        altRef: { completion: "R5", monsterDamage: 254, usedPct: 51, leftPct: 50 } },
+        altDoc: { completion: "R5", monsterDamage: 254, usedPct: 51, leftPct: 50 },
+        altRef: { completion: "R4", monsterDamage: 320, usedPct: 64, leftPct: 36 } },
     ],
   },
 ];
@@ -192,7 +204,21 @@ console.log(`party ${PARTY_SIZE} · Broken Chain mode · focus fire · v7 curve\
 console.log(`${W("Fight", 24)}${W("Completion", 12)}${W("Monster dmg", 14)}${W("Used", 8)}${W("Left in segment", 20)}  vs reference`);
 console.log("─".repeat(112));
 
-const mismatches: string[] = [];
+/**
+ * ⚠ THREE KINDS OF DISAGREEMENT, AND ONLY ONE IS A FAILURE.
+ *
+ *   drift      the engine moved away from what it MEASURED at 0.8.9.4. Something changed; this
+ *              fails the build, which is the whole point of re-measuring.
+ *   notPriced  a typed damage response that prices at nothing because this script runs HEADLESS —
+ *              there are no party actors, so there is no damage mix to weigh a resistance against.
+ *              Structural, not a regression, and it makes the affected fights a LOWER BOUND.
+ *   docGap     the measured value differs from Christopher's Act 3 document. Context, never a
+ *              failure: 0.7.32 deliberately raised the Veil-Torn Dragon and Thought Harrower, so
+ *              the document is older than the creatures on purpose.
+ */
+const drift: string[] = [];
+const notPriced: string[] = [];
+const docGap: string[] = [];
 
 for (const seg of SEGMENTS) {
   const full = resolvePartyProfile({ level: seg.level, size: PARTY_SIZE, equipmentMode: MODE }).sustain;
@@ -202,7 +228,7 @@ for (const seg of SEGMENTS) {
   for (const fight of seg.fights) {
     if (fight.blocked || (!fight.roster && !fight.mirrors)) {
       console.log(`${W(`${fight.id} ${fight.label}`, 24)}${W("NOT RUN", 12)}${W("—", 14)}${W("—", 8)}${W("—", 20)}`);
-      mismatches.push(`${fight.id}: NOT RUN — ${fight.blocked}`);
+      docGap.push(`${fight.id}: NOT RUN — ${fight.blocked}`);
       continue;
     }
     const r = runFight(fight, fight.roster ?? [], sustainNow, full);
@@ -212,9 +238,12 @@ for (const seg of SEGMENTS) {
       : "";
     console.log(`${W(`${fight.id} ${fight.label}`, 24)}${W(r.completion, 12)}${W(r.monsterDamage.toFixed(0), 14)}${W(`${r.usedPct.toFixed(0)}%`, 8)}${W(`${r.left.toFixed(0)} / ${full.toFixed(0)} — ${r.leftPct.toFixed(0)}%`, 20)}  ${delta}`);
     if (ref && Math.abs(ref.monsterDamage - r.monsterDamage) > 5) {
-      mismatches.push(`${fight.id}: engine ${r.monsterDamage.toFixed(0)} vs reference ${ref.monsterDamage} (${(r.monsterDamage - ref.monsterDamage).toFixed(0)})`);
+      drift.push(`${fight.id}: engine ${r.monsterDamage.toFixed(0)} vs measured ${ref.monsterDamage} (${(r.monsterDamage - ref.monsterDamage).toFixed(0)})`);
     }
-    for (const a of r.assumptions) if (a.flag === "NEEDS DM INPUT") mismatches.push(`${fight.id}: NOT PRICED — ${a.creature} · ${a.field}`);
+    if (ref && fight.doc && Math.abs(fight.doc.monsterDamage - ref.monsterDamage) > 5) {
+      docGap.push(`${fight.id}: measured ${ref.monsterDamage} vs the document's ${fight.doc.monsterDamage} (${(ref.monsterDamage - fight.doc.monsterDamage > 0 ? "+" : "")}${ref.monsterDamage - fight.doc.monsterDamage})`);
+    }
+    for (const a of r.assumptions) if (a.flag === "NEEDS DM INPUT") notPriced.push(`${fight.id}: ${a.creature} · ${a.field}`);
     sustainNow = r.left;
 
     if (fight.altOrder) {
@@ -222,13 +251,47 @@ for (const seg of SEGMENTS) {
       const aref = fight.altRef;
       console.log(`${W(`   ${fight.altLabel}`, 24)}${W(alt.completion, 12)}${W(alt.monsterDamage.toFixed(0), 14)}${W(`${alt.usedPct.toFixed(0)}%`, 8)}${W(`${alt.left.toFixed(0)} / ${full.toFixed(0)} — ${alt.leftPct.toFixed(0)}%`, 20)}  ${aref ? `ref ${aref.completion} ${aref.monsterDamage} (${(aref.monsterDamage - alt.monsterDamage).toFixed(0)})` : ""}`);
       if (aref && Math.abs(aref.monsterDamage - alt.monsterDamage) > 5) {
-        mismatches.push(`${fight.id} ${fight.altLabel}: engine ${alt.monsterDamage.toFixed(0)} vs reference ${aref.monsterDamage} (${(alt.monsterDamage - aref.monsterDamage).toFixed(0)})`);
+        drift.push(`${fight.id} ${fight.altLabel}: engine ${alt.monsterDamage.toFixed(0)} vs measured ${aref.monsterDamage} (${(alt.monsterDamage - aref.monsterDamage).toFixed(0)})`);
+      }
+      if (aref && fight.altDoc && Math.abs(fight.altDoc.monsterDamage - aref.monsterDamage) > 5) {
+        docGap.push(`${fight.id} ${fight.altLabel}: measured ${aref.monsterDamage} vs the document's ${fight.altDoc.monsterDamage}`);
       }
     }
   }
   console.log("");
 }
 
-console.log("WHERE IT DOES NOT MATCH, AND WHY\n" + "─".repeat(112));
-if (mismatches.length === 0) console.log("  every fight within 5 damage of the reference");
-else mismatches.forEach(m => console.log("  " + m));
+console.log("DRIFT FROM THE MEASURED REFERENCE — this is what fails the build\n" + "─".repeat(112));
+if (drift.length === 0) console.log("  none — every fight is within 5 damage of what it measured at 0.8.9.4");
+else drift.forEach(m => console.log("  " + m));
+
+console.log("\nNOT PRICED — structural, because this script runs headless\n" + "─".repeat(112));
+if (notPriced.length === 0) console.log("  none");
+else {
+  notPriced.forEach(m => console.log("  " + m));
+  console.log("  ⚠ A typed resistance is weighed by the PARTY'S share of that damage type, and there are");
+  console.log("    no party actors in a script. So these price at nothing and their fights read LOW —");
+  console.log("    the measured figures above are a lower bound for F2, F4 and F5.");
+}
+
+console.log("\nAGAINST THE ACT 3 DOCUMENT — context, never a failure\n" + "─".repeat(112));
+if (docGap.length === 0) console.log("  the measured figures agree with the document");
+else {
+  docGap.forEach(m => console.log("  " + m));
+  console.log("  ⚠ The document predates 0.7.32, which deliberately RAISED the Veil-Torn Dragon and the");
+  console.log("    Thought Harrower — so F9 and F10 reading high is the content being newer, not wrong.");
+  console.log("  ⚠ F6 (Mirrors) is the one gap with no such explanation. It is built in THIS script from");
+  console.log("    the document's own archetype table, so a 65-damage gap is a question about the build,");
+  console.log("    not about drift. Left visible rather than normalised away.");
+}
+
+/**
+ * ⚠ THIS FILE HAD NO EXIT CALL AT ALL, WHICH IS WHY IT WAS GREEN FOR MONTHS.
+ *
+ * It printed deviations and returned 0, so CI reported success no matter what it found — one step
+ * worse than the `check:summons` fault MASTER records, because that one at least had an exit check
+ * in the wrong place. Only DRIFT fails: the other two sections are known conditions, and a gate
+ * that fails on a known condition is one that gets ignored.
+ */
+console.log(`\n${drift.length === 0 ? "PASS" : `FAIL — ${drift.length} fight(s) drifted`}`);
+process.exit(drift.length === 0 ? 0 : 1);
