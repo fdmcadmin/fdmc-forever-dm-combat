@@ -31,6 +31,7 @@
 import type { LairSpec, LairOption } from "../monsters/lair";
 import { lairDamagePerRound, unpricedLairOptions } from "../monsters/lair";
 import { materializeSummon } from "../monsters/summon";
+import { classifyTrait } from "./traitClassifier";
 import { summonerContextFor } from "./summonRoster";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 
@@ -41,7 +42,17 @@ export type LairRosterGroup = {
   quantity: number;
   baseHp: number;
   acMultiplier: number;
-  traitFactors: never[];
+  /**
+   * ⚠ THE CONTROL A LAIR EXERTS, PRICED. This was `never[]` — a slot that could only ever be
+   * empty — and `lairDamagePerRound` returns 0 for anything that is not damage, so every
+   * movement, obscurement and cover option in the campaign was worth exactly nothing.
+   *
+   * Christopher: *"movement, obsurement, and cover should all be priceable, why would they not …
+   * control has a price in every workbook."* It does, and this one already had it: the calibrated
+   * rules include "Half cover vs ranged attacks" and the obscurement family, and `classifyTrait`
+   * has been reading them off creature traits all along. Nothing reached them from a lair.
+   */
+  traitFactors: Array<{ stackGroup: string; label: string; contribution: number }>;
   dpr: { round1: number; round2: number; round3: number; round4Plus: number };
   damageUptime: number;
   arrivesRound?: number;
@@ -133,6 +144,40 @@ export function lairRosterGroups(
   });
 
   /**
+   * WHAT THE LAIR'S NON-DAMAGING OPTIONS ARE WORTH.
+   *
+   * Each option's own text goes through the SAME classifier a creature trait does, so a lair and a
+   * creature saying "heavily obscured" are priced by one rule rather than two.
+   *
+   * ⚠ A LAIR PICKS ONE OPTION A ROUND AND CANNOT REPEAT IT, so a fight sees them in rotation. Each
+   * matched rule is therefore worth its contribution DIVIDED BY the number of options — charging
+   * every option every round is the same error the damage mean already avoids.
+   *
+   * ⚠ AND ONE RULE PER STACK GROUP. Two options that classify to the same effect are the same
+   * claim about the same thing; `stack_group` is the workbook's own double-count key.
+   */
+  const controlFactors: Array<{ stackGroup: string; label: string; contribution: number }> = [];
+  const seenGroups = new Set<string>();
+  const rotation = Math.max(1, lair.options.length);
+  for (const o of lair.options) {
+    if (o.effect === "damage") continue;
+    const match = classifyTrait(o.name, o.text);
+    if (!match) {
+      assumptions.push({ creature: name, flag: "NEEDS DM INPUT", field: "lair",
+        detail: `"${o.name}" is a ${o.effect ?? "control"} option and no calibrated rule reads it, so it prices at NOTHING. `
+          + `Word it the way the workbook does, or state what it is worth.` });
+      continue;
+    }
+    if (seenGroups.has(match.rule.stack_group)) continue;
+    seenGroups.add(match.rule.stack_group);
+    controlFactors.push({
+      stackGroup: match.rule.stack_group,
+      label: `${o.name} — ${match.label}`,
+      contribution: match.rule.contribution / rotation,
+    });
+  }
+
+  /**
    * ⚠ THE LAIR ITSELF IS A ROW, NOT JUST A NOTE — and this is the half that was missing.
    *
    * Christopher: *"lair summons happen at round 0 and they get a initiative 20 so there isnt a
@@ -158,7 +203,7 @@ export function lairRosterGroups(
     baseHp: 0,
     bodiless: true,
     acMultiplier: 1,
-    traitFactors: [],
+    traitFactors: controlFactors,
     dpr: { round1: damage, round2: damage, round3: damage, round4Plus: damage },
     damageUptime: 1,
     arrivesRound: 1,
