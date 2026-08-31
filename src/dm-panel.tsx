@@ -789,12 +789,12 @@ function DmPanelApp() {
           <span
             role="button"
             tabIndex={0}
-            title=""
+            title="Author sign-in"
             onClick={() => setAuthorPromptOpen(v => !v)}
             onKeyDown={e => { if (e.key === "Enter") setAuthorPromptOpen(v => !v); }}
-            style={{ fontSize: 10, color: authorOn ? "#7b68ee" : "#444", cursor: "default", userSelect: "none" }}
+            style={{ fontSize: 10, color: authorOn ? "#7b68ee" : "#7b68ee99", cursor: "pointer", userSelect: "none", textDecoration: "underline dotted" }}
           >
-            FDMC {APP_VERSION} DM Tools
+            {authorOn ? "🔓" : "🔑"} FDMC {APP_VERSION} DM Tools
           </span>
           {authorPromptOpen && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 6 }}>
@@ -816,6 +816,18 @@ function DmPanelApp() {
                   border: `1px solid ${authorError ? "#8a2a2a" : "#2f2f4a"}`,
                 }}
               />
+              {/* ⚠ AN EXPLICIT SUBMIT, because Enter is not always reachable. Christopher: *"there is
+                  no way for my to hit enter."* A field whose only commit path is a keypress is a field
+                  that can silently have none. */}
+              <button type="button"
+                onClick={() => {
+                  if (grantAuthorMode(authorCode)) { setAuthorOn(true); setAuthorPromptOpen(false); setAuthorCode(""); setAuthorError(false); }
+                  else setAuthorError(true);
+                }}
+                style={{ fontSize: 10, padding: "1px 8px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+                Unlock
+              </button>
+              {authorError && <span style={{ fontSize: 10, color: "#ff9999" }}>code not accepted</span>}
               {authorOn && (
                 <button type="button" onClick={() => { clearAuthorMode(); setAuthorOn(false); setAuthorPromptOpen(false); }}
                   style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
