@@ -41,7 +41,7 @@ import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
 import { EngineDiagnosticsPanel } from "./core/encounter-band/EngineDiagnosticsPanel";
-import { isAuthorMode, grantAuthorMode, clearAuthorMode } from "./core/campaign/authorMode";
+import { isAuthorMode, grantAuthorModeWithGitHub, clearAuthorMode } from "./core/campaign/authorMode";
 import { isModuleUnlocked } from "./core/campaign/moduleUnlock";
 import { WhatsNewPopup } from "./core/ui/WhatsNewPopup";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
@@ -708,8 +708,29 @@ function DmPanelApp() {
   // The author door: state for the unlabelled version-label button in the header.
   const [authorPromptOpen, setAuthorPromptOpen] = useState(false);
   const [authorCode, setAuthorCode] = useState("");
-  const [authorError, setAuthorError] = useState(false);
+  // ⚠ THE REASON, NOT A FLAG. "Not accepted" sent Christopher to generate a new key for a gate no
+  // key could satisfy. A refusal that cannot say why costs more time than the check saves.
+  const [authorError, setAuthorError] = useState("");
+  const [authorBusy, setAuthorBusy] = useState(false);
   const [authorOn, setAuthorOn] = useState(isAuthorMode);
+  /** Hand the token to GitHub and let it say who this is. */
+  async function submitAuthorToken(): Promise<void> {
+    setAuthorBusy(true);
+    setAuthorError("");
+    try {
+      const check = await grantAuthorModeWithGitHub(authorCode);
+      if (check.ok) {
+        setAuthorOn(true);
+        setAuthorPromptOpen(false);
+        setAuthorCode("");
+      } else {
+        setAuthorError(check.reason);
+      }
+    } finally {
+      setAuthorBusy(false);
+    }
+  }
+
   const readmeUnlocked = isModuleUnlocked();
 
   return (
@@ -798,42 +819,36 @@ function DmPanelApp() {
           </span>
           {authorPromptOpen && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 6 }}>
+              {/*
+                ⚠ A GITHUB TOKEN, NOT A PASSWORD FDMC KNOWS. It is handed to GitHub, which says who
+                it belongs to and whether they can push the campaign repo. FDMC compares the ACCOUNT,
+                never the credential — so revoking a token and issuing a new one needs no code change.
+              */}
               <input
                 type="password"
                 autoFocus
                 value={authorCode}
-                placeholder="author code"
-                onChange={e => { setAuthorCode(e.target.value); setAuthorError(false); }}
-                onKeyDown={e => {
-                  if (e.key !== "Enter") return;
-                  if (grantAuthorMode(authorCode)) {
-                    setAuthorOn(true); setAuthorPromptOpen(false); setAuthorCode("");
-                  } else setAuthorError(true);
-                }}
+                placeholder="GitHub token"
+                title="A GitHub token for an authorised author account, with push access to the campaign repo."
+                onChange={e => { setAuthorCode(e.target.value); setAuthorError(""); }}
+                onKeyDown={e => { if (e.key === "Enter") void submitAuthorToken(); }}
                 style={{
-                  fontSize: 10, padding: "1px 5px", width: 110, background: "#0e0e16",
+                  fontSize: 10, padding: "1px 5px", width: 150, background: "#0e0e16",
                   color: "#c9d0e8", borderRadius: 3,
                   border: `1px solid ${authorError ? "#8a2a2a" : "#2f2f4a"}`,
                 }}
               />
-              {/* ⚠ AN EXPLICIT SUBMIT, because Enter is not always reachable. Christopher: *"there is
-                  no way for my to hit enter."* A field whose only commit path is a keypress is a field
-                  that can silently have none. */}
-              <button type="button"
-                onClick={() => {
-                  if (grantAuthorMode(authorCode)) { setAuthorOn(true); setAuthorPromptOpen(false); setAuthorCode(""); setAuthorError(false); }
-                  else setAuthorError(true);
-                }}
-                style={{ fontSize: 10, padding: "1px 8px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
-                Unlock
+              <button type="button" disabled={authorBusy} onClick={() => void submitAuthorToken()}
+                style={{ fontSize: 10, padding: "1px 8px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: authorBusy ? "wait" : "pointer" }}>
+                {authorBusy ? "checking…" : "Unlock"}
               </button>
-              {authorError && <span style={{ fontSize: 10, color: "#ff9999" }}>code not accepted</span>}
               {authorOn && (
-                <button type="button" onClick={() => { clearAuthorMode(); setAuthorOn(false); setAuthorPromptOpen(false); }}
+                <button type="button" onClick={() => { clearAuthorMode(); setAuthorOn(false); setAuthorPromptOpen(false); setAuthorError(""); }}
                   style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
                   sign out
                 </button>
               )}
+              {authorError && <span style={{ fontSize: 10, color: "#ff9999", maxWidth: 320 }}>{authorError}</span>}
             </span>
           )}
           <button

@@ -37,17 +37,29 @@
  */
 
 import { safeStorage } from "../utils/safeStorage";
-
-/** btoa("fdmc-author") — the code the query parameter must carry. */
-const AUTHOR_CODE_HASH = "ZmRtYy1hdXRob3I=";
-const AUTHOR_KEY = "fdmc.author.mode.v1";
+import { verifyAuthorIdentity, type AuthorCheck } from "./authorIdentity";
+import { savePublishToken } from "./publishToGitHub";
 
 /**
- * A DERIVED token, not the code hash — the same shape as the module unlock's, and for the same
- * reason: pasting the hash into localStorage by hand must not grant author mode. Only passing the
- * parameter through `applyAuthorModeFromUrl` issues this exact value.
+ * ⚠ THERE IS NO AUTHOR CODE ANY MORE.
+ *
+ * This held `AUTHOR_CODE_HASH = btoa("…")` — base64, not a hash — compiled into a bundle that ships
+ * to every table. One `atob` recovered it, and rotating it meant editing source and redeploying.
+ * Christopher: *"anything that ship into the app is decodeable if someone is determined enough."*
+ *
+ * Author mode is a GITHUB IDENTITY now: `authorIdentity.verifyAuthorIdentity` asks GitHub who the
+ * token belongs to and whether they can push the campaign repo. Only the authorised USER ID is
+ * compiled in, which is public and grants nothing on its own.
  */
-const AUTHOR_TOKEN = btoa(`fdmc-author:${AUTHOR_CODE_HASH}:granted`);
+const AUTHOR_KEY = "fdmc.author.mode.v2";
+
+/**
+ * A LOCAL MARKER, NOT A CREDENTIAL. It records that GitHub said yes on this browser, so the panel
+ * does not re-check on every render. It is not the token and cannot be exchanged for one — and
+ * because it is only a marker, forging it buys nothing that matters: every irreversible action
+ * still goes through the real GitHub token, which GitHub itself enforces.
+ */
+const AUTHOR_TOKEN = "fdmc-author:github-verified";
 
 /** Is this the author's install? Everything author-only asks here and nowhere else. */
 export function isAuthorMode(): boolean {
@@ -70,33 +82,34 @@ export function isAuthorMode(): boolean {
  * does not travel that way — so the irreversible actions ask for it every time, and the flag is
  * demoted to deciding whether the button is worth showing at all.
  */
-export function verifyAuthorKey(code: string): boolean {
-  try { return btoa(code.trim()) === AUTHOR_CODE_HASH; } catch { return false; }
+export async function verifyAuthorKey(token: string): Promise<boolean> {
+  return (await verifyAuthorIdentity(token)).ok;
 }
 
 /**
- * Grant author mode from a code typed IN THE APP.
+ * Grant author mode by proving a GitHub identity.
  *
- * Christopher, 2026-08-28: *"if I have to go hunting for the way to do it every time then that is
- * a problem."* Right — a URL parameter is a thing you have to remember, on a panel that lives
- * inside someone else s frame, and remembering it is not part of the job.
+ * ⚠ THE CREDENTIAL IS OPAQUE TO FDMC. It is handed to GitHub and never compared against anything
+ * here, so revoking a token and issuing a new one for the same account needs no source change —
+ * which is the whole point. Paste the new one and it works.
  *
- * ⚠ SAME CHECK AS THE URL PATH, NOT A SECOND ONE. It hashes the typed code and compares it to the
- * same constant `applyAuthorModeFromUrl` uses, so there is one way in and one thing to be wrong
- * about. Pasting the token into localStorage still grants nothing.
+ * The token is stored where PUBLISHING already keeps it, because it is the same credential doing
+ * the same job. One token, one place, and signing out clears it.
  */
-export function grantAuthorMode(code: string): boolean {
+export async function grantAuthorModeWithGitHub(token: string): Promise<AuthorCheck> {
+  const check = await verifyAuthorIdentity(token);
+  if (!check.ok) return check;
   try {
-    if (btoa(code.trim()) !== AUTHOR_CODE_HASH) return false;
+    savePublishToken(token.trim());
     safeStorage().setItem(AUTHOR_KEY, AUTHOR_TOKEN);
-    return true;
-  } catch {
-    return false;
-  }
+  } catch { /* storage refused — author mode lasts this session only */ }
+  return check;
 }
 
 export function clearAuthorMode(): void {
+  // Sign out of BOTH: the marker and the credential it was granted from.
   try { safeStorage().removeItem(AUTHOR_KEY); } catch { /* ok */ }
+  try { savePublishToken(""); } catch { /* ok */ }
 }
 
 /**
@@ -109,17 +122,22 @@ export function clearAuthorMode(): void {
  * Returns whether author mode is on AFTER applying, so a caller can seed state in one line.
  */
 export function applyAuthorModeFromUrl(): boolean {
+  /**
+   * ⚠ `?author=<code>` IS GONE, AND ONLY `?author=off` REMAINS.
+   *
+   * A URL could carry the old compiled code because the check was local. Nothing can carry a
+   * GitHub identity that way — the token would sit in an address bar, in history, and in whatever
+   * frame the panel is embedded in. Signing out is still worth a parameter; signing IN is not.
+   */
   try {
     const url = new URL(window.location.href);
     const param = url.searchParams.get("author");
     if (param !== null) {
       if (param.trim().toLowerCase() === "off") clearAuthorMode();
-      else if (btoa(param.trim()) === AUTHOR_CODE_HASH) {
-        safeStorage().setItem(AUTHOR_KEY, AUTHOR_TOKEN);
-      }
       url.searchParams.delete("author");
       window.history.replaceState({}, "", url.toString());
     }
   } catch { /* no URL, no storage, or a sandboxed frame — stay locked */ }
   return isAuthorMode();
 }
+

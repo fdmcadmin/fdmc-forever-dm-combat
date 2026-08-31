@@ -60,8 +60,8 @@ export const ENGINE_MANIFEST: EngineManifest = {
   candidate: {
     "engineVersion": "1.0.0",
     "hash": "e5dea0559e4b",
-    "builtAt": "2026-08-31T03:22:33.353Z",
-    "appVersion": "0.8.10.4",
+    "builtAt": "2026-08-31T03:47:18.004Z",
+    "appVersion": "0.8.11.0",
     "capabilities": [
       "estimateCreature",
       "resolvePartyProfile",
