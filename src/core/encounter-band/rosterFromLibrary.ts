@@ -399,12 +399,78 @@ export function rosterFromTemplates(
    *
    * Appended AFTER the creature rows so a summoned body never renumbers the roster the DM authored.
    */
+  /**
+   * ⚠ MEASURED BEFORE ANY LAIR ROW EXISTS. `roster` holds only creatures at this point, which is
+   * exactly the base the lair's pressure is a fraction OF — a lair that amplified its own row
+   * would be pricing itself.
+   */
+  const ROUNDS = ["round1", "round2", "round3", "round4Plus"] as const;
+  const creatureDprAt = (round: (typeof ROUNDS)[number]): number =>
+    roster.reduce((sum, g) => sum + Number(g.quantity ?? 0) * Number(g.dpr?.[round] ?? 0), 0);
+
   const lairGroups: typeof roster = [];
   for (const { template } of expanded) {
     if (!template.lair) continue;
     const built = lairRosterGroups(template, summonLibrary as MainMonsterTemplate[]);
-    lairGroups.push(...(built.groups as unknown as typeof roster));
+    const rows = built.groups as unknown as typeof roster;
     assumptions.push(...built.assumptions as RosterAssumption[]);
+
+    /**
+     * ── THE CREATURE HALF: control lands on the BOSS, not on the lair's bodiless row ──────────
+     *
+     * Christopher: *"the cover/obscurement should lower the EHP or DPR anyone in the fight."* An
+     * EHP factor on a row with `baseHp: 0` lowers nothing, which is what 0.8.11.1 shipped. The
+     * creature the lair belongs to is the one whose effective HP actually moves.
+     */
+    const host = roster.find(g => g.id === template.templateId);
+    if (host) {
+      const held = new Set((host.traitFactors ?? []).map(f => String(f.stackGroup ?? f.label ?? "")));
+      for (const factor of built.control.hostFactors) {
+        // ⚠ `combineSustainContributions` THROWS on a repeated stack group, and it is right to:
+        // a lair granting cover to a creature that already has a cover trait is one effect
+        // claimed twice. The creature's own trait is the more specific of the two, so it wins.
+        if (held.has(factor.stackGroup)) {
+          assumptions.push({ creature: template.name, flag: "ESTIMATED", field: "lair",
+            detail: `Lair option "${factor.label}" is the same ${factor.stackGroup} effect ${template.name} `
+              + `already has as a trait, so it is NOT counted twice. The creature's own trait carries it.` });
+          continue;
+        }
+        held.add(factor.stackGroup);
+        (host.traitFactors ??= []).push(factor);
+      }
+    } else if (built.control.hostFactors.length) {
+      assumptions.push({ creature: template.name, flag: "NEEDS DM INPUT", field: "lair",
+        detail: `The lair's control could not be applied — no roster row matches ${template.templateId}.` });
+    }
+
+    /**
+     * ── THE PARTY HALF: what nothing on a monster's row can say ───────────────────────────────
+     *
+     * *"raising the DPR for both because they would not get cover."* Stripping cover raises what
+     * every monster LANDS, and the party's side of that has no home on a creature row — so it goes
+     * where it belongs, on the lair, which is the thing doing it. The row already dies with its
+     * boss via `endsWithGroupId`, so the pressure stops when the lair does.
+     *
+     * ⚠ A CEILING. It is measured off a roster at full strength while the lair row's damage is
+     * flat, so late rounds — with bodies already dead — read slightly high.
+     */
+    const pressure = built.control.pressureFraction;
+    const lairRow = rows.find(g => g.id === `${template.templateId}:lair`);
+    if (pressure > 0 && lairRow) {
+      const base = Object.fromEntries(ROUNDS.map(r => [r, creatureDprAt(r) * pressure]));
+      lairRow.dpr = {
+        round1: (lairRow.dpr?.round1 ?? 0) + base.round1,
+        round2: (lairRow.dpr?.round2 ?? 0) + base.round2,
+        round3: (lairRow.dpr?.round3 ?? 0) + base.round3,
+        round4Plus: (lairRow.dpr?.round4Plus ?? 0) + base.round4Plus,
+      };
+      assumptions.push({ creature: template.name, flag: "ESTIMATED", field: "lair",
+        detail: `The lair strips cover, so every monster lands ${(pressure * 100).toFixed(2)}% more on the party `
+          + `— ${base.round1.toFixed(1)} extra damage a round, carried on the lair's own row because the lair `
+          + `is what causes it. Measured at full roster strength, so it is a ceiling.` });
+    }
+
+    lairGroups.push(...rows);
   }
   roster.push(...lairGroups);
 

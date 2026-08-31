@@ -27,6 +27,8 @@ import { legalLairOptions, lairDamagePerRound, unpricedLairOptions } from "../sr
 import { lairRosterGroups } from "../src/core/encounter-band/lairRoster";
 import { summonRosterGroups, summonerContextFor } from "../src/core/encounter-band/summonRoster";
 import { prepareRoster, encounterDprAt } from "../src/core/encounter-band/checkerV2";
+import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
+import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { formatAbilityEntry } from "../src/core/monsters/creator/monsterCreatorModel";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
@@ -327,6 +329,70 @@ eq("a mixed expression is left alone", arithmetic("2d8+1d4"), "2d8+1d4");
     (lairRosterGroups(BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!, BROKEN_CHAIN_MONSTER_LIBRARY)
       .groups[0] as { endsWithGroupId?: string }).endsWithGroupId,
     BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon")!.templateId);
+}
+
+;
+/**
+ * WHICH WAY A LAIR'S CONTROL POINTS, AND WHETHER IT REACHES ANYBODY.
+ *
+ * Christopher, 2026-08-30: *"the cover/obscurement should lower the EHP or DPR anyone in the fight
+ * … and yes the Wrong Angle would lower the EHP of both while raising the DPR for both because they
+ * would not get cover but the creatures usually dont care about cover."*
+ *
+ * ⚠ TWO SEPARATE FAILURES ARE FENCED HERE, AND 0.8.11.1 SHIPPED BOTH.
+ *
+ * THE SIGN. `classifyTrait` matches the substring "half cover", so Wrong Angle's *"treat half cover
+ * as no cover"* returned the rule for GAINING half cover. A cover STRIP was priced as a cover
+ * GRANT — the creature got HARDER to kill because the lair took its cover away. The last four
+ * assertions feed the same rule both wordings and require the number to change sign, so a matcher
+ * that stops reading direction fails here rather than quietly inverting a boss.
+ *
+ * THE REACH. The factors were correct and landed on the lair's own row, which is `bodiless` with
+ * `baseHp: 0` — a multiplier on nothing. Every number in Act 3 was unchanged and the report read as
+ * though the control had been priced. So the last two assertions do not ask what the lair COMPUTED;
+ * they ask what arrived on the creature and on the party, through the real roster builder.
+ */
+{
+  const LIB = BROKEN_CHAIN_MONSTER_LIBRARY;
+  const dragon = LIB.find(t => t.name === "Veil-Torn Dragon")!;
+  const harrower = LIB.find(t => t.name === "Thought Harrower")!;
+  const dragonLair = lairRosterGroups(dragon, LIB);
+  const harrowerLair = lairRosterGroups(harrower, LIB);
+
+  const conceal = dragonLair.control.hostFactors.find(f => f.stackGroup === "concealment");
+  eq("obscurement the lair GRANTS raises the creature's EHP", (conceal?.contribution ?? 0) > 0, true);
+  eq("...and costs the party nothing on top — one effect, one channel", dragonLair.control.pressureFraction, 0);
+
+  const cover = harrowerLair.control.hostFactors.find(f => f.stackGroup === "cover");
+  eq("cover the lair STRIPS lowers the creature's EHP", (cover?.contribution ?? 0) < 0, true);
+  eq("...and raises what every monster lands on the party", harrowerLair.control.pressureFraction > 0, true);
+
+  eq("control is never parked on the bodiless lair row",
+    [...dragonLair.groups, ...harrowerLair.groups].every(g => (g.traitFactors ?? []).length === 0), true);
+
+  /** The same calibrated rule, two wordings. If direction stops being read, one of these fails. */
+  const worded = (text: string) => lairRosterGroups(
+    { ...harrower, lair: { ...harrower.lair!, options: [{ name: "Test", effect: "cover", text }] } } as typeof harrower,
+    LIB).control;
+  const granted = worded("The creature has half cover against ranged attacks.");
+  const stripped = worded("Ranged attacks in the area treat half cover as no cover.");
+  eq("one rule reads POSITIVE when the wording grants cover", (granted.hostFactors[0]?.contribution ?? 0) > 0, true);
+  eq("...and NEGATIVE when the wording takes cover away", (stripped.hostFactors[0]?.contribution ?? 0) < 0, true);
+  eq("...the magnitude being the SAME calibrated number either way",
+    Math.abs(granted.hostFactors[0].contribution + stripped.hostFactors[0].contribution) < 1e-9, true);
+  eq("...and only the strip charges the party", [granted.pressureFraction > 0, stripped.pressureFraction > 0], [false, true]);
+
+  /** ⚠ DOES ANYTHING CALL IT. Through `rosterFromTemplates`, the way the app actually prices. */
+  const d = partyDefenceAt(9, "brokenChain");
+  const saveAvg = (d.str + d.dex + d.con + d.int + d.wis + d.cha) / 6;
+  const priced = rosterFromTemplates([{ template: harrower, quantity: 1 }], 9,
+    { ac: d.ac, saveBonus: saveAvg, partySize: 4,
+      saves: { str: d.str, dex: d.dex, con: d.con, int: d.int, wis: d.wis, cha: d.cha } });
+  const hostRow = priced.roster.find(g => g.id === harrower.templateId)!;
+  const lairRow = priced.roster.find(g => g.id === `${harrower.templateId}:lair`)!;
+  eq("the lair's control REACHES the creature's own row",
+    (hostRow.traitFactors ?? []).some(f => f.stackGroup === "cover" && f.contribution < 0), true);
+  eq("...and the party's half becomes damage the lair deals", lairRow.dpr.round1 > 0, true);
 }
 
 /**

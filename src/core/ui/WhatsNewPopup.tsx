@@ -89,6 +89,24 @@ export type VersionNotes = {
  */
 export const RELEASE_HISTORY: VersionNotes[] = [
   {
+    version: "0.8.11.2",
+    notes: [
+      {
+        area: "Encounter Checker",
+        points: [
+          "A lair's cover and obscurement now change the numbers instead of only being listed. Obscurement the lair creates makes the creature standing in it harder to kill; cover the lair takes away makes the creature EASIER to kill and makes every monster in the fight land more on the party.",
+          "Lair options nothing can price yet — forced movement and portals — are now named individually in the assumptions instead of disappearing, so you can see exactly what the estimate is leaving out.",
+        ],
+      },
+      {
+        area: "Author mode",
+        points: [
+          "Author mode is unlocked with a GitHub token now, not a code. If the token is refused, the message says which step failed — the account, the repository, or the connection — rather than only \"not accepted\".",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.8.9.3",
     notes: [
       {

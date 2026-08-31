@@ -20,12 +20,17 @@
  *
  * This file is that caller.
  *
- * ── ⚠ IT PRICES NOTHING ITSELF ──────────────────────────────────────────────────────────────
+ * ── ⚠ WHAT IT PRICES, AND WHAT IT HANDS TO SOMEBODY ELSE ────────────────────────────────────
  *
- * Damage comes from `lairDamagePerRound`, which returns 0 unless an option is authored `damage`
- * — and all six campaign options are movement, obscurement and cover, so 0 is the right answer
- * today. Bodies come from the authored `SummonSpec`. What this adds is the ROUND each one arrives,
- * which is the only thing the lair knows that the roster did not.
+ * Damage comes from `lairDamagePerRound`, which returns 0 unless an option is authored `damage` —
+ * and all six campaign options are movement, obscurement and cover, so 0 is the right answer for
+ * that channel. Bodies come from the authored `SummonSpec`, and the ROUND each arrives is the one
+ * thing the lair knows that the roster did not.
+ *
+ * CONTROL is the fourth thing, and it does NOT belong on the row this file builds. See
+ * `LairControl`: a lair's cover and obscurement move the EHP of the CREATURE and the damage taken
+ * by the PARTY, and this row is bodiless — it has no HP for a multiplier to act on. 0.8.11.1 put
+ * the factors here anyway and they moved not one number. The caller applies them.
  */
 
 import type { LairSpec, LairOption } from "../monsters/lair";
@@ -33,6 +38,7 @@ import { lairDamagePerRound, unpricedLairOptions } from "../monsters/lair";
 import { materializeSummon } from "../monsters/summon";
 import { classifyTrait } from "./traitClassifier";
 import { summonerContextFor } from "./summonRoster";
+import type { SustainFactor } from "./checkerV2";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 
 /** The subset of a roster group this file produces. Kept structural so it cannot drift from checkerV2. */
@@ -43,16 +49,15 @@ export type LairRosterGroup = {
   baseHp: number;
   acMultiplier: number;
   /**
-   * ⚠ THE CONTROL A LAIR EXERTS, PRICED. This was `never[]` — a slot that could only ever be
-   * empty — and `lairDamagePerRound` returns 0 for anything that is not damage, so every
-   * movement, obscurement and cover option in the campaign was worth exactly nothing.
+   * ⚠ ALWAYS EMPTY, AND THAT IS THE CORRECTION. 0.8.11.1 put the lair's control factors HERE, and
+   * they moved no number at all: `traitFactors` multiply EHP, this row is `bodiless` with
+   * `baseHp: 0`, and a multiplier on nothing is nothing. The control was classified, printed, and
+   * inert.
    *
-   * Christopher: *"movement, obsurement, and cover should all be priceable, why would they not …
-   * control has a price in every workbook."* It does, and this one already had it: the calibrated
-   * rules include "Half cover vs ranged attacks" and the obscurement family, and `classifyTrait`
-   * has been reading them off creature traits all along. Nothing reached them from a lair.
+   * Control lands on the ACTORS now — see `LairControl`. The field stays so this row cannot drift
+   * from `RosterGroup`.
    */
-  traitFactors: Array<{ stackGroup: string; label: string; contribution: number }>;
+  traitFactors: SustainFactor[];
   dpr: { round1: number; round2: number; round3: number; round4Plus: number };
   damageUptime: number;
   arrivesRound?: number;
@@ -65,7 +70,56 @@ export type LairRosterGroup = {
 
 export type LairAssumption = { creature: string; flag: string; field: string; detail: string };
 
-export type LairRosterBuild = { groups: LairRosterGroup[]; assumptions: LairAssumption[] };
+/**
+ * WHAT THE LAIR DOES TO THE PEOPLE IN IT — the half a bodiless row can never carry.
+ *
+ * Christopher, 2026-08-30: *"the cover/obscurement should lower the EHP or DPR anyone in the fight
+ * but the lair is effecting the players more then the bosses, and yes the Wrong Angle would lower
+ * the EHP of both while raising the DPR for both because they would not get cover but the creatures
+ * usually dont care about cover."*
+ *
+ * So a lair's control is TWO-SIDED, and the two sides are two different channels:
+ *
+ *   `hostFactors`      what it does to the CREATURE, as signed EHP contributions. Concealment the
+ *                      boss stands in raises its EHP; cover stripped off the boss lowers it.
+ *   `pressureFraction` what it does to the PARTY, as the fraction by which every monster's landed
+ *                      damage rises. Stripping cover raises the party's exposure, and nothing on a
+ *                      monster's own row can say that.
+ *
+ * ⚠ ONE OPTION MAY USE BOTH, BUT ONLY WHEN IT REALLY IS TWO EFFECTS. Cover removal genuinely cuts
+ * both ways — the option's own text says *"The distortion benefits both sides."* Concealment does
+ * not: "the party needs more rounds to kill it" and "the boss is harder to hit" are one statement,
+ * and charging both is the double-count `effectiveHpPerBody` warns about.
+ */
+export type LairControl = {
+  hostFactors: SustainFactor[];
+  pressureFraction: number;
+};
+
+export type LairRosterBuild = {
+  groups: LairRosterGroup[];
+  assumptions: LairAssumption[];
+  control: LairControl;
+};
+
+/**
+ * DOES THIS OPTION HAND OUT COVER, OR TAKE IT AWAY?
+ *
+ * ⚠ THE CLASSIFIER CANNOT ANSWER THIS, AND READING IT AS "GRANTS" IS HOW 0.8.11.1 GOT THE SIGN
+ * BACKWARDS. `classifyTrait` matches on the substring "half cover", so Wrong Angle's *"treat half
+ * cover as no cover and three-quarters cover as half cover"* came back as the rule for GAINING half
+ * cover — a cover strip priced as a cover grant, +0.0165 where the number belongs below zero.
+ *
+ * The split is deliberate and it is the design: the calibrated rule carries the MAGNITUDE, which is
+ * RULE 2 and stays; the option's own wording carries the DIRECTION. Neither one invents the other.
+ */
+function stripsCover(text: string): boolean {
+  const t = (text ?? "").toLowerCase();
+  return /\bas no cover\b/.test(t)
+    || /\bignor\w*[^.]{0,30}\bcover\b/.test(t)
+    || /\bcover\b[^.]{0,30}\bdoes(n't| not) apply\b/.test(t)
+    || /\bcover\b[^.]{0,30}\bis (reduced|ignored|treated as)\b/.test(t);
+}
 
 /**
  * ⚠ WHEN A LAIR SUMMON ACTUALLY ARRIVES, AND WHY IT IS NOT ALWAYS ROUND 1.
@@ -123,7 +177,7 @@ export function lairRosterGroups(
   library: MainMonsterTemplate[],
 ): LairRosterBuild {
   const lair = template.lair;
-  if (!lair) return { groups: [], assumptions: [] };
+  if (!lair) return { groups: [], assumptions: [], control: { hostFactors: [], pressureFraction: 0 } };
 
   const name = template.name;
   const groups: LairRosterGroup[] = [];
@@ -156,7 +210,7 @@ export function lairRosterGroups(
    * ⚠ AND ONE RULE PER STACK GROUP. Two options that classify to the same effect are the same
    * claim about the same thing; `stack_group` is the workbook's own double-count key.
    */
-  const controlFactors: Array<{ stackGroup: string; label: string; contribution: number }> = [];
+  const control: LairControl = { hostFactors: [], pressureFraction: 0 };
   const seenGroups = new Set<string>();
   const rotation = Math.max(1, lair.options.length);
   for (const o of lair.options) {
@@ -170,10 +224,40 @@ export function lairRosterGroups(
     }
     if (seenGroups.has(match.rule.stack_group)) continue;
     seenGroups.add(match.rule.stack_group);
-    controlFactors.push({
+
+    const share = match.rule.contribution / rotation;
+
+    if (stripsCover(o.text ?? "")) {
+      /**
+       * ⚠ BOTH SIDES, AND THE PARTY'S SIDE IS THE ONE THAT MATTERS.
+       *
+       * Nobody gets cover, so everybody is easier to hit: the host's EHP falls by the calibrated
+       * cover contribution, and the damage the party takes rises by the same fraction.
+       */
+      control.hostFactors.push({
+        stackGroup: match.rule.stack_group,
+        label: `${o.name} — cover stripped (${match.label} reversed)`,
+        contribution: -share,
+      });
+      control.pressureFraction += share;
+      assumptions.push({ creature: name, flag: "ESTIMATED", field: "lair",
+        detail: `"${o.name}" REMOVES cover rather than granting it, so it is priced in both directions: `
+          + `${name} loses ${(share * 100).toFixed(2)}% effective HP and every monster in the fight lands `
+          + `${(share * 100).toFixed(2)}% more. ⚠ THE CREATURE HALF IS A CEILING ON THE PARTY'S BENEFIT — it `
+          + `assumes ${name} was using cover, and per the author creatures usually are not, so the real fight `
+          + `is slightly HARDER than this reads.` });
+      continue;
+    }
+
+    /**
+     * Cover or concealment GRANTED. One statement, one channel: "the boss is harder to hit" and
+     * "the party needs more rounds" are the same fact, and charging the party channel as well
+     * would be the double-count.
+     */
+    control.hostFactors.push({
       stackGroup: match.rule.stack_group,
       label: `${o.name} — ${match.label}`,
-      contribution: match.rule.contribution / rotation,
+      contribution: share,
     });
   }
 
@@ -203,7 +287,8 @@ export function lairRosterGroups(
     baseHp: 0,
     bodiless: true,
     acMultiplier: 1,
-    traitFactors: controlFactors,
+    // ⚠ EMPTY BY DESIGN — a multiplier on a bodiless row multiplies nothing. See `LairControl`.
+    traitFactors: [],
     dpr: { round1: damage, round2: damage, round3: damage, round4Plus: damage },
     damageUptime: 1,
     arrivesRound: 1,
@@ -270,5 +355,5 @@ export function lairRosterGroups(
     addSummon(option.summon, option.name, round, certain);
   }
 
-  return { groups, assumptions };
+  return { groups, assumptions, control };
 }
