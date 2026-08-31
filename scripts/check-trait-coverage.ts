@@ -29,8 +29,10 @@
  * Plus 1.0, which needs no provenance but does need a note: a decided non-contribution is an
  * answer, an undecided one is a gap.
  */
-import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
-import { resolveTraitRule } from "../src/core/encounter-band/compactImport";
+import { BROKEN_CHAIN_MONSTER_LIBRARY, BUNDLED_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
+import { AUTHORED_MONSTERS } from "../src/data/broken-chain/authored.generated";
+import { resolveTraitRule, traitRule } from "../src/core/encounter-band/compactImport";
+import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
 const TOLERANCE = 5e-6;
 const failures: string[] = [];
@@ -85,9 +87,99 @@ if (debt.length) {
   for (const line of debt) console.log(`     ${line}`);
 }
 
+/**
+ * ── ⚠ AND THE AUTHORED PAYLOAD MAY NOT SILENTLY DROP A PRICED DEFENCE ───────────────────────
+ *
+ * Christopher, 2026-08-31: *"this checker is wrong on the encounter and the darkmane."*
+ *
+ * The Darkmare carries two priced defences in the bundled library — the constant obscurement and
+ * an interpolated +2 AC row for Shadow Shroud (x1.056615). The authored payload had ONE, and
+ * `mergeAuthored` lets authored override bundled wholesale, so the live Mare was priced without
+ * Shadow Shroud at all. Nothing said so: the coverage gate above only asks whether the multipliers
+ * that ARE there can explain themselves, and a defence that is gone has no multiplier to check.
+ *
+ * ⚠ THIS IS NOT "AUTHORED IS WRONG". The authored library IS the truth for the Broken Chain, and
+ * removing a defence is a decision the author is entitled to make. What it may not be is SILENT —
+ * so the removal is cleared exactly the way this file already distinguishes a decided 1.0 from an
+ * unassessed creature: record the row at 1.0 with a reason, and the gate passes.
+ *
+ * A diff would not have caught this either. The value never moved; it stopped existing.
+ */
+/**
+ * ⚠ COMPARED AS A PRODUCT, NOT ROW BY ROW, AND BY templateId, NOT BY NAME.
+ *
+ * Row matching gave a false positive on the first run: the Demonic Reaver's bundled "Blur"
+ * (x1.227798, no calibrated source) became the authored "All attacks at disadvantage - 1 round"
+ * (x1.129416). Same effect, correctly re-classified onto a calibrated rule — a rename is not a
+ * loss, and a gate that calls it one trains the author to ignore it. Names also move: the id
+ * `veil-torn-wyrmling` is labelled "Veilbound Drake Guard" now, which is what authoring is for.
+ *
+ * What actually matters is whether the creature got CHEAPER, so that is what is measured.
+ */
+const DROP_TOLERANCE = 1e-4;
+const bundledById = new Map(BUNDLED_MONSTER_LIBRARY.map(t => [t.templateId, t]));
+const product = (t?: MainMonsterTemplate): number =>
+  (t?.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1);
+
+/**
+ * ⚠ A DECLARED DEBT, PRINTED EVERY RUN — the same device this file already uses for
+ * `uncalibrated`, and for the same reason: *"so that it stays a decision rather than becoming the
+ * floor."*
+ *
+ * These five creatures lost priced defences through the authoring round trip before the gate
+ * existed, and restoring them is an AUTHORING decision that changes Act 3 balance — not mine to
+ * take. They are listed so the gate can still fail on anything NEW while these await Christopher's
+ * call. Deleting a line from here without restoring the defence is how this debt becomes invisible
+ * again.
+ */
+const KNOWN_DROPS: Record<string, string> = {
+  "broken-chain:act3:grief-colossus:v1":
+    "Body Between (x1.232313 = Fixed prevention - 12/round) became \"Damage transfer / redirection\" at 1.0, which the workbook leaves UNPRICED. MASTER records that Body Between IS the prevention rule.",
+  "broken-chain:act3:nail-saint:v1":
+    "Claimed Line (x1.108348) — authored defences are EMPTY, so the creature also reports as unassessed.",
+  "broken-chain:act3:shardbound:v1":
+    "Shatter the Stake (x1.047749) — authored defences are EMPTY.",
+  "broken-chain:act3:veilwood-crone:v1":
+    "Control spellcasting (x1.108348) became a decided \"No notable defensive traits\" 1.0, which SUPPRESSES the unassessed flag. This is Gate I's other creature.",
+  "broken-chain:act3:veil-torn-wyrmling:v1":
+    "Moon-Slick Scales (x1.047749) — authored carries a decided \"No notable defensive traits\" 1.0. ⚠ THE RENAME HID THIS ONE: the id still says veil-torn-wyrmling and the creature is labelled \"Veilbound Drake Guard\", so a by-name comparison could not see it at all.",
+  "broken-chain:act3:demonic-reaver:v1":
+    "Blur x1.227798 -> x1.129416. A re-classification onto a calibrated rule, so probably CORRECT — listed because it is an 8% fall and should be confirmed, not because it is known wrong.",
+};
+
+const dropped: string[] = [];
+const known: string[] = [];
+for (const authored of AUTHORED_MONSTERS as MainMonsterTemplate[]) {
+  const bundled = bundledById.get(authored.templateId);
+  if (!bundled) continue;
+  const before = product(bundled);
+  const after = product(authored);
+  if (after >= before - DROP_TOLERANCE) continue;
+  const line = `${authored.name} (${authored.templateId}): defence product x${before.toFixed(6)} -> x${after.toFixed(6)}`;
+  if (KNOWN_DROPS[authored.templateId]) known.push(`${line}\n       ${KNOWN_DROPS[authored.templateId]}`);
+  else dropped.push(line);
+}
+
+if (known.length) {
+  console.log(`\n  ${known.length} DECLARED DEFENCE DEBT — priced defences lost through the authoring round trip,`);
+  console.log(`  awaiting an authoring decision. Printed every run so they stay a decision.`);
+  for (const line of known) console.log(`     ${line}`);
+}
+
+if (dropped.length) {
+  console.error(`\nFAILED — ${dropped.length} creature(s) got cheaper in the authored payload with no record:\n`);
+  for (const line of dropped) console.error(`  ${line}`);
+  console.error(`\n  The authored library IS the truth, so removing a defence is allowed — but not`);
+  console.error(`  SILENTLY. Record it as a 1.0 row with a reason, the way a creature with no`);
+  console.error(`  defensive traits is DECIDED rather than unassessed, or restore the defence.`);
+  console.error(`  A diff would not catch this: the value did not move, it stopped existing.`);
+  process.exit(1);
+}
+
 if (failures.length) {
   console.error(`\nFAILED — ${failures.length} multiplier(s) with nowhere to have come from:\n`);
   for (const f of failures) console.error(`  ${f}`);
   process.exit(1);
 }
-console.log(`\nPASS — every multiplier in the library can say where it came from.`);
+console.log(`\nPASS — every multiplier in the library can say where it came from,`);
+console.log(`       and the authored payload drops no priced defence without saying so.`);

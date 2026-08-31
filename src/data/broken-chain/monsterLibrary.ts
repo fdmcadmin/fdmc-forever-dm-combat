@@ -30,7 +30,13 @@ const act2S1E2Label = "Act 2 S1 E2 - Frozen Hollow";
 const act2S2E2Label = "Act 2 S2 E2 - Last Directive";
 const fortCervanBandLabel = "The Fort — Cervan's Band";
 
-const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
+/**
+ * ⚠ EXPORTED FOR THE COVERAGE GATE, NOT FOR THE APP. Nothing in the running app may read this —
+ * the app reads `BROKEN_CHAIN_MONSTER_LIBRARY`, which is this merged under the authored payload.
+ * `check:traits` needs both sides to prove the authored one has not silently dropped a priced
+ * defence, which is exactly how the Darkmare lost Shadow Shroud.
+ */
+export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   // ── Act 1 · Wardenwood — Thornfang Pack ──────────────────────────────────────
   {
     templateId: "broken-chain:act1:thornfang-wolf:v1",

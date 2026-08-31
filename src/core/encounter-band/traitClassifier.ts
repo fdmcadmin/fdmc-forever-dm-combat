@@ -131,6 +131,34 @@ const MATCHERS: Matcher[] = [
     test: (_n, t) => any(t, "mirror image", "duplicates of itself", "illusory duplicates") },
   { label: "Half cover vs ranged attacks",
     test: (_n, t) => any(t, "half cover") },
+  /**
+   * ⚠ CONSTANT OBSCUREMENT IS NOT THE SAME RULE AS OBSCUREMENT THAT LAPSES, and reading them alike
+   * under-priced the Darkmare for the life of the campaign.
+   *
+   * The calibrated concealment row is literally *"Concealment until first attack hits each
+   * round"* — a defence that BUYS ONE ATTACK and then stops. The Darkmane is one-way magical
+   * obscurement the creature simply stands inside; nothing about it ends on a hit, so every attack
+   * all fight is made at disadvantage. Christopher, 2026-08-31: *"Persistent one-way obscurement
+   * should be priced as a continuing attack-roll defense, not a 'first incoming attack only'
+   * effect."* The bundled library's own note had said "permanent" while naming the lapsing rule.
+   *
+   * So the CONTINUING form reads as `attack_suppression`, which is the family for a defence that
+   * keeps working. ⚠ IT IS STILL A FLOOR: the workbook calibrates that rule for ONE round
+   * (+0.129416) and this never expires, so the true value is higher and no published row covers it.
+   *
+   * ⚠ AND THE TEST IS NARROW ON PURPOSE. Only obscurement that SAYS it is constant qualifies —
+   * anything that names a lapse, a round limit or a trigger keeps the concealment rule, because
+   * that is exactly what the concealment rule was calibrated on.
+   */
+  { label: "All attacks at disadvantage - 1 round",
+    test: (n, t) => {
+      const obscuring = any(t, "heavily obscured", "lightly obscured", "obscurement", "concealment");
+      if (!obscuring) return null;
+      const lapses = /until (it is hit|the first|hit once)|first attack|end of (its|the)|for 1 round|one round/.test(t);
+      if (lapses) return null;
+      const constant = /\bconstant\b|\bpermanent\b|\bat all times\b|\balways\b/.test(n + " " + t);
+      return constant ? `${obscuring}, constant` : null;
+    } },
   { label: "Concealment until first attack hits each round",
     test: (_n, t) => any(t, "heavily obscured", "lightly obscured", "obscurement", "concealment") },
   { label: "Shield-like +5 AC - 2 rounds",

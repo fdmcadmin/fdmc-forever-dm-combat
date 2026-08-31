@@ -379,9 +379,21 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "speed": "50 ft.",
       "defenses": [
         {
-          "name": "Concealment until first attack hits each round",
-          "ehpMultiplier": 1.1132595358150892,
-          "note": "Read from \"Darkmane (Constant)\" (trait) on \"obscurement\"."
+          "name": "Darkmane (Constant)",
+          "ehpMultiplier": 1.1294156939022204,
+          "rule": "All attacks at disadvantage - 1 round",
+          "note": "Christopher, 2026-08-31: persistent one-way obscurement is a CONTINUING attack-roll defence, not a \"first incoming attack only\" effect. It was priced as \"Concealment until first attack hits each round\" (+0.113260) whose own note already admitted the mismatch by calling the obscurement permanent. The trait never lapses on a hit, so the correct family is attack_suppression. ⚠ THIS IS A FLOOR: the workbook's continuing rule is calibrated for ONE round (+0.129416) and this effect is permanent, so the real value is higher and no calibrated row covers it."
+        },
+        {
+          "name": "Shadow Shroud (1/Day)",
+          "ehpMultiplier": 1.056615,
+          "provenance": "interpolated",
+          "note": "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615). ⚠ RESTORED — this row exists in the bundled library and was absent from the authored payload, and authored overrides bundled, so the live Mare was priced without it. `readDefensesFromTraits` could not re-find it: the classifier reads \"attack rolls against it\" and this trait says \"attacks against it\", and no calibrated row covers a +2 AC bump."
+        },
+        {
+          "name": "Umbral Passage",
+          "ehpMultiplier": 1,
+          "note": "Decided 1.0. Christopher: it \"should receive some tactical value for free repositioning and carrying the Crone, but not be treated like raw DPR\" — and there is no calibrated multiplier for repositioning, the same gap the lair's forced-movement options report. Priced at raw HP deliberately, with the tactical value left to the DM, exactly as the Briar Regent records forced movement."
         }
       ],
       "attacksPerTurn": 2,

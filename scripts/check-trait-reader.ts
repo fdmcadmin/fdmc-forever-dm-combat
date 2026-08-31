@@ -20,8 +20,21 @@ for (const t of L) {
   const readable = [...(t.traits ?? []), ...(t.reactions ?? []), ...(t.actions ?? [])];
   for (const d of t.stats.defenses ?? []) {
     if (!d.rule) continue;
-    const row = readable.find(x => x.name === d.name)
-      ?? readable.find(x => x.name && d.name.includes(x.name));
+    /**
+     * ⚠ CASE-INSENSITIVE, OR THE FALLBACK CLASSIFIES THE NOTE INSTEAD OF THE TRAIT.
+     *
+     * The Darkmare's defence is "Darkmane (constant obscurement)" and its trait is "Darkmane
+     * (Constant)" — one capital letter apart, so `includes` missed it, `row` came back undefined,
+     * and the classifier was handed `d.note`. A note that DISCUSSES the pricing then gets read AS
+     * the trait: this one says the effect is *not* a "first incoming attack only" effect, and the
+     * word "first attack" in that sentence flipped the very matcher the note exists to justify.
+     *
+     * A gate that reads prose about a trait when it cannot find the trait will eventually grade
+     * commentary. Find the trait.
+     */
+    const key = d.name.toLowerCase();
+    const row = readable.find(x => (x.name ?? "").toLowerCase() === key)
+      ?? readable.find(x => x.name && key.includes(x.name.toLowerCase()));
     const m = classifyTrait(row?.name ?? d.name, row?.text ?? d.note);
     if (!m) { missed++; console.log(`  miss      ${t.name} · ${d.name}  (authored ${d.rule})`); continue; }
     if (m.label === d.rule) { agree++; console.log(`  agree     ${t.name} · ${d.name}  ->  ${m.label}`); }
