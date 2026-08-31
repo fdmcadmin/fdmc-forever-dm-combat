@@ -92,7 +92,7 @@ const SEGMENTS: Array<{ label: string; level: number; fights: Fight[] }> = [
         ref: { completion: "R3", monsterDamage: 91, usedPct: 23, leftPct: 63 } },
       { id: "F6", label: "Mirrors (4 built)", level: 7, mirrors: true,
         doc: { completion: "R5", monsterDamage: 135, usedPct: 34, leftPct: 29 },
-        ref: { completion: "R5", monsterDamage: 70, usedPct: 18, leftPct: 45 } },
+        ref: { completion: "R5", monsterDamage: 127, usedPct: 32, leftPct: 31 } },
     ],
   },
   {
@@ -153,9 +153,15 @@ function mirrorTemplate(m: (typeof MIRROR_ARCHETYPES)[number]): MainMonsterTempl
     templateId: `broken-chain:elemental-mirror-${m.archetype.toLowerCase()}`,
     name: `Elemental Mirror (${m.archetype})`,
     stats: {
-      kind: "monster", ac: 15, maxHp: 90, speed: "30 ft.", size: "Medium",
+      // ⚠ CORRECTED FROM CHRISTOPHER, 2026-08-28: *"mirrors have 2 attack if they use either the
+      // claw or the bolt and only one ofensive 1/day is used per round while the hp were changed to
+      // the 85."* This script had HP 90 and ONE attack, transcribed from an earlier archetype table
+      // — and the mirrors had since been nerfed. Half the offence and 5 extra HP is most of the
+      // 65-damage gap I had left standing as an open question; it was never a mystery, it was a
+      // stale transcription in this file.
+      kind: "monster", ac: 15, maxHp: 85, speed: "30 ft.", size: "Medium",
       classification: "strong", creatureType: "Aberration",
-      attacksPerTurn: 1,
+      attacksPerTurn: 2,
       // The workbook's own calibrated rule for a telegraphed alternating immunity/resistance.
       defenses: [{ name: "Telegraphed alternating immunity/resistance", ehpMultiplier: 1.075915990842233 }],
     },
@@ -280,9 +286,9 @@ else {
   docGap.forEach(m => console.log("  " + m));
   console.log("  ⚠ The document predates 0.7.32, which deliberately RAISED the Veil-Torn Dragon and the");
   console.log("    Thought Harrower — so F9 and F10 reading high is the content being newer, not wrong.");
-  console.log("  ⚠ F6 (Mirrors) is the one gap with no such explanation. It is built in THIS script from");
-  console.log("    the document's own archetype table, so a 65-damage gap is a question about the build,");
-  console.log("    not about drift. Left visible rather than normalised away.");
+  console.log("  ⚠ F6 (Mirrors) WAS -65 until Christopher corrected the build: 2 attacks, HP 85, one");
+  console.log("    offensive 1/day per round. It reads 127 against the document's 135 now. The gap was a");
+  console.log("    stale transcription in THIS file, never drift in the content.");
 }
 
 /**
