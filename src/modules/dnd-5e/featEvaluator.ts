@@ -164,16 +164,49 @@ class Parser {
 
   expr(): number { return this.ternary(); }
 
+  /**
+   * ⚠ ONLY THE TAKEN BRANCH CAN ASK FOR AN INPUT.
+   *
+   * Christopher, 2026-08-28: *"why are these the way they are if we already know how those actions
+   * work … we already wired in all the X feats with the last workbook."* Exactly — and the feats
+   * WERE wired. The guard was working and the reporting was not.
+   *
+   * Nearly every Fighting Style is written `resolvedAC ? 0 : ehpFromAC(baseEhp,AC+1)-…`, and the
+   * app passes every `resolved*` flag TRUE because the entered sheet already contains the AC, HP
+   * and attack bonus a feat grants. So the value taken is the constant 0 — correct, and nothing is
+   * needed to produce it.
+   *
+   * But BOTH branches were evaluated, so the dead branch's identifiers landed in `missing` and the
+   * channel reported NEEDS_INPUT anyway. Six channels asked the DM for AC, attacks, targetAC and
+   * perHitDamage in order to compute a zero.
+   *
+   * The parser must still WALK both branches — it is a single token cursor and the untaken side has
+   * to be consumed — so the fix is to walk them and then keep only what the taken side asked for.
+   */
   private ternary(): number {
     const cond = this.or();
     if (this.isOp("?")) {
       this.eat("?");
+      const before = new Set(this.missing);
       const a = this.expr();
+      const addedByA = [...this.missing].filter(m => !before.has(m));
+
+      this.restoreMissing(before);
       this.eat(":");
       const b = this.expr();
+      const addedByB = [...this.missing].filter(m => !before.has(m));
+
+      this.restoreMissing(before);
+      for (const m of cond ? addedByA : addedByB) this.missing.add(m);
       return cond ? a : b;
     }
     return cond;
+  }
+
+  /** Roll `missing` back to a snapshot, so a branch that was not taken leaves no demand behind. */
+  private restoreMissing(snapshot: Set<string>): void {
+    this.missing.clear();
+    for (const m of snapshot) this.missing.add(m);
   }
   private or(): number { let v = this.and(); while (this.isOp("||")) { this.eat("||"); const r = this.and(); v = (v || r) ? 1 : 0; } return v; }
   private and(): number { let v = this.cmp(); while (this.isOp("&&")) { this.eat("&&"); const r = this.cmp(); v = (v && r) ? 1 : 0; } return v; }
