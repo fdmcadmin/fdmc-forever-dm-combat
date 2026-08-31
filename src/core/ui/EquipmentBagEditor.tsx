@@ -793,6 +793,27 @@ export function resolveChassisItem(item: EquipmentItem): EquipmentItem {
  * Every other caller already passed the flag. Making it required means the next one cannot get a
  * silent default wrong.
  */
+/**
+ * WHICH BODY SLOT AN ITEM OCCUPIES, from what the item IS.
+ *
+ * The library records `type` ("shield", "armor", "weapon") and never `slot`, while every reader —
+ * the shield check in `chassis.ts`, the worn-slot exclusivity in the equip handler — asks for
+ * `slot`. One derivation closes that, rather than hand-editing every item.
+ *
+ * ⚠ ONLY WHERE IT IS UNAMBIGUOUS. A ring or an amulet is not inferable from "magic", so it returns
+ * undefined and behaves exactly as it does today. Guessing a slot would silently start unequipping
+ * things a DM had both of.
+ */
+function slotFromItemType(type: string | undefined, category: string | undefined): string | undefined {
+  const t = (type ?? "").toLowerCase();
+  if (t === "shield") return "shield";
+  if (t === "armor") {
+    const c = (category ?? "").toLowerCase();
+    return c.includes("shield") ? "shield" : "body";
+  }
+  return undefined;
+}
+
 export function itemToAction(item: EquipmentItem, equipped: boolean): ActorAction {
   item = resolveChassisItem(item);
   // A TO-HIT is what makes something a weapon — not the presence of dice.
@@ -881,9 +902,25 @@ export function itemToAction(item: EquipmentItem, equipped: boolean): ActorActio
         : hasEffectDice ? outcomeModeForEffectKind(item.effectKind)
         : isConsumable ? "triggered"
         : "passive",
-      // Carried on the action, like statEffects, so the card can enforce slot exclusivity
-      // without resolving the item back out of the library.
-      slot: item.slot,
+      /**
+       * Carried on the action, like statEffects, so the card can enforce slot exclusivity
+       * without resolving the item back out of the library.
+       *
+       * ⚠ AND IT IS DERIVED FROM THE TYPE WHEN THE ITEM DOES NOT STATE ONE, BECAUSE NOTHING STATES
+       * ONE. `grep -c '"slot"'` over the whole equipment library returns ZERO — not one item, of
+       * any kind, carries a slot. Everything downstream reads `metadata.slot`:
+       *
+       *   · `chassis.ts` finds a worn shield with `slot === "shield"` — so it never found one,
+       *     which is why Shield Master reported `shieldEquipped` as missing on a character who is
+       *     visibly holding the Marrow Shield. Christopher: *"the character the SM is reading on
+       *     has a shield."* He was right; the field it was read from was empty for everybody.
+       *   · the equip handler's worn-slot exclusivity ("putting one on takes the oldest one in
+       *     that slot off") could never fire either.
+       *
+       * The library DOES say what a thing is — `type: "shield"`, `type: "armor"` — so the slot is
+       * derivable and does not need a hundred items hand-edited. A stated slot still wins.
+       */
+      slot: item.slot ?? slotFromItemType(item.type, item.category),
       details: [
         item.ac ? `AC ${item.ac}` : undefined,
         item.attack ? `⚔ ${item.attack}` : undefined,
