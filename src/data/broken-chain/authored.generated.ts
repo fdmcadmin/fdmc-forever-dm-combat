@@ -331,7 +331,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "routineSlots": 2,
         "damageType": "Bludgeoning",
         "range": "reach 10 ft.",
-        "text": "Targets one Medium or smaller creature, and on a hit the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
+        "text": "One Medium or smaller creature. On a hit, the target is grappled (escape DC 17). A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
       },
       {
         "name": "Heavy Blow",
@@ -576,7 +576,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "damage": "1d10 + @MAIN",
         "damageType": "Bludgeoning",
         "range": "reach 5 ft.",
-        "text": "Targets one Large or smaller creature, and on a hit the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
+        "text": "One Large or smaller creature. On a hit, the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
       }
     ],
     "reactions": [
@@ -700,7 +700,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
             "chance": 1,
             "note": "marked target"
           }
-        ], "damageType": "Slashing"
+        ], "damageType": "Slashing", "range": "reach 5 ft."
       }
     ],
     "reactions": [],
@@ -1321,7 +1321,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Razor Quill",
         "kind": "attack",
         "roll": "1d20 + @ATK",
-        "damage": "1d12 + @MAIN", "damageType": "Slashing", "riders": [{ "name": "Psychic rider", "damage": "1d6", "damageType": "Psychic", "cadence": "once-per-turn" }]
+        "damage": "1d12 + @MAIN", "damageType": "Slashing", "riders": [{ "name": "Psychic rider", "damage": "1d6", "damageType": "Psychic", "cadence": "once-per-turn" }], "range": "reach 5 ft."
       },
       {
         "name": "Black Fan (Recharge 5–6)",
@@ -1807,7 +1807,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d10+@STR",
-        "routineSlots": 2, "damageType": "Piercing", "riders": [{ "name": "Cold rider", "damage": "2d6", "damageType": "Cold", "cadence": "per-hit" }]
+        "routineSlots": 2, "damageType": "Piercing", "riders": [{ "name": "Cold rider", "damage": "2d6", "damageType": "Cold", "cadence": "per-hit" }], "range": "reach 10 ft."
       },
       {
         "name": "Claw",
@@ -1939,7 +1939,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR",
         "save": "",
-        "routineSlots": 1, "damageType": "Slashing", "riders": [{ "name": "Fire rider", "damage": "1d6", "damageType": "Fire", "cadence": "per-hit" }]
+        "routineSlots": 1, "damageType": "Slashing", "riders": [{ "name": "Fire rider", "damage": "1d6", "damageType": "Fire", "cadence": "per-hit" }], "range": "reach 5 ft."
       },
       {
         "name": "Tail",

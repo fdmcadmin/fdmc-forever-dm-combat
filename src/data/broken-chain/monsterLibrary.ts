@@ -1289,7 +1289,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Devouring Claw", kind: "attack", roll: "1d20 + 7", damage: "2d10 + @MAIN", save: "STR DC 15", damageType: "Cold", range: "reach 5 ft.", text: "DC 15 STR save or grappled." },
-      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 8", damage: "3d8 + @MAIN", damageType: "Cold", text: "Targets one grappled creature. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest — a creature reduced to 0 max HP dies and freezes." },
+      { name: "Hunger Bite (Grappled only)", kind: "attack", roll: "1d20 + 8", damage: "3d8 + @MAIN", damageType: "Cold", text: "One grappled creature. The grappled creature's maximum HP is reduced by HALF the cold damage dealt until a long rest." },
       { name: "Hungering Leap", kind: "action", recharge: "5-6", save: "STR DC 16", damage: "2d6", text: "Leaps up to 30 ft to an unoccupied space it can see. Each creature within 10 ft of the landing makes a DC 15 STR save or is knocked prone and pushed 10 ft (2d6 bludgeoning on a fail). It then makes one Devouring Claw against the nearest creature." },
       { name: "Mark Prey (Legendary Action, 1/round)", kind: "action", text: "The Wendigo marks one creature it can see. Until the end of that creature's next turn, the Wendigo has advantage on attacks against it and ignores any bonus to its AC from shields. This is its ONLY legendary action — one per round." },
     ],
@@ -1471,7 +1471,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Snap to the Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
-      { name: "Razor Quill", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", damageType: "Slashing", riders: [{ name: "Psychic rider", damage: "1d6", damageType: "Psychic", cadence: "once-per-turn" }] },
+      { name: "Razor Quill", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", damageType: "Slashing", riders: [{ name: "Psychic rider", damage: "1d6", damageType: "Psychic", cadence: "once-per-turn" }], range: "reach 5 ft." },
       { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
     reactions: [
@@ -2136,7 +2136,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Oppressive Presence", kind: "trait", text: "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions." },
     ],
     actions: [
-      { name: "Iron Grasp", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft.", text: "Targets one Large or smaller creature, and on a hit the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time." },
+      { name: "Iron Grasp", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft.", text: "One Large or smaller creature. On a hit, the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time." },
     ],
     reactions: [
       { name: "Commanding Presence", kind: "reaction", text: "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances." },
@@ -2176,7 +2176,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Two-Handed Hold", kind: "trait", text: "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends." },
     ],
     actions: [
-      { name: "Grasping Limb", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", routineSlots: 2, damageType: "Bludgeoning", range: "reach 10 ft.", text: "Targets one Medium or smaller creature, and on a hit the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target." },
+      { name: "Grasping Limb", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", routineSlots: 2, damageType: "Bludgeoning", range: "reach 10 ft.", text: "One Medium or smaller creature. On a hit, the target is grappled (escape DC 17). A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target." },
       { name: "Heavy Blow", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", routineSlots: 2, damageType: "Bludgeoning", range: "reach 5 ft." },
       { name: "Cast Aside", kind: "action", economyCost: "free", text: "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends." },
     ],
@@ -2218,7 +2218,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Scent the Expense", kind: "trait", text: "Whenever a hostile creature the Reaver can see within 60 ft. expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class-feature uses, item charges, and similar resources count; recurring once-per-turn riders and other effects that do not consume a limited use do not. At the start of the Reaver’s turn, its current quarry locks until the end of that turn and cannot be replaced during that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage." },
     ],
     actions: [
-      { name: "Rending Talon", kind: "attack", roll: "1d20 + @ATK", damage: "1d10+@MAIN", text: "Multiattack: the Reaver makes two Rending Talon attacks.", damageType: "Slashing", riders: [{ name: "Fire rider", damage: "2d6", damageType: "Fire", cadence: "per-hit" }] },
+      { name: "Rending Talon", kind: "attack", roll: "1d20 + @ATK", damage: "1d10+@MAIN", text: "Multiattack: the Reaver makes two Rending Talon attacks.", damageType: "Slashing", riders: [{ name: "Fire rider", damage: "2d6", damageType: "Fire", cadence: "per-hit" }], range: "reach 5 ft." },
     ],
     reactions: [
     ],
@@ -2339,7 +2339,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Broken Lift (Recharge 5–6)", kind: "action", economyCost: "bonus", recharge: "5-6", text: "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed." },
-      { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10+@STR", damageType: "Piercing", riders: [{ name: "Cold rider", damage: "2d6", damageType: "Cold", cadence: "per-hit" }] },
+      { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10+@STR", damageType: "Piercing", riders: [{ name: "Cold rider", damage: "2d6", damageType: "Cold", cadence: "per-hit" }], range: "reach 10 ft." },
       { name: "Claw", kind: "attack", roll: "1d20 + 9", damage: "2d6 + 5", damageType: "Slashing", range: "reach 5 ft." },
       { name: "Fractured Dream Breath (Recharge 5–6)", kind: "action", save: "CON DC 17", recharge: "5-6", text: "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends." },
       { name: "Moonfall Breath (Recharge 5–6)", kind: "action", save: "DEX DC 17", recharge: "5-6", damage: "8d8", text: "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge." },
@@ -2450,7 +2450,7 @@ const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Guiding Bolt", kind: "spell", setId: "element", setOption: "Earth", uses: 3, roll: "1d20+@SPELL", damage: "4d6 radiant", damageType: "Radiant", range: "range 120 ft.", text: "3/day.," },
       { name: "Venomroot Bloom", kind: "action", setId: "element", setOption: "Nature", uses: 1, save: "CON DC @DC", text: "1/Day, Action. Choose a point within 60 feet. Poisonous roots erupt in a 20-foot-radius area until the start of the mirror's next turn. The area is difficult terrain for creatures other than the mirror. A creature that enters the area for the first time on a turn or starts its turn there makes a Constitution saving throw. On a failed save, its speed becomes 0 and it is poisoned until the start of its next turn. On a success, its speed is halved until the start of its next turn." },
       { name: "Thorn Whip", kind: "spell", setId: "element", setOption: "Nature", roll: "1d20+@SPELL", damage: "2d6 piercing", damageType: "Piercing", range: "reach 30 ft.", text: "At-will cantrip.," },
-      { name: "Ray of Sickness", kind: "spell", setId: "element", setOption: "Nature", uses: 3, roll: "1d20+@SPELL", damage: "2d8 poison", damageType: "Poison", range: "range 60 ft.", text: "3/day. On a hit the target makes a Constitution save or is poisoned until the end of the mirror's next turn." },
+      { name: "Ray of Sickness", kind: "spell", setId: "element", setOption: "Nature", uses: 3, roll: "1d20+@SPELL", damage: "2d8 poison", damageType: "Poison", range: "range 60 ft.", text: "3/day. On a hit, the target makes a Constitution saving throw or has the Poisoned condition until the end of the mirror's next turn." },
       { name: "Stormcharged Fireball", kind: "action", setId: "element", setOption: "Fire", uses: 1, damage: "3d6 {primary} + 3d6 {secondary}", save: "DEX DC @DC", text: "1/Day, Action. Choose a point within 90 feet. A 15-foot-radius sphere erupts with fire threaded by lightning. Each creature in the area makes a Dexterity saving throw, taking 3d6 fire plus 3d6 lightning damage on a failed save, or half as much on a success." },
       { name: "Fire Bolt", kind: "spell", setId: "element", setOption: "Fire", roll: "1d20+@SPELL", damage: "2d10 fire", damageType: "Fire", range: "range 120 ft.", text: "At-will cantrip., A flammable object hit by this spell ignites if it is not being worn or carried." },
       { name: "Thunderwave", kind: "spell", setId: "element", setOption: "Fire", uses: 3, damage: "2d8 thunder", save: "CON DC @DC", text: "3/day. Each creature in a 15-foot cube originating from the mirror makes a Constitution save, taking 2d8 thunder damage and being pushed 10 feet away on a failure, or half damage and no push on a success." },
