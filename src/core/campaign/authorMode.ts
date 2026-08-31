@@ -74,6 +74,27 @@ export function verifyAuthorKey(code: string): boolean {
   try { return btoa(code.trim()) === AUTHOR_CODE_HASH; } catch { return false; }
 }
 
+/**
+ * Grant author mode from a code typed IN THE APP.
+ *
+ * Christopher, 2026-08-28: *"if I have to go hunting for the way to do it every time then that is
+ * a problem."* Right — a URL parameter is a thing you have to remember, on a panel that lives
+ * inside someone else s frame, and remembering it is not part of the job.
+ *
+ * ⚠ SAME CHECK AS THE URL PATH, NOT A SECOND ONE. It hashes the typed code and compares it to the
+ * same constant `applyAuthorModeFromUrl` uses, so there is one way in and one thing to be wrong
+ * about. Pasting the token into localStorage still grants nothing.
+ */
+export function grantAuthorMode(code: string): boolean {
+  try {
+    if (btoa(code.trim()) !== AUTHOR_CODE_HASH) return false;
+    safeStorage().setItem(AUTHOR_KEY, AUTHOR_TOKEN);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function clearAuthorMode(): void {
   try { safeStorage().removeItem(AUTHOR_KEY); } catch { /* ok */ }
 }

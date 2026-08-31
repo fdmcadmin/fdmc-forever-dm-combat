@@ -1824,7 +1824,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "action",
         "save": "DEX",
         "recharge": "5-6",
-        "text": "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) lightning damage on failure, half on success. ",
+        "text": "90-ft. line, 10 ft. wide; DC 18 Dexterity save; 36 (8d8) lightning damage on failure, half on success. ",
         "range": "90 FT, 10 FT Wide",
         "damage": "8d8"
       },

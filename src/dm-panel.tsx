@@ -41,7 +41,7 @@ import { ActRunPanel } from "./core/encounter-band/ActRunPanel";
 import { EncounterDifficultyPanel } from "./core/encounter-band/EncounterDifficultyPanel";
 import { CreatureEstimatorPanel } from "./core/encounter-band/CreatureEstimatorPanel";
 import { EngineDiagnosticsPanel } from "./core/encounter-band/EngineDiagnosticsPanel";
-import { isAuthorMode } from "./core/campaign/authorMode";
+import { isAuthorMode, grantAuthorMode, clearAuthorMode } from "./core/campaign/authorMode";
 import { isModuleUnlocked } from "./core/campaign/moduleUnlock";
 import { WhatsNewPopup } from "./core/ui/WhatsNewPopup";
 import { loadEncounterLibrary } from "./core/monsters/encounterLibrary";
@@ -705,6 +705,11 @@ function DmPanelApp() {
    * ⚠ ONCE PER VERSION, and only for an unlocked install. Everything the notes describe belongs to
    * the campaign side, so a locked install has nothing to be told about.
    */
+  // The author door: state for the unlabelled version-label button in the header.
+  const [authorPromptOpen, setAuthorPromptOpen] = useState(false);
+  const [authorCode, setAuthorCode] = useState("");
+  const [authorError, setAuthorError] = useState(false);
+  const [authorOn, setAuthorOn] = useState(isAuthorMode);
   const readmeUnlocked = isModuleUnlocked();
 
   return (
@@ -767,7 +772,58 @@ function DmPanelApp() {
               app was on 0.8.8.2 — sixty-odd versions stale, on the one line a DM would quote in a
               bug report. `APP_VERSION` was already imported at the top of this file. A version
               typed into a string stops being the version the moment anything ships. */}
-          <span style={{ fontSize: 10, color: "#444" }}>FDMC {APP_VERSION} DM Tools</span>
+          {/*
+            THE AUTHOR DOOR — present, unlabelled, and exactly where the version already was.
+
+            Christopher, 2026-08-28: *"cant i have a button that can be almost like a hidden button,
+            its there but you have to know where to click."* Author mode was reachable only by
+            loading the panel with `?author=<code>` — a thing to remember, on a panel that lives
+            inside someone else's frame. A door you have to look up is a door that costs something
+            every time.
+
+            ⚠ IT HIDES, IT DOES NOT SECURE, AND THAT WAS ALWAYS TRUE. The stored grant decides what
+            is SHOWN; `verifyAuthorKey` still gates what RUNS, and the GitHub token is what actually
+            stops a stranger. So making the door easy to open for someone who knows the code costs
+            nothing that was being protected — it just stops charging the author for it.
+          */}
+          <span
+            role="button"
+            tabIndex={0}
+            title=""
+            onClick={() => setAuthorPromptOpen(v => !v)}
+            onKeyDown={e => { if (e.key === "Enter") setAuthorPromptOpen(v => !v); }}
+            style={{ fontSize: 10, color: authorOn ? "#7b68ee" : "#444", cursor: "default", userSelect: "none" }}
+          >
+            FDMC {APP_VERSION} DM Tools
+          </span>
+          {authorPromptOpen && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 6 }}>
+              <input
+                type="password"
+                autoFocus
+                value={authorCode}
+                placeholder="author code"
+                onChange={e => { setAuthorCode(e.target.value); setAuthorError(false); }}
+                onKeyDown={e => {
+                  if (e.key !== "Enter") return;
+                  if (grantAuthorMode(authorCode)) {
+                    setAuthorOn(true); setAuthorPromptOpen(false); setAuthorCode("");
+                  } else setAuthorError(true);
+                }}
+                style={{
+                  fontSize: 10, padding: "1px 5px", width: 110, background: "#0e0e16",
+                  color: "#c9d0e8", borderRadius: 3,
+                  border: `1px solid ${authorError ? "#8a2a2a" : "#2f2f4a"}`,
+                }}
+              />
+              {authorOn && (
+                <button type="button" onClick={() => { clearAuthorMode(); setAuthorOn(false); setAuthorPromptOpen(false); }}
+                  style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
+                  sign out
+                </button>
+              )}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -947,7 +1003,7 @@ function DmPanelApp() {
             {/* Gate 7 of the portability spec, as a control rather than a hand-edited build.
                 Author-only: deliberately breaking a capability is not something a player should
                 be able to do to their own table. */}
-            <EngineDiagnosticsPanel enabled={isAuthorMode()} />
+            <EngineDiagnosticsPanel enabled={authorOn} />
           </div>
         )}
         {panelId === "monsters" && (
