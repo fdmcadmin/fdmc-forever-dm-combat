@@ -83,14 +83,44 @@ export function consumeActionResourcesOnCommit(params: {
 
   // 1. Class-feature spell ("freeCast"): spends its dedicated N/long-rest resource
   //    (label = spell name), NOT a spell slot. Must run before the slot branch below.
+  /**
+   * ⚠ FREE USES AND A SPELL SLOT ARE NOT TWO DIFFERENT SPELLS.
+   *
+   * Christopher, 2026-08-28: *"just because something is 1 cast per long rest doesnt mean it should
+   * need 2 different spells. if it is used at the base level it should consume the free usages,
+   * while upcasting it or casting at base level without the free usage would still use the spell
+   * slot."*
+   *
+   * This branch used to spend the free use and RETURN unconditionally, so a `freeCast` spell could
+   * never touch a slot — not when upcast, not when its pool was empty. Divine Smite therefore had
+   * to be authored twice, once as a class feature and once as a spell, and the two copies drift.
+   *
+   * The rule, in order:
+   *   · UPCAST                        → a slot, always. The free use buys the base casting only.
+   *   · BASE LEVEL, uses remaining    → a free use.
+   *   · BASE LEVEL, pool empty        → fall through to the slot, if the spell has a level.
+   *
+   * Falling through is the whole point: the return below happens only when there is no slot to
+   * fall back to, which is the one case where "cast without a charge" is still the honest answer.
+   */
   if (action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast") {
-    const r = consumeNamedResource(actorId, action.label);
-    if (r.outcome === "spent") {
-      log({ actorName, actionName: action.label, tabId: "spells", message: `${actorName} casts ${action.label} (class feature) — ${r.remaining}/${r.max ?? "?"} uses left.` });
-    } else if (r.outcome === "empty") {
-      log({ actorName, actionName: action.label, tabId: "spells", message: `⚠ ${actorName} has no ${action.label} uses left — cast without a charge.` });
+    const authored = action.metadata?.spellLevel ?? 0;
+    const upcast = castLevel !== undefined && authored > 0 && castLevel > authored;
+
+    if (!upcast) {
+      const r = consumeNamedResource(actorId, action.label);
+      if (r.outcome === "spent") {
+        log({ actorName, actionName: action.label, tabId: "spells", message: `${actorName} casts ${action.label} (class feature) — ${r.remaining}/${r.max ?? "?"} uses left.` });
+        return;
+      }
+      if (authored <= 0) {
+        // No slot to fall back to — the pool was the only source.
+        log({ actorName, actionName: action.label, tabId: "spells", message: `⚠ ${actorName} has no ${action.label} uses left — cast without a charge.` });
+        return;
+      }
+      log({ actorName, actionName: action.label, tabId: "spells", message: `${actorName} has no ${action.label} uses left — casting from a spell slot instead.` });
     }
-    return;
+    // Upcast, or the pool is spent: branch 2 takes it from here and spends the slot.
   }
 
   // 2. Spell with slot level → decrement matching slot resource. The level comes from the
