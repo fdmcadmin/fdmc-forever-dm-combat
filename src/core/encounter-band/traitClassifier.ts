@@ -123,8 +123,25 @@ const MATCHERS: Matcher[] = [
     test: (_n, t) => any(t, "drops to 1 hit point instead", "1 hit point instead", "reduced to 1 hit point instead") },
 
   // ── Making itself harder to hit ─────────────────────────────────────────────
+  /**
+   * ⚠ "ONCE PER ROUND" IS THE SAME RULE AS "THE FIRST ATTACK", written from the other end.
+   *
+   * This wanted the words "first attack", so it could not read the Shardbound's reaction —
+   * *"it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once
+   * per round."* Christopher, 2026-08-31: *"the shardbound's defense is the reaction that it can
+   * impose disadvantage on a attacker once per turn."* A reaction usable once a round IS the first
+   * attack each round, and the workbook prices it at exactly the multiplier that creature already
+   * carried.
+   *
+   * ⚠ THE FREQUENCY CLAUSE IS REQUIRED, and it is what keeps this off the Demonic Reaver. Shifting
+   * Outline gives disadvantage with no limit at all, which is the CONTINUING rule below, worth
+   * nearly three times as much. Reading a permanent defence as a once-a-round one would be the
+   * Darkmane error again with the sign the other way.
+   */
   { label: "First attack each round at disadvantage",
-    test: (_n, t) => /(first|1st) (attack|opportunity attack)[^.]{0,60}disadvantage/.test(t) ? "first attack each round at disadvantage" : null },
+    test: (_n, t) => /(first|1st) (attack|opportunity attack)[^.]{0,60}disadvantage/.test(t)
+      ? "first attack each round at disadvantage"
+      : (/\bdisadvantage\b/.test(t) && /once per (round|turn)/.test(t) ? "disadvantage, once per round" : null) },
   { label: "All attacks at disadvantage - 1 round",
     test: (_n, t) => /attack rolls against (it|the|him|her)[^.]{0,40}disadvantage/.test(t) ? "attack rolls against it have disadvantage" : null },
   { label: "Three attack-decoy images",

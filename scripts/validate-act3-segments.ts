@@ -73,7 +73,11 @@ const SEGMENTS: Array<{ label: string; level: number; encounterIds: string[] }> 
 ];
 
 /**
- * WHAT THIS ENGINE MEASURED, at 0.8.9.6, against the authored library.
+ * WHAT THIS ENGINE MEASURED, at 0.8.11.5, against the authored library.
+ *
+ * ⚠ THE CUT BELOW MOVED R2 -> R3 (82 -> 105) when Shardbound's "Shatter the Stake" was RESTORED:
+ * a reaction imposing disadvantage once a round, priced at the workbook's own +0.047749, which the
+ * authoring round trip had dropped. An extra round of the fight is an extra round of its damage.
  *
  * ⚠ NOT A TARGET AND NOT A BALANCE JUDGEMENT — a fingerprint. Drift from it means the ENGINE or the
  * CONTENT changed; whether that change was wanted is a question for the app, with a real party.
@@ -82,7 +86,7 @@ const SEGMENTS: Array<{ label: string; level: number; encounterIds: string[] }> 
  */
 const REFERENCE: Record<string, { completion: string; monsterDamage: number }> = {
   "act3-e1-the-first-court": { completion: "R3", monsterDamage: 45 },
-  "act3-e2-the-cut-below": { completion: "R2", monsterDamage: 82 },
+  "act3-e2-the-cut-below": { completion: "R3", monsterDamage: 105 },
   "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 124 },
   "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 55 },
   "act3-e5-the-scar-line": { completion: "R3", monsterDamage: 91 },
@@ -90,8 +94,8 @@ const REFERENCE: Record<string, { completion: string; monsterDamage: number }> =
   "campaign-mt3nm2j9": { completion: "FAIL R4", monsterDamage: 256 },
   "act3-e7-the-last-court": { completion: "R3", monsterDamage: 85 },
   "act3-e8-the-occupied-acre": { completion: "R3", monsterDamage: 75 },
-  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 211 },
-  "act3-e10-the-center": { completion: "R4", monsterDamage: 249 },
+  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 215 },
+  "act3-e10-the-center": { completion: "R4", monsterDamage: 252 },
 };
 
 const TOLERANCE = 5;

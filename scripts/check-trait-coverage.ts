@@ -29,10 +29,9 @@
  * Plus 1.0, which needs no provenance but does need a note: a decided non-contribution is an
  * answer, an undecided one is a gap.
  */
-import { BROKEN_CHAIN_MONSTER_LIBRARY, BUNDLED_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
-import { AUTHORED_MONSTERS } from "../src/data/broken-chain/authored.generated";
+import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { resolveTraitRule, traitRule } from "../src/core/encounter-band/compactImport";
-import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
+import { classifyTraits } from "../src/core/encounter-band/traitClassifier";
 
 const TOLERANCE = 5e-6;
 const failures: string[] = [];
@@ -106,20 +105,26 @@ if (debt.length) {
  * A diff would not have caught this either. The value never moved; it stopped existing.
  */
 /**
- * ⚠ COMPARED AS A PRODUCT, NOT ROW BY ROW, AND BY templateId, NOT BY NAME.
+ * ⚠ REWRITTEN: THE BUNDLED PRODUCT WAS THE WRONG QUESTION.
  *
- * Row matching gave a false positive on the first run: the Demonic Reaver's bundled "Blur"
- * (x1.227798, no calibrated source) became the authored "All attacks at disadvantage - 1 round"
- * (x1.129416). Same effect, correctly re-classified onto a calibrated rule — a rename is not a
- * loss, and a gate that calls it one trains the author to ignore it. Names also move: the id
- * `veil-torn-wyrmling` is labelled "Veilbound Drake Guard" now, which is what authoring is for.
+ * Comparing authored against bundled asks "did this get cheaper than a copy we happen to ship",
+ * and Christopher's four answers showed how weak that is. It flagged the Veilbound Drake Guard,
+ * which has NO defensive traits at all, so its 1.0 is simply true. It flagged the Demonic Reaver,
+ * whose "Blur" was correctly re-classified onto a calibrated rule. And it would have gone quiet
+ * forever the moment the bundled copy was updated to match.
  *
- * What actually matters is whether the creature got CHEAPER, so that is what is measured.
+ * The real question does not mention the bundled library: **does this creature have a defensive
+ * trait that the workbook PRICES, which its defences do not record?** That is answerable from the
+ * creature alone, it stays true as the library changes, and it is what actually went wrong — the
+ * Grief Colossus still has Body Between, the Shardbound still has Shatter the Stake, and both
+ * priced at nothing.
+ *
+ * ⚠ A DECIDED 1.0 WITH A REASON STILL WINS. The Veilwood Crone records *"the durability in that
+ * fight belongs to the mare — the Crone is the damage and the control, and she is meant to be
+ * reached."* That is an authoring decision with its rationale on the record, and a gate that
+ * overrules it would be arguing with the author. Recording the stack group at 1.0 is how you say
+ * "counted, and worth nothing here".
  */
-const DROP_TOLERANCE = 1e-4;
-const bundledById = new Map(BUNDLED_MONSTER_LIBRARY.map(t => [t.templateId, t]));
-const product = (t?: MainMonsterTemplate): number =>
-  (t?.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1);
 
 /**
  * ⚠ A DECLARED DEBT, PRINTED EVERY RUN — the same device this file already uses for
@@ -132,37 +137,59 @@ const product = (t?: MainMonsterTemplate): number =>
  * call. Deleting a line from here without restoring the defence is how this debt becomes invisible
  * again.
  */
-const KNOWN_DROPS: Record<string, string> = {
-  "broken-chain:act3:grief-colossus:v1":
-    "Body Between (x1.232313 = Fixed prevention - 12/round) became \"Damage transfer / redirection\" at 1.0, which the workbook leaves UNPRICED. MASTER records that Body Between IS the prevention rule.",
-  "broken-chain:act3:nail-saint:v1":
-    "Claimed Line (x1.108348) — authored defences are EMPTY, so the creature also reports as unassessed.",
-  "broken-chain:act3:shardbound:v1":
-    "Shatter the Stake (x1.047749) — authored defences are EMPTY.",
-  "broken-chain:act3:veilwood-crone:v1":
-    "Control spellcasting (x1.108348) became a decided \"No notable defensive traits\" 1.0, which SUPPRESSES the unassessed flag. This is Gate I's other creature.",
-  "broken-chain:act3:veil-torn-wyrmling:v1":
-    "Moon-Slick Scales (x1.047749) — authored carries a decided \"No notable defensive traits\" 1.0. ⚠ THE RENAME HID THIS ONE: the id still says veil-torn-wyrmling and the creature is labelled \"Veilbound Drake Guard\", so a by-name comparison could not see it at all.",
-  "broken-chain:act3:demonic-reaver:v1":
-    "Blur x1.227798 -> x1.129416. A re-classification onto a calibrated rule, so probably CORRECT — listed because it is an 8% fall and should be confirmed, not because it is known wrong.",
-};
+const OPEN_AUDIT = new Set([
+  // Found by this gate on the run that restored the Colossus, Shardbound and Nail Saint. Each is a
+  // trait the workbook prices whose creature records nothing for it — REAL, and each needs its own
+  // look before a number moves, because some are large (Phase restore 50%) and some are flagged
+  // volatile in the workbook (Flat DR 3). Not restored blind: three creatures were restored in this
+  // pass only because Christopher named them or the value was an exact bundled match.
+  "Mirage Stalker :: Phantom Step",
+  "Gloamknife Stray :: Wrong Silhouette",
+  "Pale Drifter :: Soul-Touched",
+  "Frozen Cloak :: Cold-Woven",
+  "Frozen Cloak :: Unfixed Shape",
+  "Wendigo Wight :: Bone-Pile Return",
+  "Wendigo Wight :: Bone Armor",
+  "Hollow Warden :: Bark-Ribbed",
+  "Hollow Warden :: Bar the Way",
+  "Velvet Host :: Discourtesy",
+]);
+
 
 const dropped: string[] = [];
 const known: string[] = [];
-for (const authored of AUTHORED_MONSTERS as MainMonsterTemplate[]) {
-  const bundled = bundledById.get(authored.templateId);
-  if (!bundled) continue;
-  const before = product(bundled);
-  const after = product(authored);
-  if (after >= before - DROP_TOLERANCE) continue;
-  const line = `${authored.name} (${authored.templateId}): defence product x${before.toFixed(6)} -> x${after.toFixed(6)}`;
-  if (KNOWN_DROPS[authored.templateId]) known.push(`${line}\n       ${KNOWN_DROPS[authored.templateId]}`);
-  else dropped.push(line);
+for (const t of BROKEN_CHAIN_MONSTER_LIBRARY) {
+  const recorded = new Set((t.stats.defenses ?? []).map(d =>
+    traitRule(d.rule ?? d.name)?.stack_group ?? d.name));
+  /**
+   * ⚠ A TYPED RESPONSE IS ALREADY PRICED, AND A DEFENCE ROW BESIDE IT DOUBLE-COUNTS.
+   *
+   * `traitFactorsFor` states this outright: a resistance recorded in `damageResponses` prices
+   * itself against the party's real damage mix, and *"a hand-added 'Resistance - ~50% of opposing
+   * damage' beside `resistant to Fire` prices the same resistance twice."* So a resistance-family
+   * match on a creature that HAS typed responses is this gate misreading a correctly-priced
+   * creature — it was reporting the Wendigo Wight's Bone Armor and two Frozen Cloak traits that
+   * way on its first run.
+   */
+  const typed = (t.stats.damageResponses ?? []).some(r => (r.type ?? "").trim() !== "");
+  const RESISTANCE_FAMILIES = new Set(["damage_resistance", "damage_vulnerability", "dynamic_resistance"]);
+
+  for (const row of classifyTraits(t)) {
+    const price = row.rule?.multiplier;
+    if (price == null || price === 1) continue;         // unpriced rules have nothing to lose
+    const group = row.rule.stack_group ?? row.label;
+    if (typed && RESISTANCE_FAMILIES.has(group)) continue;
+    if (recorded.has(group) || recorded.has(row.label)) continue;
+    const line = `${t.name}: trait "${row.traitName}" prices as "${row.label}" (x${price.toFixed(6)}) — not recorded in its defences`;
+    if (OPEN_AUDIT.has(`${t.name} :: ${row.traitName}`)) known.push(line);
+    else dropped.push(line);
+  }
 }
 
 if (known.length) {
-  console.log(`\n  ${known.length} DECLARED DEFENCE DEBT — priced defences lost through the authoring round trip,`);
-  console.log(`  awaiting an authoring decision. Printed every run so they stay a decision.`);
+  console.log(`\n  ${known.length} OPEN DEFENCE AUDIT — a trait the workbook prices, with nothing recorded for it.`);
+  console.log(`  Each needs its own look before a number moves. Printed every run so it stays a decision`);
+  console.log(`  rather than becoming the floor; anything NEW fails instead of quietly joining the list.`);
   for (const line of known) console.log(`     ${line}`);
 }
 

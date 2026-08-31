@@ -947,10 +947,10 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
         },
         {
-          "name": "Damage transfer / redirection",
-          "ehpMultiplier": 1,
-          "note": "Priced by a formula that needs encounter inputs, so there is no single effective-HP multiplier for it.",
-          "rule": "Damage transfer / redirection"
+          "name": "Body Between",
+          "ehpMultiplier": 1.2323134514052565,
+          "rule": "Fixed prevention - 12/round",
+          "note": "RESTORED. Christopher, 2026-08-31: \"why did the grief colossus get reduced on the body between trait, we didnt change this.\" He is right — nobody changed it, the round trip lost it. This row read \"Damage transfer / redirection\", which the workbook leaves UNPRICED, so Body Between priced at 1.0 and the Colossus was 23% cheaper than authored. MASTER already records that Body Between IS the workbook's Fixed prevention - 12/round, and `classifyTrait` reads it that way today on \"reduce the triggering damage by 12\" — the mis-read is a fossil of the version whose match window was 20 characters and could not reach that phrase. The `rule` field is set now, so the multiplier is derived from the rule and a re-export cannot silently revalue it."
         }
       ],
       "attacksPerTurn": 2,
@@ -1166,7 +1166,14 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 16,
       "maxHp": 56,
       "speed": "30 ft.",
-      "defenses": [],
+      "defenses": [
+        {
+          "name": "Claimed Line",
+          "ehpMultiplier": 1.1083484151471665,
+          "rule": "Opposing damage uptime -10%",
+          "note": "RESTORED — same fault as Shardbound, and not one Christopher was asked about: the bundled x1.108348 IS the published multiplier for \"Opposing damage uptime -10%\", carried with no `rule` field, so the round trip returned EMPTY defences. Claimed Line taxes 10 ft. of movement off the first hostile creature to cross each round, which is time not spent attacking — the uptime rule is what the workbook prices that as. ⚠ FLAG, NOT A DECISION: if this should instead be a decided 1.0 the way the Crone's is, say so and it comes back out."
+        }
+      ],
       "size": "Medium",
       "classification": "elite",
       "archetype": "tactician",
@@ -1469,7 +1476,14 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 17,
       "maxHp": 46,
       "speed": "30 ft.",
-      "defenses": [],
+      "defenses": [
+        {
+          "name": "Shatter the Stake",
+          "ehpMultiplier": 1.0477493435640757,
+          "rule": "First attack each round at disadvantage",
+          "note": "RESTORED. Christopher, 2026-08-31: \"the shardbound's defense is the reaction that it can impose disadvantage on a attacker once per turn.\" That is the workbook's \"First attack each round at disadvantage\" exactly, and the value the bundled library already carried (x1.047749) IS that rule's published multiplier — it simply had no `rule` field, so the authoring round trip could not preserve it and the defences came back EMPTY. `classifyTrait` could not re-find it either: its matcher wanted the words \"first attack\" and the reaction says \"impose disadvantage on that attack. Once per round.\""
+        }
+      ],
       "attacksPerTurn": 2,
       "size": "Medium",
       "classification": "elite",
