@@ -79,9 +79,27 @@ const DAMAGE_TYPES = ["acid","bludgeoning","cold","fire","force","lightning","ne
   "piercing","poison","psychic","radiant","slashing","thunder"];
 const ATTACK_PREFIX = /\b(?:Melee|Ranged|Melee or Ranged)\s+(?:Weapon\s+|Spell\s+)?Attack(?:\s+Roll)?\s*:?\s*/i;
 const TOHIT = /[+-]\s*\d+\s*to hit\s*[.,;]?\s*/i;
-const RANGE = /\b(reach\s+\d+\s*ft\.?|ranged?\s+\d+(?:\/\d+)?\s*ft\.?|melee or thrown\s+\d+(?:\/\d+)?\s*ft\.?)\s*[.,;]?\s*/i;
-const TARGET = /\bone\s+(?:target|creature|incapacitated target)\b[^.,;]*[.,;]?\s*/i;
-const HIT_CLAUSE = /Hit\s*:\s*\d+\s*\(([^)]*)\)\s*([^.;]*)[.;]?\s*/i;
+// ⚠ A DUAL RANGE IS ONE RANGE. Taking "reach 10 ft. or range 60 ft." as only its first half left
+// "or range 60 ft." stranded at the front of the text.
+const RANGE = /\b((?:reach\s+\d+\s*ft\.?|ranged?\s+\d+(?:\/\d+)?\s*ft\.?|melee or thrown\s+\d+(?:\/\d+)?\s*ft\.?)(?:\s+or\s+(?:reach|range)\s+\d+(?:\/\d+)?\s*ft\.?)?)\s*[.,;]?\s*/i;
+/**
+ * ⚠ A TARGET RESTRICTION IS RULES TEXT AND IS KEPT — "one target" IS NOT THE ONLY SHAPE.
+ *
+ * Christopher: *"some of the actions feel incomplete."* The first version matched only "one target"
+ * and "one creature", so "one LARGE or smaller creature" survived as a dangling lead and four
+ * actions read as fragments: *"one Large or smaller creature. Until the grapple ends…"*.
+ *
+ * A bare "one target" says nothing the fields do not. A RESTRICTION on what may be targeted is a
+ * rule, and `targets` is a COUNT with nowhere to put it — so it is rewritten as its own sentence
+ * rather than dropped or left hanging.
+ */
+const TARGET = /\bone\s+(?:target|creature|incapacitated target)\s*[.,;]\s*/i;
+const TARGET_RESTRICTED = /\b(one\s+[^.,;]*?creature)\s*[.,;]\s*/i;
+// ⚠ IT STOPS AT A COMMA, NOT AT THE NEXT PERIOD. Reading to the period swallowed riders that
+// continued the same sentence: "bludgeoning damage, AND THE TARGET IS GRAPPLED (escape DC 16)" lost
+// the grapple along with the damage type. Three actions lost a rule outright before this was found,
+// and a migration that DELETES a rule is worse than the duplication it set out to remove.
+const HIT_CLAUSE = /Hit\s*:\s*\d+\s*\(([^)]*)\)\s*([^.;,]*)[.;,]?\s*/i;
 
 function normaliseAction(a) {
   if (!a || typeof a !== "object" || a.damageType) return a;
@@ -96,7 +114,13 @@ function normaliseAction(a) {
   const rangeM = text.match(RANGE);
   let rest = text.replace(hit[0], " ").replace(ATTACK_PREFIX, " ").replace(TOHIT, " ");
   if (rangeM) rest = rest.replace(RANGE, " ");
-  rest = rest.replace(TARGET, " ").replace(/^\s*damage\s*[.;]?/i, " ")
+  rest = rest.replace(TARGET, " ");
+  const restricted = rest.match(TARGET_RESTRICTED);
+  if (restricted) rest = rest.replace(TARGET_RESTRICTED, `Targets ${restricted[1]}. `);
+  // A rider that continued the damage sentence starts with "and …". Lifting it out leaves a
+  // fragment, so it is given the subject the sentence used to supply.
+  rest = rest.replace(/(^|\.\s+)and\s+the\s+/i, (_m, lead) => `${lead}On a hit the `);
+  rest = rest.replace(/^\s*damage\s*[.;]?/i, " ")
              .replace(/\s{2,}/g, " ").replace(/^[\s,.;:]+/, "").trim();
 
   const out = { ...a, damageType: found[0][0].toUpperCase() + found[0].slice(1) };

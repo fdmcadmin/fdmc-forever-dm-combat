@@ -331,7 +331,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "routineSlots": 2,
         "damageType": "Bludgeoning",
         "range": "reach 10 ft.",
-        "text": "one Medium or smaller creature. Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
+        "text": "Targets one Medium or smaller creature, and on a hit the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
       },
       {
         "name": "Heavy Blow",
@@ -576,7 +576,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "damage": "1d10 + @MAIN",
         "damageType": "Bludgeoning",
         "range": "reach 5 ft.",
-        "text": "one Large or smaller creature. Until the grapple ends, the target is restrained. The Knight can restrain only"
+        "text": "Targets one Large or smaller creature, and on a hit the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
       }
     ],
     "reactions": [
