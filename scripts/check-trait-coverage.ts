@@ -138,29 +138,38 @@ if (debt.length) {
  * again.
  */
 const OPEN_AUDIT = new Set([
-  // Found by this gate on the run that restored the Colossus, Shardbound and Nail Saint. Each is a
-  // trait the workbook prices whose creature records nothing for it — REAL, and each needs its own
-  // look before a number moves, because some are large (Phase restore 50%) and some are flagged
-  // volatile in the workbook (Flat DR 3). Not restored blind: three creatures were restored in this
-  // pass only because Christopher named them or the value was an exact bundled match.
-  "Mirage Stalker :: Phantom Step",
-  "Gloamknife Stray :: Wrong Silhouette",
-  "Pale Drifter :: Soul-Touched",
+  // ⚠ ONE ENTRY LEFT, AND IT IS NOT A PRICING GAP — it is filed in the wrong PLACE.
+  // The Frozen Cloak's Cold-Woven is a TYPED response ("immune to cold, necrotic and poison;
+  // resistant to nonmagical bludgeoning, piercing and slashing"), and this creature records no
+  // `damageResponses` at all. A defence row would be the double-count `traitFactorsFor` warns
+  // about; the fix is to enter the types, which prices them against the party's real damage mix.
+  // That is a content edit with a list of types in it, so it waits for the author.
   "Frozen Cloak :: Cold-Woven",
-  "Frozen Cloak :: Unfixed Shape",
-  "Wendigo Wight :: Bone-Pile Return",
-  "Wendigo Wight :: Bone Armor",
-  "Hollow Warden :: Bark-Ribbed",
-  "Hollow Warden :: Bar the Way",
-  "Velvet Host :: Discourtesy",
 ]);
 
 
 const dropped: string[] = [];
 const known: string[] = [];
 for (const t of BROKEN_CHAIN_MONSTER_LIBRARY) {
-  const recorded = new Set((t.stats.defenses ?? []).map(d =>
-    traitRule(d.rule ?? d.name)?.stack_group ?? d.name));
+  /**
+   * ⚠ A DEFENCE RECORDED UNDER THE TRAIT'S OWN NAME COUNTS.
+   *
+   * Matching only on rule and stack group reported four creatures that were fine: the Mirage
+   * Stalker records "Phantom Step", the Hollow Warden records "Bark-Ribbed", and both ARE the
+   * trait, priced, just without a `rule` field. MASTER's own line for that field says a campaign
+   * trait carries a campaign NAME — "Body Between" IS Fixed prevention - 12/round — so a gate that
+   * insists on the workbook's label is making exactly the mistake `resolveTraitRule` exists to fix.
+   *
+   * A row whose name CONTAINS the trait name counts too: the Frozen Cloak files one row as
+   * "Unfixed Shape + Fold Into the Cold", two traits assessed together.
+   */
+  const rows = t.stats.defenses ?? [];
+  const recorded = new Set(rows.map(d => traitRule(d.rule ?? d.name)?.stack_group ?? d.name));
+  const namesRecorded = rows.map(d => d.name.toLowerCase());
+  const recordsTrait = (traitName: string): boolean => {
+    const n = traitName.toLowerCase();
+    return namesRecorded.some(r => r === n || r.includes(n));
+  };
   /**
    * ⚠ A TYPED RESPONSE IS ALREADY PRICED, AND A DEFENCE ROW BESIDE IT DOUBLE-COUNTS.
    *
@@ -179,7 +188,7 @@ for (const t of BROKEN_CHAIN_MONSTER_LIBRARY) {
     if (price == null || price === 1) continue;         // unpriced rules have nothing to lose
     const group = row.rule.stack_group ?? row.label;
     if (typed && RESISTANCE_FAMILIES.has(group)) continue;
-    if (recorded.has(group) || recorded.has(row.label)) continue;
+    if (recorded.has(group) || recorded.has(row.label) || recordsTrait(row.traitName)) continue;
     const line = `${t.name}: trait "${row.traitName}" prices as "${row.label}" (x${price.toFixed(6)}) — not recorded in its defences`;
     if (OPEN_AUDIT.has(`${t.name} :: ${row.traitName}`)) known.push(line);
     else dropped.push(line);

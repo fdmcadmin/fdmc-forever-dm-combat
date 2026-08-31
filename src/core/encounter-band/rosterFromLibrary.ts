@@ -216,9 +216,15 @@ export function traitFactorsFor(
   const cover = damageMix && damageMix.coverage < 0.999
     ? ` Read from ${(damageMix.coverage * 100).toFixed(0)}% of their damage — ${damageMix.untyped.length} action${damageMix.untyped.length === 1 ? "" : "s"} state no damage type.`
     : "";
+  /**
+   * ⚠ AN UNRESOLVED QUALIFIER IS A QUESTION, NOT A NARRATION, and it must not be hidden with the
+   * rest. The panel shows only NEEDS DM INPUT now, so a line that ends *"enter a share to state
+   * the real one"* has to carry that flag or it becomes an upper bound nobody is told about.
+   * Everything else in this loop describes a number that priced correctly, and the panel drops it.
+   */
   for (const d of typed.derived) {
     const pct = (d.share * 100).toFixed(1);
-    out.push({ creature: name, flag: "ESTIMATED", field: "damage_response",
+    out.push({ creature: name, flag: d.qualifierUnresolved ? "NEEDS DM INPUT" : "ESTIMATED", field: "damage_response",
       detail: (d.share === 0
         ? `"${d.response.response} to ${d.response.type}" prices at nothing because none of this party's readable damage is ${d.response.type} — read from their own actions, not assumed.`
         : d.qualifierUnresolved

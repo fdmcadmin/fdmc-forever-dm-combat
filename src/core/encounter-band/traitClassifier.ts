@@ -59,6 +59,45 @@ const any = (text: string, ...phrases: string[]): string | null => {
 const all = (text: string, ...phrases: string[]): string | null =>
   phrases.every(p => text.includes(p)) ? phrases.join(" + ") : null;
 
+/**
+ * ⚠ HAVING A RESISTANCE AND BEATING ONE ARE OPPOSITE FACTS, and the word is the same.
+ *
+ * The Pale Drifter's Soul-Touched says its *"attacks are magical and overcome resistance to
+ * nonmagical damage"* — that is OFFENCE, a note about what its attacks get through. It matched
+ * "resistan" + "nonmagical" and priced the Drifter as though IT were resistant, which is the
+ * defence of a creature it is attacking. A trait that beats resistance must never read as one.
+ */
+const beatsResistance = (t: string): boolean =>
+  /(overcom|ignor|bypass|penetrat)\w*\s+(the\s+)?resistance/.test(t)
+  || /count as magical|are magical/.test(t) && t.includes("resistan");
+
+/**
+ * "reduce … by N" — but ONLY when it is DAMAGE being reduced.
+ *
+ * ⚠ SPEED IS REDUCED IN FEET AND IT IS NOT DAMAGE PREVENTION. The Velvet Host's Discourtesy
+ * (*"The target's speed is reduced by 10 ft."*) and the Hollow Warden's Bar the Way (*"its
+ * remaining speed is reduced by 10 ft."*) both priced as "Fixed prevention - 12/round", x1.232313
+ * of effective HP, for slowing somebody down. The old test was `reduce\w*[^.]{0,40}by 1[0-4]` and
+ * asked nothing about what was being reduced.
+ *
+ * Clause-scoped, because the match must not reach across a full stop — the Grief Colossus's Body
+ * Between goes on to say it *"takes 6 psychic damage that cannot be reduced"*, and a matcher that
+ * reads across sentences picks that up as a second prevention.
+ */
+const damageReducedBy = (text: string, lo: number, hi: number): string | null => {
+  for (const m of text.matchAll(/[^.]*\breduc\w*[^.]*/g)) {
+    const clause = m[0];
+    const by = clause.match(/\bby (\d+)\b/);
+    if (!by) continue;
+    const n = Number(by[1]);
+    if (n < lo || n > hi) continue;
+    if (!/\bdamage\b/.test(clause)) continue;
+    if (/\bspeed\b|\bft\b|\bfeet\b/.test(clause)) continue;
+    return `damage reduced by ${n}`;
+  }
+  return null;
+};
+
 const MATCHERS: Matcher[] = [
   // ── Named outright ──────────────────────────────────────────────────────────
   { label: "Legendary Resistance - 3 uses",
@@ -89,13 +128,14 @@ const MATCHERS: Matcher[] = [
   { label: "Reactive resistance to last damage type",
     test: (_n, t) => all(t, "resistan", "last damage type") ?? all(t, "resistan", "damage type it last took") },
   { label: "Nonmagical weapon resistance (campaign gear)",
-    test: (_n, t) => all(t, "resistan", "nonmagical") },
+    test: (_n, t) => beatsResistance(t) ? null : all(t, "resistan", "nonmagical") },
   { label: "Broad resistance below half HP",
     test: (_n, t) => t.includes("resistan") ? any(t, "below half", "half its hit point maximum or fewer", "bloodied") : null },
   { label: "Resistance - ~50% of opposing damage",
     test: (_n, t) => any(t, "resistance to all damage", "resistance to bludgeoning, piercing, and slashing") },
   { label: "Resistance - ~25% of opposing damage",
-    test: (_n, t) => t.includes("resistance to") ? "resistance to (one damage type)" : null },
+    test: (_n, t) => beatsResistance(t) ? null
+      : (t.includes("resistance to") ? "resistance to (one damage type)" : null) },
   { label: "Limited spell immunity",
     test: (_n, t) => all(t, "immune", "spells of") },
   { label: "Condition immunity",
@@ -196,9 +236,9 @@ const MATCHERS: Matcher[] = [
    * reads across sentences picks that up as an 8/round prevention.
    */
   { label: "Fixed prevention - 12/round",
-    test: (_n, t) => /reduce\w*[^.]{0,40}\bby 1[0-4]\b/.test(t) ? "damage reduced by ~12" : null },
+    test: (_n, t) => damageReducedBy(t, 10, 14) },
   { label: "Fixed prevention - 8/round",
-    test: (_n, t) => /reduce\w*[^.]{0,40}\bby [6-9]\b/.test(t) ? "damage reduced by ~8" : null },
+    test: (_n, t) => damageReducedBy(t, 6, 9) },
   { label: "Flat DR 5 per damaging hit [volatile]",
     test: (_n, t) => /reduced by 5|reduce[sd]? .{0,24}by 5\b/.test(t) && t.includes("each") ? "each hit reduced by 5" : null },
   { label: "Flat DR 3 per damaging hit [volatile]",

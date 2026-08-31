@@ -734,7 +734,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "unspecified", ac: 14, maxHp: 33, speed: "30 ft", classification: "strong",
       defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Slip Between repositions it; bright light grounds that entirely. Plain HP bar." },
+        { name: "Wrong Silhouette", ehpMultiplier: 1.0477493435640757, rule: "First attack each round at disadvantage", note: "\"The first attack each creature makes against it has disadvantage\" IS the workbook's rule of that name, word for word. It was never recorded: the only row here said \"No notable defensive traits\", and that note is about SLIP BETWEEN — a different trait — so the decision covered one trait and silenced the other. Found by the coverage gate asking what a creature's traits price at." },
+        { name: "Slip Between", ehpMultiplier: 1.0, note: "Decided 1.0. Repositioning, and bright light grounds it entirely. Plain HP bar — this is the note the row above used to carry." },
       ],
     },
     abilities: [
@@ -1276,6 +1277,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
         { name: "Bone Armor (resistance phase)", ehpMultiplier: 1.3, provenance: "derived", note: "Back half of the bar only. Resistance to all damage except fire/radiant, with a 0.25 bypass share, gives a 0.625 weighted pass fraction: the armored 65 raw costs 104. Across the whole bar that is (65 unarmored + 104 armored) / 130 = 1.30." },
         { name: "Bone Armor regeneration", ehpMultiplier: 1.3976, provenance: "derived", note: "2d10+3 (avg 14) at the start of each turn while armor is active, expected 3 ticks = 42 healing, which costs 42 / 0.625 = 67.2 of party output. Composes onto the 169 above: 236.2 / 169 = 1.3976, giving 236.2 total personal EHP (= 130 x 1.817)." },
         { name: "Wrong Cold + Hungering Leap tempo", ehpMultiplier: 1.0, note: "Aura spacing and Leap repositioning are an UPTIME tax on the party (0.86 in the workbook), not extra HP. Counted on the damage clock via pcEffectiveDamage, never here — folding it in would double-charge it." },
+        { name: "Bone-Pile Return", ehpMultiplier: 1.0, note: "DECIDED 1.0 — already counted, one row up. The trait says the Wight \"returns to half its hit point maximum\", which classifies as the workbook's \"Phase restore - 50% max HP\" (x1.543381), and adding that would price the second life TWICE: the Bone Armor rows above model the whole 130 as 65 unarmored + 65 armored precisely BECAUSE the return is what puts it in the armored phase. The armored half IS this trait. Recorded rather than left absent so the coverage gate can see it was assessed." },
       ],
     },
     abilities: [

@@ -658,19 +658,34 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                       broken. Christopher, 2026-08-20: *"there is still 3 things the checker cant
                       price and this is against the encounter that is from the library."* Two of
                       those three were priced; the third was a real parser gap, now fixed. */}
-                  {roster.assumptions.length > 0 && (() => {
-                    const blocked = roster.assumptions.filter(a => a.flag === "NEEDS DM INPUT").length;
-                    const estimated = roster.assumptions.length - blocked;
+                  {/**
+                    * ⚠ ONLY WHAT IS NOT PRICED. Christopher, 2026-08-31: *"if something is
+                    * priced (like lair actions) there shouldn't be a text that says anything
+                    * about it, the only time the text should be there (including the fire
+                    * resistance text) should be if something isn't built right or can[’t] be
+                    * priced because it's a new action."*
+                    *
+                    * The ESTIMATED lines were narration of work that had already succeeded — a
+                    * lair action explaining how it was priced in both directions, a typed
+                    * resistance explaining the share it read off the party. Correct, and charged
+                    * to the DM on every single read. The rule is now simple: this box means
+                    * SOMETHING IS WRONG OR MISSING. An empty box is the good outcome.
+                    *
+                    * ESTIMATED assumptions still exist in the data and the scripts still print
+                    * them — `validate:segments` and the gates want the full picture. It is the
+                    * PANEL that stops narrating.
+                    */}
+                  {(() => {
+                    const blocked = roster.assumptions.filter(a => a.flag === "NEEDS DM INPUT");
+                    if (blocked.length === 0) return null;
                     return (
                     <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
-                      <div style={{ fontWeight: 600, marginBottom: 2, color: blocked > 0 ? "#e07b39" : "#c9a227" }}>
-                        {blocked > 0 && `${blocked} thing${blocked === 1 ? "" : "s"} the checker could not price — ${blocked === 1 ? "it scores" : "they score"} 0 until you fill ${blocked === 1 ? "it" : "them"} in`}
-                        {blocked > 0 && estimated > 0 && " · "}
-                        {estimated > 0 && `${estimated} priced on a stated assumption`}
+                      <div style={{ fontWeight: 600, marginBottom: 2, color: "#e07b39" }}>
+                        {`${blocked.length} thing${blocked.length === 1 ? "" : "s"} the checker could not price — ${blocked.length === 1 ? "it scores" : "they score"} 0 until you fill ${blocked.length === 1 ? "it" : "them"} in`}
                       </div>
-                      {roster.assumptions.map((a, i) => (
-                        <div key={i} style={{ color: a.flag === "NEEDS DM INPUT" ? "#e07b39" : "#8a8aa0" }}>
-                          [{a.flag === "NEEDS DM INPUT" ? "NOT PRICED" : "PRICED · assumption"}] {a.creature} · {a.field} — {a.detail}
+                      {blocked.map((a, i) => (
+                        <div key={i} style={{ color: "#e07b39" }}>
+                          {a.creature} · {a.field} — {a.detail}
                         </div>
                       ))}
                     </div>
