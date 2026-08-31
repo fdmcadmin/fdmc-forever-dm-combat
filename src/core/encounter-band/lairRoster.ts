@@ -190,12 +190,6 @@ export function lairRosterGroups(
    */
   const damage = lairDamagePerRound(lair, o => Number(String(o.damage ?? "").replace(/[^\d.]/g, "")) || 0);
   const unpriced = unpricedLairOptions(lair);
-  assumptions.push({
-    creature: name, flag: damage > 0 ? "ESTIMATED" : "NOTED", field: "lair",
-    detail: `Lair acts on initiative ${lair.initiative ?? 20}${lair.noRepeatConsecutive ? ", never repeating an option" : ""}`
-      + ` — ${lair.options.length} option(s), ${damage > 0 ? `${damage.toFixed(1)} average damage a round` : "no damage"}.`
-      + (unpriced.length ? ` ${unpriced.length} option(s) nothing can price yet: ${unpriced.map(o => o.name).join(", ")}.` : ""),
-  });
 
   /**
    * WHAT THE LAIR'S NON-DAMAGING OPTIONS ARE WORTH.
@@ -217,9 +211,11 @@ export function lairRosterGroups(
     if (o.effect === "damage") continue;
     const match = classifyTrait(o.name, o.text);
     if (!match) {
+      // ⚠ ONE LINE. The panel prints `detail` verbatim, and the section header already says these
+      // score 0 until they are filled in — repeating it per row, with advice attached, is how a
+      // report that should be scannable becomes a wall nobody reads.
       assumptions.push({ creature: name, flag: "NEEDS DM INPUT", field: "lair",
-        detail: `"${o.name}" is a ${o.effect ?? "control"} option and no calibrated rule reads it, so it prices at NOTHING. `
-          + `Word it the way the workbook does, or state what it is worth.` });
+        detail: `"${o.name}" (${o.effect ?? "control"}) — no calibrated rule prices this.` });
       continue;
     }
     if (seenGroups.has(match.rule.stack_group)) continue;
@@ -240,12 +236,14 @@ export function lairRosterGroups(
         contribution: -share,
       });
       control.pressureFraction += share;
-      assumptions.push({ creature: name, flag: "ESTIMATED", field: "lair",
-        detail: `"${o.name}" REMOVES cover rather than granting it, so it is priced in both directions: `
-          + `${name} loses ${(share * 100).toFixed(2)}% effective HP and every monster in the fight lands `
-          + `${(share * 100).toFixed(2)}% more. ⚠ THE CREATURE HALF IS A CEILING ON THE PARTY'S BENEFIT — it `
-          + `assumes ${name} was using cover, and per the author creatures usually are not, so the real fight `
-          + `is slightly HARDER than this reads.` });
+      /**
+       * ⚠ NO LINE HERE. The caller reports this one, because it is the only place that knows BOTH
+       * numbers — the EHP the creature loses and the damage the party gains. Reporting from both
+       * ends printed the same fact twice, in a panel where every line costs the DM a read.
+       *
+       * The reasoning for pricing it in both directions lives in this file and in MASTER. It does
+       * not belong in a tooltip: the DM knows what their own lair action does.
+       */
       continue;
     }
 
@@ -259,6 +257,26 @@ export function lairRosterGroups(
       label: `${o.name} — ${match.label}`,
       contribution: share,
     });
+  }
+
+  /**
+   * ⚠ SAY THE LAIR IS THERE **ONLY WHEN NOTHING ELSE DOES.**
+   *
+   * This line used to be unconditional, on the reasoning that a fight where the environment takes a
+   * turn on initiative 20 is not the same fight as one where it does not. That was right when the
+   * lair produced no row and no number. It now produces both — a named roster row and, where the
+   * control prices, a damage figure — so restating the authored initiative, the option count and
+   * "no damage" is telling the DM three things they can already see. Christopher: *"these shouldnt
+   * be listed since we know what each of these do already."*
+   *
+   * What the reasoning was actually protecting is the case where the lair contributes NOTHING
+   * measurable. That case still gets its line; every other case is covered by the numbers.
+   */
+  const summons = (lair.openingSummon ? 1 : 0) + lair.options.filter(o => o.summon).length;
+  if (damage === 0 && control.hostFactors.length === 0 && control.pressureFraction === 0 && summons === 0) {
+    assumptions.push({ creature: name, flag: "NOTED", field: "lair",
+      detail: `Lair acts on initiative ${lair.initiative ?? 20} but nothing in it prices — `
+        + `${unpriced.length || lair.options.length} option(s) score 0.` });
   }
 
   /**

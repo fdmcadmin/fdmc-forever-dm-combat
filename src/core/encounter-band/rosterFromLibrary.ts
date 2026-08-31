@@ -464,10 +464,20 @@ export function rosterFromTemplates(
         round3: (lairRow.dpr?.round3 ?? 0) + base.round3,
         round4Plus: (lairRow.dpr?.round4Plus ?? 0) + base.round4Plus,
       };
+      /**
+       * ⚠ ONE LINE, BOTH NUMBERS, NO RATIONALE. This is the only place that knows the EHP the
+       * creature lost AND the damage the party gained, which is why the lair builder stays silent
+       * and reports nothing from its end.
+       *
+       * The panel prints `detail` verbatim, so anything explaining WHY it is priced this way is
+       * charged to the DM on every read. That reasoning lives in `lairRoster.ts` and MASTER.
+       */
+      const stripped = built.control.hostFactors.filter(f => f.contribution < 0);
+      const named = stripped.map(f => `"${(f.label ?? f.stackGroup).split(" — ")[0]}"`).join(", ") || "The lair";
+      const ehpPct = stripped.reduce((s, f) => s + f.contribution, 0) * 100;
       assumptions.push({ creature: template.name, flag: "ESTIMATED", field: "lair",
-        detail: `The lair strips cover, so every monster lands ${(pressure * 100).toFixed(2)}% more on the party `
-          + `— ${base.round1.toFixed(1)} extra damage a round, carried on the lair's own row because the lair `
-          + `is what causes it. Measured at full roster strength, so it is a ceiling.` });
+        detail: `${named} strips cover — ${ehpPct.toFixed(2)}% EHP on ${template.name}, `
+          + `+${base.round1.toFixed(1)} damage a round on the party. Assumes the creature was in cover.` });
     }
 
     lairGroups.push(...rows);

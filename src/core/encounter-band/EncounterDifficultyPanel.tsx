@@ -35,6 +35,7 @@ import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
+import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
@@ -232,9 +233,25 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * and priced with every `resolved*` flag TRUE, because the entered sheet already contains the
    * AC and HP a feat grants. That guard is what stops the app recalculating what a DM typed in.
    */
+  /**
+   * ⚠ THE FIGHT IS AN INPUT TO THE FEATS, and it was not being passed.
+   *
+   * Shield Master needs the share of incoming damage that comes through Dex saves; Great Weapon
+   * Master needs a hit chance, which needs an AC to roll against. Both are properties of the
+   * encounter that is already selected in this panel, so neither is something a DM should be asked
+   * to type. See `incomingSaveExposure`.
+   */
+  const fightInputs = useMemo(() => {
+    const entries = (encounter?.entries ?? [])
+      .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
+      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number }>;
+    return { targetAC: meanTargetAc(entries), saveExposure: incomingSaveExposure(entries) };
+  }, [encounter, monsterLibrary]);
+
   const partyFeats = useMemo(() => partyFeatsFromActors(chosen as unknown[], {
     baseDpr: profile?.dpr.round1, baseEhp: profile?.sustain,
-  }), [chosen, profile]);
+    targetAC: fightInputs.targetAC, saveExposure: fightInputs.saveExposure,
+  }), [chosen, profile, fightInputs]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -533,7 +550,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                           /* ⚠ SAID, NOT SWALLOWED. A feat that could not be priced is a question,
                              excluded from the two figures above rather than added as zero. */
                           <span style={{ color: "#c0a060" }}
-                            title={partyFeats.needsInput.map(n => `${n.feat} · ${n.channel} — needs ${n.missing.join(", ")}`).join("\n")}>
+                            title={partyFeats.needsInput.map(n => `${n.actor} · ${n.feat} · ${n.channel} — needs ${n.missing.join(", ")}`).join("\n")}>
                             {" · "}{partyFeats.needsInput.length}{" feat channel"}
                             {partyFeats.needsInput.length === 1 ? "" : "s"}{" need input"}
                           </span>

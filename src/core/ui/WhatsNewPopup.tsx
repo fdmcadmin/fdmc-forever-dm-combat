@@ -89,6 +89,20 @@ export type VersionNotes = {
  */
 export const RELEASE_HISTORY: VersionNotes[] = [
   {
+    version: "0.8.11.3",
+    notes: [
+      {
+        area: "Encounter Checker",
+        points: [
+          "Shield Master and Great Weapon Master price themselves now. The checker reads the shield your character is actually wearing, the weapon they are actually swinging, and the AC and Dexterity saves of the fight you have selected — none of it is asked for.",
+          "A feat listed on BOTH the Feats and Features tabs is counted once. It used to be counted twice, which quietly inflated the party's damage.",
+          "Every unpriced feat channel now says WHICH character it belongs to, so two people with the same feat no longer look like one duplicated line.",
+          "Lair assumptions are one line each. The reasoning behind a price belongs in the design notes, not in front of you every time you open the panel.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.8.11.2",
     notes: [
       {

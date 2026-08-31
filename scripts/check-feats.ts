@@ -131,12 +131,24 @@ console.log("\nFeats on the Features tab");
   ok("and is attributed to its character",
     onFeatures.matched.some(m => m.actor === "Lights Stone" && m.feats.includes("Magic Initiate")));
 
-  // ⚠ THE MIGRATION MOVES RATHER THAN COPIES — the same feat on both tabs would count twice.
+  /**
+   * ⚠ THIS ASSERTION USED TO REQUIRE THE OPPOSITE, and it was wrong in the way MASTER already
+   * names: it encoded a HAZARD as an INVARIANT.
+   *
+   * It read *"the same feat on both tabs doubles — which is why the migration moves"*, treating a
+   * double-count as acceptable because `migrateFeatsIntoFeatures` moves rather than copies. That
+   * puts the guarantee in another file — one that runs ONCE, keyed by version — so a feat added by
+   * hand afterwards, or an actor restored from a party backup carrying both, doubles silently. The
+   * panel showed it as a duplicated row; the total was wrong by a whole feat.
+   *
+   * No character has a feat twice. Deduping at the read costs nothing and needs no other file to
+   * behave.
+   */
   const onBoth = partyFeatsFromActors([
     { name: "Double", level: 8, tabs: { features: [{ label: "Magic Initiate" }], feats: [{ label: "Magic Initiate" }] } },
   ]);
-  ok("the same feat on both tabs doubles — which is why the migration moves",
-    Math.abs(onBoth.dpr - onFeatures.dpr * 2) < 1e-9,
+  ok("the same feat on both tabs is priced ONCE",
+    Math.abs(onBoth.dpr - onFeatures.dpr) < 1e-9,
     `${onBoth.dpr.toFixed(3)} vs ${onFeatures.dpr.toFixed(3)}`);
 
   // A class feature sharing the tab is not a feat: ignored, and reported rather than failing.
@@ -173,6 +185,88 @@ console.log("\nEntered values are never recomputed");
   ok("Tough adds no EHP, because the entered HP already has it",
     tough.partyEhp === 0 && tough.dpr === 0,
     `dpr ${tough.dpr} partyEhp ${tough.partyEhp}`);
+}
+
+/* ── The accuracy inputs ARRIVE, not merely exist ─────────────────────────────────────────── */
+console.log("\nEquipment and the fight reach the feat context");
+{
+  /**
+   * ⚠ THIS ASSERTS DELIVERY, WHICH IS THE THING THAT WAS BROKEN.
+   *
+   * Christopher: *"you said the shield problem of need shield was fixed and the GWM would be
+   * correct."* The shield LOOKUP was fixed — items derive a slot, so `offHandBlocker` finds a worn
+   * shield. `partyFeatsFromActors` then never passed equipment to the evaluator at all, so
+   * `shieldEquipped` could not arrive however good the lookup got. Correct code nothing reached,
+   * for the third time this stretch.
+   *
+   * So these tests go through `partyFeatsFromActors` with a REAL sheet, never through the
+   * derivation helpers directly — a helper that returns the right number to nobody is the bug.
+   */
+  const shieldBearer = {
+    name: "Ripsnarl", level: 9, attacksPerAction: 2,
+    tabs: {
+      features: [{ label: "Shield Master" }, { label: "Great Weapon Master" }],
+      equipment: [{ label: "Marrow Shield", metadata: { slot: "shield", equipped: true } }],
+      actions: [{ label: "Greataxe", metadata: { attack: "+9", damage: "1d12 + 5" } }],
+    },
+  };
+
+  const blind = partyFeatsFromActors([shieldBearer]);
+  ok("with no fight selected the accuracy feats still report NEEDS_INPUT",
+    blind.needsInput.some(n => n.feat === "Great Weapon Master"));
+
+  const priced = partyFeatsFromActors([shieldBearer], {
+    baseEhp: 400, targetAC: 17, saveExposure: { dex: 0.35 },
+  });
+  ok("Shield Master prices once the shield and the fight's Dex exposure arrive",
+    !priced.needsInput.some(n => n.feat === "Shield Master"),
+    priced.needsInput.filter(n => n.feat === "Shield Master").map(n => n.missing.join(",")).join(" | "));
+  ok("Great Weapon Master prices from the character's own weapon",
+    !priced.needsInput.some(n => n.feat === "Great Weapon Master") && priced.dpr > 0,
+    `dpr ${priced.dpr.toFixed(2)} · still missing: ${priced.needsInput.map(n => n.missing.join(",")).join(" | ") || "nothing"}`);
+
+  /** A sheet with no readable weapon must NOT be priced off a zero. */
+  const unarmed = partyFeatsFromActors(
+    [{ name: "Sage", level: 9, tabs: { features: [{ label: "Great Weapon Master" }] } }],
+    { baseEhp: 400, targetAC: 17, saveExposure: { dex: 0.35 } });
+  ok("a character with no readable weapon still reports NEEDS_INPUT",
+    unarmed.needsInput.some(n => n.feat === "Great Weapon Master"));
+
+  /** A shield nobody is wearing is not a shield. */
+  const stowed = partyFeatsFromActors([{
+    ...shieldBearer,
+    tabs: { ...shieldBearer.tabs, equipment: [{ label: "Marrow Shield", metadata: { slot: "shield", equipped: false } }] },
+  }], { baseEhp: 400, targetAC: 17, saveExposure: { dex: 0.35 } });
+  ok("an UNEQUIPPED shield prices Shield Master at nothing, not at the worn value",
+    stowed.dpr === priced.dpr && !stowed.needsInput.some(n => n.feat === "Shield Master"));
+
+  /** ⚠ THE SAME FEAT ON BOTH TABS IS ONE FEAT. It used to be counted twice. */
+  const doubled = partyFeatsFromActors([{
+    name: "Twice", level: 9, attacksPerAction: 2,
+    tabs: {
+      feats: [{ label: "Great Weapon Master" }],
+      features: [{ label: "great weapon master" }],
+      actions: [{ label: "Greataxe", metadata: { attack: "+9", damage: "1d12 + 5" } }],
+    },
+  }], { baseEhp: 400, targetAC: 17, saveExposure: { dex: 0.35 } });
+  const single = partyFeatsFromActors([{
+    name: "Once", level: 9, attacksPerAction: 2,
+    tabs: {
+      feats: [{ label: "Great Weapon Master" }],
+      actions: [{ label: "Greataxe", metadata: { attack: "+9", damage: "1d12 + 5" } }],
+    },
+  }], { baseEhp: 400, targetAC: 17, saveExposure: { dex: 0.35 } });
+  ok("a feat listed on BOTH tabs is priced once, not twice",
+    Math.abs(doubled.dpr - single.dpr) < 1e-9, `${doubled.dpr.toFixed(3)} vs ${single.dpr.toFixed(3)}`);
+
+  /** Every unpriced channel says WHOSE it is. Two characters, one feat, two distinguishable lines. */
+  const twoPeople = partyFeatsFromActors([
+    { name: "Ripsnarl", level: 9, tabs: { features: [{ label: "Shield Master" }] } },
+    { name: "Iskarn", level: 9, tabs: { features: [{ label: "Shield Master" }] } },
+  ]);
+  ok("an unpriced channel names the character it belongs to",
+    new Set(twoPeople.needsInput.map(n => n.actor)).size === 2,
+    twoPeople.needsInput.map(n => `${n.actor}:${n.feat}`).join(" | "));
 }
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);

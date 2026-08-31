@@ -29,6 +29,7 @@
 
 import { priceFeats, type PartyFeatTotals } from "./featEvaluator";
 import { featPricing } from "./featPricing.generated";
+import { featContextFromActor, type ActorLikeForFeats } from "./featContextFromActor";
 
 type Entry = { label?: string; description?: string };
 type ActorLike = {
@@ -46,16 +47,34 @@ export type PartyFeatContribution = {
   matched: Array<{ actor: string; feats: string[] }>;
   /** Entries on a feats/features tab that are not feats in the workbook. Not an error. */
   unmatched: string[];
-  /** Channels that could not be priced. Named, never folded in as zero. */
-  needsInput: PartyFeatTotals["needsInput"];
+  /** Channels that could not be priced, each naming the character it belongs to. */
+  needsInput: Array<PartyFeatTotals["needsInput"][number] & { actor: string }>;
 };
 
-/** Every entry on a character's feat-bearing tabs. */
+/**
+ * Every entry on a character's feat-bearing tabs, ONCE.
+ *
+ * ⚠ THE SAME FEAT ON BOTH TABS WAS PRICED TWICE. This reads `feats` and `features` together
+ * because `deriveActorStats` does and a reader that picked one would disagree with it mid-
+ * migration — but concatenating them means a character carrying "Shield Master" on both tabs got
+ * its DPR and its needs-input line counted twice over. It showed as a duplicate row in the panel's
+ * tooltip, which is the visible half; the invisible half was a double-counted total.
+ *
+ * Deduped case-insensitively, since the two tabs are hand-entered and need not agree on casing.
+ */
 function featEntries(actor: ActorLike): string[] {
   const tabs = actor.tabs ?? {};
-  return [...(tabs.feats ?? []), ...(tabs.features ?? [])]
-    .map(e => (e?.label ?? "").trim())
-    .filter(Boolean);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const e of [...(tabs.feats ?? []), ...(tabs.features ?? [])]) {
+    const label = (e?.label ?? "").trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(label);
+  }
+  return out;
 }
 
 /**
@@ -72,7 +91,23 @@ function featEntries(actor: ActorLike): string[] {
  */
 export function partyFeatsFromActors(
   actors: unknown[],
-  known: { baseDpr?: number; baseEhp?: number } = {},
+  /**
+   * ⚠ `targetAC` AND `saveExposure` ARE WHAT THIS FUNCTION WAS MISSING ENTIRELY.
+   *
+   * Its context was level, PB, party size, round and the two party totals — no equipment, no
+   * weapon, no enemy. So `shieldEquipped`, `hitChance`, `perHitDamage` and `onceHit` could never
+   * arrive and Shield Master and Great Weapon Master reported NEEDS_INPUT forever, no matter what
+   * the character was holding. Deriving a shield's SLOT correctly (0.8.10) was a prerequisite for
+   * this and not a substitute for it.
+   *
+   * Both come from the fight the panel is already showing. See `incomingSaveExposure`.
+   */
+  known: {
+    baseDpr?: number;
+    baseEhp?: number;
+    targetAC?: number;
+    saveExposure?: Partial<Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>>;
+  } = {},
 ): PartyFeatContribution {
   const party = (actors as ActorLike[]).filter(Boolean);
   const out: PartyFeatContribution = { dpr: 0, partyEhp: 0, matched: [], unmatched: [], needsInput: [] };
@@ -104,11 +139,21 @@ export function partyFeatsFromActors(
       resolvedAttackBonus: true,
       resolvedSaves: true,
       resolvedAttackPackets: true,
+
+      /**
+       * What this character is holding and what it is swinging at. Keys are omitted rather than
+       * defaulted when they cannot be read, so a sheet with no readable weapon still reports
+       * NEEDS_INPUT instead of pricing off a zero.
+       */
+      ...featContextFromActor(actor as ActorLikeForFeats, known.targetAC),
+      ...(known.saveExposure?.dex !== undefined ? { DexSaveExposure: known.saveExposure.dex } : {}),
     });
 
     out.dpr += totals.dpr;
     out.partyEhp += totals.partyEhp;
-    out.needsInput.push(...totals.needsInput);
+    // ⚠ NAMED. Two characters with the same feat produced two identical lines with nothing to tell
+    // them apart, so the panel read as a duplicate rather than as two people.
+    out.needsInput.push(...totals.needsInput.map(n => ({ ...n, actor: actor.name ?? "Unnamed" })));
     out.matched.push({ actor: actor.name ?? "Unnamed", feats: totals.priced.map(p => p.name) });
   }
 
