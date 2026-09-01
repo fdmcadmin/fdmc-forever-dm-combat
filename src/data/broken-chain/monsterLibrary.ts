@@ -1762,7 +1762,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       proficiencyBonus: 3,
       kind: "fiend", ac: 13, maxHp: 90, speed: "50 ft.",
       defenses: [
-        { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
+        { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, persistent: true, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
         { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
       ],
       attacksPerTurn: 2,

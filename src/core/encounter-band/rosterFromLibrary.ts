@@ -90,7 +90,11 @@ export function traitFactorsFor(
   template: MainMonsterTemplate, out: RosterAssumption[],
   /** The party's damage composition, so a typed response prices itself. See `partyDamageMix.ts`. */
   damageMix?: PartyDamageMix,
+  /** The party's own chance to hit, for a defence that never expires. See `MonsterDefense.persistent`. */
+  hitChance?: number,
 ): SustainFactor[] {
+  /** The two rules whose value is a DURATION of reduced accuracy — the only ones `persistent` moves. */
+  const ACCURACY_GROUPS = new Set(["attack_suppression", "concealment"]);
   const name = template.name;
   const defenses = template.stats.defenses ?? [];
   const factors: SustainFactor[] = [];
@@ -171,7 +175,43 @@ export function traitFactorsFor(
       out.push({ creature: name, flag: "NEEDS DM INPUT", field: "trait",
         detail: `"${d.name}" is not a calibrated rule and declares no provenance, so there is nothing to say where its ×${(1 + contribution).toFixed(3)} came from. Give it a rule that resolves, or declare the source.` });
     }
-    factors.push({ stackGroup, label: d.name, contribution });
+    /**
+     * ⚠ A PERSISTENT ACCURACY DEFENCE IS PRICED FROM THE PARTY, NOT FROM A ONE-ROUND ANCHOR.
+     *
+     * Christopher, 2026-09-01: *"the parties hit chance should be read by the encounter checker
+     * because that's where the dpr is suppose to move when you place a party against it."*
+     *
+     * Both of the workbook's accuracy rules buy a WINDOW — "all attacks at disadvantage - 1 round"
+     * and "concealment until first attack hits each round". The Darkmane buys the whole fight, and
+     * there is no published row for that, so it was carrying x1.1294 and F3 cleared in three rounds
+     * on a number that was visibly too small.
+     *
+     * Disadvantage turns a hit chance of p into p². A body the party hits half as often costs twice
+     * as much to remove, so the contribution is `1/p - 1`, derived from the party's OWN accuracy.
+     *
+     * ⚠ ONLY WITH A REAL PARTY, AND ONLY UPWARD. No chosen actors means no hit chance and the
+     * calibrated floor stands, reported as a floor. And the derived value never lowers a defence
+     * below its published anchor: a very accurate party would otherwise make a permanent aura worth
+     * LESS than one round of the same effect, which is not a thing that can be true.
+     */
+    let finalContribution = contribution;
+    if (d.persistent && ACCURACY_GROUPS.has(stackGroup)) {
+      if (hitChance !== undefined && hitChance > 0 && hitChance <= 1) {
+        const derived = 1 / hitChance - 1;
+        if (derived > contribution) {
+          finalContribution = derived;
+          out.push({ creature: name, flag: "ESTIMATED", field: "trait",
+            detail: `"${d.name}" never expires, so it is priced from THIS party's accuracy rather than the workbook's one-round anchor: `
+              + `they hit on ${(hitChance * 100).toFixed(0)}%, disadvantage makes that ${(hitChance * hitChance * 100).toFixed(0)}%, `
+              + `so the body costs ×${(1 / hitChance).toFixed(3)} instead of ×${(1 + contribution).toFixed(3)}.` });
+        }
+      } else {
+        out.push({ creature: name, flag: "ESTIMATED", field: "trait",
+          detail: `"${d.name}" never expires, but the workbook's only accuracy rules buy ONE round, so ×${(1 + contribution).toFixed(3)} is a FLOOR. `
+            + `Choose the party's actors and it is priced from their real hit chance instead.` });
+      }
+    }
+    factors.push({ stackGroup, label: d.name, contribution: finalContribution });
   }
 
   /**
@@ -369,7 +409,7 @@ export function creatureProfile(
       detail: "No readable damage in any round, so this creature contributes nothing to the fight's pressure." });
   }
 
-  const traitFactors = traitFactorsFor(template, out, target.damageMix);
+  const traitFactors = traitFactorsFor(template, out, target.damageMix, target.hitChance);
   const traitMultiplier = 1 + combineSustainContributions(traitFactors);
   const acMultiplier = acMultiplierFor(parsed.ac, partyLevel, parsed.name, out);
 

@@ -382,6 +382,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         {
           "name": "Darkmane (Constant)",
           "ehpMultiplier": 1.1294156939022204,
+          "persistent": true,
           "rule": "All attacks at disadvantage - 1 round",
           "note": "Christopher, 2026-08-31: persistent one-way obscurement is a CONTINUING attack-roll defence, not a \"first incoming attack only\" effect. It was priced as \"Concealment until first attack hits each round\" (+0.113260) whose own note already admitted the mismatch by calling the obscurement permanent. The trait never lapses on a hit, so the correct family is attack_suppression. ⚠ THIS IS A FLOOR: the workbook's continuing rule is calibrated for ONE round (+0.129416) and this effect is permanent, so the real value is higher and no calibrated row covers it."
         },
@@ -2003,7 +2004,13 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         {
           "name": "No notable defensive traits of her own",
           "ehpMultiplier": 1,
-          "note": "DECIDED 1.0, not unassessed. Gate I pairs her with the Darkmare, and the durability in that fight belongs to the mare — the Crone is the damage and the control, and she is meant to be reached. Her own body prices at raw HP on purpose. The two rows below are what the MARE gives her, not traits of hers."
+          "note": "DECIDED 1.0, not unassessed. Gate I pairs her with the Darkmare, and the durability in that fight belongs to the mare — the Crone is the damage and the control, and she is meant to be reached. Her own BODY prices at raw HP on purpose. The rows below are her CONTROL and what the Mare gives her — different channels, not durability."
+        },
+        {
+          "name": "Control spellcasting",
+          "ehpMultiplier": 1.1083484151471665,
+          "rule": "Opposing damage uptime -10%",
+          "note": "RESTORED. Christopher, 2026-09-01: *\"didn't we just learn how her picking works, she has fear and two other spells besides the venomous, the only time the crone would use a non-[spell] is if there were no slots remaining and since it never gets that far there would always be a spell she can cast.\"* Right — she carries 11 slots (4/3/3/1) into a three-round fight, and three of her spells are PURE CONTROL with no damage line at all: Fear, Hold Person, Entangle. All three price at nothing today, so a caster who spends every round taking PCs out of the fight read as contributing only her Claw. ⚠ THIS IS NOT DURABILITY AND DOES NOT CONTRADICT THE 1.0 ABOVE. That row says her BODY is meant to be reached; this one says her control costs the party rounds. `Opposing damage uptime -10%` is the workbook's own rule for exactly that, and x1.108348 is the value the bundled library carried before the authoring round trip dropped it."
         },
         {
           "name": "Shadow Shroud (from Darkmare)",
@@ -2014,6 +2021,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         {
           "name": "Inside Darkmane (obscured)",
           "ehpMultiplier": 1.1294156939022204,
+          "persistent": true,
           "rule": "All attacks at disadvantage - 1 round",
           "note": "Darkmane is a locked 30-ft one-way obscurement aura centred on the Mare, and the Crone is the ally it exists to cover — Umbral Passage is written specifically to \"carry one willing allied creature inside Darkmane.\" Attacks into it are made by creatures that cannot see, so the Crone is as obscured as the Mare and was priced as if she stood in the open. ⚠ FLOOR, AND A LOW ONE: the calibrated rule is ONE ROUND of disadvantage and this aura is permanent. Real disadvantage against a 50% hit chance is worth x2.0 of effective HP, not x1.13. No published row prices a permanent aura, so this cannot be closed with a multiplier — it needs the obscurement executed as state. See the V2.2 handoff, F3."
         }

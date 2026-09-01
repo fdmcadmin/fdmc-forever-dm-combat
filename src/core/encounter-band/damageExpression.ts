@@ -100,6 +100,28 @@ export type PartyDefence = {
    */
   saves?: Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
   /**
+   * THE PARTY'S OWN CHANCE TO HIT, 0–1, read off the chosen actors.
+   *
+   * Christopher, 2026-09-01: *"the parties hit chance should be read by the encounter checker
+   * because that's where the dpr is suppose to move when you place a party against it."*
+   *
+   * ⚠ IT IS THE INPUT A PERMANENT DISADVANTAGE EFFECT CANNOT BE PRICED WITHOUT, and nothing
+   * published it. The party curve carries AC and six saves — defence only — and so does the
+   * workbook's own Party Defense Reach sheet. So the Darkmane, a permanent one-way obscurement
+   * aura, was priced with the calibrated anchor for ONE ROUND of disadvantage (x1.1294) because
+   * that was the only row available, and F3 cleared in three rounds on a number everyone could see
+   * was too small.
+   *
+   * The party is right there. `attackProfile` already derives a hit chance from an actor's own
+   * weapon against a target AC — it was built for Great Weapon Master — so the accuracy comes from
+   * the same actors the DPR does, and nothing is invented.
+   *
+   * ⚠ ABSENT MEANS ABSENT. With no chosen party this stays undefined and a persistent defence
+   * falls back to the calibrated one-round floor, flagged as a floor. A guessed hit chance would
+   * move every fight in the campaign on a number nobody entered.
+   */
+  hitChance?: number;
+  /**
    * What this party actually DEALS, by damage type — from `partyDamageMixFromActors`.
    *
    * It rides on the defence bag because a typed resistance is priced against the party the same

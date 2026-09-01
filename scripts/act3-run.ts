@@ -24,13 +24,31 @@ import { AUTHORED_ENCOUNTERS } from "../src/data/broken-chain/authored.generated
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
 import { effectiveHpPerBody, simulateEncounter, resolvePartyProfile } from "../src/core/encounter-band/checkerV2";
+import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
 const lib = BROKEN_CHAIN_MONSTER_LIBRARY as MainMonsterTemplate[];
 const MODE = "brokenChain" as const;
 const SIZE = 4;
 
-/** The act as it is played: a full rest at each level change, sustain carried inside a segment. */
+/**
+ * The act as it is PLAYED — long rest at each level change, SHORT REST between fights.
+ *
+ * ⚠ THE FIRST VERSION MODELLED NO SHORT RESTS AT ALL, and Christopher caught it: *"are these using
+ * the fresh/25%/40/60 doesn't model that the fight should be fought at with the short rest being
+ * 25-30% recovery."* Right — a party does not walk from The Cut Below into Gate I without stopping,
+ * and a run that pretends otherwise reports every fight after the first as arriving lower than it
+ * ever would.
+ *
+ * `SHORT_REST_RECOVERY` is 0.2554 — 25.5%, inside the band he named, and PUBLISHED rather than
+ * chosen here: it is the share of a party's resource pool a short rest hands back, p10 0.07 to p90
+ * 0.40 depending on how much of the kit is short-rest refreshed.
+ *
+ * ⚠ A REST CHANGES WHAT THE PARTY ARRIVES WITH, NOT HOW FAST THEY KILL. Rounds-to-clear is roster
+ * EHP against party DPR, and neither moves when the party is rested. So the short rests below fix
+ * the DRAIN column and change no round count — which is itself the answer to why these fights come
+ * in under the workbook.
+ */
 const SEGMENTS: Array<{ level: number; ids: string[] }> = [
   { level: 6, ids: ["act3-e1-the-first-court", "act3-e2-the-cut-below", "act3-e3-gate-i-crone-and-mare"] },
   { level: 7, ids: ["act3-e4-the-hollow-feast", "act3-e5-the-scar-line", "campaign-mt3nm2j9"] },
@@ -78,8 +96,16 @@ for (const seg of SEGMENTS) {
   console.log(`  party lands, cumulatively: ${landed.map((v, i) => `R${i + 1} ${v.toFixed(0)}`).join(" · ")}`);
 
   let sustain = full.sustain;
+  let firstOfSegment = true;
 
   for (const id of seg.ids) {
+    // A short rest between fights, never before the first — that one follows a long rest.
+    if (!firstOfSegment) {
+      const before = sustain;
+      sustain = Math.min(full.sustain, sustain + full.sustain * SHORT_REST_RECOVERY);
+      console.log(`\n  ── SHORT REST   +${pct(SHORT_REST_RECOVERY * 100)} of full   ${pct((before / full.sustain) * 100)} → ${pct((sustain / full.sustain) * 100)}`);
+    }
+    firstOfSegment = false;
     const enc = AUTHORED_ENCOUNTERS.find(e => e.id === id);
     if (!enc) { console.log(`\n  ${id} — MISSING`); continue; }
     const entries = enc.entries

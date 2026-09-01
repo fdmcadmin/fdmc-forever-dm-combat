@@ -63,6 +63,25 @@ export type MonsterDefense = {
    * number and knowingly left it, and the gate counts and prints every one of them on each run.
    */
   provenance?: "workbook-profile" | "interpolated" | "derived" | "uncalibrated";
+  /**
+   * THIS DEFENCE NEVER EXPIRES — so the calibrated anchor is a FLOOR, not the answer.
+   *
+   * ⚠ EVERY ACCURACY RULE IN THE WORKBOOK IS DURATION-LIMITED. "All attacks at disadvantage - 1
+   * round" and "Concealment until first attack hits each round" are the only two, and both buy a
+   * window. There is no published row for an aura that is simply always on, so the Darkmane — a
+   * locked 30-ft one-way obscurement centred on the Darkmare — was priced at x1.1294, one round's
+   * worth, for an effect that runs the entire fight.
+   *
+   * Setting this says the effect has no printed expiry. When the party's own hit chance is known
+   * (`PartyDefence.hitChance`, read off the chosen actors) the contribution is DERIVED from it
+   * instead: disadvantage turns a hit chance of p into p², so the body costs 1/p of what it did.
+   * With no party chosen the calibrated value stands, and reports itself as a floor.
+   *
+   * ⚠ IT IS NOT A LICENCE TO INFLATE. It only applies to a defence whose rule is already an
+   * accuracy rule — attack suppression or concealment. Marking a regeneration or a resistance
+   * persistent does nothing, because duration is not what those rules are anchored on.
+   */
+  persistent?: boolean;
   /** Why it is worth that — the arithmetic, so a future session can re-check it. */
   note?: string;
 };

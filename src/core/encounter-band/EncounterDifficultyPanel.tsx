@@ -36,6 +36,7 @@ import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
+import { attackProfile } from "../../modules/dnd-5e/featContextFromActor";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 
 const PARTY_SIZES = [3, 4, 5, 6] as const;
@@ -181,6 +182,28 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   );
 
   const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
+  const fightInputs = useMemo(() => {
+    const entries = (encounter?.entries ?? [])
+      .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
+      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number }>;
+    const targetAC = meanTargetAc(entries);
+    /**
+     * ⚠ THE PARTY'S ACCURACY, READ OFF THE PARTY. Christopher: *"the parties hit chance should be
+     * read by the encounter checker because that's where the dpr is suppose to move when you place
+     * a party against it."*
+     *
+     * `attackProfile` was built for Great Weapon Master and already derives a hit chance from an
+     * actor's own weapon against a target AC. The same actors that supply the DPR supply this, so
+     * a permanent disadvantage effect prices against the party actually in the fight rather than
+     * against a one-round anchor. No chosen party means no number and the anchor stands.
+     */
+    const chances = (chosen as unknown[])
+      .map(a => targetAC === undefined ? undefined : attackProfile(a as never, targetAC)?.hitChance)
+      .filter((h): h is number => typeof h === "number" && h > 0);
+    const hitChance = chances.length ? chances.reduce((s, h) => s + h, 0) / chances.length : undefined;
+    return { targetAC, saveExposure: incomingSaveExposure(entries), hitChance };
+  }, [encounter, monsterLibrary, chosen]);
+
 
   const roster = useMemo(() => {
     if (!encounter) return { roster: [], assumptions: [] };
@@ -197,12 +220,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
     // The full library, not just this fight — a summoned creature is never already on the field.
-    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix }, monsterLibrary);
+    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix, hitChance: fightInputs.hitChance }, monsterLibrary);
     return {
       roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
@@ -241,12 +264,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * encounter that is already selected in this panel, so neither is something a DM should be asked
    * to type. See `incomingSaveExposure`.
    */
-  const fightInputs = useMemo(() => {
-    const entries = (encounter?.entries ?? [])
-      .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
-      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number }>;
-    return { targetAC: meanTargetAc(entries), saveExposure: incomingSaveExposure(entries) };
-  }, [encounter, monsterLibrary]);
 
   const partyFeats = useMemo(() => partyFeatsFromActors(chosen as unknown[], {
     baseDpr: profile?.dpr.round1, baseEhp: profile?.sustain,
