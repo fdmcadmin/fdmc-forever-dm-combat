@@ -95,7 +95,14 @@ export function priceDamageResponses(
   mix?: PartyDamageMix,
 ): DamageResponsePrice {
   const all = responses ?? [];
-  const named = all.filter(r => r.type.trim() !== "");
+  /**
+   * ⚠ AN UNSUBSTITUTED PLACEHOLDER IS NOT A DAMAGE TYPE. A template authored once and resolved
+   * per body — the Elemental Mirror's `{physical1}`, which becomes bludgeoning on the front line
+   * and piercing/slashing on the back — still carries its braces until a body picks an element.
+   * Read literally it is an unreadable type reported on every unbuilt copy, which is noise about
+   * the AUTHORING mechanism rather than a fact about the creature.
+   */
+  const named = all.filter(r => r.type.trim() !== "" && !r.type.includes("{"));
 
   /**
    * The explicit share if there is one, otherwise the party's own. A type the party does not deal
@@ -140,7 +147,7 @@ export function priceDamageResponses(
 /** One-line summary for a card or an editor row: "Immune to cold · Vulnerable to radiant". */
 export function describeDamageResponses(responses: readonly DamageResponse[] | undefined): string {
   return (responses ?? [])
-    .filter(r => r.type.trim() !== "")
+    .filter(r => r.type.trim() !== "" && !r.type.includes("{"))
     .map(r => {
       const word = r.response === "immune" ? "Immune" : r.response === "vulnerable" ? "Vulnerable" : "Resistant";
       return `${word} to ${r.type}${r.qualifier ? ` ${r.qualifier}` : ""}`;

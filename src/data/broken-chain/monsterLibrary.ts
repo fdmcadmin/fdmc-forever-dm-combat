@@ -2546,6 +2546,31 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       defenses: [
         { name: "Elemental Guard", ehpMultiplier: 1.075916, rule: "Telegraphed alternating immunity/resistance", note: "Workbook: Telegraphed alternating immunity/resistance (+0.075916), exact. Read from the trait text by traitClassifier on \"immunity that rotates each turn\" - the mirror had NO defences at all, so a Gate boss priced at flat 90 raw HP with its signature ability worth zero." },
       ],
+      /**
+       * ⚠ PHYSICAL RESISTANCE IS PER LINE, AND THE MIRROR HAD NONE AT ALL.
+       *
+       * Christopher, 2026-09-01: *"the front line should be ice, earth and nature, these have
+       * resistance to bludgeoning … and the back line has resistance to slashing and piercing as
+       * well as their intended elements having the alternating."*
+       *
+       * `damageResponses` was an EMPTY ARRAY on this creature, so four Mirrors took full physical
+       * damage from a party whose weapons are mostly physical. The element package already knows
+       * which line a body is on — Ice/Earth/Nature are `Defensive-solid`, Fire/Water/Air are
+       * `Offensive-fluid` — so the line is a consequence of the pick, not a seventh thing to choose.
+       *
+       * ⚠ AUTHORED ONCE, RESOLVED PER BODY. `{physical1}`/`{physical2}` substitute from the chosen
+       * element's `optionVars`, which is what stops this being six hand-written copies that drift.
+       * `physical2` is empty on the front line — one type there, two on the back — and an empty or
+       * still-unsubstituted row is dropped rather than priced.
+       *
+       * ⚠ SEPARATE FROM ELEMENTAL GUARD, DELIBERATELY. The Guard is the ROTATING elemental
+       * immunity and is priced above as its own calibrated rule; this is the static physical
+       * profile. V2.2 keeps them apart for the same reason: *"Separate from Elemental Guard."*
+       */
+      damageResponses: [
+        { type: "{physical1}", response: "resistant" },
+        { type: "{physical2}", response: "resistant" },
+      ],
       size: "Medium", classification: "elite", cr: 7,
       // "The Wood builds one mirror for each adventurer." Flat 90 HP each; the count follows
       // party size and the party-size HP band does not apply. See `oneBodyPerPc`.
@@ -2571,12 +2596,12 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
         namesBody: true,
         note: "Primary locks its paired secondary. Do not duplicate a package across the roster.",
         optionVars: {
-        "Ice": { primary: "ice", secondary: "necrotic", pair: "Ice/Necrotic", group: "Defensive-solid" },
-        "Earth": { primary: "earth", secondary: "radiant", pair: "Earth/Radiant", group: "Defensive-solid" },
-        "Nature": { primary: "nature", secondary: "poison", pair: "Nature/Poison", group: "Defensive-solid" },
-        "Fire": { primary: "fire", secondary: "lightning", pair: "Fire/Lightning", group: "Offensive-fluid" },
-        "Water": { primary: "water", secondary: "acid", pair: "Water/Acid", group: "Offensive-fluid" },
-        "Air": { primary: "air", secondary: "force", pair: "Air/Force", group: "Offensive-fluid" },
+        "Ice": { primary: "ice", secondary: "necrotic", pair: "Ice/Necrotic", group: "Defensive-solid", line: "front", physical1: "bludgeoning", physical2: "" },
+        "Earth": { primary: "earth", secondary: "radiant", pair: "Earth/Radiant", group: "Defensive-solid", line: "front", physical1: "bludgeoning", physical2: "" },
+        "Nature": { primary: "nature", secondary: "poison", pair: "Nature/Poison", group: "Defensive-solid", line: "front", physical1: "bludgeoning", physical2: "" },
+        "Fire": { primary: "fire", secondary: "lightning", pair: "Fire/Lightning", group: "Offensive-fluid", line: "back", physical1: "piercing", physical2: "slashing" },
+        "Water": { primary: "water", secondary: "acid", pair: "Water/Acid", group: "Offensive-fluid", line: "back", physical1: "piercing", physical2: "slashing" },
+        "Air": { primary: "air", secondary: "force", pair: "Air/Force", group: "Offensive-fluid", line: "back", physical1: "piercing", physical2: "slashing" },
         },
       },
     ],

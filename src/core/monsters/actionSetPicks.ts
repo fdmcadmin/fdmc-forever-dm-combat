@@ -242,8 +242,34 @@ export function materializeTemplateBody(
    */
   const finish = <T extends { roll?: string; damage?: string; save?: string }>(list: T[] | undefined) =>
     (list ?? []).map(a => resolveMonsterActionFormulas(substituteVars(a, vars), reshaped));
+
+  /**
+   * ⚠ TYPED RESPONSES TOO — the element decides what the BODY resists, not just what it deals.
+   *
+   * Christopher, 2026-09-01: *"the front line should be ice, earth and nature, these have
+   * resistance to bludgeoning … and the back line has resistance to slashing and piercing as well
+   * as their intended elements having the alternating."*
+   *
+   * That is per-body and per-packet, exactly as V2.2's handoff requires — *"this is per target
+   * body and per damage packet. Do not create one universal Mirror resistance profile."* Which
+   * means it belongs in `damageResponses`, and substitution never reached them: it ran over
+   * actions, traits and reactions only, so a `{physical}` row would have shipped its own
+   * placeholder as a damage type.
+   *
+   * ⚠ AN UNRESOLVED PLACEHOLDER IS DROPPED, NOT PRICED. A template with no pick yet leaves
+   * `{physical1}` in place, and `normalizeDamageType` would report that as an unreadable type on
+   * every unbuilt Mirror. A row whose type is still a placeholder is not yet a fact about anything.
+   */
+  // ⚠ SUBSTITUTED DIRECTLY. `substituteVars` fixes a fixed list of action FIELDS — name, text,
+  // damage, roll, save — and `type` is not one of them, so routing through it silently did nothing.
+  const fillType = (s: string) => s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+  const responses = (built.stats.damageResponses ?? [])
+    .map(r => ({ ...r, type: fillType(r.type ?? "") }))
+    .filter(r => r.type.trim() !== "" && !r.type.includes("{"));
+
   return {
     ...built,
+    stats: { ...built.stats, damageResponses: responses },
     actions: finish(built.actions),
     traits: finish(built.traits),
     reactions: finish(built.reactions),
