@@ -393,6 +393,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // scale by the ×1.27 dynamics factor the two MC-run fights show. PROVISIONAL: this
     // fight has no MC lane of its own yet.
     stats: {
+      // Act 2 document: Challenge 3. The printed proficiency follows from it.
+      cr: 3,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -432,6 +434,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Hollow Pack formation defense (see Pale Stalker). AC 12 is its own
     // offensive-side term — it is the easiest body in the fight to hit.
     stats: {
+      // Act 2 document: Challenge 1/2. The printed proficiency follows from it.
+      cr: 0.5,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -465,6 +469,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Frozen Hollow formation defense (shared across all three bodies) — v12 Encounter
     // Safety: 200 HP @5P won in 2.02 rounds, × 1.27 dynamics. PROVISIONAL, no MC lane yet.
     stats: {
+      // Act 2 document: Challenge 2. The printed proficiency follows from it.
+      cr: 2,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -537,6 +543,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
+      // Act 2 document: Challenge 2. The printed proficiency follows from it.
+      cr: 2,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -577,6 +585,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
+      // Act 2 document: Challenge 4. The printed proficiency follows from it.
+      cr: 4,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -659,6 +669,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // out (acFactor 0.62 at L4 — by far the hardest thing to hit in the act) what remains is
     // the shared Last Directive formation value, not a second helping of the same armour.
     stats: {
+      // Act 2 document: Challenge 1. The printed proficiency follows from it.
+      cr: 1,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -832,6 +844,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // v12 Encounter Safety: Lesser Wendigos 300 HP @5P (2× 120 at 4P) won in 2.46 rounds
     // × 1.27 dynamics. PROVISIONAL — analytic-derived, no MC lane of its own yet.
     stats: {
+      // Act 2 document: Challenge 5. The printed proficiency follows from it.
+      cr: 5,
       // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 3,
@@ -935,6 +949,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Formation defenses (shared by all three bodies — the v12 MC constrains the encounter
     // total, not each creature). AC now handled separately on the offensive side.
     stats: {
+      // Act 2 document: Challenge 4. The printed proficiency follows from it.
+      cr: 4,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -1017,6 +1033,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel); AC 17 is its own
     // offensive-side term and is what makes it the formation's hardest body to hit.
     stats: {
+      // Act 2 document: Challenge 4. The printed proficiency follows from it.
+      cr: 4,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -1132,9 +1150,11 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel). AC 14 is the
     // softest of the three — the offensive-side term now shows that instead of hiding it.
     stats: {
+      // Act 2 document: Challenge 5. The printed proficiency follows from it.
+      cr: 5,
       // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
-      proficiencyBonus: 4,
+      proficiencyBonus: 3,
       kind: "undead", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "commander",
       spellSlots: [{ level: 1, max: 3 }, { level: 2, max: 2 }, { level: 3, max: 2 }, { level: 4, max: 1 }],
@@ -1164,7 +1184,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Whiteout (Turn 1, its Sleet Storm)", kind: "action", spellSlotLevel: 4, save: "DEX DC 15", text: "A 40-ft-tall, 20-ft-radius cylinder of freezing rain centered on a point within 150 ft. The area is heavily obscured, open flames in it are doused, and its ground becomes slick ice (difficult terrain). When a creature enters the area for the first time on a turn or starts its turn there, it makes a DC 15 DEX save or falls prone. A creature concentrating that starts its turn in the area makes a DC 15 concentration save or loses the spell. The Weaver drops this on turn one." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + 7", damage: "2d8 + @MAIN", save: "STR DC 15", text: "EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "per-hit" }] },
+      /**
+       * ⚠ +6, NOT +7. The Act 2 document prints "Rime Bolt. +6 to hit, range 120 ft" and
+       * "Proficiency Bonus: +3", and the creature's own array agrees: its best ability is INT 17
+       * (+3), so +3 +3 = +6 and +7 is not reachable by any ability it has.
+       *
+       * Caught by the proficiency cross-check added in 0.8.11.11 — the creature contradicting
+       * itself is what made it findable. This is the ONE stale number that check surfaced across
+       * the library.
+       */
+      { name: "Rime Bolt", kind: "attack", roll: "1d20+@ATK", damage: "2d8 + @MAIN", save: "STR DC 15", text: "EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "per-hit" }] },
       { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", damage: "4d6", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
       { name: "Rimestep (Bonus Action)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
@@ -1198,9 +1227,11 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // lifts Death Burst to DC 15 and recomputes Frost Slam to +5 to hit / 2d8+2 cold
     // (STR +2, PB +3). AC 17 is unaffected — it's authored natural armour, not from DEX.
     stats: {
+      // Act 2 document: Challenge 5. The printed proficiency follows from it.
+      cr: 5,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
-      proficiencyBonus: 2,
+      proficiencyBonus: 3,
       kind: "undead", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
       size: "Large", classification: "elite", archetype: "guardian",
       defenses: [
@@ -1259,6 +1290,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // The 34-HP Reknit is a DEFENSE, not extra maxHp — keeping it here means the panel
     // shows why this creature outlasts its bar, and that bright light removes it.
     stats: {
+      // Act 2 document: Challenge 4. The printed proficiency follows from it.
+      cr: 4,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
@@ -1348,6 +1381,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // The Lesser Wendigo's 45 is a SEPARATE add pool and is deliberately not multiplied by
     // the Wight's defenses.
     stats: {
+      // Act 2 document: Challenge 9. The printed proficiency follows from it.
+      cr: 9,
       kind: "aberration", ac: 17, maxHp: 130, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
       /**
        * ⚠ THE PRINTED FIGURE, RECOVERED. Christopher, 2026-09-01, with the block in hand: *"tell
