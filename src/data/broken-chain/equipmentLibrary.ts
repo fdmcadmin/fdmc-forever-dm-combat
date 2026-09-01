@@ -1267,6 +1267,172 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
     "convergence": {"role":"output","enabled":true,"mechanicalTag":"Stability + Continuity"},
     "isLocked": true
+  },
+  {
+    "id": "bc-sentrys-knot",
+    "name": "Sentry’s Knot",
+    "type": "magic",
+    "description": "A fist of grey cord knotted around something that will not sit still. It pulls toward whoever in the group is closest to falling. Tags: A1–A2 · Ward Field Reward · Guardian / Devout",
+    "mechanicsText": "When a creature other than you that you can see within 30 feet would be reduced to 0 hit points, the knot tears itself apart. That creature is reduced to 1 hit point instead and gains temporary hit points equal to one roll of its Hit Die + your proficiency bonus.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Guardian / Devout. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-sighters-wrap",
+    "name": "Sighter’s Wrap",
+    "type": "magic",
+    "description": "A strip of oiled cloth wound for a hand that is not yours. It tightens a little when something across the field takes aim. Tags: A1–A2 · Ward Field Reward · Suppressing / Precise",
+    "mechanicsText": "When a creature you can see within 30 feet scores a Critical Hit against you or an ally, tear the wrap free and force that creature to reroll the triggering attack roll. It must use the new roll.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Suppressing / Precise. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-fieldwork-flask",
+    "name": "Fieldwork Flask",
+    "type": "magic",
+    "description": "A field flask with a Ward seal still intact over the stopper. Whatever is inside is warm through the glass. Tags: A1–A2 · Ward Field Reward · Mending / Warden",
+    "mechanicsText": "When a creature you can see within 30 feet is reduced to 0 hit points, empty the flask. That creature immediately regains hit points equal to two rolls of its Hit Die + its Constitution modifier (minimum 1) and remains conscious.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Mending / Warden. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-hardedge-cord",
+    "name": "Hardedge Cord",
+    "type": "magic",
+    "description": "A short cord strung between two iron tabs, wound far tighter than a hand could manage. It is meant to be snapped, once. Tags: A1–A2 · Ward Field Reward · Vanguard / Skirmish",
+    "mechanicsText": "When you are hit by an attack, after its damage is rolled but before the damage is applied, snap the cord. Reduce the triggering attack’s damage by 2d8. Until that attack finishes resolving, it cannot knock you Prone, move you against your will, or give you the Grappled condition.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Vanguard / Skirmish. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-reading-stone",
+    "name": "Reading Stone",
+    "type": "magic",
+    "description": "A thin disc of pale stone with a hairline fracture already through it. Held up, the fracture seems to be reading the room rather than the light. Tags: A1–A2 · Ward Field Reward · Tactician / Breaker",
+    "mechanicsText": "When you or a creature you can see within 30 feet fails a saving throw, break the stone. The creature succeeds on that saving throw instead.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Tactician / Breaker. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-pack-sign-token",
+    "name": "Pack-Sign Token",
+    "type": "magic",
+    "description": "A flat token scored down the middle so it can be split by hand. Both halves carry the same mark. Tags: A1–A2 · Ward Field Reward · Pack / Covenant",
+    "mechanicsText": "When you or an ally you can see within 30 feet is hit by an attack while another allied creature is within 5 feet of the target, split the token. The target gains a +5 bonus to AC against the triggering attack only, potentially causing it to miss.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Pack / Covenant. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-unspent-mark",
+    "name": "Unspent Mark",
+    "type": "magic",
+    "description": "A Ward sigil struck onto soft metal and never spent. It sits cold against anything magical that comes near it. Tags: A1–A2 · Ward Field Reward · Resonant / Siphon",
+    "mechanicsText": "When you fail a saving throw against a spell or magical effect, expend the mark to succeed on that saving throw instead. If a successful save normally deals reduced damage, you take that normal successful-save damage; the Mark grants no additional resistance or reduction.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Resonant / Siphon. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-potion-of-healing",
+    "name": "Potion of Healing",
+    "type": "consumable",
+    "activation": "action",
+    "description": "A standard healing potion set aside with the tavern’s practical emergency stock. Tags: A2 · Tavern stock",
+    "mechanicsText": "Use the normal D&D Potion of Healing rules.",
+    "isUsable": true,
+    "value": "50gp",
+    "act": "Act 2",
+    "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 2.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-smoke-flask",
+    "name": "Smoke Flask",
+    "type": "consumable",
+    "activation": "action",
+    "description": "A squat dark-glass flask whose stopper is wrapped in grey cloth. The liquid inside never settles; when the glass breaks, it becomes a wall of smoke before it reaches the ground. Tags: A2 · Tavern stock",
+    "mechanicsText": "As a Magic action, throw the flask at a point you can see within 30 feet. It shatters and creates dense smoke in a 10-foot-radius sphere centered on that point. The area is Heavily Obscured until the end of your next turn. A strong wind disperses the smoke early.",
+    "isUsable": true,
+    "value": "100gp",
+    "act": "Act 2",
+    "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-wardbreaker-oil",
+    "name": "Wardbreaker Oil",
+    "type": "consumable",
+    "activation": "bonus",
+    "description": "A thin metallic oil kept in a narrow Ward-sealed vial. It crawls toward an edge or point as it is applied and holds there until impact. Tags: A2 · Tavern stock",
+    "mechanicsText": "As a Bonus Action, apply the oil to one weapon or one piece of ammunition. The coating remains potent until its effect is delivered or washed away. The first time a creature takes damage from the coated weapon or ammunition, it takes an additional 2d6 Force damage; if it is Large or smaller, it is pushed 5 feet directly away from the attacker. The oil is then expended.",
+    "isUsable": true,
+    "value": "150gp",
+    "act": "Act 2",
+    "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
+    "isLocked": true
   }
 ];
 

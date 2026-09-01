@@ -34,8 +34,16 @@ for (let boot = 0; boot < 2; boot++) {
 }
 
 const encounterNames = new Set(loadEncounterLibrary().map(e => e.name.trim()));
-/** Pool names that are deliberately not fights — merchants, quest rewards, base weapons. */
-const NOT_A_FIGHT = /stock|reward|cottage|base weapon|convergence/i;
+/**
+ * Pool names that are deliberately not fights — merchants, quest rewards, base weapons.
+ *
+ * ⚠ `merchant` ADDED 2026-09-01. The v6 loot document's last purchasing window is the
+ * "END-OF-ACT 2 TAVERN MERCHANT", and the pattern already excused every OTHER merchant by
+ * accident — Northgate and Aldric both happen to be called a "STOCK". A window that sells things
+ * is not a fight whichever noun it is named with, and the gate should not depend on the author
+ * reaching for the one word it recognises.
+ */
+const NOT_A_FIGHT = /stock|reward|cottage|base weapon|convergence|merchant/i;
 
 const pools = new Map<string, number>();
 for (const owner of ["campaign", "dm"] as const) {
