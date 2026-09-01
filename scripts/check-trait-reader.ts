@@ -12,6 +12,7 @@
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
 import { classifyTrait, classifyTraits, classifyTraitAll } from "../src/core/encounter-band/traitClassifier";
 import { pricingModelOf, PRICING_MODEL_LABEL, TRAIT_RULES, traitRule, resolveTraitRule } from "../src/core/encounter-band/compactImport";
+import { monsterFormulaVars, monsterProficiency } from "../src/core/monsters/resolveMonsterFormulaVars";
 import { auditCoverage, mechanicsOf } from "../src/core/encounter-band/coverageGate";
 
 let agree = 0, disagree = 0, missed = 0;
@@ -192,6 +193,47 @@ if (report.blocked.length !== 0) {
     problems.push("no campaign-named defence rows exist, so this check proves nothing — it would pass on a name-only lookup too");
     disagree++;
   }
+}
+
+/**
+ * ── A CREATURE'S OWN ATTACK BONUS IS EVIDENCE ABOUT ITS PROFICIENCY ─────────────────────────
+ *
+ * Christopher, 2026-09-01: *"tell me how the Wendigo wight is marked wrong for its dc check."*
+ * It was not marked wrong by its author — it was marked wrong by this app.
+ *
+ * `monsterProficiency` reads `stats.proficiencyBonus`, then falls back to CR, then to a floor of
+ * +2. The Wendigo Wight carried NEITHER field while its block prints "Challenge 9 · Proficiency
+ * Bonus +4", so every `@DC`, `@DCxxx` and `@ATK` on it resolved two low — and its four authored
+ * DCs, every one of them an exact `8 + ability + PB`, all reported as matching no token.
+ *
+ * ⚠ THE CREATURE CONTRADICTS ITSELF, WHICH IS WHAT MAKES THIS CHECKABLE. A block printing
+ * "+8 to hit" on a STR attack with STR +4 is stating a proficiency of +4 in a second place. When
+ * that disagrees with the resolved bonus, one of the two is wrong and the app should say so
+ * rather than quietly using the smaller number in every formula the creature owns.
+ */
+{
+  let pbGaps = 0;
+  for (const t of L) {
+    const vars = monsterFormulaVars(t);
+    const pb = monsterProficiency(t.stats);
+    const main = Number(String(vars.MAIN).replace("+", ""));
+    // Only literal rolls: a formula-authored bonus is derived and cannot contradict its source.
+    const printed = (t.actions ?? [])
+      .map(a => a.roll)
+      .filter((r): r is string => Boolean(r) && !/@/.test(r!))
+      .map(r => Number((r.match(/1d20\s*\+\s*(\d+)/) ?? [])[1] ?? NaN))
+      .filter(n => Number.isFinite(n));
+    if (printed.length === 0) continue;
+    const best = Math.max(...printed);
+    // The best attack is at most main + PB. More than that and the stated proficiency is too low.
+    if (best > main + pb) {
+      pbGaps++;
+      problems.push(`${t.name}: proficiency resolves to +${pb}, but its own "+${best} to hit" with @MAIN ${vars.MAIN} needs +${best - main}. `
+        + `Set stats.proficiencyBonus (or cr) — every @DC and @ATK on this creature is currently ${best - main - pb} too low.`);
+      disagree++;
+    }
+  }
+  console.log(`\n  proficiency cross-check: ${pbGaps === 0 ? "every creature's attacks agree with its stated proficiency" : `${pbGaps} disagree`}`);
 }
 
 if (disagree) {

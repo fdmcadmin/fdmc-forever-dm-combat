@@ -46,6 +46,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "beast", ac: 13, maxHp: 11, speed: "50 ft", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Pack Tactics is offensive (advantage to hit), not durability. Plain HP bar." },
@@ -82,6 +85,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "beast", ac: 14, maxHp: 26, speed: "50 ft", classification: "strong",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Leads the pack but takes damage normally. Plain HP bar." },
@@ -118,6 +124,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "monstrosity", ac: 13, maxHp: 59, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Big HP pool, no resistances or revival. Plain HP bar." },
@@ -156,6 +165,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act1-mosshide-owlbear",
     encounterLabel: act1MosshideLabel,
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "monstrosity", ac: 12, maxHp: 5, speed: "30 ft", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "A 5-HP juvenile body that flees rather than dies. Plain HP bar." },
@@ -194,6 +206,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "unspecified", ac: 15, maxHp: 16, attacksPerTurn: 1, speed: "30 ft", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
@@ -231,6 +246,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "beast", ac: 13, maxHp: 26, speed: "30 ft., climb 30 ft.", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Webbing slows the party but does not make the spider harder to kill. Plain HP bar." },
@@ -266,6 +284,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "unspecified", ac: 13, maxHp: 16, attacksPerTurn: 2, speed: "30 ft.", classification: "normal",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Ambush is an opener, not durability. Plain HP bar." },
@@ -301,6 +322,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Act 1 boss. No v12 workbook lane, but unlike the Act 1 chaff it has a real defensive
     // trait, so it is itemised rather than flattened to 1.0. ESTIMATE — no MC run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "unspecified", ac: 13, maxHp: 100, attacksPerTurn: 2, speed: "50 ft", classification: "act-boss",
       defenses: [
         { name: "Phantom Step", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.18, a hand-authored figure predating the workbook. Calibrated handling: attack-disadvantage-until-damaged + triggered reaction. Kept as a trait, and priced with Phantom Lunge. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -369,6 +393,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // scale by the ×1.27 dynamics factor the two MC-run fights show. PROVISIONAL: this
     // fight has no MC lane of its own yet.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "beast", ac: 13, maxHp: 75, speed: "50 ft", classification: "strong",
       defenses: [
         { name: "Ambush + Apex Unleashed", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: offensive trigger / action economy. Apex is priced through Breath, not as effective HP. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -405,6 +432,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Hollow Pack formation defense (see Pale Stalker). AC 12 is its own
     // offensive-side term — it is the easiest body in the fight to hit.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "beast", ac: 12, maxHp: 26, speed: "40 ft", classification: "normal",
       defenses: [
         { name: "Pack coordination", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: conditional attack advantage. Kept as an advantage trait, priced in the attack matrix. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -435,6 +465,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Frozen Hollow formation defense (shared across all three bodies) — v12 Encounter
     // Safety: 200 HP @5P won in 2.02 rounds, × 1.27 dynamics. PROVISIONAL, no MC lane yet.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 12, maxHp: 42, speed: "20 ft", classification: "normal",
       defenses: [
         { name: "Hollow Fortitude", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: drop-to-1 / revive primitive. Kept as a save-to-1 trait and priced there. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -471,6 +504,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 12, maxHp: 35, speed: "30 ft",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Unused legacy creature (no encounter). Plain HP bar." },
@@ -501,6 +537,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 13, maxHp: 36, speed: "30 ft", classification: "normal",
       defenses: [
         { name: "Cold Aura + paralysis", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: control / save manipulation. Priced as the Aura and the Claw, each directly. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -538,6 +577,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterLabel: act2S1E2Label,
     // Shares the Frozen Hollow formation defense (see Icebound Zombie).
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 14, maxHp: 82, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
         { name: "Nonmagical resistance + STR drain", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: typed resistance + ability drain. Each is priced directly, by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -579,6 +621,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // absorbed AC; now AC 14 is its own offensive-side term, so this number is traits only.
     // v12 Encounter Safety: Last Directive 151 HP @5P won in 1.74 rounds × 1.27 dynamics.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft", classification: "elite",
       defenses: [
         { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.64, a hand-authored figure predating the workbook. Calibrated handling: aura + max-HP drain + stun, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -614,6 +659,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // out (acFactor 0.62 at L4 — by far the hardest thing to hit in the act) what remains is
     // the shared Last Directive formation value, not a second helping of the same armour.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 19, maxHp: 12, speed: "0 ft., fly 50 ft. (hover)", classification: "normal",
       defenses: [
         { name: "Patrol screen", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.64, a hand-authored figure predating the workbook. Calibrated handling: typed physical resistance + movement, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -648,6 +696,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "unspecified", ac: 14, maxHp: 65, attacksPerTurn: 2, speed: "30 ft", classification: "elite",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
@@ -691,6 +742,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "unspecified", ac: 14, maxHp: 65, attacksPerTurn: 2, speed: "30 ft", classification: "strong",
       defenses: [
         { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "No resistances, no second life. Plain HP bar." },
@@ -732,6 +786,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
     // invented multiplier. Revisit if it ever gets a Monte Carlo run.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "unspecified", ac: 14, maxHp: 33, speed: "30 ft", classification: "strong",
       defenses: [
         { name: "Wrong Silhouette", ehpMultiplier: 1.0477493435640757, rule: "First attack each round at disadvantage", note: "\"The first attack each creature makes against it has disadvantage\" IS the workbook's rule of that name, word for word. It was never recorded: the only row here said \"No notable defensive traits\", and that note is about SLIP BETWEEN — a different trait — so the decision covered one trait and silenced the other. Found by the coverage gate asking what a creature's traits price at." },
@@ -775,6 +832,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // v12 Encounter Safety: Lesser Wendigos 300 HP @5P (2× 120 at 4P) won in 2.46 rounds
     // × 1.27 dynamics. PROVISIONAL — analytic-derived, no MC lane of its own yet.
     stats: {
+      // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 3,
       kind: "undead", ac: 15, maxHp: 120, attacksPerTurn: 2, speed: "40 ft", classification: "mid-boss",
       size: "Large", archetype: "skirmisher",
       defenses: [
@@ -875,6 +935,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Formation defenses (shared by all three bodies — the v12 MC constrains the encounter
     // total, not each creature). AC now handled separately on the offensive side.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 15, maxHp: 52, speed: "30 ft", attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
       spellSlots: [{ level: 1, max: 4 }, { level: 2, max: 3 }, { level: 3, max: 2 }],
@@ -954,6 +1017,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel); AC 17 is its own
     // offensive-side term and is what makes it the formation's hardest body to hit.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 17, maxHp: 45, speed: "30 ft", attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "bruiser",
       defenses: [
@@ -1020,6 +1086,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // the same revival. It is also a stripped body (Rime Claw only, no spells, no reactions),
     // so on its own it really is a plain HP bar.
     stats: {
+      // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 3,
       kind: "undead", ac: 14, maxHp: 25, speed: "30 ft",
       defenses: [
         { name: "None (stripped husk)", ehpMultiplier: 1.0, note: "Revival value is carried by the creature that raised it, not by the husk. Do not add an uplift here." },
@@ -1063,6 +1132,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // Shares the Frozen Sentinels formation defenses (see Frozen Sentinel). AC 14 is the
     // softest of the three — the offensive-side term now shows that instead of hiding it.
     stats: {
+      // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 4,
       kind: "undead", ac: 14, maxHp: 75, speed: "30 ft", attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "commander",
       spellSlots: [{ level: 1, max: 3 }, { level: 2, max: 2 }, { level: 3, max: 2 }, { level: 4, max: 1 }],
@@ -1126,6 +1198,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // lifts Death Burst to DC 15 and recomputes Frost Slam to +5 to hit / 2d8+2 cold
     // (STR +2, PB +3). AC 17 is unaffected — it's authored natural armour, not from DEX.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "undead", ac: 17, maxHp: 136, attacksPerTurn: 2, speed: "30 ft",
       size: "Large", classification: "elite", archetype: "guardian",
       defenses: [
@@ -1184,6 +1259,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // The 34-HP Reknit is a DEFENSE, not extra maxHp — keeping it here means the panel
     // shows why this creature outlasts its bar, and that bright light removes it.
     stats: {
+      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 2,
       kind: "fiend", ac: 15, maxHp: 85, speed: "30 ft, fly 30 ft (hover)",
       // Official 5e creature type, not the flavour name: the chassis is the 2024 Shadow
       // Demon, so it publishes as a FIEND. "Incorporeal Cold-Woven Entity" is the campaign
@@ -1271,6 +1349,25 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     // the Wight's defenses.
     stats: {
       kind: "aberration", ac: 17, maxHp: 130, attacksPerTurn: 2, speed: "40 ft", classification: "act-boss",
+      /**
+       * ⚠ THE PRINTED FIGURE, RECOVERED. Christopher, 2026-09-01, with the block in hand: *"tell
+       * me how the Wendigo wight is marked wrong for its dc check."* It was not — the app was.
+       *
+       * `monsterProficiency` reads this field first and falls back to CR; this creature carried
+       * NEITHER, so it resolved at the CR-less floor of +2 while its block prints "Challenge 9 ·
+       * Proficiency Bonus +4". Every derived token was two low, so every authored DC on it looked
+       * like it matched no token at all:
+       *
+       *   printed DC 16 Hungering Leap  = 8 + STR +4 + 4   @DCSTR read 14
+       *   printed DC 15 Devouring Claw  = 8 + DEX +3 + 4   @DCDEX read 13   (it IS the DEX attack)
+       *   printed DC 15 Wrong Cold      = 8 + CON +3 + 4   @DCCON read 13
+       *   printed DC 14 Bone-Nest       = 8 + WIS +2 + 4   @DCWIS read 12
+       *
+       * Every one of them is 8 + ability + PB. The creature was authored exactly the way the DC
+       * vocabulary intends and the app could not see it, which is why 34 of 44 save lines across
+       * the library read as "typed in": the tokens were wrong, so the numbers looked right.
+       */
+      proficiencyBonus: 4,
       damageUptime: 0.86, // aura spacing + Hungering Leap repositioning, per the workbook calibration
       size: "Large", archetype: "bruiser",
       defenses: [
@@ -1620,6 +1717,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e3-gate-i-crone-and-mare",
     encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
     stats: {
+      // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
+      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
+      proficiencyBonus: 3,
       kind: "fiend", ac: 13, maxHp: 90, speed: "50 ft.",
       defenses: [
         { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },

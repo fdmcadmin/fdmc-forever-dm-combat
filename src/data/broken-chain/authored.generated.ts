@@ -377,6 +377,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "ac": 13,
       "maxHp": 90,
       "speed": "50 ft.",
+      "proficiencyBonus": 3,
       "defenses": [
         {
           "name": "Darkmane (Constant)",
