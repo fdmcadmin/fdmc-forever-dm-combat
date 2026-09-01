@@ -146,3 +146,100 @@ export function describeDamage(damage?: string, damageType?: DamageType): string
   if (!damage) return "";
   return damageType ? `${damage} ${damageType}` : damage;
 }
+
+/**
+ * THE WHOLE PRINTED LINE, WRITTEN BACK OUT OF THE FIELDS.
+ *
+ * Christopher, 2026-08-31: *"it should read exactly how the SRD creatures do."* Right — and that
+ * is the other half of the one-grammar rule. Parsing the SRD into fields is only worth doing if
+ * the app can PRINT the same sentence back; otherwise moving the numbers out of the prose reads
+ * as losing them, which is exactly how it looked.
+ *
+ * The shape is the SRD 5.2.1 block this file already parses:
+ *
+ *   Melee Attack Roll: +8, reach 5 ft. Hit: 13 (2d8 + 4) Cold damage.
+ *   Dexterity Saving Throw: DC 18. Failure: 27 (6d8) Lightning damage.
+ *
+ * ⚠ THE AVERAGE IS SHOWN ONLY WHEN IT IS KNOWN. A template's damage may be `2d8 + @MAIN`, and
+ * @MAIN is not resolved until a body is generated. Printing "0 (2d8 + @MAIN)" would state a
+ * number the block does not have, so the average is omitted until the formula is arithmetic.
+ *
+ * ⚠ AND THE RIDER IS APPENDED, NEVER RE-PARSED. `text` holds only what is left once the mechanics
+ * are fields — *"and lightning jumps from the target to one creature…"* — so it is added as
+ * written.
+ */
+export function describeStatBlockAction(a: {
+  roll?: string;
+  damage?: string;
+  damageType?: string | readonly string[];
+  save?: string;
+  range?: string;
+  text?: string;
+}): string {
+  const parts: string[] = [];
+
+  /**
+   * "1d20 + 8" is how a roll is stored; the SRD prints the BONUS.
+   *
+   * ⚠ AND THE TERMS ARE SUMMED, because the bonus is authored as a FORMULA. Christopher,
+   * 2026-08-31: *"the +X and dc X needs to still come from the creature's stats, not written into
+   * the line … if a stat change you have to go into it and edit each instance."* Exactly — so an
+   * attack is authored `1d20+@STR+@PROF`, and `resolveMonsterFormula` substitutes the creature's
+   * own numbers to give `1d20 + 5+3`. Printing that verbatim would read "+5+3"; the SRD prints
+   * "+8". Folding it here is what lets the STORED field stay a formula.
+   */
+  const rollTail = a.roll ? (a.roll.match(/1d20\s*(.*)$/i) ?? [])[1] : undefined;
+  let bonusValue: number | undefined;
+  if (rollTail !== undefined) {
+    let sum = 0;
+    let saw = false;
+    for (const m of rollTail.matchAll(/([+-])?\s*(\d+)/g)) { sum += (m[1] === "-" ? -1 : 1) * Number(m[2]); saw = true; }
+    if (saw) bonusValue = sum;
+  }
+  const bonus = bonusValue === undefined ? undefined : `${bonusValue < 0 ? "" : "+"}${bonusValue}`;
+  // The range is printed with its own full stop ("reach 5 ft."), so adding one gives "ft..".
+  const range = (a.range ?? "").trim().replace(/\.\s*$/, "");
+  if (bonus) {
+    const melee = /reach/i.test(range) || !range;
+    parts.push(`${melee ? "Melee" : "Ranged"} Attack Roll: ${bonus}` + (range ? `, ${range}` : "") + ".");
+  } else if (a.save) {
+    // "DEX DC 15" -> "Dexterity Saving Throw: DC 15." A bare ability keeps its sentence and simply
+    // has no DC to print — the authored field is short, and inventing one would state a number.
+    const m = a.save.match(/\b(STR|DEX|CON|INT|WIS|CHA)\b\s*(?:DC\s*(\d+))?/i);
+    const long: Record<string, string> = { str: "Strength", dex: "Dexterity", con: "Constitution",
+      int: "Intelligence", wis: "Wisdom", cha: "Charisma" };
+    parts.push(m
+      ? `${long[m[1].toLowerCase()]} Saving Throw:${m[2] ? ` DC ${m[2]}` : ""}.`
+      : `${a.save}.`);
+  } else if (range) {
+    parts.push(`${range}.`);
+  }
+
+  if (a.damage) {
+    const types = Array.isArray(a.damageType) ? a.damageType : a.damageType ? [a.damageType] : [];
+    const typeWords = types.map(t => String(t)[0].toUpperCase() + String(t).slice(1)).join(" and ");
+    // `resolveMonsterFormula` substitutes into the string, so "2d8 + @MAIN" comes back as
+    // "2d8 +5". Space the operators the way a printed block does.
+    const tidy = a.damage.replace(/\s*([+-])\s*/g, " $1 ").replace(/\s{2,}/g, " ").trim();
+    const average = averageOf(tidy);
+    const dice = average === undefined ? `(${tidy})` : `${average} (${tidy})`;
+    parts.push(`${bonus ? "Hit" : "Failure"}: ${dice}${typeWords ? ` ${typeWords}` : ""} damage.`);
+  }
+
+  const rider = (a.text ?? "").trim();
+  if (rider) parts.push(rider);
+  return parts.join(" ");
+}
+
+/** The printed average of a pure-dice formula, or undefined when it carries an @variable. */
+function averageOf(formula: string): number | undefined {
+  if (/@/.test(formula)) return undefined;
+  let total = 0;
+  let seen = false;
+  for (const m of formula.matchAll(/([+-]?)\s*(?:(\d+)d(\d+)|(\d+))/g)) {
+    const sign = m[1] === "-" ? -1 : 1;
+    if (m[2]) { total += sign * Number(m[2]) * (Number(m[3]) + 1) / 2; seen = true; }
+    else if (m[4]) { total += sign * Number(m[4]); seen = true; }
+  }
+  return seen ? Math.floor(total) : undefined;
+}

@@ -47,6 +47,8 @@ import type { MonsterRider } from "./monsterRider";
 import { TRAIT_RULES, traitRule, resolveTraitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
 import { classifyTraits, classifyTrait } from "../encounter-band/traitClassifier";
 import { DAMAGE_TYPES } from "../constants/damageTypes";
+import { describeStatBlockAction } from "../../modules/dnd-5e/statBlockGrammar";
+import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
 import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -876,19 +878,36 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           * everywhere it is shown. The author could not see that from here, so the panel now says
           * it back to them in the block's own words.
           */}
-        {!opts.reaction && (a.roll || a.damage) && (
-          <div style={{ fontSize: 10, color: "#8fb8ff", marginTop: 2, fontStyle: "italic" }}>
-            reads as: {a.roll ? `${a.roll} to hit, ` : ""}
-            {/* Inlined rather than imported: `describeDamage` lives in the D&D mod, and core may
-                not reach into a mod. One template literal is not worth a layering violation. */}
-            {a.damage
-              ? `on hit ${a.damage}${a.damageType
-                  ? ` ${Array.isArray(a.damageType) ? a.damageType.join(" and ") : a.damageType} damage`
-                  : " damage — NO TYPE SET"}`
-              : "no damage"}
-            {a.range ? `, ${a.range}` : ""}
-          </div>
-        )}
+        {/**
+          * ⚠ RESOLVED AGAINST THE CREATURE, NOT READ OFF THE LINE.
+          *
+          * Christopher: *"the +X and dc X needs to still come from the creatures stats, not
+          * written into the line for the editor to read both and then if a stat change you have to
+          * go into it and edit each instance that STR/DEX ect value touched."*
+          *
+          * So the STORED field stays a formula — `1d20+@STR+@PROF`, `@DCDEX` — and this line is
+          * the RESOLVED view of it. Change the creature's Strength and every attack it touches
+          * reprints itself; nothing is hand-edited twice.
+          *
+          * A bonus typed as a bare number still prints, and is flagged: it is the case that does
+          * NOT track a stat change, and the Darkmare's `1d20 + 8` is one of them.
+          */}
+        {!opts.reaction && (a.roll || a.damage) && (() => {
+          const resolved = resolveMonsterActionFormulas(a, draft);
+          const literal = (a.roll && !/@/.test(a.roll)) || (a.save && !/@/.test(a.save));
+          return (
+            <div style={{ fontSize: 10, color: "#8fb8ff", marginTop: 2 }}>
+              <span style={{ color: "#667" }}>prints as: </span>
+              {describeStatBlockAction({ ...resolved, damageType: a.damageType, range: a.range, text: a.text })}
+              {a.damage && !a.damageType && <span style={{ color: "#e07b39" }}> — NO TYPE SET</span>}
+              {literal && (
+                <span style={{ color: "#8a6a2a" }} title="Written as a number, so it will not follow a change to the creature's ability scores or proficiency. Use @ATK, @DC or @STR+@PROF to derive it.">
+                  {" "}— typed in, not derived from stats
+                </span>
+              )}
+            </div>
+          );
+        })()}
         {/* ── RIDERS — extra damage on a hit, as facts rather than dice hidden in a formula ──
             ⚠ THERE WAS NO WAY TO BUILD ONE. Christopher: *"there is no way for me to create a
             rider for the Reeve."* A PC action has riders; a creature action had a damage string,
@@ -1185,24 +1204,9 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               onChange={e => setDraft(d => ({ ...d, bodyNameFormat: e.target.value || undefined }))} />
           </label>
         )}
-        {/**
-          * ⚠ "NO SETS" READ AS "NO ROUTINE", AND THEY ARE NOT THE SAME THING.
-          *
-          * Christopher, 2026-08-31: *"why are hoove and horn as well as all the other action now a
-          * bare action set, when did this change."* It did not change — an action SET is a POOL
-          * (pick N of these), and exactly ONE creature in the campaign has ever had one: the
-          * Elemental Mirror's element package, added in 0.7.17. The Darkmare never did.
-          *
-          * Its routine lives in the two fields this line said nothing about: `attacksPerTurn` and
-          * each action's `routineSlots` — the "× of MA" column. So a correctly configured
-          * two-attack creature was told, in italics, that its actions were "simply on the
-          * creature". Say what the routine IS instead of only what it is not.
-          */}
         {sets.length === 0 && (
           <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: 0 }}>
-            {(draft.stats.attacksPerTurn ?? 1) > 1
-              ? `No pools. This creature takes ${draft.stats.attacksPerTurn} attacks a turn, spent on the actions below by their “× of MA” cost — that IS its routine. A set is only needed to make the DM choose N options from a list, as the Elemental Mirror does for its element.`
-              : "No pools — every action below is simply on the creature. A set makes the DM choose N of them; set “Attacks per turn” on the Abilities tab for an ordinary multiattack."}
+            No sets — every action below is simply on the creature. Add one to make a pool.
           </p>
         )}
         {sets.map((s, i) => {
