@@ -275,18 +275,43 @@ const MATCHERS: Matcher[] = [
  * here — which is why the caller offers the full list rather than treating null as "no defence".
  */
 export function classifyTrait(name: string | undefined, text: string | undefined): TraitMatch | null {
+  return classifyTraitAll(name, text)[0] ?? null;
+}
+
+/**
+ * EVERY calibrated rule one trait names — because a trait may honestly do two things.
+ *
+ * ⚠ ONE ANSWER WAS NOT ENOUGH, AND IT FAILED A FOLD. Christopher authored the Darkmane's solo
+ * state onto the existing trait, so the text now reads *"creates one-way magical obscurement …
+ * While no ally is inside Darkmane, Darkmare has advantage on saving throws against spells."*
+ * That is obscurement AND Magic Resistance. `classifyTrait` returns the first match top-down,
+ * Magic Resistance sits near the top of the table, and the reader gate then disagreed with the
+ * authored `attack_suppression` rule and stopped the publish. The trait was not wrong; the reader
+ * could only hold one fact about it.
+ *
+ * ⚠ ONE PER STACK GROUP, STILL. Two matchers in the same group are two spellings of one effect,
+ * and the first is the more specific by the table's own ordering — that guarantee is why "the
+ * first attack each round" must be read before "all attacks". Different groups compose, which is
+ * exactly what `combineSustainContributions` is for.
+ */
+export function classifyTraitAll(name: string | undefined, text: string | undefined): TraitMatch[] {
   const n = (name ?? "").toLowerCase();
   const t = (text ?? "").toLowerCase();
-  if (!n && !t) return null;
+  if (!n && !t) return [];
+  const out: TraitMatch[] = [];
+  const seen = new Set<string>();
   for (const m of MATCHERS) {
     const evidence = m.test(n, t);
     if (!evidence) continue;
     const rule = traitRule(m.label);
     // A matcher naming a rule the bundle does not carry is a bug in this table, not a match.
     if (!rule) continue;
-    return { label: m.label, rule, evidence };
+    const group = rule.stack_group ?? m.label;
+    if (seen.has(group)) continue;
+    seen.add(group);
+    out.push({ label: m.label, rule, evidence });
   }
-  return null;
+  return out;
 }
 
 /**

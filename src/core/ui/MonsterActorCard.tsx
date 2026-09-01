@@ -491,7 +491,9 @@ function ActionCard({
             {action.roll && (
               <span style={{ fontSize: 10, color: "#7b68ee" }}>⚔ {action.roll}</span>
             )}
-            {action.damage && splitTypedDamage(action.damage, action.text).map((c, i) => {
+            {/* The structured field is the source now; the text is only the fallback for content
+                authored before the one-grammar pass. See `splitTypedDamage`. */}
+            {action.damage && splitTypedDamage(action.damage, action.text, action.damageType).map((c, i) => {
               const v = damageTypeVisual(c.type);
               return (
                 <span

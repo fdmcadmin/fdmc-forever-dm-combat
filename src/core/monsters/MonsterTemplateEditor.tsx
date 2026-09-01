@@ -46,6 +46,7 @@ import {
 import type { MonsterRider } from "./monsterRider";
 import { TRAIT_RULES, traitRule, resolveTraitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
 import { classifyTraits, classifyTrait } from "../encounter-band/traitClassifier";
+import { DAMAGE_TYPES } from "../constants/damageTypes";
 import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -631,6 +632,41 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 <span style={labelStyle}>Dmg</span>
                 <input value={a.damage ?? ""} onChange={e => updateListItem(list, realIdx, { damage: e.target.value })} placeholder="1d6+2" style={inputStyle} />
               </div>
+              {/**
+                * ⚠ THE TYPE HAD NOWHERE TO BE SEEN, AND THAT IS WHY THE ACTIONS LOOK STRIPPED.
+                *
+                * Christopher, 2026-08-31: *"in the past claw/hoove/horn read X slashing damage,
+                * now it just says the reach and nothing else … this looks like we went from a
+                * highly defined action sheet to a forge level."*
+                *
+                * The 0.8.9.x one-grammar pass did what he asked — *"it should just say on hit
+                * this is the damage it does and the type"* — and moved the type out of the
+                * sentence into the `damageType` FIELD, deleting the "Hit: 9 (2d6+4) slashing
+                * damage." prose that then said it twice. The field was never given a control.
+                * `grep damageType` over this whole editor returned NOTHING.
+                *
+                * So the Darkmare's Horn really is Cold, it always has been, and the author had no
+                * way to see or change it. The data model was right and the panel was not told —
+                * the same fault as the Defenses tab reading the price off a name.
+                */}
+              <div style={{ flex: 1, minWidth: 110 }}>
+                <span style={labelStyle}>Dmg type</span>
+                {/* ⚠ ONE ROLL MAY CARRY TWO TYPES — *"it should stay duel typing for the possible
+                    resist windows"* — and the authored shape for that is an ARRAY. Typing
+                    "Cold and Necrotic" stores two; a single type stores a plain string, so an
+                    ordinary attack's data does not change shape just because this control exists. */}
+                <input list="fdmc-damage-types"
+                  value={Array.isArray(a.damageType) ? a.damageType.join(" and ") : (a.damageType ?? "")}
+                  onChange={e => {
+                    const parts = e.target.value.split(/\s*(?:\band\b|\+|\/|,)\s*/i).map(s => s.trim()).filter(Boolean);
+                    updateListItem(list, realIdx, {
+                      damageType: parts.length === 0 ? undefined : parts.length === 1 ? parts[0] : parts,
+                    });
+                  }}
+                  placeholder={a.damage ? "— none set —" : ""}
+                  title="The damage type as a FIELD, so a resistance can answer what the attack actually deals. Two types on one roll: 'Cold and Necrotic'."
+                  style={{ ...inputStyle, borderColor: a.damage && !a.damageType ? "#8a6a2a" : undefined }} />
+              </div>
             </>
           )}
           <div style={{ flex: 1, minWidth: 96 }}>
@@ -829,10 +865,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             style={{ alignSelf: "flex-end", fontSize: 10, padding: "2px 5px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>
         </div>
         <div>
-          <span style={labelStyle}>{opts.reaction ? "Trigger + effect" : "Text"}</span>
+          <span style={labelStyle}>{opts.reaction ? "Trigger + effect" : "Text — the RIDER only; the numbers above are the damage line"}</span>
           <input value={a.text ?? ""} onChange={e => updateListItem(list, realIdx, { text: e.target.value })}
-            placeholder={opts.reaction ? "Trigger: … Effect: …" : undefined} style={inputStyle} />
+            placeholder={opts.reaction ? "Trigger: … Effect: …" : "e.g. the target has the Prone condition"} style={inputStyle} />
         </div>
+        {/**
+          * ⚠ SHOW THE SENTENCE THE FIELDS PRODUCE. An empty Text box under a stripped damage line
+          * reads as a lost action — *"now it just says the reach and nothing else"* — when the
+          * action is fully specified and the app renders it from `roll`, `damage` and `damageType`
+          * everywhere it is shown. The author could not see that from here, so the panel now says
+          * it back to them in the block's own words.
+          */}
+        {!opts.reaction && (a.roll || a.damage) && (
+          <div style={{ fontSize: 10, color: "#8fb8ff", marginTop: 2, fontStyle: "italic" }}>
+            reads as: {a.roll ? `${a.roll} to hit, ` : ""}
+            {/* Inlined rather than imported: `describeDamage` lives in the D&D mod, and core may
+                not reach into a mod. One template literal is not worth a layering violation. */}
+            {a.damage
+              ? `on hit ${a.damage}${a.damageType
+                  ? ` ${Array.isArray(a.damageType) ? a.damageType.join(" and ") : a.damageType} damage`
+                  : " damage — NO TYPE SET"}`
+              : "no damage"}
+            {a.range ? `, ${a.range}` : ""}
+          </div>
+        )}
         {/* ── RIDERS — extra damage on a hit, as facts rather than dice hidden in a formula ──
             ⚠ THERE WAS NO WAY TO BUILD ONE. Christopher: *"there is no way for me to create a
             rider for the Reeve."* A PC action has riders; a creature action had a damage string,
@@ -1129,9 +1185,24 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               onChange={e => setDraft(d => ({ ...d, bodyNameFormat: e.target.value || undefined }))} />
           </label>
         )}
+        {/**
+          * ⚠ "NO SETS" READ AS "NO ROUTINE", AND THEY ARE NOT THE SAME THING.
+          *
+          * Christopher, 2026-08-31: *"why are hoove and horn as well as all the other action now a
+          * bare action set, when did this change."* It did not change — an action SET is a POOL
+          * (pick N of these), and exactly ONE creature in the campaign has ever had one: the
+          * Elemental Mirror's element package, added in 0.7.17. The Darkmare never did.
+          *
+          * Its routine lives in the two fields this line said nothing about: `attacksPerTurn` and
+          * each action's `routineSlots` — the "× of MA" column. So a correctly configured
+          * two-attack creature was told, in italics, that its actions were "simply on the
+          * creature". Say what the routine IS instead of only what it is not.
+          */}
         {sets.length === 0 && (
           <p style={{ fontSize: 11, color: "#555", fontStyle: "italic", margin: 0 }}>
-            No sets — every action below is simply on the creature. Add one to make a pool.
+            {(draft.stats.attacksPerTurn ?? 1) > 1
+              ? `No pools. This creature takes ${draft.stats.attacksPerTurn} attacks a turn, spent on the actions below by their “× of MA” cost — that IS its routine. A set is only needed to make the DM choose N options from a list, as the Elemental Mirror does for its element.`
+              : "No pools — every action below is simply on the creature. A set makes the DM choose N of them; set “Attacks per turn” on the Abilities tab for an ordinary multiattack."}
           </p>
         )}
         {sets.map((s, i) => {
@@ -2026,6 +2097,12 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* ⚠ AT THE ROOT, NOT IN A TAB. A `<datalist>` is looked up by id across the whole document,
+          so one rendered per row would duplicate the id, and one rendered inside the Defenses tab
+          would be unmounted the moment the author opened Actions. */}
+      <datalist id="fdmc-damage-types">
+        {DAMAGE_TYPES.map(t => <option key={t} value={t[0].toUpperCase() + t.slice(1)} />)}
+      </datalist>
       {/* Header */}
       <div style={{ padding: "8px 14px", borderBottom: "1px solid #2a2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>

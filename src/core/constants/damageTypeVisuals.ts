@@ -47,9 +47,48 @@ export type TypedDamageComponent = { dice: string; type?: string };
  * Falls back to a single untyped chip (the raw damage) when the text can't be parsed, so a
  * chip is never lost.
  */
-export function splitTypedDamage(damage?: string, text?: string): TypedDamageComponent[] {
+export function splitTypedDamage(
+  damage?: string,
+  text?: string,
+  /** One type, or the two an Elemental Mirror deals on a single roll. */
+  damageType?: string | readonly string[],
+): TypedDamageComponent[] {
   const raw = (damage ?? "").trim();
   if (!raw) return [];
+
+  /**
+   * ⚠ THE FIELD FIRST, AND THE TEXT ONLY AS A FALLBACK — the comment above is now HALF WRONG.
+   *
+   * It said the rules TEXT is the source because the dice string carries no types, and that WAS
+   * true. The 0.8.9.x one-grammar pass then moved the type into the structured `damageType` field
+   * and deleted the "Hit: 9 (2d6 + 4) slashing damage." prose that had been saying it twice — so
+   * this parser was left reading a sentence that no longer contains the answer, and every migrated
+   * monster action lost its coloured type chip at the table.
+   *
+   * Christopher, 2026-08-31: *"the damage type comes from the text, why did we change the design
+   * from the PC model when using the monster model."* The PC model was never changed: an actor
+   * action has had a `damageType` control all along and `ActorCard` composes the line from the
+   * fields. The monster half moved its DATA and left both its card and its editor reading prose.
+   * This is the card half.
+   *
+   * Two types on one roll — the Elemental Mirror's *"stay duel typing for the possible resist
+   * windows"* — are written in the one field and split here, so the chips keep showing both.
+   */
+  // An array is the authored shape for two types on one roll; a string still splits on "and", "/"
+  // and "+" so a hand-typed "Cold and Necrotic" is read the same way.
+  const stated = Array.isArray(damageType)
+    ? damageType.map(t => String(t))
+    : String(damageType ?? "").split(/\s*(?:\band\b|\+|\/|,)\s*/i);
+  {
+    const known = stated.map(t => t.trim().toLowerCase()).filter(t => t && t in DAMAGE_TYPE_VISUALS);
+    if (known.length) {
+      const dice = raw.match(/\d+d\d+/g) ?? [];
+      // One type: the whole line is that type. Two: pair them with the dice in order, and when
+      // there is only one die both types ride it — which is what "one roll, two types" means.
+      if (known.length === 1) return [{ dice: raw, type: known[0] }];
+      return known.map((t, i) => ({ dice: dice[i] ?? dice[0] ?? raw, type: t }));
+    }
+  }
 
   const components: TypedDamageComponent[] = [];
   if (text) {

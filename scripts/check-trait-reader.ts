@@ -10,7 +10,7 @@
  * does not do, and does it while looking confident. This fails on disagreement, never on a miss.
  */
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
-import { classifyTrait, classifyTraits } from "../src/core/encounter-band/traitClassifier";
+import { classifyTrait, classifyTraits, classifyTraitAll } from "../src/core/encounter-band/traitClassifier";
 import { pricingModelOf, PRICING_MODEL_LABEL, TRAIT_RULES, traitRule, resolveTraitRule } from "../src/core/encounter-band/compactImport";
 import { auditCoverage, mechanicsOf } from "../src/core/encounter-band/coverageGate";
 
@@ -35,12 +35,23 @@ for (const t of L) {
     const key = d.name.toLowerCase();
     const row = readable.find(x => (x.name ?? "").toLowerCase() === key)
       ?? readable.find(x => x.name && key.includes(x.name.toLowerCase()));
-    const m = classifyTrait(row?.name ?? d.name, row?.text ?? d.note);
-    if (!m) { missed++; console.log(`  miss      ${t.name} · ${d.name}  (authored ${d.rule})`); continue; }
-    if (m.label === d.rule) { agree++; console.log(`  agree     ${t.name} · ${d.name}  ->  ${m.label}`); }
-    else {
+    /**
+     * ⚠ ALL THE RULES THE TRAIT NAMES, NOT JUST THE FIRST. A trait may honestly do two things —
+     * the Darkmane is obscurement AND, while solo, Magic Resistance — and reading only the first
+     * match made the gate call an accurate authored rule a disagreement, which stopped a publish.
+     * The author is right if the rule they named is among the ones the trait actually reads as.
+     */
+    const all = classifyTraitAll(row?.name ?? d.name, row?.text ?? d.note);
+    if (all.length === 0) { missed++; console.log(`  miss      ${t.name} · ${d.name}  (authored ${d.rule})`); continue; }
+    const hit = all.find(m => m.label === d.rule);
+    if (hit) {
+      agree++;
+      const also = all.filter(m => m !== hit).map(m => m.label);
+      console.log(`  agree     ${t.name} · ${d.name}  ->  ${hit.label}`
+        + (also.length ? `   (also reads: ${also.join(", ")} — a second row would price it)` : ""));
+    } else {
       disagree++;
-      problems.push(`${t.name} · ${d.name}: authored "${d.rule}", read "${m.label}" on [${m.evidence}]`);
+      problems.push(`${t.name} · ${d.name}: authored "${d.rule}", read ${all.map(m => `"${m.label}" on [${m.evidence}]`).join(" and ")}`);
     }
   }
 }
