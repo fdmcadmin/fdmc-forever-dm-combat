@@ -14,6 +14,10 @@ import { classifyTrait, classifyTraits, classifyTraitAll } from "../src/core/enc
 import { pricingModelOf, PRICING_MODEL_LABEL, TRAIT_RULES, traitRule, resolveTraitRule } from "../src/core/encounter-band/compactImport";
 import { monsterFormulaVars, monsterProficiency } from "../src/core/monsters/resolveMonsterFormulaVars";
 import { auditCoverage, mechanicsOf } from "../src/core/encounter-band/coverageGate";
+import { creatureProfile, rosterFromTemplates, type RosterAssumption } from "../src/core/encounter-band/rosterFromLibrary";
+import { estimateCreature } from "../src/core/encounter-band/creatureEstimator";
+import { effectiveHpPerBody } from "../src/core/encounter-band/checkerV2";
+import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
 
 let agree = 0, disagree = 0, missed = 0;
 const problems: string[] = [];
@@ -42,7 +46,23 @@ for (const t of L) {
      * match made the gate call an accurate authored rule a disagreement, which stopped a publish.
      * The author is right if the rule they named is among the ones the trait actually reads as.
      */
-    const all = classifyTraitAll(row?.name ?? d.name, row?.text ?? d.note);
+    /**
+     * ⚠ NO TRAIT FOUND MEANS NOTHING TO GRADE — it does NOT mean "grade the note instead".
+     *
+     * The fallback to `d.note` was already caught once, when it read the Darkmane note's phrase
+     * "first attack" and flipped the matcher that note existed to justify. Making the lookup
+     * case-insensitive fixed that instance and left the fallback in place.
+     *
+     * It fails again on a RECEIVED effect. The Veilwood Crone carries "Inside Darkmane (obscured)"
+     * and "Shadow Shroud (from Darkmare)" — both real, both calibrated, and neither is a trait on
+     * her block: they are the Mare's aura and the Mare's action, landing on her. There is no prose
+     * of hers to read, so the classifier got the note and disagreed with a row that is correct.
+     *
+     * A trait this gate cannot find is a MISS, which costs the author nothing. Grading commentary
+     * is how a gate ends up arguing with the thing it is meant to protect.
+     */
+    if (!row) { missed++; console.log(`  miss      ${t.name} · ${d.name}  (authored ${d.rule}; no trait of that name on this block — received effect or campaign-named row)`); continue; }
+    const all = classifyTraitAll(row.name, row.text);
     if (all.length === 0) { missed++; console.log(`  miss      ${t.name} · ${d.name}  (authored ${d.rule})`); continue; }
     const hit = all.find(m => m.label === d.rule);
     if (hit) {
@@ -234,6 +254,61 @@ if (report.blocked.length !== 0) {
     }
   }
   console.log(`\n  proficiency cross-check: ${pbGaps === 0 ? "every creature's attacks agree with its stated proficiency" : `${pbGaps} disagree`}`);
+}
+
+/**
+ * ── THE ESTIMATOR AND THE CHECKER MUST REPORT THE SAME CREATURE ─────────────────────────────
+ *
+ * Christopher, 2026-09-01: *"why would the estimator and the checker not agree, this is already a
+ * problem for me, if i say this creature has X ehp from the estimator but then the checker says nah
+ * it only has X then how would that math work."*
+ *
+ * They now share `creatureProfile`, so they agree by construction. This proves it, and fails if a
+ * future edit gives either one its own arithmetic again — which is exactly how they drifted the
+ * first time: the checker grew an AC term, a four-round trace and damage-mix-priced typed
+ * responses, and the estimator kept none of them.
+ *
+ * ⚠ THE LAIR CREATURES ARE ALLOWED TO DIFFER, AND ONLY THEM. A lair's control is applied to its
+ * host by `rosterFromTemplates` because a lair exists in an ENCOUNTER, not on a creature standing
+ * by itself. Rating the Veil-Torn Dragon alone should not include the terrain it fights in. The
+ * exemption is named per creature so it cannot quietly widen.
+ */
+{
+  const LEVEL = 7;
+  const d = partyDefenceAt(LEVEL, "wotcStandard");
+  const target = {
+    ac: d.ac, saveBonus: (d.str + d.dex + d.con + d.int + d.wis + d.cha) / 6,
+    saves: { str: d.str, dex: d.dex, con: d.con, int: d.int, wis: d.wis, cha: d.cha },
+    partySize: 4,
+  };
+  const LAIR_EXEMPT = new Set(["Veil-Torn Dragon", "Thought Harrower"]);
+  let same = 0, exempt = 0;
+  for (const t of L.filter(x => !x.isTemplate)) {
+    const noted: RosterAssumption[] = [];
+    const p = creatureProfile(t, LEVEL, target as never, noted);
+    const est = estimateCreature({
+      rawHp: p.baseHp, ac: Number.isFinite(p.ac) ? (p.ac as number) : 15,
+      ehpMultiplier: p.acMultiplier * p.traitMultiplier / p.damageUptime,
+      ehpAdjustment: 0, acAdjustment: 0,
+      r1Dpr: p.dpr.round1, r2PlusDpr: p.dpr.round4Plus,
+      offenseBasis: p.attackBonus > 0 ? "attack" : "saveDc",
+      attackBonus: p.attackBonus, saveDc: p.saveDc,
+    });
+    const built = rosterFromTemplates([{ template: t, quantity: 1 }], LEVEL, target as never);
+    const row = built.roster.find(g => g.id === t.templateId);
+    if (!row) continue;
+    const chk = effectiveHpPerBody(row, 4);
+    if (Math.abs(chk - est.effectiveHp) < 0.01) { same++; continue; }
+    if (t.lair && LAIR_EXEMPT.has(t.name)) { exempt++; continue; }
+    problems.push(`${t.name}: estimator says ${est.effectiveHp.toFixed(2)} EHP, checker prices ${chk.toFixed(2)}. `
+      + `They share \`creatureProfile\` — a gap means one of them grew its own arithmetic again.`);
+    disagree++;
+  }
+  console.log(`\n  estimator/checker agreement: ${same} identical, ${exempt} lair-exempt`);
+  if (same === 0) {
+    problems.push("no creature was compared, so this check proves nothing");
+    disagree++;
+  }
 }
 
 if (disagree) {

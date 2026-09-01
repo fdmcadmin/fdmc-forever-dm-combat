@@ -2001,9 +2001,21 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "speed": "30 ft., swim 30 ft.",
       "defenses": [
         {
-          "name": "No notable defensive traits",
+          "name": "No notable defensive traits of her own",
           "ehpMultiplier": 1,
-          "note": "DECIDED 1.0, not unassessed. Gate I pairs her with the Darkmare, and the durability in that fight belongs to the mare — the Crone is the damage and the control, and she is meant to be reached. Prices at raw HP on purpose."
+          "note": "DECIDED 1.0, not unassessed. Gate I pairs her with the Darkmare, and the durability in that fight belongs to the mare — the Crone is the damage and the control, and she is meant to be reached. Her own body prices at raw HP on purpose. The two rows below are what the MARE gives her, not traits of hers."
+        },
+        {
+          "name": "Shadow Shroud (from Darkmare)",
+          "ehpMultiplier": 1.056615,
+          "provenance": "interpolated",
+          "note": "The V2.2 handoff, F3 certification list: \"Shroud on Darkmare and Crone; +2 AC on both; independent Disadvantage-until-hit states.\" Shadow Shroud targets Darkmare AND one additional creature — \"normally the Crone\" — and she carried NOTHING for it: her only row was a decided 1.0 and every point of the Shroud was priced on the Mare alone. Same interpolated +2 AC value as the Mare's row, because it is the same effect on a second body."
+        },
+        {
+          "name": "Inside Darkmane (obscured)",
+          "ehpMultiplier": 1.1294156939022204,
+          "rule": "All attacks at disadvantage - 1 round",
+          "note": "Darkmane is a locked 30-ft one-way obscurement aura centred on the Mare, and the Crone is the ally it exists to cover — Umbral Passage is written specifically to \"carry one willing allied creature inside Darkmane.\" Attacks into it are made by creatures that cannot see, so the Crone is as obscured as the Mare and was priced as if she stood in the open. ⚠ FLOOR, AND A LOW ONE: the calibrated rule is ONE ROUND of disadvantage and this aura is permanent. Real disadvantage against a 50% hit chance is worth x2.0 of effective HP, not x1.13. No published row prices a permanent aura, so this cannot be closed with a multiplier — it needs the obscurement executed as state. See the V2.2 handoff, F3."
         }
       ],
       "attacksPerTurn": 2,

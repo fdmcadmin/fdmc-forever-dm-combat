@@ -23,6 +23,7 @@ import { CREATOR_BANDS, type CreatorBandId } from "../monsters/creator/monsterCr
 import { estimateCreature } from "./creatureEstimator";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
+import { creatureProfile, type RosterAssumption } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { auditCoverage, mechanicsOf, type CoverageReport } from "./coverageGate";
 import type { PartyEquipmentMode } from "./partyCurveV2";
@@ -74,34 +75,48 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
 
   const estimate = useMemo(() => {
     if (!template || unbuiltTemplate) return null;
-    const parsed = parseCreature(template);
     const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
     const defence = partyDefenceAt(band.referenceLevel, refMode);
     const saveAverage = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
-    // THREE rounds, not four: v6 rates the legal three-round action sequence.
-    const trace = traceCreature(parsed, {
+
+    /**
+     * ⚠ THE SHARED DERIVATION, SO THIS PANEL AND THE CHECKER CANNOT DISAGREE.
+     *
+     * Christopher, 2026-09-01: *"if i say this creature has X ehp from the estimator but then the
+     * checker says nah it only has X then how would that math work."* It did not. This panel built
+     * its own inputs — three-round trace, a raw product of `stats.defenses`, and no AC term at all
+     * — while `rosterFromTemplates` traced four rounds, priced typed responses against the party's
+     * damage mix, and multiplied by `acMultiplierFor`. Three differences, one of them worth 12% on
+     * the Darkmare alone.
+     *
+     * `creatureProfile` is now the only place a creature is priced. This reads it; the checker
+     * reads it; the act runner reads the checker. One derivation, three readers — which is the
+     * workbook's own Encounter Feeder rule: *"no copied EHP or DPR, every derived value is a
+     * lookup."*
+     *
+     * ⚠ THE AC TERM IS PARTY-LEVEL DEPENDENT, DELIBERATELY. *"we wouldn't change the vs X party to
+     * the worse model."* A creature is worth less against a level 12 party than a level 5 one, so
+     * this panel's EHP moves with the reference band it is rated against — and says which band that
+     * is. That is a feature of the model, not drift.
+     */
+    const noted: RosterAssumption[] = [];
+    const profile = creatureProfile(template, band.referenceLevel, {
       ac: defence.ac, saveBonus: saveAverage,
       saves: { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha },
-    }, 3);
-    // The trait multiplier is the PRODUCT of the authored defences, matching the checker's own
-    // combination rule. Flat effects belong in `ehpAdjustment`, AC-equivalent ones in `acAdjustment`.
-    const traitMultiplier = (template.stats.defenses ?? [])
-      .reduce((product, d) => product * (d.ehpMultiplier || 1), 1);
-    const acValue = typeof template.stats.ac === "number"
-      ? template.stats.ac : Number.parseInt(String(template.stats.ac), 10);
-    const attackBonus = parsed.features.reduce((best, f) => Math.max(best, f.attackBonus ?? 0), 0);
-    const saveDc = parsed.features.reduce((best, f) => Math.max(best, f.saveDc ?? 0), 0);
+    }, noted);
+
     return estimateCreature({
-      rawHp: template.stats.maxHp || 0,
-      ac: Number.isFinite(acValue) ? acValue : 15,
-      ehpMultiplier: traitMultiplier,
+      rawHp: profile.baseHp,
+      ac: Number.isFinite(profile.ac) ? (profile.ac as number) : 15,
+      // AC and traits together — exactly what `effectiveHpPerBody` multiplies raw HP by.
+      ehpMultiplier: profile.acMultiplier * profile.traitMultiplier / profile.damageUptime,
       ehpAdjustment: 0,
       acAdjustment: 0,
-      r1Dpr: trace.rounds[0]?.totalExpectedDamage ?? 0,
-      r2PlusDpr: trace.rounds[1]?.totalExpectedDamage ?? 0,
-      offenseBasis: attackBonus > 0 ? "attack" : "saveDc",
-      attackBonus,
-      saveDc,
+      r1Dpr: profile.dpr.round1,
+      r2PlusDpr: profile.dpr.round4Plus,
+      offenseBasis: profile.attackBonus > 0 ? "attack" : "saveDc",
+      attackBonus: profile.attackBonus,
+      saveDc: profile.saveDc,
       desiredCr,
     });
   }, [template, unbuiltTemplate, refBand, refMode, desiredCr]);

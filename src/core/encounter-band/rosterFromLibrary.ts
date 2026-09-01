@@ -34,6 +34,7 @@ import { priceDamageResponses, describeDamageResponses } from "./damageResponseP
 import type { PartyDamageMix } from "./partyDamageMix";
 import { traceCreature } from "./actionTrace";
 import type { PartyDefence } from "./damageExpression";
+import { combineSustainContributions } from "./checkerV2";
 import type { RosterGroup, SustainFactor } from "./checkerV2";
 
 export type RosterAssumption = {
@@ -294,6 +295,109 @@ export type RosterBuild = { roster: RosterGroup[]; assumptions: RosterAssumption
  * source for the party curve, spell profiles, effect families and the rest of the pricing law —
  * that is workbook law and belongs there. It is no longer consulted for what a creature IS.
  */
+/**
+ * ONE CREATURE, PRICED ONCE — the derivation both the estimator and the checker read.
+ *
+ * Christopher, 2026-09-01: *"why would the estimator and the checker not agree, this is already a
+ * problem for me, if i say this creature has X ehp from the estimator but then the checker says nah
+ * it only has X then how would that math work."*
+ *
+ * They did not agree, and it was never one difference. Measured across Act 3, the two paths
+ * differed in THREE places:
+ *
+ *   1. **THE AC TERM.** `rosterFromTemplates` multiplied by `acMultiplierFor` — the creature's AC
+ *      against the expected monster AC at the party's level. The estimator applied nothing, and
+ *      spent AC on a CR shift instead. Every one of Act 3's twenty creatures carries a term other
+ *      than 1; the Darkmare's is 0.8771, so 107 EHP became 94.
+ *   2. **THE TRACE LENGTH.** The checker traced FOUR rounds and kept round 4 as the sustained
+ *      figure; the estimator traced three.
+ *   3. **THE TRAIT PRODUCT.** The checker used `traitFactorsFor`, which prices typed damage
+ *      responses against the PARTY'S REAL DAMAGE MIX and carries the stack-group guard. The
+ *      estimator multiplied `stats.defenses` raw, so a creature with a typed resistance was priced
+ *      on a different basis by each.
+ *
+ * ⚠ AND THE LEVEL-DEPENDENT MODEL IS THE ONE THAT SURVIVES. *"we wouldn't change the vs X party to
+ * the worse model."* A creature IS worth less against a level 12 party than a level 5 one, and the
+ * checker is the layer that already says so. So the estimator adopts this; this does not flatten.
+ *
+ * ⚠ NOTHING HERE IS NEW ARITHMETIC. Every line is the checker's existing computation, lifted
+ * verbatim so the roster's numbers cannot move. `check:baseline` reporting zero movement is the
+ * whole proof that this was an extraction and not a change.
+ */
+export type CreatureProfile = {
+  name: string;
+  parsed: ReturnType<typeof parseCreature>;
+  baseHp: number;
+  ac: number | undefined;
+  /** AC against the expected monster AC for this party level. The term the estimator was missing. */
+  acMultiplier: number;
+  traitFactors: SustainFactor[];
+  /** `1 + combined trait adjustment` — what `effectiveHpPerBody` multiplies by. */
+  traitMultiplier: number;
+  /** The creature's authored damage uptime. `effectiveHpPerBody` DIVIDES by it. */
+  damageUptime: number;
+  /** `rawHp × acMultiplier × traitMultiplier`. The per-body figure BOTH layers must report. */
+  effectiveHp: number;
+  dpr: { round1: number; round2: number; round3: number; round4Plus: number };
+  /** E7 — (R1 + 2×R2+) / 3. Three rounds: one opener, two sustained. */
+  threeRoundDpr: number;
+  attackBonus: number;
+  saveDc: number;
+};
+
+export function creatureProfile(
+  template: MainMonsterTemplate,
+  partyLevel: number,
+  target: PartyDefence,
+  out: RosterAssumption[],
+): CreatureProfile {
+  const parsed = parseCreature(template);
+
+  const trace = traceCreature(parsed, target, 4);
+  for (const a of trace.assumptions) {
+    out.push({ creature: parsed.name, flag: a.flag, field: a.field, detail: a.detail });
+  }
+  const r = trace.rounds;
+  const dpr = {
+    round1: r[0]?.totalExpectedDamage ?? 0,
+    round2: r[1]?.totalExpectedDamage ?? 0,
+    round3: r[2]?.totalExpectedDamage ?? 0,
+    round4Plus: r[3]?.totalExpectedDamage ?? 0,
+  };
+  if (dpr.round1 <= 0 && dpr.round4Plus <= 0) {
+    out.push({ creature: parsed.name, flag: "NEEDS DM INPUT", field: "damage",
+      detail: "No readable damage in any round, so this creature contributes nothing to the fight's pressure." });
+  }
+
+  const traitFactors = traitFactorsFor(template, out, target.damageMix);
+  const traitMultiplier = 1 + combineSustainContributions(traitFactors);
+  const acMultiplier = acMultiplierFor(parsed.ac, partyLevel, parsed.name, out);
+
+  /**
+   * ⚠ UPTIME IS A CREATURE FACT AND BELONGS IN THE SHARED FIGURE. `effectiveHpPerBody` divides by
+   * it, so the Wendigo Wight's authored 0.86 — its Wrong Cold aura and Leap tempo, counted on the
+   * damage clock rather than as HP — is worth x1.163 of effective HP. Leaving it out of the profile
+   * was the last per-creature disagreement: the estimator read 246.91 where the checker read 287.11.
+   */
+  const damageUptime = Number(template.stats.damageUptime ?? 1) || 1;
+
+  return {
+    name: parsed.name,
+    parsed,
+    baseHp: parsed.maxHp,
+    ac: parsed.ac,
+    acMultiplier,
+    traitFactors,
+    traitMultiplier,
+    damageUptime,
+    effectiveHp: parsed.maxHp * acMultiplier * traitMultiplier / damageUptime,
+    dpr,
+    threeRoundDpr: (dpr.round1 + 2 * dpr.round4Plus) / 3,
+    attackBonus: parsed.features.reduce((best, f) => Math.max(best, f.attackBonus ?? 0), 0),
+    saveDc: parsed.features.reduce((best, f) => Math.max(best, f.saveDc ?? 0), 0),
+  };
+}
+
 export function rosterFromTemplates(
   entries: RosterEntryInput[], partyLevel: number, target: PartyDefence,
   /**
@@ -335,36 +439,16 @@ export function rosterFromTemplates(
   });
 
   const roster = expanded.map(({ template, quantity, fromAuthoredBody }) => {
-    // The library entry, every time. Nothing overrides what the DM can see.
-    const parsed = parseCreature(template);
-
-    const trace = traceCreature(parsed, target, 4);
-    for (const a of trace.assumptions) {
-      assumptions.push({ creature: parsed.name, flag: a.flag, field: a.field, detail: a.detail });
-    }
-
-    // The per-round profile IS the trace. Round 4 carries the sustained figure.
-    const r = trace.rounds;
-    const dpr = {
-      round1: r[0]?.totalExpectedDamage ?? 0,
-      round2: r[1]?.totalExpectedDamage ?? 0,
-      round3: r[2]?.totalExpectedDamage ?? 0,
-      round4Plus: r[3]?.totalExpectedDamage ?? 0,
-    };
-    if (dpr.round1 <= 0 && dpr.round4Plus <= 0) {
-      assumptions.push({ creature: parsed.name, flag: "NEEDS DM INPUT", field: "damage",
-        detail: "No readable damage in any round, so this creature contributes nothing to the fight's pressure." });
-    }
-
     /**
-     * Itemised from the block's own defences, for every creature.
-     *
-     * The snapshot's calibrated `tm` used to replace this wholesale. Dropping it costs nothing
-     * measurable: across all 51 profiled creatures the block's defence product and the snapshot's
-     * `tm` agree to within 0.005, so this is the same number arrived at from the readable source
-     * instead of a precomputed one.
+     * ⚠ THE SHARED DERIVATION, NOT A SECOND ONE. The library entry, every time — nothing overrides
+     * what the DM can see. See `creatureProfile`: parse, four-round trace, trait factors against
+     * the party's damage mix, and the AC term. The estimator reads the same call, so the number it
+     * shows a DM is by construction the number this roster is priced from.
      */
-    const traitFactors: SustainFactor[] = traitFactorsFor(template, assumptions, target.damageMix);
+    const profile = creatureProfile(template, partyLevel, target, assumptions);
+    const parsed = profile.parsed;
+    const dpr = profile.dpr;
+    const traitFactors = profile.traitFactors;
 
     /**
      * ⚠ ONE BODY PER PC OVERRIDES THE AUTHORED COUNT. The Mirrors are the campaign's sole
@@ -388,7 +472,7 @@ export function rosterFromTemplates(
       quantity: bodies,
       flatHpPerBody: perPc,
       baseHp: parsed.maxHp,
-      acMultiplier: acMultiplierFor(parsed.ac, partyLevel, parsed.name, assumptions),
+      acMultiplier: profile.acMultiplier,
       traitFactors,
       dpr,
       damageUptime: template.stats.damageUptime ?? 1,
