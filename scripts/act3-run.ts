@@ -25,6 +25,7 @@ import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrar
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
 import { effectiveHpPerBody, simulateEncounter, resolvePartyProfile } from "../src/core/encounter-band/checkerV2";
 import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
+import { nextArrivalSpent } from "../src/core/encounter-band/actRun";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
 const lib = BROKEN_CHAIN_MONSTER_LIBRARY as MainMonsterTemplate[];
@@ -44,16 +45,34 @@ const SIZE = 4;
  * chosen here: it is the share of a party's resource pool a short rest hands back, p10 0.07 to p90
  * 0.40 depending on how much of the kit is short-rest refreshed.
  *
- * ⚠ A REST CHANGES WHAT THE PARTY ARRIVES WITH, NOT HOW FAST THEY KILL. Rounds-to-clear is roster
- * EHP against party DPR, and neither moves when the party is rested. So the short rests below fix
- * the DRAIN column and change no round count — which is itself the answer to why these fights come
- * in under the workbook.
+ * ⚠ AND A REST CHANGES HOW FAST THEY KILL, WHICH I GOT WRONG. I wrote that arrival state moves
+ * the drain and not the round count. It moves both: `arrivingSpent` depletes the party's DAMAGE as
+ * well as its pool, so a party walking into the Mirrors two fights deep kills slower than a fresh
+ * one and the fight runs longer. See the note on `spent` below.
  */
-const SEGMENTS: Array<{ level: number; ids: string[] }> = [
-  { level: 6, ids: ["act3-e1-the-first-court", "act3-e2-the-cut-below", "act3-e3-gate-i-crone-and-mare"] },
-  { level: 7, ids: ["act3-e4-the-hollow-feast", "act3-e5-the-scar-line", "campaign-mt3nm2j9"] },
-  { level: 8, ids: ["act3-e7-the-last-court", "act3-e8-the-occupied-acre", "act3-e9-gate-iii-veil-torn-dragon"] },
-  { level: 9, ids: ["act3-e10-the-center"] },
+type Step = { id: string; restAfter: "Short" | "Long" | "None"; restConfirmed: boolean };
+const SEGMENTS: Array<{ level: number; steps: Step[] }> = [
+  { level: 6, steps: [
+    { id: "act3-e1-the-first-court", restAfter: "Short", restConfirmed: false },
+    { id: "act3-e2-the-cut-below", restAfter: "Short", restConfirmed: false },
+    { id: "act3-e3-gate-i-crone-and-mare", restAfter: "Long", restConfirmed: true },
+  ] },
+  { level: 7, steps: [
+    // ⚠ NO REST BETWEEN THESE TWO. Christopher, 2026-09-01: *"the rest happens between the scar
+    // line and the mirrors."* The first version rested after every fight, which is why the Mirrors
+    // arrived at 100% — they do not, and F4 + F5 are fought back to back.
+    { id: "act3-e4-the-hollow-feast", restAfter: "None", restConfirmed: true },
+    { id: "act3-e5-the-scar-line", restAfter: "Short", restConfirmed: true },
+    { id: "campaign-mt3nm2j9", restAfter: "Long", restConfirmed: true },
+  ] },
+  { level: 8, steps: [
+    { id: "act3-e7-the-last-court", restAfter: "Short", restConfirmed: false },
+    { id: "act3-e8-the-occupied-acre", restAfter: "Short", restConfirmed: false },
+    { id: "act3-e9-gate-iii-veil-torn-dragon", restAfter: "Long", restConfirmed: true },
+  ] },
+  { level: 9, steps: [
+    { id: "act3-e10-the-center", restAfter: "Long", restConfirmed: true },
+  ] },
 ];
 
 /** The workbook's own Encounter Results sheet, for the side-by-side. */
@@ -95,17 +114,25 @@ for (const seg of SEGMENTS) {
   }
   console.log(`  party lands, cumulatively: ${landed.map((v, i) => `R${i + 1} ${v.toFixed(0)}`).join(" · ")}`);
 
-  let sustain = full.sustain;
-  let firstOfSegment = true;
+  /**
+   * ⚠ `arrivingSpent`, NOT `customSustain` — AND THAT WAS A REAL ERROR, NOT A DETAIL.
+   *
+   * Christopher, 2026-09-01: *"you are wrong that the % of spent didn't effect dpr because we
+   * already know that it should we already establish this before .8.0."*
+   *
+   * He is right, and the app has said so since then. `resolvePartyProfile.arrivingSpent` carries
+   * its own note: *"THIS MOVES DAMAGE AS WELL AS SUSTAIN … a healer who spends half a fight
+   * burning through L3 spell slots cant go into the next fight buring the same lvl 3 spell
+   * slots."* Passing `customSustain` scales the POOL and leaves the party opening every fight with
+   * a full nova — so this report had a depleted party killing exactly as fast as a fresh one, and
+   * I then used that to argue the round counts were not an arrival-state artefact. They are.
+   */
+  let spent = 0;
+  /** The state the party is actually IN when the segment ends — before its closing long rest. */
+  let endOfSegment = 0;
 
-  for (const id of seg.ids) {
-    // A short rest between fights, never before the first — that one follows a long rest.
-    if (!firstOfSegment) {
-      const before = sustain;
-      sustain = Math.min(full.sustain, sustain + full.sustain * SHORT_REST_RECOVERY);
-      console.log(`\n  ── SHORT REST   +${pct(SHORT_REST_RECOVERY * 100)} of full   ${pct((before / full.sustain) * 100)} → ${pct((sustain / full.sustain) * 100)}`);
-    }
-    firstOfSegment = false;
+  for (const step of seg.steps) {
+    const id = step.id;
     const enc = AUTHORED_ENCOUNTERS.find(e => e.id === id);
     if (!enc) { console.log(`\n  ${id} — MISSING`); continue; }
     const entries = enc.entries
@@ -113,15 +140,17 @@ for (const seg of SEGMENTS) {
       .filter(e => e.template);
     const built = rosterFromTemplates(entries, seg.level, { ac: d.ac, saveBonus: saveAvg, partySize: SIZE, saves });
 
-    const arriveAt = sustain;
-    const arrivePct = (arriveAt / full.sustain) * 100;
-    const profile = resolvePartyProfile({ level: seg.level, size: SIZE, equipmentMode: MODE, customSustain: arriveAt });
+    const arrivePct = (1 - spent) * 100;
+    const profile = resolvePartyProfile({ level: seg.level, size: SIZE, equipmentMode: MODE, arrivingSpent: spent });
     const sim = simulateEncounter({
       party: { size: SIZE, sustain: profile.sustain, dpr: profile.dpr },
       roster: built.roster, settings: { damageAllocation: "focus_fire" },
     });
     const taken = sim.rounds[sim.rounds.length - 1]?.cumulativeMonsterDamage ?? 0;
-    sustain = Math.max(0, arriveAt - taken);
+    const cost = full.sustain > 0 ? taken / full.sustain : 0;
+    const spentBefore = spent;
+    endOfSegment = Math.min(1, spentBefore + cost);
+    spent = nextArrivalSpent(spent, cost, step.restAfter, SHORT_REST_RECOVERY);
 
     const total = built.roster.reduce((s, g) => s + effectiveHpPerBody(g, SIZE) * Number(g.quantity ?? 0), 0);
     /**
@@ -165,11 +194,16 @@ for (const seg of SEGMENTS) {
     if (!wiped && ends > 0 && headroom >= 0) {
       console.log(`     to survive into R${ends + 1} it needs > ${boundary.toFixed(1)} EHP — short by ${headroom.toFixed(1)} (${pct(margin)} more)`);
     }
-    console.log(`     arrive ${pct(arrivePct)} of full  →  takes ${taken.toFixed(0)}  →  exit ${pct((sustain / full.sustain) * 100)}`
-      + `   ·  this fight cost ${pct((taken / full.sustain) * 100)}`
+    const restNote = step.restAfter === "None" ? "no rest — straight into the next fight"
+      : step.restAfter === "Long" ? "LONG REST — full reset"
+      : `SHORT REST +${pct(SHORT_REST_RECOVERY * 100)}`;
+    console.log(`     arrive ${pct(arrivePct)} of full  →  takes ${taken.toFixed(0)}  →  ${pct((1 - (spentBefore + cost)) * 100)} before rest`
+      + `   ·  this fight cost ${pct(cost * 100)}`
       + (w ? `   (workbook ${pct(w.cost)})` : ""));
+    console.log(`     ${restNote}${step.restConfirmed ? "" : "   [rest placement UNCONFIRMED]"}  →  next fight arrives at ${pct((1 - spent) * 100)}`);
   }
-  console.log(`\n  segment ends at ${pct((sustain / full.sustain) * 100)} of a full party's sustain`);
+  // ⚠ BEFORE the closing long rest. Reporting after it always prints 100% and says nothing.
+  console.log(`\n  segment ends at ${pct((1 - endOfSegment) * 100)} of a full party's sustain, before its closing long rest`);
 }
 
 console.log("\n" + "═".repeat(100));
