@@ -44,8 +44,8 @@ import {
   type CreatorPressureId,
 } from "./creator/monsterCreatorModel";
 import type { MonsterRider } from "./monsterRider";
-import { TRAIT_RULES, traitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
-import { classifyTraits } from "../encounter-band/traitClassifier";
+import { TRAIT_RULES, traitRule, resolveTraitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
+import { classifyTraits, classifyTrait } from "../encounter-band/traitClassifier";
 import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -144,6 +144,18 @@ function withoutBlankDefences(draft: MainMonsterTemplate): MainMonsterTemplate {
 
 export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptions = [], onSave, onCancel, onRevertToCampaign, canSaveToCampaign = false }: MonsterTemplateEditorProps) {
   const [draft, setDraft] = useState<MainMonsterTemplate>(() => JSON.parse(JSON.stringify(template)));
+
+  /**
+   * Every trait and reaction actually written on this block — what a defence row may point AT.
+   *
+   * Reactions count: the Shardbound's whole defence is one ("destroy a stake to impose
+   * disadvantage on that attack"), and a defence list that could only see `traits` would call
+   * that creature undefended.
+   */
+  const writtenTraits = useMemo(
+    () => [...(draft.traits ?? []), ...(draft.reactions ?? [])].filter(t => (t.name ?? "").trim()),
+    [draft.traits, draft.reactions],
+  );
   const [step, setStep] = useState<StepId>("identity");
   const [chassisId, setChassisId] = useState<string>("");
   const [scoreArray, setScoreArray] = useState<string>("");
@@ -215,11 +227,60 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
            * a 1.0 whose stated reason was the single word "formula". The model has a real
            * sentence; store that instead, and the stored data explains itself.
            */
-          ? { ...x, name: label, rule: label, provenance: undefined, ehpMultiplier: rule?.multiplier ?? 1,
+          /**
+           * ⚠ AND THE TRAIT'S OWN NAME SURVIVES. This wrote `name: label`, replacing the campaign
+           * name with the workbook's — so "Body Between" became "Fixed prevention - 12/round" and
+           * "Darkmane (Constant)" became "Concealment until first attack hits each round". The
+           * stat block stopped saying what the creature does.
+           *
+           * `MonsterDefense.name` is documented as *"the trait's actual name, as printed on the
+           * stat block"* and `rule` as which calibrated rule it IS. Two fields, two facts. A blank
+           * row still takes the label, because a row with no name yet has nothing to protect.
+           */
+          ? { ...x, name: x.name?.trim() ? x.name : label,
+              rule: label, provenance: undefined, ehpMultiplier: rule?.multiplier ?? 1,
               note: rule && rule.multiplier == null ? PRICING_MODEL_WHY[pricingModelOf(rule)] : rule?.application }
           : x)),
       },
     }));
+  }
+  /**
+   * NAME THE TRAIT, AND THE PROFILE FOLLOWS.
+   *
+   * ⚠ THE NAME IS THE ONLY THING THE AUTHOR TYPES. The trait itself is already written on the
+   * Traits tab, so naming it here is enough for `classifyTrait` to read its text and assign the
+   * calibrated rule, the multiplier and the stack group. That is the whole of Christopher's
+   * instruction: *"the picker can read the trait and assign the correct profile to them."*
+   *
+   * ⚠ A DECLARED PROVENANCE IS NEVER OVERWRITTEN. The Darkmare's Shadow Shroud carries an
+   * INTERPOLATED +2 AC value that no calibrated rule covers; re-reading the trait would replace a
+   * number a person derived with one a matcher guessed, which is precisely the loss this whole
+   * pass exists to stop. A hand-declared number wins over a re-read.
+   */
+  function renameDefense(idx: number, name: string) {
+    setDraft(d => {
+      const source = [...(d.traits ?? []), ...(d.reactions ?? [])]
+        .find(x => (x.name ?? "").toLowerCase() === name.trim().toLowerCase());
+      const match = source ? classifyTrait(source.name, source.text) : null;
+      return {
+        ...d,
+        stats: {
+          ...d.stats,
+          defenses: (d.stats.defenses ?? []).map((x, i) => {
+            if (i !== idx) return x;
+            if (!match || x.provenance) return { ...x, name };
+            return {
+              ...x, name,
+              rule: match.label,
+              ehpMultiplier: match.rule.multiplier ?? 1,
+              note: `Read from "${source!.name}" on "${match.evidence}".`
+                + (match.rule.multiplier == null
+                  ? ` ${PRICING_MODEL_WHY[pricingModelOf(match.rule)]}` : ""),
+            };
+          }),
+        },
+      };
+    });
   }
   function addDefense() {
     setDraft(d => ({
@@ -1538,23 +1599,101 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
         <div style={{ background: "#12121c", border: "1px solid #23233a", borderRadius: 6, padding: 10, marginTop: 10 }}>
           <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#34c759" }}>Defensive traits</span>
           <p style={{ ...hintStyle, marginTop: 4 }}>
-            What makes this creature harder to kill than its raw HP says — resistances, regeneration, a revival, a reaction that blunts a hit. Pick the trait; <strong style={{ color: "#aaa" }}>the workbook supplies its effective-HP weight</strong>. Leave empty for a creature whose HP is the whole story.
+            What makes this creature harder to kill than its raw HP says — resistances, regeneration, a revival, a reaction that blunts a hit. <strong style={{ color: "#aaa" }}>Name the trait and the workbook assigns its weight</strong>, read from what the trait actually says. Leave empty for a creature whose HP is the whole story.
           </p>
+          {/* Every trait and reaction written on this block, offered by name so the row points at
+              a real one rather than at a spelling of it. */}
+          <datalist id="fdmc-written-traits">
+            {writtenTraits.map((t, i) => <option key={i} value={t.name ?? ""} />)}
+          </datalist>
+          {/**
+            * ⚠ THIS PANEL READ THE PRICE OFF THE TRAIT'S NAME, and that is why the Darkmare showed
+            * three empty rows, UNPRICED, and "Combined ×1.000 → effective HP 90" for a creature
+            * the checker prices at ×1.193 and 107.
+            *
+            * Christopher, 2026-08-31: *"i thought all of the traits were suppose to be typed in
+            * and the price assigns the EHP for them."* They are, and it does — `MonsterDefense`
+            * has carried a `rule` field for exactly that, and `resolveTraitRule` reads `rule`
+            * before `name` precisely because a campaign trait carries a campaign NAME. The
+            * CHECKER used it. This panel used `traitRule(d.name)` in three separate places, so
+            * every trait whose name is not literally one of the 58 workbook labels — 51 of the
+            * library's 60 rows — rendered as an unpriced blank.
+            *
+            * It is the same fault MASTER records against the checker matching on display name,
+            * one layer up, and it is almost certainly how the defences got lost in the first
+            * place: a panel that shows ×1.000 for a priced creature invites the author to fix
+            * something that was never broken.
+            */}
           {(draft.stats.defenses ?? []).map((d, i) => {
-            const rule = traitRule(d.name);
+            const rule = resolveTraitRule(d);
+            // The trait this row names, and what the reader sees in it. Evidence is what turns a
+            // derived answer into a checkable one — the author can see the phrase it matched.
+            const source = writtenTraits.find(x => (x.name ?? "").toLowerCase() === d.name.trim().toLowerCase());
+            const readEvidence = source ? classifyTrait(source.name, source.text)?.evidence : undefined;
             return (
               <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
-                <div style={{ flex: 3, minWidth: 200 }}>
-                  <span style={labelStyle}>Trait</span>
-                  <select value={d.name} onChange={e => selectDefense(i, e.target.value)} style={inputStyle}>
-                    <option value="">— pick a calibrated trait —</option>
-                    {TRAIT_RULES.map(r => (
-                      <option key={r.label} value={r.label}>
-                        {r.label}{r.multiplier == null ? ` (${PRICING_MODEL_LABEL[pricingModelOf(r)]})` : ` — ×${r.multiplier.toFixed(3)}`}
-                      </option>
-                    ))}
-                  </select>
+                <div style={{ flex: 2, minWidth: 130 }}>
+                  <span style={labelStyle}>Trait{source ? "" : " (no match on this block)"}</span>
+                  <input value={d.name} placeholder="as printed on the block" list="fdmc-written-traits"
+                    onChange={e => renameDefense(i, e.target.value)}
+                    style={{ ...inputStyle, borderColor: source ? undefined : "#5a4a2a" }} />
                 </div>
+                {/**
+                  * ⚠ READ, DON'T PICK. Christopher: *"remove the defense picker, put back the
+                  * trait text box and then the picker can read the trait and assign the correct
+                  * profile to them"*, which is the same instruction as *"the parser should be
+                  * able to read something like Elemental guard and do the assigned defense to
+                  * it."* The author already wrote the trait; a dropdown of 58 asks for it twice.
+                  *
+                  * So the RULE IS DERIVED and shown read-only, with the phrase it matched on. The
+                  * picker survives ONLY as the fallback for a trait nothing can read — because
+                  * "no match is an answer" and a trait the table does not recognise still has to
+                  * be priceable by hand.
+                  */}
+                {rule ? (
+                  <div style={{ flex: 3, minWidth: 200 }}>
+                    <span style={labelStyle}>Prices as (read from the trait)</span>
+                    <div title={readEvidence ? `Matched on "${readEvidence}"` : "Set by hand."}
+                      style={{ ...inputStyle, background: "#0d0d16", cursor: "default", color: "#8fb8ff",
+                               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {rule.label}
+                    </div>
+                  </div>
+                ) : d.provenance ? (
+                  /**
+                   * ⚠ A DECLARED NUMBER IS SETTLED, NOT WAITING FOR A PICK. The Darkmare's Shadow
+                   * Shroud is an INTERPOLATED +2 AC that no calibrated rule covers; offering a
+                   * dropdown beside it invites the author to replace a derived number with a
+                   * guessed one, which is how the interpolation was lost the first time.
+                   */
+                  <div style={{ flex: 3, minWidth: 200 }}>
+                    <span style={labelStyle}>Prices as (declared)</span>
+                    <div title={d.note} style={{ ...inputStyle, background: "#0d0d16", cursor: "default", color: "#8fb8ff" }}>
+                      {d.provenance}
+                    </div>
+                  </div>
+                ) : (d.ehpMultiplier ?? 1) === 1 && d.note ? (
+                  // A decided 1.0 with its reason is an answer. Say so instead of asking again.
+                  <div style={{ flex: 3, minWidth: 200 }}>
+                    <span style={labelStyle}>Prices as (decided)</span>
+                    <div title={d.note} style={{ ...inputStyle, background: "#0d0d16", cursor: "default", color: "#8a8aa0",
+                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      no effective-HP contribution
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ flex: 3, minWidth: 200 }}>
+                    <span style={labelStyle}>Nothing read it — price it by hand</span>
+                    <select value="" onChange={e => selectDefense(i, e.target.value)} style={inputStyle}>
+                      <option value="">— pick a calibrated trait —</option>
+                      {TRAIT_RULES.map(r => (
+                        <option key={r.label} value={r.label}>
+                          {r.label}{r.multiplier == null ? ` (${PRICING_MODEL_LABEL[pricingModelOf(r)]})` : ` — ×${r.multiplier.toFixed(3)}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {/* ⚠ FOUR DIFFERENT ANSWERS USED TO PRINT AS ONE WORD. Eighteen calibrated rules
                     carry no multiplier, and "unpriced" reads as "the workbook has nothing to say"
                     when it has something specific to say about each — see `pricingModelOf`.
@@ -1591,13 +1730,26 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 able to read something like Elemental guard and do the assigned defense to it."*
                 It proposes with the phrase it matched on, never silently: see `traitClassifier`. */}
             <SmallBtn color="#4a9eff" onClick={() => readDefensesFromTraits()}>Read from traits</SmallBtn>
-            <span style={{ fontSize: 11, color: "#99a" }}>
-              Combined <strong style={{ color: "#dfe4ff" }}>
-                ×{(draft.stats.defenses ?? []).reduce((p, d) => p * (traitRule(d.name)?.multiplier ?? 1), 1).toFixed(3)}
-              </strong> → effective HP <strong style={{ color: "#dfe4ff" }}>
-                {Math.round(draft.stats.maxHp * (draft.stats.defenses ?? []).reduce((p, d) => p * (traitRule(d.name)?.multiplier ?? 1), 1))}
-              </strong>
-            </span>
+            {/**
+              * ⚠ THE STORED MULTIPLIER IS THE ANSWER, not one re-derived from the trait's name.
+              * This read `traitRule(d.name)?.multiplier ?? 1`, so a row whose name is a campaign
+              * name contributed 1.0 — and the Darkmare, priced at x1.193 by the checker, told its
+              * author "Combined x1.000 → effective HP 90". Fourteen creatures in the library
+              * printed a total that disagreed with the fight, the Wendigo Wight by 106 HP.
+              *
+              * `ehpMultiplier` is the field the checker multiplies. Show that.
+              */}
+            {(() => {
+              const combined = (draft.stats.defenses ?? []).reduce((p, d) => p * (d.ehpMultiplier || 1), 1);
+              return (
+                <span style={{ fontSize: 11, color: "#99a" }}>
+                  Combined <strong style={{ color: "#dfe4ff" }}>×{combined.toFixed(3)}</strong>
+                  {" "}→ effective HP <strong style={{ color: "#dfe4ff" }}>
+                    {Math.round(draft.stats.maxHp * combined)}
+                  </strong>
+                </span>
+              );
+            })()}
           </div>
 
           {/* ── WHAT THIS CREATURE'S AC IS WORTH ────────────────────────────────────────────

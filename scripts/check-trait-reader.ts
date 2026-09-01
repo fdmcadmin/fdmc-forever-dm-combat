@@ -11,7 +11,7 @@
  */
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
 import { classifyTrait, classifyTraits } from "../src/core/encounter-band/traitClassifier";
-import { pricingModelOf, PRICING_MODEL_LABEL, TRAIT_RULES } from "../src/core/encounter-band/compactImport";
+import { pricingModelOf, PRICING_MODEL_LABEL, TRAIT_RULES, traitRule, resolveTraitRule } from "../src/core/encounter-band/compactImport";
 import { auditCoverage, mechanicsOf } from "../src/core/encounter-band/coverageGate";
 
 let agree = 0, disagree = 0, missed = 0;
@@ -140,6 +140,48 @@ if (report.blocked.length !== 0) {
   }
 }
 
+
+/**
+ * ── WHAT THE AUTHOR SEES MUST BE WHAT THE CHECKER COMPUTES ──────────────────────────────────
+ *
+ * Christopher, 2026-08-31, looking at the Darkmare's Defenses tab: three empty rows, UNPRICED,
+ * *"Combined ×1.000 → effective HP 90"* — for a creature the checker prices at ×1.193 and 107.
+ *
+ * The editor resolved each row's rule with `traitRule(d.name)`, the workbook LABEL only, while
+ * the checker uses `resolveTraitRule`, which reads the `rule` field first precisely because a
+ * campaign trait carries a campaign name. 51 of the library's 60 defence rows are named for the
+ * trait rather than the rule, so 51 rendered blank and 14 creatures showed a combined multiplier
+ * that disagreed with the fight — the Wendigo Wight by 106 effective HP.
+ *
+ * ⚠ THAT IS ALMOST CERTAINLY HOW THE DEFENCES GOT LOST. A panel that shows ×1.000 for a priced
+ * creature invites its author to fix something that was never broken.
+ *
+ * So this asserts the two agree, and asserts the case is REAL — a gate that passed because every
+ * row happened to be named after its rule would prove nothing.
+ */
+{
+  let campaignNamed = 0;
+  for (const t of L) {
+    for (const d of t.stats.defenses ?? []) {
+      const byName = traitRule(d.name);
+      const resolved = resolveTraitRule(d);
+      if (!byName && resolved) campaignNamed++;
+      const x = d.ehpMultiplier ?? 1;
+      if (x === 1) continue;
+      // A priced row must be explicable to the AUTHOR, not only to the checker.
+      if (!resolved && !d.provenance) {
+        problems.push(`${t.name} · "${d.name}" carries x${x} that the editor cannot explain — no resolvable rule and no provenance`);
+        disagree++;
+      }
+    }
+  }
+  console.log(`\n  ${campaignNamed} defence row(s) are named for the TRAIT, not the workbook rule —`);
+  console.log(`  the exact case a name-only lookup renders as an unpriced blank.`);
+  if (campaignNamed === 0) {
+    problems.push("no campaign-named defence rows exist, so this check proves nothing — it would pass on a name-only lookup too");
+    disagree++;
+  }
+}
 
 if (disagree) {
   console.error(`\nFAILED — ${disagree} disagreement(s):`);
