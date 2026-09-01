@@ -471,11 +471,40 @@ export function rosterFromTemplates(
   const expanded: Array<RosterEntryInput & { fromAuthoredBody?: boolean }> = entries.flatMap(entry => {
     const bodies = entry.bodies ?? [];
     if (bodies.length === 0) return [entry];
-    return bodies.map(body => ({
-      template: materializeTemplateBody(entry.template, body),
-      quantity: 1,
-      fromAuthoredBody: true,
-    }));
+    return bodies.map(body => {
+      /**
+       * ⚠ A BODY THAT HAS NOT CHOSEN IS NOT A LEGAL BODY, AND IT WAS PRICED AS ONE.
+       *
+       * Christopher, 2026-09-01: *"we cant assign these to the library, what part of this is a DM
+       * authored fight and this is why we built the archetype, the checker should be able to read
+       * X elemental body with X bond does X."*
+       *
+       * Exactly — the element is the DM's choice per fight, and the checker reads it per body. So
+       * the library must NOT presume one. What it also must not do is price a body that has not
+       * chosen: Gate II authors four Mirrors as `{ id, name: "" }`, and an unpicked Mirror's Claw
+       * resolves to `2d6+4 {primary}` — damage with a placeholder where its type should be, which
+       * the pricer reads as untyped and a resistance can never answer. Its guard has no element,
+       * its physical line is undecided, and its 1/day signature is whichever the template listed
+       * first.
+       *
+       * None of that is wrong CONTENT. It is an unfinished choice, and the checker's job is to say
+       * so rather than quietly average it.
+       */
+      const namingSet = (entry.template.actionSets ?? []).find(s => s.namesBody);
+      const picked = namingSet ? (body.actionPicks?.[namingSet.id] ?? []).filter(Boolean) : [];
+      if (namingSet && picked.length === 0) {
+        assumptions.push({ creature: entry.template.name, flag: "NEEDS DM INPUT", field: "body",
+          detail: `A body in this fight has not chosen its ${namingSet.label ?? namingSet.id}. `
+            + `It is priced with every element-dependent value unresolved — damage type, the rotating guard, `
+            + `the physical resistance line and the per-element signature. Choose one of `
+            + `${Object.keys(namingSet.optionVars ?? {}).join(", ") || "the listed options"} for each body.` });
+      }
+      return {
+        template: materializeTemplateBody(entry.template, body),
+        quantity: 1,
+        fromAuthoredBody: true,
+      };
+    });
   });
 
   const roster = expanded.map(({ template, quantity, fromAuthoredBody }) => {

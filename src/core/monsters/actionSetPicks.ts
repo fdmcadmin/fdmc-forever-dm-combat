@@ -267,19 +267,28 @@ export function materializeTemplateBody(
     .map(r => ({ ...r, type: fillType(r.type ?? "") }))
     .filter(r => r.type.trim() !== "" && !r.type.includes("{"));
 
+  /**
+   * ⚠ ONE `stats` OBJECT, BUILT ONCE. This returned `stats` twice — once with the resolved typed
+   * responses and again inside the archetype spread — and the later spread wins, rebuilding from
+   * `built.stats` and throwing the resolved responses away. So an Ice Mirror with no archetype
+   * resisted bludgeoning and an Ice Mirror that was ALSO a bruiser resisted `{physical1}`.
+   *
+   * The archetype is the common case, so the bug was live for every body that has one. Two spreads
+   * of the same key in one literal is the shape to watch for: the second is not a merge.
+   */
+  const stats = {
+    ...built.stats,
+    damageResponses: responses,
+    ...(body.archetype ? { archetype: body.archetype } : {}),
+  };
   return {
     ...built,
-    stats: { ...built.stats, damageResponses: responses },
+    stats,
     actions: finish(built.actions),
     traits: finish(built.traits),
     reactions: finish(built.reactions),
     ...(body.bond ? { bond: body.bond } : {}),
-    ...(body.archetype
-      ? {
-        abilities: redistributeAbilityEntries(built.abilities, body.archetype),
-        stats: { ...built.stats, archetype: body.archetype },
-      }
-      : {}),
+    ...(body.archetype ? { abilities: redistributeAbilityEntries(built.abilities, body.archetype) } : {}),
   };
 }
 
