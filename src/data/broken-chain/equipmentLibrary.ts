@@ -1433,6 +1433,398 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     },
     "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
     "isLocked": true
+  },
+  {
+    "id": "bc-a4-blinkstep",
+    "name": "Blinkstep",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "A matched pair of narrow, blackened ankle clasps whose metal has been pitted smooth by years of elemental exposure. Hairline fractures cross each face without ever quite meeting, and when the bearer shifts weight, one clasp seems to arrive a fraction of a heartbeat before the foot beneath it. Tags: A4 · Movement · Ruined / elemental saturation",
+    "mechanicsText": "Bonus Action · 1/Short Rest: teleport up to 20 feet to an unoccupied space you can see.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Movement",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 1 — first required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-deferred-wound",
+    "name": "Deferred Wound",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "A segmented forearm guard of dull layered metal, old enough that its dents have been worn smooth rather than repaired. Dark seams run between the plates like healed fractures. When a blow lands, those seams briefly hold the shape of the impact instead of letting it pass cleanly into the bearer. Tags: A4 · Defense · Ruined / elemental saturation",
+    "mechanicsText": "Reaction · 1/Long Rest: when you take damage, roll 2d8. Reduce the triggering damage by up to the roll and record the amount actually reduced as deferred damage. Healing before the end of the current round removes deferred damage first. At round end, lose HP equal to any deferred damage that remains. The original hit still counts as a hit/damage event; deferred resolution does not retrigger hit/damage riders.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Defense",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 2 — second required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-rupture",
+    "name": "Rupture",
+    "type": "magic",
+    "activation": "free",
+    "description": "A narrow black-iron wrist ring split by ember-bright cracks that never cool completely. The metal looks less forged than pressure-broken and forced back together. At the instant an attack lands, the cracks flare toward the point of impact as though the ring is trying to widen the wound already made. Tags: A4 · Offensive · Ruined / elemental saturation",
+    "mechanicsText": "Rider · 1/Long Rest: when you hit, deal an additional 2d10 damage of one damage type dealt by that attack.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Offensive",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 3 — Phoenix. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-applied-insight",
+    "name": "Applied Insight",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "A palm-sized many-faceted lens held in a scorched brass frame. Several faces are clouded with mineral haze while one always seems unnaturally clear when turned toward a problem. Its frame bears tiny adjustment marks from hands that kept refining it long after its original maker was gone. Tags: A4 · Utility · Ruined / elemental saturation",
+    "mechanicsText": "Reaction · 1/Long Rest: after you or an ally within 30 feet fails an ability check, add 1d10 to the result, potentially turning it into a success.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Utility",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 4 — first required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-true-ground",
+    "name": "True Ground",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "A heavy black-stone ankle band locked inside an old metal brace. Its underside has been worn perfectly flat despite the uneven ground it has crossed. Loose grit and tiny fragments of stone subtly orient toward it whenever the bearer plants their weight. Tags: A4 · Stability · Ruined / elemental saturation",
+    "mechanicsText": "Bonus Action · 1/Short Rest: anchor your current space until the end of the current round. If a hostile effect moves you against your will, after that movement resolves teleport back to the anchor or the nearest space you can occupy.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Stability",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 5 — second required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-condition-vessel",
+    "name": "Condition Vessel",
+    "type": "magic",
+    "activation": "action",
+    "description": "A hollow crystal vessel no larger than a thumb joint, suspended inside a tarnished silver cage. Faint stains of different colors drift through the crystal and never mix. Near hostile magic or poison, one stain crawls toward the surface as if the vessel is already making room for something else. Tags: A4 · Cleanse · Ruined / elemental saturation",
+    "mechanicsText": "Magic Action · 1/Long Rest: end Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained on one willing creature within 30 feet. You gain that condition until the end of the current round. You cannot use this property for a condition you are immune to.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Cleanse",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 6 — Elemental level fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-threat-positioning",
+    "name": "Threat Positioning",
+    "type": "magic",
+    "activation": "free",
+    "description": "A thin compass-disc of dark alloy with no cardinal marks and three broken pointers trapped beneath its glass. The pointers ignore north. When danger is near, they settle instead on moving threats, then twitch a heartbeat after those threats change their intent. Tags: A4 · Tactical · Ruined / elemental saturation",
+    "mechanicsText": "1/Long Rest, immediately after Initiative is rolled and before the first turn: choose one visible hostile creature and move your Initiative to immediately after it. The hostile creature does not move.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Tactical",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 7 — Construct / Ward outpost entrance. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-preserved-reaction",
+    "name": "Preserved Reaction",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "A braided wrist loop made from old silver wire and blackened root-fiber. One strand always hangs slightly slack no matter how tightly the loop is fastened. When the bearer commits to a sudden response, that slack strand snaps taut as if taking the strain of the reaction for them. Tags: A4 · Continuity · Ruined / elemental saturation",
+    "mechanicsText": "1/Long Rest: when you use your normal Reaction for a standard non-spell Reaction, expend this item's charge instead of expending your Reaction. All other costs remain. Eligible uses are Opportunity Attacks, non-spell class/subclass/feat/item Reactions, or release of a Readied non-spell action or movement. Reaction spells, Readied spells, and Bond reactions are excluded.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Continuity",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 8 — required outpost/cavern fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-catalyst",
+    "name": "Catalyst",
+    "type": "magic",
+    "description": "A dense concentration of Convergence energy capable of infusing greater power into certain exceptional items. When accepted by a compatible item, the Catalyst strengthens and completes what is already present rather than forming something new. Tags: Catalyst · Tempering / stabilization · Not a Component Tag",
+    "mechanicsText": "A Catalyst can temper one still-raw Ruined A4. The Catalyst is consumed, and that same A4 becomes its same-tag Tier 4 Singular. A Catalyst cannot be used as a normal component, cannot create a new tag, cannot temper A1–A3, and cannot use a completed T3 as the input. A creature can bind only one Tier 4 Singular.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 CATALYST REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Special Convergence Item — NO normal Component Tag, so it carries no `mechanicalTag` and can never be a recipe half. Consumed on use. Catalyst quantity scales by party size; the Act 4 tables are the source of truth for when each enters inventory.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-blinkstep",
+    "name": "Blinkstep — Tempered",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "The Catalyst fills every old fracture in the ankle clasps with clean, luminous lines without erasing the pitted age of the metal. The two pieces remain unmistakably the same worn pair, but their edges now separate into brief translucent afterimages whenever the bearer moves, each afterimage appearing one perfect step ahead before folding back into the clasps. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Encounter: teleport up to 30 feet to an unoccupied space you can see. Passive — your Speed increases by 10 feet.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "encounter"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Movement"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-applied-insight",
+    "name": "Applied Insight — Tempered",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "The Catalyst runs through the clouded facets as bright internal veins, clearing them without replacing the old lens. The scorched brass frame unfolds into two thin nested rings that turn around the original setting on their own. What was once the single clear face now becomes whichever facet the item needs, visibly aligning itself with the task at hand. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Reaction · 1/Short Rest: after you or an ally within 30 feet fails an ability check, add 1d12 to the result, potentially succeeding. Passive — after each Long Rest, choose one skill or tool; you gain proficiency with it until your next Long Rest.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Utility"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-deferred-wound",
+    "name": "Deferred Wound — Tempered",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "The Catalyst settles into the guard's dark seams like molten light and binds the old segmented plates without smoothing away their dents. Hair-thin luminous bridges now span the gaps between sections. When damage is deferred, the light gathers visibly inside those bridges; when the wound is fully cleared, the stored glow collapses inward and leaves a brief protective sheen over the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Reaction · 1/Short Rest: Deferred Wound uses 2d10 instead of 2d8. Passive — if all deferred damage is cleared before it resolves at round end, you gain Temporary Hit Points equal to your Proficiency Bonus.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Defense"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-true-ground",
+    "name": "True Ground — Tempered",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "The Catalyst traces the old ankle band with concentric lines of pale light, turning the worn cracks into a deliberate geometric pattern. The black stone and metal remain unchanged in shape, but a faint ring of the same pattern now appears on the ground whenever the bearer anchors themselves. If they are displaced, that luminous imprint holds their place until they return to it. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Encounter: the anchor lasts until the start of your next turn and also answers hostile teleportation, returning you to the anchor or nearest space you can occupy after the hostile displacement resolves. Passive — once per round, reduce forced movement applied to you by 10 feet.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "encounter"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Stability"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-condition-vessel",
+    "name": "Condition Vessel — Tempered",
+    "type": "magic",
+    "activation": "action",
+    "description": "The Catalyst threads through the tarnished cage and turns each bar into a bright channel feeding the original crystal vessel. The crystal itself becomes perfectly clear between uses, while its old colored stains survive as thin veins around the edge. When a condition is drawn out, its color flashes inside the vessel and is consumed by the Catalyst light instead of passing into the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Magic Action · 1/Short Rest: end one listed Condition on a willing creature within 30 feet; the extracted condition ends without transferring to you. Passive — you have advantage on saving throws against Charmed, Frightened, and Poisoned.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Cleanse"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-rupture",
+    "name": "Rupture — Tempered",
+    "type": "magic",
+    "activation": "free",
+    "description": "The Catalyst does not close the wrist ring's old splits; it makes them precise. Brilliant white-gold light burns inside each ember crack, and several razor-thin segments now hover a hair's breadth from the original iron while remaining bound to it. On a committed hit, the floating pieces snap into alignment and drive the ring's stored force through the same wound before drifting apart again. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Rider · 1/Short Rest: when you hit, deal an additional 2d12 damage of one damage type dealt by the attack, and the target cannot regain Hit Points until the start of your next turn. Passive — once on each of your turns, one damage die showing 1 may count as 2.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Offensive"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-threat-positioning",
+    "name": "Threat Positioning — Tempered",
+    "type": "magic",
+    "activation": "free",
+    "description": "The Catalyst rebuilds nothing that was missing from the old compass-disc; instead it surrounds the original broken pointers with a thin luminous orbit. The dark disc remains scratched and incomplete beneath the glass, while the new ring moves freely above it. When initiative is set, one line of light locks onto the chosen threat and the orbit visibly turns until the bearer's place and the threat's place exchange. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Short Rest, immediately after Initiative is rolled and before the first turn: exchange your Initiative with one visible hostile creature. Initiative is never moved mid-round, and this cannot create double or skipped turns. Passive — when a hostile creature immediately before you in Initiative finishes its turn, gain +2 to your next saving throw before the end of your next turn.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Tactical"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-preserved-reaction",
+    "name": "Preserved Reaction — Tempered",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "The Catalyst weaves a bright filament through the original silver-and-root braid, following every old bend instead of replacing it. The once-slack strand now carries a second luminous echo beside it. When the item preserves a Reaction, the physical braid tightens around the bearer while the echo flashes toward the triggering threat, making the item look momentarily connected to both the response that was kept and the interruption it denied. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Short Rest: use the A4 Preserved Reaction substitution. If a hostile creature caused the trigger, its next attempted Reaction before the start of its next turn is suppressed; then the suppression ends. Passive — Held Intent: when you Ready a non-spell action or movement and its trigger does not occur before the start of your next turn, it remains Readied until the end of that turn. Only one Readied intent can be preserved this way.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Continuity"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
   }
 ];
 

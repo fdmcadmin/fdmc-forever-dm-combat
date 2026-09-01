@@ -29,22 +29,38 @@
  * author confirms it, exactly as the damage-type reader works.
  */
 
-export type ItemActivation = "action" | "bonus" | "reaction" | "free";
+/**
+ * ⚠ `passive` IS ITS OWN COST, NOT A FLAVOUR OF `free`.
+ *
+ * Christopher, 2026-09-01: *"passive should be always on, we already have this action cost."*
+ * Right — `ActionEconomyKind` has carried it since the PC action economy was built, and only this
+ * item vocabulary was missing it. Two words for one concept is the drift this codebase keeps
+ * paying for, so they are the same list now.
+ *
+ * The difference is real, and it is not about slots. Both spend nothing, but `free` is something
+ * you DO at no cost — a rider you choose to fire, an initiative swap taken before the first turn —
+ * while `passive` is always on and never chosen. An author reading "No action" against a Speed
+ * increase learns the wrong thing about their own item.
+ */
+export type ItemActivation = "action" | "bonus" | "reaction" | "free" | "passive";
 
 export const ITEM_ACTIVATION_LABEL: Record<ItemActivation, string> = {
   action: "Action",
   bonus: "Bonus Action",
   reaction: "Reaction",
   free: "No action",
+  passive: "Always on",
 };
 
-/** The economy this activation spends. `free` spends nothing — a worn item, or a passive rider. */
+/** The economy this activation spends. Neither `free` nor `passive` spends a slot. */
 export function economyCostFor(activation: ItemActivation): Array<"main" | "bonus" | "reaction"> {
   switch (activation) {
     case "action": return ["main"];
     case "bonus": return ["bonus"];
     case "reaction": return ["reaction"];
     case "free": return [];
+    // Always on: there is nothing to spend, and nothing to choose.
+    case "passive": return [];
   }
 }
 
