@@ -997,7 +997,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Rime Claw", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + 3", damageType: "Cold", range: "reach 5 ft.", text: "The wound crusts over with black frost." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + 3", save: "STR DC 15", text: "FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "once-per-turn" }] },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @SPELL", damage: "2d8 + 3", save: "STR DC 15", text: "FIRST Rime Bolt each turn only: if the target is Large or smaller, it makes a DC 15 STR save or is restrained as icy tendrils lock around it for 1 minute. A restrained target can use its action to repeat the save, ending the effect on itself on a success.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "once-per-turn" }] },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "When any creature of the line drops to 0 HP, a surviving CASTER (Frozen Sentinel or Frost-Weaver) may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance; it is not a reduced copy of the raised body). One raise per caster; each body can be raised once. Raising costs that caster its whole action — a round of control traded for a body that only claws." },
       { name: "Rimestep (Bonus Action, 1st slot)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, holding the line." },
     ],
@@ -1067,7 +1067,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     actions: [
       { name: "Longsword", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", damageType: "Slashing", range: "reach 5 ft.", text: "One-handed behind the shield." },
-      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", damageType: "Cold", range: "range 30 ft.", text: "This version does not restrain." },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20 + @SPELL", damage: "2d8 + @MAIN", damageType: "Cold", range: "range 30 ft.", text: "This version does not restrain." },
       { name: "Frozen Resurrection (1/fight)", kind: "action", text: "If a destroyed ally within 30 ft has lain dead a full turn — it fell on an earlier round and is still down at the start of the Wight's turn — the Wight raises it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — spawn/add it as a new monster instance, not a reduced copy of the raised body). Full form only: once the Wight has itself been raised into a husk, it can no longer do this. A husk cannot raise anything; one revival per body, and the chain ends." },
       { name: "Rimestep (Bonus Action, Recharge 5-6)", kind: "action", recharge: "5-6", text: "Teleport up to 30 ft to a seen space." },
     ],
@@ -1189,11 +1189,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * "Proficiency Bonus: +3", and the creature's own array agrees: its best ability is INT 17
        * (+3), so +3 +3 = +6 and +7 is not reachable by any ability it has.
        *
+       * ⚠ AND IT IS @SPELL, NOT @ATK. Christopher: the Bolt is CAST. Both tokens resolve to
+       * main + proficiency = +6 on this creature, so the number is identical either way — but the
+       * one that says WHY it is +6 is the one that stays right when a rule changes for one and not
+       * the other.
+       *
        * Caught by the proficiency cross-check added in 0.8.11.11 — the creature contradicting
        * itself is what made it findable. This is the ONE stale number that check surfaced across
        * the library.
        */
-      { name: "Rime Bolt", kind: "attack", roll: "1d20+@ATK", damage: "2d8 + @MAIN", save: "STR DC 15", text: "EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "per-hit" }] },
+      { name: "Rime Bolt", kind: "attack", roll: "1d20+@SPELL", damage: "2d8 + @MAIN", save: "STR DC 15", text: "EVERY Rime Bolt the Weaver casts carries the icy-tendril restrain: if the target is Large or smaller, it makes a DC 15 STR save or is restrained by icy tendrils for 1 minute, repeating the save as an action to end it.", damageType: "Cold", riders: [{ name: "Necrotic rider", damage: "1d8", damageType: "Necrotic", cadence: "per-hit" }] },
       { name: "Frost-Weave Pull", kind: "action", recharge: "6", save: "STR DC 15", damage: "4d6", text: "The Weaver hauls on threads of frost woven through the ice. Each creature within 30 ft makes a DC 15 STR save. On a fail: dragged up to 20 ft straight toward the Weaver across the ice, takes 14 (4d6) cold, and is restrained in frost-weave until the end of its next turn. On a success: half damage, no pull, no restrain. Sets the party up for the Sentinels, the Rime Wight's blade, and the killing frost." },
       { name: "Raise the Frozen (Animate Dead, 3rd-level slot)", kind: "action", spellSlotLevel: 3, text: "The Weaver is the line's SECOND caster and carries Animate Dead alongside the Sentinel. When any creature of the line drops to 0 HP, it may use its action to raise it as a FROZEN HUSK (its own creature: AC 14, HP 25, Rime Claw only — add it as a new monster instance). One raise per caster; each body once." },
       { name: "Rimestep (Bonus Action)", kind: "action", spellSlotLevel: 1, text: "Teleport 30 ft to a space it can see, staying out of melee reach." },
@@ -1775,11 +1780,24 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     traits: [
       { name: "Darkmane (Constant)", kind: "trait", text: "Darkmare creates one-way magical obscurement around itself. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally." },
       { name: "Umbral Passage", kind: "trait", text: "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold." },
-      { name: "Shadow Shroud (1/Day)", kind: "trait", text: "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not." },
     ],
     actions: [
       { name: "Horn", kind: "attack", roll: "1d20 + 8", damage: "2d8 + @MAIN", damageType: "Cold", range: "reach 5 ft." },
       { name: "Hooves", kind: "attack", roll: "1d20 + 8", damage: "2d6 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft." },
+      /**
+       * ⚠ A SPELL, NOT A TRAIT. Christopher, 2026-09-01: *"the darkmare's shadow shroud isnt a
+       * trait its a defensive spell, if we keep adding it as a trait and keeping it as a spell
+       * then this is what causes the issues."* It was authored BOTH ways — one trait and one
+       * spell action with the same text — so every reader had to pick, and the two could drift.
+       * The trait is gone; this is the only Shadow Shroud.
+       *
+       * ⚠ AND A SPELL IS A LEGITIMATE DEFENCE. Workbook V2.2's SRD Spell Registry prices Shield,
+       * Blur and Mirror Image exactly this way — by decomposing the spell into Standard Mechanics
+       * primitives. Shadow Shroud decomposes as `temporary_ac_modifier(+2, until end of next
+       * turn)` + attack disadvantage until the first hit, which is what the defence row's
+       * interpolated x1.056615 is pricing.
+       */
+      { name: "Shadow Shroud (1/Day)", kind: "spell", spellSlotLevel: 3, text: "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not." },
     ],
     reactions: [
     ],

@@ -156,8 +156,24 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
    * that creature undefended.
    */
   const writtenTraits = useMemo(
-    () => [...(draft.traits ?? []), ...(draft.reactions ?? [])].filter(t => (t.name ?? "").trim()),
-    [draft.traits, draft.reactions],
+    () => [
+      ...(draft.traits ?? []),
+      ...(draft.reactions ?? []),
+      /**
+       * ⚠ A DEFENSIVE SPELL IS A DEFENCE. Christopher: *"the darkmare's shadow shroud isnt a trait
+       * its a defensive spell."* Workbook V2.2 agrees — its SRD Spell Registry prices Shield, Blur
+       * and Mirror Image by decomposing the spell into Standard Mechanics primitives, so a spell
+       * is a first-class source of one.
+       *
+       * ⚠ SPELLS ONLY, NOT EVERY ACTION. `classifyTraits` deliberately does not read actions,
+       * because an action's text says what the creature does TO someone and reading it as a
+       * defence would price an attack twice. A `kind: "spell"` action is the narrow exception the
+       * registry recognises, and it is offered here for the author to POINT AT — nothing is
+       * inferred from it.
+       */
+      ...(draft.actions ?? []).filter(a => a.kind === "spell"),
+    ].filter(t => (t.name ?? "").trim()),
+    [draft.traits, draft.reactions, draft.actions],
   );
   const [step, setStep] = useState<StepId>("identity");
   const [chassisId, setChassisId] = useState<string>("");

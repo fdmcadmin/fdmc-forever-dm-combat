@@ -454,11 +454,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "trait",
         "text": "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold."
       },
-      {
-        "name": "Shadow Shroud (1/Day)",
-        "kind": "trait",
-        "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
-      }
     ],
     "actions": [
       {
@@ -482,7 +477,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "routineSlots": 1
       },
       {
-        "name": "Shadow Shroud ",
+        "name": "Shadow Shroud (1/Day)",
         "kind": "spell",
         "spellSlotLevel": 3,
         "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
@@ -5209,7 +5204,7 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
         "hiddenNameOverride": "Darkmare",
         "spellPicks": {
           "3": [
-            "Shadow Shroud "
+            "Shadow Shroud (1/Day)"
           ]
         }
       }
