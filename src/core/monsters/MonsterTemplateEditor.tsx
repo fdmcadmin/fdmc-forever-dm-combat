@@ -48,7 +48,7 @@ import { TRAIT_RULES, traitRule, resolveTraitRule, EXPECTED_MONSTER_AC, pricingM
 import { classifyTraits, classifyTrait } from "../encounter-band/traitClassifier";
 import { DAMAGE_TYPES } from "../constants/damageTypes";
 import { describeStatBlockAction } from "../../modules/dnd-5e/statBlockGrammar";
-import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
+import { resolveMonsterActionFormulas, monsterFormulaVars } from "./resolveMonsterFormulaVars";
 import { acMultiplierFor } from "../encounter-band/rosterFromLibrary";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -900,11 +900,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
               <span style={{ color: "#667" }}>prints as: </span>
               {describeStatBlockAction({ ...resolved, damageType: a.damageType, range: a.range, text: a.text })}
               {a.damage && !a.damageType && <span style={{ color: "#e07b39" }}> — NO TYPE SET</span>}
-              {literal && (
-                <span style={{ color: "#8a6a2a" }} title="Written as a number, so it will not follow a change to the creature's ability scores or proficiency. Use @ATK, @DC or @STR+@PROF to derive it.">
-                  {" "}— typed in, not derived from stats
-                </span>
-              )}
+              {literal && (() => {
+                /**
+                 * ⚠ SHOW WHAT THE TOKENS ARE WORTH ON THIS CREATURE. The vocabulary exists on both
+                 * sides — a PC's martial save DC is `8+@ATK` and a monster has `@DC`, `@DCDEX` and
+                 * the rest — but an author choosing between them needs to see the numbers, or the
+                 * choice is a guess and they type the literal instead. Which is what happened: 34
+                 * of the library's 44 save lines are literals.
+                 *
+                 * ⚠ AND IT IS NOT AUTO-FILLED, DELIBERATELY. `monsterFormulaVars` records why: the
+                 * ability named in "DEX DC 17" is what the PARTY ROLLS, not what powers the effect,
+                 * so inferring the token from the save line would silently move 41 authored DCs.
+                 * The author picks; this only makes the choice visible.
+                 */
+                const v = monsterFormulaVars(draft);
+                return (
+                  <span style={{ color: "#8a6a2a" }}
+                    title={`Written as a number, so it will not follow a change to ability scores or proficiency.`
+                      + ` On this creature: @ATK=${v.ATK}, @DC=${v.DC}, @DCSTR=${v.DCSTR}, @DCDEX=${v.DCDEX},`
+                      + ` @DCCON=${v.DCCON}, @DCINT=${v.DCINT}, @DCWIS=${v.DCWIS}, @DCCHA=${v.DCCHA}.`
+                      + ` Pick the ability that POWERS the effect, not the one the target rolls.`}>
+                    {" "}— typed in, not derived from stats
+                  </span>
+                );
+              })()}
             </div>
           );
         })()}
