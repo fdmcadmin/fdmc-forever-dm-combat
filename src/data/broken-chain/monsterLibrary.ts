@@ -1797,7 +1797,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * turn)` + attack disadvantage until the first hit, which is what the defence row's
        * interpolated x1.056615 is pricing.
        */
-      { name: "Shadow Shroud (1/Day)", kind: "spell", spellSlotLevel: 3, text: "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not." },
+      { name: "Shadow Shroud (1/Day)", kind: "spell", spellSlotLevel: 3, text: "Action: Darkmare AND one additional creature within 60 ft. are shrouded. Each target gains +2 AC until the end of Darkmare’s next turn, and attacks against that target have disadvantage until that target is hit once. The disadvantage ends on that target’s first hit and does not end the other’s; the +2 AC runs to its full duration either way. Using Shadow Shroud is Darkmare’s Action, so it makes no Multiattack that turn." },
     ],
     reactions: [
     ],

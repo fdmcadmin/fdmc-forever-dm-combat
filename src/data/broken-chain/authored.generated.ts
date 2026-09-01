@@ -423,7 +423,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "label": "DEX",
-        "value": "14 (+2)"
+        "value": "18 (+4)"
       },
       {
         "label": "CON",
@@ -436,18 +436,18 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "label": "WIS",
-        "value": "16 (+3)"
+        "value": "14 (+2)"
       },
       {
         "label": "CHA",
-        "value": "17 (+3)"
+        "value": "15 (+2)"
       }
     ],
     "traits": [
       {
         "name": "Darkmane (Constant)",
         "kind": "trait",
-        "text": "Darkmare creates one-way magical obscurement around itself. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally."
+        "text": "Darkmare is the centre of a constant 30-foot-radius one-way magical obscurement aura. The radius is locked and the aura moves with Darkmare. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally through it. While no allied creature is inside Darkmane, Darkmare has advantage on saving throws against spells and magical effects."
       },
       {
         "name": "Umbral Passage",
@@ -480,7 +480,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Shadow Shroud (1/Day)",
         "kind": "spell",
         "spellSlotLevel": 3,
-        "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
+        "text": "Action: Darkmare AND one additional creature within 60 ft. are shrouded. Each target gains +2 AC until the end of Darkmare’s next turn, and attacks against that target have disadvantage until that target is hit once. The disadvantage ends on that target’s first hit and does not end the other’s; the +2 AC runs to its full duration either way. Using Shadow Shroud is Darkmare’s Action, so it makes no Multiattack that turn."
       }
     ],
     "reactions": [],
