@@ -178,6 +178,25 @@ export type BrokenChainModuleData = {
 
 export type Actor = {
   id: string;
+  /**
+   * PROFICIENCY BONUS, WHEN IT IS NOT THIS ACTOR'S OWN.
+   *
+   * Christopher, 2026-09-02: *"the PB it is reading for the attack, the save and checks are all
+   * suppose to come from Lyrielle"* — the owner of that specific companion.
+   *
+   * A Primal Companion / Beast Master beast uses its RANGER'S proficiency, not a bonus derived
+   * from its own level, and every number on its card follows from that: attack bonus, save DCs,
+   * skill checks. `buildFormulaVarMap` derived `getProficiencyBonus(actor.level)`, so Faelar
+   * was proficient at her own level and quietly disagreed with her owner.
+   *
+   * ⚠ STAMPED, NOT AUTHORED. `resolveActor` writes this for a companion by reading its owner
+   * through the same override layer everything else resolves through; nothing hand-enters it.
+   * Absent on an ordinary character, whose own level is the right source.
+   *
+   * This is the player-side twin of `creatureProficiencyBonus`, which already prefers an
+   * explicit bonus over one derived from CR — same rule, same reason.
+   */
+  proficiencyBonus?: number;
   kind: ActorKind;
   name: string;
   subtitle: string;

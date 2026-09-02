@@ -1,4 +1,5 @@
 import type { Actor } from "../types/actor";
+import { proficiencyBonus } from "../rules/dnd5e";
 import type { FdmcActorLiveState, FdmcRoomLiveState } from "./fdmcRoomLiveState";
 
 /**
@@ -55,6 +56,33 @@ export function resolveActor(
       hp: live?.hp ?? override.stats?.hp ?? base.stats.hp,
     },
   };
+
+  /**
+   * ⚠ A COMPANION IS PROFICIENT AT ITS OWNER'S LEVEL.
+   *
+   * Christopher: *"all of these things are affected by the ranger lvl or the pc level, this is how
+   * things with companions are suppose to be."* Stamped HERE because this is the one place every
+   * surface already funnels through — the card, the popout, the seat library and the combat
+   * tracker all call `resolveActor`, so the 18 `resolveFormulaVars` call sites downstream need
+   * no change at all and cannot drift apart.
+   *
+   * ⚠ THE OWNER IS READ THROUGH THE OVERRIDE LAYER, not off the bundled base. A DM who levels
+   * Lyrielle in the editor writes an override; reading `library[ownerId].level` alone would leave
+   * Faelar proficient at whatever level shipped in the source file.
+   *
+   * `moduleData.ownerId` is the canonical home — `Actor.ownerId` exists on the type but every
+   * live call site (the combat tracker's grouping, `resetCompanionTurns`, the editor's save path)
+   * reads and writes the moduleData one.
+   */
+  if (merged.kind === "companion") {
+    const ownerId = merged.moduleData?.ownerId;
+    if (ownerId) {
+      const ownerLevel = overrides[ownerId]?.level ?? library[ownerId]?.level;
+      if (typeof ownerLevel === "number" && Number.isFinite(ownerLevel)) {
+        return { ...merged, proficiencyBonus: proficiencyBonus(ownerLevel) };
+      }
+    }
+  }
 
   return merged;
 }

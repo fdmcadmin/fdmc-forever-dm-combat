@@ -132,7 +132,13 @@ export function buildFormulaVarMap(
   castingClass?: CastingClassSlot,
 ): Record<string, string> {
   const stats = derivedStats ?? deriveActorStats(actor, undefined, drainState);
-  const prof = getProficiencyBonus(actor.level);
+  /**
+   * ⚠ AN EXPLICIT BONUS WINS. A companion carries its OWNER's proficiency (stamped by
+   * `resolveActor`), because a Primal Companion is proficient at its ranger's level and not its
+   * own. Everything downstream — @PROF, @ATK, @SPELL, and every save DC written as `8+@ATK` or
+   * `8+@SPELL` — follows from this one line, which is why it is the only place that changed.
+   */
+  const prof = actor.proficiencyBonus ?? getProficiencyBonus(actor.level);
   const spellMod = getSpellcastingMod(actor, stats, castingClass);
 
   /**
