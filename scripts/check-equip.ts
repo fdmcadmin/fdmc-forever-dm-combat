@@ -16,6 +16,7 @@ import { checkEquip, isWorn } from "../src/core/equipment/equipRules";
 import { ACTIVE_EQUIP_RULES } from "../src/modules/equipRuleRoster";
 import { attunementRule, attunementUsage, ATTUNEMENT_LIMIT } from "../src/modules/dnd-5e/attunementRule";
 import { singularRule, singularUsage, isT4Singular } from "../src/modules/the-broken-chain/singularRule";
+import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "../src/data/broken-chain/equipmentLibrary";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -118,6 +119,42 @@ console.log("\nA refusal says how to fix it");
   ok("message names the item and the way out",
     Boolean(d && d.message.includes(target.label) && /remove/i.test(d.message)));
   ok("hint is short enough for a tooltip", Boolean(d && d.hint.length > 0 && d.hint.length < 90));
+}
+
+/* ── THE T4 CAP AGAINST THE REAL LIBRARY ──────────────────────────────────────────────────── */
+console.log("\nT4 Singular cap, read off the campaign library");
+{
+  /**
+   * ⚠ THIS RULE HAD NEVER MET ITS OWN DATA. `singularRule` was written on 2026-08-17 and its own
+   * note said so — *"NO T4 EXISTS IN THE CAMPAIGN LIBRARY YET — it tops out at tier 2. This guards
+   * a shape the data has not reached."* Eight Catalyst-tempered Singulars landed on 2026-09-01, and
+   * Christopher's question was the right one: *"why would we add in the T4 and not check if the
+   * singularity tag was written correctly."*
+   *
+   * A cap that has only ever been tested against hand-built fixtures is a cap nobody has tested.
+   * These read the library.
+   */
+  const lib = BROKEN_CHAIN_EQUIPMENT_LIBRARY as Array<{ name: string; tier?: string; convergence?: { actLabel?: string } }>;
+  const t4Items = lib.filter(i => isT4Singular(i.tier));
+  const a4Items = lib.filter(i => i.convergence?.actLabel === "A4");
+
+  ok("every Tier 4 Singular in the library reads as one", t4Items.length === 8, `${t4Items.length} found`);
+  ok("and nothing else does — no false positive on a tier string",
+    lib.filter(i => isT4Singular(i.tier)).length === t4Items.length && t4Items.every(i => /Tempered/.test(i.name)),
+    t4Items.map(i => i.name).join(", "));
+  ok("the eight raw A4 components are NOT T4 — a component is not its own output",
+    a4Items.length === 8 && a4Items.every(i => !isT4Singular(i.tier)));
+
+  // The bag builds an equipped action's metadata with `tier: item.tier` (EquipmentBagEditor).
+  const asWorn = (i: { name: string; tier?: string }, equipped = true) =>
+    ({ id: i.name, label: i.name, metadata: { tier: i.tier, equipped } }) as unknown as ActorAction;
+
+  ok("the first T4 equips", singularRule({ actorName: "PC", target: asWorn(t4Items[0], false), equipment: [] } as never) === null);
+  const second = singularRule({ actorName: "PC", target: asWorn(t4Items[1], false), equipment: [asWorn(t4Items[0])] } as never);
+  ok("a SECOND T4 is refused", Boolean(second), second ? second.rule : "not refused");
+  ok("a raw A4 component beside a worn T4 is allowed",
+    singularRule({ actorName: "PC", target: asWorn(a4Items[0], false), equipment: [asWorn(t4Items[0])] } as never) === null);
+  ok("the cap reports itself full at one", singularUsage([asWorn(t4Items[0])] as never).full === true);
 }
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);

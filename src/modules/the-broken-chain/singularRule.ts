@@ -13,8 +13,15 @@
  * make Tier 1, A1+A3 / A2+A2 / A2+A3 make Tier 2, A3+A3 reaches Tier 3, and A4 tempered by a
  * Catalyst is Tier 4.
  *
- * ⚠ NO T4 EXISTS IN THE CAMPAIGN LIBRARY YET — it tops out at tier 2. This guards a shape the data
- * has not reached rather than one it currently breaks.
+ * ⚠ THE DATA HAS REACHED IT NOW. This said "NO T4 EXISTS IN THE CAMPAIGN LIBRARY YET — it tops out
+ * at tier 2", which was true when the rule was written and stopped being true on 2026-09-01: the
+ * v6 loot document's eight Catalyst-tempered Singulars are in the library, each authored
+ * `tier: "4"`.
+ *
+ * So this is no longer a guard for a shape nobody has built. `check:equip` asserts it against the
+ * real library — all eight read as T4, zero of the other 156 items do, a second one is refused and
+ * a raw A4 component beside a T4 is not. A rule that has never met its own data is a rule nobody
+ * has tested.
  */
 
 import type { EquipRule } from "../../core/equipment/equipRules";
