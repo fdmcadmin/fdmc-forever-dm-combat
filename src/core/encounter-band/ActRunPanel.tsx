@@ -41,6 +41,7 @@ import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 import { simulateEncounter, resolvePartyProfile } from "./checkerV2";
+import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 
@@ -88,6 +89,23 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
     const size = Math.max(1, run?.partySize ?? 4);
     return players.length === size ? partyDamageMixFromActors(players as never[]) : EMPTY_DAMAGE_MIX;
   }, [actors, run?.partySize]);
+  /**
+   * ⚠ THE RUN HAS TO SEE THE BONDS THE FIGHT DOES.
+   *
+   * The difficulty panel reads the party's bond mitigation and takes it off every round. If this
+   * panel did not, the two surfaces would disagree about the same fight by however much the
+   * party's bonds are worth — and "why does the estimator not agree with the checker" is a
+   * question this codebase has already answered once at the cost of a whole version.
+   *
+   * Read on the same terms as the damage mix directly above: only when the readable player actors
+   * match the run's party size, so six characters are never averaged into a four-player run.
+   */
+  const bondMitigation = useMemo(() => {
+    const players = (actors as Array<{ kind?: string }>).filter(a => a?.kind === "player");
+    const size = Math.max(1, run?.partySize ?? 4);
+    return players.length === size ? partyBondMitigationFromActors(players as never[]) : null;
+  }, [actors, run?.partySize]);
+
   const resolved = useMemo(() => (run ? resolveActRun(run.steps, choices) : []), [run, choices]);
   const blocks = useMemo(() => restBlocks(resolved), [resolved]);
   const gates = useMemo(() => (run ? runLevelGates(run.steps) : []), [run]);
@@ -146,7 +164,10 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
           ? resolvePartyProfile({ level: step.partyLevel, size: partySize, customSustain: full.sustain * (1 - arrivingSpent) })
           : full;
         const result = simulateEncounter({
-          party: { size: profile.size, sustain: profile.sustain, dpr: profile.dpr },
+          party: {
+            size: profile.size, sustain: profile.sustain, dpr: profile.dpr,
+            mitigationPerRound: bondMitigation?.perRound ?? 0,
+          },
           roster,
         });
         // What the fight actually took out of the party, as a share of a FULL pool — so the
@@ -159,7 +180,9 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, result: null, cost: 0 };
       }
     });
-  }, [resolved, encounters, monsterLibrary, run?.partySize, run?.shortRestRecovery, run?.partyMode, partyDamageMix]);
+    // ⚠ `bondMitigation` IS A PARTY INPUT AND REACHES NO ROSTER FIGURE, so it must be named here
+    // or a party gaining a Guardian would not re-price the run until something else moved.
+  }, [resolved, encounters, monsterLibrary, run?.partySize, run?.shortRestRecovery, run?.partyMode, partyDamageMix, bondMitigation]);
 
   const pricedById = useMemo(() => new Map(priced.map(p => [p.id, p])), [priced]);
 

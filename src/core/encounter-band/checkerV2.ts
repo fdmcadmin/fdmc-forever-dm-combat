@@ -706,6 +706,8 @@ export type SimulationRound = {
   monsterDprEnd: number;
   monsterDamage: number;
   cumulativeMonsterDamage: number;
+  /** HP the party's bonds stopped this round — reduction, temp HP and healing together. */
+  bondMitigation: number;
   downs: number;
   damagedButStanding: number;
   standing: number;
@@ -749,6 +751,16 @@ export function simulateEncounter(opts: {
      * are any (`partyDefenceFromActors`), otherwise the defence curve's DEX average.
      */
     initiative?: number;
+    /**
+     * Expected HP the party's BONDS prevent, absorb or restore each round — damage reduction,
+     * temporary HP and healing, read from the characters' own assignments. See
+     * `modules/the-broken-chain/bondMitigationFromActors`.
+     *
+     * ⚠ NOT PART OF SUSTAIN. Sustain is a pool spent once; this recurs every round, so folding it
+     * into sustain would price a Guardian's Stand as a single 8 HP instead of 8 HP a round for the
+     * length of the fight. In a five-round gate those differ by a factor of five.
+     */
+    mitigationPerRound?: number;
   };
   roster: RosterGroup[];
   settings?: {
@@ -797,6 +809,11 @@ export function simulateEncounter(opts: {
     settings.damageAllocation === "spread_evenly" ? "spread_evenly" : "focus_fire";
   // EQUAL pools. Not an authored per-PC share.
   const sustainPerPc = partySustain / partySize;
+  /**
+   * ⚠ WHAT THE BONDS STOP FROM LANDING. Zero when the party carries none, which reproduces every
+   * number this simulation produced before bonds were read at all.
+   */
+  const mitigationPerRound = Math.max(0, Number(party.mitigationPerRound ?? 0));
   const rounds: SimulationRound[] = [];
   let cumulativePartyDamage = 0;
   let cumulativeMonsterDamage = 0;
@@ -868,9 +885,21 @@ export function simulateEncounter(opts: {
      * names — it halved the monsters' output in the very round the fight is decided, which is
      * usually their most dangerous one.
      */
-    const monsterDamage = completionRound || pcsStart === 0
+    const monsterDamageBeforeBonds = completionRound || pcsStart === 0
       ? 0
       : hostileFirst * monsterDprStart + (1 - hostileFirst) * monsterDprEnd;
+    /**
+     * ⚠ CAPPED AT THE ROUND'S OWN DAMAGE, so mitigation can never run the party's HP UP.
+     *
+     * Reduction and temporary HP genuinely cannot: an unspent point of either is simply wasted.
+     * HEALING can in principle restore earlier losses, and letting it do so here would be wrong
+     * in the other direction — with no per-PC HP tracking, uncapped healing would let a party
+     * exceed full HP and outrun a fight it should lose. Capping per round understates a dedicated
+     * healer slightly and can never overstate one, which is the correct way round for a checker
+     * a DM uses to decide whether a fight is survivable.
+     */
+    const bondMitigation = Math.min(mitigationPerRound, monsterDamageBeforeBonds);
+    const monsterDamage = monsterDamageBeforeBonds - bondMitigation;
     cumulativeMonsterDamage += monsterDamage;
     const downs = damageAllocation === "spread_evenly"
       ? (cumulativeMonsterDamage + EPSILON >= partySustain ? partySize : 0)
@@ -889,6 +918,7 @@ export function simulateEncounter(opts: {
           : standing === 0 ? "PARTY_DOWN" : "ONGOING";
     rounds.push({
       round, partyPotential, pcsStart, partyDamage, cumulativePartyDamage,
+      bondMitigation,
       // What is left of what has ARRIVED — the number a DM reads mid-fight.
       monsterEhpLeft: Math.max(0, ehpOnField - cumulativePartyDamage),
       monsterDprStart, monsterDprEnd, monsterDamage, cumulativeMonsterDamage,

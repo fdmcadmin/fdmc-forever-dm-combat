@@ -34,6 +34,7 @@ import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
+import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
 import { attackProfile } from "../../modules/dnd-5e/featContextFromActor";
@@ -143,6 +144,15 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    */
   const actorDefence = useMemo(
     () => (resolved ? partyDefenceFromActors(chosen as never[]) : null),
+    [chosen, resolved],
+  );
+  /**
+   * ⚠ WHAT THE PARTY'S BONDS STOP. Christopher: *"almost every bond has some version of damage
+   * reduction for self or others."* Read from the characters' own assignments, priced per round
+   * because that is how often a bond fires — never folded into sustain, which is spent once.
+   */
+  const bondMitigation = useMemo(
+    () => (resolved ? partyBondMitigationFromActors(chosen as never[]) : null),
     [chosen, resolved],
   );
   const targetAc = acOverride ?? actorDefence?.ac ?? defence.ac;
@@ -312,6 +322,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
            * drift this file keeps paying for.
            */
           initiative: actorDefence?.initiative ?? saves.dex,
+          mitigationPerRound: bondMitigation?.perRound ?? 0,
         },
         roster: roster.roster,
         settings: { damageAllocation: allocation, targetSafetyMargin },
@@ -319,7 +330,14 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     } catch {
       return null;
     }
-  }, [roster, profile, allocation, targetSafetyMargin]);
+    /**
+     * ⚠ `bondMitigation` AND `actorDefence` BELONG HERE EXPLICITLY. The AC and save values reach
+     * the simulation THROUGH `roster`, so changing the chosen party already re-ran this by way of
+     * that dependency. Mitigation and initiative do not — they are party inputs that touch no
+     * roster figure, so without naming them a party could gain a Guardian and the fight would not
+     * re-price until something unrelated moved.
+     */
+  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, actorDefence, saves.dex]);
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
@@ -615,6 +633,37 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                       </>
                     )}
                   </div>
+
+                  {/* ⚠ WHAT THE BONDS STOPPED, AND WHAT THEY DID NOT. The party clock above is
+                      already NET of this, so without the line a DM has no way to see why a gate
+                      got easier — the number would simply have moved. Every source names the
+                      character and the option it assumed, because the bond fires once a round and
+                      a table that plays the offensive line gets a different fight. */}
+                  {bondMitigation && (bondMitigation.sources.length > 0 || bondMitigation.withoutBond.length > 0) && (
+                    <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
+                      <span style={{ color: "#8a8aa0" }}>BONDS PREVENT </span>
+                      <strong style={{ color: "#7fbf7f" }}>{bondMitigation.perRound.toFixed(1)} HP</strong>
+                      <span style={{ color: "#555" }}> per round · already taken off the clock above</span>
+                      {bondMitigation.sources.length > 0 && (
+                        <div style={{ marginTop: 3, color: "#777", lineHeight: 1.5 }}>
+                          {bondMitigation.sources.map(s =>
+                            `${s.actor} ${s.option} ${s.amount.toFixed(1)} (${s.kind}${s.held ? ", held" : ""})`).join(" · ")}
+                        </div>
+                      )}
+                      {bondMitigation.withoutBond.length > 0 && (
+                        <div style={{ marginTop: 3, color: "#e0b070" }}>
+                          No bond assigned: {bondMitigation.withoutBond.join(", ")} — their mitigation is not in this figure.
+                        </div>
+                      )}
+                      {bondMitigation.unpriced.length > 0 && (
+                        <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px solid #2a2a3e", color: "#e0b070", lineHeight: 1.45 }}>
+                          {bondMitigation.unpriced.length} bond effect{bondMitigation.unpriced.length === 1 ? "" : "s"} real but NOT priced —
+                          {" "}{[...new Set(bondMitigation.unpriced.map(u => u.reason))].join(", ")}.
+                          {" "}The party is stronger than this figure, never weaker.
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Balance adjustment — the contract's own recommendation output. */}
                   {result.balanceAdjustment.scaledHpChange !== null && (
