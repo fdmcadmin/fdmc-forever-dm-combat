@@ -706,6 +706,23 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
                 </div>
               )}
             </label>
+            {/*
+              ⚠ A COMPANION BOND NEEDS BOTH CONTROLS, AND THIS USED TO OFFER ONE.
+              Christopher, 2026-09-02: *"there is no way to choose the specialization for the
+              companion."*
+
+              This was a single either/or — companion picker OR path picker — so Pack Instinct,
+              the only `actor: "companion"` template in the ladder, took the first branch and its
+              Path buttons could never render. The card still printed "Metamorphosis reached —
+              choose the permanent path", which was true and impossible to act on.
+
+              Pack's choice is not a minor one either: Bonded Strike is the companion's DPR line
+              and Shielding Bond is damage reduction on the closest ally, so the unreachable
+              control was deciding whether the bond shows up in the checker as offence or as
+              mitigation at all.
+
+              The companion picker keeps column two; the path row now follows it full width.
+            */}
             {tpl?.actor === "companion" ? (
               <label style={labelStyle}>
                 Bonded companion
@@ -722,9 +739,16 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
                   </span>
                 )}
               </label>
-            ) : tpl && atMeta ? (
-              <label style={labelStyle}>
+            ) : <span />}
+            {tpl && atMeta ? (
+              <label style={tpl.actor === "companion" ? { ...labelStyle, gridColumn: "span 2" } : labelStyle}>
                 Path <span style={{ color: locked ? "#e9a66a" : "#666" }}>{locked ? "— permanent" : "— permanent once chosen"}</span>
+                {tpl.actor === "companion" && (
+                  <span style={{ display: "block", fontSize: 10, color: "#777", marginTop: 2 }}>
+                    {tpl.name} is performed by the bonded companion, but the CHOICE is recorded on this
+                    character — the assignment lives here, and only the GM writes it.
+                  </span>
+                )}
                 <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
                   {paths.map((pp, pi) => (
                     <button key={pp.name} type="button" disabled={locked && Number(draft.bondPathIndex) !== pi}

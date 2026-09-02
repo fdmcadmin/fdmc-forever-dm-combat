@@ -118,6 +118,38 @@ console.log("\nThe path NOT taken keeps a weaker version, and it still counts");
     aegis.perRound > wrath.perRound, `${aegis.perRound.toFixed(1)} vs ${wrath.perRound.toFixed(1)}`);
 }
 
+/* ── The companion bond's path decides what it IS ────────────────────────────────────────── */
+console.log("\nA companion bond's path is not cosmetic");
+{
+  /**
+   * ⚠ WHY THE UNREACHABLE PATH PICKER WAS A REAL DEFECT, not a cosmetic one.
+   *
+   * Christopher, 2026-09-02: *"there is no way to choose the specialization for the companion."*
+   * `ActorEditor` rendered the companion picker OR the path picker, never both, so Pack Instinct —
+   * the only `actor: "companion"` template — could never have its path set, while the card printed
+   * "Metamorphosis reached — choose the permanent path".
+   *
+   * A script cannot see a JSX either/or. What it CAN prove is that the choice changes the answer:
+   * Bonded Strike is the companion's damage line and Shielding Bond reduces the next hit on the
+   * closest ally, so an unset path is not a neutral default — it decides whether the bond reaches
+   * the checker as mitigation at all.
+   */
+  const companionBonds = BROKEN_CHAIN_BOND_TEMPLATES.filter(t => t.actor === "companion");
+  ok("the ladder still has a companion bond to guard", companionBonds.length > 0,
+    companionBonds.map(t => t.id).join(", "));
+
+  for (const t of companionBonds) {
+    const paths = t.stages[2]?.paths ?? [];
+    ok(`${t.id} offers two paths at Metamorphosis for the picker to render`, paths.length === 2,
+      paths.map(p => p.name).join(" / "));
+    const p0 = partyBondMitigationFromActors([bonded("C", t.id, 6, 0)]);
+    const p1 = partyBondMitigationFromActors([bonded("C", t.id, 6, 1)]);
+    ok(`${t.id}'s two paths price DIFFERENTLY — the choice is load-bearing`,
+      p0.perRound !== p1.perRound,
+      `${p0.perRound.toFixed(1)} (${p0.sources[0]?.option ?? "—"}) vs ${p1.perRound.toFixed(1)} (${p1.sources[0]?.option ?? "—"})`);
+  }
+}
+
 /* ── One bond, one option, one round ─────────────────────────────────────────────────────── */
 console.log("\nA bond fires ONCE — the options are not summed");
 {
