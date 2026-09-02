@@ -164,6 +164,271 @@ const KNOWN_SCRIPT_ONLY: readonly string[] = [
   // rather than a blank: the ledger shrinking is the only visible record that debt was paid.
 ];
 
+/* ══ EXPORT GRANULARITY ═════════════════════════════════════════════════════════════════════
+ *
+ * ⚠ A LIVE MODULE PROVES NOTHING ABOUT WHAT IS INSIDE IT.
+ *
+ * Everything above answers "does anything import this FILE?" and that is where this gate stopped —
+ * so 0.8.15 and 0.8.16 shipped five exports with no production caller while the ledger stayed
+ * clean and PASS printed. `healingResolution.ts` is imported by `ActorCard.tsx`, so it is LIVE; of
+ * its four exports only `usableHealing` is ever called. `initiativeOrder.ts` is imported by the
+ * checker; two of its four exports are reached.
+ *
+ * Christopher: *"why [are] both the class midigation, the partyDefenseFromActors unable to be
+ * called if rule 0 part 2 is being followed."* For those two the answer was that neither is a
+ * wiring fault — one IS called, the other was never built. But the question found this: the gate
+ * implementing RULE 0's second half could not see one level down, which is exactly where the
+ * failure it exists to catch had moved.
+ *
+ * ── HOW REACH IS DECIDED, AND WHY IT IS THE IMPORT AND NOT THE TEXT ───────────────────────────
+ *
+ * An export is reached when another file IMPORTS THAT NAME from it. Grepping for the identifier
+ * would be a guess: short names collide, a name in a comment counts, and a local variable sharing
+ * the name reads as a call. The import statement is exact.
+ *
+ * ⚠ A NAMESPACE IMPORT REACHES EVERYTHING. `import * as X from "./m"` can use any export, and
+ * nothing short of resolving `X.foo` would tell which — so the whole module is treated as reached
+ * rather than reporting every export as an orphan. Under-reporting beats a wall of false alarms
+ * nobody reads.
+ *
+ * ⚠ TYPES ARE NOT CHECKED. An unused type is dead weight the compiler already flags at its use
+ * site; an unused FUNCTION is a capability nobody can reach, which is the thing that keeps costing.
+ */
+const VALUE_EXPORT = /^\s*export\s+(?:async\s+)?(?:function\*?|const|class|let|var)\s+([A-Za-z_$][\w$]*)/gm;
+const EXPORT_LIST = /^\s*export\s*\{([^}]*)\}\s*(?:from\s*["'][^"']+["'])?\s*;?/gm;
+/** `import { a, b as c }` / `import Default,` — the NAMES a file pulls from one module. */
+const IMPORT_NAMES = /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:([A-Za-z_$][\w$]*)\s*,?\s*)?(?:\{([^}]*)\})?\s*(?:from\s*)?["']([^"']+)["']/g;
+const NAMESPACE_IMPORT = /(?:^|\n)\s*import\s+\*\s+as\s+[A-Za-z_$][\w$]*\s+from\s*["']([^"']+)["']/g;
+
+function valueExportsOf(file: string): string[] {
+  const text = readFileSync(file, "utf8");
+  const names = new Set<string>();
+  for (const m of text.matchAll(VALUE_EXPORT)) names.add(m[1]);
+  for (const m of text.matchAll(EXPORT_LIST)) {
+    for (const part of m[1].split(",")) {
+      const name = part.trim().split(/\s+as\s+/)[0].trim();
+      // `export { type Foo }` and bare `type` re-exports are not value exports.
+      if (name && !/^type\b/.test(part.trim())) names.add(name);
+    }
+  }
+  return [...names];
+}
+
+/** file → { names it imports from that target, or ALL for a namespace import } */
+function namesPulledBy(readers: string[]): { byTarget: Map<string, Set<string>>; whole: Set<string> } {
+  const byTarget = new Map<string, Set<string>>();
+  const whole = new Set<string>();
+  for (const f of readers) {
+    const text = readFileSync(f, "utf8");
+    for (const m of text.matchAll(NAMESPACE_IMPORT)) {
+      const t = resolveSpec(f, m[1]);
+      if (t) whole.add(t);
+    }
+    for (const m of text.matchAll(IMPORT_NAMES)) {
+      const target = resolveSpec(f, m[3]);
+      if (!target || target === f) continue;
+      const set = byTarget.get(target) ?? new Set<string>();
+      if (m[1]) set.add(m[1]);
+      for (const part of (m[2] ?? "").split(",")) {
+        const name = part.trim().split(/\s+as\s+/)[0].trim();
+        if (name && !/^type\b/.test(part.trim())) set.add(name);
+      }
+      byTarget.set(target, set);
+    }
+  }
+  return { byTarget, whole };
+}
+
+const prodPull = namesPulledBy(files);
+const scriptPull = namesPulledBy(scripts);
+
+/**
+ * ⚠ AN EXPORT USED INSIDE ITS OWN LIVE MODULE IS REACHED, and the first version of this called
+ * fifty of them orphans.
+ *
+ * `encounterDprAt` is exported AND called by `simulateEncounter` two functions down; the code runs
+ * on every encounter. `resolveSummonFormula` is exported and used by `materializeSummon`. Reporting
+ * those as unreachable is false — the export is merely wider than it needs to be, which is an API
+ * question, not a wiring one. The failure this gate is for is a function NOTHING runs.
+ *
+ * ⚠ COMMENTS ARE STRIPPED FIRST. This codebase names its own functions in prose constantly — the
+ * note above `relativeHostileOrder` says "relativeHostileOrder" — so counting raw text would mark
+ * every genuine orphan as internally used and the gate would find nothing. That is the
+ * cannot-fail shape all over again.
+ */
+const stripComments = (text: string) =>
+  text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+function usedInsideOwnModule(file: string, name: string): boolean {
+  const code = stripComments(readFileSync(file, "utf8"));
+  const hits = code.match(new RegExp(`\\b${name.replace(/\$/g, "\\$")}\\b`, "g"))?.length ?? 0;
+  return hits > 1;   // the declaration itself is the first
+}
+
+/** An entry point's own exports answer to the HTML that loads it, not to another module. */
+const entrySet = new Set(entries);
+const orphanExports: string[] = [];
+const scriptOnlyExports: string[] = [];
+let exportsChecked = 0;
+
+for (const f of files) {
+  if (!live.has(f) || entrySet.has(f)) continue;          // dead modules are already reported above
+  if (prodPull.whole.has(f) || scriptPull.whole.has(f)) continue;   // namespace import — reaches all
+  const reachedByProd = prodPull.byTarget.get(f) ?? new Set<string>();
+  const reachedByScript = scriptPull.byTarget.get(f) ?? new Set<string>();
+  for (const name of valueExportsOf(f)) {
+    exportsChecked++;
+    if (reachedByProd.has(name)) continue;
+    if (usedInsideOwnModule(f, name)) continue;
+    if (reachedByScript.has(name)) scriptOnlyExports.push(`${rel(f)} → ${name}`);
+    else orphanExports.push(`${rel(f)} → ${name}`);
+  }
+}
+orphanExports.sort(); scriptOnlyExports.sort();
+
+/**
+ * ⚠ THE SAME LEDGER DISCIPLINE AS THE MODULE LISTS, one level down. Each line is a capability
+ * nothing a DM touches can reach. Removing one is progress; adding one is a deliberate edit.
+ */
+const KNOWN_SCRIPT_ONLY_EXPORTS: readonly string[] = [
+  "core/constants/damageTypes.ts → damageTypesOf",
+  "core/encounter-band/controlPricing.ts → proneIncomingSwing",
+  "core/encounter-band/controlPricing.ts → withRerollOnFail",
+  "core/encounter-band/initiativeOrder.ts → relativeHostileOrder",
+  "core/encounter-band/reachability.ts → edgeGapFromCentres",
+  "core/encounter-band/reachability.ts → priceForcedMovement",
+  "core/encounter-band/reachability.ts → priceFrightened",
+  "core/encounter-band/reachability.ts → priceGrappled",
+  "core/encounter-band/reachability.ts → priceProne",
+  "core/encounter-engine/index.ts → engine",
+  "core/monsters/creator/monsterCreatorModel.ts → creatureSaves",
+  "core/monsters/lair.ts → legalLairOptions",
+  "core/rules/healingResolution.ts → expectedHealingAtLevel",
+  "core/rules/healingResolution.ts → healingMultiplierFromText",
+  "core/ui/itemActivation.ts → sweepItemActivation",
+  "modules/dnd-5e/srdAuditChassis.generated.ts → SRD_AUDIT_CR_ROWS",
+  "modules/dnd-5e/srdLibrary.ts → SRD_ABSENT",
+  "modules/dnd-5e/srdLibrary.ts → SRD_CORRECTED",
+  "modules/dnd-5e/srdLibrary.ts → SRD_STILL_INCOMPLETE",
+  "modules/dnd-5e/srdLibrary.ts → SRD_UNMATCHED",
+];
+
+/**
+ * ⚠ 101 EXPORTS NOTHING RUNS — the debt this gate exists to stop growing.
+ *
+ * Measured, not chosen. Every line is an exported function or constant that no other production
+ * file imports and that its own module never uses, so no code path in the app reaches it. Some are
+ * genuinely load-bearing ideas that were never wired — `verifyCampaignProvenance` is the digest
+ * check MASTER describes as what stops a local edit passing as authored content, and it is called
+ * nowhere. Others are helpers a refactor left behind.
+ *
+ * They are pinned so the number cannot climb quietly. Wire one, or delete it, and remove its line —
+ * a stale entry FAILS this gate, so the ledger cannot drift out of date either.
+ */
+const KNOWN_ORPHAN_EXPORTS: readonly string[] = [
+  "core/campaign/actTags.ts → byCampaignOrder",
+  "core/campaign/authorExport.ts → verifyCampaignProvenance",
+  "core/campaign/authorMode.ts → verifyAuthorKey",
+  "core/campaign/repairDuplicateResistance.ts → countDuplicateResistance",
+  "core/constants/damageTypes.ts → describeDamageTypes",
+  "core/constants/damageTypes.ts → firstDamageTypeIn",
+  "core/constants/weaponMastery.ts → WEAPON_MASTERY_INDEX",
+  "core/content/contentScope.ts → authoringRefusal",
+  "core/content/contentScope.ts → byScope",
+  "core/content/contentScope.ts → canSaveToPersonalLibrary",
+  "core/content/contentScope.ts → canUseInEncounter",
+  "core/currency/currency.ts → canAfford",
+  "core/dice/localRoller.ts → localRollCrit",
+  "core/encounter-band/checkerV2.ts → expectedAttackDamage",
+  "core/encounter-band/checkerV2.ts → expectedSaveDamage",
+  "core/encounter-band/checkerV2.ts → rechargeProbability",
+  "core/encounter-band/checkerV2.ts → resolveStateTrigger",
+  "core/encounter-band/compactImport.ts → effectFamily",
+  "core/encounter-band/compactImport.ts → srdIdentify",
+  "core/encounter-band/compactImport.ts → stackGroups",
+  "core/encounter-band/coverageGate.ts → coverageSummary",
+  "core/encounter-band/damageExpression.ts → DEFAULT_PARTY_DEFENCE",
+  "core/encounter-band/partyCurveV2.ts → EMPIRICAL_LEVELS",
+  "core/encounter-band/partyDefenceCurve.ts → saveBonusFor",
+  "core/encounter-band/partyResourceCurve.ts → PUBLISHED_LEVELS",
+  "core/encounter-band/pricingPrimitives.generated.ts → primitivesInChannel",
+  "core/encounter-engine/contracts.ts → isOk",
+  "core/events/encounterLog.ts → attributeEvent",
+  "core/jcon/jconStorageBoundary.ts → FDMC_JCON_STORAGE_BOUNDARY",
+  "core/jcon/jconStorageBoundary.ts → createPublicEquipmentSnapshot",
+  "core/jcon/jconStorageBoundary.ts → getPrivateJconStorageSummary",
+  "core/jcon/jconStorageBoundary.ts → getRoomJconStorageSummary",
+  "core/monsters/MonsterJconScanner.tsx → MonsterJconScanner",
+  "core/monsters/actionSetPicks.ts → availableInSet",
+  "core/monsters/actionSetPicks.ts → emptyActionSetPicks",
+  "core/monsters/actionSetPicks.ts → needsActionSetPicks",
+  "core/monsters/actionSetPicks.ts → unfilledActionSlots",
+  "core/monsters/dmMonsterLibrary.ts → clearStagedMonsters",
+  "core/monsters/dmMonsterLibrary.ts → normalizedToTemplate",
+  "core/monsters/dmMonsterLibrary.ts → stageMonster",
+  "core/monsters/dmMonsterLibrary.ts → unstageMonster",
+  "core/monsters/runtime/mainMonsterRuntime.ts → MIRAGE_STALKER_TEMPLATE",
+  "core/monsters/runtime/mainMonsterRuntime.ts → makePlayerSafeMonsterLabel",
+  "core/monsters/runtime/mainMonsterRuntime.ts → maxClassification",
+  "core/monsters/runtime/mainMonsterRuntime.ts → rescaleMonsterHp",
+  "core/rules/bondProgress.ts → assignBond",
+  "core/rules/multiclass.ts → formatClassLevels",
+  "core/seats/dmActorLibrary.ts → applyLevelUpApproval",
+  "core/seats/playerActorCache.ts → clearCache",
+  "core/seats/playerActorCache.ts → getCachedActor",
+  "core/seats/seatColors.ts → MONSTER_COLOR_SOFT",
+  "core/seats/seatColors.ts → findSeatForActor",
+  "core/state/autoBackup.ts → loadWalletMirror",
+  "core/state/convergenceInbox.ts → clearConvergenceInbox",
+  "core/state/resolveFormulaVars.ts → formulaDisplayLabel",
+  "core/state/resolveFormulaVars.ts → resolveActionFormula",
+  "core/table-state/actorHydrationBoundary.ts → resolveActors",
+  "core/table-state/fdmcRoomLiveState.ts → deregisterMonsterInstance",
+  "core/table-state/fdmcRoomLiveState.ts → spendPartyCopper",
+  "core/table-state/roomStateBridge.ts → FDMC_ROOM_STATE_VERSION",
+  "core/table-state/roomStateBridge.ts → getFdmcRoomSyncDiagnostics",
+  "core/table-state/roomStateBridge.ts → subscribeFdmcRoomSyncDiagnostics",
+  "core/table-state/sharedTableBudget.ts → FDMC_SHARED_TABLE_SAFE_BYTES",
+  "core/table-state/sharedTableState.ts → FDMC_SHARED_TABLE_STATE_KEY",
+  "core/text/negatedMention.ts → isOnlyNegatedMention",
+  "core/tokens/tokenBinding.ts → validateTokenBinding",
+  "core/tokens/tokenContextMenu.ts → teardownTokenContextMenus",
+  "core/types/actionEconomy.ts → ECONOMY_SLOTS",
+  "core/types/actionEconomy.ts → isFreeCost",
+  "core/types/spellSlots.ts → formatSpellLevel",
+  "core/types/spellSlots.ts → makeSpellCastingData",
+  "core/types/spellSlots.ts → spellSlotResourceKey",
+  "core/ui/EquipmentBagEditor.tsx → bindableWeapons",
+  "core/ui/EquipmentBagEditor.tsx → resolveBoundFocus",
+  "core/ui/EquipmentLibraryStandalone.tsx → isConvergenceOffer",
+  "core/ui/EquipmentLibraryStandalone.tsx → isLootChoice",
+  "core/ui/EquipmentLibraryStandalone.tsx → isLootDelivery",
+  "core/ui/EquipmentLibraryStandalone.tsx → isLootOffer",
+  "core/ui/LevelUpRequestPanel.tsx → isLevelUpResponse",
+  "core/ui/itemActivation.ts → readActivationFromText",
+  "core/ui/pcActionAdapters.ts → appendActorActionToActor",
+  "core/ui/pcActionTypes.ts → PC_ROLL_MODES",
+  "core/ui/pcActionTypes.ts → makeBondPairActions",
+  "core/ui/pcActionTypes.ts → splitPcActionsByTab",
+  "core/ui/pcActionTypes.ts → validatePcActionDraft",
+  "core/ui/tabVisuals.ts → tabEmptyHint",
+  "core/utils/safeStorage.ts → storageGet",
+  "core/utils/safeStorage.ts → storageMode",
+  "core/utils/safeStorage.ts → storageRemove",
+  "core/utils/safeStorage.ts → storageSet",
+  "data/broken-chain/authored.generated.ts → AUTHORED_AT",
+  "data/broken-chain/monsterLibrary.ts → VOIDED_FOR_CHANGES",
+  "modules/dnd-5e/featPricing.generated.ts → FEAT_EXPRESSION_DICTIONARY",
+  "modules/dnd-5e/srdAuditChassis.generated.ts → SRD_AUDIT_BY_NAME",
+  "modules/dnd-5e/srdContent.ts → DND_MOD_PROVENANCE",
+  "modules/dnd-5e/srdContent.ts → SRD_ATTRIBUTION",
+  "modules/dnd-5e/srdContent.ts → isSrdRecord",
+  "modules/dnd-5e/srdLibrary.ts → SRD_LIBRARY_BY_ID",
+  "modules/dnd-5e/srdMonsters.generated.ts → SRD_BY_ID",
+  "modules/dnd-5e/srdMonsters.generated.ts → SRD_NEEDS_INPUT",
+  "modules/dnd-5e/statBlockGrammar.ts → describeDamage",
+];
+
 console.log(`Wiring — ${files.length} modules, ${entries.length} entry points, ${scripts.length} scripts\n`);
 
 console.log("Entry points");
@@ -180,6 +445,11 @@ for (const s of scriptOnly) console.log(`     ${s}${KNOWN_SCRIPT_ONLY.includes(s
 console.log(`\nORPHAN — ${orphans.length} (no importer anywhere)`);
 for (const o of orphans) console.log(`     ${o}${KNOWN_ORPHANS.includes(o) ? "" : "   ⚠ NEW"}`);
 
+console.log(`\nEXPORTS — ${exportsChecked} value exports across the live modules`);
+console.log(`  unreached by production: ${scriptOnlyExports.length} script-only, ${orphanExports.length} orphan`);
+for (const s of scriptOnlyExports) console.log(`     ${s}${KNOWN_SCRIPT_ONLY_EXPORTS.includes(s) ? "" : "   ⚠ NEW"}`);
+for (const o of orphanExports) console.log(`     ${o}   ⚠ ORPHAN EXPORT`);
+
 console.log("\nThe ledger");
 const newOrphans = orphans.filter(o => !KNOWN_ORPHANS.includes(o));
 const newScriptOnly = scriptOnly.filter(s => !KNOWN_SCRIPT_ONLY.includes(s));
@@ -192,6 +462,22 @@ ok("the orphan ledger has no stale entries", staleOrphans.length === 0,
   staleOrphans.length ? `now wired — delete from the list: ${staleOrphans.join(", ")}` : "");
 ok("the script-only ledger has no stale entries", staleScriptOnly.length === 0,
   staleScriptOnly.length ? `now wired — delete from the list: ${staleScriptOnly.join(", ")}` : "");
+
+const newScriptOnlyExports = scriptOnlyExports.filter(s => !KNOWN_SCRIPT_ONLY_EXPORTS.includes(s));
+const staleScriptOnlyExports = KNOWN_SCRIPT_ONLY_EXPORTS.filter(k => !scriptOnlyExports.includes(k));
+ok("no NEW export proven only by a gate", newScriptOnlyExports.length === 0, newScriptOnlyExports.join(", "));
+ok("the export ledger has no stale entries", staleScriptOnlyExports.length === 0,
+  staleScriptOnlyExports.length ? `now called — delete from the list: ${staleScriptOnlyExports.join(", ")}` : "");
+/**
+ * ⚠ AN ORPHAN EXPORT IS NEVER LEDGERED. A module can be wiring still to do; an exported function
+ * that nothing imports — not even a gate — is unreachable and unproven at once, which is strictly
+ * worse than either. Wire it, test it, or delete it.
+ */
+const newOrphanExports = orphanExports.filter(o => !KNOWN_ORPHAN_EXPORTS.includes(o));
+const staleOrphanExports = KNOWN_ORPHAN_EXPORTS.filter(k => !orphanExports.includes(k));
+ok("no NEW orphan export", newOrphanExports.length === 0, newOrphanExports.join(", "));
+ok("the orphan-export ledger has no stale entries", staleOrphanExports.length === 0,
+  staleOrphanExports.length ? `now reached — delete from the list: ${staleOrphanExports.join(", ")}` : "");
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);
 process.exit(failures === 0 ? 0 : 1);
