@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.14.2",
+  "version": "0.8.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -33,7 +33,7 @@
     "fold:authoring": "node scripts/fold-authoring.mjs",
     "check:traits": "npx tsx scripts/check-trait-coverage.ts",
     "check:reader": "npx tsx scripts/check-trait-reader.ts",
-    "check:healing": "npx tsx scripts/check-party-healing.ts",
+    "check:healing": "npx tsx scripts/check-healing-resolution.ts",
     "check:partyfit": "npx tsx scripts/check-party-fit.ts",
     "check:encrepair": "npx tsx scripts/check-encounter-repair.ts",
     "check:saves": "npx tsx scripts/check-monster-saves.ts",
@@ -61,7 +61,8 @@
     "engine:package": "node scripts/package-engine.mjs",
     "engine:certify": "node scripts/package-engine.mjs --certify",
     "check:initiative": "npx tsx scripts/check-initiative.ts",
-    "check:bond-mitigation": "npx tsx scripts/check-bond-mitigation.ts"
+    "check:bond-mitigation": "npx tsx scripts/check-bond-mitigation.ts",
+    "check:reaction-budget": "npx tsx scripts/check-reaction-budget.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

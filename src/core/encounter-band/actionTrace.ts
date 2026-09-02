@@ -375,19 +375,79 @@ export function traceCreature(
     }
 
     // ── Separate budgets: none of these consumes the Action ──────────────────
-    for (const b of otherChannels) {
+    /**
+     * ⚠ A REACTION IS A SHARED BUDGET, AND THIS USED TO SUM EVERY ONE OF THEM.
+     *
+     * Christopher, 2026-09-02: *"Do not sum the expected value of every possible Reaction in the
+     * same round. Once one is used, the others are unavailable until refresh."*
+     *
+     * This loop scheduled EVERY non-action feature every round, with the note "Own budget — does
+     * not consume the Action." That note is true of the ACTION and false of everything else it
+     * was applied to: a creature carrying Shield, Counterspell and an opportunity attack fired
+     * all three, every round, and the trace added up damage from a body that legally had one
+     * Reaction to spend.
+     *
+     * The same error covered Bonus Actions — two bonus-action features both fired, when a turn
+     * has one.
+     *
+     * ⚠ WHICH CHANNELS ARE CAPPED, AND WHY THE OTHERS ARE NOT.
+     *   reaction, bonus_action   ONE per turn. The 5e economy, and the workbook's own separate
+     *                            shared budget.
+     *   legendary_action         Its own authored pool, spent across other creatures' turns —
+     *                            genuinely several per round, and `uses` already bounds it.
+     *   lair_action              Fires on its own initiative count, not the creature's turn.
+     *   free                     Costs nothing by definition.
+     *
+     * ⚠ HIGHEST EXPECTED VALUE WINS THE SLOT, which is the *"runtime strategy/expected-value
+     * logic"* the instruction names. A body does not get to hold the best reaction AND fire a
+     * worse one; it picks, and the rest wait for the refresh.
+     */
+    const SHARED_BUDGET: ReadonlySet<ActionChannel> = new Set<ActionChannel>(["reaction", "bonus_action"]);
+    const budgetSpent = new Set<ActionChannel>();
+
+    const eligible = otherChannels
+      .filter(b => {
+        const used = spent.get(b) ?? 0;
+        if (b.usesLeft !== null && used >= b.usesLeft) return false;
+        return b.perUse > 0;
+      })
+      // Best first, so a capped channel's single slot goes to the strongest legal option.
+      .sort((a, b) => b.perUse - a.perUse);
+
+    for (const b of eligible) {
+      const capped = SHARED_BUDGET.has(b.channel);
+      if (capped && budgetSpent.has(b.channel)) continue;   // already spent this turn
       const used = spent.get(b) ?? 0;
-      if (b.usesLeft !== null && used >= b.usesLeft) continue;
-      if (b.perUse <= 0) continue;
       const availability = used === 0 ? 1 : rechargeProbability(b.recharge);
       spent.set(b, used + 1);
+      if (capped) budgetSpent.add(b.channel);
       scheduled.push({
         feature: b.feature.name, channel: b.channel, method: b.method,
         castLevel: b.castLevel, targets: b.targets,
         expectation: b.expectation + (availability < 1 ? ` × ${(availability * 100).toFixed(0)}% available` : ""),
         expectedDamage: b.perUse * availability,
         resourceSpent: b.usesLeft !== null ? `1 of ${b.usesLeft} uses` : b.recharge ? `recharge ${b.recharge}` : null,
-        note: "Own budget — does not consume the Action.",
+        note: capped
+          ? `Spends this turn's ${b.channel === "reaction" ? "Reaction" : "Bonus Action"} — nothing else on that budget resolves until it refreshes.`
+          : "Own budget — does not consume the Action.",
+      });
+    }
+
+    /**
+     * ⚠ WHAT LOST THE SLOT IS REPORTED, NOT DROPPED. A body whose Counterspell never resolved
+     * because Shield took the Reaction is a real tactical fact the DM should see, and silently
+     * omitting it looks identical to the feature having been forgotten.
+     */
+    for (const b of eligible) {
+      if (!SHARED_BUDGET.has(b.channel)) continue;
+      if (scheduled.some(s => s.feature === b.feature.name && s.channel === b.channel)) continue;
+      scheduled.push({
+        feature: b.feature.name, channel: b.channel, method: b.method,
+        castLevel: b.castLevel, targets: b.targets,
+        expectation: "not scheduled — the budget was already spent",
+        expectedDamage: 0,
+        resourceSpent: null,
+        note: `${b.channel === "reaction" ? "Reaction" : "Bonus Action"} already spent this turn; this cannot also resolve.`,
       });
     }
 

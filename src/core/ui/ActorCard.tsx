@@ -1,3 +1,4 @@
+import { usableHealing } from "../rules/healingResolution";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appendBonusDie, applyAdvantage, scaleUpcastRider, type RollMode } from "../dice/diceFormula";
 
@@ -1746,14 +1747,29 @@ export function ActorCard({
   }
 
   function healAmount(amount: number) {
-    const next = {
+    /**
+     * ⚠ THE CAP HAS ONE HOME NOW. This computed `min(effectiveMax, current + amount)` inline,
+     * which was correct and was also the ONLY place that arithmetic existed — so the encounter
+     * model had no way to ask what a heal was worth without re-deriving it, and a re-derivation
+     * is a second implementation waiting to drift.
+     *
+     * `usableHealing` is the workbook's `healing` primitive: *"Expected usable same-encounter
+     * healing, capped by missing HP/overheal"*, with the healing-received multiplier applied
+     * first. Same numbers as before for an unmodified heal; the multiplier is new.
+     */
+    const resolved = usableHealing({
+      amount,
       // Heal up to the EFFECTIVE max so a timed max-HP boost (Aid) is actually usable.
-      current: Math.min(effectiveMaxHp(hp), hp.current + amount),
+      effectiveMax: effectiveMaxHp(hp),
+      current: hp.current,
+    });
+    const next = {
+      current: hp.current + resolved.usable,
       max: hp.max,
       temp: hp.temp ?? 0,
       bonusMax: hp.bonusMax,
     };
-    const restoredAmount = next.current - hp.current;
+    const restoredAmount = resolved.usable;
 
     if (restoredAmount <= 0) {
       return;
