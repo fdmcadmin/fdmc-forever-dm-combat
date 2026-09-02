@@ -67,10 +67,15 @@ console.log("\"almost every bond has some version of damage reduction for self o
       const m = partyBondMitigationFromActors([bonded("T", t.id, 6, p)]);
       return m.perRound === 0 && m.unpriced.length === 0;
     }));
-  ok("no bond's mitigation is silently dropped — it prices, or it says why",
-    silent.length <= 1, silent.length ? `silent: ${silent.map(t => t.id).join(", ")}` : "none silent");
-  ok("...and the one that may be silent is a pure-mobility bond with no defensive clause",
-    silent.every(t => t.id === "skirmish"), silent.map(t => t.id).join(", ") || "none");
+  /**
+   * ⚠ ZERO, NOT "AT MOST ONE". This read `<= 1` while Skirmish was the known exception, and
+   * Christopher corrected the premise: *"this is one of the only bonds that doesnt have a stated
+   * defense because dart lets the POC move without OA happening."* Dart IS a defence — an
+   * opportunity attack that never happens — it simply prints no die. Once that was classified,
+   * the tolerance became a hole big enough to hide a real regression in, so it is gone.
+   */
+  ok("NO bond is silently dropped, on either path — it prices, or it says why",
+    silent.length === 0, silent.length ? `silent: ${silent.map(t => t.id).join(", ")}` : "none silent");
 
   const priced = BROKEN_CHAIN_BOND_TEMPLATES.filter(t =>
     ([0, 1] as const).some(p => partyBondMitigationFromActors([bonded("T", t.id, 6, p)]).perRound > 0));
@@ -237,6 +242,41 @@ console.log("\nA whole party sums, one option each");
     m.sources.map(s => s.actor).join(", "));
   ok("...and the Vanguard is REPORTED, so its absence from the total is visible",
     m.unpriced.some(u => u.actor === "Striker" && u.reason === "accuracy"));
+
+  /**
+   * ⚠ FOUND ON THE LIVE PARTY, NOT IN A FIXTURE. Ripsnarl carries Skirmish Instinct at
+   * Metamorphosis — Momentum and Dart, pure damage and movement. He produced no source, no
+   * `unpriced` note and no `withoutBond` entry, so the panel named three of four characters and
+   * said nothing at all about the fourth. Every character with a bond must now be accounted for
+   * somewhere, which is the property this asserts.
+   */
+  const withSkirmish = [...four, bonded("Runner", "skirmish", 8, 0)];
+  const s = partyBondMitigationFromActors(withSkirmish);
+  const accountedFor = new Set([
+    ...s.sources.map(x => x.actor), ...s.unpriced.map(x => x.actor),
+    ...s.withoutBond, ...s.bondWithoutMitigation.map(x => x.actor),
+  ]);
+  ok("EVERY character is accounted for somewhere — priced, unpriced, or explicitly neither",
+    withSkirmish.every(a => accountedFor.has(a.name)),
+    [...accountedFor].join(", "));
+
+  /**
+   * ⚠ THE CATCH-ALL MUST BE EMPTY AGAINST THE REAL LADDER, and that is the assertion — not that it
+   * fires. `bondWithoutMitigation` was added when Skirmish appeared to have no defence at all;
+   * classifying Dart as avoidance emptied it. Keeping the field is right (a future authored bond
+   * with no defensive text must still be named rather than vanish), but asserting it fires on
+   * Skirmish would now be asserting the bug.
+   *
+   * Every one of the fourteen is accounted for by a real category, so this list is empty. If a
+   * bond ever lands in it, that is a content or classifier question worth surfacing — which is
+   * exactly what the panel prints.
+   */
+  ok("no AUTHORED bond falls into the catch-all — all fourteen have a real category",
+    s.bondWithoutMitigation.length === 0,
+    s.bondWithoutMitigation.map(b => `${b.actor} ${b.bond}`).join(", ") || "empty");
+  ok("Skirmish is classified as AVOIDANCE, not as 'no mitigation'",
+    s.unpriced.some(u => u.actor === "Runner" && u.reason === "avoidance"),
+    s.unpriced.filter(u => u.actor === "Runner").map(u => u.reason).join(", ") || "none");
   ok("the total is their sum",
     Math.abs(m.perRound - m.sources.reduce((s, x) => s + x.amount, 0)) < 1e-9);
   ok("a level-8 party's bonds are worth a meaningful share of a round",

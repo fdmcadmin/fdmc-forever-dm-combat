@@ -639,7 +639,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                       got easier — the number would simply have moved. Every source names the
                       character and the option it assumed, because the bond fires once a round and
                       a table that plays the offensive line gets a different fight. */}
-                  {bondMitigation && (bondMitigation.sources.length > 0 || bondMitigation.withoutBond.length > 0) && (
+                  {bondMitigation && (bondMitigation.sources.length > 0 || bondMitigation.withoutBond.length > 0
+                    || bondMitigation.bondWithoutMitigation.length > 0) && (
                     <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
                       <span style={{ color: "#8a8aa0" }}>BONDS PREVENT </span>
                       <strong style={{ color: "#7fbf7f" }}>{bondMitigation.perRound.toFixed(1)} HP</strong>
@@ -648,6 +649,15 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                         <div style={{ marginTop: 3, color: "#777", lineHeight: 1.5 }}>
                           {bondMitigation.sources.map(s =>
                             `${s.actor} ${s.option} ${s.amount.toFixed(1)} (${s.kind}${s.held ? ", held" : ""})`).join(" · ")}
+                        </div>
+                      )}
+                      {/* ⚠ A BOND THAT MITIGATES NOTHING IS STILL ACCOUNTED FOR. Ripsnarl carries
+                          Skirmish — pure damage and movement — and without this line a DM reading
+                          a four-person party sees three names and no word about the fourth. */}
+                      {bondMitigation.bondWithoutMitigation.length > 0 && (
+                        <div style={{ marginTop: 3, color: "#777" }}>
+                          {bondMitigation.bondWithoutMitigation.map(b => `${b.actor} ${b.bond}`).join(" · ")}
+                          {" — read, and carries no mitigation on either branch."}
                         </div>
                       )}
                       {bondMitigation.withoutBond.length > 0 && (
