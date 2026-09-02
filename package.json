@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.12.9",
+  "version": "0.8.13.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -59,7 +59,8 @@
     "import:srd:audit": "node scripts/import-srd-audit.mjs",
     "gen:feats": "node scripts/gen-feats.mjs",
     "engine:package": "node scripts/package-engine.mjs",
-    "engine:certify": "node scripts/package-engine.mjs --certify"
+    "engine:certify": "node scripts/package-engine.mjs --certify",
+    "check:initiative": "npx tsx scripts/check-initiative.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

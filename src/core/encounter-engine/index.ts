@@ -29,7 +29,6 @@ import {
   resolvePartyProfile as resolvePartyProfileImpl,
   simulateEncounter as simulateEncounterImpl,
 } from "../encounter-band/checkerV2";
-import { aggregateAudit as aggregateAuditImpl } from "../encounter-band/aggregateAudit";
 import { auditCoverage as auditCoverageImpl } from "../encounter-band/coverageGate";
 
 import {
@@ -40,7 +39,6 @@ import {
   type EstimatorInput,
   type EstimatorResult,
   type EncounterResult,
-  type AggregateAudit,
   type CoverageReport,
   type MechanicSource,
   type PartyProfile,
@@ -53,7 +51,6 @@ import { ENGINE_MANIFEST, engineProvenance } from "./fallbackManifest";
 registerActive("estimateCreature", estimateCreatureImpl as never);
 registerActive("resolvePartyProfile", resolvePartyProfileImpl as never);
 registerActive("checkEncounter", simulateEncounterImpl as never);
-registerActive("aggregateAudit", aggregateAuditImpl as never);
 registerActive("auditCoverage", auditCoverageImpl as never);
 
 /**
@@ -74,7 +71,6 @@ export const engineDirect = {
   estimateCreature: estimateCreatureImpl,
   resolvePartyProfile: resolvePartyProfileImpl,
   checkEncounter: simulateEncounterImpl,
-  aggregateAudit: aggregateAuditImpl,
   auditCoverage: auditCoverageImpl,
 } as const;
 
@@ -88,9 +84,6 @@ export const engine = {
   },
   checkEncounter(opts: Parameters<typeof simulateEncounterImpl>[0]): EngineOutcome<EncounterResult> {
     return safeExecute<EncounterResult>("checkEncounter", opts);
-  },
-  aggregateAudit(opts: Parameters<typeof aggregateAuditImpl>[0]): EngineOutcome<AggregateAudit> {
-    return safeExecute<AggregateAudit>("aggregateAudit", opts);
   },
   auditCoverage(sources: MechanicSource[]): EngineOutcome<CoverageReport> {
     return safeExecute<CoverageReport>("auditCoverage", sources);

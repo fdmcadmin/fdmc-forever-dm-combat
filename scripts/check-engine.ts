@@ -161,25 +161,25 @@ console.log("\nGate 6 — packaging and recovery");
       m.lkg ? `${m.lkg.engineVersion} ${m.lkg.hash}` : "none");
 
     // Break the candidate, then confirm the ANSWER still arrives — from the fallback.
-    registerActive("aggregateAudit", (() => { throw new Error("candidate down"); }) as never);
-    const recovered = engine.aggregateAudit({
-      level: 9, partySize: 4, mode: "wotcStandard",
-      groups: [{ quantity: 1, groupEhp: 300, round1DprPerBody: 66, round2PlusDprPerBody: 55 }],
-    });
+    /**
+     * ⚠ THIS GATE USED TO RIDE ON `aggregateAudit`, which was removed with the legacy flat
+     * model (0.8.13.0). The gate is about the RECOVERY MECHANISM, not about which capability
+     * carries it, so it moved to `resolvePartyProfile` rather than being deleted with the
+     * capability it happened to be written against.
+     */
+    const probe = { level: 9, size: 4, equipmentMode: "wotcStandard" } as const;
+    registerActive("resolvePartyProfile", (() => { throw new Error("candidate down"); }) as never);
+    const recovered = engine.resolvePartyProfile(probe);
     ok("a broken candidate recovers to the bundled LKG",
       isOk(recovered) && recovered.from === "fallback",
       isOk(recovered) ? `from ${recovered.from}` : recovered.detail);
     ok("and the recovered answer is the real one",
-      isOk(recovered) && recovered.value.encounterEhp === 300,
-      isOk(recovered) ? String(recovered.value.encounterEhp) : "");
+      isOk(recovered) && recovered.value.level === 9 && recovered.value.size === 4,
+      isOk(recovered) ? `L${recovered.value.level} ${recovered.value.size}P` : "");
 
-    registerActive("aggregateAudit", engineDirect.aggregateAudit as never);
-    resetCapability("aggregateAudit");
-    ok("and the candidate comes back after reset",
-      isOk(engine.aggregateAudit({
-        level: 9, partySize: 4, mode: "wotcStandard",
-        groups: [{ quantity: 1, groupEhp: 300, round1DprPerBody: 66, round2PlusDprPerBody: 55 }],
-      })));
+    registerActive("resolvePartyProfile", engineDirect.resolvePartyProfile as never);
+    resetCapability("resolvePartyProfile");
+    ok("and the candidate comes back after reset", isOk(engine.resolvePartyProfile(probe)));
   }
 }
 

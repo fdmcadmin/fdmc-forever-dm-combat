@@ -37,7 +37,6 @@ const REAL: Record<EngineCapability, unknown> = {
   estimateCreature: engineDirect.estimateCreature,
   resolvePartyProfile: engineDirect.resolvePartyProfile,
   checkEncounter: engineDirect.checkEncounter,
-  aggregateAudit: engineDirect.aggregateAudit,
   auditCoverage: engineDirect.auditCoverage,
 };
 

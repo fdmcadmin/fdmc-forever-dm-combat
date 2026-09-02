@@ -104,21 +104,6 @@ export function validateOutput(capability: EngineCapability, output: unknown): C
       return bad;
     }
 
-    case "aggregateAudit": {
-      const bad = [
-        ...requireFinite(o, ["encounterEhp", "monsterDprRound1", "monsterDprRound2Plus", "partySustain"]),
-        ...requireNonNegative(o, ["encounterEhp", "monsterDprRound1", "monsterDprRound2Plus", "partySustain"]),
-      ];
-      if (!Array.isArray(o.rounds)) bad.push({ field: "rounds", problem: "not an array" });
-      // The sheet's own sentinels are strings; a number is equally valid. Anything else is not.
-      for (const f of ["completionRound", "fatalRound", "projectedDowns"]) {
-        const v = o[f];
-        if (typeof v === "string") continue;
-        if (!finite(v)) bad.push({ field: f, problem: `neither a number nor a sheet sentinel (${String(v)})` });
-      }
-      return bad;
-    }
-
     case "auditCoverage": {
       const bad: ContractViolation[] = [];
       for (const f of ["covered", "packets", "unpriced", "parameters", "blocked"]) {

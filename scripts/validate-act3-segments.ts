@@ -75,6 +75,14 @@ const SEGMENTS: Array<{ label: string; level: number; encounterIds: string[] }> 
 /**
  * WHAT THIS ENGINE MEASURED, at 0.8.11.5, against the authored library.
  *
+ * ⚠ TWO FIGURES MOVED AT 0.8.13.0, when the simulation stopped assuming half a roster acts before
+ * the party and started reading each body's DEX against the party's. Gate I rose 124 → 130: the
+ * Crone and the Mare outrun a level-6 party, so more of their output lands before it can be
+ * removed. The Center FELL 252 → 243: the Thought Harrower is DEX +1 against a level-9 party at
+ * +3.1, so the party now outruns it. Both moves are the model reading initiative it previously
+ * could not see, and both are small because the old midpoint was a fair average — it was only
+ * ever wrong at the ends.
+ *
  * ⚠ THE CUT BELOW MOVED R2 -> R3 (82 -> 105) when Shardbound's "Shatter the Stake" was RESTORED:
  * a reaction imposing disadvantage once a round, priced at the workbook's own +0.047749, which the
  * authoring round trip had dropped. An extra round of the fight is an extra round of its damage.
@@ -87,7 +95,7 @@ const SEGMENTS: Array<{ label: string; level: number; encounterIds: string[] }> 
 const REFERENCE: Record<string, { completion: string; monsterDamage: number }> = {
   "act3-e1-the-first-court": { completion: "R3", monsterDamage: 45 },
   "act3-e2-the-cut-below": { completion: "R3", monsterDamage: 105 },
-  "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 124 },
+  "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 130 },
   "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 55 },
   "act3-e5-the-scar-line": { completion: "R3", monsterDamage: 91 },
   // ⚠ FAIL R4 — a WIPE in this model, and it is the fight to look at in the app with a real party.
@@ -95,7 +103,7 @@ const REFERENCE: Record<string, { completion: string; monsterDamage: number }> =
   "act3-e7-the-last-court": { completion: "R3", monsterDamage: 85 },
   "act3-e8-the-occupied-acre": { completion: "R3", monsterDamage: 75 },
   "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 215 },
-  "act3-e10-the-center": { completion: "R4", monsterDamage: 252 },
+  "act3-e10-the-center": { completion: "R4", monsterDamage: 243 },
 };
 
 const TOLERANCE = 5;
@@ -112,7 +120,14 @@ function runFight(encounterId: string, level: number, sustainNow: number, fullSu
   const built = rosterFromTemplates(entries, level, { ac: defence.ac, saveBonus: saveAvg, partySize: PARTY_SIZE, saves });
   const profile = resolvePartyProfile({ level, size: PARTY_SIZE, equipmentMode: MODE, customSustain: sustainNow });
   const result = simulateEncounter({
-    party: { size: PARTY_SIZE, sustain: sustainNow, dpr: profile.dpr },
+    /**
+     * ⚠ THE DEX LINE IS THE PARTY'S INITIATIVE, AND LEAVING IT OUT IS NOT NEUTRAL. Omitted, the
+     * party schedules at +0 while every Act 3 body reads its real DEX (+2 to +5 across the
+     * library), so every roster would act first far more often here than it does in the app.
+     * This script has to schedule the party the same way the panel does or it is measuring a
+     * fight nobody plays.
+     */
+    party: { size: PARTY_SIZE, sustain: sustainNow, dpr: profile.dpr, initiative: defence.dex },
     roster: built.roster, settings: { damageAllocation: "focus_fire" },
   });
   const last = result.rounds[result.rounds.length - 1];

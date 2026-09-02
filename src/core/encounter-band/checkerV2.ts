@@ -29,6 +29,7 @@ import {
   partyCurveRow,
   type PartyEquipmentMode,
 } from "./partyCurveV2";
+import { hostileFractionActingFirst } from "./initiativeOrder";
 import { depleteRoundValue } from "./partyResourceCurve";
 
 export { partySizeHpMultiplier };
@@ -346,6 +347,14 @@ export type RosterGroup = {
   id?: string;
   name?: string;
   quantity: number;
+  /**
+   * This body's initiative modifier — its DEX unless the sheet states one.
+   *
+   * ⚠ ABSENT IS NOT ZERO-AND-IGNORED. When no body in a roster states one, every body ties the
+   * party and `hostileFractionActingFirst` returns 0.5 — the midpoint the simulation used before
+   * initiative was read at all. So an unstated roster behaves exactly as it did.
+   */
+  initiativeMod?: number;
   baseHp: number;
   /** Healing / form / temp-HP pools legally available IN THIS FIGHT. */
   explicitSameEncounterPools?: number;
@@ -733,7 +742,14 @@ export type EncounterResult = {
 };
 
 export function simulateEncounter(opts: {
-  party: { size: number; sustain: number; dpr: Partial<RoundProfile> };
+  party: {
+    size: number; sustain: number; dpr: Partial<RoundProfile>;
+    /**
+     * The party's initiative modifier — the DEX line. Read from the chosen characters when there
+     * are any (`partyDefenceFromActors`), otherwise the defence curve's DEX average.
+     */
+    initiative?: number;
+  };
   roster: RosterGroup[];
   settings?: {
     maxRounds?: number;
@@ -749,6 +765,22 @@ export function simulateEncounter(opts: {
     throw new RangeError("party.size must be a positive integer and party.sustain must be positive");
   }
   const prepared = prepareRoster(roster, partySize);
+  /**
+   * ⚠ HOW MUCH OF THE ROSTER'S OUTPUT IS ALREADY COMMITTED WHEN THE PARTY ACTS.
+   *
+   * This replaces a hard-coded 0.5. See `initiativeOrder` for why it is a probability rather
+   * than an order, and why 0.5 is still exactly what an evenly-matched roster produces.
+   */
+  const partyInitiative = Number(party.initiative ?? 0);
+  const hostileFirst = hostileFractionActingFirst(
+    prepared.map(g => ({
+      name: g.name,
+      quantity: g.quantity,
+      initiativeMod: Number(g.initiativeMod ?? 0),
+      weight: roundValue(g.dpr, 1),
+    })),
+    Number.isFinite(partyInitiative) ? partyInitiative : 0,
+  );
   /**
    * ⚠ THE ENCOUNTER'S TOTAL, ONCE EVERYTHING HAS ARRIVED. This is the figure the report quotes,
    * the PCER divides by, and the HP-change guidance scales — all of which are questions about the
@@ -824,6 +856,12 @@ export function simulateEncounter(opts: {
      * initiative model; never apply an extra completion-round damage discount ON TOP OF
      * midpoint/whole-body attrition."*
      *
+     * ⚠ THE MIDPOINT IS NOW THE DEFAULT CASE OF A READ ONE. This was a fixed (start + end) / 2;
+     * it is now `hostileFirst * start + (1 - hostileFirst) * end`, where the fraction comes from
+     * the bodies' own initiative modifiers against the party's. An evenly-matched roster yields
+     * 0.5 and therefore the identical number. It is still ONE initiative model, which is what the
+     * rule below requires — it is simply no longer the same one for every fight.
+     *
      * The midpoint of start-of-round and end-of-round output IS the single initiative model, and
      * with whole-body attrition it already accounts for bodies dropping mid-round. Multiplying it
      * again by `completionRoundMonsterFraction` (0.5 by default) was the second discount the rule
@@ -832,7 +870,7 @@ export function simulateEncounter(opts: {
      */
     const monsterDamage = completionRound || pcsStart === 0
       ? 0
-      : (monsterDprStart + monsterDprEnd) / 2;
+      : hostileFirst * monsterDprStart + (1 - hostileFirst) * monsterDprEnd;
     cumulativeMonsterDamage += monsterDamage;
     const downs = damageAllocation === "spread_evenly"
       ? (cumulativeMonsterDamage + EPSILON >= partySustain ? partySize : 0)

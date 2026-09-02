@@ -42,12 +42,6 @@ export type {
 } from "../encounter-band/checkerV2";
 
 export type {
-  AggregateAudit,
-  AggregateGroup,
-  AggregateRound,
-} from "../encounter-band/aggregateAudit";
-
-export type {
   CoverageReport,
   MechanicSource,
   BasePacket,
@@ -70,7 +64,6 @@ export const ENGINE_CAPABILITIES = [
   "estimateCreature",
   "resolvePartyProfile",
   "checkEncounter",
-  "aggregateAudit",
   "auditCoverage",
 ] as const;
 

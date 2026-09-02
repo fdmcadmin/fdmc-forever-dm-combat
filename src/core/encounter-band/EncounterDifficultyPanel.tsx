@@ -26,7 +26,6 @@ import {
   simulateEncounter, resolvePartyProfile, effectiveHpPerBody,
   type DamageAllocation, type EncounterResult,
 } from "./checkerV2";
-import { aggregateAudit, auditDivergence, type AggregateAudit } from "./aggregateAudit";
 import {
   GENERIC_CHECKER_LEVELS, isProjectedLevel, partySizeHpMultiplier,
   type PartyEquipmentMode,
@@ -34,6 +33,7 @@ import {
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
+import { partyDefenceFromActors } from "./partyDefenceFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
 import { attackProfile } from "../../modules/dnd-5e/featContextFromActor";
@@ -90,12 +90,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   const [acOverride, setAcOverride] = useState<number | null>(null);
   const [saveOverride, setSaveOverride] = useState<number | null>(null);
   const defence = partyDefenceAt(partyLevel, equipmentMode);
-  const targetAc = acOverride ?? defence.ac;
-  /** Six saves, unless the DM has typed one number to flatten them. */
-  const saves = saveOverride === null
-    ? { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha }
-    : { str: saveOverride, dex: saveOverride, con: saveOverride, int: saveOverride, wis: saveOverride, cha: saveOverride };
-  const targetSave = saveOverride ?? (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
   /** Whether the checker is using the curve or the DM's typed numbers — surfaced in the panel. */
   const isOverridden = acOverride !== null || saveOverride !== null;
   const curveModeLabel = equipmentMode === "brokenChain" ? "Broken Chain" : "WotC standard";
@@ -134,6 +128,40 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     [players, partySize, chosenActorIds],
   );
   const resolved = chosen.length === partySize;
+
+  /**
+   * ⚠ THE CURVE IS THE FALLBACK NOW, NOT THE ANSWER.
+   *
+   * Christopher: *"there should be a update to the standard on the dex line as well as how ac for
+   * the party was obtained."* The workbook's own `Party Defense Reach` rows are stamped
+   * PROVISIONAL STANDARD-PROGRESSION PROXY, and `Party Progression Runtime` says what replaces
+   * them: *"Expose AC and armor source per PC. Per-PC, not party-average AC."*
+   *
+   * So the order of authority is: a DM's typed override, then the REAL party when one is chosen,
+   * then the published proxy. The proxy is never wrong to show — it is wrong to prefer when four
+   * actual characters with actual armour are sitting in the roster.
+   */
+  const actorDefence = useMemo(
+    () => (resolved ? partyDefenceFromActors(chosen as never[]) : null),
+    [chosen, resolved],
+  );
+  const targetAc = acOverride ?? actorDefence?.ac ?? defence.ac;
+  /**
+   * Six saves, unless the DM has typed one number to flatten them.
+   *
+   * ⚠ THE FLATTENED FIGURE IS A DISPLAY, NOT AN INPUT. `featureResolver` reads
+   * `target.saves[ability]` whenever the feature named one, so a Dex burst prices against DEX.
+   * `targetSave` is the mean of whatever six are in force, shown so the panel has one number to
+   * print and used only where a feature never said which save it calls for.
+   */
+  const saves = saveOverride !== null
+    ? { str: saveOverride, dex: saveOverride, con: saveOverride, int: saveOverride, wis: saveOverride, cha: saveOverride }
+    : actorDefence?.saves
+      ?? { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha };
+  const targetSave = (saves.str + saves.dex + saves.con + saves.int + saves.wis + saves.cha) / 6;
+  /** Where the numbers above came from, so the panel can say it rather than imply it. */
+  const defenceBasis: "override" | "actors" | "curve" =
+    acOverride !== null || saveOverride !== null ? "override" : actorDefence ? "actors" : "curve";
 
   /**
    * The same three answers at every size from 3 to 6 — Christopher: *"3 player would make you
@@ -274,7 +302,17 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     if (roster.roster.length === 0 || !profile) return null;
     try {
       return simulateEncounter({
-        party: { size: profile.size, sustain: profile.sustain, dpr: profile.dpr },
+        party: {
+          size: profile.size, sustain: profile.sustain, dpr: profile.dpr,
+          /**
+           * ⚠ THE DEX LINE, AND IT IS THE SAME LINE TWICE. Initiative is a DEX check, so the
+           * party's place in the body order is the DEX average from whichever source the panel is
+           * already trusting for saves — the chosen characters when there are any, the published
+           * curve otherwise. Deriving a second opinion of the party's DEX here is exactly the
+           * drift this file keeps paying for.
+           */
+          initiative: actorDefence?.initiative ?? saves.dex,
+        },
         roster: roster.roster,
         settings: { damageAllocation: allocation, targetSafetyMargin },
       });
@@ -282,50 +320,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       return null;
     }
   }, [roster, profile, allocation, targetSafetyMargin]);
-
-  /**
-   * THE WORKBOOK'S OWN READING OF THE SAME ROSTER.
-   *
-   * ⚠ THE PANEL USED TO SHOW ONE MODEL AND CALL IT THE ANSWER. `simulateEncounter` is the body
-   * trace the Runtime Contract requires for final behaviour — it removes a body's output the round
-   * that body dies, and drops party output as PCs go down. The visible Encounter Checker in the
-   * workbook does neither; it runs flat.
-   *
-   * The two therefore disagree, always in the same direction: with more than one body the trace
-   * reads SOFTER. Six pikemen at level 6 come out 3 PCs down on the aggregate and 1 on the trace.
-   * Showing only the trace meant the panel quietly promised a gentler fight than the workbook did,
-   * with nothing on screen to say a second opinion existed.
-   *
-   * Christopher: *"at no point does the app tell us something is faster or slower then the workbook
-   * does."* So both are computed, and the divergence is stated rather than resolved.
-   */
-  const aggregate = useMemo<AggregateAudit | null>(() => {
-    if (roster.roster.length === 0 || !profile) return null;
-    try {
-      return aggregateAudit({
-        level: partyLevel,
-        partySize: profile.size,
-        mode: equipmentMode,
-        groups: roster.roster.map(g => ({
-          name: g.name,
-          quantity: g.quantity,
-          // The sheet expects group EHP already priced and already party-size scaled, which is
-          // exactly what the checker's own per-body helper produces.
-          groupEhp: g.quantity * effectiveHpPerBody(g, profile.size),
-          round1DprPerBody: g.dpr?.round1 ?? 0,
-          round2PlusDprPerBody: g.dpr?.round2 ?? g.dpr?.round1 ?? 0,
-        })),
-        targetSafetyMargin,
-      });
-    } catch { return null; }
-  }, [roster, profile, partyLevel, equipmentMode, targetSafetyMargin]);
-
-  const divergence = useMemo(
-    () => (aggregate && result
-      ? auditDivergence(aggregate, { completionRound: result.completionRound, downsAtCompletion: result.downsAtCompletion })
-      : null),
-    [aggregate, result],
-  );
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
@@ -478,7 +472,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                 <div title={
                   isOverridden
                     ? "OVERRIDDEN — the checker is using your typed numbers, not the party curve. Clear both to go back to the curve."
-                    : `Read from the party defence curve at level ${partyLevel} (${curveModeLabel}): average AC and the matching ability save. Type over either one for your own table — a real table is not the average table.`
+                    : defenceBasis === "actors"
+                      ? `Read from the ${chosen.length} chosen characters: ${actorDefence?.perPc.map(p => `${p.actor} AC ${p.ac}`).join(" · ")}. Their own armour and save proficiencies, not the published average. Type over either one to override.`
+                      : `Read from the party defence curve at level ${partyLevel} (${curveModeLabel}): average AC and the matching ability save. The workbook stamps these rows PROVISIONAL PROXY — choose a party to read real characters instead. Type over either one for your own table.`
                 }>
                   <label style={label}>
                     Party AC / save{" "}
@@ -488,7 +484,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                           style={{ fontSize: 9, padding: "0 4px", background: "#e07b3922", border: "1px solid #e07b3955", borderRadius: 3, color: "#e07b39", cursor: "pointer" }}>
                           overridden · reset
                         </button>
-                      : <span style={{ fontSize: 9, color: "#5a5a6e" }}>from curve</span>}
+                      : <span style={{ fontSize: 9, color: "#5a5a6e" }}>{defenceBasis === "actors" ? "from party" : "from curve"}</span>}
                   </label>
                   <div style={{ display: "flex", gap: 4 }}>
                     <input type="number" value={targetAc} onChange={e => setAcOverride(e.target.value === "" ? null : Number(e.target.value))}
@@ -635,29 +631,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                     </div>
                   )}
 
-                  {/* THE WORKBOOK'S AGGREGATE AUDIT, side by side with the body trace. It is
-                      shown whether or not the two agree: a DM who only ever sees them when they
-                      differ has no way to know the check was run the rest of the time. */}
-                  {aggregate && (
-                    <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
-                      <div style={{ color: "#7bb0e0", marginBottom: 3, letterSpacing: 0.4 }}>
-                        WORKBOOK AGGREGATE AUDIT
-                        <span style={{ color: "#555", letterSpacing: 0 }}> · flat DPR, no bodies removed</span>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4, color: "#999" }}>
-                        <span>ends <strong style={{ color: "#ddd" }}>R{String(aggregate.completionRound)}</strong></span>
-                        <span>fatal <strong style={{ color: typeof aggregate.fatalRound === "number" ? "#ff4444" : "#7be08a" }}>{String(aggregate.fatalRound)}</strong></span>
-                        <span>down <strong style={{ color: "#ddd" }}>{String(aggregate.projectedDowns)}</strong></span>
-                        <span>standing <strong style={{ color: "#ddd" }}>{aggregate.standingAtCompletion}</strong></span>
-                      </div>
-                      {divergence && !divergence.agrees && (
-                        <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px solid #2a2a3e", color: "#e0b070", lineHeight: 1.45 }}>
-                          {divergence.note}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {/* NOTHING IS SILENT — *"if the checker has no idea how to parse something
                       it will tell the dm to cal[culate] that damage."* A silent OMISSION
                       reaches the total exactly as unchallenged as a silent substitute would.
@@ -732,9 +705,11 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                     Survivor counts are model projections under {allocation === "focus_fire" ? "focus fire" : "even spread"}, not observed outcomes.
                     {" "}Every attack was resolved against AC {Number(targetAc.toFixed(2))}{acOverride === null ? "" : " (your override)"}
                     {" "}and every save against a +{Number(targetSave.toFixed(2))}{saveOverride === null ? "" : " (your override)"} bonus
-                    {acOverride === null && saveOverride === null
-                      ? ` — the published ${equipmentMode === "brokenChain" ? "Broken Chain" : "Standard"} party curve at level ${partyLevel}, not an assumption.`
-                      : " — an override you entered, replacing the published curve."}
+                    {defenceBasis === "override"
+                      ? " — an override you entered, replacing everything below it."
+                      : defenceBasis === "actors"
+                        ? ` — read from the ${chosen.length} chosen characters' own armour and save proficiencies. DEX saves resolved at +${saves.dex.toFixed(2)}, not the six-way mean.`
+                        : ` — the published ${equipmentMode === "brokenChain" ? "Broken Chain" : "Standard"} party curve at level ${partyLevel}. The workbook stamps it a PROVISIONAL PROXY; choose a party to read real characters.`}
                   </div>
 
                   <details>

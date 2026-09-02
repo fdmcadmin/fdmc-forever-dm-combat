@@ -23,6 +23,7 @@
  *    unchallenged as a silent substitute.
  */
 
+import { creatureInitiativeModifier } from "./initiativeOrder";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import { materializeTemplateBody } from "../monsters/actionSetPicks";
@@ -539,6 +540,12 @@ export function rosterFromTemplates(
       id: template.templateId,
       name: parsed.name,
       quantity: bodies,
+      /**
+       * ⚠ THE BODY'S OWN DEX. The scheduler contract's *"No tactical invention"* row is explicit
+       * that ordering comes from imported stats and nowhere else, so this reads the template
+       * rather than being assigned a place in the order.
+       */
+      initiativeMod: creatureInitiativeModifier({ abilities: template.abilities }),
       flatHpPerBody: perPc,
       baseHp: parsed.maxHp,
       acMultiplier: profile.acMultiplier,
