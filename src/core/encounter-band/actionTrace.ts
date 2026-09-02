@@ -101,6 +101,27 @@ function rechargeProbability(range: string | undefined): number {
  * abilities early), then the routine Multiattack fills whatever Action budget is left, then the
  * separate channels resolve on their own budgets.
  */
+/**
+ * Does this feature's own text say it does NOT spend the shared Reaction / Bonus Action?
+ *
+ * ⚠ FIRST-PERSON DISCLAIMERS ONLY, and the phrasing matters. "This does not use your reaction"
+ * (Guardian's Intercept) and "never cost your bonus action" (Pack's companion) are the shapes the
+ * campaign actually writes. A trait that merely MENTIONS a reaction — "the target loses its
+ * reaction", "cannot make opportunity attacks" — is talking about somebody else's economy and
+ * must not exempt itself from its own.
+ */
+export function notABudgetedResponse(text: string | undefined): boolean {
+  const t = (text ?? "").toLowerCase();
+  if (!t.trim()) return false;
+  if (/\btarget\b|\benemy\b|\bit loses\b|\bits reaction\b/.test(t) && !/\byour\s+(?:reaction|bonus action)\b/.test(t)) {
+    // Talking about another creature's economy, not disclaiming its own.
+    return false;
+  }
+  return /\b(?:does\s+not|doesn't|do\s+not|don't|never)\s+(?:use|cost|consume|expend|require)s?\b[^.]{0,40}\b(?:reaction|bonus\s+action)\b/.test(t)
+    || /\bwithout\s+(?:using|spending|expending)\b[^.]{0,20}\b(?:reaction|bonus\s+action)\b/.test(t)
+    || /\b(?:reaction|bonus\s+action)\b[^.]{0,30}\bis\s+not\s+(?:used|spent|consumed)\b/.test(t);
+}
+
 export function traceCreature(
   creature: ParsedCreature,
   target: { ac: number; saveBonus: number; partySize?: number; saves?: Record<SaveAbility, number> },
@@ -415,7 +436,26 @@ export function traceCreature(
       .sort((a, b) => b.perUse - a.perUse);
 
     for (const b of eligible) {
-      const capped = SHARED_BUDGET.has(b.channel);
+      /**
+       * ⚠ A RESPONSE THAT SAYS IT IS NOT A REACTION KEEPS ITS OWN BUDGET.
+       *
+       * Christopher, 2026-09-02: *"the only time any kind of second reaction can be used is the
+       * guardian and pack reactions because they do not consume a reaction."* The instruction says
+       * the same: *"A special triggered response that explicitly is not a Reaction continues to use
+       * its own authored frequency budget and does not consume the normal Reaction."*
+       *
+       * Guardian's Intercept prints it outright — *"This does not use your reaction"* — and Pack's
+       * companion actions are *"always free — never cost your bonus action."* On the PC side this
+       * is already structural: a bond row costs the BOND slot, which is its own field beside
+       * `reaction` in the four-slot economy, so a Guardian intercepts AND still takes an
+       * opportunity attack.
+       *
+       * A CREATURE has no bond slot, so an authored trait with the same disclaimer would have been
+       * capped by the budget it explicitly refuses to spend. Its own `uses`/`recharge` still bound
+       * it — this exempts it from the SHARED cap, not from its printed limit.
+       */
+      const disclaimsBudget = notABudgetedResponse(b.feature.text);
+      const capped = SHARED_BUDGET.has(b.channel) && !disclaimsBudget;
       if (capped && budgetSpent.has(b.channel)) continue;   // already spent this turn
       const used = spent.get(b) ?? 0;
       const availability = used === 0 ? 1 : rechargeProbability(b.recharge);
@@ -440,6 +480,7 @@ export function traceCreature(
      */
     for (const b of eligible) {
       if (!SHARED_BUDGET.has(b.channel)) continue;
+      if (notABudgetedResponse(b.feature.text)) continue;   // it never competed for the slot
       if (scheduled.some(s => s.feature === b.feature.name && s.channel === b.channel)) continue;
       scheduled.push({
         feature: b.feature.name, channel: b.channel, method: b.method,

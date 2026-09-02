@@ -19,7 +19,7 @@
  * ⚠ THE EXIT CHECK IS THE LAST THING IN THIS FILE.
  */
 
-import { traceCreature } from "../src/core/encounter-band/actionTrace";
+import { traceCreature, notABudgetedResponse } from "../src/core/encounter-band/actionTrace";
 import type { ParsedCreature } from "../src/core/encounter-band/parseCreature";
 import type { ParsedFeature } from "../src/core/encounter-band/featureResolver";
 
@@ -135,6 +135,58 @@ console.log("\nA reaction with printed uses is bounded by BOTH limits");
     names[1] === "Riposte" && names[2] === "Riposte", names.join(" | "));
   ok("never two in one round at any point", t.rounds.every(r =>
     r.scheduled.filter(s => s.channel === "reaction" && s.expectedDamage > 0).length === 1));
+}
+
+/* ── ⚠ A RESPONSE THAT SAYS IT IS NOT A REACTION KEEPS ITS OWN BUDGET ────────────────────── */
+console.log("\nA response that explicitly does NOT cost a Reaction is exempt");
+{
+  /**
+   * Christopher, 2026-09-02: *"the only time any kind of second reaction can be used is the
+   * guardian and pack reactions because they do not consume a reaction."*
+   *
+   * Guardian's Intercept prints it: *"This does not use your reaction."* On the PC side that is
+   * already structural — a bond row costs the BOND slot, its own field beside `reaction` in the
+   * four-slot economy. A CREATURE has no bond slot, so an authored trait with the same disclaimer
+   * would have been capped by the budget it explicitly refuses to spend.
+   */
+  ok("\"This does not use your reaction\" is recognised",
+    notABudgetedResponse("when a creature hits an ally, reduce the damage by 1d6. This does not use your reaction."));
+  ok("\"never cost your bonus action\" too — Pack's companion",
+    notABudgetedResponse("Companion movement and actions are always free — never cost your bonus action."));
+  ok("\"without using your reaction\"",
+    notABudgetedResponse("you may strike back without using your reaction"));
+
+  /**
+   * ⚠ AND THE MIRROR CASE MUST NOT EXEMPT ITSELF. A trait that takes away SOMEBODY ELSE'S
+   * reaction mentions the word and is talking about their economy, not disclaiming its own.
+   */
+  ok("a trait that suppresses the TARGET's reaction is not exempt",
+    !notABudgetedResponse("the target loses its reaction until the start of its next turn"));
+  ok("...nor one that merely denies opportunity attacks",
+    !notABudgetedResponse("the target cannot make opportunity attacks"));
+  ok("an ordinary reaction is not exempt", !notABudgetedResponse("as a reaction, strike the attacker"));
+  ok("no text is not a disclaimer", !notABudgetedResponse(undefined));
+
+  // And it actually changes the schedule: the exempt one resolves ALONGSIDE a budgeted reaction.
+  const c = creature([
+    feat("Routine Swing", "action", "1d8+4"),
+    feat("Riposte", "reaction", "3d6"),
+    feat("Warding Instinct", "reaction", "2d6", { text: "Reduce the hit by 2d6. This does not use your reaction." }),
+  ]);
+  const fired = scheduledOn(c, "reaction").map(f => f.feature).sort();
+  ok("the exempt response resolves BESIDE the one that spent the Reaction",
+    fired.length === 2 && fired.includes("Riposte") && fired.includes("Warding Instinct"),
+    fired.join(", "));
+
+  // ...but its own printed limit still bounds it.
+  const limited = creature([
+    feat("Routine Swing", "action", "1d8+4"),
+    feat("Once Ward", "reaction", "2d6", { uses: 1, text: "This does not use your reaction." }),
+  ]);
+  const perRound = traceCreature(limited, TARGET, 3).rounds
+    .map(r => r.scheduled.filter(s => s.channel === "reaction" && s.expectedDamage > 0).length);
+  ok("exempt from the SHARED cap is not exempt from its own uses", perRound.join(",") === "1,0,0",
+    perRound.join(","));
 }
 
 /* ── ⚠ THE SUM IS GONE: the whole point, stated as damage ────────────────────────────────── */
