@@ -220,7 +220,27 @@ export function useCombatLog() {
 
     const pendingKeySet = new Set(pendingKeys);
     setEntries((current) => {
-      const next = current.filter((entry) => !entry.pendingKey || !pendingKeySet.has(entry.pendingKey));
+      /**
+       * ⚠ RE-READ THE SHARED LOG FIRST — WRITING A STALE COPY BACK IS HOW THE LOG TRAVELLED
+       * BACKWARDS.
+       *
+       * `addEntry` reads `readSharedEntries()` before it merges, precisely because several frames
+       * run this hook at once — the DM panel, the combat window, every open actor popout. These
+       * two removers did not. They filtered THIS frame's React state and then persisted it, so a
+       * frame whose state was behind overwrote the shared log with its own older snapshot and
+       * every entry added since was gone.
+       *
+       * It is not a rare race: `removePendingEntries` fires on every action use, every turn reset
+       * and every resolved roll. Christopher: *"something is causing the combat log to revert to
+       * the 11:54 time stamp and it is now 00:05"* — ten minutes of log, repeatedly discarded.
+       *
+       * It also cost the diagnosis of a different bug: I read "no new log entry" as "the click did
+       * nothing" three times while testing Iskarn's card, when the entries had been written and
+       * then reverted out from under me.
+       */
+      const currentShared = readSharedEntries();
+      const base = currentShared.length > 0 ? currentShared : current;
+      const next = base.filter((entry) => !entry.pendingKey || !pendingKeySet.has(entry.pendingKey));
       writeSharedEntries(next);
       return next;
     });
@@ -230,7 +250,10 @@ export function useCombatLog() {
 
   const clearPendingEntries = useCallback(() => {
     setEntries((current) => {
-      const next = current.filter((entry) => !entry.pendingKey);
+      // Same as `removePendingEntries` — the shared log is the base, never this frame's copy.
+      const currentShared = readSharedEntries();
+      const base = currentShared.length > 0 ? currentShared : current;
+      const next = base.filter((entry) => !entry.pendingKey);
       writeSharedEntries(next);
       return next;
     });

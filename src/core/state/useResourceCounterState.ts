@@ -118,6 +118,21 @@ export function useResourceCounterState(actors: Actor[]) {
     }
   }, [actors]);
 
+  /**
+   * ⚠ A STORAGE LISTENER, which this hook did not have. `useCombatLog` syncs frames this way and
+   * this one relied on a REMOTE-only broadcast, so same-browser frames never learned of a change.
+   */
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return;
+      const next = readStored();
+      stateRef.current = next;
+      setCounters(next);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   // Broadcast listener — keeps other windows in sync
   useEffect(() => {
     if (!OBR.isAvailable) return;
@@ -132,6 +147,34 @@ export function useResourceCounterState(actors: Actor[]) {
     });
   }, []);
 
+  /**
+   * THE LATEST PERSISTED STATE, not this frame's frozen copy.
+   *
+   * ⚠ EVERY MUTATOR SPREAD `stateRef.current` AND THEN BROADCAST THE WHOLE MAP, so a frame acting
+   * on a stale base did not merely lose its own change — it overwrote everyone's. The receiver
+   * replaces its entire state with the message.
+   *
+   * And the frames could not stay in step. The broadcast is `destination: "REMOTE"`, which is
+   * other USERS, not the DM's own other windows; this hook has no `storage` listener either
+   * (`useCombatLog` has one). So the DM panel, the combat window and every open actor popout each
+   * seeded from storage at mount and then drifted apart for the rest of the session.
+   *
+   * Christopher, on the log reverting to the moment combat ended: *"combat end is not a frozen
+   * state until the next time combat happens, then long rests would revert, usage of spell slots,
+   * and such."* Exactly right, and this is where that happens — the log was the visible half.
+   *
+   * MERGED PER ACTOR, not replaced: `stateRef.current` carries pools seeded at mount for actors
+   * or items that storage has never seen, and a straight read would drop them.
+   */
+  function freshBase(): ResourceCounterMap {
+    const stored = readStored();
+    const merged: ResourceCounterMap = { ...stateRef.current };
+    for (const actorId of Object.keys(stored)) {
+      merged[actorId] = { ...(merged[actorId] ?? {}), ...stored[actorId] };
+    }
+    return merged;
+  }
+
   function broadcastAndPersist(next: ResourceCounterMap) {
     persist(next);
     stateRef.current = next;
@@ -140,7 +183,12 @@ export function useResourceCounterState(actors: Actor[]) {
       void OBR.broadcast.sendMessage(
         BROADCAST_CHANNEL,
         { type: "fdmc:resource-counters:update", state: next },
-        { destination: "REMOTE" }
+        /**
+         * ⚠ ALL, NOT REMOTE. REMOTE is other USERS; it never reached the DM own combat window or
+         * an open actor popout, so those frames kept a copy from their mount and any spend from
+         * one of them overwrote the rest. Same correction the actor turn reset needed.
+         */
+        { destination: "ALL" }
       ).catch(() => undefined);
     }
   }
@@ -158,11 +206,12 @@ export function useResourceCounterState(actors: Actor[]) {
   // ── Decrement (use one slot) ──────────────────────────────────────────────
 
   const decrementResource = useCallback((actorId: string, resourceActionId: string) => {
-    const current = stateRef.current[actorId]?.[resourceActionId] ?? 0;
+    const base = freshBase();
+    const current = base[actorId]?.[resourceActionId] ?? 0;
     if (current <= 0) return;
     const next = {
-      ...stateRef.current,
-      [actorId]: { ...(stateRef.current[actorId] ?? {}), [resourceActionId]: current - 1 },
+      ...base,
+      [actorId]: { ...(base[actorId] ?? {}), [resourceActionId]: current - 1 },
     };
     broadcastAndPersist(next);
   }, []);
@@ -173,14 +222,15 @@ export function useResourceCounterState(actors: Actor[]) {
     const action = actor?.tabs.resources?.find(r => r.id === resourceActionId);
     const label = action?.label;
     const max = action ? getMaxFromAction(action) : undefined;
-    const current = stateRef.current[actorId]?.[resourceActionId] ?? max ?? 0;
+    const base = freshBase();
+    const current = base[actorId]?.[resourceActionId] ?? max ?? 0;
     const spend = Math.max(0, Math.floor(amount));
     if (spend <= 0) return { outcome: "empty", label, remaining: current, max };
     if (current <= 0) return { outcome: "empty", label, remaining: 0, max };
     const applied = Math.min(spend, current);
     const next = {
-      ...stateRef.current,
-      [actorId]: { ...(stateRef.current[actorId] ?? {}), [resourceActionId]: current - applied },
+      ...base,
+      [actorId]: { ...(base[actorId] ?? {}), [resourceActionId]: current - applied },
     };
     broadcastAndPersist(next);
     return { outcome: "spent", label, remaining: current - applied, max };
@@ -195,11 +245,12 @@ export function useResourceCounterState(actors: Actor[]) {
     if (max <= 0) return { outcome: "no-resource" };
     const key = itemChargeKey(action.id);
     const label = action.label;
-    const current = stateRef.current[actorId]?.[key] ?? max;
+    const base = freshBase();
+    const current = base[actorId]?.[key] ?? max;
     if (current <= 0) return { outcome: "empty", label, remaining: 0, max };
     const next = {
-      ...stateRef.current,
-      [actorId]: { ...(stateRef.current[actorId] ?? {}), [key]: current - 1 },
+      ...base,
+      [actorId]: { ...(base[actorId] ?? {}), [key]: current - 1 },
     };
     broadcastAndPersist(next);
     return { outcome: "spent", label, remaining: current - 1, max };
@@ -219,12 +270,13 @@ export function useResourceCounterState(actors: Actor[]) {
     const max = action.metadata?.charges?.max ?? 0;
     if (max <= 0) return { outcome: "no-resource" };
     const key = itemChargeKey(action.id);
-    const current = stateRef.current[actorId]?.[key] ?? max;
+    const base = freshBase();
+    const current = base[actorId]?.[key] ?? max;
     const next = Math.min(max, current + amount);
     if (next === current) return { outcome: "spent", label: action.label, remaining: current, max };
     broadcastAndPersist({
-      ...stateRef.current,
-      [actorId]: { ...(stateRef.current[actorId] ?? {}), [key]: next },
+      ...base,
+      [actorId]: { ...(base[actorId] ?? {}), [key]: next },
     });
     return { outcome: "spent", label: action.label, remaining: next, max };
   }, []);
@@ -236,7 +288,10 @@ export function useResourceCounterState(actors: Actor[]) {
     if (!actor) return;
 
     const resourceActions = actor.tabs.resources ?? [];
-    const actorCounters = { ...(stateRef.current[actorId] ?? {}) };
+    // ⚠ A REST IS THE MOST DESTRUCTIVE PLACE TO ACT ON A STALE COPY — it rewrites the whole pool
+    // set for the actor and broadcasts the whole map. Same fresh base as every other mutator.
+    const base = freshBase();
+    const actorCounters = { ...(base[actorId] ?? {}) };
 
     for (const action of resourceActions) {
       const kind = action.metadata?.resourceKind;
@@ -310,7 +365,7 @@ export function useResourceCounterState(actors: Actor[]) {
       }
     }
 
-    const next = { ...stateRef.current, [actorId]: actorCounters };
+    const next = { ...base, [actorId]: actorCounters };
     broadcastAndPersist(next);
   }, [actors]);
 
@@ -371,7 +426,7 @@ export function useResourceCounterState(actors: Actor[]) {
     });
 
     if (!matchingResource) return { outcome: "no-resource" };
-    const current = stateRef.current[actorId]?.[matchingResource.id] ?? 0;
+    const current = freshBase()[actorId]?.[matchingResource.id] ?? 0;
     const max = getMaxFromAction(matchingResource);
     if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 
@@ -400,7 +455,7 @@ export function useResourceCounterState(actors: Actor[]) {
     });
 
     if (!matchingResource) return { outcome: "no-resource" };
-    const current = stateRef.current[actorId]?.[matchingResource.id] ?? 0;
+    const current = freshBase()[actorId]?.[matchingResource.id] ?? 0;
     const max = getMaxFromAction(matchingResource);
     if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 

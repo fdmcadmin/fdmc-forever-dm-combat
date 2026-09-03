@@ -4,7 +4,7 @@ import { ActionButton } from "./ActionButton";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
 import { isUsedActionStateValue, slotsOf, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { CommittedRollOutcomeMode, CommittedRollState } from "../types/committedRoll";
-import { normalizeOutcomeMode, resolveOutcomeMode } from "../types/tabs";
+import { normalizeOutcomeMode, resolveOutcomeMode, authoredEconomy } from "../types/tabs";
 import { isInertAction } from "../types/tabs";
 import { rollLabelForEffectKind } from "../constants/itemTypeCapabilities";
 import type { ActorAction, TabId } from "../types/tabs";
@@ -59,6 +59,35 @@ function inferCosts(action: ActorAction, activeTab: TabId): ActionCost[] {
       const authored = action.metadata?.cost?.trim().toLowerCase();
       if (authored === "free") return ["free"];
       if (authored === "passive") return ["passive"];
+      /**
+       * ⚠ AND THE ECONOMY NAMED IN PROSE, which this recovered for exactly two values.
+       *
+       * The backfill above only rescued `free` and `passive`, because those were the two the
+       * empty array was ambiguous BETWEEN. But a legacy action whose cost reads "Magic Action;
+       * 1 Psionic Energy Die" is neither — so it fell through with `[]`, and `isInertAction`'s
+       * last rule (silent AND no slots) then made it INERT. No button, no handler, no log line
+       * when clicked, and a card that looks completely normal because the "ACTION" chip is
+       * rendered from the prose it just failed to read.
+       *
+       * Christopher: *"half of my pisionic dice do nothing."* Both Telekinetic Movement entries
+       * died here — the resource-name fix alone would never have reached them, because nothing
+       * was calling the spend at all.
+       *
+       * ⚠ BONUS BEFORE ACTION. "Bonus Action" contains "action"; testing the general word first
+       * would file every bonus action as a main action and silently move it to the wrong slot.
+       *
+       * The exact single-word economies first — `authoredEconomy` already parses those, and
+       * Psi-Powered Leap stores exactly "bonus". Then the prose forms, for a cost written as a
+       * sentence: "Magic Action; 1 Psionic Energy Die", "Bonus Action; 1 Superiority Die".
+       */
+      const exact = authoredEconomy(action);
+      if (exact) return [exact === "action" ? "main" : exact];
+      if (authored) {
+        if (authored.includes("bonus action")) return ["bonus"];
+        if (authored.includes("reaction")) return ["reaction"];
+        if (authored.includes("bond")) return ["bond"];
+        if (/\baction\b/.test(authored)) return ["main"];
+      }
     }
     return action.economyCost;
   }
