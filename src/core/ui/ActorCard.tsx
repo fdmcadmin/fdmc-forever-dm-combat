@@ -1,3 +1,4 @@
+import { savingThrowModifier } from "../rules/dnd5e";
 import { usableHealing } from "../rules/healingResolution";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appendBonusDie, applyAdvantage, scaleUpcastRider, type RollMode } from "../dice/diceFormula";
@@ -403,19 +404,35 @@ function formatModifier(modifier?: number) {
 /**
  * Ability check / saving throw formula.
  *
- * A SAVE uses the ability's explicit `save` modifier when the sheet carries one (that is
- * what `AbilityScore.save` is for — a proficient PC save already includes its proficiency
- * bonus), falling back to the plain ability modifier when unset ("no proficiency").
+ * ⚠ THE SAVE IS RESOLVED, NOT READ OFF A FIELD — and reading the field is how a proficient save
+ * rolled without its proficiency.
  *
- * Before 2026-07-30 this ignored `save` entirely and every saving throw rolled the ability
- * modifier alone, so a Paladin whose sheet read CHA SV +6 rolled +3.
+ * This took `entry.save` when the sheet carried one and fell back to the bare ability modifier
+ * otherwise. That was right while an explicit `save` was the ONLY way to express proficiency. It
+ * stopped being right when `saveProficient` arrived: proficiency became a FLAG that adds the
+ * bonus, and a sheet that sets the flag carries no explicit number for this to find.
+ *
+ * So the card and the roll disagreed, and only the card was correct. Lights Stone, Paladin 7,
+ * WIS 10 with `saveProficient` — the sheet displays SV +3 from `savingThrowModifier`, and the
+ * WIS Save button sent `1d20+0`. Christopher: *"check why proficenty to saves are not being
+ * counted."*
+ *
+ * `savingThrowModifier` is the one resolver — the same call `AbilityScoreRow` makes to print the
+ * number — so the button and the sheet can no longer say different things. An explicit `save`
+ * still wins inside it, which is the escape hatch a summon needs.
  */
 function abilityRollFormula(actor: Actor, ability: AbilityId, rollType: "check" | "save" = "check") {
   const entry = actor.abilityScores?.[ability];
-  const value = rollType === "save" && typeof entry?.save === "number"
-    ? entry.save
-    : entry?.modifier;
-  return `1d20${formatModifier(value)}`;
+  if (rollType !== "save") return `1d20${formatModifier(entry?.modifier)}`;
+  if (typeof entry?.modifier !== "number") {
+    return `1d20${formatModifier(typeof entry?.save === "number" ? entry.save : undefined)}`;
+  }
+  return `1d20${formatModifier(savingThrowModifier({
+    modifier: entry.modifier,
+    saveProficient: entry.saveProficient,
+    explicit: entry.save,
+    level: actor.level,
+  }))}`;
 }
 
 function firstRollDiceLabel(action: ActorAction | null | undefined, fallbackLabel: string) {

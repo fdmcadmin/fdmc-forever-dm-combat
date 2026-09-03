@@ -1,3 +1,4 @@
+import { creatureSaveModifier } from "../monsters/creator/monsterCreatorModel";
 /**
  * MonsterActorCard
  *
@@ -1118,14 +1119,28 @@ export function MonsterActorCard({
   // ── Ability check / save roll ────────────────────────────────────────────────
   // Rolls a raw 1d20 + ability modifier (with the current adv/disadv mode) and routes
   // it through the same Dice+ bridge as actions. Result lands via the dice listener.
-  // Checks and saves are DIFFERENT numbers for a creature proficient in a save. `save`
-  // is the override; when absent the save equals the check (no proficiency).
+  /**
+   * ⚠ RESOLVED, NOT READ — the same fault the player card had, on the creature side.
+   *
+   * This took `s.save` when present and fell back to the plain modifier otherwise, so a creature
+   * whose proficiency is expressed as the `saveProficient` FLAG — which every authored Act 3
+   * block uses — rolled its save without the bonus while the block printed it with. The Veilwood
+   * Crone's card says WIS +9 and the button sent +6.
+   *
+   * `creatureSaveModifier` is the one resolver, and `check:saves` already proves it agrees across
+   * all 54 creatures. It handles the explicit override, the flag, and a printed-vs-CR proficiency
+   * bonus; nothing here should decide any of that a second time.
+   */
   const abilityChecks = useMemo(() => {
-    const scores = (monster as { abilityScores?: { label: string; value: string; save?: number }[] }).abilityScores ?? [];
-    return scores.map((s) => {
-      const modifier = parseAbilityModifier(s.value);
-      return { label: s.label, modifier, save: typeof s.save === "number" ? s.save : modifier };
-    });
+    const scores = (monster as {
+      abilityScores?: { label: string; value: string; save?: number; saveProficient?: boolean }[];
+    }).abilityScores ?? [];
+    const stats = (monster as { cr?: number; proficiencyBonus?: number });
+    return scores.map((s) => ({
+      label: s.label,
+      modifier: parseAbilityModifier(s.value),
+      save: creatureSaveModifier(s, stats),
+    }));
   }, [monster]);
 
   // Named skill checks — read the governing ability modifier from the monster's scores
