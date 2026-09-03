@@ -599,7 +599,7 @@ export const BROKEN_CHAIN_BOND_TEMPLATES: BondTemplate[] = [
       label: "Metamorphosis",
       blurb: "permanent path choice — the unchosen path holds at its Realized form",
       paths: [
-        { name: "Bonded Strike", chosen: "Companion stat block attack — the first strike gets +1d4.", unchosen: "Shielding Bond Reduces the next hit against the closest ally by 1d8. This bond is not affected by bonuses." },
+        { name: "Bonded Strike", chosen: "Companion stat block attack — the first strike gets +1d4.", chosenRider: { damage: "1d4", firstStrikeOnly: true }, unchosen: "Shielding Bond Reduces the next hit against the closest ally by 1d8. This bond is not affected by bonuses." },
         { name: "Shielding Bond", chosen: "Shielding Bond reduces the next hit against the closest ally by 1d8 + PB.", unchosen: "Bonded Strike Companion stat block attack — no bonus die." },
       ],
     },
@@ -608,7 +608,7 @@ export const BROKEN_CHAIN_BOND_TEMPLATES: BondTemplate[] = [
       label: "Tempered",
       blurb: "the unchosen path takes its single bump here — it holds this form through Unbroken",
       paths: [
-        { name: "Apex Bond", chosen: "Bonded Strike evolves into Apex Bond. Companion stat block attack — the first strike gets +1d6 and ignores resistance to its damage type.", unchosen: "Shielding Bond Next hit against closest ally reduced by 1d10. This bond is not affected by bonuses." },
+        { name: "Apex Bond", chosen: "Bonded Strike evolves into Apex Bond. Companion stat block attack — the first strike gets +1d6 and ignores resistance to its damage type.", chosenRider: { damage: "1d6", firstStrikeOnly: true }, unchosen: "Shielding Bond Next hit against closest ally reduced by 1d10. This bond is not affected by bonuses." },
         { name: "Ironbound Guard", chosen: "Shielding Bond evolves into Ironbound Guard. Ironbound Guard reduces the next hit against the closest ally by 1d10 + PB.", unchosen: "Bonded Strike Companion stat block attack — the first strike gets +1d4." },
       ],
     },
@@ -617,7 +617,7 @@ export const BROKEN_CHAIN_BOND_TEMPLATES: BondTemplate[] = [
       label: "Unbroken",
       blurb: "the chosen path deepens — the unchosen holds at its Tempered form",
       paths: [
-        { name: "Unbroken Bond", chosen: "Apex Bond evolves into Unbroken Bond. Companion stat block attack — the first strike gets +1d8 and ignores resistance to its damage type.", unchosen: "Shielding Bond Next hit against closest ally reduced by 1d10. This bond is not affected by bonuses." },
+        { name: "Unbroken Bond", chosen: "Apex Bond evolves into Unbroken Bond. Companion stat block attack — the first strike gets +1d8 and ignores resistance to its damage type.", chosenRider: { damage: "1d8", firstStrikeOnly: true }, unchosen: "Shielding Bond Next hit against closest ally reduced by 1d10. This bond is not affected by bonuses." },
         { name: "Unbroken Guard", chosen: "Ironbound Guard evolves into Unbroken Guard. Unbroken Guard reduces the next hit against any ally within 15 ft by 1d12 + your modifier + PB.", unchosen: "Bonded Strike Companion stat block attack — the first strike gets +1d4." },
       ],
     },

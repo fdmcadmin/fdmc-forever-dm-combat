@@ -40,7 +40,7 @@ import {
   type MasteryProperty,
 } from "../rules/weaponMastery";
 import { characterLevel, classLevels, castingAbilityForClass } from "../rules/multiclass";
-import { withGeneratedBondActions } from "../rules/bondActions";
+import { withCompanionBondRider, withGeneratedBondActions } from "../rules/bondActions";
 // The fourteen bonds and this campaign's stage gates are MOD content. They reach the engine's
 // card the same way they already reach BondSummary and the actor editor — see RULE 3.
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
@@ -954,11 +954,21 @@ export function ActorCard({
    * the assignment is cleared.
    */
   const actor = useMemo(
-    () => withGeneratedBondActions(
-      authoredActor,
+    () => withCompanionBondRider(
+      withGeneratedBondActions(
+        authoredActor,
+        BROKEN_CHAIN_BOND_TEMPLATES,
+        BROKEN_CHAIN_BOND_GATES,
+        (companionId) => partyMembers?.find((m) => m.id === companionId)?.name,
+      ),
+      /**
+       * ...and the other half of the same ladder, for the card that PERFORMS it. A companion
+       * reads its owner's choice out of `moduleData.ownerBond`, stamped at the hydration
+       * boundary. Composed here so both halves land before anything below reads `actor` —
+       * the same reason the generator is applied at this line and not per-surface.
+       */
       BROKEN_CHAIN_BOND_TEMPLATES,
       BROKEN_CHAIN_BOND_GATES,
-      (companionId) => partyMembers?.find((m) => m.id === companionId)?.name,
     ),
     [authoredActor, partyMembers],
   );

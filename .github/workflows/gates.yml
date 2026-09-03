@@ -191,3 +191,6 @@ jobs:
       # Fails on any published number that moved. Not a bug report — read the diff.
       - name: check baseline
         run: npm run check:baseline
+
+      - name: check companion bond rider
+        run: npm run check:bondrider

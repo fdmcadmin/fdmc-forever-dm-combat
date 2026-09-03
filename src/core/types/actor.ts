@@ -164,6 +164,24 @@ export type BrokenChainModuleData = {
    */
   bondAssignment?: BondAssignment;
   /**
+   * A COMPANION'S VIEW OF ITS OWNER'S BOND, stamped at the hydration boundary.
+   *
+   * The pack bond is `actor: "companion"` — Faelar swings it, Lyrielle chooses it. The choice
+   * lives on HER sheet, so the companion's card had no way to see which path was taken and the
+   * Metamorphosis rider never reached the attack that it modifies. Christopher: *"the bonded
+   * strike on faelar's sheet is missing the rider for meta."*
+   *
+   * Stamped rather than looked up so the rule stays where the other owner-derived values already
+   * are (`resolveActor`), and so every surface downstream — card, popout, tracker — sees one
+   * answer. It is derived state: never authored, never written back.
+   */
+  ownerBond?: {
+    assignment: BondAssignment;
+    /** The OWNER's level — the bond's stage is derived from it, not from the beast's. */
+    ownerLevel?: number;
+    milestones?: string[];
+  };
+  /**
    * Campaign milestones this party has earned — the ids raised when a gated encounter ends.
    *
    * Held per actor for now because that is where module data lives; every character in one party

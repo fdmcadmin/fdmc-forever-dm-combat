@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.17.4",
+  "version": "0.8.18.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -63,7 +63,8 @@
     "check:initiative": "npx tsx scripts/check-initiative.ts",
     "check:bond-mitigation": "npx tsx scripts/check-bond-mitigation.ts",
     "check:reaction-budget": "npx tsx scripts/check-reaction-budget.ts",
-    "check:companion": "npx tsx scripts/check-companion-derivation.ts"
+    "check:companion": "npx tsx scripts/check-companion-derivation.ts",
+    "check:bondrider": "npx tsx scripts/check-companion-bond.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

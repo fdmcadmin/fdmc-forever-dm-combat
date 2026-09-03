@@ -75,12 +75,52 @@ export function resolveActor(
    * reads and writes the moduleData one.
    */
   if (merged.kind === "companion") {
-    const ownerId = merged.moduleData?.ownerId;
-    if (ownerId) {
+    // Held in a local so `act`/`theme`/`statBlockStatus` stay narrowed when it is spread below.
+    const ownModule = merged.moduleData;
+    const ownerId = ownModule?.ownerId;
+    if (ownerId && ownModule) {
       const ownerLevel = overrides[ownerId]?.level ?? library[ownerId]?.level;
+      /**
+       * ⚠ WIS AND PB COME FROM THE OWNER. THE REST OF THE STAT BLOCK DOES NOT.
+       *
+       * Christopher, 2026-09-03: *"WIS and PB are carried over to the companion for saves and
+       * damage, while the ABS of faelar come from the beast of the land stat block."* So this
+       * replaces exactly one ability score and leaves STR/DEX/CON/INT/CHA alone — the beast is
+       * still the beast, it is only proficient and wise at its owner's measure.
+       *
+       * Overriding the SCORE rather than adding a token means every consumer already works:
+       * `@WIS` in a damage formula, the WIS save row, and any check that reads the modifier all
+       * resolve through the same field they always did.
+       *
+       * It is invisible on the current party — Lyrielle and Faelar are both WIS 14 — which is
+       * precisely why it needed a gate rather than an eye.
+       */
+      const ownerWis = overrides[ownerId]?.abilityScores?.wis ?? library[ownerId]?.abilityScores?.wis;
+      const ownerModule = overrides[ownerId]?.moduleData ?? library[ownerId]?.moduleData;
+      const ownerAssignment = ownerModule?.bondAssignment;
+
+      let stamped = merged;
       if (typeof ownerLevel === "number" && Number.isFinite(ownerLevel)) {
-        return { ...merged, proficiencyBonus: proficiencyBonus(ownerLevel) };
+        stamped = { ...stamped, proficiencyBonus: proficiencyBonus(ownerLevel) };
       }
+      if (ownerWis) {
+        stamped = { ...stamped, abilityScores: { ...stamped.abilityScores, wis: ownerWis } };
+      }
+      if (ownerAssignment) {
+        stamped = {
+          ...stamped,
+          moduleData: {
+            ...ownModule,
+            // Keys are omitted rather than set to undefined — `exactOptionalPropertyTypes`.
+            ownerBond: {
+              assignment: ownerAssignment,
+              ...(typeof ownerLevel === "number" ? { ownerLevel } : {}),
+              ...(ownerModule?.milestones ? { milestones: ownerModule.milestones } : {}),
+            },
+          },
+        };
+      }
+      return stamped;
     }
   }
 

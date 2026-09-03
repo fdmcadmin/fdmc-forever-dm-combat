@@ -328,6 +328,78 @@ function noteRow(id: string, label: string, text: string): ActorAction {
  * campaign without bonds - or one whose bond content has not been loaded - renders exactly what
  * it authored.
  */
+/**
+ * THE OWNER'S BOND CHOICE, LANDING ON THE COMPANION THAT PERFORMS IT.
+ *
+ * The bond ladder is chosen on the character's sheet; a `actor: "companion"` bond is executed
+ * from the companion's card using its own stat block and economy. Nothing joined the two, so
+ * Lyrielle reached Metamorphosis, took Bonded Strike, and Faelar's Bonded Strike kept rolling
+ * its Realized damage. Christopher: *"lyrielle got to pick the bond, choose the spec, but fealar
+ * didnt get the added bonus."*
+ *
+ * ⚠ THE PATH IS KEYED ON ITS METAMORPHOSIS NAME, never its name at the current stage. A path
+ * RENAMES as it evolves — Bonded Strike becomes Apex Bond at IV and Unbroken Bond at V — while
+ * the companion's action is still labelled "Bonded Strike" on its sheet. Matching the stage name
+ * would silently stop finding the action at level 9.
+ *
+ * Returns the SAME actor when there is no rider to fold, so a companion without a bonded owner
+ * never gets a new identity on every render.
+ */
+export function withCompanionBondRider(
+  actor: Actor,
+  templates: readonly BondTemplate[],
+  gates: BondStageContext["gates"],
+): Actor {
+  const ownerBond = actor.moduleData?.ownerBond;
+  if (!ownerBond) return actor;
+
+  const template = templates.find((t) => t.id === ownerBond.assignment.templateId);
+  if (!template || template.actor !== "companion") return actor;
+
+  const picked = ownerBond.assignment.chosenPathIndex;
+  if (picked === undefined) return actor;
+
+  const resolved = resolveBond(template, ownerBond.assignment, {
+    level: ownerBond.ownerLevel ?? actor.level ?? 1,
+    milestones: ownerBond.milestones ?? [],
+    gates,
+  });
+  const rider = template.stages[resolved.stageIndex]?.paths?.[picked]?.chosenRider;
+  if (!rider?.damage) return actor;
+
+  // The stable key: what this path was called when it was chosen.
+  const key = template.stages[BOND_METAMORPHOSIS_STAGE]?.paths?.[picked]?.name?.toLowerCase();
+  if (!key) return actor;
+
+  let touched = false;
+  const tabs = Object.fromEntries(
+    Object.entries(actor.tabs).map(([tabId, actions]) => {
+      if (!Array.isArray(actions)) return [tabId, actions];
+      return [tabId, actions.map((action) => {
+        if (!action.label?.toLowerCase().includes(key)) return action;
+        const damage = action.metadata?.damage;
+        if (!damage) return action;
+        // Idempotent: the card re-renders constantly and a rider must not stack on itself.
+        if (damage.includes(rider.damage as string)) return action;
+        touched = true;
+        const note = rider.firstStrikeOnly ? " (first strike only)" : "";
+        return {
+          ...action,
+          metadata: {
+            ...action.metadata,
+            damage: `${damage} + ${rider.damage}`,
+            details: `${action.metadata?.details ?? ""}
+
+${resolved.stageName} — ${template.name}: +${rider.damage}${note}, from ${resolved.chosen?.name ?? "the chosen path"}.`.trim(),
+          },
+        };
+      })];
+    }),
+  ) as Actor["tabs"];
+
+  return touched ? { ...actor, tabs } : actor;
+}
+
 export function generatedBondActions(
   template: BondTemplate,
   assignment: BondAssignment,
@@ -398,6 +470,25 @@ export function withGeneratedBondActions(
   if (!assignment) return actor;
   const template = templates.find((t) => t.id === assignment.templateId);
   if (!template) return actor;
+
+  /**
+   * ⚠ A COMPANION-PERFORMED BOND LEAVES THE CHARACTER'S CARD ALONE.
+   *
+   * `pack` is `actor: "companion"`: Lyrielle chooses, Faelar swings. Her card carries a
+   * hand-authored controller row — "Choose ONE each round: Faelar performs Bonded Strike or
+   * Faelar protects" — and the companion's card carries the two things it can actually do.
+   * That split is the design, not an omission.
+   *
+   * Generating here would do real damage: `isAuthoredBondLadderRow` treats every
+   * `actionKind: "bond"` row without the generated prefix as a ladder row to be replaced, so
+   * running this would DELETE `lyrielle-bond-reference` and emit the companion's rows on the
+   * wrong sheet. Christopher, on a proposal to do exactly that: *"why did you change the model
+   * of the pack bond when i was written to my instructions, it just needed to be tied to the
+   * companion."*
+   *
+   * The tie is `withCompanionBondRider`, applied to the COMPANION.
+   */
+  if (template.actor === "companion") return actor;
 
   const generated = generatedBondActions(
     template,

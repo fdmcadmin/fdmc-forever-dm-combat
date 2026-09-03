@@ -109,6 +109,28 @@ export function resolveBondStage(ctx: BondStageContext): BondStageResolution {
   return { stage, stageByLevel };
 }
 
+/**
+ * THE MACHINE FORM OF THE DIE A PATH'S TEXT STATES.
+ *
+ * A path box is prose because a DM reads it — "Companion stat block attack — the first strike
+ * gets +1d4." The card cannot roll prose, and this codebase does not tag from prose
+ * (the same rule that keeps equipment from being classified by its name), so the die is stated
+ * once more in a field a formula can consume.
+ *
+ * Christopher, 2026-09-03: *"the bonded strike on faelar's sheet is missing the rider for meta"* —
+ * Lyrielle reached Metamorphosis and chose Bonded Strike, and nothing carried the +1d4 to the
+ * companion that actually swings it. `bondActions.withCompanionBondRider` is what reads this.
+ *
+ * Only the CHOSEN form carries one. The unchosen path is held, by definition, at a form the
+ * ladder already spells out, and giving it a rider would be inventing a second live effect.
+ */
+export type BondRider = {
+  /** Added to the performer's damage formula, e.g. "1d4". */
+  damage?: string;
+  /** The rider lands on the first strike of the turn only, not on every attack. */
+  firstStrikeOnly?: boolean;
+};
+
 export type BondPath = {
   /** The path's name AT THIS STAGE. It renames as it evolves — never use it as a key. */
   name: string;
@@ -116,6 +138,8 @@ export type BondPath = {
   chosen: string;
   /** What this path holds at when the OTHER path was chosen. */
   unchosen?: string;
+  /** The die `chosen` states, in a form a formula can use. See {@link BondRider}. */
+  chosenRider?: BondRider;
 };
 
 export type BondStage = {
