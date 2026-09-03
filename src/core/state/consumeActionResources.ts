@@ -42,12 +42,38 @@ export function resolveNamedResourceCost(
 
   const prose = action.metadata?.cost?.trim().toLowerCase();
   if (!prose) return undefined;
+  /**
+   * ⚠ ONE DIE IS SPENT FROM A POOL OF DICE, and an exact substring match cannot see that.
+   *
+   * The prose names what this USE costs, so it is written singular — "Magic Action; 1 Psionic
+   * Energy Die". The pool is named for what it HOLDS, so it is plural — "Psionic Energy Dice".
+   * `prose.includes(label)` is false, no resource resolves, and the card does nothing at all when
+   * clicked. Christopher: *"half of my pisionic dice do nothing."*
+   *
+   * Half, precisely: Psionic Strike carries a structured `slotCost` and returns above this line,
+   * so it works; both Telekinetic Movement entries name their cost only in prose and were dead.
+   * The same trap catches "1 Luck Point" against "Luck Points", "1 Superiority Die" against
+   * "Superiority Dice", and every other pool whose singular is not its plural.
+   *
+   * Matching stays WHOLE-WORD and symmetric — both sides get the same normalisation — so this
+   * loosens the spelling and not the meaning. `dice`→`die` is spelled out because it is an
+   * irregular this vocabulary genuinely uses in both directions; the trailing-s rule covers the
+   * regular cases. The exact match is tried first and unchanged.
+   */
+  const normalise = (value: string) => value
+    .toLowerCase()
+    .replace(/\bdice\b/g, "die")
+    .replace(/\b(\w{3,}?)s\b/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  const proseNormalised = normalise(prose);
   // Longest label first so "Spell Slots L1" wins over a bare "Spell" style label.
-  const match = [...resourceLabels]
+  const candidates = [...resourceLabels]
     .filter(Boolean)
     .sort((a, b) => b.length - a.length)
-    .find(label => label.trim().length > 2 && prose.includes(label.trim().toLowerCase()));
-  return match;
+    .filter(label => label.trim().length > 2);
+  return candidates.find(label => prose.includes(label.trim().toLowerCase()))
+    ?? candidates.find(label => proseNormalised.includes(normalise(label)));
 }
 
 export function consumeActionResourcesOnCommit(params: {

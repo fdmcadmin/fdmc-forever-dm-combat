@@ -4,7 +4,7 @@ import { ActionButton } from "./ActionButton";
 import type { ActorConcentrationState } from "../state/useActorConcentrationState";
 import { isUsedActionStateValue, slotsOf, type ActorActionEconomyState, type ActionCost } from "../types/actionEconomy";
 import type { CommittedRollOutcomeMode, CommittedRollState } from "../types/committedRoll";
-import { normalizeOutcomeMode } from "../types/tabs";
+import { normalizeOutcomeMode, resolveOutcomeMode } from "../types/tabs";
 import { isInertAction } from "../types/tabs";
 import { rollLabelForEffectKind } from "../constants/itemTypeCapabilities";
 import type { ActorAction, TabId } from "../types/tabs";
@@ -287,10 +287,30 @@ function createCandidate(action: ActorAction, _activeTab: TabId, costs: ActionCo
 }
 
 function hasAttachedDice(action: ActorAction) {
-  // NEITHER passive NOR utility ever rolls, whatever the metadata says. utility is clickable
-  // — the click IS the action — but it has no dice and never will.
-  const mode = normalizeOutcomeMode(action.metadata?.outcomeMode);
-  if (mode === "passive" || mode === "utility") return false;
+  /**
+   * ⚠ UTILITY MEANS *INSTANT*, NOT *DICELESS* — and this line said the opposite.
+   *
+   * Christopher: *"why is this what utility means, we built utility to mean happens instantly
+   * while additive is happens with a attack."* That is the real distinction and it is about WHEN
+   * a thing resolves, not whether it has dice:
+   *
+   *   utility   resolves NOW, on the click.        It may well roll — Second Wind rolls 1d10+level.
+   *   additive  arms a rider on a LATER attack.    It rolls nothing standalone.
+   *
+   * This read "NEITHER passive NOR utility ever rolls, whatever the metadata says" and returned
+   * false, so an instant ability carrying its own damage was clickable and could never produce a
+   * die. Iskarn's Second Wind — Tactical Shift prints `1d10+6` on the card and rolled nothing:
+   * *"Iskarns tactical shift is unrollable."*
+   *
+   * Only PASSIVE is diceless by definition — it is not clickable at all.
+   *
+   * ⚠ AND `resolveOutcomeMode`, NOT `normalizeOutcomeMode`. The normaliser maps the retired
+   * `reference` tag to `passive`, which is the mapping its own doc warns against — so a legacy
+   * entry was blocked here no matter what else was fixed. The resolver is the one that can see
+   * whether the action spends anything.
+   */
+  const mode = resolveOutcomeMode(action);
+  if (mode === "passive") return false;
 
   const metadata = action.metadata;
   /**
@@ -327,9 +347,11 @@ function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, cost
   if (slotsOf(costs).length > 0) {
     return false;
   }
-  // No Roll button for the two non-rolling modes.
-  const om = normalizeOutcomeMode(action.metadata?.outcomeMode);
-  if (om === "passive" || om === "utility") {
+  // No Roll button for the one genuinely non-rolling mode. `utility` is INSTANT, not diceless —
+  // see `hasAttachedDice`. `resolveOutcomeMode`, so a legacy `reference` entry is not read as
+  // passive before anything else gets a say.
+  const om = resolveOutcomeMode(action);
+  if (om === "passive") {
     return false;
   }
   if (action.logMode === "silent" && om === "additive") {

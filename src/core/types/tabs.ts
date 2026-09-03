@@ -53,10 +53,17 @@ export type ActionDisplayMode = "card" | "compact";
  *                    The distinction from `triggered` is whose roll the dice land on: its own,
  *                    or somebody else's.
  *
- *   utility        : CLICKABLE, rolls nothing itself, and MODIFIES THE ATTACKS THAT PC MAKES
- *                    THIS TURN. You activate it, and it changes what your own subsequent
- *                    actions do. Rage, Great Weapon Master, Sacred Weapon, Celestial Revelation.
- *                    The click is the whole action; the effect lands on what you do next.
+ *   utility        : CLICKABLE, and RESOLVES INSTANTLY — on the click, not on a later roll.
+ *                    Rage, Great Weapon Master, Sacred Weapon, Celestial Revelation, Second Wind.
+ *
+ *                    ⚠ IT MAY ROLL. Christopher: *"we built utility to mean happens instantly
+ *                    while additive is happens with a attack."* The line is about WHEN a thing
+ *                    lands, never about whether it has dice. This paragraph used to read "rolls
+ *                    nothing itself, and MODIFIES THE ATTACKS THAT PC MAKES THIS TURN" — a
+ *                    description of `additive` wearing utility's name — and `hasAttachedDice`
+ *                    enforced it, so an instant ability with its own damage was clickable and
+ *                    could never produce a die. Second Wind — Tactical Shift printed 1d10+6 and
+ *                    rolled nothing.
  *
  *   passive        : NOT clickable. ALWAYS affecting the character — no activation, nothing to
  *                    press. A standing bonus, an always-on defence, a spell that is simply on.
@@ -123,7 +130,7 @@ export function normalizeOutcomeMode(mode: LegacyOutcomeMode | undefined): Actio
  * legacy tags in code; never make the table re-author around them.
  */
 export function resolveOutcomeMode(action: {
-  metadata?: { outcomeMode?: LegacyOutcomeMode; slotCost?: string; cost?: string };
+  metadata?: { outcomeMode?: LegacyOutcomeMode; slotCost?: string; cost?: string; damage?: string };
   economyCost?: readonly string[];
 }): ActionOutcomeMode | undefined {
   const mode = action.metadata?.outcomeMode;

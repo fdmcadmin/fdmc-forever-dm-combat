@@ -214,7 +214,10 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
       const hasFormula = draft.attackBonus || draft.saveDc || draft.damage || draft.healing;
       // "Reference Only" is retired and no longer in the dropdown — telling a DM to switch to a
       // mode that is not offered is a dead end.
-      if (!hasFormula) errs.push("This outcome mode rolls something, so it needs a formula. Add one, or switch to Utility (clickable, no dice) or Passive (not clickable).");
+      // ⚠ "Utility (clickable, no dice)" was the wrong definition, told to the DM as advice.
+      // Utility means it resolves INSTANTLY — it may carry dice; `additive` is the one that
+      // rolls nothing of its own because it rides a later attack. See `ActionOutcomeMode`.
+      if (!hasFormula) errs.push("This outcome mode rolls something, so it needs a formula. Add one, or switch to Utility (resolves instantly on click) or Passive (not clickable).");
     }
     if (errs.length > 0) { setErrors(errs); return; }
 
