@@ -405,8 +405,38 @@ export function fingerprintEquipmentItem(item: EquipmentItem): string {
   return JSON.stringify(rest, Object.keys(rest).sort());
 }
 
+/**
+ * THE SEED VERSION IS THE CONTENT, because a hand-typed one does not get typed.
+ *
+ * ⚠ TEN ITEMS WERE ADDED TO THE LIBRARY AND NOBODY EVER SAW THEM. `CAMPAIGN_EQUIPMENT_SEED_VERSION`
+ * is a literal — `"tbc-acts1-4-v5-focus-all-three"` — and it had not changed since the INITIAL
+ * COMMIT. 0.8.12.6 seeded *"the v6 loot document's ten missing items"*, including all seven Ward
+ * Field Rewards, and every browser that had ever seeded returned at the guard below and merged
+ * none of them. Christopher: *"i cant find all 7 of the new items [...] i cant find the flask for
+ * the mending."* The Fieldwork Flask was in `equipmentLibrary.ts` the whole time.
+ *
+ * A constant that must be bumped by hand whenever a DIFFERENT file changes is a rule with no
+ * enforcement — the same shape as the encounter library, which already solved it by folding
+ * `AUTHORED_DIGEST` into its own seed version.
+ *
+ * So the version is DERIVED: the literal stays as a human-readable prefix for diagnosis, and a
+ * fingerprint of what is actually being seeded follows it. Change any item, add one, retire one,
+ * and the key stops matching on its own.
+ *
+ * ⚠ RE-SEEDING IS SAFE — it MERGES. `byId` starts from the DM's existing campaign store, retired
+ * ids are removed by name, and seeded items are written over their own ids. A co-resident item the
+ * campaign never shipped is untouched, which is the rule the equipment library has always had.
+ */
+function seedFingerprint(items: EquipmentItem[], retiredIds: string[]): string {
+  const canonical = items.map(fingerprintEquipmentItem).sort().join(" ") + "" + [...retiredIds].sort().join(",");
+  let h = 0x811c9dc5;
+  for (let i = 0; i < canonical.length; i++) { h ^= canonical.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return `${h.toString(16).padStart(8, "0")}-${items.length}`;
+}
+
 export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds: string[] = []): void {
-  if (safeStorage().getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === CAMPAIGN_EQUIPMENT_SEED_VERSION) return;
+  const version = `${CAMPAIGN_EQUIPMENT_SEED_VERSION}+${seedFingerprint(items, retiredIds)}`;
+  if (safeStorage().getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === version) return;
   const byId = new Map(loadEquipmentLibrary("campaign").map(i => [i.id, i]));
   // Merging alone can only ever add. Items the campaign module dropped have to be named
   // explicitly or they stay in the library forever.
@@ -449,7 +479,7 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds:
   });
   if (keep.length !== dm.length) saveEquipmentLibrary(keep, "dm");
 
-  safeStorage().setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, CAMPAIGN_EQUIPMENT_SEED_VERSION);
+  safeStorage().setItem(CAMPAIGN_EQUIPMENT_SEED_KEY, version);
 }
 
 /** Seed version for the base weapon set — bump to re-seed after editing BASE_WEAPONS. */
