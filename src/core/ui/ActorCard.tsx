@@ -3618,7 +3618,7 @@ export function ActorCard({
     const isLevelledSpell = action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0;
     const isSpendingSpell = isFreeCastSpell || isLevelledSpell;
     const hasNamedResourceCost = Boolean(
-      resolveNamedResourceCost(action, (actor.tabs.resources ?? []).map(r => r.label)),
+      resolveNamedResourceCost(action, (actor.tabs.resources ?? [])),
     );
     const damageRollsDice = /\d+d\d+/i.test(action.metadata?.damage ?? "");
     return hasRollableFormula(action.metadata?.attack)
@@ -3734,7 +3734,7 @@ export function ActorCard({
     // 3. Named resource cost (Rage, Channel Divinity, Second Wind, Action Surge, …).
     //    Resolved via the shared helper so the prose fallback (cost text naming a pool)
     //    is honored identically here and in the spend path.
-    const slotCost = resolveNamedResourceCost(action, resources.map(r => r.label));
+    const slotCost = resolveNamedResourceCost(action, resources);
     if (slotCost) {
       const needle = slotCost.toLowerCase();
       const res = resources.find(r => {
@@ -3888,7 +3888,7 @@ export function ActorCard({
     // human cost text ("Bonus Action; 1 Channel Divinity") still spends — those were the
     // cards that did nothing at all on click.
     const hasNamedResourceCost = Boolean(
-      resolveNamedResourceCost(action, (actor.tabs.resources ?? []).map(r => r.label))
+      resolveNamedResourceCost(action, (actor.tabs.resources ?? []))
     );
     // An item pool spends on use like any other. Most charged items are pure effect — Gapstep
     // Boots move you, Stabilized Band re-rolls a save — so they never reach a committed roll

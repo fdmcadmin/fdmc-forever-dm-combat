@@ -47,7 +47,7 @@ const tabNotes: Record<TabId, string> = {
   notes: "Saved notes live here.",
 };
 
-function inferCosts(action: ActorAction, activeTab: TabId): ActionCost[] {
+export function inferCosts(action: ActorAction, activeTab: TabId): ActionCost[] {
   if (action.economyCost) {
     /**
      * LEGACY BACKFILL. Every action authored before 0.7.10.18 stored `[]` for BOTH free and
@@ -315,7 +315,7 @@ function createCandidate(action: ActorAction, _activeTab: TabId, costs: ActionCo
   };
 }
 
-function hasAttachedDice(action: ActorAction) {
+export function hasAttachedDice(action: ActorAction) {
   /**
    * ⚠ UTILITY MEANS *INSTANT*, NOT *DICELESS* — and this line said the opposite.
    *
@@ -369,7 +369,7 @@ function hasAttachedDice(action: ActorAction) {
  * Only an `additive` rider is genuinely silent AND non-rolling: it arms itself onto a later
  * roll. Everything else that is silent still has something to resolve.
  */
-function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, costs: ActionCost[], _outcomeMode: CommittedRollOutcomeMode) {
+export function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, costs: ActionCost[], _outcomeMode: CommittedRollOutcomeMode) {
   // Costless means NO SLOT. A free action arrives as ["free"] and still qualifies for a
   // direct roll — testing raw length here would have taken Shield Bash's Roll button away
   // the moment "free" became a real value.
@@ -394,7 +394,7 @@ function shouldShowDirectRollButton(action: ActorAction, _activeTab: TabId, cost
  * This is distinct from "direct roll" (which clicks once → rolls).
  * Checks click once to select, then show a Roll button.
  */
-function isCheckAction(action: ActorAction): boolean {
+export function isCheckAction(action: ActorAction): boolean {
   return action.actionKind === "check" ||
     action.metadata?.outcomeMode === "ability-check";
 }

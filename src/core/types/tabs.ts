@@ -242,6 +242,20 @@ export type ActorActionMetadata = {
    */
   cost?: ActionEconomyKind | string;
   slotCost?: string;
+  /**
+   * THE AUTHORED ACTION -> POOL LINK: the exact `id` of a row in this actor's Resources tab,
+   * and how many that row loses per use.
+   *
+   * The sheets have carried both for a long time; neither was declared here and nothing read
+   * either one, so every action fell back to matching its English `cost` prose against pool
+   * LABELS. A pool whose label the prose did not literally contain was unreachable - see the
+   * long note on `resolveNamedResourceCost`, which is where these are now read first.
+   *
+   * `resourceCost` defaults to 1. Lay on Hands is the reason it must not be assumed: purifying
+   * poison costs 5 points, not one use.
+   */
+  resourceId?: string;
+  resourceCost?: number;
   spellLevel?: number;
   /**
    * WHICH CLASS CASTS THIS — a slot, not an ability.

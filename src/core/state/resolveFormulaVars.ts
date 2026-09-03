@@ -306,7 +306,15 @@ export function resolveFormulaVars(
  * Used to show an indicator on the action card that the formula is dynamic.
  */
 export function formulaHasVars(formula?: string): boolean {
-  return Boolean(formula && /@(STR|DEX|CON|INT|WIS|CHA|PROF|SPELL|SAVE_BONUS|ATK)/.test(formula));
+  /**
+   * ANY @TOKEN, not a hand-kept list of them. The list had gone stale: @MAIN / @SECOND / @THIRD
+   * (class level) and @CASTMOD were all added to the resolver above and never added here, so a
+   * formula like Second Wind - Tactical Shift's `1d10+@MAIN` reported "no variables" and
+   * `formulaDisplayLabel` printed the raw template instead of the resolved number.
+   *
+   * A resolver that grows and a detector that does not is a bug generator. Detect the SHAPE.
+   */
+  return Boolean(formula && /@[A-Z_]+/i.test(formula));
 }
 
 /**

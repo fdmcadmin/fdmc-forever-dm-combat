@@ -30,10 +30,52 @@ import type { ConsumeResult } from "./useResourceCounterState";
  * The fallback only fires on an actual label match against THIS actor's resources, so it
  * can never invent a pool that isn't on the sheet.
  */
+/**
+ * A resource row, or just its label. Callers that have the actor's `tabs.resources` in hand
+ * should pass the ROWS — the id is what carries the authored link below.
+ */
+export type ResourceRef = string | { id?: string; label: string };
+
 export function resolveNamedResourceCost(
   action: ActorAction,
-  resourceLabels: string[],
+  resources: readonly ResourceRef[],
 ): string | undefined {
+  const rows = resources
+    .map(r => (typeof r === "string" ? { id: undefined as string | undefined, label: r } : r))
+    .filter(r => Boolean(r?.label));
+  const resourceLabels = rows.map(r => r.label);
+
+  /**
+   * ⚠ THE SHEET ALREADY SAYS WHICH POOL THIS SPENDS. READ IT.
+   *
+   * Actions carry `metadata.resourceId` — the exact id of a row in this actor's Resources tab —
+   * and `metadata.resourceCost`, how many it takes. Both were written by the authoring layer and
+   * **nothing in the app had ever read either one**: they were not even declared on
+   * `ActorActionMetadata`. The only link from an action to its pool was the label guesswork
+   * below, so a pool whose LABEL did not appear in the action's English cost prose was
+   * unreachable no matter how precisely the sheet had named it.
+   *
+   * That is what made Iskarn's card look broken. `Telekinetic Movement - Psionic Die` names its
+   * cost "Magic Action; 1 Psionic Energy Die"; the pool is labelled `Psionic Energy Dice (d8)`.
+   * The prose does not contain that string — the "(d8)" alone defeats it — so no resource
+   * resolved, nothing was spent, and with `logMode: "silent"` and no dice of its own the click
+   * produced no roll, no charge and no log line. Christopher: *"none of the actions work."*
+   * All the while the action was carrying `resourceId: "psionic-energy-dice-pool-isk"`, which
+   * matches a row on that very sheet.
+   *
+   * Across the live party 8 actions carry the field and **all 8 resolve to a real pool with no
+   * dangling ids** — including `Lay On Hands - Purify Poison`, whose `resourceCost: 5` means the
+   * one case that did limp along through the prose scan was spending 1 point instead of 5.
+   *
+   * The id is checked FIRST because it is a statement, not an inference. The prose scan stays
+   * exactly as it was, as the fallback for the sheets that never got the field.
+   */
+  const authoredId = action.metadata?.resourceId?.trim();
+  if (authoredId) {
+    const linked = rows.find(r => r.id === authoredId);
+    if (linked) return linked.label;
+  }
+
   const slotCost = action.metadata?.slotCost?.trim();
   if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !/^L\d/i.test(slotCost)) {
     return slotCost;
@@ -50,15 +92,14 @@ export function resolveNamedResourceCost(
    * `prose.includes(label)` is false, no resource resolves, and the card does nothing at all when
    * clicked. Christopher: *"half of my pisionic dice do nothing."*
    *
-   * Half, precisely: Psionic Strike carries a structured `slotCost` and returns above this line,
-   * so it works; both Telekinetic Movement entries name their cost only in prose and were dead.
-   * The same trap catches "1 Luck Point" against "Luck Points", "1 Superiority Die" against
-   * "Superiority Dice", and every other pool whose singular is not its plural.
-   *
    * Matching stays WHOLE-WORD and symmetric — both sides get the same normalisation — so this
    * loosens the spelling and not the meaning. `dice`→`die` is spelled out because it is an
    * irregular this vocabulary genuinely uses in both directions; the trailing-s rule covers the
    * regular cases. The exact match is tried first and unchanged.
+   *
+   * ⚠ This is a FALLBACK and it is not sufficient on its own — see the authored-id branch above.
+   * It cannot see a parenthetical in the label ("Psionic Energy Dice (d8)"), and widening it far
+   * enough to would start matching pools the action never meant.
    */
   const normalise = (value: string) => value
     .toLowerCase()
@@ -81,12 +122,13 @@ export function consumeActionResourcesOnCommit(params: {
   actorName: string;
   action: ActorAction;
   consumeSpellSlot: (actorId: string, level: number) => ConsumeResult;
-  consumeNamedResource: (actorId: string, label: string) => ConsumeResult;
+  consumeNamedResource: (actorId: string, label: string, amount?: number) => ConsumeResult;
   /** Spends the action's own item pool. Absent on callers that predate item charges. */
   consumeItemCharge?: (actorId: string, action: ActorAction) => ConsumeResult;
   log: (entry: AddCombatLogEntryInput) => void;
   /** This actor's resource labels — enables the `metadata.cost` prose fallback. */
-  resourceLabels?: string[];
+  /** This actor's resource ROWS. Pass the rows, not just labels — `metadata.resourceId` links to `id`. */
+  resourceLabels?: readonly ResourceRef[];
   /** Level the spell is actually cast at — the player's upcast pick. Absent = as authored. */
   castLevel?: number;
 }): void {
@@ -170,7 +212,7 @@ export function consumeActionResourcesOnCommit(params: {
   //    but NOT named resources that merely start with L (Lay on Hands, Luck, …).
   const slotCost = resolveNamedResourceCost(action, resourceLabels);
   if (slotCost) {
-    const r = consumeNamedResource(actorId, slotCost);
+    const r = consumeNamedResource(actorId, slotCost, action.metadata?.resourceCost ?? 1);
     if (r.outcome === "spent") {
       log({ actorName, actionName: action.label, tabId: "resources", message: `${actorName} uses ${r.label ?? slotCost} (${r.remaining}/${r.max ?? "?"} left).` });
     } else if (r.outcome === "empty") {

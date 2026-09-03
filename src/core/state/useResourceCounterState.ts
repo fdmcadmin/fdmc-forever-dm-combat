@@ -439,7 +439,7 @@ export function useResourceCounterState(actors: Actor[]) {
   // The action's slotCost field should match (or partially match) the resource label.
   // e.g. slotCost "Channel Divinity" matches resource "Channel Divinity: 2 uses"
 
-  const consumeNamedResource = useCallback((actorId: string, resourceLabel: string): ConsumeResult => {
+  const consumeNamedResource = useCallback((actorId: string, resourceLabel: string, amount: number = 1): ConsumeResult => {
     if (!resourceLabel.trim()) return { outcome: "no-resource" };
 
     const actor = actors.find(a => a.id === actorId);
@@ -455,13 +455,18 @@ export function useResourceCounterState(actors: Actor[]) {
     });
 
     if (!matchingResource) return { outcome: "no-resource" };
+    // An action may spend MORE THAN ONE. Lay on Hands purifies poison for 5 points, not 1 use —
+    // and `spendResource` already handled a variable amount by id. Nothing called it for this, so
+    // every named cost was silently a cost of 1 no matter what the sheet authored.
+    const spend = Math.max(1, Math.floor(amount));
+    if (spend > 1) return spendResource(actorId, matchingResource.id, spend);
     const current = freshBase()[actorId]?.[matchingResource.id] ?? 0;
     const max = getMaxFromAction(matchingResource);
     if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 
     decrementResource(actorId, matchingResource.id);
     return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max };
-  }, [actors, decrementResource]);
+  }, [actors, decrementResource, spendResource]);
 
   return {
     counters,
