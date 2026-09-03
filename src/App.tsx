@@ -2221,6 +2221,37 @@ export default function App() {
     addEntry({ actorName: "System", actionName: "Combat Start", tabId: "system", message: `Round 1 begins. ${sorted[0]?.name ?? "First combatant"} goes first.` });
   }
 
+  /**
+   * RESET ONE ACTOR'S TURN, ON EVERY CLIENT.
+   *
+   * ⚠ THREE PATHS RESET A TURN AND ONLY ONE OF THEM TOLD ANYBODY. `handleNextTurn` (initiative
+   * advances) broadcast; the DM pressing a CARD's own "Next Turn" did not, and neither did the
+   * popout. Christopher: *"if i click the next turn button on a card from the dm side they see it
+   * happen, right"* — they did not.
+   *
+   * The comment inside `handleNextTurn` already diagnosed why and the fix was only applied there:
+   * `resetActorTurn` clears the economy hook, which syncs on its own channel, but the DOTS also
+   * read `usedCostSlots` from the actor-card session snapshot, cleared by a `turnResetVersion`
+   * bump that is local state no other client can see. So the DM went green and the player stayed
+   * red.
+   *
+   * One helper, so a fourth reset path cannot be added without the broadcast.
+   */
+  function resetActorTurnEverywhere(actorId: string) {
+    resetActorTurn(actorId);
+    resetCompanionTurns(actorId);   // companions share the owner's turn
+    setTurnResetVersion(v => v + 1);
+    if (OBR.isAvailable) {
+      void OBR.broadcast.sendMessage(
+        FDMC_ACTOR_TURN_RESET_CHANNEL,
+        { type: "fdmc:actor-turn-reset", actorId },
+        // ALL, not REMOTE: this client needs it too when the card is rendered elsewhere, and the
+        // listener is a no-op for an actor whose slots are already clear.
+        { destination: "ALL" },
+      ).catch(() => undefined);
+    }
+  }
+
   function handleNextTurn() {
     // Players broadcast a request — DM executes the actual state change
     if (isPlayerMode && OBR.isAvailable) {
@@ -2276,32 +2307,11 @@ export default function App() {
       // Actor's turn starts — reset their economy now
       const nextActor = actors.find(a => a.id === nextCombatant.id);
       if (nextActor) {
-        resetActorTurn(nextActor.id);
-        resetCompanionTurns(nextActor.id); // companions share the owner's turn
-        /**
-         * ⚠ AND TELL EVERY OTHER CLIENT, because half this actor's turn state does not sync.
-         *
-         * `resetActorTurn` clears the economy hook, which broadcasts on its own channel. The
-         * DOTS also read `usedCostSlots`, which lives in the actor-card session snapshot and is
-         * cleared by the `turnResetVersion` tick below — a bump in THIS component's state that
-         * no other client can see. So the DM's copy went green and the player's stayed red.
-         *
-         * A monster turn start has had `fdmc:monster-turn-reset` for exactly this reason; an
-         * actor turn start had nothing. Christopher: *"actions are not resetting in combat when
-         * a players turn comes up."*
-         *
-         * ALL, not REMOTE: this client needs it too when the card is rendered elsewhere, and the
-         * listener is a no-op for an actor whose slots are already clear.
-         */
-        if (OBR.isAvailable) {
-          void OBR.broadcast.sendMessage(
-            FDMC_ACTOR_TURN_RESET_CHANNEL,
-            { type: "fdmc:actor-turn-reset", actorId: nextActor.id },
-            { destination: "ALL" },
-          ).catch(() => undefined);
-        }
+        // ⚠ ONE HELPER — see `resetActorTurnEverywhere`. This block used to carry the reset, the
+        // companion reset and the broadcast inline, and the two per-card reset paths carried a
+        // copy that was missing the broadcast.
+        resetActorTurnEverywhere(nextActor.id);
       }
-      setTurnResetVersion(v => v + 1);
       setSelectedActorId(nextCombatant.id);
       setActiveMonsterInstanceId("");
     } else {
@@ -4736,8 +4746,8 @@ export default function App() {
                  */
                 onResetTurn={() => {
                   if (isPlayerMode) { handleNextTurn(); return; }
-                  resetActorTurn(focusedActorId);
-                  setTurnResetVersion(v => v + 1);
+                  // Broadcasts, so the player's dots clear too — see `resetActorTurnEverywhere`.
+                  resetActorTurnEverywhere(focusedActorId);
                 }}
                 onSetConcentration={(next) => setActorConcentration(focusedActorId, next)}
                 onClearConcentration={() => clearActorConcentration(focusedActorId)}

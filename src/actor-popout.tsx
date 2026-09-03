@@ -12,7 +12,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import ReactDOM from "react-dom/client";
-import { ActorCard } from "./core/ui/ActorCard";
+import { ActorCard, FDMC_ACTOR_TURN_RESET_CHANNEL } from "./core/ui/ActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
@@ -357,7 +357,16 @@ function ActorPopout() {
         onReadyActionCosts={(costs, readiedKey) => readyActionCosts(actor.id, costs, readiedKey)}
         onUnreadyAction={(readiedKey) => unreadyActionKey(actor.id, readiedKey)}
         onRemovePendingLogEntries={removePendingEntries}
-        onResetTurn={() => resetActorTurn(actor.id)}
+        onResetTurn={() => {
+          resetActorTurn(actor.id);
+          if (OBR.isAvailable) {
+            void OBR.broadcast.sendMessage(
+              FDMC_ACTOR_TURN_RESET_CHANNEL,
+              { type: "fdmc:actor-turn-reset", actorId: actor.id },
+              { destination: "ALL" },
+            ).catch(() => undefined);
+          }
+        }}
         onSetConcentration={(next) => setActorConcentration(actor.id, next)}
         onClearConcentration={() => clearActorConcentration(actor.id)}
         onStartCommittedRoll={(input) => {

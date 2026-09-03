@@ -20,21 +20,29 @@ export type CastLevelOption = {
   max: number | null;
 };
 
+import { scaleUpcastRider } from "../dice/diceFormula";
+
 type SpellLevelPickerProps = {
   options: CastLevelOption[];
   selected: number;
   onSelect: (level: number) => void;
   /** Shown under the row when the spell says what upcasting adds. */
   upcastNote?: string;
+  /** The rider `withUpcastRiders` will add per extra level, when the spell authors one. */
+  upcastDamage?: string;
   disabled?: boolean;
 };
 
-export function SpellLevelPicker({ options, selected, onSelect, upcastNote, disabled }: SpellLevelPickerProps) {
+export function SpellLevelPicker({ options, selected, onSelect, upcastNote, upcastDamage, disabled }: SpellLevelPickerProps) {
   if (options.length <= 1) {
     return null;
   }
 
   const base = options[0].level;
+  const steps = selected - base;
+  // Scaled the same way `withUpcastRiders` scales it, so the label states the real addition.
+  const upcastRider = upcastDamage?.trim() && steps > 0 ? scaleUpcastRider(upcastDamage.trim(), steps) : "";
+  const autoScaled = Boolean(upcastRider);
 
   return (
     <div className="spell-level-picker" aria-label="Cast at level">
@@ -77,7 +85,20 @@ export function SpellLevelPicker({ options, selected, onSelect, upcastNote, disa
       {selected > base && (
         <span className="spell-level-picker-note">
           Upcast +{selected - base}
-          {upcastNote ? ` — ${upcastNote}` : " — add upcast damage manually"}
+          {/*
+            ⚠ "ADD IT MANUALLY" WAS ADVICE TO DOUBLE-COUNT.
+
+            This said so whenever the spell carried no upcast NOTE — a human-readable blurb — with
+            no reference to whether there was upcast DAMAGE. But `withUpcastRiders` scales an
+            authored `upcastDamage` into the rolled formula on its own, so a DM told to add the
+            dice by hand would have added them twice. Cure Wounds at L2 rolls 2d8+2 + 2d8 already.
+
+            The note is the explanation; `autoScaled` is the fact. Only a spell with no rider to
+            apply asks for anything by hand.
+          */}
+          {autoScaled
+            ? ` — ${upcastRider} added automatically${upcastNote ? ` · ${upcastNote}` : ""}`
+            : upcastNote ? ` — ${upcastNote}` : " — add upcast damage manually"}
         </span>
       )}
     </div>

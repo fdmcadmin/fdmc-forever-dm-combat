@@ -1137,6 +1137,28 @@ export function ActorCard({
         delete next[actorId];
         return next;
       });
+      /**
+       * ⚠ AND THE ATTACK USES, which this listener did not clear — so Extra Attack never reset.
+       *
+       * `resetTurn()` clears three things: resolved readied keys, used cost slots, and
+       * `attackUseByActorId`. This listener cleared the first two. The local function only runs
+       * when somebody presses the card's OWN "Next Turn"; a turn that starts because initiative
+       * advanced arrives here instead — which is every turn in an actual fight.
+       *
+       * So a fighter spent "Attack 2/2", the round came back around, the dots went green and the
+       * attack counter did not. It survived on EVERY client, the DM's included, because the
+       * broadcast is the only path and the broadcast was short one clear.
+       *
+       * ⚠ TWO IMPLEMENTATIONS OF "RESET THIS ACTOR'S TURN" IS THE REAL FAULT. They drifted the
+       * moment a third piece of turn state was added and only one of them learned about it. Any
+       * new per-turn state must be cleared in BOTH, or moved somewhere both read.
+       */
+      setAttackUseByActorId((current) => {
+        if (!current[actorId]) return current;
+        const next = { ...current };
+        delete next[actorId];
+        return next;
+      });
     });
   }, []);
 
@@ -3579,6 +3601,31 @@ export function ActorCard({
     return { ...action, metadata: { ...metadata, damage: top.dmg.trim() } };
   }
 
+  /**
+   * DOES THIS ACTION SPEND ITS OWN RESOURCES WHEN IT RESOLVES, rather than when it is used?
+   *
+   * ⚠ ONE DEFINITION, THREE CALLERS. `handleUseAction` spends immediately when this is FALSE and
+   * leaves the rest to a roll; `onStartCommittedRoll` spends for a committed roll; and
+   * `completeTriggeredCandidate` spends for a triggered one. Writing the condition twice is how
+   * the triggered path came to spend nothing at all — it was never given the rule.
+   *
+   * Only DICE mean an action resolves its own damage. `hasRollableFormula` accepts a bare signed
+   * number, so a Rage authored as damage "+2" once read as "this rolls its own damage" and its
+   * pool never moved — an additive rider is logMode "silent" and never commits a roll.
+   */
+  function actionRollsItsOwnDamage(action: ActorAction): boolean {
+    const isFreeCastSpell = action.actionKind === "spell" && action.metadata?.spellSlotMode === "freeCast";
+    const isLevelledSpell = action.actionKind === "spell" && (action.metadata?.spellLevel ?? 0) > 0;
+    const isSpendingSpell = isFreeCastSpell || isLevelledSpell;
+    const hasNamedResourceCost = Boolean(
+      resolveNamedResourceCost(action, (actor.tabs.resources ?? []).map(r => r.label)),
+    );
+    const damageRollsDice = /\d+d\d+/i.test(action.metadata?.damage ?? "");
+    return hasRollableFormula(action.metadata?.attack)
+      || Boolean(action.metadata?.saveDc?.trim())
+      || ((isSpendingSpell || hasNamedResourceCost) && damageRollsDice);
+  }
+
   function withUpcastRiders(action: ActorAction): ActorAction {
     const metadata = action.metadata;
     const rider = metadata?.upcastDamage?.trim();
@@ -3630,6 +3677,7 @@ export function ActorCard({
         selected={getCastLevel(action)}
         onSelect={(level) => setCastLevel(action, level)}
         upcastNote={extractUpcastNote(action)}
+        upcastDamage={action.metadata?.upcastDamage}
       />
     );
   }
@@ -3865,10 +3913,9 @@ export function ActorCard({
     // Only DICE mean the action resolves its own damage. This is deliberately checked here
     // rather than in hasRollableFormula, which is shared with the roll workspace where a flat
     // modifier IS a legitimate thing to roll with.
-    const damageRollsDice = /\d+d\d+/i.test(action.metadata?.damage ?? "");
-    const rollsItsOwn = hasRollableFormula(action.metadata?.attack)
-      || Boolean(action.metadata?.saveDc?.trim())
-      || ((isSpendingSpell || hasNamedResourceCost) && damageRollsDice);
+    // ⚠ ONE DEFINITION — `actionRollsItsOwnDamage`. It used to be computed inline here and only
+    // here, which is why the triggered path never learned the rule and spent nothing.
+    const rollsItsOwn = actionRollsItsOwnDamage(action);
     if ((isActivatedAbility || isSpendingSpell || hasNamedResourceCost || hasItemCharges) && !rollsItsOwn) {
       onConsumeActionResources?.(action, getCastLevel(action));
     }
@@ -4020,11 +4067,44 @@ export function ActorCard({
   }
 
   async function completeTriggeredCandidate(candidate: ReadiedRollCandidate, entry: { action: ActorAction; sourceTabId: TabId | "pinned" }) {
+    /**
+     * ⚠ THE UPCAST RIDER, WHICH THIS PATH READ STRAIGHT PAST.
+     *
+     * `withUpcastRiders` runs in the action mapping that feeds the CARD (see the memo that
+     * builds `withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(…))))`),
+     * so the card correctly showed Cure Wounds at L2 as "2d8+2 + 2d8". This function reads
+     * `entry.action.metadata.damage` — the RAW action, before that mapping — and sent 2d8+2.
+     *
+     * Christopher: *"didnt add the extra dice."* The dice were computed and displayed; only the
+     * roll that actually went out missed them. Reading the ridered action is the whole fix.
+     */
+    const triggeredAction = withUpcastRiders(entry.action);
+
+    /**
+     * ⚠ AND NOTHING WAS SPENT — because there are THREE resolution paths, not two.
+     *
+     * `handleUseAction` spends immediately for an action that does not roll its own damage, and
+     * hands anything that DOES roll to the commit path, where `onStartCommittedRoll` spends it.
+     * Its comment says exactly that: *"Rolled spells still spend on commit; `rollsItsOwn` keeps
+     * the two paths from double-spending."*
+     *
+     * A TRIGGERED action is the third path. It sends its formula to Dice+ directly and never
+     * commits a roll, so neither of those two ever fires: the log read *"Lyrielle triggers Cure
+     * Wounds. Marked used until reset"* — a message from this function — and no slot moved.
+     * Christopher: *"it didnt spend the spell slot."*
+     *
+     * The same predicate decides it here, so the three paths still cannot double-spend: this
+     * consumes only what `handleUseAction` deliberately left for a roll to spend.
+     */
+    if (actionRollsItsOwnDamage(entry.action)) {
+      onConsumeActionResources?.(triggeredAction, getCastLevel(entry.action));
+    }
+
     // Resolve @VARIABLE tokens (@PROF, @STR, …) before sending to Dice+. Damage-only and
     // triggered actions route here (see TabPanel resolveOutcomeMode); without this the raw
     // "1d8+1+@PROF" was sent to Dice+, which can't parse it — so the dice never rolled.
     const _derivedForTrigger = deriveActorStats(actor, undefined, status);
-    const rawRollFormula = entry.action.metadata?.damage ?? entry.action.metadata?.additive ?? entry.action.metadata?.attack;
+    const rawRollFormula = triggeredAction.metadata?.damage ?? triggeredAction.metadata?.additive ?? triggeredAction.metadata?.attack;
     const rollFormula = rawRollFormula
       ? normalizeFirstRollFormula(resolveFormulaVars(rawRollFormula, actor, _derivedForTrigger, status))
       : rawRollFormula;
