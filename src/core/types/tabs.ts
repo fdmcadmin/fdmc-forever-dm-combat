@@ -135,8 +135,22 @@ export function resolveOutcomeMode(action: {
 }): ActionOutcomeMode | undefined {
   const mode = action.metadata?.outcomeMode;
   if (mode !== "reference") return mode;
+  /**
+   * WARNING: "free" AND "passive" ARE COST STRINGS THAT SAY THE COST IS NOTHING.
+   *
+   * This tested the cost for truthiness, so the word "free" was read as evidence that the
+   * action spends something, and a legacy reference row authored free was promoted to
+   * `utility` -- a live, instant action. That is how the Bond tab ended up with (Meta) rows
+   * that are pure instruction text ("Choose ONE each round: Rallying Surge or Fortify") sitting
+   * on the sheet as pressable buttons that could never do anything when pressed.
+   *
+   * `authoredEconomy` already names the two economies that consume nothing; ask it instead of
+   * inferring spending from the presence of a string.
+   */
+  const named = authoredEconomy(action);
+  const namesNoCost = named === "free" || named === "passive";
   const spends = Boolean(action.metadata?.slotCost?.trim())
-    || Boolean(action.metadata?.cost?.trim())
+    || (!namesNoCost && Boolean(action.metadata?.cost?.trim()))
     || (action.economyCost?.length ?? 0) > 0;
   return spends ? "utility" : "passive";
 }

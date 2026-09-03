@@ -60,8 +60,15 @@ for (const actor of actors) {
       // ── a click that can produce nothing at all ───────────────────────────────
       if (inert && resolveOutcomeMode(action) !== "passive") {
         add("INERT", `not clickable: costs=[${costs.join(",")}] logMode=${action.logMode}`);
-      } else if (!inert && action.logMode === "silent" && !dice && !named && !md.charges && mode !== "additive" && mode !== "passive") {
+      // Consuming an economy slot IS something - the row readies and the slot goes red. Those
+      // are silent rather than dead, and are reported separately below.
+      } else if (!inert && action.logMode === "silent" && !dice && !named && !md.charges && mode !== "additive" && mode !== "passive" && slotsOf(costs).length === 0) {
         add("SILENT-NOTHING", `clickable but silent with no dice and no pool: cost=${JSON.stringify(md.cost ?? "")} outcomeMode=${mode}`);
+      }
+
+      // ── readies a slot but tells the table nothing ────────────────────────────
+      if (!inert && action.logMode === "silent" && !dice && !named && slotsOf(costs).length > 0) {
+        add("SILENT-SLOT-BURN", "spends the " + slotsOf(costs).join("/") + " slot with no dice, no pool and no log line - the player gets no feedback that anything happened");
       }
 
       // ── authored passive on a tab whose whole point is spending economy ───────
@@ -78,7 +85,11 @@ for (const actor of actors) {
       if (action.actionKind === "spell" && spellLevel > 0) {
         const rider = (md.upcastDamage ?? "").trim();
         const rolls = /\d+d\d+/i.test(md.damage ?? "");
-        if (!rider && rolls) {
+        // A spell may upcast by ROLL COUNT rather than dice — Scorching Ray gains a ray per
+        // level via attackRollsPerLevel, which spellAttackRollCount already reads. Those
+        // correctly carry no upcastDamage; flagging them was a false positive.
+        const scalesByCount = (md.attackRollsPerLevel ?? 0) > 0;
+        if (!rider && rolls && !scalesByCount) {
           add("UPCAST-NOOP", `L${spellLevel} spell rolls ${JSON.stringify(md.damage)} but has no upcastDamage — a higher slot is spent and adds nothing`);
         }
         if (md.spellSlotMode === "freeCast" && !rider && rolls) {
@@ -89,7 +100,7 @@ for (const actor of actors) {
   }
 }
 
-const order = ["INERT", "PASSIVE-ON-ECONOMY-TAB", "SILENT-NOTHING", "UNLINKED-POOL", "DICE-NO-BUTTON", "UPCAST-NOOP", "UPCAST-FREECAST-NOOP"];
+const order = ["INERT", "PASSIVE-ON-ECONOMY-TAB", "SILENT-NOTHING", "SILENT-SLOT-BURN", "UNLINKED-POOL", "DICE-NO-BUTTON", "UPCAST-NOOP", "UPCAST-FREECAST-NOOP"];
 console.log(`audited ${total} actions across ${actors.length} actors\n`);
 for (const kind of order) {
   const rows = findings.filter(f => f.kind === kind);
