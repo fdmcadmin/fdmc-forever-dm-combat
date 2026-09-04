@@ -137,14 +137,10 @@ if (debt.length) {
  * call. Deleting a line from here without restoring the defence is how this debt becomes invisible
  * again.
  */
-const OPEN_AUDIT = new Set([
-  // ⚠ ONE ENTRY LEFT, AND IT IS NOT A PRICING GAP — it is filed in the wrong PLACE.
-  // The Frozen Cloak's Cold-Woven is a TYPED response ("immune to cold, necrotic and poison;
-  // resistant to nonmagical bludgeoning, piercing and slashing"), and this creature records no
-  // `damageResponses` at all. A defence row would be the double-count `traitFactorsFor` warns
-  // about; the fix is to enter the types, which prices them against the party's real damage mix.
-  // That is a content edit with a list of types in it, so it waits for the author.
-  "Frozen Cloak :: Cold-Woven",
+const OPEN_AUDIT = new Set<string>([
+  // EMPTY. The Frozen Cloak's Cold-Woven was the last entry; it is now entered as
+  // `damageResponses` on the creature, which is where a typed response belongs, so the
+  // resistance-family skip below covers it and no debt row is needed.
 ]);
 
 

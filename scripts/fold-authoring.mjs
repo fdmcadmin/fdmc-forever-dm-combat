@@ -278,10 +278,46 @@ console.log(`Encounter references check out: ${bundledIds.size} bundled creature
  * was carried forward is printed by name.
  */
 const REPLACE = process.argv.includes("--replace");
+/**
+ * ⚠ THIS FUNCTION ONCE ATE THE LIBRARY, SILENTLY, AND THAT IS THE WHOLE REASON IT IS THIS LONG.
+ *
+ * `catch { return []; }` looks defensive and is the opposite. `mergeById` carries forward
+ * whatever this returns, so an empty return does not mean "nothing to carry" — it means
+ * "REPLACE the entire authored library with just this payload". A publish holding two
+ * creatures rewrote AUTHORED_MONSTERS from eighteen entries to two, and printed nothing,
+ * because the "carried forward" line below only fires when `previous` is non-empty.
+ *
+ * What made it fire: `authored.generated.ts` is TYPESCRIPT, and TypeScript permits trailing
+ * commas. `JSON.parse` does not. One reformat of the generated file — an editor's
+ * format-on-save is enough — and every subsequent fold quietly reset the library. Nothing in
+ * the run said so; the damage only surfaced downstream as `check:traits` reporting that a
+ * creature had "got cheaper with no record", which is that gate doing exactly its job.
+ *
+ * So: trailing commas are tolerated, and a parse failure is FATAL. Refusing to fold is
+ * recoverable — the author fixes the file and pushes again. Folding against a phantom empty
+ * library is not: it writes the loss into the generated file and pushes it.
+ */
 const previousArray = (name) => {
   const m = previous.match(new RegExp(`export const ${name}[^=]*=\\s*(\\[[\\s\\S]*?\\n\\]);`));
-  if (!m) return [];
-  try { return JSON.parse(m[1]); } catch { return []; }
+  if (!m) {
+    // A genuinely empty `= [];` does not match the regex and is legitimate on a first fold.
+    // The export being PRESENT but unparseable is not — that is a shape this cannot read.
+    if (previous.includes(`export const ${name}`) && !previous.match(new RegExp(`export const ${name}[^=]*=\\s*\\[\\s*\\];`))) {
+      console.error(`FATAL: found ${name} in ${OUT} but could not extract its array.`);
+      console.error(`Refusing to fold: carrying on would REPLACE the authored library with this payload alone.`);
+      process.exit(1);
+    }
+    return [];
+  }
+  try {
+    // TS trailing commas -> valid JSON. Only ",]" / ",}" are touched; string content is not.
+    return JSON.parse(m[1].replace(/,(\s*[\]}])/g, "$1"));
+  } catch (err) {
+    console.error(`FATAL: ${name} in ${OUT} did not parse: ${err.message}`);
+    console.error(`Refusing to fold: this would have silently reset the authored library to the`);
+    console.error(`${name === "AUTHORED_MONSTERS" ? "creatures" : "items"} in this payload alone, discarding every earlier publish.`);
+    process.exit(1);
+  }
 };
 const mergeById = (label, incoming, idOf, previous) => {
   if (REPLACE) return incoming;

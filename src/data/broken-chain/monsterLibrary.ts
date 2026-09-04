@@ -431,15 +431,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     name: "Pack Hunter",
     encounterId: "act2-s1-e1-hollow-pack",
     encounterLabel: act2S1E1Label,
-    // Shares the Hollow Pack formation defense (see Pale Stalker). AC 12 is its own
+    // Shares the Hollow Pack formation defense (see Pale Stalker). AC 13 is its own
     // offensive-side term — it is the easiest body in the fight to hit.
+    // AC 13 (natural armor) and Speed 50 ft. restored from the Act 2 document, 2026-09-03.
     stats: {
       // Act 2 document: Challenge 1/2. The printed proficiency follows from it.
       cr: 0.5,
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
-      kind: "beast", ac: 12, maxHp: 26, speed: "40 ft", classification: "normal",
+      kind: "beast", ac: 13, maxHp: 26, speed: "50 ft", classification: "normal",
       defenses: [
         { name: "Pack coordination", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: conditional attack advantage. Kept as an advantage trait, priced in the attack matrix. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
@@ -474,7 +475,10 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
-      kind: "undead", ac: 12, maxHp: 42, speed: "20 ft", classification: "normal",
+      // AC 11 from the Act 2 document, which states it twice: the stat block, and the
+      // "Locked source corrections" line — "Icebound Zombie AC 11 and 42 HP (homebrew
+      // Frost Zombie)". Restored 2026-09-03.
+      kind: "undead", ac: 11, maxHp: 42, speed: "20 ft", classification: "normal",
       defenses: [
         { name: "Hollow Fortitude", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.45, a hand-authored figure predating the workbook. Calibrated handling: drop-to-1 / revive primitive. Kept as a save-to-1 trait and priced there. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
@@ -498,43 +502,6 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     resources: [],
     notes: ["Saving Throws: WIS +0.", "Damage Immunities: Cold, Poison.", "Condition Immunities: Poisoned.", "Senses: Darkvision 60 ft., Passive Perception 8."],
     visibility: { defaultState: "hp-bar", hiddenName: "Icebound Corpse", revealedName: "Icebound Zombie" },
-  },
-  {
-    templateId: "broken-chain:act2-s1:ghoul:v1",
-    name: "Ghoul",
-    // REPLACED by the Corrupted Hunter in Frozen Hollow (2026-07-17 library sweep; the
-    // authoritative encounter doc). Kept as a dormant library template — no encounterId, so
-    // it is not seeded into any fight.
-    encounterId: undefined,
-    encounterLabel: act2S1E2Label,
-    // No v12 workbook lane for this fight - coverage is explicit at 1.0 rather than an
-    // invented multiplier. Revisit if it ever gets a Monte Carlo run.
-    stats: {
-      // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
-      // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
-      proficiencyBonus: 2,
-      kind: "undead", ac: 12, maxHp: 35, speed: "30 ft",
-      defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1.0, note: "Unused legacy creature (no encounter). Plain HP bar." },
-      ],
-    },
-    abilities: [
-      formatAbility("STR", 13, 1),
-      formatAbility("DEX", 15, 2),
-      formatAbility("CON", 10, 0),
-      formatAbility("INT", 7, -2),
-      formatAbility("WIS", 10, 0),
-      formatAbility("CHA", 8, -1),
-    ],
-    traits: [{ name: "Hungry Dead", kind: "trait", text: "Advantage on attack rolls against any creature that has not yet taken a turn this combat, or that is paralyzed." }],
-    actions: [
-      { name: "Bite", kind: "attack", roll: "1d20 + @CON+@PROF", damage: "2d6 + @MAIN", text: "One incapacitated target only.", damageType: "Piercing" },
-      { name: "Claws", kind: "attack", roll: "1d20 + @ATK", damage: "2d4 + @MAIN", save: "CON DC 10", text: "If target is not undead, it is paralyzed until the end of its next turn on a failed save.", damageType: "Slashing" },
-    ],
-    reactions: [],
-    resources: [],
-    notes: ["Damage Immunities: Poison.", "Condition Immunities: Charmed, Exhaustion, Poisoned.", "Senses: Darkvision 60 ft., Passive Perception 10."],
-    visibility: { defaultState: "hp-bar", hiddenName: "Hungry Dead", revealedName: "Ghoul" },
   },
   {
     templateId: "broken-chain:act2-s1:hollow-mourner:v1",
@@ -628,13 +595,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act2-s2-e2-last-directive",
     encounterLabel: act2S2E2Label,
     // Re-derived under the split model. The old 1.10 was calibrated when kitMultiplier still
-    // absorbed AC; now AC 14 is its own offensive-side term, so this number is traits only.
+    // absorbed AC; now AC 17 is its own offensive-side term, so this number is traits only.
     // v12 Encounter Safety: Last Directive 151 HP @5P won in 1.74 rounds × 1.27 dynamics.
     stats: {
       // Recovered 2026-09-01: the CR its HP, AC and traced DPR imply. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 2,
-      kind: "celestial", ac: 14, maxHp: 85, attacksPerTurn: 2, speed: "0 ft., fly 5 ft", classification: "elite",
+      // AC 17 (natural armor) and Speed 30 ft., fly 90 ft. from the Act 2 document.
+      // The stored speed was "0 ft., fly 5 ft" — not a balance choice; a flying
+      // guardian that cannot move. Restored 2026-09-03.
+      kind: "celestial", ac: 17, maxHp: 85, attacksPerTurn: 2, speed: "30 ft., fly 90 ft", classification: "elite",
       defenses: [
         { name: "Weeping Souls + max-HP drain", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.64, a hand-authored figure predating the workbook. Calibrated handling: aura + max-HP drain + stun, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
       ],
@@ -884,6 +854,13 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        *
        * ⚠ A +1/+1 increase on a creature the table has already fought. Small, and it is the
        * correct value rather than a retune.
+       *
+       * ⚠ THE ACT 2 DOCUMENT IS STALE HERE, KNOWINGLY (Christopher, 2026-09-03). Its stat block
+       * still prints "Claw. Melee Attack Roll: +5 … Hit: 7 (1d8 + 3)", which is the pre-DEX STR
+       * value this row deliberately replaced. An audit of the library against the Act 1-3
+       * documents flags this line every time it runs, and it is the only row in 51 creatures
+       * where the code is right and the DOCUMENT needs reprinting — as +6 / 1d8+4. Written down
+       * so the next audit reads a decision rather than rediscovering it as drift.
        */
       { name: "Claw", kind: "attack", roll: "1d20 + 6", damage: "1d8 + 4", damageType: "Slashing", riders: [{ name: "Cold rider", damage: "1d6", damageType: "Cold", cadence: "per-hit" }] },
       /**
@@ -1305,6 +1282,24 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // Demon, so it publishes as a FIEND. "Incorporeal Cold-Woven Entity" is the campaign
       // description; publication needs a real type (Christopher, 2026-07-25).
       size: "Medium", classification: "elite", archetype: "skirmisher",
+      /**
+       * COLD-WOVEN IS A TYPED RESPONSE, NOT A DEFENCE ROW. The Act 2 document: "The Cloak is
+       * immune to Cold, Necrotic, and Poison damage … It has Resistance to Bludgeoning,
+       * Piercing, and Slashing damage from nonmagical attacks." Entered here so it prices
+       * against the party's real damage mix; a defence row beside it would double-count,
+       * exactly as `traitFactorsFor` warns.
+       *
+       * `share` is deliberately unset — the split of the party's eligible damage is a fact
+       * about the party, and an unset share records the response rather than inventing one.
+       */
+      damageResponses: [
+        { type: "cold", response: "immune" },
+        { type: "necrotic", response: "immune" },
+        { type: "poison", response: "immune" },
+        { type: "bludgeoning", response: "resistant", qualifier: "from nonmagical attacks" },
+        { type: "piercing", response: "resistant", qualifier: "from nonmagical attacks" },
+        { type: "slashing", response: "resistant", qualifier: "from nonmagical attacks" },
+      ],
       defenses: [
         { name: "Reknit in the Cold", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.40, a hand-authored figure predating the workbook. Calibrated handling: conditional +34 HP same-body return. A drop-prevention/revive primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
         { name: "Unfixed Shape + Fold Into the Cold", ehpMultiplier: 1, note: "RETIRED LEGACY DEBT — was x1.10, a hand-authored figure predating the workbook. Calibrated handling: disadvantage-until-first-hit + Hide, each priced by its own primitive. Decided 1.0 because the effect IS priced, just not as effective HP; charging both would count it twice." },
@@ -1808,45 +1803,6 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     visibility: { defaultState: "hp-bar", hiddenName: "Darkmare", revealedName: "Darkmare" },
   },
   {
-    templateId: "broken-chain:act3:hollowbloom:v1",
-    name: "Hollowbloom",
-    // ⚠ REPLACED OUT OF FIGHT 4 by the v3_13 Hollow Feast rewrite. The creature is kept —
-    // the doc replaces the ROSTER, not the authored statblock — but it is no longer in any
-    // encounter. Give it an encounterId to field it again.
-    stats: {
-      kind: "fey", ac: 15, maxHp: 75, speed: "30 ft., climb 20 ft.",
-      defenses: [
-        { name: "Offered Shelter", ehpMultiplier: 1.049548, rule: "Half cover vs ranged attacks", note: "Workbook: Half cover vs ranged attacks (+0.049548). Two 5-ft circles granting half cover." },
-      ],
-      size: "Small", classification: "elite", archetype: "tactician",
-      skills: [{ label: "Nature", modifier: 8 }],
-      proficiencyBonus: 3,
-    },
-    abilities: [
-      { label: "STR", value: "10 (+0)" },
-      { label: "DEX", value: "16 (+3)" },
-      { label: "CON", value: "18 (+4)" },
-      { label: "INT", value: "20 (+5)", saveProficient: true },
-      { label: "WIS", value: "16 (+3)", saveProficient: true },
-      { label: "CHA", value: "12 (+1)" },
-    ],
-    traits: [
-      { name: "Offered Shelter", kind: "trait", save: "DEX DC 16", text: "When initiative is rolled, create two 5-ft. flower circles on natural ground within 40 ft. A creature in a circle has half cover. At the start of Hollowbloom’s turn, each occupied circle closes; the occupant makes a DC 16 Dexterity save or is restrained until the end of its turn. The circle then withers." },
-    ],
-    actions: [
-      { name: "Set the Table", kind: "action", economyCost: "bonus", text: "Bonus Action: create one new Offered Shelter circle within 30 ft. Maximum two circles at a time." },
-      { name: "Bark Needle", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", damageType: "Piercing", range: "range 90 ft." },
-      { name: "Close the Bloom (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "Choose one visible 10-ft. area of flowers or natural growth within 60 ft. Creatures there make a DC 16 Dexterity save; 18 (4d8) slashing on failure, half on success, and a creature that fails cannot take reactions until the end of its turn." },
-    ],
-    reactions: [
-    ],
-    resources: [],
-    notes: [
-      "A small figure of hollow bark and flower-pale fingers. It offers shelter the way a trap offers shelter: truthfully, until the moment the offer closes.",
-    ],
-    visibility: { defaultState: "hp-bar", hiddenName: "Hollowbloom", revealedName: "Hollowbloom" },
-  },
-  {
     templateId: "broken-chain:act3:briar-regent:v1",
     name: "Briar Regent",
     encounterId: "act3-e4-the-hollow-feast",
@@ -1897,7 +1853,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
         // ⚠ TAKE THE BLOW IS NOT AN EHP MULTIPLIER, BY INSTRUCTION. It reduces an ALLY's damage
         // by 8 and costs the Bulwark 4 unpreventable damage — it moves damage rather than
         // removing it, and the encounter page says to price it in the runtime trace.
-        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: Interpose is priced by the runtime trace. It redirects damage to the guardian; it does not add effective HP to the roster." },
+        { name: "Interpose — no effective-HP contribution", ehpMultiplier: 1, note: "Doc v3_13: Interpose is priced by the runtime trace. It redirects damage to the guardian; it does not add effective HP to the roster." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "strong", archetype: "guardian",
@@ -1991,46 +1947,6 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       "Begins NEUTRAL. Turns hostile if the party damages it or drops a Fey under its hospitality; a Fiend's death does not turn it.",
     ],
     visibility: { defaultState: "hp-bar", hiddenName: "Velvet Host", revealedName: "Velvet Host" },
-  },
-  {
-    templateId: "broken-chain:act3:mothwake:v1",
-    name: "Mothwake",
-    // ⚠ REPLACED OUT OF FIGHT 4 by the v3_13 Hollow Feast rewrite. The creature is kept —
-    // the doc replaces the ROSTER, not the authored statblock — but it is no longer in any
-    // encounter. Give it an encounterId to field it again.
-    stats: {
-      kind: "fey", ac: 14, maxHp: 44, speed: "30 ft., fly 30 ft.",
-      defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Hush After Failure and Moonless Swarm are movement. Plain HP bar." },
-      ],
-      attacksPerTurn: 2,
-      size: "Medium", classification: "elite", archetype: "mystic",
-      skills: [{ label: "Stealth", modifier: 7 }, { label: "Perception", modifier: 8 }],
-      proficiencyBonus: 3,
-    },
-    abilities: [
-      { label: "STR", value: "10 (+0)" },
-      { label: "DEX", value: "18 (+4)", saveProficient: true },
-      { label: "CON", value: "12 (+1)" },
-      { label: "INT", value: "14 (+2)" },
-      { label: "WIS", value: "20 (+5)", saveProficient: true },
-      { label: "CHA", value: "16 (+3)" },
-    ],
-    traits: [
-      { name: "Hush After Failure", kind: "trait", text: "Once per round when a creature within 30 ft. fails a saving throw, Mothwake may move up to 10 ft. without provoking opportunity attacks." },
-      { name: "Moonless Swarm", kind: "trait", text: "Mothwake can move through the spaces of other creatures, but cannot end there." },
-    ],
-    actions: [
-      { name: "Hushwing", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", damageType: "Psychic", range: "range 90 ft." },
-      { name: "Black Petal Fall (Recharge 5–6)", kind: "action", save: "WIS DC 16", recharge: "5-6", damage: "4d8", text: "20-ft.-radius sphere within 90 ft.; creatures inside make a DC 16 Wisdom save. Failure: 18 (4d8) psychic and the creature cannot gain advantage on attack rolls until the end of its next turn. Success: half damage." },
-    ],
-    reactions: [
-    ],
-    resources: [],
-    notes: [
-      "A mantle of black moths repeatedly almost forms a person. The wings settle only when it is listening to a heartbeat.",
-    ],
-    visibility: { defaultState: "hp-bar", hiddenName: "Mothwake", revealedName: "Mothwake" },
   },
   {
     templateId: "broken-chain:act3:moss-crowned-charger:v1",
