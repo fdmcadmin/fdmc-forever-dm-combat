@@ -31,6 +31,7 @@
  */
 
 import { damageExpressionAverage } from "../../core/encounter-band/damageExpression";
+import { resolveFormulaVars } from "../../core/state/resolveFormulaVars";
 import { attackHitProbability } from "../../core/encounter-band/checkerV2";
 
 type ActionLike = {
@@ -71,6 +72,33 @@ export function shieldEquipped(actor: ActorLikeForFeats): boolean {
 }
 
 /** "+9", "9", "+9 to hit" → 9. Anything unreadable is not a number and must not become one. */
+/**
+ * The attack string with its @-variables resolved against the actor holding it.
+ *
+ * ⚠ WITHOUT THIS, A REAL CHARACTER HAS NO READABLE ATTACK BONUS AT ALL. Actions store what the
+ * sheet was authored with — `1d20+@ATK`, `1d20+@PROF+@STR` — and @ATK is a COMPLETE bonus
+ * (max(STR,DEX) modifier + proficiency). Parsing the raw string finds no number to trust, so the
+ * actor drops out of the party's hit-chance average and the fight is priced against whoever is
+ * left. Christopher: *"thats why we have the app read current party, so it is suppose to read the
+ * actual chance to hit which for my party it should read rip having a +8 to hit, lyrielle having a
+ * staggering +9 to hit"*.
+ *
+ * A string that still carries an @-token after resolution returns undefined rather than a partial
+ * number — an unresolved variable is a missing input, and this file's rule is that a key is
+ * omitted rather than defaulted.
+ */
+function resolvedAttackText(raw: string | undefined, actor: ActorLikeForFeats): string | undefined {
+  const text = String(raw ?? "").trim();
+  if (!text) return undefined;
+  if (!/@[A-Za-z]/.test(text)) return text;
+  try {
+    const out = resolveFormulaVars(text, actor as never);
+    return /@[A-Za-z]/.test(out) ? undefined : out;
+  } catch {
+    return undefined;
+  }
+}
+
 function parseAttackBonus(raw: string | undefined): number | undefined {
   /**
    * ⚠ THIS TOOK THE FIRST NUMBER IN THE STRING, AND THE FIRST NUMBER IS USUALLY THE DIE COUNT.
@@ -131,7 +159,7 @@ export function attackProfile(actor: ActorLikeForFeats, targetAC: number): Attac
 
   let best: AttackProfile | undefined;
   for (const a of candidates) {
-    const attackBonus = parseAttackBonus(a.metadata?.attack);
+    const attackBonus = parseAttackBonus(resolvedAttackText(a.metadata?.attack, actor));
     if (attackBonus === undefined) continue;
     const perHitDamage = damageExpressionAverage(a.metadata?.damage);
     if (!(perHitDamage > 0)) continue;
