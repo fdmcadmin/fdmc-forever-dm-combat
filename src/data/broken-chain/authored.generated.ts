@@ -227,7 +227,10 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20 + @ATK",
         "damage": "2d10 + @MAIN",
         "text": "Multiattack: Brandwing makes two Ember Lance attacks.",
-        "damageType": ["Fire","Psychic"],
+        "damageType": [
+          "Fire",
+          "Psychic"
+        ],
         "range": "range 120 ft."
       }
     ],
@@ -454,7 +457,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Umbral Passage",
         "kind": "trait",
         "text": "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold."
-      },
+      }
     ],
     "actions": [
       {
@@ -700,7 +703,13 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20 +@ATK",
         "damage": "1d10+@MAIN",
         "text": "Multiattack: the Reaver makes two Rending Talon attacks.",
-        "riders": [{ "name": "Fire rider", "damage": "2d6", "damageType": "Fire", "cadence": "per-hit" }, 
+        "riders": [
+          {
+            "name": "Fire rider",
+            "damage": "2d6",
+            "damageType": "Fire",
+            "cadence": "per-hit"
+          },
           {
             "name": "Scent the Expense",
             "damage": "4d4",
@@ -709,7 +718,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
             "chance": 1,
             "note": "marked target"
           }
-        ], "damageType": "Slashing", "range": "reach 5 ft."
+        ],
+        "damageType": "Slashing",
+        "range": "reach 5 ft."
       }
     ],
     "reactions": [],
@@ -905,7 +916,10 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20 + @ATK",
         "damage": "1d10 + @MAIN",
-        "damageType": ["Cold","Psychic"],
+        "damageType": [
+          "Cold",
+          "Psychic"
+        ],
         "range": "range 90 ft."
       },
       {
@@ -1337,7 +1351,17 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Razor Quill",
         "kind": "attack",
         "roll": "1d20 + @ATK",
-        "damage": "1d12 + @MAIN", "damageType": "Slashing", "riders": [{ "name": "Psychic rider", "damage": "1d6", "damageType": "Psychic", "cadence": "once-per-turn" }], "range": "reach 5 ft."
+        "damage": "1d12 + @MAIN",
+        "damageType": "Slashing",
+        "riders": [
+          {
+            "name": "Psychic rider",
+            "damage": "1d6",
+            "damageType": "Psychic",
+            "cadence": "once-per-turn"
+          }
+        ],
+        "range": "reach 5 ft."
       },
       {
         "name": "Black Fan (Recharge 5–6)",
@@ -1830,7 +1854,17 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "kind": "attack",
         "roll": "1d20+@ATK",
         "damage": "2d10+@STR",
-        "routineSlots": 2, "damageType": "Piercing", "riders": [{ "name": "Cold rider", "damage": "2d6", "damageType": "Cold", "cadence": "per-hit" }], "range": "reach 10 ft."
+        "routineSlots": 2,
+        "damageType": "Piercing",
+        "riders": [
+          {
+            "name": "Cold rider",
+            "damage": "2d6",
+            "damageType": "Cold",
+            "cadence": "per-hit"
+          }
+        ],
+        "range": "reach 10 ft."
       },
       {
         "name": "Claw",
@@ -1962,7 +1996,17 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "roll": "1d20+@STR+@PB",
         "damage": "2d6+@STR",
         "save": "",
-        "routineSlots": 1, "damageType": "Slashing", "riders": [{ "name": "Fire rider", "damage": "1d6", "damageType": "Fire", "cadence": "per-hit" }], "range": "reach 5 ft."
+        "routineSlots": 1,
+        "damageType": "Slashing",
+        "riders": [
+          {
+            "name": "Fire rider",
+            "damage": "1d6",
+            "damageType": "Fire",
+            "cadence": "per-hit"
+          }
+        ],
+        "range": "reach 5 ft."
       },
       {
         "name": "Tail",
@@ -2194,6 +2238,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-farwatch-glass",
+    "activation": "action",
     "name": "Farwatch Glass",
     "type": "magic",
     "description": "A thumb-sized oval of smoke-dark glass with a silver thread trapped inside it. The thread drifts when the glass is idle and snaps toward whatever the glass is remembering when awakened. Tags: A1 · Utility",
@@ -2216,6 +2261,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-slipstone",
+    "activation": "bonus",
     "name": "Slipstone",
     "type": "magic",
     "description": "A flat piece of violet-grey stone whose two faces never seem perfectly aligned. Turn it in the hand and one edge appears to arrive a fraction of a heartbeat before the rest. Tags: A1 · Movement",
@@ -2238,6 +2284,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-rootheart-seed",
+    "activation": "reaction",
     "name": "Rootheart Seed",
     "type": "magic",
     "description": "A black seed the size of a thumbnail, veined with dull green-gold. It is almost weightless until the ground shifts beneath its bearer, when it becomes suddenly and impossibly heavy. Tags: A1 · Stability",
@@ -2396,6 +2443,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-canopy-eye",
+    "activation": "bonus",
     "name": "Canopy Eye",
     "type": "magic",
     "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface. Tags: A1 · Utility",
@@ -2525,6 +2573,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-ashwood-brigandine",
+    "activation": "reaction",
     "name": "Ashwood Brigandine",
     "type": "armor",
     "description": "Plated with bark from the corruption's edge, where the wood hardened wrong — denser than any living tree.",
@@ -2555,6 +2604,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-displaced-ward-brooch",
+    "activation": "reaction",
     "name": "Displaced Ward Brooch",
     "type": "magic",
     "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here did not spare the equipment. Tags: A1 · Defense",
@@ -2684,13 +2734,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "id": "tbc-marrow",
     "name": "Marrow Shield",
     "type": "shield",
-    "ac": "+3",
-    "description": "Named for the first thing strength drain reaches. The face of it is unmarked — no emblem, no device. It belonged to someone who didn't want to be found.",
-    "mechanicsText": "+3 bonus to AC — a shield's base +2 plus a +1 magical bonus. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
+    "description": "+3 bonus to AC — a shield's base +2 plus a +1 magical bonus. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
     "isUsable": false,
-    "act": "Act 2",
-    "sourceEncounter": "ELITE QUEST REWARD",
-    "isLocked": true
+    "statEffects": [
+      {
+        "type": "addAC",
+        "stat": "str",
+        "value": 3
+      }
+    ],
+    "category": "Shield"
   },
   {
     "id": "tbc-frost-brace",
@@ -2751,6 +2804,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-north-wind-flask",
+    "activation": "action",
     "name": "North Wind Flask",
     "type": "gear",
     "description": "A stoppered blue-glass flask that rattles with trapped wind. Frost forms around the cork whenever the pressure inside rises.",
@@ -2897,6 +2951,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-hollow-lantern",
+    "activation": "bonus",
     "name": "Hollow Lantern",
     "type": "magic",
     "description": "A Ward field lantern recovered from the village cache. Its pale flame does not flicker in wind, and for a moment it shows what prefers not to be found. Tags: A2 · Cleanse",
@@ -2935,6 +2990,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-sentinel-chalk",
+    "activation": "action",
     "name": "Sentinel Chalk",
     "type": "magic",
     "description": "A stick of blue-white chalk recovered from the frozen line. A mark drawn with it holds its edge even under snow and rime. Tags: A2 · Utility",
@@ -2956,6 +3012,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-gloamstep-shard",
+    "activation": "bonus",
     "name": "Gloamstep Shard",
     "type": "magic",
     "description": "A sliver of dark glass rimed white on one edge and perfectly black on the other. In dim light the shard seems a few inches closer than the hand holding it. Tags: A2 · Movement",
@@ -3110,6 +3167,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-wendigo-heart-ember",
+    "activation": "action",
     "name": "Wendigo Ember Heart",
     "type": "magic",
     "damage": "3d6",
@@ -3207,6 +3265,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-step-stabilizer",
+    "activation": "bonus",
     "name": "Step Stabilizer",
     "type": "magic",
     "description": "A small paired set of heel plates that seem to find the next safe piece of ground first. Tags: Recipe: Movement + Utility · Completed: Movement",
@@ -3227,6 +3286,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-reinforced-wrap",
+    "activation": "reaction",
     "name": "Reinforced Wrap",
     "type": "magic",
     "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands. Tags: Recipe: Defense + Stability · Completed: Defense",
@@ -3248,6 +3308,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-lensing-glass",
+    "activation": "bonus",
     "name": "Lensing Glass",
     "type": "magic",
     "description": "A clear lens that catches edges the eye normally loses. Tags: Recipe: Cleanse + Utility · Completed: Cleanse",
@@ -3336,6 +3397,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-quickstep",
+    "activation": "bonus",
     "name": "Quickstep",
     "type": "magic",
     "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next. Tags: Recipe: Movement + Utility · Completed: Movement",
@@ -3378,6 +3440,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-driftveil",
+    "activation": "reaction",
     "name": "Driftveil",
     "type": "magic",
     "description": "A short mantle that pulls sideways at the instant a blow finds its wearer. Tags: Recipe: Defense + Movement · Completed: Defense",
@@ -3400,6 +3463,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-clearward-mantle",
+    "activation": "bonus",
     "name": "Clearward Mantle",
     "type": "magic",
     "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
@@ -3421,6 +3485,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "bc-turnstep-relay",
+    "activation": "reaction",
     "name": "Turnstep Relay",
     "type": "magic",
     "description": "A narrow pair of hinged plates whose inner marks click toward the next threat a heartbeat before it moves. Tags: Recipe: Movement + Tactical · Completed: Tactical",
@@ -4234,6 +4299,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-branchcall-marker",
+    "activation": "reaction",
     "name": "Branchcall Marker",
     "type": "magic",
     "description": "A leaf-thin disc of living wood etched with branching paths. Its edges flex toward nearby motion, and two of the carved routes brighten together when the battlefield opens. Tags: A3 · Tactical",
@@ -4278,6 +4344,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-veilwash-leaf",
+    "activation": "action",
     "name": "Veilwash Leaf",
     "type": "magic",
     "description": "A translucent leaf whose veins carry warm yellow in one direction and icy blue in the other. Pressed to living skin, hostile residue beads away from it like rain refusing to cling. Tags: A3 · Cleanse",
@@ -4390,6 +4457,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-mirrorbark-scale",
+    "activation": "reaction",
     "name": "Mirrorbark Scale",
     "effect": {
       "type": "reroll",
@@ -4848,6 +4916,564 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A1",
       "flavorTag": "Frost"
     }
+  },
+  {
+    "id": "bc-sentrys-knot",
+    "name": "Sentry’s Knot",
+    "type": "magic",
+    "description": "A fist of grey cord knotted around something that will not sit still. It pulls toward whoever in the group is closest to falling. Tags: A1–A2 · Ward Field Reward · Guardian / Devout",
+    "mechanicsText": "When a creature other than you that you can see within 30 feet would be reduced to 0 hit points, the knot tears itself apart. That creature is reduced to 1 hit point instead and gains temporary hit points equal to one roll of its Hit Die + your proficiency bonus.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Guardian / Devout. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-sighters-wrap",
+    "name": "Sighter’s Wrap",
+    "type": "magic",
+    "description": "A strip of oiled cloth wound for a hand that is not yours. It tightens a little when something across the field takes aim. Tags: A1–A2 · Ward Field Reward · Suppressing / Precise",
+    "mechanicsText": "When a creature you can see within 30 feet scores a Critical Hit against you or an ally, tear the wrap free and force that creature to reroll the triggering attack roll. It must use the new roll.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Suppressing / Precise. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-fieldwork-flask",
+    "name": "Fieldwork Flask",
+    "type": "magic",
+    "description": "A field flask with a Ward seal still intact over the stopper. Whatever is inside is warm through the glass. Tags: A1–A2 · Ward Field Reward · Mending / Warden",
+    "mechanicsText": "When a creature you can see within 30 feet is reduced to 0 hit points, empty the flask. That creature immediately regains hit points equal to two rolls of its Hit Die + its Constitution modifier (minimum 1) and remains conscious.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Mending / Warden. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-hardedge-cord",
+    "name": "Hardedge Cord",
+    "type": "magic",
+    "description": "A short cord strung between two iron tabs, wound far tighter than a hand could manage. It is meant to be snapped, once. Tags: A1–A2 · Ward Field Reward · Vanguard / Skirmish",
+    "mechanicsText": "When you are hit by an attack, after its damage is rolled but before the damage is applied, snap the cord. Reduce the triggering attack’s damage by 2d8. Until that attack finishes resolving, it can't knock you Prone, move you against your will, or give you the Grappled condition.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Vanguard / Skirmish. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-reading-stone",
+    "name": "Reading Stone",
+    "type": "magic",
+    "description": "A thin disc of pale stone with a hairline fracture already through it. Held up, the fracture seems to be reading the room rather than the light. Tags: A1–A2 · Ward Field Reward · Tactician / Breaker",
+    "mechanicsText": "When you or a creature you can see within 30 feet fails a saving throw, break the stone. The creature succeeds on that saving throw instead.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Tactician / Breaker. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-pack-sign-token",
+    "name": "Pack-Sign Token",
+    "type": "magic",
+    "description": "A flat token scored down the middle so it can be split by hand. Both halves carry the same mark. Tags: A1–A2 · Ward Field Reward · Pack / Covenant",
+    "mechanicsText": "When you or an ally you can see within 30 feet is hit by an attack while another allied creature is within 5 feet of the target, split the token. The target gains a +5 bonus to AC against the triggering attack only, potentially causing it to miss.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Pack / Covenant. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-unspent-mark",
+    "name": "Unspent Mark",
+    "type": "magic",
+    "description": "A Ward sigil struck onto soft metal and never spent. It sits cold against anything magical that comes near it. Tags: A1–A2 · Ward Field Reward · Resonant / Siphon",
+    "mechanicsText": "When you fail a saving throw against a spell or magical effect, expend the mark to succeed on that saving throw instead. If a successful save normally deals reduced damage, you take that normal successful-save damage; the Mark grants no additional resistance or reduction.",
+    "isUsable": true,
+    "act": "Act 1",
+    "sourceEncounter": "WARD FIELD REWARD POOL",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Bond-matched to Resonant / Siphon. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-potion-of-healing",
+    "name": "Potion of Healing",
+    "type": "consumable",
+    "activation": "action",
+    "description": "A standard healing potion set aside with the tavern’s practical emergency stock. Tags: A2 · Tavern stock",
+    "mechanicsText": "Use the normal D&D Potion of Healing rules.",
+    "isUsable": true,
+    "value": "50gp",
+    "act": "Act 2",
+    "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 2.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-smoke-flask",
+    "name": "Smoke Flask",
+    "type": "consumable",
+    "activation": "action",
+    "description": "A squat dark-glass flask whose stopper is wrapped in grey cloth. The liquid inside never settles; when the glass breaks, it becomes a wall of smoke before it reaches the ground. Tags: A2 · Tavern stock",
+    "mechanicsText": "As a Magic action, throw the flask at a point you can see within 30 feet. It shatters and creates dense smoke in a 10-foot-radius sphere centered on that point. The area is Heavily Obscured until the end of your next turn. A strong wind disperses the smoke early.",
+    "isUsable": true,
+    "value": "100gp",
+    "act": "Act 2",
+    "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-wardbreaker-oil",
+    "name": "Wardbreaker Oil",
+    "type": "consumable",
+    "activation": "bonus",
+    "description": "A thin metallic oil kept in a narrow Ward-sealed vial. It crawls toward an edge or point as it is applied and holds there until impact. Tags: A2 · Tavern stock",
+    "mechanicsText": "As a Bonus Action, apply the oil to one weapon or one piece of ammunition. The coating remains potent until its effect is delivered or washed away. The first time a creature takes damage from the coated weapon or ammunition, it takes an additional 2d6 Force damage; if it is Large or smaller, it is pushed 5 feet directly away from the attacker. The oil is then expended.",
+    "isUsable": true,
+    "value": "150gp",
+    "act": "Act 2",
+    "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-blinkstep",
+    "name": "Blinkstep",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "A matched pair of narrow, blackened ankle clasps whose metal has been pitted smooth by years of elemental exposure. Hairline fractures cross each face without ever quite meeting, and when the bearer shifts weight, one clasp seems to arrive a fraction of a heartbeat before the foot beneath it. Tags: A4 · Movement · Ruined / elemental saturation",
+    "mechanicsText": "Bonus Action · 1/Short Rest: teleport up to 20 feet to an unoccupied space you can see.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Movement",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 1 — first required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-deferred-wound",
+    "name": "Deferred Wound",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "A segmented forearm guard of dull layered metal, old enough that its dents have been worn smooth rather than repaired. Dark seams run between the plates like healed fractures. When a blow lands, those seams briefly hold the shape of the impact instead of letting it pass cleanly into the bearer. Tags: A4 · Defense · Ruined / elemental saturation",
+    "mechanicsText": "Reaction · 1/Long Rest: when you take damage, roll 2d8. Reduce the triggering damage by up to the roll and record the amount actually reduced as deferred damage. Healing before the end of the current round removes deferred damage first. At round end, lose HP equal to any deferred damage that remains. The original hit still counts as a hit/damage event; deferred resolution does not retrigger hit/damage riders.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Defense",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 2 — second required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-rupture",
+    "name": "Rupture",
+    "type": "magic",
+    "activation": "free",
+    "description": "A narrow black-iron wrist ring split by ember-bright cracks that never cool completely. The metal looks less forged than pressure-broken and forced back together. At the instant an attack lands, the cracks flare toward the point of impact as though the ring is trying to widen the wound already made. Tags: A4 · Offensive · Ruined / elemental saturation",
+    "mechanicsText": "Rider · 1/Long Rest: when you hit, deal an additional 2d10 damage of one damage type dealt by that attack.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Offensive",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 3 — Phoenix. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-applied-insight",
+    "name": "Applied Insight",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "A palm-sized many-faceted lens held in a scorched brass frame. Several faces are clouded with mineral haze while one always seems unnaturally clear when turned toward a problem. Its frame bears tiny adjustment marks from hands that kept refining it long after its original maker was gone. Tags: A4 · Utility · Ruined / elemental saturation",
+    "mechanicsText": "Reaction · 1/Long Rest: after you or an ally within 30 feet fails an ability check, add 1d10 to the result, potentially turning it into a success.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Utility",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 4 — first required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-true-ground",
+    "name": "True Ground",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "A heavy black-stone ankle band locked inside an old metal brace. Its underside has been worn perfectly flat despite the uneven ground it has crossed. Loose grit and tiny fragments of stone subtly orient toward it whenever the bearer plants their weight. Tags: A4 · Stability · Ruined / elemental saturation",
+    "mechanicsText": "Bonus Action · 1/Short Rest: anchor your current space until the end of the current round. If a hostile effect moves you against your will, after that movement resolves teleport back to the anchor or the nearest space you can occupy.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Stability",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 5 — second required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-condition-vessel",
+    "name": "Condition Vessel",
+    "type": "magic",
+    "activation": "action",
+    "description": "A hollow crystal vessel no larger than a thumb joint, suspended inside a tarnished silver cage. Faint stains of different colors drift through the crystal and never mix. Near hostile magic or poison, one stain crawls toward the surface as if the vessel is already making room for something else. Tags: A4 · Cleanse · Ruined / elemental saturation",
+    "mechanicsText": "Magic Action · 1/Long Rest: end Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained on one willing creature within 30 feet. You gain that condition until the end of the current round. You cannot use this property for a condition you are immune to.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Cleanse",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 6 — Elemental level fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-threat-positioning",
+    "name": "Threat Positioning",
+    "type": "magic",
+    "activation": "free",
+    "description": "A thin compass-disc of dark alloy with no cardinal marks and three broken pointers trapped beneath its glass. The pointers ignore north. When danger is near, they settle instead on moving threats, then twitch a heartbeat after those threats change their intent. Tags: A4 · Tactical · Ruined / elemental saturation",
+    "mechanicsText": "1/Long Rest, immediately after Initiative is rolled and before the first turn: choose one visible hostile creature and move your Initiative to immediately after it. The hostile creature does not move.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Tactical",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 7 — Construct / Ward outpost entrance. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-a4-preserved-reaction",
+    "name": "Preserved Reaction",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "A braided wrist loop made from old silver wire and blackened root-fiber. One strand always hangs slightly slack no matter how tightly the loop is fastened. When the bearer commits to a sudden response, that slack strand snaps taut as if taking the strain of the reaction for them. Tags: A4 · Continuity · Ruined / elemental saturation",
+    "mechanicsText": "1/Long Rest: when you use your normal Reaction for a standard non-spell Reaction, expend this item's charge instead of expending your Reaction. All other costs remain. Eligible uses are Opportunity Attacks, non-spell class/subclass/feat/item Reactions, or release of a Readied non-spell action or movement. Reaction spells, Readied spells, and Bond reactions are excluded.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "convergence": {
+      "role": "input",
+      "enabled": true,
+      "mechanicalTag": "Continuity",
+      "actLabel": "A4"
+    },
+    "dmNote": "Drops at: Act 4 sequence 8 — required outpost/cavern fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-catalyst",
+    "name": "Catalyst",
+    "type": "magic",
+    "description": "A dense concentration of Convergence energy capable of infusing greater power into certain exceptional items. When accepted by a compatible item, the Catalyst strengthens and completes what is already present rather than forming something new. Tags: Catalyst · Tempering / stabilization · Not a Component Tag",
+    "mechanicsText": "A Catalyst can temper one still-raw Ruined A4. The Catalyst is consumed, and that same A4 becomes its same-tag Tier 4 Singular. A Catalyst cannot be used as a normal component, cannot create a new tag, cannot temper A1–A3, and cannot use a completed T3 as the input. A creature can bind only one Tier 4 Singular.",
+    "isUsable": false,
+    "act": "Act 4",
+    "sourceEncounter": "ACT 4 CATALYST REWARD TABLE",
+    "charges": {
+      "max": 1,
+      "reset": "manual"
+    },
+    "dmNote": "Special Convergence Item — NO normal Component Tag, so it carries no `mechanicalTag` and can never be a recipe half. Consumed on use. Catalyst quantity scales by party size; the Act 4 tables are the source of truth for when each enters inventory.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-blinkstep",
+    "name": "Blinkstep — Tempered",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "The Catalyst fills every old fracture in the ankle clasps with clean, luminous lines without erasing the pitted age of the metal. The two pieces remain unmistakably the same worn pair, but their edges now separate into brief translucent afterimages whenever the bearer moves, each afterimage appearing one perfect step ahead before folding back into the clasps. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Encounter: teleport up to 30 feet to an unoccupied space you can see. Passive — your Speed increases by 10 feet.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "encounter"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Movement"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-applied-insight",
+    "name": "Applied Insight — Tempered",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "The Catalyst runs through the clouded facets as bright internal veins, clearing them without replacing the old lens. The scorched brass frame unfolds into two thin nested rings that turn around the original setting on their own. What was once the single clear face now becomes whichever facet the item needs, visibly aligning itself with the task at hand. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Reaction · 1/Short Rest: after you or an ally within 30 feet fails an ability check, add 1d12 to the result, potentially succeeding. Passive — after each Long Rest, choose one skill or tool; you gain proficiency with it until your next Long Rest.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Utility"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-deferred-wound",
+    "name": "Deferred Wound — Tempered",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "The Catalyst settles into the guard's dark seams like molten light and binds the old segmented plates without smoothing away their dents. Hair-thin luminous bridges now span the gaps between sections. When damage is deferred, the light gathers visibly inside those bridges; when the wound is fully cleared, the stored glow collapses inward and leaves a brief protective sheen over the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Reaction · 1/Short Rest: Deferred Wound uses 2d10 instead of 2d8. Passive — if all deferred damage is cleared before it resolves at round end, you gain Temporary Hit Points equal to your Proficiency Bonus.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Defense"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-true-ground",
+    "name": "True Ground — Tempered",
+    "type": "magic",
+    "activation": "bonus",
+    "description": "The Catalyst traces the old ankle band with concentric lines of pale light, turning the worn cracks into a deliberate geometric pattern. The black stone and metal remain unchanged in shape, but a faint ring of the same pattern now appears on the ground whenever the bearer anchors themselves. If they are displaced, that luminous imprint holds their place until they return to it. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Encounter: the anchor lasts until the start of your next turn and also answers hostile teleportation, returning you to the anchor or nearest space you can occupy after the hostile displacement resolves. Passive — once per round, reduce forced movement applied to you by 10 feet.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "encounter"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Stability"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-condition-vessel",
+    "name": "Condition Vessel — Tempered",
+    "type": "magic",
+    "activation": "action",
+    "description": "The Catalyst threads through the tarnished cage and turns each bar into a bright channel feeding the original crystal vessel. The crystal itself becomes perfectly clear between uses, while its old colored stains survive as thin veins around the edge. When a condition is drawn out, its color flashes inside the vessel and is consumed by the Catalyst light instead of passing into the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Magic Action · 1/Short Rest: end one listed Condition on a willing creature within 30 feet; the extracted condition ends without transferring to you. Passive — you have advantage on saving throws against Charmed, Frightened, and Poisoned.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Cleanse"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-rupture",
+    "name": "Rupture — Tempered",
+    "type": "magic",
+    "activation": "free",
+    "description": "The Catalyst does not close the wrist ring's old splits; it makes them precise. Brilliant white-gold light burns inside each ember crack, and several razor-thin segments now hover a hair's breadth from the original iron while remaining bound to it. On a committed hit, the floating pieces snap into alignment and drive the ring's stored force through the same wound before drifting apart again. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — Rider · 1/Short Rest: when you hit, deal an additional 2d12 damage of one damage type dealt by the attack, and the target cannot regain Hit Points until the start of your next turn. Passive — once on each of your turns, one damage die showing 1 may count as 2.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Offensive"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-threat-positioning",
+    "name": "Threat Positioning — Tempered",
+    "type": "magic",
+    "activation": "free",
+    "description": "The Catalyst rebuilds nothing that was missing from the old compass-disc; instead it surrounds the original broken pointers with a thin luminous orbit. The dark disc remains scratched and incomplete beneath the glass, while the new ring moves freely above it. When initiative is set, one line of light locks onto the chosen threat and the orbit visibly turns until the bearer's place and the threat's place exchange. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Short Rest, immediately after Initiative is rolled and before the first turn: exchange your Initiative with one visible hostile creature. Initiative is never moved mid-round, and this cannot create double or skipped turns. Passive — when a hostile creature immediately before you in Initiative finishes its turn, gain +2 to your next saving throw before the end of your next turn.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Tactical"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
+  },
+  {
+    "id": "bc-t4-preserved-reaction",
+    "name": "Preserved Reaction — Tempered",
+    "type": "magic",
+    "activation": "reaction",
+    "description": "The Catalyst weaves a bright filament through the original silver-and-root braid, following every old bend instead of replacing it. The once-slack strand now carries a second luminous echo beside it. When the item preserves a Reaction, the physical braid tightens around the bearer while the echo flashes toward the triggering threat, making the item look momentarily connected to both the response that was kept and the interruption it denied. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Active — 1/Short Rest: use the A4 Preserved Reaction substitution. If a hostile creature caused the trigger, its next attempted Reaction before the start of its next turn is suppressed; then the suppression ends. Passive — Held Intent: when you Ready a non-spell action or movement and its trigger does not occur before the start of your next turn, it remains Readied until the end of that turn. Only one Readied intent can be preserved this way.",
+    "isUsable": false,
+    "tier": "4",
+    "act": "Act 4",
+    "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+    "attunementRequired": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Continuity"
+    },
+    "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+    "isLocked": true
   }
 ];
 
@@ -5224,7 +5850,7 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
         "hiddenNameOverride": "Darkmare",
         "spellPicks": {
           "3": [
-            "Shadow Shroud (1/Day)"
+            "Shadow Shroud "
           ]
         }
       }
@@ -5426,10 +6052,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-b512c7b2-141917";
+export const AUTHORED_DIGEST = "fnv1a-5f8164df-120053";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-08-27T06:23:09.299Z";
+export const AUTHORED_AT = "2026-09-04T09:37:01.127Z";
 
 /**
  * Merge authored content over a bundled list by id.
