@@ -72,10 +72,37 @@ export function shieldEquipped(actor: ActorLikeForFeats): boolean {
 
 /** "+9", "9", "+9 to hit" → 9. Anything unreadable is not a number and must not become one. */
 function parseAttackBonus(raw: string | undefined): number | undefined {
-  const m = String(raw ?? "").match(/([+-]?\s*\d+)/);
-  if (!m) return undefined;
-  const n = Number(m[1].replace(/\s+/g, ""));
-  return Number.isFinite(n) ? n : undefined;
+  /**
+   * ⚠ THIS TOOK THE FIRST NUMBER IN THE STRING, AND THE FIRST NUMBER IS USUALLY THE DIE COUNT.
+   *
+   * The old body was `String(raw).match(/([+-]?\s*\d+)/)` — one match, no `/g`. Against the roll
+   * an action actually stores, "1d20 + 7", the first match is the "1" of "1d20", so a +7 attack
+   * was read as +1. A multi-term bonus lost everything after the first term too: "+3 +1" read as
+   * +3, dropping exactly the magic-weapon bonus.
+   *
+   * ⚠ AND SINCE 2026-09-01 THIS NUMBER PRICES MONSTERS, NOT JUST FEATS. `traitFactorsFor` derives
+   * a persistent accuracy defence as `1/hitChance`, so an under-read attack bonus inflates every
+   * such creature. Christopher: *"there is no way a BC party can ever have 45% chance to hit, all
+   * actors have 1+ weapons, and a PB of 3+"*. He is right: four actors averaging +7 against the
+   * Twilight Pond mean AC of 14 hit on 70%, not 45%, and the 45% was three actors read as +1.
+   *
+   * Dice are stripped BEFORE the signed terms are summed, so the die count can never be mistaken
+   * for a bonus, and an unresolved @-variable returns undefined rather than a guess — the same
+   * "absent, not defaulted" rule the rest of this file follows.
+   */
+  const text = String(raw ?? "").trim();
+  if (!text) return undefined;
+  if (/@[A-Za-z]/.test(text)) return undefined;
+  const withoutDice = text.replace(/\d*\s*d\s*\d+/gi, " ");
+  let total = 0;
+  let found = false;
+  for (const m of withoutDice.matchAll(/([+-])\s*(\d+)/g)) {
+    total += (m[1] === "-" ? -1 : 1) * Number.parseInt(m[2], 10);
+    found = true;
+  }
+  if (found) return total;
+  const bare = withoutDice.match(/(-?\d+)/);
+  return bare ? Number.parseInt(bare[1], 10) : undefined;
 }
 
 export type AttackProfile = {
