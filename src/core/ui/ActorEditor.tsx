@@ -1127,6 +1127,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
                         tags: [],
                         metadata: {
                           resourceKind: g.kind,
+                          /* From the workbook registry, so an auto-granted Rage returns one use on a
+                             short rest instead of waiting for a DM to type it in by hand. */
+                          ...(g.shortRestRegain !== undefined ? { shortRestRegain: g.shortRestRegain } : {}),
                           cost: g.reset === "shortRest" ? "Short Rest" : g.reset === "longRest" ? "Long Rest" : g.reset,
                           details: [`Pool: ${g.max}`, `Reset: ${g.reset}`,
                             /* The workbook registry's own recovery line, where it names one. */

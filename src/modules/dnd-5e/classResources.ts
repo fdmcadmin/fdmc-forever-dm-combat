@@ -20,11 +20,13 @@
  * The registry has 168 rules across 16 classes and 135 subclasses; this table has 13 classes and
  * NO subclasses. Where they differ today:
  *
- *   · Barbarian Rage — the registry says `one_expended_use` `on_finish_short_rest`. Here it is
- *     `longRest` carrying a prose `note`, because `reset` cannot express "full on a long rest,
- *     one use back on a short one". The note is not machine-readable, so a short rest in the app
- *     returns nothing for it. Fixing this needs a partial-recovery shape on `ClassResource`; it
- *     is a real change to the resource model and is not smuggled in with a file move.
+ *   · Barbarian Rage — the registry says `one_expended_use` `on_finish_short_rest`, and the pool
+ *     is now GRANTED with `shortRestRegain: 1`, so a short rest returns one use. An earlier note
+ *     here claimed `reset` could not express partial recovery and that the resource model needed
+ *     changing. That was wrong: `reset` is not what says it, `shortRestRegain` is, and it has been
+ *     in `core/types/tabs.ts` and honoured by `resetActorResources` all along. Christopher:
+ *     *"your wrong on the rest model, we already built the long vs short"*. What was missing was
+ *     nobody SETTING the field except a DM typing it into the resource table by hand.
  *   · Wizard Arcane Recovery — `longRest` here; the registry says `during_short_rest` /
  *     `once_per_long_rest`, which is a different rule: it is USED on a short rest, once between
  *     long rests.
@@ -72,6 +74,18 @@ export type ClassResource = {
    * "shortRest" would refill the whole pool and be wrong in the direction that hands out power.
    */
   shortRest?: string;
+  /**
+   * The machine form of the line above, for pools the registry says come back EVERY short rest.
+   * `"all"` restores the pool; a number adds that many uses, capped at max — the exact contract
+   * `resetActorResources` already implements.
+   *
+   * ⚠ ONLY WHERE THE USE LIMIT IS `each_short_rest`. Sorcerous Restoration and Arcane Recovery are
+   * `once_per_long_rest`: real short-rest recoveries that may be taken ONCE between long rests.
+   * `shortRestRegain` fires on every short rest and has no once-per-long-rest form, so setting it
+   * for those would hand back half a Sorcerer's level in points at every rest. They keep the
+   * informational `shortRest` line and are left for the DM to spend deliberately.
+   */
+  shortRestRegain?: number | "all";
 };
 
 /**
@@ -112,7 +126,15 @@ const CLASS_RESOURCES: Record<string, ClassResource[]> = {
     { label: "Favored Enemy", max: 2, reset: "longRest", kind: "freeCast", level: 1, note: "Hunter's Mark, no slot" },
   ],
   bard: [
-    { label: "Bardic Inspiration", max: "@CASTMOD", reset: "shortRest", kind: "pool", level: 1 },
+    /**
+     * ⚠ LONG REST UNTIL 5th, AND IT WAS SHORT FROM 1st HERE. Font of Inspiration is the feature
+     * that moves Bardic Inspiration onto a short rest; before it, uses come back on a long rest
+     * only. The registry says the same thing by giving its rule `earliestLevel: 5`, which is what
+     * surfaced this — a level 3 Bard was being granted a pool that refilled at every short rest.
+     */
+    { label: "Bardic Inspiration", max: "@CASTMOD", reset: "longRest", kind: "pool", level: 1 },
+    { label: "Bardic Inspiration", max: "@CASTMOD", reset: "shortRest", kind: "pool", level: 5,
+      note: "Font of Inspiration" },
   ],
   cleric: [
     { label: "Channel Divinity", max: 2, reset: "shortRest", kind: "pool", level: 2 },
@@ -152,16 +174,33 @@ function registryShortRest(
   subclassName: string | null | undefined,
   level: number,
   label: string,
-): string | undefined {
+): { line: string; regain?: number | "all" } | undefined {
   const want = label.trim().toLowerCase();
   if (!want) return undefined;
   for (const rule of shortRestRulesFor(className, subclassName, level)) {
     const named = rule.resource.trim().toLowerCase();
     if (!named || !rule.recovery) continue;
     if (named === want || named.includes(want) || want.includes(named)) {
-      return rule.timing ? `${rule.recovery} (${rule.timing})` : rule.recovery;
+      const line = rule.timing ? `${rule.recovery} (${rule.timing})` : rule.recovery;
+      return { line, regain: regainFrom(rule.recovery, rule.useLimit) };
     }
   }
+  return undefined;
+}
+
+/**
+ * The registry's recovery token as a number the rest code can apply, or undefined where it is a
+ * decision rather than a quantity.
+ *
+ * ⚠ HIT POINT DICE ARE NOT HERE, AND THAT IS CORRECT. Their recovery reads "Spend one at a time
+ * until current maximum HP is reached or no dice remain" — that is SPENDING during the rest, a
+ * player choice about how much HP to buy back, not a pool refilling. The app already models it as
+ * a spendable pool that a long rest restores.
+ */
+function regainFrom(recovery: string | null, useLimit: string | null): number | "all" | undefined {
+  if (!recovery || useLimit !== "each_short_rest") return undefined;
+  if (recovery === "all_expended_uses") return "all";
+  if (recovery === "one_expended_use") return 1;
   return undefined;
 }
 
@@ -203,11 +242,13 @@ export function resourcesForClasses(
     for (const res of resourcesForClass(row.name, row.level)) {
       const label = seen.has(res.label) ? `${res.label} (${row.name})` : res.label;
       seen.add(res.label);
+      const reg = registryShortRest(row.name, row.subclassName, row.level, res.label);
       out.push({
         ...res,
         label,
         className: row.name,
-        shortRest: registryShortRest(row.name, row.subclassName, row.level, res.label),
+        shortRest: reg?.line,
+        shortRestRegain: reg?.regain,
       });
     }
   }
