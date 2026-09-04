@@ -1,1010 +1,8 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-08-27T01:03:53.579Z",
-  "digest": "fnv1a-6c083028-115862",
-  "monsters": [
-    {
-      "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
-      "name": "Veilbound Drake Guard",
-      "encounterId": "act3-e9-gate-iii-veil-torn-dragon",
-      "encounterLabel": "Act 3 E9 - Gate III: The Veil-Torn Dragon",
-      "stats": {
-        "kind": "dragon",
-        "ac": 15,
-        "maxHp": 55,
-        "speed": "30 ft., fly 60 FT",
-        "defenses": [],
-        "size": "Medium",
-        "classification": "mid-boss",
-        "archetype": "skirmisher",
-        "skills": [
-          {
-            "label": "Stealth",
-            "modifier": 4
-          }
-        ],
-        "cr": 4,
-        "attacksPerTurn": 3,
-        "damageResponses": []
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "DEX",
-          "value": "15 (+2)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "INT",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "WIS",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "CHA",
-          "value": "10 (+0)"
-        }
-      ],
-      "traits": [],
-      "actions": [
-        {
-          "name": "Bite",
-          "kind": "attack",
-          "roll": "1d20 +@STR+@PB",
-          "damage": "2d6+@STR",
-          "text": "Hit: 9 (2d6 + 2) piercing damage.",
-          "routineSlots": 1
-        },
-        {
-          "name": "Veil Breath",
-          "kind": "action",
-          "save": "DEX",
-          "recharge": "6",
-          "damage": "4d6",
-          "text": "The drake exhales corrupted Fey energy in a 20-foot cone. Each creature in that area must make a Dexterity saving throw, taking 14 (4d6) fire on a failed save, or half as much on a successful one.",
-          "onSave": "half",
-          "range": "20 FT cone"
-        },
-        {
-          "name": "Claw",
-          "kind": "action",
-          "roll": "1d20+@STR+@PB",
-          "damage": "2d6+@STR+1d6",
-          "text": "Hit: 9 (2d6 + 2) slashing damage plus 3 (1d6) fire damage.",
-          "save": "",
-          "routineSlots": 1
-        },
-        {
-          "name": "Tail",
-          "kind": "action",
-          "text": "Hit: 9 (2d6 + 2) bludgeoning damage, and if the target is Large or smaller, it must succeed on a DC 12 Strength saving throw or be knocked pron",
-          "roll": "1d20+@STR+@PB",
-          "damage": "2d6+@STR",
-          "save": "",
-          "routineSlots": 1
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early"
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Corrupted Guards",
-        "revealedName": "Veilbound Drake Guard"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T23:18:04.304Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:demonic-reaver:v1",
-      "name": "Demonic Reaver",
-      "encounterId": "act3-e8-the-occupied-acre",
-      "encounterLabel": "Act 3 E8 - The Occupied Acre",
-      "stats": {
-        "kind": "fiend",
-        "ac": 18,
-        "maxHp": 90,
-        "speed": "40 ft.",
-        "defenses": [
-          {
-            "name": "All attacks at disadvantage - 1 round",
-            "ehpMultiplier": 1.1294156939022204,
-            "note": "Read from \"Shifting Outline\" (trait) on \"attack rolls against it have disadvantage\"."
-          },
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "skirmisher",
-        "skills": [
-          {
-            "label": "Acrobatics",
-            "modifier": 8
-          },
-          {
-            "label": "Stealth",
-            "modifier": 12
-          },
-          {
-            "label": "Perception",
-            "modifier": 12
-          }
-        ],
-        "cr": 9,
-        "damageResponses": [
-          {
-            "type": "fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "DEX",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "12 (+1)"
-        },
-        {
-          "label": "INT",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "14 (+2)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Shifting Outline",
-          "kind": "trait",
-          "text": "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect."
-        },
-        {
-          "name": "Scent the Expense",
-          "kind": "trait",
-          "text": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage"
-        }
-      ],
-      "actions": [
-        {
-          "name": "Rending Talon",
-          "kind": "attack",
-          "roll": "1d20 +@ATK",
-          "damage": "1d10+@MAIN slashing + 2d6 fire",
-          "text": "Melee Attack: +8 to hit, reach 5 ft., one target. Hit: 16 (1d10 + 4 slashing plus 2d6 fire) damage. Multiattack: the Reaver makes two Rending Talon attacks.",
-          "riders": [
-            {
-              "name": "Scent the Expense",
-              "damage": "4d4",
-              "cadence": "once-per-turn",
-              "chance": 1,
-              "note": "marked target"
-            }
-          ]
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Demonic Reaver",
-        "revealedName": "Demonic Reaver"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T06:26:47.425Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:breaker:v1",
-      "name": "Breaker",
-      "encounterId": "act3-e8-the-occupied-acre",
-      "encounterLabel": "Act 3 E8 - The Occupied Acre",
-      "stats": {
-        "kind": "fiend",
-        "ac": 15,
-        "maxHp": 100,
-        "speed": "40 ft.",
-        "defenses": [
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 5,
-        "size": "Large",
-        "classification": "elite",
-        "archetype": "bruiser",
-        "skills": [
-          {
-            "label": "Athletics",
-            "modifier": 9
-          },
-          {
-            "label": "Perception",
-            "modifier": 7
-          }
-        ],
-        "proficiencyBonus": 4,
-        "damageResponses": [
-          {
-            "type": "Fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "21 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "DEX",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "CON",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "12 (+1)"
-        },
-        {
-          "label": "WIS",
-          "value": "16 (+3)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "17 (+3)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Two-Handed Hold",
-          "kind": "trait",
-          "text": "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Grasping Limb",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "1d6 + @MAIN",
-          "routineSlots": 2,
-          "text": "Melee Weapon Attack: +9 to hit, reach 10 ft., one Medium or smaller creature. Hit: 8 (1d6 + 5) bludgeoning damage, and the target is grappled (escape DC 17). Multiattack: the Breaker makes four attacks, two Grasping Limb and two Heavy Blow. A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target."
-        },
-        {
-          "name": "Heavy Blow",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "1d8 + @MAIN",
-          "routineSlots": 2,
-          "text": "Melee Weapon Attack: +9 to hit, reach 5 ft., one target. Hit: 9 (1d8 + 5) bludgeoning damage."
-        },
-        {
-          "name": "Cast Aside",
-          "kind": "action",
-          "economyCost": "free",
-          "text": "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends.",
-          "routineSlots": 1
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A massive four-limbed Fiend built to ruin formation rather than hold ground. Two long grasping limbs reach ahead of its shoulders while the shorter arms hammer whatever remains close. It is broad, obvious, and easy to hit; the problem is how much body must be cut through before it stops rearranging the fight.",
-        "DM DESIGN READ. The Breaker enters the party's shape rather than defending a point. Its four-attack routine lets it seize up to two bodies while Heavy Blows keep the turn relevant; Cast Aside is the formation-breaking payoff.",
-        "THE ROUTINE IS A FIXED 2+2 SPLIT, not four of the best attack. Grasping Limb averages 8.5 and Heavy Blow 9.5, so the authored routine is 2x8.5 + 2x9.5 = 36 before to-hit, while a free choice of four would read 38. Check the DPR column against 36, not 38."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Breaker",
-        "revealedName": "Breaker"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T19:47:34.600Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:thought-harrower:v1",
-      "lair": {
-        "initiative": 20,
-        "noRepeatConsecutive": true,
-        "note": "The Center. Distance stops agreeing with itself.",
-        "options": [
-          {
-            "name": "Adjacent Elsewhere",
-            "effect": "portal",
-            "text": "Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn."
-          },
-          {
-            "name": "Memory of Falling",
-            "effect": "forced_movement",
-            "save": "STR DC 18",
-            "text": "Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage."
-          },
-          {
-            "name": "Wrong Angle",
-            "effect": "cover",
-            "text": "Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
-          }
-        ]
-      },
-      "name": "Thought Harrower",
-      "encounterId": "act3-e10-the-center",
-      "encounterLabel": "Act 3 E10 - The Center",
-      "stats": {
-        "kind": "aberration",
-        "ac": 17,
-        "maxHp": 179,
-        "speed": "30 ft.",
-        "defenses": [
-          {
-            "name": "Legendary Resistance - 1 use",
-            "ehpMultiplier": 1.0424576635782374,
-            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
-          }
-        ],
-        "attacksPerTurn": 3,
-        "size": "Medium",
-        "classification": "act-boss",
-        "archetype": "tactician",
-        "legendaryPerRound": 1,
-        "skills": [
-          {
-            "label": "Arcana",
-            "modifier": 10
-          },
-          {
-            "label": "Perception",
-            "modifier": 8
-          }
-        ],
-        "cr": 9
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "DEX",
-          "value": "12 (+1)"
-        },
-        {
-          "label": "CON",
-          "value": "18 (+4)"
-        },
-        {
-          "label": "INT",
-          "value": "22 (+6)",
-          "save": 10
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "save": 8
-        },
-        {
-          "label": "CHA",
-          "value": "18 (+4)",
-          "saveProficient": true
-        }
-      ],
-      "traits": [
-        {
-          "name": "Legendary Resistance (1/Day)",
-          "kind": "trait",
-          "text": "If the Harrower fails a saving throw, it can choose to succeed instead."
-        },
-        {
-          "name": "Residual Hunger",
-          "kind": "trait",
-          "text": "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed."
-        },
-        {
-          "name": "Wrong Origin",
-          "kind": "trait",
-          "text": "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Fracture Seed",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated."
-        },
-        {
-          "name": "Rift Lance",
-          "kind": "attack",
-          "roll": "1d20+@INT+@PB",
-          "damage": "4d8+@INT",
-          "text": "Ranged Spell Attack: +10 to hit, range 120 ft.; Hit: 15 (4d8 +6) psychic.",
-          "routineSlots": 3
-        },
-        {
-          "name": "Unmake Distance (Recharge 5–6)",
-          "kind": "action",
-          "save": "INT",
-          "recharge": "5-6",
-          "damage": "8d6+@INT",
-          "text": "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (8d6+6) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice."
-        },
-        {
-          "name": "Mind Hook",
-          "kind": "action",
-          "save": "WIS",
-          "legendaryCost": 1,
-          "damage": "4d6+@INT",
-          "text": "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (3d8+@INT) psychic and moved 10 ft. toward the origin; success: Half Damage on save and no movement.",
-          "onSave": "half"
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Fold Thought",
-          "kind": "reaction",
-          "text": "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round."
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "The thing doing the thinking at the center has too many correct angles. It does not cast darkness or shadow; it makes two places become adjacent because it has forgotten that they were not.",
-        "LAIR ACTIONS (not yet playable from the tracker — a lair is a SUMMON at initiative 20, and the summon mechanism is unbuilt). At initiative count 20 (losing ties), choose one option. The same option cannot be used on consecutive rounds. Adjacent Elsewhere. Choose two 10-ft. spaces within 90 ft. Until the next initiative count 20, a creature that enters one may spend 5 ft. of movement to exit from the other. Each creature can use this once per turn. Memory of Falling. Choose a 15-ft.-radius area within 90 ft. Creatures there make a DC 18 Strength save or slide 10 ft. in one horizontal direction chosen by the Harrower. No damage. Wrong Angle. Choose a 20-ft.-radius area within 90 ft. Until the next initiative count 20, ranged attacks that originate inside or target inside the area treat half cover as no cover and three-quarters cover as half cover. The distortion benefits both sides."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Thought Harrower",
-        "revealedName": "Thought Harrower"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T23:36:41.234Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:grief-colossus:v1",
-      "name": "Grief Colossus",
-      "encounterId": "act3-e10-the-center",
-      "encounterLabel": "Act 3 E10 - The Center",
-      "stats": {
-        "kind": "aberration",
-        "ac": 18,
-        "maxHp": 200,
-        "speed": "35 ft.",
-        "defenses": [
-          {
-            "name": "Legendary Resistance - 1 use",
-            "ehpMultiplier": 1.0424576635782374,
-            "note": "Read from \"Legendary Resistance (1/Day)\" (trait) on \"legendary resistance\"."
-          },
-          {
-            "name": "Damage transfer / redirection",
-            "ehpMultiplier": 1,
-            "note": "Priced by a formula that needs encounter inputs, so there is no single effective-HP multiplier for it.",
-            "rule": "Damage transfer / redirection"
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Huge",
-        "classification": "act-boss",
-        "archetype": "guardian",
-        "skills": [
-          {
-            "label": "Athletics",
-            "modifier": 10
-          }
-        ],
-        "cr": 9
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "22 (+6)",
-          "saveProficient": true
-        },
-        {
-          "label": "DEX",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "CON",
-          "value": "22 (+6)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "8 (-1)"
-        },
-        {
-          "label": "WIS",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "CHA",
-          "value": "10 (+0)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Legendary Resistance (1/Day)",
-          "kind": "trait",
-          "text": "If the Colossus fails a saving throw, it can choose to succeed instead."
-        },
-        {
-          "name": "Impossible Mass",
-          "kind": "trait",
-          "text": "Advantage on saves against being knocked prone or moved against its will."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Anchor the Wrong",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn."
-        },
-        {
-          "name": "Slam",
-          "kind": "attack",
-          "roll": "1d20 + @STR+PB",
-          "damage": "4d10+@STR",
-          "text": "Melee Weapon Attack: +10 to hit, reach 10 ft.; Hit: 17 (4d10 + 6) bludgeoning.",
-          "routineSlots": 2
-        },
-        {
-          "name": "Collapse Space (Recharge 5–6)",
-          "kind": "action",
-          "save": "STR",
-          "recharge": "5-6",
-          "damage": "5d8+@STR",
-          "text": "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone."
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Body Between",
-          "kind": "reaction",
-          "text": "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round."
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "The weight behind the thought. Its limbs do not bend in the same number of places twice, but when it decides a space is occupied, the battlefield has to argue with several tons of certainty."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Grief Colossus",
-        "revealedName": "Grief Colossus"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T23:36:28.900Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:darkmare:v1",
-      "name": "Darkmare",
-      "encounterId": "act3-e3-gate-i-crone-and-mare",
-      "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
-      "stats": {
-        "kind": "fiend",
-        "ac": 13,
-        "maxHp": 90,
-        "speed": "50 ft.",
-        "defenses": [
-          {
-            "name": "Concealment until first attack hits each round",
-            "ehpMultiplier": 1.1132595358150892,
-            "note": "Read from \"Darkmane (Constant)\" (trait) on \"obscurement\"."
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Large",
-        "classification": "mid-boss",
-        "archetype": "bruiser",
-        "skills": [
-          {
-            "label": "Perception",
-            "modifier": 5
-          }
-        ],
-        "damageResponses": [],
-        "spellSlots": [
-          {
-            "level": 3,
-            "max": 1
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "20 (+5)",
-          "save": 8
-        },
-        {
-          "label": "DEX",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "CON",
-          "value": "14 (+2)",
-          "save": 7
-        },
-        {
-          "label": "INT",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "WIS",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "CHA",
-          "value": "17 (+3)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Darkmane (Constant)",
-          "kind": "trait",
-          "text": "Darkmare creates one-way magical obscurement around itself. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally."
-        },
-        {
-          "name": "Umbral Passage",
-          "kind": "trait",
-          "text": "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold."
-        },
-        {
-          "name": "Shadow Shroud (1/Day)",
-          "kind": "trait",
-          "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Horn",
-          "kind": "attack",
-          "roll": "1d20 + 8",
-          "damage": "2d8 + @MAIN",
-          "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 14 (2d8 + 5) cold damage.",
-          "routineSlots": 1
-        },
-        {
-          "name": "Hooves",
-          "kind": "attack",
-          "roll": "1d20 + 8",
-          "damage": "2d6 + @MAIN",
-          "text": "Melee Weapon Attack: +8 to hit, reach 5 ft.; Hit: 12 (2d6 + 5) bludgeoning damage.",
-          "routineSlots": 1
-        },
-        {
-          "name": "Shadow Shroud ",
-          "kind": "spell",
-          "spellSlotLevel": 3,
-          "text": "Action: choose Darkmare or one creature within 60 ft. The target gains +2 AC until the end of Darkmare’s next turn, and attacks against it have disadvantage until it is hit once. The disadvantage ends on that first hit; the AC duration does not."
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "A war-mount shaped from a noble silhouette and then invaded from the inside. Its hooves do not ask the Wood for a road; they burn one."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Darkmare",
-        "revealedName": "Darkmare"
-      },
-      "dmEdited": {
-        "at": "2026-08-27T00:23:57.189Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:veilwood-crone:v1",
-      "name": "Veilwood Crone",
-      "encounterId": "act3-e3-gate-i-crone-and-mare",
-      "encounterLabel": "Act 3 E3 - Gate I: The Crone and the Mare",
-      "stats": {
-        "kind": "fey",
-        "ac": 15,
-        "maxHp": 111,
-        "speed": "30 ft., swim 30 ft.",
-        "defenses": [],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "mid-boss",
-        "archetype": "mystic",
-        "spellSlots": [
-          {
-            "level": 1,
-            "max": 4
-          },
-          {
-            "level": 2,
-            "max": 3
-          },
-          {
-            "level": 3,
-            "max": 3
-          },
-          {
-            "level": 4,
-            "max": 1
-          }
-        ],
-        "skills": [
-          {
-            "label": "Nature",
-            "modifier": 7
-          },
-          {
-            "label": "Perception",
-            "modifier": 9
-          }
-        ],
-        "proficiencyBonus": 3
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "18 (+4)"
-        },
-        {
-          "label": "DEX",
-          "value": "18 (+4)"
-        },
-        {
-          "label": "CON",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "18 (+4)"
-        },
-        {
-          "label": "WIS",
-          "value": "22 (+6)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "14 (+2)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Spellcasting",
-          "kind": "trait",
-          "roll": "1d20 + 9",
-          "text": "7th-level spellcaster; spell save DC 17, +9 to hit. Slots 4 / 3 / 3 / 1. Core control list: Entangle, Web, Hold Person. A spell replaces Multiattack."
-        },
-        {
-          "name": "Night-Garden Native",
-          "kind": "trait",
-          "text": "The Crone ignores difficult terrain created by plants and vegetation, and nonmagical plants do not impede her movement."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Claw",
-          "kind": "attack",
-          "roll": "1d20 + @STR+@PROF",
-          "damage": "2d8 + @STR",
-          "text": "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 13 (2d8 + 4) slashing damage."
-        },
-        {
-          "name": "Blighted Vitality (Recharge 4–6)",
-          "kind": "action",
-          "save": "CON DC 17",
-          "recharge": "4-6",
-          "text": "Choose up to two creatures within 60 ft. Each makes a DC 17 Constitution save. On a failure, healing received is halved until the end of the Crone’s second turn after the effect begins. Reapplying the effect does not extend or stack the duration."
-        },
-        {
-          "name": "Venomous Eruption",
-          "kind": "spell",
-          "spellSlotLevel": 4,
-          "text": "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned.",
-          "damage": "6d8+@MAIN",
-          "economyCost": "action",
-          "save": "WIS",
-          "onSave": "half"
-        },
-        {
-          "name": "Hold Person",
-          "kind": "spell",
-          "text": "Choose a Humanoid that you can see within range. The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.",
-          "save": "WIS",
-          "onSave": "none",
-          "spellSlotLevel": 2
-        },
-        {
-          "name": " Entangle",
-          "kind": "spell",
-          "text": "Grasping plants sprout from the ground in a 20-foot square within range. For the duration, these plants turn the ground in the area into Difficult Terrain. They disappear when the spell ends.  Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends. A Restrained creature can take an action to make a Strength (Athletics) check against your spell save DC. On a success, it frees itself from the grasping plants and is no longer Restrained by them.",
-          "save": "STR",
-          "onSave": "none",
-          "spellSlotLevel": 1
-        },
-        {
-          "name": "Fear",
-          "kind": "spell",
-          "text": "Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration.  A Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn’t have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.",
-          "range": "30 FT Cone",
-          "save": "WIS"
-        }
-      ],
-      "reactions": [],
-      "resources": [],
-      "notes": [
-        "The Crone is not an invader. Black flowers open for her because this is still Feywild soil. Her cruelty is native: poisonous hospitality, thorn-shadow, and the night-side of living things."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Veilwood Crone",
-        "revealedName": "Veilwood Crone"
-      },
-      "dmEdited": {
-        "at": "2026-08-27T00:24:27.001Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
-      "name": "Demon Knight of Punishment",
-      "encounterId": "act3-e8-the-occupied-acre",
-      "encounterLabel": "Act 3 E8 - The Occupied Acre",
-      "stats": {
-        "kind": "fiend",
-        "ac": 16,
-        "maxHp": 110,
-        "speed": "30 ft.",
-        "defenses": [
-          {
-            "name": "Damage transfer / redirection",
-            "ehpMultiplier": 1,
-            "note": "Read from \"Oppressive Presence\" (trait) on \"must target\". The workbook calibrates this rule as UNPRICED — it is a real trait with no published weight."
-          },
-          {
-            "name": "Resistance - ~50% of opposing damage",
-            "ehpMultiplier": 1.3418341811719772,
-            "rule": "Resistance - ~50% of opposing damage",
-            "note": "profile"
-          }
-        ],
-        "attacksPerTurn": 1,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "guardian",
-        "skills": [
-          {
-            "label": "Intimidation",
-            "modifier": 7
-          },
-          {
-            "label": "Perception",
-            "modifier": 6
-          }
-        ],
-        "proficiencyBonus": 4,
-        "damageResponses": [
-          {
-            "type": "Fire",
-            "response": "resistant"
-          }
-        ]
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "18 (+4)"
-        },
-        {
-          "label": "DEX",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "CON",
-          "value": "19 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "WIS",
-          "value": "14 (+2)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "17 (+3)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Retaliatory Shock",
-          "kind": "trait",
-          "text": "When the Demon Knight of Punishment takes bludgeoning, piercing, or slashing damage, each enemy within 10 feet of the Knight takes piercing damage equal to the Knight's Constitution modifier (4). The triggering damage resolves normally."
-        },
-        {
-          "name": "Oppressive Presence",
-          "kind": "trait",
-          "text": "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Iron Grasp",
-          "kind": "attack",
-          "roll": "1d20 + @ATK",
-          "damage": "1d10 + @MAIN",
-          "text": "Melee Weapon Attack: +8 to hit, reach 5 ft., one Large or smaller creature. Hit: 9 (1d10 + 4) bludgeoning damage, and the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time."
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Commanding Presence",
-          "kind": "reaction",
-          "text": "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances."
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
-        "DM DESIGN READ. The Knight is the wall. Its shattered plate is deliberately hittable, but its raw body is large. Barbed Plate punishes repeated close physical hits. Oppressive Presence taxes multi-target creature effects once, and Commanding Presence can force a second legal instance into the Knight; single-target effects remain valid answers.",
-        "BARBED PLATE IS DAMAGE, NOT DEFENCE, and the trace cannot see it. 4 piercing per melee hit taken is real pressure on the party - roughly 12 a round against three melee hits - but it is retaliation triggered by the PARTY's action, and the trace prices only what the creature spends its own action economy on. Not counted in the DPR below."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Demon Knight of Punishment",
-        "revealedName": "Demon Knight of Punishment"
-      },
-      "dmEdited": {
-        "at": "2026-08-26T07:06:55.539Z"
-      }
-    }
-  ],
+  "exportedAt": "2026-09-04T09:29:39.076Z",
+  "digest": "fnv1a-5f8164df-120053",
+  "monsters": [],
   "equipment": [
     {
       "id": "bc-tools-repairs",
@@ -1030,6 +28,7 @@
     },
     {
       "id": "bc-farwatch-glass",
+      "activation": "action",
       "name": "Farwatch Glass",
       "type": "magic",
       "description": "A thumb-sized oval of smoke-dark glass with a silver thread trapped inside it. The thread drifts when the glass is idle and snaps toward whatever the glass is remembering when awakened. Tags: A1 · Utility",
@@ -1052,6 +51,7 @@
     },
     {
       "id": "bc-slipstone",
+      "activation": "bonus",
       "name": "Slipstone",
       "type": "magic",
       "description": "A flat piece of violet-grey stone whose two faces never seem perfectly aligned. Turn it in the hand and one edge appears to arrive a fraction of a heartbeat before the rest. Tags: A1 · Movement",
@@ -1074,6 +74,7 @@
     },
     {
       "id": "bc-rootheart-seed",
+      "activation": "reaction",
       "name": "Rootheart Seed",
       "type": "magic",
       "description": "A black seed the size of a thumbnail, veined with dull green-gold. It is almost weightless until the ground shifts beneath its bearer, when it becomes suddenly and impossibly heavy. Tags: A1 · Stability",
@@ -1232,6 +233,7 @@
     },
     {
       "id": "tbc-canopy-eye",
+      "activation": "bonus",
       "name": "Canopy Eye",
       "type": "magic",
       "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface. Tags: A1 · Utility",
@@ -1361,6 +363,7 @@
     },
     {
       "id": "tbc-ashwood-brigandine",
+      "activation": "reaction",
       "name": "Ashwood Brigandine",
       "type": "armor",
       "description": "Plated with bark from the corruption's edge, where the wood hardened wrong — denser than any living tree.",
@@ -1391,6 +394,7 @@
     },
     {
       "id": "tbc-displaced-ward-brooch",
+      "activation": "reaction",
       "name": "Displaced Ward Brooch",
       "type": "magic",
       "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here did not spare the equipment. Tags: A1 · Defense",
@@ -1517,18 +521,6 @@
       "isLocked": true
     },
     {
-      "id": "tbc-marrow",
-      "name": "Marrow Shield",
-      "type": "shield",
-      "ac": "+3",
-      "description": "Named for the first thing strength drain reaches. The face of it is unmarked — no emblem, no device. It belonged to someone who didn't want to be found.",
-      "mechanicsText": "+3 bonus to AC — a shield's base +2 plus a +1 magical bonus. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
-      "isUsable": false,
-      "act": "Act 2",
-      "sourceEncounter": "ELITE QUEST REWARD",
-      "isLocked": true
-    },
-    {
       "id": "tbc-frost-brace",
       "name": "Frost Brace",
       "type": "magic",
@@ -1587,6 +579,7 @@
     },
     {
       "id": "tbc-north-wind-flask",
+      "activation": "action",
       "name": "North Wind Flask",
       "type": "gear",
       "description": "A stoppered blue-glass flask that rattles with trapped wind. Frost forms around the cork whenever the pressure inside rises.",
@@ -1733,6 +726,7 @@
     },
     {
       "id": "tbc-hollow-lantern",
+      "activation": "bonus",
       "name": "Hollow Lantern",
       "type": "magic",
       "description": "A Ward field lantern recovered from the village cache. Its pale flame does not flicker in wind, and for a moment it shows what prefers not to be found. Tags: A2 · Cleanse",
@@ -1771,6 +765,7 @@
     },
     {
       "id": "bc-sentinel-chalk",
+      "activation": "action",
       "name": "Sentinel Chalk",
       "type": "magic",
       "description": "A stick of blue-white chalk recovered from the frozen line. A mark drawn with it holds its edge even under snow and rime. Tags: A2 · Utility",
@@ -1792,6 +787,7 @@
     },
     {
       "id": "bc-gloamstep-shard",
+      "activation": "bonus",
       "name": "Gloamstep Shard",
       "type": "magic",
       "description": "A sliver of dark glass rimed white on one edge and perfectly black on the other. In dim light the shard seems a few inches closer than the hand holding it. Tags: A2 · Movement",
@@ -1946,6 +942,7 @@
     },
     {
       "id": "tbc-wendigo-heart-ember",
+      "activation": "action",
       "name": "Wendigo Ember Heart",
       "type": "magic",
       "damage": "3d6",
@@ -2043,6 +1040,7 @@
     },
     {
       "id": "bc-step-stabilizer",
+      "activation": "bonus",
       "name": "Step Stabilizer",
       "type": "magic",
       "description": "A small paired set of heel plates that seem to find the next safe piece of ground first. Tags: Recipe: Movement + Utility · Completed: Movement",
@@ -2063,6 +1061,7 @@
     },
     {
       "id": "bc-reinforced-wrap",
+      "activation": "reaction",
       "name": "Reinforced Wrap",
       "type": "magic",
       "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands. Tags: Recipe: Defense + Stability · Completed: Defense",
@@ -2084,6 +1083,7 @@
     },
     {
       "id": "bc-lensing-glass",
+      "activation": "bonus",
       "name": "Lensing Glass",
       "type": "magic",
       "description": "A clear lens that catches edges the eye normally loses. Tags: Recipe: Cleanse + Utility · Completed: Cleanse",
@@ -2172,6 +1172,7 @@
     },
     {
       "id": "bc-quickstep",
+      "activation": "bonus",
       "name": "Quickstep",
       "type": "magic",
       "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next. Tags: Recipe: Movement + Utility · Completed: Movement",
@@ -2214,6 +1215,7 @@
     },
     {
       "id": "bc-driftveil",
+      "activation": "reaction",
       "name": "Driftveil",
       "type": "magic",
       "description": "A short mantle that pulls sideways at the instant a blow finds its wearer. Tags: Recipe: Defense + Movement · Completed: Defense",
@@ -2236,6 +1238,7 @@
     },
     {
       "id": "bc-clearward-mantle",
+      "activation": "bonus",
       "name": "Clearward Mantle",
       "type": "magic",
       "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
@@ -2257,6 +1260,7 @@
     },
     {
       "id": "bc-turnstep-relay",
+      "activation": "reaction",
       "name": "Turnstep Relay",
       "type": "magic",
       "description": "A narrow pair of hinged plates whose inner marks click toward the next threat a heartbeat before it moves. Tags: Recipe: Movement + Tactical · Completed: Tactical",
@@ -3070,6 +2074,7 @@
     },
     {
       "id": "tbc-branchcall-marker",
+      "activation": "reaction",
       "name": "Branchcall Marker",
       "type": "magic",
       "description": "A leaf-thin disc of living wood etched with branching paths. Its edges flex toward nearby motion, and two of the carved routes brighten together when the battlefield opens. Tags: A3 · Tactical",
@@ -3114,6 +2119,7 @@
     },
     {
       "id": "tbc-veilwash-leaf",
+      "activation": "action",
       "name": "Veilwash Leaf",
       "type": "magic",
       "description": "A translucent leaf whose veins carry warm yellow in one direction and icy blue in the other. Pressed to living skin, hostile residue beads away from it like rain refusing to cling. Tags: A3 · Cleanse",
@@ -3226,6 +2232,7 @@
     },
     {
       "id": "tbc-mirrorbark-scale",
+      "activation": "reaction",
       "name": "Mirrorbark Scale",
       "effect": {
         "type": "reroll",
@@ -3525,6 +2532,564 @@
       ]
     },
     {
+      "id": "bc-sentrys-knot",
+      "name": "Sentry’s Knot",
+      "type": "magic",
+      "description": "A fist of grey cord knotted around something that will not sit still. It pulls toward whoever in the group is closest to falling. Tags: A1–A2 · Ward Field Reward · Guardian / Devout",
+      "mechanicsText": "When a creature other than you that you can see within 30 feet would be reduced to 0 hit points, the knot tears itself apart. That creature is reduced to 1 hit point instead and gains temporary hit points equal to one roll of its Hit Die + your proficiency bonus.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Guardian / Devout. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-sighters-wrap",
+      "name": "Sighter’s Wrap",
+      "type": "magic",
+      "description": "A strip of oiled cloth wound for a hand that is not yours. It tightens a little when something across the field takes aim. Tags: A1–A2 · Ward Field Reward · Suppressing / Precise",
+      "mechanicsText": "When a creature you can see within 30 feet scores a Critical Hit against you or an ally, tear the wrap free and force that creature to reroll the triggering attack roll. It must use the new roll.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Suppressing / Precise. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-fieldwork-flask",
+      "name": "Fieldwork Flask",
+      "type": "magic",
+      "description": "A field flask with a Ward seal still intact over the stopper. Whatever is inside is warm through the glass. Tags: A1–A2 · Ward Field Reward · Mending / Warden",
+      "mechanicsText": "When a creature you can see within 30 feet is reduced to 0 hit points, empty the flask. That creature immediately regains hit points equal to two rolls of its Hit Die + its Constitution modifier (minimum 1) and remains conscious.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Mending / Warden. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-hardedge-cord",
+      "name": "Hardedge Cord",
+      "type": "magic",
+      "description": "A short cord strung between two iron tabs, wound far tighter than a hand could manage. It is meant to be snapped, once. Tags: A1–A2 · Ward Field Reward · Vanguard / Skirmish",
+      "mechanicsText": "When you are hit by an attack, after its damage is rolled but before the damage is applied, snap the cord. Reduce the triggering attack’s damage by 2d8. Until that attack finishes resolving, it can't knock you Prone, move you against your will, or give you the Grappled condition.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Vanguard / Skirmish. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-reading-stone",
+      "name": "Reading Stone",
+      "type": "magic",
+      "description": "A thin disc of pale stone with a hairline fracture already through it. Held up, the fracture seems to be reading the room rather than the light. Tags: A1–A2 · Ward Field Reward · Tactician / Breaker",
+      "mechanicsText": "When you or a creature you can see within 30 feet fails a saving throw, break the stone. The creature succeeds on that saving throw instead.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Tactician / Breaker. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-pack-sign-token",
+      "name": "Pack-Sign Token",
+      "type": "magic",
+      "description": "A flat token scored down the middle so it can be split by hand. Both halves carry the same mark. Tags: A1–A2 · Ward Field Reward · Pack / Covenant",
+      "mechanicsText": "When you or an ally you can see within 30 feet is hit by an attack while another allied creature is within 5 feet of the target, split the token. The target gains a +5 bonus to AC against the triggering attack only, potentially causing it to miss.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Pack / Covenant. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-unspent-mark",
+      "name": "Unspent Mark",
+      "type": "magic",
+      "description": "A Ward sigil struck onto soft metal and never spent. It sits cold against anything magical that comes near it. Tags: A1–A2 · Ward Field Reward · Resonant / Siphon",
+      "mechanicsText": "When you fail a saving throw against a spell or magical effect, expend the mark to succeed on that saving throw instead. If a successful save normally deals reduced damage, you take that normal successful-save damage; the Mark grants no additional resistance or reduction.",
+      "isUsable": true,
+      "act": "Act 1",
+      "sourceEncounter": "WARD FIELD REWARD POOL",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Bond-matched to Resonant / Siphon. Single use — spent, broken or emptied when it fires. No attunement, not a Convergence input, no offensive benefit. A PC can receive only one Ward Field Reward in the whole campaign, across Acts 1-2 only.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-potion-of-healing",
+      "name": "Potion of Healing",
+      "type": "consumable",
+      "activation": "action",
+      "description": "A standard healing potion set aside with the tavern’s practical emergency stock. Tags: A2 · Tavern stock",
+      "mechanicsText": "Use the normal D&D Potion of Healing rules.",
+      "isUsable": true,
+      "value": "50gp",
+      "act": "Act 2",
+      "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 2.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-smoke-flask",
+      "name": "Smoke Flask",
+      "type": "consumable",
+      "activation": "action",
+      "description": "A squat dark-glass flask whose stopper is wrapped in grey cloth. The liquid inside never settles; when the glass breaks, it becomes a wall of smoke before it reaches the ground. Tags: A2 · Tavern stock",
+      "mechanicsText": "As a Magic action, throw the flask at a point you can see within 30 feet. It shatters and creates dense smoke in a 10-foot-radius sphere centered on that point. The area is Heavily Obscured until the end of your next turn. A strong wind disperses the smoke early.",
+      "isUsable": true,
+      "value": "100gp",
+      "act": "Act 2",
+      "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-wardbreaker-oil",
+      "name": "Wardbreaker Oil",
+      "type": "consumable",
+      "activation": "bonus",
+      "description": "A thin metallic oil kept in a narrow Ward-sealed vial. It crawls toward an edge or point as it is applied and holds there until impact. Tags: A2 · Tavern stock",
+      "mechanicsText": "As a Bonus Action, apply the oil to one weapon or one piece of ammunition. The coating remains potent until its effect is delivered or washed away. The first time a creature takes damage from the coated weapon or ammunition, it takes an additional 2d6 Force damage; if it is Large or smaller, it is pushed 5 feet directly away from the attacker. The oil is then expended.",
+      "isUsable": true,
+      "value": "150gp",
+      "act": "Act 2",
+      "sourceEncounter": "END-OF-ACT 2 TAVERN MERCHANT",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-blinkstep",
+      "name": "Blinkstep",
+      "type": "magic",
+      "activation": "bonus",
+      "description": "A matched pair of narrow, blackened ankle clasps whose metal has been pitted smooth by years of elemental exposure. Hairline fractures cross each face without ever quite meeting, and when the bearer shifts weight, one clasp seems to arrive a fraction of a heartbeat before the foot beneath it. Tags: A4 · Movement · Ruined / elemental saturation",
+      "mechanicsText": "Bonus Action · 1/Short Rest: teleport up to 20 feet to an unoccupied space you can see.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Movement",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 1 — first required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-deferred-wound",
+      "name": "Deferred Wound",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "A segmented forearm guard of dull layered metal, old enough that its dents have been worn smooth rather than repaired. Dark seams run between the plates like healed fractures. When a blow lands, those seams briefly hold the shape of the impact instead of letting it pass cleanly into the bearer. Tags: A4 · Defense · Ruined / elemental saturation",
+      "mechanicsText": "Reaction · 1/Long Rest: when you take damage, roll 2d8. Reduce the triggering damage by up to the roll and record the amount actually reduced as deferred damage. Healing before the end of the current round removes deferred damage first. At round end, lose HP equal to any deferred damage that remains. The original hit still counts as a hit/damage event; deferred resolution does not retrigger hit/damage riders.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Defense",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 2 — second required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-rupture",
+      "name": "Rupture",
+      "type": "magic",
+      "activation": "free",
+      "description": "A narrow black-iron wrist ring split by ember-bright cracks that never cool completely. The metal looks less forged than pressure-broken and forced back together. At the instant an attack lands, the cracks flare toward the point of impact as though the ring is trying to widen the wound already made. Tags: A4 · Offensive · Ruined / elemental saturation",
+      "mechanicsText": "Rider · 1/Long Rest: when you hit, deal an additional 2d10 damage of one damage type dealt by that attack.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Offensive",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 3 — Phoenix. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-applied-insight",
+      "name": "Applied Insight",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "A palm-sized many-faceted lens held in a scorched brass frame. Several faces are clouded with mineral haze while one always seems unnaturally clear when turned toward a problem. Its frame bears tiny adjustment marks from hands that kept refining it long after its original maker was gone. Tags: A4 · Utility · Ruined / elemental saturation",
+      "mechanicsText": "Reaction · 1/Long Rest: after you or an ally within 30 feet fails an ability check, add 1d10 to the result, potentially turning it into a success.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Utility",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 4 — first required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-true-ground",
+      "name": "True Ground",
+      "type": "magic",
+      "activation": "bonus",
+      "description": "A heavy black-stone ankle band locked inside an old metal brace. Its underside has been worn perfectly flat despite the uneven ground it has crossed. Loose grit and tiny fragments of stone subtly orient toward it whenever the bearer plants their weight. Tags: A4 · Stability · Ruined / elemental saturation",
+      "mechanicsText": "Bonus Action · 1/Short Rest: anchor your current space until the end of the current round. If a hostile effect moves you against your will, after that movement resolves teleport back to the anchor or the nearest space you can occupy.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Stability",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 5 — second required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-condition-vessel",
+      "name": "Condition Vessel",
+      "type": "magic",
+      "activation": "action",
+      "description": "A hollow crystal vessel no larger than a thumb joint, suspended inside a tarnished silver cage. Faint stains of different colors drift through the crystal and never mix. Near hostile magic or poison, one stain crawls toward the surface as if the vessel is already making room for something else. Tags: A4 · Cleanse · Ruined / elemental saturation",
+      "mechanicsText": "Magic Action · 1/Long Rest: end Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained on one willing creature within 30 feet. You gain that condition until the end of the current round. You cannot use this property for a condition you are immune to.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Cleanse",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 6 — Elemental level fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-threat-positioning",
+      "name": "Threat Positioning",
+      "type": "magic",
+      "activation": "free",
+      "description": "A thin compass-disc of dark alloy with no cardinal marks and three broken pointers trapped beneath its glass. The pointers ignore north. When danger is near, they settle instead on moving threats, then twitch a heartbeat after those threats change their intent. Tags: A4 · Tactical · Ruined / elemental saturation",
+      "mechanicsText": "1/Long Rest, immediately after Initiative is rolled and before the first turn: choose one visible hostile creature and move your Initiative to immediately after it. The hostile creature does not move.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Tactical",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 7 — Construct / Ward outpost entrance. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-a4-preserved-reaction",
+      "name": "Preserved Reaction",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "A braided wrist loop made from old silver wire and blackened root-fiber. One strand always hangs slightly slack no matter how tightly the loop is fastened. When the bearer commits to a sudden response, that slack strand snaps taut as if taking the strain of the reaction for them. Tags: A4 · Continuity · Ruined / elemental saturation",
+      "mechanicsText": "1/Long Rest: when you use your normal Reaction for a standard non-spell Reaction, expend this item's charge instead of expending your Reaction. All other costs remain. Eligible uses are Opportunity Attacks, non-spell class/subclass/feat/item Reactions, or release of a Readied non-spell action or movement. Reaction spells, Readied spells, and Bond reactions are excluded.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "input",
+        "enabled": true,
+        "mechanicalTag": "Continuity",
+        "actLabel": "A4"
+      },
+      "dmNote": "Drops at: Act 4 sequence 8 — required outpost/cavern fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-catalyst",
+      "name": "Catalyst",
+      "type": "magic",
+      "description": "A dense concentration of Convergence energy capable of infusing greater power into certain exceptional items. When accepted by a compatible item, the Catalyst strengthens and completes what is already present rather than forming something new. Tags: Catalyst · Tempering / stabilization · Not a Component Tag",
+      "mechanicsText": "A Catalyst can temper one still-raw Ruined A4. The Catalyst is consumed, and that same A4 becomes its same-tag Tier 4 Singular. A Catalyst cannot be used as a normal component, cannot create a new tag, cannot temper A1–A3, and cannot use a completed T3 as the input. A creature can bind only one Tier 4 Singular.",
+      "isUsable": false,
+      "act": "Act 4",
+      "sourceEncounter": "ACT 4 CATALYST REWARD TABLE",
+      "charges": {
+        "max": 1,
+        "reset": "manual"
+      },
+      "dmNote": "Special Convergence Item — NO normal Component Tag, so it carries no `mechanicalTag` and can never be a recipe half. Consumed on use. Catalyst quantity scales by party size; the Act 4 tables are the source of truth for when each enters inventory.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-blinkstep",
+      "name": "Blinkstep — Tempered",
+      "type": "magic",
+      "activation": "bonus",
+      "description": "The Catalyst fills every old fracture in the ankle clasps with clean, luminous lines without erasing the pitted age of the metal. The two pieces remain unmistakably the same worn pair, but their edges now separate into brief translucent afterimages whenever the bearer moves, each afterimage appearing one perfect step ahead before folding back into the clasps. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Encounter: teleport up to 30 feet to an unoccupied space you can see. Passive — your Speed increases by 10 feet.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "encounter"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-applied-insight",
+      "name": "Applied Insight — Tempered",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "The Catalyst runs through the clouded facets as bright internal veins, clearing them without replacing the old lens. The scorched brass frame unfolds into two thin nested rings that turn around the original setting on their own. What was once the single clear face now becomes whichever facet the item needs, visibly aligning itself with the task at hand. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Reaction · 1/Short Rest: after you or an ally within 30 feet fails an ability check, add 1d12 to the result, potentially succeeding. Passive — after each Long Rest, choose one skill or tool; you gain proficiency with it until your next Long Rest.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Utility"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-deferred-wound",
+      "name": "Deferred Wound — Tempered",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "The Catalyst settles into the guard's dark seams like molten light and binds the old segmented plates without smoothing away their dents. Hair-thin luminous bridges now span the gaps between sections. When damage is deferred, the light gathers visibly inside those bridges; when the wound is fully cleared, the stored glow collapses inward and leaves a brief protective sheen over the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Reaction · 1/Short Rest: Deferred Wound uses 2d10 instead of 2d8. Passive — if all deferred damage is cleared before it resolves at round end, you gain Temporary Hit Points equal to your Proficiency Bonus.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Defense"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-true-ground",
+      "name": "True Ground — Tempered",
+      "type": "magic",
+      "activation": "bonus",
+      "description": "The Catalyst traces the old ankle band with concentric lines of pale light, turning the worn cracks into a deliberate geometric pattern. The black stone and metal remain unchanged in shape, but a faint ring of the same pattern now appears on the ground whenever the bearer anchors themselves. If they are displaced, that luminous imprint holds their place until they return to it. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Encounter: the anchor lasts until the start of your next turn and also answers hostile teleportation, returning you to the anchor or nearest space you can occupy after the hostile displacement resolves. Passive — once per round, reduce forced movement applied to you by 10 feet.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "encounter"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Stability"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-condition-vessel",
+      "name": "Condition Vessel — Tempered",
+      "type": "magic",
+      "activation": "action",
+      "description": "The Catalyst threads through the tarnished cage and turns each bar into a bright channel feeding the original crystal vessel. The crystal itself becomes perfectly clear between uses, while its old colored stains survive as thin veins around the edge. When a condition is drawn out, its color flashes inside the vessel and is consumed by the Catalyst light instead of passing into the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Magic Action · 1/Short Rest: end one listed Condition on a willing creature within 30 feet; the extracted condition ends without transferring to you. Passive — you have advantage on saving throws against Charmed, Frightened, and Poisoned.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Cleanse"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-rupture",
+      "name": "Rupture — Tempered",
+      "type": "magic",
+      "activation": "free",
+      "description": "The Catalyst does not close the wrist ring's old splits; it makes them precise. Brilliant white-gold light burns inside each ember crack, and several razor-thin segments now hover a hair's breadth from the original iron while remaining bound to it. On a committed hit, the floating pieces snap into alignment and drive the ring's stored force through the same wound before drifting apart again. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Rider · 1/Short Rest: when you hit, deal an additional 2d12 damage of one damage type dealt by the attack, and the target cannot regain Hit Points until the start of your next turn. Passive — once on each of your turns, one damage die showing 1 may count as 2.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Offensive"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-threat-positioning",
+      "name": "Threat Positioning — Tempered",
+      "type": "magic",
+      "activation": "free",
+      "description": "The Catalyst rebuilds nothing that was missing from the old compass-disc; instead it surrounds the original broken pointers with a thin luminous orbit. The dark disc remains scratched and incomplete beneath the glass, while the new ring moves freely above it. When initiative is set, one line of light locks onto the chosen threat and the orbit visibly turns until the bearer's place and the threat's place exchange. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Short Rest, immediately after Initiative is rolled and before the first turn: exchange your Initiative with one visible hostile creature. Initiative is never moved mid-round, and this cannot create double or skipped turns. Passive — when a hostile creature immediately before you in Initiative finishes its turn, gain +2 to your next saving throw before the end of your next turn.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Tactical"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-preserved-reaction",
+      "name": "Preserved Reaction — Tempered",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "The Catalyst weaves a bright filament through the original silver-and-root braid, following every old bend instead of replacing it. The once-slack strand now carries a second luminous echo beside it. When the item preserves a Reaction, the physical braid tightens around the bearer while the echo flashes toward the triggering threat, making the item look momentarily connected to both the response that was kept and the interruption it denied. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Short Rest: use the A4 Preserved Reaction substitution. If a hostile creature caused the trigger, its next attempted Reaction before the start of its next turn is suppressed; then the suppression ends. Passive — Held Intent: when you Ready a non-spell action or movement and its trigger does not occur before the start of your next turn, it remains Readied until the end of that turn. Only one Readied intent can be preserved this way.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Continuity"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
       "id": "tbc-rimestone-pauldron",
       "name": "Rimestone Pauldron",
       "type": "magic",
@@ -3684,6 +3249,21 @@
         "actLabel": "A1",
         "flavorTag": "Frost"
       }
+    },
+    {
+      "id": "tbc-marrow",
+      "name": "Marrow Shield",
+      "type": "shield",
+      "description": "+3 bonus to AC — a shield's base +2 plus a +1 magical bonus. When the bearer would suffer a Strength score reduction, they add +2 to the Constitution saving throw.",
+      "isUsable": false,
+      "statEffects": [
+        {
+          "type": "addAC",
+          "stat": "str",
+          "value": 3
+        }
+      ],
+      "category": "Shield"
     }
   ],
   "encounters": [
