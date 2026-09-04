@@ -4,6 +4,37 @@
  * LAYER: D&D MOD. These are 5e's pools; another d20 system ships its own table and the engine
  * neither knows nor cares. The SHAPE — a pool with a max and a reset cadence — is engine.
  *
+ * ⚠ AND IT NOW LIVES WHERE THAT SENTENCE SAYS IT DOES. This file declared "LAYER: D&D MOD" at the
+ * top while sitting in `core/rules/`, which is the one place the line above says it must not be.
+ * Moved to the mod beside `featPricing.generated.ts` and `shortRestRules.generated.ts`.
+ * Christopher: *"classResources were suppose to go into it that is why we have the Main class and
+ * sub class but if they didnt then they belong in the dnd mod, same with the short rest rules"*.
+ *
+ * ── WHAT THIS TABLE IS FOR, AND WHAT IT IS NOT ──────────────────────────────────────────────
+ * This grants pools onto a CHARACTER SHEET when the editor builds one. It is read by
+ * `ActorEditor` and nothing else. It is NOT the recovery authority: what a short rest gives back
+ * is `shortRestRules.generated.ts`, generated from the workbook, which the sheet's own header
+ * reserves for the app — *"the external party runtime applies these rules to live state"*.
+ *
+ * ⚠ THE TWO TABLES DISAGREE IN PLACES, AND THE DISAGREEMENTS ARE LISTED RATHER THAN PAPERED OVER.
+ * The registry has 168 rules across 16 classes and 135 subclasses; this table has 13 classes and
+ * NO subclasses. Where they differ today:
+ *
+ *   · Barbarian Rage — the registry says `one_expended_use` `on_finish_short_rest`. Here it is
+ *     `longRest` carrying a prose `note`, because `reset` cannot express "full on a long rest,
+ *     one use back on a short one". The note is not machine-readable, so a short rest in the app
+ *     returns nothing for it. Fixing this needs a partial-recovery shape on `ClassResource`; it
+ *     is a real change to the resource model and is not smuggled in with a file move.
+ *   · Wizard Arcane Recovery — `longRest` here; the registry says `during_short_rest` /
+ *     `once_per_long_rest`, which is a different rule: it is USED on a short rest, once between
+ *     long rests.
+ *   · Sorcerer Sorcerous Restoration (L5, up to half class level) — absent here entirely.
+ *   · Warlock Pact Magic — deliberately absent here (slots belong to the slot system) and present
+ *     in the registry, which owns the CADENCE rather than the pool. Both are correct.
+ *   · Hit Point Dice — a registry row for all 16 classes; none here, because `core/rules/
+ *     multiclass.ts` already grants them per die size and the app spends them.
+ *   · Blood Hunter, Gunslinger and Illrigger are in the registry and missing here.
+ *
  * Built on the same pattern as `weaponMastery`: a table keyed by class, read by level, with the
  * multiclass case handled by asking each class row separately. A DM should not have to hand-type
  * "Second Wind, 2 uses, short rest" onto every Fighter when the rule is the same for all of them.
@@ -17,7 +48,8 @@
  * Lay on Hands is `@MAIN*5`, not a number that has to be re-typed at every level.
  */
 
-import type { ResourceKind } from "../types/tabs";
+import type { ResourceKind } from "../../core/types/tabs";
+import { shortRestRulesFor } from "./shortRestRules.generated";
 
 export type ClassResource = {
   label: string;
@@ -29,6 +61,17 @@ export type ClassResource = {
   /** Level the class gains it. */
   level: number;
   note?: string;
+  /**
+   * What the workbook's registry says comes back on a short rest for this pool, e.g.
+   * "all_expended_uses (on_finish_short_rest)". Absent when the registry names no rule for it.
+   *
+   * ⚠ REPORTED, NOT APPLIED. This is the authority's own line put in front of the DM; it does not
+   * change `reset`, because `reset` is a single cadence and several of these are partial — a
+   * Barbarian's Rage is a long-rest pool that returns ONE use on a short rest, which the current
+   * shape cannot say. Showing the registry's words is honest; silently rewriting `reset` to
+   * "shortRest" would refill the whole pool and be wrong in the direction that hands out power.
+   */
+  shortRest?: string;
 };
 
 /**
@@ -97,6 +140,31 @@ const CLASS_RESOURCES: Record<string, ClassResource[]> = {
   ],
 };
 
+/**
+ * The registry's recovery line for one pool, matched by resource name.
+ *
+ * ⚠ MATCHED BOTH WAYS, because the two tables name the same thing at different lengths: this
+ * table says "Sorcery Points" where the registry says "Sorcery Points (Sorcerous Restoration)".
+ * A strict equality check would silently find nothing and every pool would look unrecovered.
+ */
+function registryShortRest(
+  className: string,
+  subclassName: string | null | undefined,
+  level: number,
+  label: string,
+): string | undefined {
+  const want = label.trim().toLowerCase();
+  if (!want) return undefined;
+  for (const rule of shortRestRulesFor(className, subclassName, level)) {
+    const named = rule.resource.trim().toLowerCase();
+    if (!named || !rule.recovery) continue;
+    if (named === want || named.includes(want) || want.includes(named)) {
+      return rule.timing ? `${rule.recovery} (${rule.timing})` : rule.recovery;
+    }
+  }
+  return undefined;
+}
+
 /** Does this class have a resource table at all? */
 export function classHasResources(className: string): boolean {
   return Boolean(CLASS_RESOURCES[className.trim().toLowerCase()]?.length);
@@ -127,7 +195,7 @@ export function resourcesForClass(className: string, level: number): ClassResour
  * They are labelled with the class so the sheet says which is which.
  */
 export function resourcesForClasses(
-  rows: readonly { name: string; level: number }[],
+  rows: readonly { name: string; level: number; subclassName?: string | null }[],
 ): (ClassResource & { className: string })[] {
   const out: (ClassResource & { className: string })[] = [];
   const seen = new Set<string>();
@@ -135,7 +203,12 @@ export function resourcesForClasses(
     for (const res of resourcesForClass(row.name, row.level)) {
       const label = seen.has(res.label) ? `${res.label} (${row.name})` : res.label;
       seen.add(res.label);
-      out.push({ ...res, label, className: row.name });
+      out.push({
+        ...res,
+        label,
+        className: row.name,
+        shortRest: registryShortRest(row.name, row.subclassName, row.level, res.label),
+      });
     }
   }
   return out;

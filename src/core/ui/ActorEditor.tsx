@@ -13,7 +13,7 @@ import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { parseClassLevels, hitDicePools } from "../rules/multiclass";
-import { resourcesForClasses, classHasResources } from "../rules/classResources";
+import { resourcesForClasses, classHasResources } from "../../modules/dnd-5e/classResources";
 import { castingAbilityForClass } from "../rules/multiclass";
 import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
@@ -1128,7 +1128,10 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
                         metadata: {
                           resourceKind: g.kind,
                           cost: g.reset === "shortRest" ? "Short Rest" : g.reset === "longRest" ? "Long Rest" : g.reset,
-                          details: [`Pool: ${g.max}`, `Reset: ${g.reset}`, g.note].filter(Boolean).join(" · "),
+                          details: [`Pool: ${g.max}`, `Reset: ${g.reset}`,
+                            /* The workbook registry's own recovery line, where it names one. */
+                            g.shortRest ? `Short rest: ${g.shortRest}` : "",
+                            g.note].filter(Boolean).join(" · "),
                           additive: String(g.max),
                         },
                       })),
