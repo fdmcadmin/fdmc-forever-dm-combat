@@ -60,6 +60,30 @@ const all = (text: string, ...phrases: string[]): string | null =>
   phrases.every(p => text.includes(p)) ? phrases.join(" + ") : null;
 
 /**
+ * ⚠ A REWORDING SILENTLY UNPRICED THE DARKMANE, AND "veil" ALONE CANNOT BE ON THIS LIST.
+ *
+ * v3_32 renamed the aura from "one-way magical OBSCUREMENT" to "one-way magical VEIL". The two
+ * rules below keyed on the word "obscurement", so the reworded trait matched nothing at all and
+ * the Darkmare's accuracy defence stopped being read — not mispriced, ABSENT.
+ *
+ * The campaign uses the bare noun everywhere else: the Veilwood Crone, the Veil-Torn Dragon, the
+ * Veilbound Drake Guard, and Veil Breath, which is a 4d6 fire cone. Matching "veil" on its own
+ * would price a breath weapon as concealment. So the additions describe an obscuring FIELD —
+ * "magical veil", "one-way veil" — and never the noun by itself.
+ */
+const OBSCURING = ["heavily obscured", "lightly obscured", "obscurement", "concealment",
+  "magical veil", "one-way veil"];
+
+/**
+ * The veil phrases report as ONE name, `magical-veil`, so the evidence on a defence row says which
+ * effect was read rather than which of two spellings happened to be in the sentence. Christopher:
+ * *"name it magical-veil"*.
+ */
+const VEIL_PHRASES = new Set(["magical veil", "one-way veil"]);
+const namedObscuring = (hit: string | null): string | null =>
+  hit === null ? null : (VEIL_PHRASES.has(hit) ? "magical-veil" : hit);
+
+/**
  * ⚠ HAVING A RESISTANCE AND BEATING ONE ARE OPPOSITE FACTS, and the word is the same.
  *
  * The Pale Drifter's Soul-Touched says its *"attacks are magical and overcome resistance to
@@ -209,7 +233,7 @@ const MATCHERS: Matcher[] = [
    */
   { label: "All attacks at disadvantage - 1 round",
     test: (n, t) => {
-      const obscuring = any(t, "heavily obscured", "lightly obscured", "obscurement", "concealment");
+      const obscuring = namedObscuring(any(t, ...OBSCURING));
       if (!obscuring) return null;
       const lapses = /until (it is hit|the first|hit once)|first attack|end of (its|the)|for 1 round|one round/.test(t);
       if (lapses) return null;
@@ -217,7 +241,7 @@ const MATCHERS: Matcher[] = [
       return constant ? `${obscuring}, constant` : null;
     } },
   { label: "Concealment until first attack hits each round",
-    test: (_n, t) => any(t, "heavily obscured", "lightly obscured", "obscurement", "concealment") },
+    test: (_n, t) => namedObscuring(any(t, ...OBSCURING)) },
   { label: "Shield-like +5 AC - 2 rounds",
     test: (_n, t) => /\+5 (bonus )?to ac|ac increases by 5/.test(t) && /2 rounds|two rounds/.test(t) ? "+5 AC for 2 rounds" : null },
   { label: "Shield-like +5 AC - 1 round",
