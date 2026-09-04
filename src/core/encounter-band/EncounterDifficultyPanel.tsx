@@ -631,6 +631,14 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               {" PROJECTED"}
                             </span>
                           )}
+                          {/*
+                            ⚠ WHY SUSTAIN CAN READ +0% ON A PARTY THAT CLEARLY MITIGATES.
+                            Bond mitigation is applied to the SIMULATION as `mitigationPerRound` —
+                            it lengthens MER directly — so it is already inside the reading and
+                            must not also be added here. Without saying so, "+0.0 (+0%)" next to
+                            "BONDS PREVENT 16.5 HP per round" reads as a broken number rather than
+                            as two figures counted in two different places.
+                          */}
                           {benchmark.rows.map(r => (
                             <span key={r.key} style={{ marginLeft: 7 }}
                               title={`${r.label} — this party ${r.current.toFixed(1)} vs published midpoint ${r.midpoint.toFixed(1)}`}>
@@ -645,6 +653,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               )}
                             </span>
                           ))}
+                          {(bondMitigation?.perRound ?? 0) > 0 && (
+                            <span style={{ color: "#777", marginLeft: 8 }}
+                              title="Bond mitigation lengthens rounds-to-fall directly in the simulation. Adding it to sustain as well would count it twice.">
+                              {"· bonds "}{(bondMitigation?.perRound ?? 0).toFixed(1)}{"/rd counted on the clock, not in sustain"}
+                            </span>
+                          )}
                         </div>
                       )}
                       {/*
