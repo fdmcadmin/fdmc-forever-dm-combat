@@ -33,6 +33,7 @@ import {
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
+import { partyBenchmark } from "./partyBenchmark";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
@@ -307,6 +308,35 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     baseDpr: profile?.dpr.round1, baseEhp: profile?.sustain,
     targetAC: fightInputs.targetAC, saveExposure: fightInputs.saveExposure,
   }), [chosen, profile, fightInputs]);
+
+  /**
+   * CURRENT PARTY vs MIDPOINT — `Rounds DPR & Sustain` row 73: *"Checker comparison | Current
+   * party vs midpoint | Delta | raw + percent"*.
+   *
+   * ⚠ ONLY WHEN A REAL PARTY IS CHOSEN. `resolved` is the whole gate. Against an unresolved
+   * roster the "current party" would BE the midpoint scaled for size, and a delta of a line
+   * against itself is a row of zeros pretending to be a reading.
+   *
+   * The current side is what this fight actually runs with — size scaling and arriving-spent
+   * depletion already in `profile` — plus the two contributions the app reads off the chosen
+   * characters rather than assumes: feat DPR on every round, and feat healing plus the resolved
+   * healing pool on sustain. Feat DPR is a flat per-round figure, so it lands on each round
+   * rather than on the round-1 anchor it was priced against.
+   */
+  const benchmark = useMemo(() => {
+    if (!profile || !resolved) return null;
+    return partyBenchmark({
+      level: partyLevel,
+      mode: equipmentMode,
+      current: {
+        round1: profile.dpr.round1 + partyFeats.dpr,
+        round2: profile.dpr.round2 + partyFeats.dpr,
+        round3: profile.dpr.round3 + partyFeats.dpr,
+        round4Plus: profile.dpr.round4Plus + partyFeats.dpr,
+        sustain: profile.sustain + partyFeats.partyEhp + partyHealing.total,
+      },
+    });
+  }, [profile, resolved, partyLevel, equipmentMode, partyFeats, partyHealing]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -587,6 +617,36 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                           </span>
                         )}
                       </div>
+                      {benchmark && (
+                        /*
+                          ⚠ THE LINE ABOVE IS WHAT THIS PARTY BRINGS; THIS ONE IS WHERE THAT SITS.
+                          Under is not a failure and over is not a pass — a three-player party
+                          reads under because it is short a body, which is the reading the DM
+                          wants before they decide what to put in front of it.
+                        */
+                        <div style={{ color: "#666", marginTop: 2 }}>
+                          <span style={{ color: "#888" }}>vs MIDPOINT</span>
+                          {benchmark.projected && (
+                            <span style={{ color: "#c0a060" }} title="Levels 17-20 have no population run in the workbook.">
+                              {" PROJECTED"}
+                            </span>
+                          )}
+                          {benchmark.rows.map(r => (
+                            <span key={r.key} style={{ marginLeft: 7 }}
+                              title={`${r.label} — this party ${r.current.toFixed(1)} vs published midpoint ${r.midpoint.toFixed(1)}`}>
+                              <span style={{ color: "#777" }}>{r.label}{" "}</span>
+                              <strong style={{ color: r.delta >= 0 ? "#4caf50" : "#e07b39" }}>
+                                {r.delta >= 0 ? "+" : "\u2212"}{Math.abs(r.delta).toFixed(1)}
+                              </strong>
+                              {r.percent !== null && (
+                                <span style={{ color: "#777" }}>
+                                  {" ("}{r.delta >= 0 ? "+" : "\u2212"}{Math.abs(r.percent * 100).toFixed(0)}{"%)"}
+                                </span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {/*
                         ⚠ UNDER SUSTAIN, NOT INSIDE IT — and that is the whole point.
 
