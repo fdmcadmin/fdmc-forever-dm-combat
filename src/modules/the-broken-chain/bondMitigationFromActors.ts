@@ -106,12 +106,21 @@ export type HostileExposure = {
   /** Each PC's own AC, so a forced target can be compared with the body it took the hit from. */
   perPc?: ReadonlyArray<{ actor: string; ac: number }>;
   /**
-   * How often the party provokes an opportunity attack in a round, 0..1.
+   * How often the denied opportunity attack would actually have happened, 0..1. Defaults to 1.
    *
-   * ⚠ NO DEFAULT, DELIBERATELY. An avoidance bond is worth exactly one prevented attack times how
-   * often that attack would have happened, and nothing in the roster knows how much the party
-   * moves. Absent leaves the bond reported rather than priced, which is the workbook's own rule:
-   * *"Missing context must never silently become zero."*
+   * ⚠ THE DEFAULT IS ONE, AND ASKING FOR A TABLE STATISTIC HERE WAS THE ERROR. Christopher: *"the
+   * avoidance you were talking about is the dart abilities which says take no OA, which means it
+   * has a full pricing."* Dart IS the movement — *"Move up to 10 ft without provoking"* — so the
+   * attack it denies is the one its own movement would have caused. That is not an unknown fact
+   * about how much a party walks; it is the ability's own trigger, and it fires whenever the
+   * ability is used.
+   *
+   * ⚠ AND ONE IS ALSO THE CEILING, from the Runtime Contract: *"Every actor has its authored
+   * normal Reaction budget, normally one."* An opportunity attack spends that Reaction, so denying
+   * it removes AT MOST one attack per round however the denial is worded — whether the character
+   * steps away untouched or the enemy is forbidden to swing.
+   *
+   * A caller that knows the character spent rounds standing still can pass a lower number.
    */
   provokeExposure?: number;
 };
@@ -137,10 +146,15 @@ function rollShiftPrevention(h: HostileExposure, averageShift: number): number {
   return (h.triggerExposure ?? 1) * (p - after) * Math.max(0, h.incomingDamagePerHit);
 }
 
-/** An opportunity attack that never happens removes the WHOLE expected attack, not part of it. */
-function avoidedAttackValue(h: HostileExposure): number | null {
-  if (h.provokeExposure === undefined) return null;
-  return clamp01(h.provokeExposure) * clamp01(h.normalHit) * Math.max(0, h.incomingDamagePerHit);
+/**
+ * An opportunity attack that never happens removes the WHOLE expected attack, not part of it.
+ *
+ * One denial, one Reaction, one attack — so this is `normalHit x incomingDamagePerHit`, the same
+ * full-attack figure the Avoidance family uses for a forced miss. It is the largest of the bond
+ * shapes precisely because nothing about the attack survives.
+ */
+function avoidedAttackValue(h: HostileExposure): number {
+  return clamp01(h.provokeExposure ?? 1) * clamp01(h.normalHit) * Math.max(0, h.incomingDamagePerHit);
 }
 
 /**
