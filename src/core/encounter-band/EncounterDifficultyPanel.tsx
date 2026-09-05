@@ -38,6 +38,8 @@ import { partyDefenceFromActors } from "./partyDefenceFromActors";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
+import { parseAttackBonus } from "./parseCreature";
+import { attackHitProbability } from "./checkerV2";
 import { attackProfile } from "../../modules/dnd-5e/featContextFromActor";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 
@@ -152,10 +154,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * reduction for self or others."* Read from the characters' own assignments, priced per round
    * because that is how often a bond fires — never folded into sustain, which is spent once.
    */
-  const bondMitigation = useMemo(
-    () => (resolved ? partyBondMitigationFromActors(chosen as never[]) : null),
-    [chosen, resolved],
-  );
+
   const targetAc = acOverride ?? actorDefence?.ac ?? defence.ac;
   /**
    * Six saves, unless the DM has typed one number to flatten them.
@@ -265,6 +264,46 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       assumptions: built.assumptions,
     };
   }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs]);
+
+  /**
+   * WHAT THE HOSTILE SIDE IS DOING, so the accuracy bonds stop reading as unpriceable.
+   *
+   * Three bond kinds were reported "real but NOT priced" for one reason: the pricer only ever
+   * received actors, so it had no per-attack damage and no hit chance to price a hit-chance effect
+   * against. Both are already in this panel — the roster's round-1 damage, and the templates' own
+   * attack bonuses against the AC this party actually presents.
+   *
+   * `incomingDamagePerHit` is recovered rather than assumed: published DPR already has hit chance
+   * inside it, so dividing by attacks AND by that chance gets back to what one landed hit costs.
+   */
+  const hostileExposure = useMemo(() => {
+    if (!encounter || targetAc === undefined || roster.roster.length === 0) return undefined;
+    let dpr = 0;
+    for (const g of roster.roster) {
+      dpr += Number(g.dpr?.round1 ?? 0) * Math.max(1, Number(g.quantity) || 1);
+    }
+    let attacks = 0;
+    let weightedBonus = 0;
+    for (const entry of encounter.entries ?? []) {
+      const template = monsterLibrary.find(m => m.templateId === entry.templateId);
+      if (!template) continue;
+      const bodies = Math.max(1, Number(entry.count) || 1);
+      const per = Math.max(1, Number(template.stats?.attacksPerTurn ?? 1));
+      const best = (template.actions ?? []).reduce(
+        (top: number, a) => Math.max(top, parseAttackBonus(String(a?.roll ?? "")) ?? 0), 0);
+      attacks += per * bodies;
+      weightedBonus += best * per * bodies;
+    }
+    if (!(dpr > 0) || !(attacks > 0)) return undefined;
+    const normalHit = attackHitProbability(weightedBonus / attacks, targetAc);
+    if (!(normalHit > 0)) return undefined;
+    return { incomingDamagePerHit: dpr / attacks / normalHit, normalHit };
+  }, [encounter, monsterLibrary, roster, targetAc]);
+
+  const bondMitigation = useMemo(
+    () => (resolved ? partyBondMitigationFromActors(chosen as never[], { hostile: hostileExposure }) : null),
+    [chosen, resolved, hostileExposure],
+  );
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought

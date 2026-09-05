@@ -76,6 +76,78 @@ import { BROKEN_CHAIN_BOND_GATES } from "./content/bondGates";
 /** What a bond option does for the party's survival. */
 export type MitigationKind = "reduction" | "temp" | "healing";
 
+/**
+ * WHAT THE HOSTILE SIDE IS DOING, which is the context these bonds were unpriced for want of.
+ *
+ * Three of the six unpriced reasons said the same thing in different words: *"pricing it needs the
+ * per-attack damage of the body being debuffed"*, *"needs that body's per-attack damage and how
+ * often the party provokes"*. The function only ever received actors, so it could not answer.
+ *
+ * The shapes below are the V3.0 feat-pricing grammar, not invented here. `2024:Protection` prices
+ * a reaction that imposes disadvantage as
+ *
+ *     reactionAvailable * adjacentAllyHitExposure * (normalHit - disadvantagedHit) * incomingDamagePerHit
+ *
+ * and `advantage_disadvantage_attack_matrix` in `pricingPrimitives.generated` gives the matrix it
+ * relies on: *"Base p=clamp((21+AB-AC)/20,.05,.95); advantage=1-(1-p)^2; disadvantage=p^2."*
+ */
+export type HostileExposure = {
+  /** Expected damage of ONE hostile attack that lands. */
+  incomingDamagePerHit: number;
+  /** The hostile side's hit chance against this party's AC — the grammar's `normalHit`. */
+  normalHit: number;
+  /** How often the priced trigger is legally available in a round, 0..1. Defaults to 1. */
+  triggerExposure?: number;
+  /**
+   * How often the party provokes an opportunity attack in a round, 0..1.
+   *
+   * ⚠ NO DEFAULT, DELIBERATELY. An avoidance bond is worth exactly one prevented attack times how
+   * often that attack would have happened, and nothing in the roster knows how much the party
+   * moves. Absent leaves the bond reported rather than priced, which is the workbook's own rule:
+   * *"Missing context must never silently become zero."*
+   */
+  provokeExposure?: number;
+};
+
+const clamp01 = (n: number): number => Math.min(1, Math.max(0, Number(n) || 0));
+
+/** Disadvantage turns p into p². The bond is worth the hit-chance it removes, times a hit's cost. */
+function disadvantagePrevention(h: HostileExposure): number {
+  const p = clamp01(h.normalHit);
+  return (h.triggerExposure ?? 1) * (p - p * p) * Math.max(0, h.incomingDamagePerHit);
+}
+
+/**
+ * A numeric penalty to the attack ROLL, priced as the hit chance it actually removes.
+ *
+ * ⚠ FLOORED AT THE NATURAL 20. A d20 shift moves hit chance by avg/20, but an attack roll of 20
+ * hits regardless, so the penalty cannot drive the chance below 0.05. Pricing the raw shift would
+ * overvalue the bond against a target the party already only hits on a 20.
+ */
+function rollShiftPrevention(h: HostileExposure, averageShift: number): number {
+  const p = clamp01(h.normalHit);
+  const after = Math.max(0.05, p - Math.max(0, averageShift) / 20);
+  return (h.triggerExposure ?? 1) * (p - after) * Math.max(0, h.incomingDamagePerHit);
+}
+
+/** An opportunity attack that never happens removes the WHOLE expected attack, not part of it. */
+function avoidedAttackValue(h: HostileExposure): number | null {
+  if (h.provokeExposure === undefined) return null;
+  return clamp01(h.provokeExposure) * clamp01(h.normalHit) * Math.max(0, h.incomingDamagePerHit);
+}
+
+/** "reduce ... by 1d8" -> 4.5. A flat "by 2" -> 2. Nothing readable -> null. */
+function averageShiftIn(text: string): number | null {
+  const dice = text.match(/(\d*)d(\d+)/i);
+  if (dice) {
+    const count = Number(dice[1] || 1);
+    const faces = Number(dice[2]);
+    if (count > 0 && faces > 0) return count * (faces + 1) / 2;
+  }
+  const flat = text.match(/by\s+(\d+)\b/i);
+  return flat ? Number(flat[1]) : null;
+}
+
 export type BondMitigationSource = {
   actor: string;
   bond: string;
@@ -262,7 +334,7 @@ function costsOwnHp(text: string): boolean {
  */
 export function partyBondMitigationFromActors(
   actors: readonly Actor[],
-  ctx?: { gates?: readonly BondStageGate[] },
+  ctx?: { gates?: readonly BondStageGate[]; hostile?: HostileExposure },
 ): PartyBondMitigation {
   if (!actors.length) return EMPTY;
 
@@ -310,15 +382,29 @@ export function partyBondMitigationFromActors(
       if (isForcedTargeting(text)) {
         unpriced.push({
           actor: actor.name, bond: template.name, option, reason: "targeting",
-          detail: "Redirects damage onto the tank rather than reducing it — an allocation effect.",
+          detail: "Redirects damage onto the tank rather than reducing it — an allocation effect. "
+            + "NEEDS_INPUT: the EHP of the body giving up the hit and of the body taking it. V3.0 prices "
+            + "redirection as `mountedUptime * mountProtectionValue`, and the roster models no per-PC EHP "
+            + "to fill mountProtectionValue with. Total damage is unchanged, so pricing it as prevention "
+            + "would credit the party with mitigation that never happened.",
         });
         continue;
       }
       if (kind === "reduction" && reducesAttackRoll(text)) {
-        unpriced.push({
-          actor: actor.name, bond: template.name, option, reason: "accuracy",
-          detail: "Reduces an ATTACK ROLL, not damage. Pricing it needs per-attack damage the roster does not carry.",
-        });
+        const shift = averageShiftIn(text);
+        const priced = ctx?.hostile && shift !== null
+          ? rollShiftPrevention(ctx.hostile, shift) : null;
+        if (priced !== null && priced > 0) {
+          sources.push({ actor: actor.name, bond: template.name, option, kind: "reduction", amount: priced, held });
+          perRound += priced;
+        } else {
+          unpriced.push({
+            actor: actor.name, bond: template.name, option, reason: "accuracy",
+            detail: shift === null
+              ? "Reduces an ATTACK ROLL by an amount this text does not state as a die or a number."
+              : "Reduces an ATTACK ROLL, not damage. NEEDS_INPUT: the hostile side's per-attack damage and hit chance.",
+          });
+        }
         continue;
       }
       if (summonsBody(text)) {
@@ -336,6 +422,12 @@ export function partyBondMitigationFromActors(
         continue;
       }
       if (avoidsOpportunityAttack(text)) {
+        const priced = ctx?.hostile ? avoidedAttackValue(ctx.hostile) : null;
+        if (priced !== null && priced > 0) {
+          sources.push({ actor: actor.name, bond: template.name, option, kind: "reduction", amount: priced, held });
+          perRound += priced;
+          continue;
+        }
         unpriced.push({
           actor: actor.name, bond: template.name, option, reason: "avoidance",
           detail: "Removes an opportunity attack from the fight — real prevented damage, but pricing it needs that body's per-attack damage and how often the party would have provoked.",
@@ -343,6 +435,12 @@ export function partyBondMitigationFromActors(
         continue;
       }
       if (imposesDisadvantage(text)) {
+        const priced = ctx?.hostile ? disadvantagePrevention(ctx.hostile) : null;
+        if (priced !== null && priced > 0) {
+          sources.push({ actor: actor.name, bond: template.name, option, kind: "reduction", amount: priced, held });
+          perRound += priced;
+          continue;
+        }
         unpriced.push({
           actor: actor.name, bond: template.name, option, reason: "accuracy",
           detail: "Imposes DISADVANTAGE on an attack — real mitigation, but a hit-chance effect. Pricing it needs the per-attack damage of the body being debuffed.",
