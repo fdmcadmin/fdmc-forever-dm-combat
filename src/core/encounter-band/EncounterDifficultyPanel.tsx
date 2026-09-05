@@ -37,6 +37,7 @@ import { partyBenchmark } from "./partyBenchmark";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
+import { slotCapabilityFromActors } from "../../modules/dnd-5e/slotCapability";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
 import { parseAttackBonus } from "./parseCreature";
 import { attackHitProbability } from "./checkerV2";
@@ -311,6 +312,16 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   const bondMitigation = useMemo(
     () => (resolved ? partyBondMitigationFromActors(chosen as never[], { hostile: hostileExposure }) : null),
     [chosen, resolved, hostileExposure],
+  );
+
+  /**
+   * ⚠ CAPACITY, NEVER A TOTAL. These slots are already inside the DPR curve; the point is that
+   * nothing said so, and nothing said what else they could have been. One Action per turn makes
+   * these alternatives, so they are counted as OPTIONS and never added to sustain or to damage.
+   */
+  const slotCapability = useMemo(
+    () => (resolved ? slotCapabilityFromActors(chosen as never[]) : null),
+    [chosen, resolved],
   );
 
   /**
@@ -700,7 +711,27 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               )}
                             </span>
                           ))}
-                          {(bondMitigation?.perRound ?? 0) > 0 && (
+                          {slotCapability && (
+                            /*
+                              ⚠ THE SAME SLOTS, NOT EXTRA ONES. A caster who heals did not also
+                              fireball, so these are alternatives and the line says so rather than
+                              letting three numbers read as a sum.
+                            */
+                            <span style={{ color: "#777", marginLeft: 8 }}
+                              title={slotCapability.contested.length
+                                ? slotCapability.contested
+                                    .map(c => `${c.actor} · ${c.slotLevel ? `L${c.slotLevel} slot` : "resource"}`
+                                      + ` → ${c.uses.join(" / ")} · ${c.options.join(", ")}`)
+                                    .join(" | ")
+                                : "No slot on this party is wanted by more than one kind of spell."}>
+                              {"· slots "}{slotCapability.byUse.healing}{"H/"}
+                              {slotCapability.byUse.damage}{"D/"}
+                              {slotCapability.byUse.control}{"C"}
+                              {slotCapability.contested.length > 0
+                                && ` · ${slotCapability.contested.length} contested`}
+                            </span>
+                          )}
+                                                    {(bondMitigation?.perRound ?? 0) > 0 && (
                             <span style={{ color: "#777", marginLeft: 8 }}
                               title="Bond mitigation lengthens rounds-to-fall directly in the simulation. Adding it to sustain as well would count it twice.">
                               {"· bonds "}{(bondMitigation?.perRound ?? 0).toFixed(1)}{"/rd counted on the clock, not in sustain"}
