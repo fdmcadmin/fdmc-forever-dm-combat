@@ -19,6 +19,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SHORT_REST_RECOVERY } from "./partyResourceCurve";
+import { shortRestRecoveryFromActors } from "../../modules/dnd-5e/shortRestRecovery";
 import {
   resolveActRun,
   restBlocks,
@@ -125,12 +126,24 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
    * THE SEQUENCE IS THE PART A RUN KNOWS. Each fight is priced with the party arriving as spent as
    * the fights before it left them (`customSustain`, the contract's own input for exactly this),
    * and a fight's cost is read from the checker's own `cumulativeMonsterDamage`. A long rest resets
-   * it; a short rest gives back what the DM says it is worth, because v7 publishes no party
-   * short-rest recovery and inventing one would silently move every fight after it.
+   * it; a short rest gives back what THIS party's Hit Dice are worth.
+   *
+   * ⚠ THAT USED TO BE A POPULATION MEDIAN FOR EVERY TABLE. `SHORT_REST_RECOVERY` is 0.255401, the
+   * median across 384 sampled L7-L9 parties, and the V3.0 method rules exactly that out: *"Each
+   * actor spends their own remaining Hit Dice one at a time until max HP or none remain."* The
+   * order of authority is now the DM's own override, then the party in front of you, then the
+   * published median when no actors are chosen — and the panel says which one it used.
    */
   const priced = useMemo(() => {
     const partySize = Math.max(1, run?.partySize ?? 4);
-    const recovery = Math.max(0, Math.min(1, run?.shortRestRecovery ?? SHORT_REST_RECOVERY));
+    /** Resolved per step, because the share depends on that step's own full sustain. */
+    const recoveryFor = (fullSustain: number): number => {
+      if (run?.shortRestRecovery !== undefined) {
+        return Math.max(0, Math.min(1, run.shortRestRecovery));
+      }
+      const derived = shortRestRecoveryFromActors(actors as never[], fullSustain);
+      return Math.max(0, Math.min(1, derived?.fraction ?? SHORT_REST_RECOVERY));
+    };
     let spent = 0;
     return resolved.map(step => {
       const encounter = encounters.find(e => e.id === step.encounterId);
@@ -174,7 +187,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         // fractions stay comparable across a block however depleted the party already was.
         const taken = result.rounds[result.rounds.length - 1]?.cumulativeMonsterDamage ?? 0;
         const cost = full.sustain > 0 ? taken / full.sustain : 0;
-        spent = nextArrivalSpent(spent, cost, step.restTaken, recovery);
+        spent = nextArrivalSpent(spent, cost, step.restTaken, recoveryFor(full.sustain));
         return { id: step.id, missing: false as const, arrivingSpent, result, cost };
       } catch {
         return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, result: null, cost: 0 };

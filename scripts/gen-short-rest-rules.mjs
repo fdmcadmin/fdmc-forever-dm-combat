@@ -178,9 +178,11 @@ export const SHORT_REST_RULES: readonly ShortRestRule[] = ${JSON.stringify(rules
     .replace(/"(key|scope|className|subclassName|resource|earliestLevel|recovery|timing|useLimit|registryStatus)":/g, "$1:")};
 
 /*
- * ⚠ ONE FUNCTION, DELIBERATELY. check:wiring fails a NEW ORPHAN EXPORT, and a convenience lookup
- * nobody calls is exactly that. A classShortRestRules and a knownShortRestClass were written here
- * and removed again for want of a caller; add them back WITH the code that needs them, not before.
+ * ⚠ ONE CONVENIENCE LOOKUP CAME BACK, AND ONLY BECAUSE SOMETHING CALLS IT. knownShortRestClass was
+ * written here, removed for want of a caller when check:wiring failed it as a NEW ORPHAN EXPORT,
+ * and restored when shortRestRecovery.ts needed it to tell "this class has no Hit Dice" apart from
+ * "this class is not in the registry". A classShortRestRules is still absent for the same reason:
+ * add it back WITH the code that needs it, not before.
  */
 /**
  * The rules that actually apply to one character: their class rules plus their subclass's own,
@@ -205,6 +207,18 @@ export function shortRestRulesFor(
   });
 }
 
+
+/**
+ * Does the registry know this class at all?
+ *
+ * ⚠ THE DIFFERENCE THIS DRAWS IS THE WHOLE POINT. A class with no Hit Dice and a class the
+ * registry has never heard of both produce nothing; only the second is a gap. Callers use this to
+ * report the second instead of quietly recovering zero for it.
+ */
+export function knownShortRestClass(className: string): boolean {
+  const want = className.trim().toLowerCase();
+  return SHORT_REST_RULES.some(r => r.className.toLowerCase() === want);
+}
 `;
 
 fs.writeFileSync(OUT, out);
