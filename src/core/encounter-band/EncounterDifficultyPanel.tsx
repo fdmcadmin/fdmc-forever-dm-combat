@@ -295,10 +295,18 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       weightedBonus += best * per * bodies;
     }
     if (!(dpr > 0) || !(attacks > 0)) return undefined;
-    const normalHit = attackHitProbability(weightedBonus / attacks, targetAc);
+    const attackBonus = weightedBonus / attacks;
+    const normalHit = attackHitProbability(attackBonus, targetAc);
     if (!(normalHit > 0)) return undefined;
-    return { incomingDamagePerHit: dpr / attacks / normalHit, normalHit };
-  }, [encounter, monsterLibrary, roster, targetAc]);
+    return {
+      incomingDamagePerHit: dpr / attacks / normalHit,
+      normalHit,
+      attackBonus,
+      /* Per-PC ACs, so a redirection bond can be priced between two NAMED bodies rather than
+         against the party's mean — the mean is the one AC that cannot express a transition. */
+      perPc: actorDefence?.perPc.map(p => ({ actor: p.actor, ac: p.ac })),
+    };
+  }, [encounter, monsterLibrary, roster, targetAc, actorDefence]);
 
   const bondMitigation = useMemo(
     () => (resolved ? partyBondMitigationFromActors(chosen as never[], { hostile: hostileExposure }) : null),

@@ -99,6 +99,13 @@ export type HostileExposure = {
   /** How often the priced trigger is legally available in a round, 0..1. Defaults to 1. */
   triggerExposure?: number;
   /**
+   * The hostile side's raw attack bonus, needed to re-roll `normalHit` against a SPECIFIC body.
+   * `normalHit` is against the party's mean AC; redirection is a question about two named ACs.
+   */
+  attackBonus?: number;
+  /** Each PC's own AC, so a forced target can be compared with the body it took the hit from. */
+  perPc?: ReadonlyArray<{ actor: string; ac: number }>;
+  /**
    * How often the party provokes an opportunity attack in a round, 0..1.
    *
    * ⚠ NO DEFAULT, DELIBERATELY. An avoidance bond is worth exactly one prevented attack times how
@@ -136,6 +143,49 @@ function avoidedAttackValue(h: HostileExposure): number | null {
   return clamp01(h.provokeExposure) * clamp01(h.normalHit) * Math.max(0, h.incomingDamagePerHit);
 }
 
+/**
+ * WHAT FORCING AN ATTACK ONTO ANOTHER BODY IS WORTH.
+ *
+ * Christopher: *"The app doesn't need someone to tell it an abstract mountProtectionValue. It can
+ * literally run those events."* Right — the transition is between two bodies whose ACs this panel
+ * already holds, so the price is the expected damage the attack stops doing:
+ *
+ *     ED(original target) - ED(forced target)
+ *
+ * The original target is the body focus fire would pick, which is the EASIEST to hit — the lowest
+ * AC in the party. The forced target is the bond's owner.
+ *
+ * ⚠ CLAMPED AT ZERO, AND THAT IS THE MODEL BEING RIGHT RATHER THAN GENEROUS. If the Guardian was
+ * already the enemy's best target the marginal value is correctly nothing, which is exactly what
+ * the Guardian ladder predicts.
+ *
+ * ⚠ THIS IS THE AC TERM ONLY, AND IT IS THE DOMINANT ONE, NOT THE WHOLE ONE. The full transition
+ * also carries resistance, temporary HP, down-state risk, concentration and actor-specific
+ * recovery. `PcDefence` publishes AC, saves and initiative — no HP — so keeping a 12-HP wizard
+ * alive is NOT in this figure. It is a floor on the bond's value, and the panel says so rather
+ * than implying the number is complete.
+ */
+function targetingPrevention(
+  h: HostileExposure, ownerName: string, forcedAttacks: number,
+): number | null {
+  if (h.attackBonus === undefined || !h.perPc || h.perPc.length < 2) return null;
+  const owner = h.perPc.find(p => p.actor === ownerName);
+  if (!owner) return null;
+  const others = h.perPc.filter(p => p.actor !== ownerName);
+  if (!others.length) return null;
+  const easiest = others.reduce((low, p) => (p.ac < low.ac ? p : low), others[0]);
+  const hit = (ac: number): number => Math.min(0.95, Math.max(0.05, (21 + h.attackBonus! - ac) / 20));
+  const perAttack = (hit(easiest.ac) - hit(owner.ac)) * Math.max(0, h.incomingDamagePerHit);
+  return Math.max(0, perAttack) * Math.max(1, forcedAttacks);
+}
+
+/** "first two attack rolls" -> 2; "its first attack roll" -> 1. The Guardian ladder in one line. */
+function forcedAttackCount(text: string): number {
+  if (/\b(two|2)\b[^.]{0,30}attack/i.test(text)) return 2;
+  if (/\b(three|3)\b[^.]{0,30}attack/i.test(text)) return 3;
+  return 1;
+}
+
 /** "reduce ... by 1d8" -> 4.5. A flat "by 2" -> 2. Nothing readable -> null. */
 function averageShiftIn(text: string): number | null {
   const dice = text.match(/(\d*)d(\d+)/i);
@@ -165,14 +215,26 @@ export type BondUnpriced = {
   bond: string;
   option: string;
   /**
-   * `accuracy`  a to-hit penalty or disadvantage.
-   * `avoidance` an opportunity attack that never happens — Dart, Ghoststep, Disrupt.
-   * `targeting` forced targeting, which redirects rather than reduces.
+   * ⚠ THE FAMILIES WERE MISNAMED, AND THE NAME WAS DOING REAL DAMAGE.
+   *
+   * `avoidance` meant "an opportunity attack that never happens", which is far narrower than the
+   * family it was named for. Christopher: *"Avoidance does not equal OA exposure. provokeExposure
+   * belongs under Opportunity Attack Avoidance / Movement Safety, while the broader defensive
+   * Avoidance family covers attacks being less likely to successfully damage the protected
+   * actor."* Filed that way, the whole Avoidance family looked unpriceable because ONE member of
+   * it needed a number nobody had.
+   *
+   * `accuracy`  a to-hit penalty or imposed disadvantage. Overlaps Avoidance mathematically and
+   *             is priced by the same shape; kept as its own label so the panel can say which
+   *             sentence it read.
+   * `oaDenial`  an opportunity attack that never happens — Dart, Ghoststep, Disrupt. Movement
+   *             safety, NOT the Avoidance family, and the only one that wants `provokeExposure`.
+   * `targeting` forced targeting. Priced as a state transition between two named bodies.
    * `body`      a summoned creature that soaks attacks — Covenant's Call.
    * `cost`      the option COSTS the party HP — Siphon's Sacrifice. Negative mitigation.
    * `modifier`  the term v13 names no ability for.
    */
-  reason: "accuracy" | "avoidance" | "targeting" | "body" | "cost" | "modifier";
+  reason: "accuracy" | "avoidance" | "oaDenial" | "targeting" | "body" | "cost" | "modifier";
   detail: string;
 };
 
@@ -380,13 +442,19 @@ export function partyBondMitigationFromActors(
         });
       }
       if (isForcedTargeting(text)) {
+        const priced = ctx?.hostile
+          ? targetingPrevention(ctx.hostile, actor.name, forcedAttackCount(text)) : null;
+        if (priced !== null && priced > 0) {
+          sources.push({ actor: actor.name, bond: template.name, option, kind: "reduction", amount: priced, held });
+          perRound += priced;
+          continue;
+        }
         unpriced.push({
           actor: actor.name, bond: template.name, option, reason: "targeting",
-          detail: "Redirects damage onto the tank rather than reducing it — an allocation effect. "
-            + "NEEDS_INPUT: the EHP of the body giving up the hit and of the body taking it. V3.0 prices "
-            + "redirection as `mountedUptime * mountProtectionValue`, and the roster models no per-PC EHP "
-            + "to fill mountProtectionValue with. Total damage is unchanged, so pricing it as prevention "
-            + "would credit the party with mitigation that never happened.",
+          detail: "Redirects an attack onto this character. NEEDS_INPUT: the hostile attack bonus and "
+            + "the party's per-PC ACs, so the transition can be priced as ED(original) - ED(forced). "
+            + "With a chosen party and a selected encounter both are present and it prices; without "
+            + "them there is no second body to compare against.",
         });
         continue;
       }
@@ -429,7 +497,7 @@ export function partyBondMitigationFromActors(
           continue;
         }
         unpriced.push({
-          actor: actor.name, bond: template.name, option, reason: "avoidance",
+          actor: actor.name, bond: template.name, option, reason: "oaDenial",
           detail: "Removes an opportunity attack from the fight — real prevented damage, but pricing it needs that body's per-attack damage and how often the party would have provoked.",
         });
         continue;
