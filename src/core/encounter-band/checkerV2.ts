@@ -182,13 +182,31 @@ export function resolvePartyProfile(opts: {
   const row = (partyCurve
     ? partyCurve.curve.find(candidate => Number(candidate.level) === Number(level))
     : partyCurveRow(level)) as
-    | { evidence?: string; wotcStandard: PartyCurveModeLike; brokenChain: PartyCurveModeLike }
+    | {
+        evidence?: string;
+        wotcStandard: PartyCurveModeLike;
+        brokenChain: PartyCurveModeLike;
+        /** Certified per-size rows; absent on an injected curve, which then scales as before. */
+        bySize?: Partial<Record<number, { wotcStandard: PartyCurveModeLike; brokenChain: PartyCurveModeLike }>>;
+      }
     | undefined;
   if (!row) throw new RangeError(`party curve does not contain level ${level}`);
   if (!Number.isInteger(size) || size < 1) throw new RangeError("size must be a positive integer");
   const modeKey: PartyEquipmentMode = equipmentMode === "brokenChain" ? "brokenChain" : "wotcStandard";
-  const source = row[modeKey];
-  const scale = size / 4;
+  /**
+   * ⚠ THE CERTIFIED SIZE ROW WINS OVER SCALING, because scaling could not answer the question.
+   *
+   * `size / 4` applied to the party and `partySizeHpMultiplier` applied to creature EHP are both
+   * linear in size, so they cancelled and party size never moved time-to-clear. V3.0 certifies
+   * 3P/5P/6P independently and they are not linear — six-player sustain at level 6 Broken Chain is
+   * 1.74x the four-player figure, not 1.50x.
+   *
+   * Scaling remains the fallback for a size the table does not certify, so an unusual party still
+   * gets an answer rather than an exception.
+   */
+  const sized = row.bySize?.[size];
+  const source = sized ? sized[modeKey] : row[modeKey];
+  const scale = sized ? 1 : size / 4;
   const campaignEnabled = modeKey === "brokenChain";
   const convergenceBurst = campaignEnabled
     ? convergence.reduce((sum, item) => sum + Number(item.round1Burst ?? 0), 0) : 0;
@@ -199,7 +217,7 @@ export function resolvePartyProfile(opts: {
    * wotcStandard the two rows are the same object, so the gift delta is zero and this is a plain
    * scale.
    */
-  const base = row.wotcStandard;
+  const base = sized ? sized.wotcStandard : row.wotcStandard;
   const spent = Math.min(1, Math.max(0, Number(arrivingSpent) || 0));
   const deplete = (key: "round1" | "round2" | "round3" | "round4Plus"): number =>
     depleteRoundValue(base[key] * scale, source[key] * scale, spent);
