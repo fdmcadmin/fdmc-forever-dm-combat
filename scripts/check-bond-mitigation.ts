@@ -306,8 +306,16 @@ console.log("\nA whole party sums, one option each");
   ok("no AUTHORED bond falls into the catch-all — all fourteen have a real category",
     s.bondWithoutMitigation.length === 0,
     s.bondWithoutMitigation.map(b => `${b.actor} ${b.bond}`).join(", ") || "empty");
-  ok("Skirmish is classified as AVOIDANCE, not as 'no mitigation'",
-    s.unpriced.some(u => u.actor === "Runner" && u.reason === "avoidance"),
+  /**
+   * ⚠ THE LABEL MOVED, THE MEANING DID NOT. Skirmish's Dart is an opportunity attack that never
+   * happens — movement safety. It was filed under `avoidance`, which named the whole defensive
+   * family after this one narrow member, and that made the family look unpriceable because Dart
+   * alone needs a provoke rate nobody has. Christopher: "Avoidance does not equal OA exposure."
+   * Imposed disadvantage and forced rerolls are the Avoidance family and they price; this is
+   * `oaDenial` and it still, correctly, does not.
+   */
+  ok("Skirmish is classified as OA DENIAL, not as 'no mitigation'",
+    s.unpriced.some(u => u.actor === "Runner" && u.reason === "oaDenial"),
     s.unpriced.filter(u => u.actor === "Runner").map(u => u.reason).join(", ") || "none");
   ok("the total is their sum",
     Math.abs(m.perRound - m.sources.reduce((s, x) => s + x.amount, 0)) < 1e-9);
