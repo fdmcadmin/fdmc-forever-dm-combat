@@ -212,3 +212,6 @@ jobs:
 
       - name: check resource ledger
         run: npm run check:ledger
+
+      - name: check neutral damage mix
+        run: npm run check:neutralmix

@@ -84,6 +84,12 @@ export type DamageMixSource = {
 };
 
 export type PartyDamageMix = {
+  /**
+   * WHERE THE SHARES CAME FROM. `actors` is this table's own characters; `published-neutral` is
+   * the certified profile used when no party is chosen. A derived number is still reported, and it
+   * has to say which one it is — a table whose damage is 40% radiant is not the published mix.
+   */
+  source?: "actors" | "published-neutral";
   /** Damage type (lower case) → its share of the party's TYPED output, 0–1. */
   shares: Record<string, number>;
   /** Expected typed damage the shares were computed over. */

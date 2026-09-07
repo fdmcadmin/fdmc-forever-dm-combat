@@ -31,6 +31,7 @@ import { lairRosterGroups } from "./lairRoster";
 import { summonRosterGroups } from "./summonRoster";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
+import { neutralDamageMix } from "../../modules/dnd-5e/neutralDamageProfile";
 import { priceDamageResponses, describeDamageResponses } from "./damageResponsePricing";
 import type { PartyDamageMix } from "./partyDamageMix";
 import { traceCreature } from "./actionTrace";
@@ -224,7 +225,17 @@ export function traitFactorsFor(
    * one: a creature can hold `Resistance - ~25% of opposing damage` as a calibrated trait AND be
    * immune to cold, and those are different claims about different damage.
    */
-  const typed = priceDamageResponses(template.stats.damageResponses, damageMix);
+  /**
+   * ⚠ NO PARTY IS NOT NO ANSWER. A typed response used to price at NOTHING when no actors were
+   * readable, so a Gate II mirror resistant to bludgeoning, piercing and slashing was worth zero
+   * and the panel asked the DM to type a share in by hand. The workbook publishes that share:
+   * `Neutral Damage Profile` gives the certified curve's damage as TYPES, which is the one form a
+   * general line can carry without smuggling somebody else's Wizard into this table's answer.
+   *
+   * A party read off real characters always outranks it — this is the floor, not the preference.
+   */
+  const mixForPricing = damageMix ?? neutralDamageMix();
+  const typed = priceDamageResponses(template.stats.damageResponses, mixForPricing);
   if (typed.multiplier !== 1) {
     factors.push({
       stackGroup: "typed_damage_response",
@@ -242,7 +253,7 @@ export function traitFactorsFor(
     out.push({ creature: name, flag: "NEEDS DM INPUT", field: "damage_response",
       detail: gap > 0
         ? `"${r.response} to ${r.type}" prices at nothing because this party's damage mix cannot be read: ${gap} damaging action${gap === 1 ? "" : "s"} on the actors state no damage type (${damageMix!.untyped.slice(0, 3).map(u => u.label).join(", ")}${gap > 3 ? ", …" : ""}). Set the damage type on those actions and every typed response prices itself.`
-        : `"${r.response} to ${r.type}" is recorded but there are no readable party actors to weigh it against, so it prices at nothing. The workbook weights it by the party's ACTUAL share of that damage type — choose the party's actors, or enter the share directly.` });
+        : `"${r.response} to ${r.type}" carries no published share either, so it prices at nothing. Choose the party's actors, or give the type a share.` });
   }
   /**
    * ⚠ A DERIVED NUMBER IS STILL REPORTED. It is not a gap — nothing is being asked for — but the
@@ -266,12 +277,24 @@ export function traitFactorsFor(
    */
   for (const d of typed.derived) {
     const pct = (d.share * 100).toFixed(1);
+    /**
+     * ⚠ SAY WHOSE SHARE IT IS. These lines all read "this party's own … share, read from their
+     * actions", which was true while the only source WAS the actors. Now that a typed response
+     * falls back to the published neutral profile when no party is chosen, the same sentence would
+     * claim a reading of characters that were never selected — a number telling the truth under a
+     * label that does not.
+     */
+    const fromActors = mixForPricing.source !== "published-neutral";
+    const whose = fromActors ? "this party's own" : "the published neutral profile's";
+    const howRead = fromActors
+      ? ", read from their actions."
+      : " — no party is chosen, so the certified curve's typed mix is used. Choose the actors to read the real share.";
     out.push({ creature: name, flag: d.qualifierUnresolved ? "NEEDS DM INPUT" : "ESTIMATED", field: "damage_response",
       detail: (d.share === 0
-        ? `"${d.response.response} to ${d.response.type}" prices at nothing because none of this party's readable damage is ${d.response.type} — read from their own actions, not assumed.`
+        ? `"${d.response.response} to ${d.response.type}" prices at nothing because none of ${fromActors ? "this party's readable damage" : "the published neutral profile"} is ${d.response.type}${fromActors ? " — read from their own actions, not assumed." : "."}`
         : d.qualifierUnresolved
-          ? `"${d.response.response} to ${d.response.type} ${d.response.qualifier}" priced at this party's full ${pct}% ${d.response.type} share. The qualifier narrows what is eligible and cannot be read from prose, so this is the UPPER bound — enter a share to state the real one.`
-          : `"${d.response.response} to ${d.response.type}" priced at this party's own ${pct}% ${d.response.type} share, read from their actions.`) + cover });
+          ? `"${d.response.response} to ${d.response.type} ${d.response.qualifier}" priced at ${whose} full ${pct}% ${d.response.type} share. The qualifier narrows what is eligible and cannot be read from prose, so this is the UPPER bound — enter a share to state the real one.`
+          : `"${d.response.response} to ${d.response.type}" priced at ${whose} ${pct}% ${d.response.type} share${howRead}`) + cover });
   }
 
   if (factors.length === 0 && template.stats.kitMultiplier && template.stats.kitMultiplier !== 1) {
