@@ -38,6 +38,17 @@ const party = [
   actor("Test Paladin B", [
     restResource("loh-b", "Lay On Hands Pool", 45, "long", "pool", "45 HP / Long Rest. Spend points to heal (any amount).", "Paladin Features"),
   ]),
+  actor("Test Paladin C", [
+    /**
+     * WARNING: THE REAL SHEETS SAY "HEALING POINTS", NOT "HP".
+     *
+     * Both fixtures above were worded "45 HP / Long Rest" and passed a denomination test that the
+     * live party failed. A campaign Paladin authors "25 healing points / Long Rest", so the reader
+     * excluded her as counted-in-uses and the whole party healing total came out 0. A fixture that
+     * only says the phrasing the code already accepted is a gate that cannot fail.
+     */
+    restResource("loh-c", "Lay On Hands", 25, "long", "pool", "Pool: 25 · Reset: Long Rest · 25 healing points / Long Rest. Healing spends any amount.", "Paladin Features"),
+  ]),
   actor("Test Aasimar", [
     // Heals, but counted in USES — a 1 is not 1 HP, so it must be excluded rather than summed.
     restResource("hh", "Healing Hands", 1, "long", "pool", "1 / Long Rest. Touch a creature to heal it.", "Aasimar"),
@@ -60,7 +71,13 @@ const excluded = (label: RegExp) => h.excluded.some(e => label.test(e.label));
 
 if (h.sources.length === 0) problems.push("no healing pools found at all — the actor shape has probably changed");
 if (!has(/lay on hands/i)) problems.push("Lay on Hands was not read");
-if (h.total !== 90) problems.push(`expected 90 HP from two 45-point pools, got ${h.total}`);
+/**
+ * WARNING: THE REAL SHEETS SAY "HEALING POINTS". A pool worded that way was excluded as
+ * counted-in-uses, so the live party read +0 healing while both fixtures here said "HP".
+ */
+if (!h.sources.some(s => /healing points/i.test(String(s.evidence ?? ""))))
+  problems.push("a pool denominated in HEALING POINTS was not read as hit points");
+if (h.total !== 115) problems.push(`expected 115 HP from two 45-point pools and one 25-point pool, got ${h.total}`);
 if (!excluded(/hit dice/i)) problems.push("Hit Dice were not excluded — they are short-rest recovery and already counted by SHORT_REST_RECOVERY");
 if (!excluded(/healing hands/i)) problems.push("a heal counted in USES was summed as if it were hit points");
 if (has(/stonecunning/i)) problems.push("Stonecunning was read as healing — the match is too loose");

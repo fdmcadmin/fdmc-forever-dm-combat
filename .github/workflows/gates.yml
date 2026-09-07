@@ -206,3 +206,6 @@ jobs:
 
       - name: check bond double count
         run: npm run check:bonddouble
+
+      - name: check party healing from actors
+        run: npm run check:partyheal

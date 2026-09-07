@@ -117,7 +117,21 @@ export function partyHealingFromActors(actors: ActorLike[]): PartyHealing {
        * max IS the healing. A pool of USES — three castings of something — is a different unit,
        * and treating a 3 as 3 HP would be nonsense. Only a pool that says HP is read as HP.
        */
-      if (!/\bhp\b|hit points/.test(text)) {
+      /**
+       * WARNING: "HEALING POINTS" IS A HIT POINT, AND THIS DID NOT KNOW THE WORD.
+       *
+       * The test accepted only "hp" and "hit points". Lay on Hands is authored as
+       * "25 healing points / Long Rest" - the one pool this whole reader was written for - so the
+       * Paladin was excluded as "counted in uses, not hit points" and the party healing total came
+       * out at exactly 0. Christopher: *"the healing and stuff like that from the screenshots
+       * should move the current numbers if they were already counted right?"* It should have;
+       * nothing was reaching the total to move it.
+       *
+       * WARNING: "POINTS" ALONE STAYS OUT. Ki, sorcery and psi points are pools of USES, and
+       * reading a 5 as 5 HP would be nonsense - which is what this guard exists to stop. Only the
+       * phrase that says the points ARE healing is added.
+       */
+      if (!/\bhp\b|hit points|healing points?/.test(text)) {
         excluded.push({ actor: who, label, reason: "The pool heals but is counted in uses, not hit points — its size cannot be read as HP." });
         continue;
       }
