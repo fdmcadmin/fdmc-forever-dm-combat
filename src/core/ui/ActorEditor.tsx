@@ -511,19 +511,23 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
       </div>
 
       {/* ── DAMAGE RESPONSES ────────────────────────────────────────────────────────────────
-          ⚠ THE CHECKER HAD NOWHERE TO READ THIS FROM. A creature has carried damage responses
-          since the monster reader existed and the checker prices them against the party's own
-          damage mix. The party side had NO FIELD AT ALL, so a Barbarian's rage resistance and a
-          Celestial's necrotic/radiant lived only as English inside a feature description — and
-          the app does not read mechanics out of prose. This is that field, entered exactly the
-          way a creature's is, and priced by the same function pointed the other way. */}
+          ⚠ THE CLASS AND LINEAGE ONES ARE ALREADY KNOWN. Christopher: *"all of those resistances
+          should be there because they are based on classes not because they want them, same with
+          the rage, it should already be known what rage resists."* `classDamageResponses` derives
+          them from the stated race and class, so this box is the OVERRIDE and the extension — for
+          a resistance that turns on a choice the sheet does not record, and for homebrew. */}
       <div style={{ padding: "8px 10px", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6 }}>
-        <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4a9eff", fontSize: 11 }}>Damage responses</span>
+        <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4a9eff", fontSize: 11 }}>Extra damage responses</span>
         <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>
-          Types this character resists, ignores, or takes double from. The encounter checker weighs
-          each one against how much damage of that type the fight actually throws — so a resistance
-          to something nothing in the fight deals is correctly worth nothing. Leave it empty when
-          the character has none.
+          <strong style={{ color: "#aaa" }}>You do not need to enter what the class or lineage already grants.</strong>{" "}
+          A Dwarf's poison resistance, an Aasimar's necrotic and radiant, and a Barbarian's
+          bludgeoning/piercing/slashing while raging are known from the Race and Class above — and
+          the rage one is counted for as many fights as that character has rages.
+        </p>
+        <p style={{ fontSize: 11, color: "#888", margin: "6px 0 0" }}>
+          Add a row for one that depends on a choice the sheet does not record — a Dragonborn's
+          ancestry, a Tiefling's legacy, a Totem Barbarian's animal — or for homebrew. Entering a
+          type that is already derived REPLACES it, so this is also how you correct one.
         </p>
         {draft.damageResponses.map((r, i) => (
           <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>

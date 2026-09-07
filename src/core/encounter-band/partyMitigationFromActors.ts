@@ -6,15 +6,23 @@
  * the mirror of it: the party's responses priced against the ROSTER's damage mix, with the same
  * function, so there is one model of "what does a resistance remove" pointed both ways.
  *
- * ─── ⚠ WHY THIS TOOK SO LONG, STATED PLAINLY ────────────────────────────────────────────────
+ * ─── ⚠ MOST OF IT IS KNOWN WITHOUT BEING TOLD ───────────────────────────────────────────────
  *
- * There was nowhere to put the data. A creature carries `stats.defenses`; an `Actor` carried no
- * equivalent field at all, so Ash's *"Resistance to Necrotic and Radiant damage"* and Ripsnarl's
- * Rage resistance to bludgeoning, piercing and slashing existed only as English inside a feature's
- * description. Reading a mechanic out of prose is the one thing this codebase refuses to do, and
- * "the class is called Barbarian so it must resist B/P/S" is exactly that with extra steps. So
- * `Actor.damageResponses` is a STATED field, entered the way a creature's is, and everything below
- * prices what the DM said and reports every character who said nothing.
+ * Christopher, 2026-09-07: *"all of those resistances should be there because they are based on
+ * classes not because they want them, same with the rage, it should already be known what rage
+ * resists."*
+ *
+ * The first version of this file asked the DM to enter every one, reasoning that the app must not
+ * read a mechanic out of a feature's description. That rule is real and it is a rule about PROSE —
+ * it does not mean the app may not know what raging does. `classDamageResponses` is the hand-built
+ * rule table, keyed on the STATED race and class, in exactly the shape `casterLean` and
+ * `weaponMastery` already use; the entered field is now the override and the extension for the
+ * cases that genuinely turn on a choice the sheet does not state.
+ *
+ * ⚠ AND A CONDITIONAL ONE IS COUNTED FOR THE FIGHTS IT COVERS. Rage's resistance lasts as long as
+ * the rage. A level 1 Barbarian gets two, regains one at the day's single Short Rest, and the day
+ * is five fights — so it covers three fights in five and is weighed at 0.6, a figure the resource
+ * ledger already holds rather than one anybody has to supply.
  *
  * ─── ⚠ ONE REACTION PER CHARACTER PER ROUND, AND IT IS CONTENDED ────────────────────────────
  *
@@ -28,15 +36,16 @@
  * The bond figure is passed in for exactly this reason: `partyBondMitigationFromActors` already
  * prices the bond side, and the two must contend rather than stack.
  *
- * ⚠ AND A CONDITIONAL RESISTANCE IS NOT AN UNCONDITIONAL ONE. Rage lasts as long as the rage does.
- * The qualifier is where a DM says so, nothing here can evaluate it, and the honest handling is
- * the same one `priceDamageResponses` already uses: price the full share as the UPPER BOUND and
- * report that the qualifier was not read — never silently narrow it, never silently drop it.
+ * ⚠ AND A CONDITION NOTHING CAN COUNT IS STILL REPORTED. A gate with a named resource is counted
+ * above; a free-text qualifier the app cannot evaluate is priced at the UPPER BOUND and flagged as
+ * unread — never silently narrowed, never silently dropped.
  */
 
 import type { Actor } from "../types/actor";
 import { priceDamageResponses, type DamageResponse } from "./damageResponsePricing";
 import { partyDamageMixFromActors, type PartyDamageMix } from "./partyDamageMix";
+import { damageResponsesForActor, type DerivedDamageResponse } from "../../modules/dnd-5e/classDamageResponses";
+import { resourceLedgerFromActor, RESOURCE_DAY } from "./resourceLedger";
 import { damageExpressionAverage } from "./damageExpression";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 
@@ -77,7 +86,19 @@ export type PartyMitigation = {
    */
   multiplier: number;
   /** The responses that produced it, with the incoming share each was weighed at. */
-  resisted: Array<{ actor: string; response: DamageResponse; share: number; qualifierUnresolved: boolean }>;
+  resisted: Array<{
+    actor: string;
+    response: DerivedDamageResponse;
+    /** The share of INCOMING damage this one removed, after party scaling and any resource gate. */
+    share: number;
+    /** Where the rule came from — a lineage, a class, or the sheet. */
+    source: string;
+    /** Fraction of the day fights its gating resource can cover. Unset when nothing gates it. */
+    uptime?: number;
+    /** How that fraction was counted, so a number nobody typed is one they can argue with. */
+    uptimeNote?: string;
+    qualifierUnresolved: boolean;
+  }>;
   /**
    * HP per round the party's REACTIONS prevent, already contended: one per character, the best of
    * whatever that character could have spent it on.
@@ -89,15 +110,29 @@ export type PartyMitigation = {
    * appear is a decision the DM can see rather than a number that went missing.
    */
   displacedByBond: Array<{ actor: string; action: string; amount: number; bondAmount: number }>;
-  /** Characters carrying no stated `damageResponses` at all. A zero that says whose it is. */
+/**
+   * Characters with no damage responses at all — none from their class or lineage, and none
+   * entered. A zero that says whose it is.
+   */
   withoutStatedResponses: string[];
   /** Responses that could not be weighed, because the roster's damage is untyped. */
   unweighted: DamageResponse[];
+  /**
+   * How much of the ROSTER's damage carried a type at all, 0..1.
+   *
+   * ⚠ A SHARE IS A SHARE OF WHAT COULD BE TYPED, NOT OF EVERYTHING. The Veilwood Crone types a
+   * quarter of her output, and all of that quarter is slashing — so a slashing resistance reads
+   * as removing 100% of incoming when it removes at most a quarter of it, and a bludgeoning one
+   * reads as 0% when it may remove plenty. Neither is fixable here (the fix is typing the stat
+   * block), so the coverage is carried out so the panel can say how much of the fight the
+   * multiplier was actually derived from.
+   */
+  mixCoverage: number;
 };
 
 const EMPTY: PartyMitigation = {
   multiplier: 1, resisted: [], reactionPerRound: 0, reactions: [],
-  displacedByBond: [], withoutStatedResponses: [], unweighted: [],
+  displacedByBond: [], withoutStatedResponses: [], unweighted: [], mixCoverage: 0,
 };
 
 function actionsOf(actor: Actor): Array<{ tab: string; action: Record<string, unknown> }> {
@@ -194,16 +229,54 @@ export function partyMitigationFromActors(
    */
   const scaled: DamageResponse[] = [];
   for (const actor of actors) {
-    const own = actor.damageResponses ?? [];
+    /** The class and lineage rules first, then anything entered — see `damageResponsesForActor`. */
+    const own = damageResponsesForActor(actor);
     if (own.length === 0) { withoutStatedResponses.push(actor.name); continue; }
+    /** Built once per character, because a gated response has to ask it how big its pool is. */
+    const ledger = resourceLedgerFromActor(actor);
     for (const r of own) {
       const share = Number.isFinite(r.share as number)
         ? (r.share as number)
         : incoming.mix?.usable ? (incoming.mix.shares[r.type.trim().toLowerCase()] ?? 0) : undefined;
       if (share === undefined) { unweighted.push(r); continue; }
-      const eligible = share / actors.length;
+
+      /**
+       * ⚠ A GATED RESISTANCE COVERS THE FIGHTS ITS RESOURCE COVERS, AND THAT IS A COUNT, NOT A
+       * GUESS. Rage lasts a minute, so one use covers a whole fight; the question is how many
+       * fights out of the day's five it can cover, which is exactly the pool's total uses. The
+       * ledger already counts `start + recovered x rests`, so this asks it rather than assuming
+       * a Barbarian rages in every fight (5/5) or in only the ones they started with (2/5).
+       */
+      let uptime = 1;
+      let uptimeNote: string | undefined;
+      if (r.gatedByResource) {
+        const row = ledger.rows.find(x => x.resource.trim().toLowerCase() === r.gatedByResource!.trim().toLowerCase());
+        if (row) {
+          uptime = Math.min(1, row.totalUses / RESOURCE_DAY.fightsPerLongRest);
+          uptimeNote = `${row.totalUses} use${row.totalUses === 1 ? "" : "s"} across ${RESOURCE_DAY.fightsPerLongRest} fights`;
+        } else {
+          /**
+           * ⚠ NO POOL ON THE SHEET IS NOT "ALWAYS ON". The rule says the resistance costs a use;
+           * if the sheet carries no such pool the app cannot say how many fights it covers, and
+           * counting it as every fight would be the most generous possible reading of a gap.
+           */
+          uptime = 0;
+          uptimeNote = `no "${r.gatedByResource}" pool on this sheet, so the app cannot say how many fights it covers`;
+        }
+      }
+
+      const eligible = (share / actors.length) * uptime;
       scaled.push({ ...r, share: eligible });
-      resisted.push({ actor: actor.name, response: r, share: eligible, qualifierUnresolved: Boolean(r.qualifier?.trim()) });
+      resisted.push({
+        actor: actor.name, response: r, share: eligible,
+        source: r.source,
+        ...(uptimeNote ? { uptime, uptimeNote } : {}),
+        /**
+         * A qualifier that IS the gate has been answered by the count above, so it is no longer
+         * an unresolved one. Only a condition nothing could evaluate is reported as unread.
+         */
+        qualifierUnresolved: Boolean(r.qualifier?.trim()) && !r.gatedByResource,
+      });
     }
   }
   const priced = priceDamageResponses(scaled, incoming.mix);
@@ -242,5 +315,6 @@ export function partyMitigationFromActors(
     displacedByBond,
     withoutStatedResponses,
     unweighted: [...unweighted, ...priced.unweighted],
+    mixCoverage: incoming.mix?.coverage ?? 0,
   };
 }

@@ -959,9 +959,15 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                           {classMitigation && (classMitigation.multiplier > 1.0001 || classMitigation.reactionPerRound > 0) && (
                             <span style={{ color: "#777", marginLeft: 8 }}
                               title={[
+                                /* ⚠ A SHARE IS A SHARE OF WHAT COULD BE TYPED. Say how much that
+                                   was, or a resistance weighed against a quarter of the fight
+                                   reads as though it were weighed against all of it. */
+                                classMitigation.mixCoverage < 0.999
+                                  ? `⚠ only ${(classMitigation.mixCoverage * 100).toFixed(0)}% of this fight's damage states a type, so every share below is a share of THAT much. Typing the rest of the stat block is what makes these exact.\n`
+                                  : "",
                                 classMitigation.resisted.length > 0
                                   ? "Resistances, weighed against what THIS fight throws:\n"
-                                    + classMitigation.resisted.map(r => `  ${r.actor} · ${r.response.response} to ${r.response.type} — ${(r.share * 100).toFixed(1)}% of incoming${r.qualifierUnresolved ? ` (⚠ "${r.response.qualifier}" could not be applied — priced as the upper bound)` : ""}`).join("\n")
+                                    + classMitigation.resisted.map(r => `  ${r.actor} · ${r.response.response} to ${r.response.type} — ${(r.share * 100).toFixed(1)}% of incoming · ${r.source}${r.uptimeNote ? ` · ${r.uptimeNote}` : ""}${r.qualifierUnresolved ? ` (⚠ "${r.response.qualifier}" could not be applied — priced as the upper bound)` : ""}`).join("\n")
                                   : "",
                                 classMitigation.reactions.length > 0
                                   ? "\nReactions, one per character:\n"
@@ -972,7 +978,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                                     + classMitigation.displacedByBond.map(d => `  ${d.actor} · ${d.action} ${d.amount.toFixed(1)} < bond ${d.bondAmount.toFixed(1)}`).join("\n")
                                   : "",
                                 classMitigation.withoutStatedResponses.length > 0
-                                  ? `\nNo damage responses entered: ${classMitigation.withoutStatedResponses.join(", ")}. Add them on the character's Profile tab — the app will not read a resistance out of a feature's description.`
+                                  ? `\nNo damage responses at all — nothing from their class or lineage, and nothing entered: ${classMitigation.withoutStatedResponses.join(", ")}. A choice-dependent one (a Dragonborn's ancestry, a Tiefling's legacy, a Totem) is entered on the Profile tab, because the sheet does not state which one it is.`
                                   : "",
                               ].filter(Boolean).join("\n")}>
                               {"· classes "}
@@ -984,8 +990,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                           {classMitigation && classMitigation.multiplier <= 1.0001 && classMitigation.reactionPerRound === 0
                             && classMitigation.withoutStatedResponses.length > 0 && (
                             <span style={{ color: "#777", marginLeft: 8 }}
-                              title={`No damage responses are entered for ${classMitigation.withoutStatedResponses.join(", ")}. A resistance written only in a feature's description is invisible to the checker — the app does not read mechanics out of prose. Enter them on each character's Profile tab and this fight will be re-priced against what they actually resist.`}>
-                              · no class resistances entered ({classMitigation.withoutStatedResponses.length})
+                              title={`${classMitigation.withoutStatedResponses.join(", ")} have no damage responses — their class and lineage grant none, and none are entered. A choice-dependent one (a Dragonborn's ancestry, a Tiefling's legacy, a Totem Barbarian) is entered on the Profile tab, because the sheet does not state which one it is. Nothing here is read out of a feature's description.`}>
+                              · no resistances ({classMitigation.withoutStatedResponses.length})
                             </span>
                           )}
                                                     {(bondMitigation?.perRound ?? 0) > 0 && (() => {

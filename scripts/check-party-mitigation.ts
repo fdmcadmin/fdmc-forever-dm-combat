@@ -10,15 +10,19 @@
  *                          creature reactions."
  *   Action Timing row 13  "Once spent, no other normal Reaction is legal until refresh."
  *
- * and one that decides whether it is a reading at all: a mechanic is read from a STATED field,
- * never from a feature's description. A Barbarian does not resist bludgeoning because the class
- * is called Barbarian.
+ * and one that decides where the resistances come from at all. Christopher, 2026-09-07: *"all of
+ * those resistances should be there because they are based on classes not because they want them,
+ * same with the rage, it should already be known what rage resists."* So they are DERIVED from the
+ * stated race and class through a hand-built rule table, the entered field is the override, and
+ * what stays forbidden is the other thing — scanning a feature's DESCRIPTION for the word
+ * "resistance", which breaks on every homebrew wording. Both halves are asserted below.
  *
  * ⚠ EVERY ASSERTION HAS A MUTATION THAT MUST FLIP IT.
  * ⚠ THE EXIT CHECK IS THE LAST THING IN THIS FILE.
  */
 
 import { partyMitigationFromActors, rosterDamageMix } from "../src/core/encounter-band/partyMitigationFromActors";
+import { classDamageResponsesFor, damageResponsesForActor } from "../src/modules/dnd-5e/classDamageResponses";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -85,24 +89,112 @@ console.log("A resistance is weighed against what THIS fight throws");
     raging.multiplier > 1 && raging.resisted[0].qualifierUnresolved, raging.resisted[0]?.response.qualifier);
 }
 
-/* ── 2. Nothing stated is a NAMED zero, never a silent one ───────────────────────────────── */
-console.log("\nA character with nothing entered is named");
+/* ── 2. The class and the lineage are already known ──────────────────────────────────────── */
+console.log("\nA class or lineage resistance is KNOWN, not asked for");
 {
-  const m = partyMitigationFromActors([pc("A"), pc("B")], { mix });
-  ok("both characters are named as having entered nothing",
+  /**
+   * Christopher, 2026-09-07: *"all of those resistances should be there because they are based on
+   * classes not because they want them, same with the rage, it should already be known what rage
+   * resists."* Keyed on the STATED race and class — the same hand-built rule-table shape
+   * `casterLean` and `weaponMastery` use.
+   */
+  const aasimar = pc("Ash", { race: "Aasimar", className: "Artificer" });
+  const derived = classDamageResponsesFor(aasimar);
+  ok("an Aasimar resists necrotic and radiant without being told",
+    derived.length === 2 && derived.every(r => r.response === "resistant")
+    && derived.map(r => r.type).sort().join(",") === "necrotic,radiant",
+    derived.map(r => `${r.response} ${r.type}`).join(", "));
+  ok("...and it names the feature it came from",
+    derived[0]?.source === "Aasimar · Celestial Resistance", derived[0]?.source);
+
+  ok("a Dwarf resists poison — and a SUBRACE still resolves",
+    classDamageResponsesFor(pc("X", { race: "Mountain Dwarf" }))[0]?.type === "poison");
+  ok("a lineage the table does not cover grants nothing",
+    classDamageResponsesFor(pc("X", { race: "Kobold", className: "Paladin" })).length === 0);
+  /** ⚠ A CHOICE IS NOT A RULE. A Dragonborn's type depends on ancestry the sheet does not state. */
+  ok("a Dragonborn is NOT given a resistance the sheet never chose",
+    classDamageResponsesFor(pc("X", { race: "Dragonborn" })).length === 0);
+
+  const barb = classDamageResponsesFor(pc("R", { race: "Orc", className: "Barbarian" }));
+  ok("a Barbarian resists bludgeoning, piercing and slashing",
+    barb.map(r => r.type).sort().join(",") === "bludgeoning,piercing,slashing",
+    barb.map(r => r.type).join(", "));
+  ok("...gated by the Rage pool, not granted outright",
+    barb.every(r => r.gatedByResource === "Rage"));
+
+  const m = partyMitigationFromActors([aasimar], { mix });
+  ok("the derived rule reaches the price with no field entered",
+    m.multiplier > 1 && m.withoutStatedResponses.length === 0, `x${m.multiplier.toFixed(3)}`);
+  ok("...and the panel can say where it came from",
+    m.resisted[0]?.source === "Aasimar · Celestial Resistance", m.resisted[0]?.source);
+
+  /** ⚠ MUTATION: change the race and the resistance must go. */
+  ok("mutation: the same character as a Human resists nothing",
+    partyMitigationFromActors([pc("Ash", { race: "Human", className: "Artificer" })], { mix }).multiplier === 1);
+
+  /** An entered response for the SAME type replaces the rule rather than stacking with it. */
+  const both = damageResponsesForActor(pc("Ash", {
+    race: "Aasimar",
+    damageResponses: [{ type: "necrotic", response: "immune" }],
+  }));
+  ok("an entered response overrides the derived one for that type, and only that type",
+    both.filter(r => r.type === "necrotic").length === 1
+    && both.find(r => r.type === "necrotic")?.response === "immune"
+    && both.some(r => r.type === "radiant"),
+    both.map(r => `${r.response} ${r.type}`).join(", "));
+}
+
+/* ── 2b. A gated resistance covers the fights its resource covers ────────────────────────── */
+console.log("\nRage covers the fights Rage can cover");
+{
+  const rageRow = (uses: number, regain?: number | "all") => ({
+    id: "rage", label: "Rage", actionKind: "resource", economyCost: [], logMode: "silent",
+    metadata: { resourceKind: "pool", additive: String(uses), ...(regain !== undefined ? { shortRestRegain: regain } : {}) },
+  });
+  /** Ripsnarl's own sheet: 2 per Long Rest, one back at the day's single Short Rest. */
+  const rip = pc("Ripsnarl", { race: "Orc", className: "Barbarian", tabs: { resources: [rageRow(2, 1)] } });
+  const m = partyMitigationFromActors([rip], { mix });
+  const slash = m.resisted.find(r => r.response.type === "slashing")!;
+  ok("three rages across a five-fight day is an uptime of 0.6",
+    Math.abs((slash.uptime ?? 0) - 0.6) < 1e-9, `${slash.uptime} — ${slash.uptimeNote}`);
+  ok("...and the share is scaled by it, not priced as always-on",
+    Math.abs(slash.share - 0.5 * 0.6) < 1e-9, `${slash.share.toFixed(3)} of incoming`);
+  ok("...so the gate is answered and is NOT also reported as an unread qualifier",
+    slash.qualifierUnresolved === false);
+
+  /** ⚠ MUTATION: more rages must be worth more. */
+  const many = partyMitigationFromActors(
+    [pc("Ripsnarl", { race: "Orc", className: "Barbarian", tabs: { resources: [rageRow(6)] } })], { mix });
+  ok("mutation: a Barbarian with more rages than fights is priced at full uptime",
+    Math.abs((many.resisted[0].uptime ?? 0) - 1) < 1e-9 && many.multiplier > m.multiplier,
+    `x${many.multiplier.toFixed(3)} vs x${m.multiplier.toFixed(3)}`);
+
+  /** ⚠ AND NO POOL IS NOT "ALWAYS ON" — the most generous reading of a gap is the wrong one. */
+  const noPool = partyMitigationFromActors(
+    [pc("R", { race: "Orc", className: "Barbarian", tabs: { resources: [] } })], { mix });
+  ok("with no Rage pool on the sheet it covers nothing, and says why",
+    noPool.multiplier === 1 && /no "Rage" pool/.test(noPool.resisted[0]?.uptimeNote ?? ""),
+    noPool.resisted[0]?.uptimeNote);
+}
+
+/* ── 2c. Nothing at all is a NAMED zero, never a silent one ──────────────────────────────── */
+console.log("\nA character with nothing at all is named");
+{
+  const m = partyMitigationFromActors([pc("A", { race: "Human" }), pc("B", { race: "Human" })], { mix });
+  ok("both characters are named as having none",
     m.withoutStatedResponses.length === 2, m.withoutStatedResponses.join(", "));
   ok("...and the multiplier is exactly 1, not a guess", m.multiplier === 1);
 
   /**
-   * ⚠ THE PROSE IS NOT READ, AND THIS IS THE ASSERTION THAT KEEPS IT THAT WAY. The live sheets
-   * say "Resistance to Necrotic and Radiant damage" inside a feature's description and the app
-   * must still price nothing until the DM states it as a field. A gate that let this pass would
-   * be inviting exactly the inference this codebase refuses to make.
+   * ⚠ THE PROSE IS STILL NOT READ. A rule table keyed on a stated class is one thing; scanning a
+   * feature's description for the word "resistance" is another, and it is the one that breaks on
+   * every homebrew wording. An Illrigger's description mentioning resistance must price nothing.
    */
   const prosey = pc("A", {
-    tabs: { features: [{ id: "f", label: "Celestial Resistance", actionKind: "feature",
-      description: "Resistance to Necrotic and Radiant damage.",
-      metadata: { details: "Resistance to Necrotic and Radiant damage." } }] },
+    race: "Human", className: "Illrigger",
+    tabs: { features: [{ id: "f", label: "Infernal Ward", actionKind: "feature",
+      description: "You have resistance to fire damage.",
+      metadata: { details: "You have resistance to fire damage." } }] },
   });
   const fromProse = partyMitigationFromActors([prosey], { mix });
   ok("a resistance written only in a description is NOT read",
@@ -110,7 +202,7 @@ console.log("\nA character with nothing entered is named");
     `x${fromProse.multiplier}`);
   ok("mutation: stating the same thing as a field DOES price it",
     partyMitigationFromActors(
-      [pc("A", { damageResponses: [{ type: "necrotic", response: "resistant" }] })], { mix },
+      [pc("A", { race: "Human", damageResponses: [{ type: "necrotic", response: "resistant" }] })], { mix },
     ).multiplier > 1);
 }
 
