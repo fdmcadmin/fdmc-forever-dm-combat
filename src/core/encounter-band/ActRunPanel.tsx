@@ -20,6 +20,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { SHORT_REST_RECOVERY } from "./partyResourceCurve";
 import { shortRestRecoveryFromActors } from "../../modules/dnd-5e/shortRestRecovery";
+
+/**
+ * WHERE A SHORT REST'S NUMBER CAME FROM — carried out of the pricing pass so the control can show
+ * the figure the run actually spent, instead of the published median it was printing regardless.
+ */
+type RestRecovery = { fraction: number; source: "override" | "party" | "published"; detail?: string };
 import {
   resolveActRun,
   restBlocks,
@@ -137,12 +143,19 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
   const priced = useMemo(() => {
     const partySize = Math.max(1, run?.partySize ?? 4);
     /** Resolved per step, because the share depends on that step's own full sustain. */
-    const recoveryFor = (fullSustain: number): number => {
+    const recoveryFor = (fullSustain: number): RestRecovery => {
       if (run?.shortRestRecovery !== undefined) {
-        return Math.max(0, Math.min(1, run.shortRestRecovery));
+        return { fraction: Math.max(0, Math.min(1, run.shortRestRecovery)), source: "override" };
       }
       const derived = shortRestRecoveryFromActors(actors as never[], fullSustain);
-      return Math.max(0, Math.min(1, derived?.fraction ?? SHORT_REST_RECOVERY));
+      if (derived) {
+        return {
+          fraction: Math.max(0, Math.min(1, derived.fraction)),
+          source: "party",
+          detail: (derived.perActor ?? []).map(a => `${a.actor} ${a.pools}`).join(" · "),
+        };
+      }
+      return { fraction: SHORT_REST_RECOVERY, source: "published" };
     };
     let spent = 0;
     return resolved.map(step => {
@@ -187,8 +200,9 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         // fractions stay comparable across a block however depleted the party already was.
         const taken = result.rounds[result.rounds.length - 1]?.cumulativeMonsterDamage ?? 0;
         const cost = full.sustain > 0 ? taken / full.sustain : 0;
-        spent = nextArrivalSpent(spent, cost, step.restTaken, recoveryFor(full.sustain));
-        return { id: step.id, missing: false as const, arrivingSpent, result, cost };
+        const rest = recoveryFor(full.sustain);
+        spent = nextArrivalSpent(spent, cost, step.restTaken, rest.fraction);
+        return { id: step.id, missing: false as const, arrivingSpent, result, cost, rest };
       } catch {
         return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, result: null, cost: 0 };
       }
@@ -451,17 +465,37 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
                     round cap — the party cannot finish {unresolved.length === 1 ? "it" : "them"} at this level.
                   </p>
                 )}
-                {/* The one number the workbook does not publish, printed where it is used. */}
-                <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 10, color: "#8a8a9a" }}>
-                  A short rest returns
-                  <input type="number" min={0} max={100} value={Math.round((run.shortRestRecovery ?? SHORT_REST_RECOVERY) * 100)}
-                    onChange={e => patchRun(run.id, { shortRestRecovery: Math.max(0, Math.min(100, Number(e.target.value) || 0)) / 100 })}
-                    style={{ ...input, width: 46, textAlign: "center" }} />
-                  % of sustain
-                  <span style={{ color: "#555" }}>
-                    — your table's call. v7 publishes no party short-rest recovery, so the run will not invent one.
-                  </span>
-                </label>
+                {/*
+                  ⚠ SHOW THE NUMBER THE RUN ACTUALLY SPENT.
+
+                  This printed `run.shortRestRecovery ?? SHORT_REST_RECOVERY` — the DM's override or
+                  the published median — and never the party-resolved figure the simulation had been
+                  using since 0.8.25.0. So a table whose own Hit Dice buy back 28.7% was shown 25%,
+                  the population median, and told the app could not know. Christopher: *"it says that
+                  the per class recovery isnt there."* It was there; the control was not showing it.
+
+                  The caption follows the same order of authority the pricing pass uses, and names it.
+                */}
+                {(() => {
+                  const rest: RestRecovery = priced.find(x => x.rest)?.rest
+                    ?? { fraction: SHORT_REST_RECOVERY, source: "published" };
+                  return (
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 10, color: "#8a8a9a" }}>
+                      A short rest returns
+                      <input type="number" min={0} max={100} value={Math.round(rest.fraction * 100)}
+                        onChange={e => patchRun(run.id, { shortRestRecovery: Math.max(0, Math.min(100, Number(e.target.value) || 0)) / 100 })}
+                        style={{ ...input, width: 46, textAlign: "center" }} />
+                      % of sustain
+                      <span style={{ color: "#555" }} title={rest.detail ?? undefined}>
+                        {rest.source === "override"
+                          ? "— your override. Clear it to read this party's own Hit Dice again."
+                          : rest.source === "party"
+                            ? `— resolved from THIS party's Hit Dice${rest.detail ? ": " + rest.detail : ""}.`
+                            : "— the published median across 384 sampled parties. Choose a party and it resolves from their own Hit Dice."}
+                      </span>
+                    </label>
+                  );
+                })()}
               </div>
             );
           })()}

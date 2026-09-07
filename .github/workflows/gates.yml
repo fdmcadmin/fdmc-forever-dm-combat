@@ -200,3 +200,6 @@ jobs:
 
       - name: check party benchmark
         run: npm run check:benchmark
+
+      - name: check short rest
+        run: npm run check:shortrest

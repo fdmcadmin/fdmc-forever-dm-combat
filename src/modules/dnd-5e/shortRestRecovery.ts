@@ -89,13 +89,42 @@ export function shortRestRecoveryFromActors(
 
   for (const actor of actors) {
     const who = actor.name ?? "(unnamed)";
-    const cls = (actor.className ?? "").trim();
-    if (cls && !knownShortRestClass(cls)) {
-      unresolved.push({
-        actor: who,
-        reason: `"${cls}" is not in the short-rest registry, so its Hit Dice cannot be confirmed.`,
-      });
-      continue;
+    /**
+     * ⚠ A MULTICLASS SHEET'S `className` IS A LABEL, NOT A CLASS, AND THIS GATE READ IT AS ONE.
+     *
+     * The registry check ran before `hitDicePools`, against the DISPLAY string. A multiclass PC
+     * carries something like "Paladin  / Sorcerer" there — a heading for the card — while the
+     * machine truth is the `classes` array, which `hitDicePools` already reads and already sums
+     * (5d10 + 2d6). "Paladin  / Sorcerer" is in no registry, so the actor was rejected here and
+     * every one of their Hit Dice vanished from the party's short-rest recovery.
+     *
+     * Measured on the live party: four of five PCs were counted and the multiclass one was not,
+     * which is a real chunk of the number the act run spends between fights.
+     *
+     * So ask the STRUCTURED rows when they exist, and fall back to the label only when they do
+     * not — which is the same precedence `hitDicePools` itself uses one line below.
+     */
+    const rows = Array.isArray(actor.classes)
+      ? (actor.classes as Array<{ name?: string }>).filter(r => r && typeof r.name === "string")
+      : [];
+    if (rows.length > 0) {
+      const unknown = rows.map(r => String(r.name).trim()).filter(n => n && !knownShortRestClass(n));
+      if (unknown.length > 0) {
+        unresolved.push({
+          actor: who,
+          reason: `${unknown.map(n => `"${n}"`).join(", ")} ${unknown.length === 1 ? "is" : "are"} not in the short-rest registry, so its Hit Dice cannot be confirmed.`,
+        });
+        continue;
+      }
+    } else {
+      const cls = (actor.className ?? "").trim();
+      if (cls && !knownShortRestClass(cls)) {
+        unresolved.push({
+          actor: who,
+          reason: `"${cls}" is not in the short-rest registry, so its Hit Dice cannot be confirmed.`,
+        });
+        continue;
+      }
     }
     const pools = hitDicePools(actor as never);
     if (!pools.length) {
