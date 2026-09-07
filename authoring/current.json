@@ -1,7 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
   "exportedAt": "2026-09-04T09:29:39.076Z",
-  "digest": "fnv1a-5f8164df-120053",
+  "digest": "fnv1a-9e19133e-120073",
   "monsters": [],
   "equipment": [
     {
@@ -3676,22 +3676,22 @@
       "actTag": "Act 3",
       "entries": [
         {
-          "templateId": "broken-chain:act3:moss-crowned-charger:v1",
+          "templateId": "broken-chain:act3:rootwake-warden:v1",
           "count": 1,
           "startingVisibility": "hp-bar",
-          "hiddenNameOverride": "Moss-Crowned Charger"
+          "hiddenNameOverride": "Rootwake Warden"
         },
         {
-          "templateId": "broken-chain:act3:rift-slick:v1",
+          "templateId": "broken-chain:act3:stormscar-ravager:v1",
           "count": 1,
           "startingVisibility": "hp-bar",
-          "hiddenNameOverride": "Rift-Slick"
+          "hiddenNameOverride": "Stormscar Ravager"
         },
         {
-          "templateId": "broken-chain:act3:nail-saint:v1",
+          "templateId": "broken-chain:act3:claimchain-exactor:v1",
           "count": 1,
           "startingVisibility": "hp-bar",
-          "hiddenNameOverride": "Nail Saint"
+          "hiddenNameOverride": "Claimchain Exactor"
         }
       ],
       "owner": "campaign",

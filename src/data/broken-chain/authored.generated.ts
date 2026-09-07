@@ -1168,112 +1168,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     }
   },
   {
-    "templateId": "broken-chain:act3:nail-saint:v1",
-    "name": "Nail Saint",
-    "encounterId": "act3-e5-the-scar-line",
-    "encounterLabel": "Act 3 E5 - The Scar Line",
-    "stats": {
-      "kind": "fiend",
-      "ac": 16,
-      "maxHp": 56,
-      "speed": "30 ft.",
-      "defenses": [
-        {
-          "name": "Claimed Line",
-          "ehpMultiplier": 1.1083484151471665,
-          "rule": "Opposing damage uptime -10%",
-          "note": "RESTORED — same fault as Shardbound, and not one Christopher was asked about: the bundled x1.108348 IS the published multiplier for \"Opposing damage uptime -10%\", carried with no `rule` field, so the round trip returned EMPTY defences. Claimed Line taxes 10 ft. of movement off the first hostile creature to cross each round, which is time not spent attacking — the uptime rule is what the workbook prices that as. ⚠ FLAG, NOT A DECISION: if this should instead be a decided 1.0 the way the Crone's is, say so and it comes back out."
-        }
-      ],
-      "size": "Medium",
-      "classification": "elite",
-      "archetype": "tactician",
-      "skills": [
-        {
-          "label": "Arcana",
-          "modifier": 8
-        }
-      ],
-      "proficiencyBonus": 3,
-      "damageResponses": [
-        {
-          "type": "Fire",
-          "response": "resistant"
-        }
-      ]
-    },
-    "abilities": [
-      {
-        "label": "STR",
-        "value": "10 (+0)"
-      },
-      {
-        "label": "DEX",
-        "value": "16 (+3)",
-        "saveProficient": true
-      },
-      {
-        "label": "CON",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "INT",
-        "value": "20 (+5)",
-        "saveProficient": true
-      },
-      {
-        "label": "WIS",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "CHA",
-        "value": "14 (+2)"
-      }
-    ],
-    "traits": [
-      {
-        "name": "Claimed Line",
-        "kind": "trait",
-        "text": "The first hostile creature each round that crosses a claimed line must spend 10 extra ft. of movement or stop immediately before crossing, its choice. Forced movement ignores this rule."
-      }
-    ],
-    "actions": [
-      {
-        "name": "Drive Nail",
-        "kind": "action",
-        "economyCost": "bonus",
-        "text": "Bonus Action: place one nail in an adjacent solid surface. Maximum two. A nail is an object (AC 13, 8 HP). A straight line up to 20 ft. long between Nail Saint and a nail is a claimed line until the start of the next turn."
-      },
-      {
-        "name": "Boundary Spike",
-        "kind": "attack",
-        "roll": "1d20 + @ATK",
-        "damage": "2d8 + @MAIN",
-        "damageType": "Force",
-        "range": "range 90 ft.",
-        "text": ""
-      },
-      {
-        "name": "Hammer the Border (Recharge 5–6)",
-        "kind": "action",
-        "save": "STR DC 16",
-        "recharge": "5-6",
-        "damage": "4d8",
-        "text": "Choose one visible nail within 60 ft. Creatures within 10 ft. of it make a DC 16 Strength save; 18 (4d8) force on failure and pushed 10 ft. away from the nail, half damage and no push on success."
-      }
-    ],
-    "reactions": [],
-    "resources": [],
-    "notes": [
-      "A thin Fiend wrapped in strips of material that look stitched to nothing. It carries iron nails too long for carpentry and drives them into living wood like survey posts."
-    ],
-    "visibility": {
-      "defaultState": "hp-bar",
-      "hiddenName": "Nail Saint",
-      "revealedName": "Nail Saint"
-    }
-  },
-  {
     "templateId": "broken-chain:act3:quillshrike:v1",
     "name": "Quillshrike",
     "encounterId": "act3-e2-the-cut-below",
@@ -1381,110 +1275,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Quillshrike",
       "revealedName": "Quillshrike"
-    }
-  },
-  {
-    "templateId": "broken-chain:act3:rift-slick:v1",
-    "name": "Rift-Slick",
-    "encounterId": "act3-e5-the-scar-line",
-    "encounterLabel": "Act 3 E5 - The Scar Line",
-    "stats": {
-      "kind": "fiend",
-      "ac": 12,
-      "maxHp": 59,
-      "speed": "40 ft., climb 30 ft.",
-      "defenses": [],
-      "attacksPerTurn": 2,
-      "size": "Medium",
-      "classification": "elite",
-      "archetype": "skirmisher",
-      "skills": [
-        {
-          "label": "Acrobatics",
-          "modifier": 8
-        },
-        {
-          "label": "Stealth",
-          "modifier": 8
-        }
-      ],
-      "proficiencyBonus": 3,
-      "damageResponses": [
-        {
-          "type": "Fire",
-          "response": "resistant"
-        }
-      ]
-    },
-    "abilities": [
-      {
-        "label": "STR",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "DEX",
-        "value": "20 (+5)",
-        "saveProficient": true
-      },
-      {
-        "label": "CON",
-        "value": "14 (+2)"
-      },
-      {
-        "label": "INT",
-        "value": "16 (+3)",
-        "saveProficient": true
-      },
-      {
-        "label": "WIS",
-        "value": "12 (+1)"
-      },
-      {
-        "label": "CHA",
-        "value": "10 (+0)"
-      }
-    ],
-    "traits": [
-      {
-        "name": "Through the Wound",
-        "kind": "trait",
-        "text": "Rift-Slick can move through a space as narrow as 3 inches without squeezing. When it passes through natural cover, roots, or a tree-space, it leaves a 5-ft. scar at the exit until the start of its next turn."
-      }
-    ],
-    "actions": [
-      {
-        "name": "Scar Slip",
-        "kind": "action",
-        "economyCost": "bonus",
-        "text": "Bonus Action: move up to 15 ft. to a scarred space it can see without provoking opportunity attacks. This is physical movement through a wound in the terrain, not teleportation."
-      },
-      {
-        "name": "Raking Claw",
-        "kind": "attack",
-        "roll": "1d20 + @ATK",
-        "damage": "1d12 + @MAIN",
-        "damageType": "Slashing",
-        "range": "reach 5 ft.",
-        "text": ""
-      },
-      {
-        "name": "Warping Cut (Recharge 5–6)",
-        "kind": "action",
-        "save": "DEX DC 16",
-        "recharge": "5-6",
-        "damage": "4d8",
-        "text": "30-ft. line, DC 16 Dexterity save; 18 (4d8) force on failure, half on success. The line becomes scarred ground until the end of the next round."
-      }
-    ],
-    "reactions": [],
-    "resources": [],
-    "notes": [
-      "A gray Fiend whose body can become too thin for its skeleton and then remember bones afterward. Wherever it squeezes through the Wood, sap hisses from the wound."
-    ],
-    "visibility": {
-      "defaultState": "hp-bar",
-      "hiddenName": "Rift-Slick",
-      "revealedName": "Rift-Slick"
     }
   },
   {
@@ -5891,22 +5681,22 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
     "actTag": "Act 3",
     "entries": [
       {
-        "templateId": "broken-chain:act3:moss-crowned-charger:v1",
+        "templateId": "broken-chain:act3:rootwake-warden:v1",
         "count": 1,
         "startingVisibility": "hp-bar",
-        "hiddenNameOverride": "Moss-Crowned Charger"
+        "hiddenNameOverride": "Rootwake Warden"
       },
       {
-        "templateId": "broken-chain:act3:rift-slick:v1",
+        "templateId": "broken-chain:act3:stormscar-ravager:v1",
         "count": 1,
         "startingVisibility": "hp-bar",
-        "hiddenNameOverride": "Rift-Slick"
+        "hiddenNameOverride": "Stormscar Ravager"
       },
       {
-        "templateId": "broken-chain:act3:nail-saint:v1",
+        "templateId": "broken-chain:act3:claimchain-exactor:v1",
         "count": 1,
         "startingVisibility": "hp-bar",
-        "hiddenNameOverride": "Nail Saint"
+        "hiddenNameOverride": "Claimchain Exactor"
       }
     ],
     "owner": "campaign",
@@ -6052,10 +5842,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-5f8164df-120053";
+export const AUTHORED_DIGEST = "fnv1a-9e19133e-120073";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-04T09:37:01.127Z";
+export const AUTHORED_AT = "2026-09-07T01:34:37.293Z";
 
 /**
  * Merge authored content over a bundled list by id.
