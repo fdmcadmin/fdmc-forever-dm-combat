@@ -282,9 +282,18 @@ console.log("\nA resource the ledger cannot size is named, not dropped");
     economyCost: ["main"], logMode: "default",
     metadata: { damage: "6d6", attack: "1d20+@SPELL", spellLevel: 7 } });
   const m = currentPartyMetrics([orphan], target)!;
-  ok("a level 7 spell on a sheet with no level 7 slots is reported",
-    m.needsInput.some(n => /Mystery Blast/.test(n) && /cannot size/.test(n)),
-    m.needsInput.join(" | "));
+  /**
+   * ⚠ IT IS A WIRING NOTE, NOT AN UNREADABLE ACTION. The app read Mystery Blast fine — dice,
+   * roll, tier. What it could not find is the pool that limits it, so it belongs in `unlinked`
+   * where the answer is "link these two rows", not in `needsInput` where the answer is "tell me
+   * a number I cannot derive". Christopher: *"why do we still have unread actions if nothing
+   * except the homebrew bonds and convergence are outside of the SRD."*
+   */
+  ok("a level 7 spell on a sheet with no level 7 slots is reported as NOT LINKED",
+    m.unlinked.some(n => /Mystery Blast/.test(n) && /cannot size/.test(n)),
+    m.unlinked.join(" | "));
+  ok("...and is NOT counted as an action the app could not read",
+    !m.needsInput.some(n => /Mystery Blast/.test(n)), m.needsInput.join(" | "));
 
   /**
    * ⚠ AND A TIER THAT LEGITIMATELY ALLOCATED NOTHING TO OFFENCE MUST STAY QUIET. Collapsing the
@@ -297,7 +306,53 @@ console.log("\nA resource the ledger cannot size is named, not dropped");
     metadata: { damage: "2d8+@CHA", spellLevel: 1, details: "Touch a creature to restore 2d8+3 hit points." } }];
   const h = currentPartyMetrics([healer], target)!;
   ok("a healing-only tier says nothing — it allocated correctly",
-    !h.needsInput.some(n => /Cure Wounds/.test(n)), h.needsInput.join(" | "));
+    !h.needsInput.some(n => /Cure Wounds/.test(n)) && !h.unlinked.some(n => /Cure Wounds/.test(n)),
+    [...h.needsInput, ...h.unlinked].join(" | "));
+}
+
+/* ── 7. Arriving spent moves the damage, and moves the RIGHT half ────────────────────────── */
+console.log("\nA party arriving spent hits for less — but keeps its weapons");
+{
+  /**
+   * Christopher, 2026-09-07: *"shouldnt the 25%, 40%, and 60% spent move the damage they do
+   * instead of still showing their damage at full."*
+   *
+   * ⚠ AND IT MOVES THE RESOURCE HALF ONLY. `partyResourceCurve` applies a published median to a
+   * party it cannot see inside, so it taxes weapons and slots together. This one knows which is
+   * which: a Barbarian out of rages still swings the axe.
+   */
+  const fresh = currentPartyMetrics([base], target)!;
+  const half = currentPartyMetrics([base], target, { arrivingSpent: 0.5 })!;
+  const empty = currentPartyMetrics([base], target, { arrivingSpent: 1 })!;
+
+  ok("arriving spent lowers round 1", half.round1Dpr < fresh.round1Dpr,
+    `fresh ${fresh.round1Dpr.toFixed(2)} → half-spent ${half.round1Dpr.toFixed(2)}`);
+  ok("...more spent, lower still", empty.round1Dpr < half.round1Dpr,
+    `${half.round1Dpr.toFixed(2)} → ${empty.round1Dpr.toFixed(2)}`);
+
+  /** ⚠ THE AT-WILL FLOOR NEVER MOVES. Weapons and cantrips cost nothing and never run out. */
+  ok("the at-will floor is identical at every depletion",
+    fresh.atWill.round1 === half.atWill.round1 && half.atWill.round1 === empty.atWill.round1,
+    `${fresh.atWill.round1.toFixed(2)} throughout`);
+  ok("a fully expended party still swings — it falls to the at-will floor, not to zero",
+    Math.abs(empty.round1Dpr - empty.atWill.round1) < 1e-9 && empty.round1Dpr > 0,
+    `R1 ${empty.round1Dpr.toFixed(2)} = at-will ${empty.atWill.round1.toFixed(2)}`);
+  ok("...and schedules nothing, because there is nothing left to spend",
+    empty.schedule.length === 0, `${empty.schedule.length} uses`);
+
+  /** ⚠ HALF THE DAY GONE IS HALF THE USES, NOT HALF THE DAMAGE PER USE. */
+  const smiteFresh = fresh.schedule.find(s => s.action === "Divine Smite");
+  const smiteHalf = half.schedule.find(s => s.action === "Divine Smite");
+  ok("a spell still hits for what it hits for; there is just less of it",
+    Boolean(smiteFresh) && Boolean(smiteHalf)
+    && Math.abs(smiteFresh!.valuePerUse - smiteHalf!.valuePerUse) < 1e-9
+    && smiteHalf!.usesPerFight < smiteFresh!.usesPerFight,
+    `${smiteFresh?.valuePerUse.toFixed(1)}/use, ${smiteFresh?.usesPerFight.toFixed(2)} → ${smiteHalf?.usesPerFight.toFixed(2)} uses`);
+
+  /** An out-of-range value must not invert the answer. */
+  ok("a nonsense arrivingSpent is clamped rather than trusted",
+    currentPartyMetrics([base], target, { arrivingSpent: -3 })!.round1Dpr === fresh.round1Dpr
+    && currentPartyMetrics([base], target, { arrivingSpent: 9 })!.round1Dpr === empty.round1Dpr);
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);

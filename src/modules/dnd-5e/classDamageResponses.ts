@@ -125,7 +125,7 @@ export function classDamageResponsesFor(actor: Actor): DerivedDamageResponse[] {
    * and asymmetric — the character sheet showing one thing and the checker pricing another. RULE
    * ZERO: one table, read by both.
    */
-  const species = resolveSpecies(actor.race);
+  const species = resolveSpecies(actor.race, actor.srdRuleset);
   for (const r of species?.damageResponses ?? []) {
     out.push({ type: r.type, response: r.response, source: `${species!.name} · ${r.feature}` });
   }

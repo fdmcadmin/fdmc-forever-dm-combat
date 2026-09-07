@@ -1,6 +1,7 @@
 import type { BondAssignment } from "./bond";
 import type { TabActionMap, TabId } from "./tabs";
 import type { DamageResponse } from "../encounter-band/damageResponsePricing";
+import type { SrdRuleset } from "../../modules/dnd-5e/srdSpecies";
 
 export type ActorKind = "player" | "companion" | "npc" | "monster" | "boss";
 
@@ -292,6 +293,16 @@ export type Actor = {
    * on. `qualifier` is where that is said, and `partyMitigationFromActors` reports every
    * qualifier it could not evaluate rather than quietly pricing the upper bound as certain.
    */
+  /**
+   * WHICH SRD THIS SHEET IS BUILT ON. Unset means the app default, 5.2.1.
+   *
+   * ⚠ THE TWO DOCUMENTS DISAGREE ABOUT SPECIES, so this moves NUMBERS and not just wording. A 5.1
+   * Dwarf walks 25 feet and a 5.2.1 Dwarf walks 30; a 5.1 Wood Elf has Mask of the Wild and Fleet
+   * of Foot where a 5.2.1 one has Druidcraft and an Elven Lineage. Both documents are CC-BY-4.0
+   * and both ship, so the sheet says which it means rather than the app guessing — and a race only
+   * one of them publishes (Goliath, Half-Orc) resolves there regardless of this field.
+   */
+  srdRuleset?: SrdRuleset;
   damageResponses?: readonly DamageResponse[];
   stats: ActorStats;
   abilityScores?: AbilityScores;

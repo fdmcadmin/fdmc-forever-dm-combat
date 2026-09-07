@@ -234,7 +234,16 @@ export function traitFactorsFor(
    *
    * A party read off real characters always outranks it — this is the floor, not the preference.
    */
-  const mixForPricing = damageMix ?? neutralDamageMix();
+  /**
+   * ⚠ AND "A PARTY WHOSE DAMAGE IS UNTYPED" IS ALSO NOT AN ANSWER. `damageMix ?? neutral` only
+   * caught the case where NO actors were passed. A chosen party whose sheets do not state damage
+   * types produces a mix that is present and `usable: false`, which is not undefined — so the
+   * fallback never fired, `priceDamageResponses` refused it, and every mirror resistance came back
+   * "carries no published share either, so it prices at nothing" on a screen with five characters
+   * selected. Christopher: *"i thought we just discussed that this should not show since it should
+   * be priced against the baseline."* It should. `usable` is the test, not existence.
+   */
+  const mixForPricing = damageMix?.usable ? damageMix : neutralDamageMix();
   const typed = priceDamageResponses(template.stats.damageResponses, mixForPricing);
   if (typed.multiplier !== 1) {
     factors.push({
@@ -286,9 +295,17 @@ export function traitFactorsFor(
      */
     const fromActors = mixForPricing.source !== "published-neutral";
     const whose = fromActors ? "this party's own" : "the published neutral profile's";
+    /**
+     * ⚠ TWO DIFFERENT REASONS THE NEUTRAL PROFILE IS IN USE, AND ONLY ONE OF THEM IS "PICK A
+     * PARTY". A chosen party whose actions state no damage type also lands here, and telling that
+     * DM to "choose the actors" when five are already selected is the app not knowing what it did.
+     */
+    const untypedParty = !fromActors && damageMix !== undefined;
     const howRead = fromActors
       ? ", read from their actions."
-      : " — no party is chosen, so the certified curve's typed mix is used. Choose the actors to read the real share.";
+      : untypedParty
+        ? ` — the ${damageMix!.untyped.length} damaging action${damageMix!.untyped.length === 1 ? "" : "s"} on the chosen characters state no damage type, so the certified curve's typed mix is used instead. Set the type on those actions to price this against the real party.`
+        : " — no party is chosen, so the certified curve's typed mix is used. Choose the actors to read the real share.";
     out.push({ creature: name, flag: d.qualifierUnresolved ? "NEEDS DM INPUT" : "ESTIMATED", field: "damage_response",
       detail: (d.share === 0
         ? `"${d.response.response} to ${d.response.type}" prices at nothing because none of ${fromActors ? "this party's readable damage" : "the published neutral profile"} is ${d.response.type}${fromActors ? " — read from their own actions, not assumed." : "."}`

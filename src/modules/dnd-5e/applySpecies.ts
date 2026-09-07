@@ -14,7 +14,7 @@
  */
 
 import type { ActorAction, TabActionMap } from "../../core/types/tabs";
-import { resolveSpecies, speciesTraitId, SPECIES_TRAIT_PREFIX } from "./srdSpecies";
+import { resolveSpecies, speciesTraitId, SPECIES_TRAIT_PREFIX, type SrdRuleset } from "./srdSpecies";
 
 export type SpeciesApplication = {
   tabs: TabActionMap;
@@ -34,8 +34,13 @@ export type SpeciesApplication = {
  * Returns null for a race the SRD does not cover, which leaves the sheet exactly as it was — a
  * Kobold and a homebrew lineage both take that path, and neither is an error.
  */
-export function applySpeciesToTabs(race: string | undefined, tabs: TabActionMap): SpeciesApplication {
-  const resolved = resolveSpecies(race);
+export function applySpeciesToTabs(
+  race: string | undefined,
+  tabs: TabActionMap,
+  /** Which document the sheet is built on. Defaults to the app-pinned 5.2.1. */
+  ruleset?: SrdRuleset,
+): SpeciesApplication {
+  const resolved = resolveSpecies(race, ruleset);
   if (!resolved) return null;
 
   const existing = (tabs.features ?? []) as ActorAction[];

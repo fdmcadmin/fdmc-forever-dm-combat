@@ -440,12 +440,14 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     if (!resolved || !partyTarget) return null;
     try {
       return currentPartyMetrics(chosen as never[], partyTarget, {
+        /* The party does not arrive fresh, and the read side has to know that too. */
+        arrivingSpent,
         // The same role resolution the ledger uses — bond first, then the class's own lean.
         leanFor: (a: unknown) => bondTemplateForActor(a as never, BROKEN_CHAIN_BOND_TEMPLATES)?.resourceLean
           ?? classResourceLean(a as never),
       });
     } catch { return null; }
-  }, [chosen, resolved, partyTarget]);
+  }, [chosen, resolved, partyTarget, arrivingSpent]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
@@ -565,7 +567,22 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
            * party that has entered no responses is unchanged.
            */
           sustain: profile.sustain * (classMitigation?.multiplier ?? 1),
-          dpr: profile.dpr,
+          /**
+           * ⚠ THE SIMULATION MUST SWING THE SAME PARTY THE PANEL SAYS IT READ.
+           *
+           * This was `profile.dpr` — the certified curve — while the caption beside it reported
+           * `currentPartyMetrics`. Christopher: *"explain why the R1 shows 138 damage, but the
+           * party shows able to do only 94.3."* Because they were two different parties on one
+           * screen: the round table, the clear round, the survivor counts and the margin were all
+           * computed from the published line while the delta above them compared the read one.
+           *
+           * The read figures win when they exist, because they are this table's characters. When
+           * they cannot be read the certified line stands in, and `offenceSource` says which.
+           */
+          dpr: offenceSource === "read" && currentParty
+            ? { round1: currentParty.round1Dpr, round2: currentParty.round2Dpr,
+              round3: currentParty.round3Dpr, round4Plus: currentParty.round4PlusDpr }
+            : profile.dpr,
           /**
            * ⚠ THE DEX LINE, AND IT IS THE SAME LINE TWICE. Initiative is a DEX check, so the
            * party's place in the body order is the DEX average from whichever source the panel is
@@ -596,7 +613,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
      */
     // ⚠ `classMitigation` REACHES NO ROSTER FIGURE EITHER, so it must be named or a party that
     // states a resistance would not re-price the fight until something else moved.
-  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, classMitigation, actorDefence, saves.dex]);
+  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, classMitigation, currentParty, offenceSource, actorDefence, saves.dex]);
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
@@ -839,9 +856,21 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                       </div>
                       <div style={{ color: "#666" }}>
                         {partySize}P · L{partyLevel} · {equipmentMode === "brokenChain" ? "Broken Chain" : "Standard"}
-                        {" · party "}{profile.dpr.round1.toFixed(0)}/{profile.dpr.round2.toFixed(0)}/
-                        {profile.dpr.round3.toFixed(0)}/{profile.dpr.round4Plus.toFixed(0)} DPR
-                        {partyFeats.dpr > 0 && (
+                        {/* ⚠ ONE PARTY ON THE SCREEN. This printed the certified curve while the
+                            simulation below and the delta above used the read one — three numbers
+                            for the same thing. It prints whichever party actually ran. */}
+                        {(() => {
+                          const d = offenceSource === "read" && currentParty
+                            ? { round1: currentParty.round1Dpr, round2: currentParty.round2Dpr,
+                              round3: currentParty.round3Dpr, round4Plus: currentParty.round4PlusDpr }
+                            : profile.dpr;
+                          return <>{" · party "}{d.round1.toFixed(0)}/{d.round2.toFixed(0)}/
+                            {d.round3.toFixed(0)}/{d.round4Plus.toFixed(0)} DPR</>;
+                        })()}
+                        {/* ⚠ FEATS ARE ONLY ADDED TO THE CERTIFIED LINE. On the read side they are
+                            already inside the actions that were scheduled, so showing "+X from
+                            feats" beside a read figure would claim an addition that never happened. */}
+                        {offenceSource !== "read" && partyFeats.dpr > 0 && (
                           <span style={{ color: "#e0b070" }} title={partyFeats.matched.map(m => `${m.actor}: ${m.feats.join(", ")}`).join(" · ")}>
                             {" +"}{partyFeats.dpr.toFixed(1)}{" from feats"}
                           </span>
@@ -945,10 +974,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                                 + String.fromCharCode(10, 10)
                                 + `audit only — ${currentParty.audit.damagePerDay.toFixed(0)} resource damage/day, ${currentParty.audit.flatUpliftPerRound.toFixed(1)}/round across ${RESOURCE_DAY.combatRoundsPerLongRest}. Row 45: the daily average is an audit result, not the round profile.`
                                 + (currentParty.estimated.length > 0 ? String.fromCharCode(10, 10) + "ESTIMATED:" + String.fromCharCode(10) + currentParty.estimated.map((s: string) => "  " + s).join(String.fromCharCode(10)) : "")
-                                + (currentParty.needsInput.length > 0 ? String.fromCharCode(10, 10) + "NEEDS DM INPUT:" + String.fromCharCode(10) + currentParty.needsInput.map((s: string) => "  " + s).join(String.fromCharCode(10)) : "")}>
+                                + (currentParty.needsInput.length > 0 ? String.fromCharCode(10, 10) + "NEEDS DM INPUT — damaging actions that could not be read:" + String.fromCharCode(10) + currentParty.needsInput.map((s: string) => "  " + s).join(String.fromCharCode(10)) : "")
+                                + (currentParty.unlinked.length > 0 ? String.fromCharCode(10, 10) + "NOT LINKED — read fine, but nothing connects them to a pool, so they schedule as zero:" + String.fromCharCode(10) + currentParty.unlinked.map((s: string) => "  " + s).join(String.fromCharCode(10)) : "")}>
                               {"· read R1 "}{currentParty.round1Dpr.toFixed(1)}
                               {" → R4+ "}{currentParty.round4PlusDpr.toFixed(1)}
                               {currentParty.needsInput.length > 0 ? ` · ${currentParty.needsInput.length} unread` : ""}
+                              {currentParty.unlinked.length > 0 ? ` · ${currentParty.unlinked.length} not linked` : ""}
                               {currentParty.estimated.length > 0 ? ` · ${currentParty.estimated.length} estimated` : ""}
                             </span>
                           )}

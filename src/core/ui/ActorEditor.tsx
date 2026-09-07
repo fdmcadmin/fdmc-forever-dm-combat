@@ -9,7 +9,7 @@ import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraf
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
 import type { DamageResponse } from "../encounter-band/damageResponsePricing";
-import { resolveSpecies } from "../../modules/dnd-5e/srdSpecies";
+import { resolveSpecies, SRD_RULESETS, type SrdRuleset } from "../../modules/dnd-5e/srdSpecies";
 import { applySpeciesToTabs, type SpeciesApplication } from "../../modules/dnd-5e/applySpecies";
 import { abilityModifier, proficiencyBonus, savingThrowModifier, inferSaveProficiency } from "../rules/dnd5e";
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
@@ -233,6 +233,8 @@ type ProfileDraft = {
    * creature's. Kept as the live array rather than as text, so it round-trips without a parser.
    */
   damageResponses: DamageResponse[];
+  /** Which SRD this sheet is built on. The two disagree about species speeds and traits. */
+  srdRuleset: SrdRuleset;
 };
 
 function actorToProfileDraft(actor: Actor): ProfileDraft {
@@ -283,6 +285,7 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
     classFeatureLabel: actor.classFeatureTracker?.label ?? "",
     classFeatureValue: actor.classFeatureTracker?.value ?? "",
     damageResponses: [...(actor.damageResponses ?? [])],
+    srdRuleset: actor.srdRuleset ?? "5.2.1",
     classFeatureNote: actor.classFeatureTracker?.note ?? "",
   };
 }
@@ -343,6 +346,7 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
       : (Number.isFinite(level) ? level : 1),
     attacksPerAction: Number.isFinite(attacksPerAction) && attacksPerAction > 1 ? attacksPerAction : undefined,
     // A blank type is a half-finished row, not a response — dropped rather than saved as one.
+    srdRuleset: draft.srdRuleset,
     damageResponses: (() => {
       const kept = draft.damageResponses.filter(r => r.type.trim() !== "");
       return kept.length > 0 ? kept : undefined;
@@ -373,7 +377,7 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; onApplySpecies?: (race: string) => SpeciesApplication }) {
+function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; onApplySpecies?: (race: string, ruleset?: SrdRuleset) => SpeciesApplication }) {
   /** What the last species change did, so an automatic edit is never a silent one. */
   const [speciesNote, setSpeciesNote] = useState<string | null>(null);
   /** Why the last path click was refused, in `chooseBondPath`'s own words. */
@@ -444,7 +448,7 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
           <input type="text" value={draft.race} placeholder="Wood Elf" style={inputStyle}
             onChange={e => {
               const race = e.target.value;
-              const applied = onApplySpecies?.(race);
+              const applied = onApplySpecies?.(race, draft.srdRuleset);
               if (!applied) { set("race", race); setSpeciesNote(null); return; }
               /* Speed comes from the species too — it is the movement half of the same fact. */
               onChange({ ...draft, race, speed: applied.speed });
@@ -461,7 +465,37 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
           )}
           {/* ⚠ A PURE CHECK. Calling the applier here would rewrite the features tab on every
               render, which is a side effect in a render path and would fight the DM as they type. */}
-          {!speciesNote && draft.race.trim() !== "" && !resolveSpecies(draft.race) && (
+          {/* ── WHICH SRD ────────────────────────────────────────────────────────────────────
+              ⚠ THE TWO DOCUMENTS DISAGREE ABOUT NUMBERS, NOT JUST WORDING. A 5.1 Dwarf walks 25
+              feet and a 5.2.1 Dwarf walks 30; a 5.1 Wood Elf has Mask of the Wild and Fleet of
+              Foot where a 5.2.1 one has Druidcraft and a lineage. Both are CC-BY-4.0 and both
+              ship, so the sheet says which — Christopher: *"the srd is suppose to be both 5.1 and
+              5.2.1 because wood elf is the class she has."* Changing it re-applies immediately,
+              because the answer to "which document" changes what the traits ARE. */}
+          <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <span style={{ fontSize: 11, color: "#888" }}>built on SRD</span>
+            {SRD_RULESETS.map(v => (
+              <button key={v} type="button"
+                onClick={() => {
+                  const applied = onApplySpecies?.(draft.race, v);
+                  if (!applied) { set("srdRuleset", v); setSpeciesNote(null); return; }
+                  onChange({ ...draft, srdRuleset: v, speed: applied.speed });
+                  setSpeciesNote(`${applied.source} — ${applied.added.length} trait${applied.added.length === 1 ? "" : "s"} added, speed ${applied.speed}`);
+                }}
+                title={v === "5.1"
+                  ? "The 2014 document. Wood Elf is a subrace with Mask of the Wild and Fleet of Foot; a Dwarf walks 25 feet."
+                  : "The 2024 document, and the app's default. Wood Elf is an Elven Lineage with Druidcraft; a Dwarf walks 30 feet."}
+                style={{
+                  fontSize: 11, padding: "2px 8px", borderRadius: 3, cursor: "pointer",
+                  background: draft.srdRuleset === v ? "#4a9eff22" : "transparent",
+                  border: `1px solid ${draft.srdRuleset === v ? "#4a9eff88" : "#333"}`,
+                  color: draft.srdRuleset === v ? "#4a9eff" : "#777",
+                }}>
+                {v}
+              </button>
+            ))}
+          </span>
+          {!speciesNote && draft.race.trim() !== "" && !resolveSpecies(draft.race, draft.srdRuleset) && (
             <span style={{ fontSize: 11, color: "#888", marginTop: 3, display: "block" }}
               title="The SRD 5.2.1 species are Aasimar, Dragonborn, Dwarf, Elf, Gnome, Goliath, Halfling, Human, Orc and Tiefling — plus their lineages (Wood Elf, Drow, Infernal Tiefling, and so on). Anything else keeps whatever you typed; nothing is added and nothing is removed.">
               Not an SRD 5.2.1 species — traits and speed stay exactly as you typed them.
@@ -1039,8 +1073,8 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
    * both. Returning null for an unrecognised race is what lets the Race field say "not an SRD
    * species" without this function needing to know anything about how it is displayed.
    */
-  function applySpecies(race: string): SpeciesApplication {
-    const applied = applySpeciesToTabs(race, tabsDraft);
+  function applySpecies(race: string, ruleset?: SrdRuleset): SpeciesApplication {
+    const applied = applySpeciesToTabs(race, tabsDraft, ruleset);
     if (!applied) return null;
     setTabsDraft(applied.tabs);
     return applied;

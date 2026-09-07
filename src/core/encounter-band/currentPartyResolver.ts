@@ -122,8 +122,24 @@ export type CurrentPartyMetrics = {
   schedule: ScheduledUse[];
   /** ⚠ AUDIT ONLY — row 45. Never the round profile. */
   audit: { damagePerDay: number; flatUpliftPerRound: number };
-  /** The contract's NEEDS DM INPUT: something damaging that could not be read at all. */
+  /**
+   * The contract's NEEDS DM INPUT: something DAMAGING that could not be read at all — a formula
+   * with an unresolved token, an action with neither a roll nor a save.
+   *
+   * ⚠ IT IS NOT "THINGS THE SHEET COULD SAY BETTER". Christopher, 2026-09-07: *"why do we still
+   * have unread actions if nothing except the homebrew bonds and convergence are outside of the
+   * SRD"* — because this list had a pool-linkage advisory folded into it and the panel counted
+   * the total as "unread". A pool nothing spends is a WIRING note about the sheet, not a damaging
+   * action the app failed to read, and conflating them made the app look like it could not read
+   * SRD content it reads perfectly well.
+   */
   needsInput: string[];
+  /**
+   * Sheet-wiring advice: nothing is unreadable, but something on the sheet is not connected and
+   * is therefore contributing zero. Separate from `needsInput` because the answer is different —
+   * one asks for a number the app cannot derive, the other says "link these two rows".
+   */
+  unlinked: string[];
   /**
    * The contract's ESTIMATED: counted, but on a stated assumption. Kept apart from `needsInput`
    * because they ask the DM for different things — one for a number, one for a ruling.
@@ -161,11 +177,29 @@ function saveChance(saveBonus: number, dc: number): number {
 export function currentPartyMetrics(
   actors: readonly Actor[],
   target: ResolvedTarget,
-  opts: { leanFor?: (actor: Actor) => ResourceLean | undefined; rounds?: number } = {},
+  opts: {
+    leanFor?: (actor: Actor) => ResourceLean | undefined;
+    rounds?: number;
+    /**
+     * How much of the party's day is already gone when this fight starts, 0..1.
+     *
+     * ⚠ IT DEPLETES THE RESOURCE HALF AND LEAVES THE AT-WILL HALF ALONE, which is the whole
+     * advantage of having read the party instead of a curve. `partyResourceCurve` has to apply a
+     * published median (`dprDepletionScale`, 0.5406 at fully expended) to a party it cannot see
+     * inside, so it taxes weapons and slots together. This one knows which is which: a Barbarian
+     * out of rages still swings the axe, and a Wizard out of slots still throws the cantrip.
+     * Christopher: *"shouldnt the 25%, 40%, and 60% spent move the damage they do instead of
+     * still showing their damage at full."* It should, and this is where it now does.
+     */
+    arrivingSpent?: number;
+  } = {},
 ): CurrentPartyMetrics | null {
   if (actors.length === 0) return null;
   const roundsPerFight = opts.rounds ?? RESOURCE_DAY.roundsPerFight;
+  /** Share of the day already gone. Clamped, because a caller can hand this anything. */
+  const spent = Math.min(1, Math.max(0, Number(opts.arrivingSpent ?? 0) || 0));
   const needsInput: string[] = [];
+  const unlinked: string[] = [];
   const estimated: string[] = [];
   const schedule: ScheduledUse[] = [];
   const atWill = { round1: 0, round2: 0, round3: 0, round4Plus: 0 };
@@ -212,7 +246,7 @@ export function currentPartyMetrics(
       r.offense === 0 && r.sustain === 0 && r.other === r.totalUses
       && r.notes.some(n => /no action on this sheet spends it/.test(n)));
     if (unspent.length > 0) {
-      needsInput.push(`${actor.name} — ${unspent.length} pool${unspent.length === 1 ? "" : "s"} nothing on the sheet spends, so ${unspent.length === 1 ? "it is" : "they are"} counted as available and scheduled as nothing: ${unspent.map(r => `${r.resource} (${r.totalUses})`).join(", ")}. Give the action that uses one a resourceId pointing at its Resources row.`);
+      unlinked.push(`${actor.name} — ${unspent.length} pool${unspent.length === 1 ? "" : "s"} nothing on the sheet spends, so ${unspent.length === 1 ? "it is" : "they are"} counted as available and scheduled as nothing: ${unspent.map(r => `${r.resource} (${r.totalUses})`).join(", ")}. Give the action that uses one a resourceId pointing at its Resources row.`);
     }
 
     /**
@@ -240,7 +274,14 @@ export function currentPartyMetrics(
     for (const spend of spends) {
       const row = rowFor(spend);
       if (!row) {
-        needsInput.push(spend.unsizedCost
+        /**
+         * ⚠ THIS IS WIRING, NOT AN UNREADABLE ACTION. The app read Hunter's Mark perfectly well —
+         * its dice, its type, its cadence. What it could not do is find the pool that limits it,
+         * which is a link missing between two rows on the same sheet. Filing it under "unread"
+         * said the app could not read SRD content, which was never true and sent the DM looking
+         * in the wrong place.
+         */
+        unlinked.push(spend.unsizedCost
           ? `${actor.name} — ${spend.label}: prints the cost "${spend.unsizedCost}" and no pool on this sheet matches it, so it is left out of the base AND out of the total. Link it to a Resources row (or give that row the action's resourceId) and it will schedule.`
           : `${actor.name} — ${spend.label}: spends a resource the ledger cannot size, so it is left out of the base and out of the total. Give the pool a size, or say what it spends.`);
         continue;
@@ -309,7 +350,13 @@ export function currentPartyMetrics(
     priced.sort((a, b) => b.value - a.value);
     let round = 0;
     for (const entry of priced) {
-      let left = entry.uses;
+      /**
+       * ⚠ ARRIVING SPENT TAKES USES AWAY, NOT DAMAGE PER USE. A Smite still hits for 2d8 on the
+       * last fight of the day; what a depleted party has fewer of is SLOTS. Scaling the value
+       * would say the same spell got weaker, which is not what running low means.
+       */
+      let left = entry.uses * (1 - spent);
+      if (!(left > 0)) continue;
       while (left > 0 && round < roundsPerFight) {
         const share = Math.min(1, left);
         perRound[round] += entry.value * share;
@@ -349,6 +396,7 @@ export function currentPartyMetrics(
       flatUpliftPerRound: damagePerDay / RESOURCE_DAY.combatRoundsPerLongRest,
     },
     needsInput,
+    unlinked,
     estimated,
   };
 }

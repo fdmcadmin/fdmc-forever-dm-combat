@@ -55,6 +55,23 @@ export function srdId(name: string): string {
  * ⚠ IT TRAVELS WITH THE CONTENT OR THE CONTENT DOES NOT SHIP. This string is not decoration; it is
  * the condition under which the records below may exist in the app at all.
  */
+/**
+ * SRD 5.1 IS ALSO CC-BY-4.0, AND SAYING OTHERWISE WAS WRONG.
+ *
+ * Wizards released SRD 5.1 under Creative Commons Attribution 4.0 in January 2023 — the same
+ * licence 5.2.1 ships under, needing only its own attribution string. Christopher, 2026-09-07:
+ * *"the srd is suppose to be both 5.1 and 5.2.1 because wood elf is the class she has, and 5.1
+ * has a SRD as well that can be used."* He is right; the app may carry both, and the campaign
+ * characters are built on 5.1, where Wood Elf is a subrace with Mask of the Wild and Fleet of Foot.
+ */
+export const SRD_51_VERSION = "5.1" as const;
+
+export const SRD_51_ATTRIBUTION =
+  "This work includes material from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of "
+  + "the Coast LLC, available at https://dnd.wizards.com/resources/systems-reference-document. The "
+  + "SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License, available "
+  + "at https://creativecommons.org/licenses/by/4.0/legalcode.";
+
 export const SRD_ATTRIBUTION =
   "This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by "
   + "Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is "

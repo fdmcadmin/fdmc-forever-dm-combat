@@ -140,5 +140,71 @@ console.log("\nApplying a species is additive");
     speciesTraitId("Fey Ancestry") === "srd-species:fey-ancestry", speciesTraitId("Fey Ancestry"));
 }
 
+/* ── 5. Both documents ship, and they disagree ───────────────────────────────────────────── */
+console.log("\nSRD 5.1 and 5.2.1 are both available, and the sheet says which");
+{
+  /**
+   * Christopher, 2026-09-07: *"the srd is suppose to be both 5.1 and 5.2.1 because wood elf is the
+   * class she has, and 5.1 has a SRD as well that can be used."* He is right — Wizards released
+   * SRD 5.1 under CC-BY-4.0 in January 2023, the same licence 5.2.1 ships under.
+   *
+   * ⚠ THE DISAGREEMENT IS NUMERIC, NOT COSMETIC, which is why a default would have been a guess.
+   */
+  const wood51 = resolveSpecies("Wood Elf", "5.1")!;
+  const wood52 = resolveSpecies("Wood Elf", "5.2.1")!;
+  ok("5.1's Wood Elf has Mask of the Wild and Fleet of Foot",
+    wood51.traits.some(t => t.name === "Mask of the Wild") && wood51.traits.some(t => t.name === "Fleet of Foot"),
+    wood51.traits.map(t => t.name).join(", "));
+  ok("5.2.1's does NOT — it is an Elven Lineage instead",
+    !wood52.traits.some(t => t.name === "Mask of the Wild")
+    && wood52.traits.some(t => /Elven Lineage/.test(t.name)),
+    wood52.traits.map(t => t.name).join(", "));
+  ok("...and both still arrive at 35 feet", wood51.speedFt === 35 && wood52.speedFt === 35);
+  ok("each says which document answered", wood51.ruleset === "5.1" && wood52.ruleset === "5.2.1");
+
+  /** ⚠ A NUMBER THE CHECKER READS DIFFERS BETWEEN THEM. */
+  ok("a 5.1 Dwarf walks 25 feet and a 5.2.1 Dwarf walks 30",
+    resolveSpecies("Dwarf", "5.1")!.speedFt === 25 && resolveSpecies("Dwarf", "5.2.1")!.speedFt === 30,
+    `${resolveSpecies("Dwarf", "5.1")!.speedFt} vs ${resolveSpecies("Dwarf", "5.2.1")!.speedFt}`);
+  ok("...so applying the wrong one would write the wrong speed",
+    applySpeciesToTabs("Dwarf", { features: [] }, "5.1")!.speed === "25 ft"
+    && applySpeciesToTabs("Dwarf", { features: [] }, "5.2.1")!.speed === "30 ft");
+
+  /** ⚠ AND A RACE ONLY ONE DOCUMENT PUBLISHES RESOLVES THERE ANYWAY. */
+  ok("a Half-Orc resolves from 5.1 even when 5.2.1 is asked for",
+    resolveSpecies("Half-Orc", "5.2.1")?.ruleset === "5.1",
+    String(resolveSpecies("Half-Orc", "5.2.1")?.ruleset));
+  ok("a Goliath resolves from 5.2.1 even when 5.1 is asked for",
+    resolveSpecies("Goliath", "5.1")?.ruleset === "5.2.1",
+    String(resolveSpecies("Goliath", "5.1")?.ruleset));
+
+  /**
+   * ⚠ "Half-Elf" AND "Half-Orc" CONTAIN THEIR PARENT SPECIES AS A WHOLE WORD, because a hyphen is
+   * a word boundary. Without a lookbehind a Half-Elf was handed full Elf darkvision, Trance and
+   * Keen Senses. Both halves are asserted, in BOTH rulesets, because the Orc twin was caught and
+   * the Elf one survived a version for want of this line.
+   */
+  for (const rules of ["5.1", "5.2.1"] as const) {
+    ok(`${rules}: a Half-Elf is not read as an Elf`,
+      resolveSpecies("Half-Elf", rules)?.name === "Half-Elf",
+      String(resolveSpecies("Half-Elf", rules)?.name));
+    ok(`${rules}: ...nor "Half Elf" without the hyphen`,
+      resolveSpecies("Half Elf", rules)?.name === "Half-Elf");
+    ok(`${rules}: a Half-Orc is not read as an Orc`,
+      resolveSpecies("Half-Orc", rules)?.name === "Half-Orc",
+      String(resolveSpecies("Half-Orc", rules)?.name));
+  }
+  /** ⚠ AND THE PARENTS MUST STILL MATCH THEMSELVES. */
+  ok("a plain Elf and a plain Orc still resolve",
+    resolveSpecies("Elf", "5.2.1")?.name === "Elf" && resolveSpecies("Orc", "5.2.1")?.name === "Orc");
+  ok("the default is the app's pinned 5.2.1",
+    resolveSpecies("Dwarf")?.ruleset === "5.2.1");
+
+  /** A 5.1 Tiefling resists fire outright; a 5.2.1 one has to pick a legacy first. */
+  ok("5.1 grants a Tiefling fire resistance; 5.2.1 waits for the legacy",
+    resolveSpecies("Tiefling", "5.1")!.damageResponses.length === 1
+    && resolveSpecies("Tiefling", "5.2.1")!.damageResponses.length === 0);
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

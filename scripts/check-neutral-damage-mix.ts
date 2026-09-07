@@ -17,6 +17,7 @@
 
 import { NEUTRAL_DAMAGE_PROFILE, neutralDamageMix } from "../src/modules/dnd-5e/neutralDamageProfile";
 import { priceDamageResponses } from "../src/core/encounter-band/damageResponsePricing";
+import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -76,6 +77,58 @@ console.log("\nAnd a real party still outranks it");
     `actors ${(fromActors.derived?.[0]?.share ?? 0) * 100}% vs published ${(fromNeutral.derived?.[0]?.share ?? 0) * 100}%`);
   ok("the mix says which one it is",
     neutralDamageMix().source === "published-neutral" && actorMix.source === "actors");
+}
+
+console.log("\nA CHOSEN party whose damage is untyped falls back too");
+{
+  /**
+   * ⚠ THE FALLBACK WAS `damageMix ?? neutral`, WHICH ONLY CAUGHT "NO ACTORS".
+   *
+   * A chosen party whose sheets state no damage types produces a mix that is PRESENT and
+   * `usable: false` — not undefined — so the fallback never fired and every mirror resistance came
+   * back "carries no published share either, so it prices at nothing" on a screen with five
+   * characters selected. Christopher, 2026-09-07: *"i thought we just discussed that this should
+   * not show since it should be priced against the baseline."*
+   *
+   * This asserts the SHAPE that broke it, in the roster path that produces the message.
+   */
+  const unusable = {
+    shares: {}, typedTotal: 0, coverage: 0, usable: false,
+    untyped: [{ actor: "A", label: "Longsword", amount: 8 }], sources: [], source: "actors" as const,
+  };
+  const template = {
+    templateId: "t", name: "Mirror",
+    stats: { kind: "construct", ac: 15, maxHp: 90, speed: "30 ft.", attacksPerTurn: 1,
+      size: "Medium", classification: "elite", proficiencyBonus: 3, defenses: [],
+      damageResponses: [{ type: "bludgeoning", response: "resistant" }] },
+    abilities: [], actions: [{ name: "Slam", kind: "attack", roll: "1d20+6", damage: "2d8+4 bludgeoning" }],
+    traits: [], reactions: [],
+  };
+  const target = { ac: 16, saveBonus: 3, partySize: 5,
+    saves: { str: 3, dex: 3, con: 3, int: 3, wis: 3, cha: 3 } };
+
+  const withUnusable = rosterFromTemplates(
+    [{ template: template as never, quantity: 1 }], 7,
+    { ...target, damageMix: unusable as never }, [template as never]);
+  const gaps = withUnusable.assumptions.filter(a => /carries no published share/.test(a.detail));
+  ok("an untyped chosen party no longer prices a resistance at nothing",
+    gaps.length === 0, gaps.map(g => g.detail).join(" | "));
+  ok("...it uses the published neutral profile and says so",
+    withUnusable.assumptions.some(a => /published neutral profile/.test(a.detail)
+      && /state no damage type/.test(a.detail)),
+    withUnusable.assumptions.map(a => a.detail.slice(0, 70)).join(" | "));
+
+  /** ⚠ MUTATION: a party whose damage IS typed must still outrank the published profile. */
+  const typed = {
+    shares: { bludgeoning: 0.9, fire: 0.1 }, typedTotal: 100, coverage: 1, usable: true,
+    untyped: [], sources: [], source: "actors" as const,
+  };
+  const withTyped = rosterFromTemplates(
+    [{ template: template as never, quantity: 1 }], 7,
+    { ...target, damageMix: typed as never }, [template as never]);
+  ok("mutation: a readable party is read, not replaced by the published profile",
+    withTyped.assumptions.some(a => /read from their actions/.test(a.detail)),
+    withTyped.assumptions.map(a => a.detail.slice(0, 60)).join(" | "));
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);

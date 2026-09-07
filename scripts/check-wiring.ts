@@ -422,6 +422,9 @@ const KNOWN_ORPHAN_EXPORTS: readonly string[] = [
   "modules/dnd-5e/srdAuditChassis.generated.ts → SRD_AUDIT_BY_NAME",
   "modules/dnd-5e/srdContent.ts → DND_MOD_PROVENANCE",
   "modules/dnd-5e/srdContent.ts → SRD_ATTRIBUTION",
+  // Both licence strings are ledgered together: neither is displayed yet, which is a real
+  // outstanding gap now that TWO CC-BY documents ship. Surfacing them is owed.
+  "modules/dnd-5e/srdContent.ts → SRD_51_ATTRIBUTION",
   "modules/dnd-5e/srdContent.ts → isSrdRecord",
   "modules/dnd-5e/srdLibrary.ts → SRD_LIBRARY_BY_ID",
   "modules/dnd-5e/srdMonsters.generated.ts → SRD_BY_ID",
