@@ -17,7 +17,18 @@
  *  · authored per-PC thresholds           → the contract gives every PC an EQUAL pool
  *
  * The differences that matter most, all of which the old model got wrong:
- *  1. Party damage SCALES with survivors (× standing ÷ size); monster damage does NOT.
+ *  1. ⚠ STALE — party damage NO LONGER scales by standing, and this line said it did long after
+ *     the code stopped. The certified R1→R4+ decline IS the attrition, so scaling it again by
+ *     projected casualties counts the same wearing-down twice; and because focus-fire and
+ *     spread-evenly project downs on different schedules, feeding that back made one fight finish
+ *     in 5 rounds or 6 depending on a display toggle. See `partyDamage` below for the removal.
+ *
+ *     ⚠ AND THE LIMIT THAT LEAVES, because it is real. That decline is an AVERAGE over 4,096
+ *     parties, where one body dropping in round 4 is smeared into roughly a tenth off the round.
+ *     A level 1 party of four loses a quarter of its output the moment a PC drops, immediately and
+ *     visibly. Christopher: *"why would a down not low dpr, they dont get to continue to damage
+ *     when they are downed."* Correct — an averaged curve cannot express that, and only per-actor
+ *     state can. Until it exists, low-level readings overstate a party that is losing bodies.
  *  2. A wounded group deals proportionally less — it does not fight at full output until dead.
  *  3. Every PC has `partySustain / partySize`, not an authored share.
  *  4. The party-size multiplier lives INSIDE effective HP, and never touches DPR.

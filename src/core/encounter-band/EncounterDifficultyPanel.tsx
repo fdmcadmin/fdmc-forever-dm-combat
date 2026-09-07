@@ -38,6 +38,7 @@ import { partyBenchmark } from "./partyBenchmark";
 import { resourceLedgerFromActors, RESOURCE_DAY } from "./resourceLedger";
 import { actorAsCreature } from "./actorAsCreature";
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
+import { classResourceLean } from "../../modules/dnd-5e/casterLean";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
@@ -358,8 +359,14 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         leanFor: (a) => {
           const id = (a as { moduleData?: { bondAssignment?: { templateId?: string } } })
             .moduleData?.bondAssignment?.templateId;
-          if (!id) return undefined;
-          return BROKEN_CHAIN_BOND_TEMPLATES.find(t => t.id === id)?.resourceLean;
+          const bond = id ? BROKEN_CHAIN_BOND_TEMPLATES.find(t => t.id === id)?.resourceLean : undefined;
+          /**
+           * ⚠ THE BOND FIRST, THEN THE CLASS. A bond is a stated choice about this character; a
+           * half or third caster's lean is what the progression already implies. Lyrielle is the
+           * case that needed it — her Pack bond is hand-built across her card and Faelar's, so no
+           * assignment records it, and a Ranger is not roleless for that reason.
+           */
+          return bond ?? classResourceLean(a as never);
         },
       })
       : null),
@@ -518,8 +525,24 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   }, [result, profile, arrivingSpent]);
 
   const fatal = result?.fatalRound ?? null;
+  /**
+   * ⚠ A GREEN VERDICT MUST NOT CONTRADICT THE NUMBER PRINTED UNDER IT.
+   *
+   * The headline was binary: FATAL when `fatalRound` fired, CLEARS otherwise. `fatalRound` fires
+   * only when cumulative monster damage empties the party's WHOLE pooled sustain, so a fight where
+   * the party falls before it finishes still read as a green CLEARS — with "margin -2.47" and
+   * "3 down · 1 damaged" sitting directly beneath it.
+   *
+   * Christopher, at level 1 against the Crone and the Mare: *"why does the checker tell me my lvl 1
+   * party can beat the crone and the mare when one of the crones spells or even one of the mare's
+   * attacks would kill a pc"*. The pooled model is the deeper answer and is a separate conflict;
+   * this is the part that is simply a wrong label. A NEGATIVE safety margin means MER < PCER — the
+   * party runs out before the roster does — and that is not a clear.
+   */
+  const fallsFirst = result !== null && (result.safetyMargin ?? 0) < 0;
   const headline = !result ? { text: "no roster", color: "#8a6a2a" }
     : fatal !== null ? { text: `FATAL R${fatal}`, color: "#ff4444" }
+    : fallsFirst ? { text: `FALLS FIRST · roster dies R${result.completionRound ?? "—"}`, color: "#e07b39" }
     : { text: `CLEARS R${result.completionRound ?? "—"}`, color: "#4caf50" };
 
   return (
