@@ -22,7 +22,8 @@
  */
 
 import { actorAsCreature } from "../src/core/encounter-band/actorAsCreature";
-import { resourceLedgerFromActor, RESOURCE_DAY } from "../src/core/encounter-band/resourceLedger";
+import { resourceLedgerFromActor, RESOURCE_DAY, CONTESTED_ROLE_MAJORITY } from "../src/core/encounter-band/resourceLedger";
+import { BROKEN_CHAIN_BOND_TEMPLATES } from "../src/modules/the-broken-chain/content/bondTemplates";
 import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 
@@ -146,6 +147,48 @@ console.log("\nTotal usable = start + recovered × rests + free");
   const noRest = resourceLedgerFromActor(actor, { shortRests: 0 });
   ok("with no scheduled Short Rest, the recovery is not granted",
     noRest.rows.find(r => r.resource === "Action Surge")!.totalUses === 1);
+}
+
+/* ── 3. The role breaks a contested tier ─────────────────────────────────────────────────── */
+console.log(String.fromCharCode(10) + "A contested tier is broken by the ROLE, not by the spell count");
+{
+  ok("every bond states which way it leans",
+    BROKEN_CHAIN_BOND_TEMPLATES.every(t => t.resourceLean !== undefined),
+    BROKEN_CHAIN_BOND_TEMPLATES.filter(t => !t.resourceLean).map(t => t.id).join(", ") || "all 14");
+
+  const l1 = (lean?: "offense" | "sustain" | "control") =>
+    resourceLedgerFromActor(actor, lean ? { lean } : {}).rows.find(r => r.resource === "Spell Slots L1")!;
+
+  const loadout = l1();
+  const sustainLean = l1("sustain");
+  const offenseLean = l1("offense");
+
+  ok("a sustain role sends the majority to sustain",
+    Math.abs(sustainLean.sustain - sustainLean.totalUses * CONTESTED_ROLE_MAJORITY) < 1e-9,
+    `sus ${sustainLean.sustain.toFixed(2)} of ${sustainLean.totalUses}`);
+  ok("an offense role sends the majority the other way",
+    Math.abs(offenseLean.offense - offenseLean.totalUses * CONTESTED_ROLE_MAJORITY) < 1e-9,
+    `off ${offenseLean.offense.toFixed(2)} of ${offenseLean.totalUses}`);
+  ok("...so the two roles genuinely disagree about the same slots",
+    Math.abs(sustainLean.offense - offenseLean.offense) > 0.5,
+    `${sustainLean.offense.toFixed(2)} vs ${offenseLean.offense.toFixed(2)}`);
+
+  /** ⚠ ALLOCATE-ONCE MUST SURVIVE THE LEAN, or the role becomes a way to conjure uses. */
+  for (const [name, row] of [["sustain", sustainLean], ["offense", offenseLean], ["loadout", loadout]] as const) {
+    ok(`${name}: still allocates exactly what it has`,
+      Math.abs(row.offense + row.sustain + row.other - row.totalUses) < 1e-9,
+      `${row.offense.toFixed(2)}+${row.sustain.toFixed(2)}+${row.other.toFixed(2)} of ${row.totalUses}`);
+  }
+
+  ok("no bond means no lean — the loadout split stands and says so",
+    loadout.notes.some(n => /no bond role/.test(n)), loadout.notes.join(" | "));
+
+  /** A lean this tier does not offer must not invent a channel. */
+  const absent = l1("control");
+  ok("a role absent from the tier falls back rather than forcing itself",
+    Math.abs(absent.offense + absent.sustain + absent.other - absent.totalUses) < 1e-9
+    && absent.notes.some(n => /does not appear at this tier/.test(n)),
+    absent.notes.join(" | "));
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);

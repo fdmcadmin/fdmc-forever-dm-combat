@@ -162,6 +162,19 @@ export type BondTemplate = {
   name: string;
   category?: string;
   role: string;
+  /**
+   * WHICH WAY THIS BOND'S CHARACTER LEANS WHEN ONE SLOT COULD BE TWO THINGS.
+   *
+   * `Resource Conversion` reserves each use once, so a tier wanted by both a heal and a damage
+   * spell has to be divided. Dividing it by how many options of each kind happen to be prepared
+   * says nothing about how the character is PLAYED. Christopher, 2026-09-07: *"the split should be
+   * based on what role that PC is playing, but it should be about a 70/30 split that way."*
+   *
+   * The role is already authored one line above; this is the same statement in a form the ledger
+   * can read, so the two cannot drift. A character with no bond has no lean and falls back to the
+   * loadout split, which the ledger reports rather than hides.
+   */
+  resourceLean?: "offense" | "sustain" | "control";
   mode: string;
   timing: string;
   quote?: string;

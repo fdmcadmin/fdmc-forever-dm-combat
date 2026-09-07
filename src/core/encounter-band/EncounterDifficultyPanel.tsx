@@ -37,6 +37,7 @@ import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyBenchmark } from "./partyBenchmark";
 import { resourceLedgerFromActors, RESOURCE_DAY } from "./resourceLedger";
 import { actorAsCreature } from "./actorAsCreature";
+import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
@@ -346,7 +347,22 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * figure and row 45 is explicit that it "is not a replacement for round scheduling".
    */
   const resourceLedger = useMemo(
-    () => (resolved ? resourceLedgerFromActors(chosen as never[]) : null),
+    () => (resolved
+      ? resourceLedgerFromActors(chosen as never[], {
+        /**
+         * The character's ROLE decides a contested tier, and the role is the bond's — authored
+         * beside it as `resourceLean`. Resolved here because the templates are module content
+         * and the ledger is engine; a character with no bond returns undefined and keeps the
+         * loadout split.
+         */
+        leanFor: (a) => {
+          const id = (a as { moduleData?: { bondAssignment?: { templateId?: string } } })
+            .moduleData?.bondAssignment?.templateId;
+          if (!id) return undefined;
+          return BROKEN_CHAIN_BOND_TEMPLATES.find(t => t.id === id)?.resourceLean;
+        },
+      })
+      : null),
     [chosen, resolved],
   );
 

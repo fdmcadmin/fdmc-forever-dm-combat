@@ -34,6 +34,19 @@ import { slotCapabilityFromActors, type SlotUse } from "../../modules/dnd-5e/slo
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 
 /** The workbook's day model. Stated once, here, so nothing re-invents it. */
+/**
+ * HOW FAR A ROLE TIPS A CONTESTED TIER.
+ *
+ * Christopher, 2026-09-07: *"the split should be based on what role that PC is playing, but it
+ * should be about a 70/30 split that way."* So a slot a Support could spend either way goes mostly
+ * to sustain, and the same slot on a Striker goes mostly to damage — the character is the tie
+ * break, not how many of each spell they happened to prepare.
+ *
+ * The lean is the bond's, authored beside its role on the template (`BondTemplate.resourceLean`).
+ * A character with no bond has no lean and keeps the loadout split, which the row reports.
+ */
+export const CONTESTED_ROLE_MAJORITY = 0.7;
+
 export const RESOURCE_DAY = {
   fightsPerLongRest: 5,
   roundsPerFight: 5,
@@ -44,6 +57,8 @@ export const RESOURCE_DAY = {
 } as const;
 
 export type LedgerKind = "sharedSlot" | "pactSlot" | "classResource" | "freeCast";
+
+export type ResourceLean = "offense" | "sustain" | "control";
 
 export type LedgerRow = {
   actor: string;
@@ -104,7 +119,7 @@ function regainPerShortRest(startUses: number, regain: number | "all" | undefine
 
 export function resourceLedgerFromActor(
   actor: Actor,
-  opts: { shortRests?: number } = {},
+  opts: { shortRests?: number; lean?: ResourceLean } = {},
 ): ResourceLedger {
   const shortRests = Math.max(0, opts.shortRests ?? RESOURCE_DAY.shortRestsPerLongRest);
   const rows: LedgerRow[] = [];
@@ -204,7 +219,28 @@ export function resourceLedgerFromActor(
 
     let offense = 0, sustain = 0, other = 0;
     const notes: string[] = [];
-    if (offered === 0) {
+    const offeredBy: Record<ResourceLean, number> = { offense: damage, sustain: healing, control };
+    const contestedNow = [damage, healing, control].filter(n => n > 0).length > 1;
+    const lean = opts.lean;
+
+    if (offered > 0 && contestedNow && lean && offeredBy[lean] > 0) {
+      /**
+       * ⚠ THE ROLE IS THE TIE BREAK, NOT THE SPELL COUNT. The leaned channel takes the majority
+       * and the rest is divided among the other channels this tier actually offers, so the total
+       * is still exactly `totalUses` — allocate-once holds however the lean falls.
+       */
+      const major = totalUses * CONTESTED_ROLE_MAJORITY;
+      const minorPool = totalUses - major;
+      const others = (Object.keys(offeredBy) as ResourceLean[]).filter(k => k !== lean && offeredBy[k] > 0);
+      const otherTotal = others.reduce((t, k) => t + offeredBy[k], 0);
+      const share: Record<ResourceLean, number> = { offense: 0, sustain: 0, control: 0 };
+      share[lean] = major;
+      for (const k of others) share[k] = otherTotal > 0 ? (minorPool * offeredBy[k]) / otherTotal : 0;
+      offense = share.offense;
+      sustain = share.sustain;
+      other = Math.max(0, totalUses - offense - sustain);
+      notes.push(`contested tier — split ${Math.round(CONTESTED_ROLE_MAJORITY * 100)}/${Math.round((1 - CONTESTED_ROLE_MAJORITY) * 100)} toward ${lean}, the role this character plays`);
+    } else if (offered === 0) {
       other = totalUses;
       notes.push(spenders.length === 0
         ? "no action on this sheet spends it, so it is held rather than allocated"
@@ -215,9 +251,11 @@ export function resourceLedgerFromActor(
       other = Math.max(0, totalUses - offense - sustain);
     }
 
-    const contested = [damage, healing, control].filter(n => n > 0).length > 1;
-    if (contested) {
-      notes.push("contested tier — one slot cannot be two of these, so the uses are divided by what the loadout offers");
+    const contested = contestedNow;
+    if (contested && !(lean && offeredBy[lean] > 0)) {
+      notes.push(lean
+        ? "contested tier — this character's role does not appear at this tier, so the uses follow what the loadout offers"
+        : "contested tier — no bond role to lean on, so the uses follow what the loadout offers");
     }
 
     rows.push({
@@ -235,9 +273,13 @@ export function resourceLedgerFromActor(
 
 export function resourceLedgerFromActors(
   actors: readonly Actor[],
-  opts: { shortRests?: number } = {},
+  /** `leanFor` is per ACTOR — every character plays their own role. */
+  opts: { shortRests?: number; leanFor?: (actor: Actor) => ResourceLean | undefined } = {},
 ): ResourceLedger {
-  const all = actors.map(a => resourceLedgerFromActor(a, opts));
+  const all = actors.map(a => {
+    const lean = opts.leanFor?.(a);
+    return resourceLedgerFromActor(a, { ...(opts.shortRests !== undefined ? { shortRests: opts.shortRests } : {}), ...(lean ? { lean } : {}) });
+  });
   return {
     rows: all.flatMap(l => l.rows),
     needsInput: all.flatMap(l => l.needsInput),
