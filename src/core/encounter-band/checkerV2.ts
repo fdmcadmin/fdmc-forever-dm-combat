@@ -788,29 +788,42 @@ export type EncounterResult = {
 export function bondArrangement(
   selectedMode: "wotcStandard" | "brokenChain",
   perRound: number,
-  /**
-   * ⚠ IS THE APP READING THIS PARTY'S OWN BONDS AT ALL — not "is the figure above zero".
-   *
-   * Deriving the arrangement from the VALUE fails the spec's own toggle test: bonds at 0 would
-   * hand the denominator back to the Broken Chain row, so turning them off moved the baseline as
-   * well as the clock. The arrangement is a structural choice about where bonds live, and it does
-   * not change because today's number happens to be zero.
-   */
+  /** Is the app reading this party's own bonds at all — not "is the figure above zero". */
   readsLiveBonds: boolean,
 ): { baselineMode: "wotcStandard" | "brokenChain"; mitigation: number; reason: string } {
-  if (!readsLiveBonds) {
+  /**
+   * ⚠ THE CERTIFIED ROWS ARE LEFT ALONE. THE ONLY QUESTION IS WHICH ONE IS COMPARED AGAINST.
+   *
+   * Christopher, 2026-09-07: *"leave the certified R1/R2/R3/R4+/Sustain rows numerically
+   * unchanged. The Bond fix only changes which existing certified row the live party compares
+   * against: bond-free WotC baseline for Standard, BC baseline for Broken Chain."*
+   *
+   * So the baseline follows the MODE, and each mode then gets the arrangement its own row
+   * requires — which is the workbook's rule that bonds are counted once:
+   *
+   *   Standard      the WotC row is BOND-FREE, so live bond prevention lands once on the clock.
+   *   Broken Chain  the BC row is certified from BC actor state INCLUDING active legal bonds,
+   *                 so nothing is subtracted a second time.
+   *
+   * ⚠ AN EARLIER PASS FORCED THE WOTC ROW IN BOTH MODES. That kept the app's live bond reading in
+   * Broken Chain mode, and it silently swapped which certified row the DM was being measured
+   * against — `Resource Conversion` row 47: *"Leave unchanged; compare the calculated current
+   * party against it."* Changing the comparison row is not "leaving it unchanged".
+   */
+  const bonds = readsLiveBonds ? Math.max(0, perRound || 0) : 0;
+  if (selectedMode === "brokenChain") {
     return {
-      baselineMode: selectedMode,
+      baselineMode: "brokenChain",
       mitigation: 0,
-      reason: "no party chosen, so the published row stands on its own",
+      reason: "already inside the certified Broken Chain row — not subtracted again",
     };
   }
   return {
     baselineMode: "wotcStandard",
-    mitigation: Math.max(0, perRound || 0),
-    reason: selectedMode === "brokenChain"
-      ? "applied once on the clock, against the bond-free baseline — the Broken Chain row already contains bonds and cannot be the denominator while they are also being subtracted"
-      : "applied once on the clock, against the bond-free WotC Standard baseline",
+    mitigation: bonds,
+    reason: bonds > 0
+      ? "applied once on the clock — the WotC Standard row is bond-free"
+      : "no bond mitigation read from this party",
   };
 }
 

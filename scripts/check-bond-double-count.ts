@@ -43,9 +43,14 @@ console.log("The rule picks the arrangement the mode's own baseline requires");
   const bc = bondArrangement("brokenChain", BONDS, true);
   ok("WotC Standard is bond-free, so live bonds go on the clock",
     near(wotc.mitigation, BONDS), `${wotc.mitigation} — ${wotc.reason}`);
-  ok("Broken Chain keeps the live bonds and moves the BASELINE to the bond-free row",
-    near(bc.mitigation, BONDS) && bc.baselineMode === "wotcStandard",
+  ok("Broken Chain compares against the BC row and subtracts nothing again",
+    near(bc.mitigation, 0) && bc.baselineMode === "brokenChain",
     `mitigation ${bc.mitigation}, baseline ${bc.baselineMode}`);
+  ok("...and Standard compares against the bond-free WotC row",
+    bondArrangement("wotcStandard", BONDS, true).baselineMode === "wotcStandard");
+  ok("neither mode recomputes a certified row — only which one is read",
+    bondArrangement("brokenChain", 0, false).baselineMode === "brokenChain"
+    && bondArrangement("wotcStandard", 0, false).baselineMode === "wotcStandard");
   ok("a negative or absent figure never becomes a bonus",
     near(bondArrangement("wotcStandard", -5).mitigation, 0)
     && near(bondArrangement("wotcStandard", 0, true).mitigation, 0));
@@ -101,8 +106,8 @@ console.log("\nToggling bonds off moves the clock exactly once");
        * ⚠ THE BUG THIS EXISTS FOR. Under the old behaviour this figure moved, because the BC
        * denominator already held the bonds and the clock took them off again.
        */
-      ok("brokenChain: pressure falls once too — same structure, bond-free denominator",
-        on.pressure < off.pressure, `${off.pressure.toFixed(1)} -> ${on.pressure.toFixed(1)}`);
+      ok("brokenChain: pressure does NOT move — bonds are already in that row",
+        near(moved, 0, 1e-9), `moved by ${moved.toFixed(6)}`);
     }
   }
 }
