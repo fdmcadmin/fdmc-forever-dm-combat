@@ -218,3 +218,6 @@ jobs:
 
       - name: check current party rounds
         run: npm run check:party
+
+      - name: check party class mitigation
+        run: npm run check:classmit

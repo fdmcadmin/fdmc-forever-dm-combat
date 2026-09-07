@@ -44,6 +44,8 @@ import {
   type RestStatus,
   nextArrivalSpent,
 } from "./actRun";
+import { actRunExportText, actRunExportFilename, type ActRunExportRow } from "./actRunExport";
+import { downloadExport } from "../export/encounterLogExport";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
@@ -257,6 +259,71 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
 
   const cycle = (c: RestChoice): RestChoice => (c === "default" ? "complete" : c === "complete" ? "skip" : "default");
 
+  /**
+   * ⚠ THE EXPORT READS THE SAME `priced` THE PANEL DRAWS FROM, AND NOTHING ELSE.
+   *
+   * Christopher: *"i also want to add a export the act run button so i can the information that
+   * the right side give."* The right side IS `priced`, so the export takes it whole rather than
+   * re-simulating — a second pass would be a second model of the run, and the file would slowly
+   * stop matching the screen it was exported from.
+   */
+  function exportRun() {
+    if (!run) return;
+    const rows: ActRunExportRow[] = resolved.map(s => {
+      const p = pricedById.get(s.id);
+      const encounter = encounters.find(e => e.id === s.encounterId);
+      const arriving = p?.arrivingSpent ?? 0;
+      const cost = p?.cost ?? 0;
+      const r = p?.result ?? null;
+      const outcome: ActRunExportRow["outcome"] = !r
+        ? "not priced"
+        : r.fatalRound !== null ? "wipe"
+          : r.completionRound !== null ? "clear" : "unresolved";
+      const note = p?.missing ? "no encounter — the step references a fight that is not in the library"
+        : p && "empty" in p && p.empty ? "no creatures in the encounter"
+          : p && "failed" in p && p.failed ? "the checker could not price this fight"
+            : undefined;
+      return {
+        sequence: s.sequence,
+        name: s.name,
+        encounter: encounter?.name ?? "(none)",
+        partyLevel: s.partyLevel,
+        restType: s.restType,
+        restStatus: s.restStatus,
+        restTaken: s.restTaken,
+        assumedRisky: s.assumedRisky,
+        arrivingSpent: arriving,
+        fightCost: cost,
+        leavesSpent: Math.min(1, arriving + cost),
+        outcome,
+        round: r ? (r.fatalRound ?? r.completionRound ?? null) : null,
+        downs: r?.downsAtCompletion ?? 0,
+        ...(note ? { note } : {}),
+      };
+    });
+    /**
+     * The recovery figure the run ACTUALLY spent, not the published median — the same correction
+     * the summary line got at 0.8.25.0. It is resolved per step, so the first step that produced
+     * one is the run's; a run with no priced step falls back to the panel's own default.
+     */
+    const used = priced.find(p => "rest" in p && p.rest)?.rest;
+    downloadExport(
+      actRunExportText({
+        runName: run.name,
+        partyMode: run.partyMode,
+        partySize: Math.max(1, run.partySize ?? 4),
+        generatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+        shortRestRecovery: used
+          ? { fraction: used.fraction, source: used.source, ...(used.detail ? { detail: used.detail } : {}) }
+          : { fraction: run.shortRestRecovery ?? SHORT_REST_RECOVERY, source: run.shortRestRecovery !== undefined ? "override" : "published" },
+        rows,
+        blocks: restBlocks(resolved),
+        levelGates: runLevelGates(run.steps),
+      }),
+      actRunExportFilename(run.name),
+    );
+  }
+
   return (
     <section style={{ marginBottom: 12, padding: "10px 12px", background: "#12101f", border: "1px solid #2a2a3e", borderRadius: 6 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
@@ -270,6 +337,13 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
           style={{ fontSize: 10, padding: "3px 9px", background: "#7b68ee22", border: "1px solid #7b68ee55", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
           + Run
         </button>
+        {run && run.steps.length > 0 && (
+          <button type="button" onClick={exportRun}
+            title="Download the run: what each fight costs, how spent the party arrives, and where they end. Tab separated, so the fight table pastes straight into a sheet."
+            style={{ fontSize: 10, padding: "3px 9px", background: "#8a7a5222", border: "1px solid #8a7a5288", borderRadius: 3, color: "#c8b57a", cursor: "pointer" }}>
+            Export run
+          </button>
+        )}
         {run && (
           <button type="button" onClick={() => { setRuns(rs => rs.filter(r => r.id !== run.id)); setActiveId(""); }}
             style={{ fontSize: 10, padding: "3px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>✕</button>

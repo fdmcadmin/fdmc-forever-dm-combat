@@ -44,6 +44,7 @@ import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
+import { partyMitigationFromActors, rosterDamageMix } from "./partyMitigationFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { slotCapabilityFromActors } from "../../modules/dnd-5e/slotCapability";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
@@ -323,6 +324,33 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   );
 
   /**
+   * ⚠ WHAT THE PARTY'S OWN CLASSES PREVENT — the half of defence the checker never read.
+   *
+   * Two things, and they are counted in different places because they ARE different things:
+   *
+   *   resistance  an EHP multiplier, weighed against what THIS fight throws. A resistance to
+   *               something nothing in the fight deals is worth nothing, which is the whole
+   *               reason it is weighed rather than assumed.
+   *   reaction    HP per round, and CONTENDED with the bond's — `Action Timing` row 22 puts every
+   *               normal Reaction in one budget, so a character brings the best of them and never
+   *               both. The bond figure goes in so the two compete instead of stacking.
+   */
+  const classMitigation = useMemo(() => {
+    if (!resolved) return null;
+    const templates = (encounter?.entries ?? [])
+      .map(e => monsterLibrary.find(m => m.templateId === e.templateId))
+      .filter((t): t is MainMonsterTemplate => Boolean(t));
+    const bondPerActor: Record<string, number> = {};
+    for (const s of bondMitigation?.sources ?? []) {
+      bondPerActor[s.actor] = Math.max(bondPerActor[s.actor] ?? 0, s.amount);
+    }
+    return partyMitigationFromActors(chosen as never[], {
+      mix: templates.length > 0 ? rosterDamageMix(templates as never) : undefined,
+      damagePerHit: hostileExposure?.incomingDamagePerHit ?? 0,
+    }, bondPerActor);
+  }, [chosen, resolved, encounter, monsterLibrary, hostileExposure, bondMitigation]);
+
+  /**
    * ⚠ ONE ARRANGEMENT, DECIDED ONCE. The baseline and the clock have to agree about where bonds
    * live, so both read this — see `bondArrangement`. `equipmentMode` stays the DM's SELECTION;
    * `bondBaselineMode` is what the comparison is actually drawn against.
@@ -517,17 +545,27 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
          * double-count `Resource Conversion` row 46 forbids ("Do not add a second free sustain
          * pool"). The read figure is reported beside the row instead, where it can be compared.
          */
-        sustain: profile.sustain + partyFeats.partyEhp + partyHealing.total,
+        sustain: profile.sustain * (classMitigation?.multiplier ?? 1) + partyFeats.partyEhp + partyHealing.total,
       },
     });
-  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, partyHealing, currentParty, offenceSource]);
+  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, partyHealing, currentParty, offenceSource, classMitigation]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
     try {
       return simulateEncounter({
         party: {
-          size: profile.size, sustain: profile.sustain, dpr: profile.dpr,
+          size: profile.size,
+          /**
+           * ⚠ A RESISTANCE IS EFFECTIVE HP, AND IT BELONGS HERE RATHER THAN IN THE CLOCK.
+           *
+           * The certified sustain line is the 4,096-party field, whose parties are abstract and
+           * carry no typed responses — so this multiplier adds something the baseline genuinely
+           * does not have, the same way feat EHP does. It is 1.0 whenever nothing is stated, so a
+           * party that has entered no responses is unchanged.
+           */
+          sustain: profile.sustain * (classMitigation?.multiplier ?? 1),
+          dpr: profile.dpr,
           /**
            * ⚠ THE DEX LINE, AND IT IS THE SAME LINE TWICE. Initiative is a DEX check, so the
            * party's place in the body order is the DEX average from whichever source the panel is
@@ -536,8 +574,12 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
            * drift this file keeps paying for.
            */
           initiative: actorDefence?.initiative ?? saves.dex,
-          // Counted once — see `bondArrangement`.
-          mitigationPerRound: bondArrange.mitigation,
+          /**
+           * Counted once — see `bondArrangement` for the bond half. The class half is already
+           * NET of each character's bond (`partyMitigationFromActors` subtracts it per actor,
+           * because one Reaction cannot be spent twice), so these add without double-counting.
+           */
+          mitigationPerRound: bondArrange.mitigation + (classMitigation?.reactionPerRound ?? 0),
         },
         roster: roster.roster,
         settings: { damageAllocation: allocation, targetSafetyMargin },
@@ -552,7 +594,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
      * roster figure, so without naming them a party could gain a Guardian and the fight would not
      * re-price until something unrelated moved.
      */
-  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, actorDefence, saves.dex]);
+    // ⚠ `classMitigation` REACHES NO ROSTER FIGURE EITHER, so it must be named or a party that
+    // states a resistance would not re-price the fight until something else moved.
+  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, classMitigation, actorDefence, saves.dex]);
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
@@ -906,6 +950,42 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               {" → R4+ "}{currentParty.round4PlusDpr.toFixed(1)}
                               {currentParty.needsInput.length > 0 ? ` · ${currentParty.needsInput.length} unread` : ""}
                               {currentParty.estimated.length > 0 ? ` · ${currentParty.estimated.length} estimated` : ""}
+                            </span>
+                          )}
+                          {/* ── WHAT THE CLASSES PREVENT ────────────────────────────────────
+                              Silent only when there is genuinely nothing to say. A party that has
+                              stated no responses is told so by name, because a missing multiplier
+                              and an un-entered one look identical on a number. */}
+                          {classMitigation && (classMitigation.multiplier > 1.0001 || classMitigation.reactionPerRound > 0) && (
+                            <span style={{ color: "#777", marginLeft: 8 }}
+                              title={[
+                                classMitigation.resisted.length > 0
+                                  ? "Resistances, weighed against what THIS fight throws:\n"
+                                    + classMitigation.resisted.map(r => `  ${r.actor} · ${r.response.response} to ${r.response.type} — ${(r.share * 100).toFixed(1)}% of incoming${r.qualifierUnresolved ? ` (⚠ "${r.response.qualifier}" could not be applied — priced as the upper bound)` : ""}`).join("\n")
+                                  : "",
+                                classMitigation.reactions.length > 0
+                                  ? "\nReactions, one per character:\n"
+                                    + classMitigation.reactions.map(r => `  ${r.actor} · ${r.action} ${r.amount.toFixed(1)}/round (${r.basis})`).join("\n")
+                                  : "",
+                                classMitigation.displacedByBond.length > 0
+                                  ? "\nDisplaced — the bond's reaction is worth more, and one Reaction cannot be spent twice:\n"
+                                    + classMitigation.displacedByBond.map(d => `  ${d.actor} · ${d.action} ${d.amount.toFixed(1)} < bond ${d.bondAmount.toFixed(1)}`).join("\n")
+                                  : "",
+                                classMitigation.withoutStatedResponses.length > 0
+                                  ? `\nNo damage responses entered: ${classMitigation.withoutStatedResponses.join(", ")}. Add them on the character's Profile tab — the app will not read a resistance out of a feature's description.`
+                                  : "",
+                              ].filter(Boolean).join("\n")}>
+                              {"· classes "}
+                              {classMitigation.multiplier > 1.0001 ? `x${classMitigation.multiplier.toFixed(2)} EHP` : ""}
+                              {classMitigation.multiplier > 1.0001 && classMitigation.reactionPerRound > 0 ? " + " : ""}
+                              {classMitigation.reactionPerRound > 0 ? `${classMitigation.reactionPerRound.toFixed(1)}/rd reactions` : ""}
+                            </span>
+                          )}
+                          {classMitigation && classMitigation.multiplier <= 1.0001 && classMitigation.reactionPerRound === 0
+                            && classMitigation.withoutStatedResponses.length > 0 && (
+                            <span style={{ color: "#777", marginLeft: 8 }}
+                              title={`No damage responses are entered for ${classMitigation.withoutStatedResponses.join(", ")}. A resistance written only in a feature's description is invisible to the checker — the app does not read mechanics out of prose. Enter them on each character's Profile tab and this fight will be re-priced against what they actually resist.`}>
+                              · no class resistances entered ({classMitigation.withoutStatedResponses.length})
                             </span>
                           )}
                                                     {(bondMitigation?.perRound ?? 0) > 0 && (() => {

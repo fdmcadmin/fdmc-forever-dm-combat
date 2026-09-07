@@ -9,6 +9,7 @@
  */
 import { nextArrivalSpent, resolveActRun, restBlocks, runLevelGates, normalizeRun, loadActRuns, saveActRuns, type ActRunStep } from "../src/core/encounter-band/actRun";
 import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
+import { actRunExportText, actRunExportFilename, type ActRunExport, type ActRunExportRow } from "../src/core/encounter-band/actRunExport";
 
 const problems: string[] = [];
 /** Numbers compare with a tolerance — 0.4 + 0.2 is 0.6000000000000001 in binary floating point,
@@ -91,6 +92,86 @@ function repairNoneUntouched(): boolean {
   saveActRuns([{ id: "r2", name: "r2", partyMode: "Broken Chain", steps: [none] }]);
   return loadActRuns()[0].steps[0].restDefault === "Skip";
 }
+
+/* ── THE EXPORT ─────────────────────────────────────────────────────────────────────────────
+ * Christopher asked for the run as a file: *"where is show what sustain is spend, how much a
+ * fight take and where they end."* The gate is those three questions, plus the two things an
+ * export must never do — invent a number, or bury a warning the panel shows.
+ */
+console.log("\nact run — export:");
+{
+  const row = (over: Partial<ActRunExportRow>): ActRunExportRow => ({
+    sequence: 1, name: "Fight", encounter: "Enc", partyLevel: 7,
+    restType: "None", restStatus: "—", restTaken: "None", assumedRisky: false,
+    arrivingSpent: 0, fightCost: 0.3, leavesSpent: 0.3,
+    outcome: "clear", round: 3, downs: 0, ...over,
+  });
+  const base: ActRunExport = {
+    runName: "Act 3 · Gate Block", partyMode: "Broken Chain", partySize: 5,
+    generatedAt: "2026-09-07 12:00:00",
+    shortRestRecovery: { fraction: 0.287, source: "party", detail: "Ripsnarl 1d12" },
+    rows: [
+      row({ sequence: 1, name: "Ambush", arrivingSpent: 0, fightCost: 0.3, leavesSpent: 0.3,
+        restType: "Short", restStatus: "Threatened", restTaken: "Short", assumedRisky: true }),
+      row({ sequence: 2, name: "Hollow Feast", arrivingSpent: 0.47, fightCost: 0.5, leavesSpent: 0.97,
+        outcome: "wipe", round: 1, downs: 4 }),
+    ],
+    blocks: [{ fights: 2, shortRests: 1, endsAt: "end of run" }],
+    levelGates: [{ after: "Ambush", from: 7, to: 8 }],
+  };
+  const text = actRunExportText(base);
+
+  eq("it answers WHERE THEY END with the last fight's leaving figure", text.includes("ends at 97%"), true);
+  eq("it names the deepest arrival", text.includes("Hollow Feast at 47% already spent"), true);
+  eq("a wipe is named with its round", text.includes("Hollow Feast (round 1)"), true);
+
+  /** ⚠ A RUN THAT QUIETLY COMPLETED A THREATENED REST MUST NOT LOOK LIKE ONE THAT DIDN'T. */
+  eq("an assumed rest is surfaced, not buried", /ASSUMED to have completed/.test(text), true);
+  eq("...and it says which rest", text.includes("Ambush (Short/Threatened)"), true);
+
+  /** The recovery figure the run actually used, and where it came from. */
+  eq("it states the short-rest recovery it used", text.includes("gives back 29%"), true);
+  eq("...and that it came from this party", text.includes("this party's own Hit Dice"), true);
+
+  /** ⚠ SPENT COLUMNS ARE NUMBERS, NOT "47%" — a percent sign is text in some locales. */
+  const table = text.split("\n").filter(l => l.includes("\t"));
+  eq("the fight table is tab separated", table.length, 3);
+  const header = table[0].split("\t");
+  eq("...with a header naming the three questions",
+    header.includes("arriving spent") && header.includes("fight cost") && header.includes("leaves spent"), true);
+  const cells = table[2].split("\t");
+  eq("...and spent columns written as numbers, not percentages",
+    cells[header.indexOf("arriving spent")], "0.47");
+  eq("...so nothing in a data row carries a percent sign", table.slice(1).some(l => l.includes("%")), false);
+  eq("every column has a cell in every row",
+    table.every(l => l.split("\t").length === header.length), true);
+
+  /** A step with no result must say so rather than export a zero that reads as "took nothing". */
+  const broken = actRunExportText({
+    ...base,
+    rows: [row({ outcome: "not priced", round: null, fightCost: 0, leavesSpent: 0,
+      note: "no encounter — the step references a fight that is not in the library" })],
+  });
+  eq("an unpriced step is labelled, not exported as a free fight",
+    broken.includes("not priced") && broken.includes("not in the library"), true);
+
+  /** ⚠ MUTATION: the export must MOVE with the run, or it is printing a template. */
+  const deeper = actRunExportText({
+    ...base,
+    rows: [base.rows[0], { ...base.rows[1], arrivingSpent: 0.8, leavesSpent: 1 }],
+  });
+  eq("mutation: a deeper arrival changes what the export says", deeper.includes("ends at 100%"), true);
+  eq("...and the old figure is gone", deeper.includes("ends at 97%"), false);
+
+  /** An empty run must not claim an ending it does not have. */
+  const empty = actRunExportText({ ...base, rows: [], blocks: [], levelGates: [] });
+  eq("an empty run says it is empty rather than ending at 0%",
+    empty.includes("no fights in it yet") && !empty.includes("ends at"), true);
+
+  eq("the filename names the run", actRunExportFilename("Act 3 · Gate Block", "2026-09-07T12:00:00Z"),
+    "fdmc-act-run-act-3-gate-block-2026-09-07-12-00-00.txt");
+}
+
 
 console.log(problems.length ? `\nFAILED: ${problems.join(", ")}` : "\nALL PASS");
 process.exit(problems.length ? 1 : 0);

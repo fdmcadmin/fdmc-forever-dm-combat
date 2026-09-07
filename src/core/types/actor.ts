@@ -1,5 +1,6 @@
 import type { BondAssignment } from "./bond";
 import type { TabActionMap, TabId } from "./tabs";
+import type { DamageResponse } from "../encounter-band/damageResponsePricing";
 
 export type ActorKind = "player" | "companion" | "npc" | "monster" | "boss";
 
@@ -273,6 +274,25 @@ export type Actor = {
    *  always consumes the whole action regardless of this value. Unset or 1 = one attack.
    *  A per-action `metadata.attackUses` overrides this for that action only. */
   attacksPerAction?: number;
+  /**
+   * DAMAGE TYPES THIS CHARACTER RESISTS, IGNORES OR TAKES DOUBLE FROM.
+   *
+   * ⚠ THE APP HAD NOWHERE TO PUT THIS, WHICH IS WHY PARTY MITIGATION WAS NEVER PRICED. Creatures
+   * have carried `stats.defenses` since the monster reader existed, and the checker prices them
+   * against the party's own damage mix. The party side had no field at all — Ash's *"Resistance to
+   * Necrotic and Radiant"* and Ripsnarl's Rage resistance to bludgeoning, piercing and slashing
+   * existed only as English inside a feature's description, and reading a mechanic out of prose is
+   * the one thing this codebase does not do (see `partyDamageMix`, `never infer data from prose`).
+   *
+   * So it is a STATED field, entered the same way a creature's is, and priced by the same
+   * `priceDamageResponses` the creature side uses — one model, pointed the other way.
+   *
+   * ⚠ CONDITIONAL RESISTANCE IS NOT UNCONDITIONAL. Rage's B/P/S resistance applies only while
+   * raging, which is a resource with a duration; entering it here prices it as if it were always
+   * on. `qualifier` is where that is said, and `partyMitigationFromActors` reports every
+   * qualifier it could not evaluate rather than quietly pricing the upper bound as certain.
+   */
+  damageResponses?: readonly DamageResponse[];
   stats: ActorStats;
   abilityScores?: AbilityScores;
   classFeatureTracker?: ClassFeatureTracker;

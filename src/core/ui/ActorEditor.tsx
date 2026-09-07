@@ -8,6 +8,7 @@ import { useState } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
+import type { DamageResponse } from "../encounter-band/damageResponsePricing";
 import { abilityModifier, proficiencyBonus, savingThrowModifier, inferSaveProficiency } from "../rules/dnd5e";
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
@@ -225,6 +226,11 @@ type ProfileDraft = {
   classFeatureLabel: string;
   classFeatureValue: string;
   classFeatureNote: string;
+  /**
+   * Damage types this character resists, ignores or takes double from — the party-side twin of a
+   * creature's. Kept as the live array rather than as text, so it round-trips without a parser.
+   */
+  damageResponses: DamageResponse[];
 };
 
 function actorToProfileDraft(actor: Actor): ProfileDraft {
@@ -274,6 +280,7 @@ function actorToProfileDraft(actor: Actor): ProfileDraft {
     hasClassResource: Boolean(actor.tabs?.resources?.length),
     classFeatureLabel: actor.classFeatureTracker?.label ?? "",
     classFeatureValue: actor.classFeatureTracker?.value ?? "",
+    damageResponses: [...(actor.damageResponses ?? [])],
     classFeatureNote: actor.classFeatureTracker?.note ?? "",
   };
 }
@@ -333,6 +340,11 @@ function profileDraftToActorPatch(draft: ProfileDraft): Partial<Actor> {
       ? multiclassRows.reduce((n, c) => n + c.level, 0)
       : (Number.isFinite(level) ? level : 1),
     attacksPerAction: Number.isFinite(attacksPerAction) && attacksPerAction > 1 ? attacksPerAction : undefined,
+    // A blank type is a half-finished row, not a response — dropped rather than saved as one.
+    damageResponses: (() => {
+      const kept = draft.damageResponses.filter(r => r.type.trim() !== "");
+      return kept.length > 0 ? kept : undefined;
+    })(),
     stats: {
       ac: Number.isFinite(ac) ? ac : 10,
       hp: {
@@ -496,6 +508,56 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
         <label style={labelStyle}>HP Max <input type="number" min={1} value={draft.hpMax} onChange={e => set("hpMax", e.target.value)} style={inputStyle} /></label>
         <label style={labelStyle}>HP Current <input type="number" min={0} value={draft.hpCurrent} onChange={e => set("hpCurrent", e.target.value)} style={inputStyle} /></label>
         <label style={{ ...labelStyle, gridColumn: "span 2" }}>Speed <input type="text" value={draft.speed} onChange={e => set("speed", e.target.value)} style={inputStyle} /></label>
+      </div>
+
+      {/* ── DAMAGE RESPONSES ────────────────────────────────────────────────────────────────
+          ⚠ THE CHECKER HAD NOWHERE TO READ THIS FROM. A creature has carried damage responses
+          since the monster reader existed and the checker prices them against the party's own
+          damage mix. The party side had NO FIELD AT ALL, so a Barbarian's rage resistance and a
+          Celestial's necrotic/radiant lived only as English inside a feature description — and
+          the app does not read mechanics out of prose. This is that field, entered exactly the
+          way a creature's is, and priced by the same function pointed the other way. */}
+      <div style={{ padding: "8px 10px", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6 }}>
+        <span style={{ ...labelStyle, textTransform: "uppercase", letterSpacing: 1, color: "#4a9eff", fontSize: 11 }}>Damage responses</span>
+        <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>
+          Types this character resists, ignores, or takes double from. The encounter checker weighs
+          each one against how much damage of that type the fight actually throws — so a resistance
+          to something nothing in the fight deals is correctly worth nothing. Leave it empty when
+          the character has none.
+        </p>
+        {draft.damageResponses.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 6 }}>
+            <div style={{ width: 118 }}>
+              <span style={labelStyle}>Response</span>
+              <select value={r.response} style={inputStyle}
+                onChange={e => set("damageResponses", draft.damageResponses.map((x, k) => (k === i ? { ...x, response: e.target.value as DamageResponse["response"] } : x)))}>
+                <option value="resistant">Resistant to</option>
+                <option value="immune">Immune to</option>
+                <option value="vulnerable">Vulnerable to</option>
+              </select>
+            </div>
+            <div style={{ flex: 2, minWidth: 100 }}>
+              <span style={labelStyle}>Damage type</span>
+              <input value={r.type} placeholder="necrotic" style={inputStyle}
+                onChange={e => set("damageResponses", draft.damageResponses.map((x, k) => (k === i ? { ...x, type: e.target.value } : x)))} />
+            </div>
+            {/* ⚠ A CONDITION IS NOT A DISCOUNT. "while raging" cannot be evaluated by the app, so
+                the checker prices the full share as an UPPER BOUND and reports that it read a
+                qualifier it could not apply — never silently narrowing it, never dropping it. */}
+            <div style={{ flex: 3, minWidth: 130 }}>
+              <span style={labelStyle}>Only when… <span style={{ color: "#666" }}>opt</span></span>
+              <input value={r.qualifier ?? ""} placeholder="while raging" style={inputStyle}
+                title="A condition the app cannot evaluate. The checker prices the full share as an upper bound and says it could not apply this."
+                onChange={e => set("damageResponses", draft.damageResponses.map((x, k) => (k === i ? { ...x, qualifier: e.target.value || undefined } : x)))} />
+            </div>
+            <button type="button" onClick={() => set("damageResponses", draft.damageResponses.filter((_, k) => k !== i))}
+              style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #5a1a1a", background: "transparent", color: "#ff6b6b", cursor: "pointer", fontSize: 12 }}>✕</button>
+          </div>
+        ))}
+        <button type="button" onClick={() => set("damageResponses", [...draft.damageResponses, { type: "", response: "resistant" as const }])}
+          style={{ marginTop: 8, padding: "3px 9px", borderRadius: 4, border: "1px solid #4a9eff55", background: "#4a9eff22", color: "#4a9eff", cursor: "pointer", fontSize: 11 }}>
+          + Damage response
+        </button>
       </div>
 
       <h4 style={{ margin: "4px 0 0" }}>Ability Scores</h4>
