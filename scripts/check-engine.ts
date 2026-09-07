@@ -45,12 +45,27 @@ console.log("Boundary parity — wrapped output must equal direct output");
   ok("workbook example 3-round DPR exact",
     direct.modeledDpr === 24.666666666666668, `got ${direct.modeledDpr}`);
 }
+/**
+ * ⚠ THIS IS A BASELINE PIN, NOT A PARITY CHECK — and being filed under one is why it went stale.
+ *
+ * Nothing here is wrapped: it reads `PARTY_CURVE_V2` directly. It exists because
+ * `scripts/baseline.json` records the curve to TWO DECIMAL PLACES, so a regeneration that moved a
+ * figure by less than 0.01 would pass that gate untouched. This is the full-precision copy.
+ *
+ * ⚠ SO IT MOVES EVERY TIME THE CURVE IS RECERTIFIED, AND IT IS THE SPOT THAT GETS FORGOTTEN. The
+ * V3.0 certification (0.8.23.0) regenerated the curve and updated `baseline.json` correctly; these
+ * two literals still held the pre-V3.0 numbers written at 0.8.3.0, so `check:engine` — which runs
+ * in CI — failed on main through six further versions before anyone read the output.
+ *
+ * WHEN THE CURVE IS RECERTIFIED, THE L9 ROW MOVES IN FOUR PLACES: `partyCurveV2.ts`,
+ * `scripts/baseline.json` (via `npm run baseline:accept`), here, and MASTER's party-curve row.
+ */
 {
   const row = PARTY_CURVE_V2.find(r => r.level === 9)!;
   ok("L9 4P wotcStandard R1 exact",
-    row.wotcStandard.round1 === 107.34437314590798, `got ${row.wotcStandard.round1}`);
+    row.wotcStandard.round1 === 139.66475906744733, `got ${row.wotcStandard.round1}`);
   ok("L9 4P wotcStandard sustain exact",
-    row.wotcStandard.sustain === 487.2898080604998, `got ${row.wotcStandard.sustain}`);
+    row.wotcStandard.sustain === 617.122547189093, `got ${row.wotcStandard.sustain}`);
 }
 
 /* ── 2. Contract validation catches what a try/catch cannot. ────────────────────────────────── */
