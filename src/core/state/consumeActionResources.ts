@@ -76,8 +76,20 @@ export function resolveNamedResourceCost(
     if (linked) return linked.label;
   }
 
+  /**
+   * ⚠ "NO SLOT" IS STILL "NO SLOT" WHEN IT SAYS HOW MANY — and the exact-string test could not
+   * see that. Lyrielle's Hunter's Mark authors `slotCost: "No Slot 2/LR"`, which is not equal to
+   * `"No Slot"`, does not start with `L<digit>`, and so was returned AS A POOL NAME. Nothing on
+   * her sheet is called "No Slot 2/LR", so the card resolved a pool that does not exist and spent
+   * nothing when clicked — the same dead-button shape as Iskarn's psionic dice.
+   *
+   * The prefix is what carries the meaning; the count after it is a limit, not a label. Matching
+   * the prefix keeps every real pool name working (none of them begins "No Slot" or "Cantrip")
+   * and stops this one class of string being mistaken for one.
+   */
   const slotCost = action.metadata?.slotCost?.trim();
-  if (slotCost && slotCost !== "Cantrip" && slotCost !== "No Slot" && !/^L\d/i.test(slotCost)) {
+  const saysNoSlot = slotCost !== undefined && /^(?:cantrip|no slot)\b/i.test(slotCost);
+  if (slotCost && !saysNoSlot && !/^L\d/i.test(slotCost)) {
     return slotCost;
   }
   if (slotCost) return undefined; // an explicit Cantrip / No Slot / L1 is not a named pool

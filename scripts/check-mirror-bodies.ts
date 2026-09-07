@@ -32,6 +32,7 @@ import { materializeTemplateBody } from "../src/core/monsters/actionSetPicks";
 import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
+import { resolveFeature } from "../src/core/encounter-band/featureResolver";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -140,6 +141,45 @@ console.log("\nAn at-will attack cantrip competes for a Multiattack slot");
   const boostedR1 = traceCreature(parseCreature(boosted), target as never, 4).rounds[0]?.totalExpectedDamage ?? 0;
   ok("a STRONGER cantrip does take a slot", boostedR1 > base,
     `R1 ${base.toFixed(2)} -> ${boostedR1.toFixed(2)}`);
+}
+
+/* ── 4. A self-buff is neither damage nor control ─────────────────────────────────────────── */
+console.log("\nSunstone Aegis raises the mirror's OWN defence and is reported as that");
+{
+  /**
+   * ⚠ THE RECORD, CORRECTED. 0.8.32.1's commit message says this branch "is NOT firing". That is
+   * wrong: it fires, and my probe printed `feature ?? creature` without ever printing the detail
+   * it produced. This gate is the proof, and it is here so the claim can never rest on a probe
+   * again — the assertion states which of the three messages comes back.
+   *
+   * `Sunstone Aegis` prints a CON save and +2 AC and NO damage dice. Three readings were possible
+   * and only one is right:
+   *   · damage        — there are no dice to find, so the DM is sent hunting for a number
+   *   · control       — files the mirror's own armour under the party's uptime
+   *   · self-defence  — effective HP, recorded in the creature's defences with a provenance
+   */
+  const body: any = materializeTemplateBody(mirror, { id: "b", name: "", actionPicks: { [naming.id]: ["Earth"] } } as never);
+  const parsed: any = parseCreature(body);
+  const aegis = parsed.features.find((f: any) => f.name === "Sunstone Aegis");
+  ok("the Earth body carries Sunstone Aegis at all", Boolean(aegis),
+    parsed.features.map((f: any) => f.name).join(", "));
+
+  const detailOf = (f: any) => resolveFeature(f).assumptions.map((a: any) => a.detail).join(" ");
+  const said = aegis ? detailOf(aegis) : "";
+  ok("it is read as raising the creature's OWN defence",
+    /OWN defence/.test(said) && /effective HP/.test(said), said.slice(0, 120));
+  ok("...and it is NOT sent back as a missing damage number",
+    !/Enter the damage, or state what it does/.test(said));
+
+  /**
+   * ⚠ A GATE THAT CANNOT FAIL IS WORSE THAN NO GATE. Strip the "+2 AC" and the same feature must
+   * fall to the generic message — if it does not, this branch is not what produced the answer.
+   */
+  const stripped = { ...aegis, text: String(aegis?.text ?? "").replace(/granting \+2 AC/i, "glowing") };
+  const strippedSaid = detailOf(stripped);
+  ok("mutation: with the AC clause removed it falls back to the generic message",
+    /Enter the damage, or state what it does/.test(strippedSaid) && !/OWN defence/.test(strippedSaid),
+    strippedSaid.slice(0, 90));
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);

@@ -215,3 +215,6 @@ jobs:
 
       - name: check neutral damage mix
         run: npm run check:neutralmix
+
+      - name: check current party rounds
+        run: npm run check:party

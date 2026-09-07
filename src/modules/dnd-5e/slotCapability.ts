@@ -123,6 +123,20 @@ const HEAL_TEXT = new RegExp(
   "i",
 );
 
+/**
+ * "DOES THIS TEXT DESCRIBE HEALING" — ONE ANSWER, EXPORTED, BECAUSE THERE WERE THREE.
+ *
+ * `actorAsCreature` carried its own copy under a comment saying it read healing *"the same way
+ * `slotCapability` reads it, so there is one answer rather than two that can disagree"* — and the
+ * copy was the OLDER pattern, the one that misses "restore 2d8+2 HP" and "regains a number of Hit
+ * Points". So the two answers already disagreed, in the direction that files a heal as offence.
+ *
+ * RULE ZERO: the implementation lives here and every caller imports it.
+ */
+export function readsAsHealing(text: string): boolean {
+  return HEAL_TEXT.test(text);
+}
+
 function allActions(actor: ActorLikeForSlots): ActionLike[] {
   const fromTabs = Object.values(actor.tabs ?? {}).flatMap(t => (Array.isArray(t) ? t : []));
   return [...(actor.actions ?? []), ...fromTabs];

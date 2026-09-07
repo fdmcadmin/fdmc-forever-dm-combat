@@ -36,7 +36,7 @@ import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyBenchmark } from "./partyBenchmark";
 import { resourceLedgerFromActors, RESOURCE_DAY } from "./resourceLedger";
-import { actorAsCreature } from "./actorAsCreature";
+import { currentPartyMetrics, targetFromRoster } from "./currentPartyResolver";
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
 import { classResourceLean } from "../../modules/dnd-5e/casterLean";
 import { bondTemplateForActor } from "../rules/bondProgress";
@@ -379,36 +379,45 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   );
 
   /**
-   * ⚠ THE AT-WILL BASE — what the party does for free, all day.
+   * ⚠ THE THING THE PARTY IS SWINGING AT IS THE ROSTER, AND THIS WAS AIMING IT AT THE PARTY.
    *
-   * `Resource Conversion` row 5: *"Base DPR must exclude every resource listed below."* So this is
-   * the weapon routine and cantrips only; every slot, pool, free cast and charge is excluded and
-   * lives in the ledger above. `actorAsCreature` puts a PC into the shape the checker's existing
-   * scheduler already reads, so this is `traceCreature` doing the work rather than a second model.
-   *
-   * ⚠ IT IS NOT THE PARTY'S DPR AND IS LABELLED SO. The resource half is counted but not yet
-   * priced into the rounds, and presenting a base as a total is exactly the mistake this whole
-   * pass is undoing.
+   * `targetAc` is `acOverride ?? actorDefence?.ac ?? defence.ac` — the PARTY's armour class, which
+   * is exactly right where it is used, as the target for the monsters' attacks. The at-will base
+   * borrowed it and handed it to `traceCreature` with a PC in the creature seat, so every
+   * character's weapon was rolling against their own party's AC. `targetFromRoster` reads the
+   * bodies actually in this fight, which is the only direction that means anything here.
    */
-  const atWillBase = useMemo(() => {
-    if (!resolved || targetAc === undefined) return null;
-    const tgt = {
-      ac: targetAc, partySize,
-      saveBonus: targetSave,
-      saves: { str: targetSave, dex: targetSave, con: targetSave, int: targetSave, wis: targetSave, cha: targetSave },
-    };
-    let r1 = 0;
-    let unreadable = 0;
-    for (const a of chosen) {
-      try {
-        const { creature, unreadable: gaps } = actorAsCreature(a as never);
-        unreadable += gaps.length;
-        const trace = traceCreature(parseCreature(creature), tgt as never, 4);
-        r1 += trace.rounds[0]?.totalExpectedDamage ?? 0;
-      } catch { /* a sheet this cannot read contributes nothing rather than a guess */ }
-    }
-    return { r1, unreadable };
-  }, [chosen, resolved, targetAc, targetSave, partySize]);
+  const partyTarget = useMemo(() => {
+    const entries = (encounter?.entries ?? [])
+      .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
+      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number }>;
+    return targetFromRoster(entries as never, partySize);
+  }, [encounter, monsterLibrary, partySize]);
+
+  /**
+   * ⚠ THE CURRENT PARTY'S OWN R1/R2/R3/R4+ AND SUSTAIN — step three, and the end of the caveat.
+   *
+   * `Resource Conversion` row 8: *"Schedule the legal actions, then write party R1/R2/R3/R4+ and
+   * Sustain to Runtime Inputs."* `actorAsCreature` supplies the at-will base with every resource
+   * excluded (row 5), `resourceLedgerFromActor` counts what may legally be spent and reserves each
+   * use once (row 44), and `currentPartyMetrics` prices those uses and PLACES THEM IN ROUNDS —
+   * best first, one per round, because a character takes one Action a turn. Row 45: the daily
+   * average is an audit result and never the round profile, so it is returned separately.
+   *
+   * Christopher, 2026-09-07: *"if we know everything on the actor we should know everything that
+   * actor can do."* This is that. Until it existed the offence side of the comparison was the
+   * certified line for this party's SIZE, which made the delta a row compared with itself.
+   */
+  const currentParty = useMemo(() => {
+    if (!resolved || !partyTarget) return null;
+    try {
+      return currentPartyMetrics(chosen as never[], partyTarget, {
+        // The same role resolution the ledger uses — bond first, then the class's own lean.
+        leanFor: (a: unknown) => bondTemplateForActor(a as never, BROKEN_CHAIN_BOND_TEMPLATES)?.resourceLean
+          ?? classResourceLean(a as never),
+      });
+    } catch { return null; }
+  }, [chosen, resolved, partyTarget]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
@@ -467,22 +476,51 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * healing pool on sustain. Feat DPR is a flat per-round figure, so it lands on each round
    * rather than on the round-1 anchor it was priced against.
    */
+  /**
+   * ⚠ WHERE THE OFFENCE SIDE CAME FROM, AS A FACT THE PANEL CAN STATE.
+   *
+   * `read` means `currentPartyMetrics` scheduled these characters' own actions and resources
+   * against this fight's bodies. `certified` means it could not — no fight selected, no readable
+   * roster, or a sheet the adapter threw on — and the published curve for this party's SIZE is
+   * standing in. The two must never be shown the same way: one is a reading, the other is a line.
+   */
+  const offenceSource: "read" | "certified" = currentParty && currentParty.round1Dpr > 0 ? "read" : "certified";
+
   const benchmark = useMemo(() => {
     if (!profile || !resolved) return null;
+    /**
+     * ⚠ FEATS ARE ADDED TO THE CERTIFIED LINE AND NOT TO THE READING, because on the read side
+     * they are ALREADY IN IT. `partyFeatsFromActors` prices a feat's damage off the same sheets
+     * `actorAsCreature` reads, so adding it to a number that already scheduled those actions
+     * counts Great Weapon Master twice. This is the same allocate-once rule the ledger applies to
+     * a slot, applied to a feat.
+     */
+    const read = offenceSource === "read" && currentParty;
+    const dpr = read
+      ? { round1: currentParty.round1Dpr, round2: currentParty.round2Dpr,
+        round3: currentParty.round3Dpr, round4Plus: currentParty.round4PlusDpr }
+      : { round1: profile.dpr.round1 + partyFeats.dpr, round2: profile.dpr.round2 + partyFeats.dpr,
+        round3: profile.dpr.round3 + partyFeats.dpr, round4Plus: profile.dpr.round4Plus + partyFeats.dpr };
     return partyBenchmark({
       level: partyLevel,
       mode: bondBaselineMode,
       // Like for like: the current side is this size's profile, so the line must be too.
       partySize,
       current: {
-        round1: profile.dpr.round1 + partyFeats.dpr,
-        round2: profile.dpr.round2 + partyFeats.dpr,
-        round3: profile.dpr.round3 + partyFeats.dpr,
-        round4Plus: profile.dpr.round4Plus + partyFeats.dpr,
+        ...dpr,
+        /**
+         * ⚠ SUSTAIN STAYS ON THE CERTIFIED FLOOR PLUS WHAT IS READ, AND `fiveRoundSustain` IS NOT
+         * ADDED TO IT. `currentPartyMetrics` sums per-actor max HP plus the healing the ledger
+         * reserved for sustain; `profile.sustain` is the certified EHP for this size and
+         * `partyHealing.total` is the same healing read a second way. Adding all three would
+         * count this party's hit points twice and its healing three times — the exact
+         * double-count `Resource Conversion` row 46 forbids ("Do not add a second free sustain
+         * pool"). The read figure is reported beside the row instead, where it can be compared.
+         */
         sustain: profile.sustain + partyFeats.partyEhp + partyHealing.total,
       },
     });
-  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, partyHealing]);
+  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, partyHealing, currentParty, offenceSource]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -851,12 +889,23 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               </span>
                             );
                           })()}
-                          {atWillBase && atWillBase.r1 > 0 && (
+                          {currentParty && currentParty.round1Dpr > 0 && (
                             <span style={{ color: "#777", marginLeft: 8 }}
-                              title={"The party's AT-WILL round-1 damage, read off the chosen characters and scheduled by the checker's own action tracer. Base DPR excludes every resource in the day budget, so this is weapons and cantrips only — not the party's total."
-                                + (atWillBase.unreadable > 0 ? " " + atWillBase.unreadable + " damaging entries could not be read." : "")}>
-                              {"· at-will R1 "}{atWillBase.r1.toFixed(1)}
-                              {atWillBase.unreadable > 0 ? ` · ${atWillBase.unreadable} unread` : ""}
+                              title={"Read off the chosen characters and scheduled by the checker's own action tracer, against this fight's bodies."
+                                + String.fromCharCode(10, 10)
+                                + `at-will ${currentParty.atWill.round1.toFixed(1)} / ${currentParty.atWill.round2.toFixed(1)} / ${currentParty.atWill.round3.toFixed(1)} / ${currentParty.atWill.round4Plus.toFixed(1)}`
+                                + String.fromCharCode(10)
+                                + "resource uses, best first, one per round:" + String.fromCharCode(10)
+                                + (currentParty.schedule.length === 0 ? "  (none priced)"
+                                  : currentParty.schedule.map((s) => `  R${s.round} ${s.actor} · ${s.action} (${s.trigger}) +${s.valuePerUse.toFixed(1)} x${s.usesPerFight.toFixed(2)}`).join(String.fromCharCode(10)))
+                                + String.fromCharCode(10, 10)
+                                + `audit only — ${currentParty.audit.damagePerDay.toFixed(0)} resource damage/day, ${currentParty.audit.flatUpliftPerRound.toFixed(1)}/round across ${RESOURCE_DAY.combatRoundsPerLongRest}. Row 45: the daily average is an audit result, not the round profile.`
+                                + (currentParty.estimated.length > 0 ? String.fromCharCode(10, 10) + "ESTIMATED:" + String.fromCharCode(10) + currentParty.estimated.map((s: string) => "  " + s).join(String.fromCharCode(10)) : "")
+                                + (currentParty.needsInput.length > 0 ? String.fromCharCode(10, 10) + "NEEDS DM INPUT:" + String.fromCharCode(10) + currentParty.needsInput.map((s: string) => "  " + s).join(String.fromCharCode(10)) : "")}>
+                              {"· read R1 "}{currentParty.round1Dpr.toFixed(1)}
+                              {" → R4+ "}{currentParty.round4PlusDpr.toFixed(1)}
+                              {currentParty.needsInput.length > 0 ? ` · ${currentParty.needsInput.length} unread` : ""}
+                              {currentParty.estimated.length > 0 ? ` · ${currentParty.estimated.length} estimated` : ""}
                             </span>
                           )}
                                                     {(bondMitigation?.perRound ?? 0) > 0 && (() => {
@@ -876,26 +925,31 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                             );
                           })()}
                           {/*
-                            ⚠ SAY WHAT THE OFFENCE SIDE IS, BECAUSE A DELTA NEAR ZERO IS NOT A
-                            COMPLIMENT — IT IS THIS ROW COMPARED WITH ITSELF.
-
-                            `resolvePartyProfile` takes a level and a SIZE and no actors: the
-                            current side's R1..R4+ and sustain are the certified curve for this
-                            party's size, depleted for arriving spent. What the app genuinely
-                            reads off the chosen characters is DEFENCE (AC, saves, initiative),
-                            healing, bond mitigation, hit chance, and feat DPR — so those are the
-                            only things that can move this delta.
+                            ⚠ SAY WHERE THE OFFENCE SIDE CAME FROM, BECAUSE THE TWO ANSWERS MEAN
+                            OPPOSITE THINGS.
 
                             Christopher, 2026-09-07: *"you are saying my party does the exact
                             amount that the workbook balanced center does with this being 3/5
-                            being new players character?"* No — the app does not know what his
-                            five characters hit for. It knows what a certified five-player party
-                            at this level hits for. Until `partyDprFromActors` exists, that gap
-                            is stated here rather than hidden behind a number that looks earned.
+                            being new players character?"* — and, on being told the app did not
+                            know: *"what do you mean the app cant know what my actors hit for
+                            [...] if we know everything on the actor we should know everything
+                            that actor can do."*
+
+                            He was right, and `currentPartyMetrics` is the answer: the characters'
+                            own actions scheduled by the checker's tracer, their resources counted
+                            by the ledger and placed in rounds. When that reading succeeds this
+                            says so. When it cannot — no fight chosen, no readable roster — the
+                            certified line for this SIZE stands in, and a near-zero delta then
+                            means a row compared with itself, which is the thing that must never
+                            look earned.
                           */}
                           <span style={{ color: "#777", marginLeft: 8 }}
-                            title="resolvePartyProfile reads a level and a party size, not your characters. Offence is the certified curve for this size; only feats, healing, defence, bond mitigation and hit chance are read from the chosen actors. A near-zero delta means 'this size's line, plus what we can read', not 'your party is exactly average'.">
-                            · offence is the certified {partySize}P line + feats, not read from these characters
+                            title={offenceSource === "read"
+                              ? "R1..R4+ are these characters' own at-will routine plus their resource uses, scheduled best-first one per round against this fight's bodies. Feats are not added on top — they are already inside the actions that were scheduled. Sustain is still the certified floor plus read healing."
+                              : "resolvePartyProfile reads a level and a party size, not your characters. Offence is the certified curve for this size; only feats, healing, defence, bond mitigation and hit chance are read from the chosen actors. A near-zero delta means 'this size's line, plus what we can read', not 'your party is exactly average'."}>
+                            {offenceSource === "read"
+                              ? `· offence read from these ${partySize} characters — at-will + scheduled resources`
+                              : `· offence is the certified ${partySize}P line + feats, not read from these characters`}
                           </span>
                         </div>
                       )}

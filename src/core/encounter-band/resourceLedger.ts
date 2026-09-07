@@ -30,8 +30,9 @@
  */
 
 import type { Actor } from "../types/actor";
-import { slotCapabilityFromActors, type SlotUse } from "../../modules/dnd-5e/slotCapability";
+import { slotCapabilityFromActors, readsAsHealing, type SlotUse } from "../../modules/dnd-5e/slotCapability";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
+import { chargeBearingActions, type ItemChargeReset } from "../state/itemCharges";
 
 /** The workbook's day model. Stated once, here, so nothing re-invents it. */
 /**
@@ -56,7 +57,7 @@ export const RESOURCE_DAY = {
   combatRoundsPerLongRest: 25,
 } as const;
 
-export type LedgerKind = "sharedSlot" | "pactSlot" | "classResource" | "freeCast";
+export type LedgerKind = "sharedSlot" | "pactSlot" | "classResource" | "freeCast" | "itemCharge";
 
 export type ResourceLean = "offense" | "sustain" | "control";
 
@@ -67,9 +68,25 @@ export type LedgerRow = {
   kind: LedgerKind;
   /** Slot level, when the resource states one. */
   tier?: number;
+  /**
+   * The item pool this row IS, when it is one — `itemChargeKey`, so an item with both an
+   * equipment row and an attack row is one pool and the spender can be matched back to it.
+   */
+  chargeKey?: string;
   startUses: number;
   /** Per scheduled Short Rest — NOT already multiplied. */
   recoveredPerShortRest: number;
+  /**
+   * Per FIGHT, for a pool that resets every encounter — NOT already multiplied.
+   *
+   * ⚠ THE WORKBOOK HAS NO COLUMN FOR THIS AND THAT IS NOT A CONFLICT. `Resource Conversion` row 42
+   * publishes one recovery cadence, the Short Rest, because every resource it lists recovers on
+   * one. An item whose charges reset at the end of each encounter recovers on a cadence the
+   * workbook states elsewhere — five fights per Long Rest — so this is the SAME arithmetic
+   * (`start + recovered x rests`) applied to the rest cadence the item itself prints, not a second
+   * model. Left at 0 for every resource the workbook does list, so its rows are unchanged.
+   */
+  recoveredPerFight: number;
   freeUses: number;
   totalUses: number;
   /** Allocation across the three channels. Sums to `totalUses`, never more. */
@@ -159,8 +176,23 @@ export function resourceLedgerFromActor(
    * means a resource is matched here exactly the way the card spends it — RULE ZERO — rather than
    * by a second rule that can disagree with the sheet.
    */
-  const resourceRows = (actor.tabs?.resources ?? []) as unknown as Array<{ label?: string }>;
-  const poolLabels = resourceRows.map(x => ({ label: String(x.label ?? "") })).filter(x => x.label);
+  /**
+   * ⚠ PASS THE ROWS, NOT THE LABELS — `ResourceRef` says so in as many words: *"Callers that have
+   * the actor's `tabs.resources` in hand should pass the ROWS — the id is what carries the
+   * authored link."*
+   *
+   * This mapped every row to `{ label }` and threw the `id` away, which disables the FIRST and
+   * most reliable branch of `resolveNamedResourceCost`: `metadata.resourceId` matched against
+   * `row.id`. The prose fallback then had to find the pool's exact label inside the action's
+   * English cost text, and it almost never does — "1 Rage" does not contain "Rage Uses", and
+   * "(d8)" alone defeats a Psionic Energy Die. Across the whole live party that left EVERY pool
+   * reporting "no action on this sheet spends it", so every resource was held as `other` and none
+   * of it reached a round. This is the same mistake the resolver was written to fix.
+   */
+  const resourceRows = (actor.tabs?.resources ?? []) as unknown as Array<{ id?: string; label?: string }>;
+  const poolRefs = resourceRows
+    .filter(x => x?.label)
+    .map(x => ({ id: x.id, label: String(x.label) }));
 
   const spendersOf = (resourceLabel: string, tier: number | undefined): string[] => {
     const out: string[] = [];
@@ -171,7 +203,7 @@ export function resourceLedgerFromActor(
         const m = (a.metadata ?? {}) as Record<string, unknown>;
         // A levelled spell spends its tier's slots, which no named-cost lookup will say.
         if (tier !== undefined && Number(m.spellLevel ?? 0) === tier) { out.push(String(a.label ?? "")); continue; }
-        const spent = resolveNamedResourceCost(a as never, poolLabels as never);
+        const spent = resolveNamedResourceCost(a as never, poolRefs as never);
         if (spent && spent.trim().toLowerCase() === resourceLabel.trim().toLowerCase()) out.push(String(a.label ?? ""));
       }
     }
@@ -261,10 +293,65 @@ export function resourceLedgerFromActor(
     rows.push({
       actor: who, resource: label, kind,
       ...(tier !== undefined ? { tier } : {}),
-      startUses: start, recoveredPerShortRest, freeUses, totalUses,
+      startUses: start, recoveredPerShortRest, recoveredPerFight: 0, freeUses, totalUses,
       offense, sustain, other, contested,
       options: spenders,
       notes,
+    });
+  }
+
+  /**
+   * ⚠ AN ITEM CHARGE IS A RESOURCE, AND NOTHING WAS SIZING IT.
+   *
+   * Christopher, 2026-09-07: *"the ember heart spends a charge (with a rest recharge)"*. The
+   * Wendigo Ember Heart carries `metadata.charges = { max: 1, reset: "manual" }` and has no
+   * Resources row at all — that is how every magic item's pool works, which is why `itemCharges`
+   * exists. `actorAsCreature` correctly refused to leave it in the at-will base, so it went to
+   * `spends`; but the ledger had no row to size it against, and a spend with no row is worth
+   * exactly ZERO. A 3d6 item was excluded from the base and then never added back.
+   *
+   * ⚠ AND THE RESET IS THE ITEM'S OWN WORD, NOT A DEFAULT. `shortRest` recovers at the one
+   * scheduled rest; `encounter` recovers at every fight after the first; `longRest` and `manual`
+   * recover nothing inside the day, which is why the Ember Heart is worth ONE use across all five
+   * fights and not one per fight.
+   */
+  const recoveryFor = (reset: ItemChargeReset, max: number) =>
+    reset === "shortRest" ? { perShortRest: max, perFight: 0 }
+      : reset === "encounter" ? { perShortRest: 0, perFight: max }
+        : { perShortRest: 0, perFight: 0 };
+
+  for (const pool of chargeBearingActions((actor.tabs ?? {}) as never)) {
+    const label = String(pool.action.label ?? pool.key);
+    const { perShortRest, perFight } = recoveryFor(pool.charges.reset, pool.charges.max);
+    const totalUses = pool.charges.max
+      + perShortRest * shortRests
+      + perFight * Math.max(0, RESOURCE_DAY.fightsPerLongRest - 1);
+
+    /**
+     * ⚠ WHAT THE POOL DOES IS WHAT ITS ACTION DOES — the workbook's own Action Surge row is
+     * offense 1 / sustain 0 / other 0 "because that is what THAT resource does". An item pool has
+     * exactly one spender, so there is nothing to contest and no lean to apply.
+     */
+    const m = (pool.action.metadata ?? {}) as Record<string, unknown>;
+    const text = `${label} ${String(m.details ?? "")} ${String((pool.action as { description?: string }).description ?? "")}`;
+    const heals = m.outcomeMode === "healing" || readsAsHealing(text);
+    const damages = !heals && Boolean(String(m.damage ?? "").trim());
+
+    rows.push({
+      actor: who, resource: label, kind: "itemCharge", chargeKey: pool.key,
+      startUses: pool.charges.max,
+      recoveredPerShortRest: perShortRest,
+      recoveredPerFight: perFight,
+      freeUses: 0,
+      totalUses,
+      offense: damages ? totalUses : 0,
+      sustain: heals ? totalUses : 0,
+      other: damages || heals ? 0 : totalUses,
+      contested: false,
+      options: [label],
+      notes: [`item pool — ${pool.charges.max} charge${pool.charges.max === 1 ? "" : "s"}, resets on ${pool.charges.reset}`
+        + (pool.charges.reset === "longRest" || pool.charges.reset === "manual"
+          ? `, so it is ${totalUses} use${totalUses === 1 ? "" : "s"} across the whole day` : "")],
     });
   }
 
