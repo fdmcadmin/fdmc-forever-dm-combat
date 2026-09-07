@@ -90,10 +90,38 @@ function row(key: BenchmarkKey, label: string, midpoint: number, current: number
  * Returns null above the empirical range only if the level is absent from the curve entirely;
  * 17-20 ARE returned, flagged `projected`, because the checker still offers them.
  */
-export function midpointFor(level: number, mode: PartyEquipmentMode): (RoundsAndSustain & { projected: boolean }) | null {
+export function midpointFor(
+  level: number,
+  mode: PartyEquipmentMode,
+  /** The party actually being measured. Omitted keeps the published four-player line. */
+  partySize?: number,
+): (RoundsAndSustain & { projected: boolean; sizeCertified: boolean }) | null {
   const curve = PARTY_CURVE_V2.find(r => r.level === level);
   if (!curve) return null;
-  const m = curve[mode];
+  /**
+   * ⚠ THE LINE HAS TO BE DRAWN FOR THE PARTY THAT IS STANDING ON IT.
+   *
+   * This read `curve[mode]` — the FOUR-PLAYER row — always, while the current side is the
+   * party's own size-scaled profile. So a five-player table was measured against a four-player
+   * line and read permanently over it, by the 5P/4P ratio and nothing else.
+   *
+   * Christopher, 2026-09-07, at L7 / 5P / Broken Chain: *"there is no way my currenty party is
+   * this strong above the line."* They were not. Of the +46.0 the panel showed on R1, 42.4 was
+   * 165.126 (the certified 5P row) against 122.678 (the 4P row) and only 3.5 was their feats.
+   * Sustain read +214.8, which is 708.498 against 493.742 — the size ratio exactly, every time,
+   * for any 5P party however it was performing.
+   *
+   * The un-scaled 4P line was the ONLY midpoint that existed before V3.0: sizes were reached by
+   * multiplying, so a size-matched midpoint would have been the same number times the same factor
+   * and told you nothing. V3.0 certifies 3P/5P/6P independently from the actor-first pool
+   * (0.8.23.0), so the comparison can now be like for like — and has to be, or the delta reports
+   * the party's SIZE where it claims to report its strength.
+   *
+   * Falls back to the published 4P row for a size the table does not certify, which is the same
+   * rule `resolvePartyProfile` already follows for scaling.
+   */
+  const sized = partySize === undefined ? undefined : curve.bySize?.[partySize]?.[mode];
+  const m = sized ?? curve[mode];
   return {
     round1: m.round1,
     round2: m.round2,
@@ -101,6 +129,7 @@ export function midpointFor(level: number, mode: PartyEquipmentMode): (RoundsAnd
     round4Plus: m.round4Plus,
     sustain: m.sustain,
     projected: String(curve.evidence ?? "").startsWith("PROJECTED"),
+    sizeCertified: Boolean(sized),
   };
 }
 
@@ -113,9 +142,11 @@ export function midpointFor(level: number, mode: PartyEquipmentMode): (RoundsAnd
 export function partyBenchmark(opts: {
   level: number;
   mode: PartyEquipmentMode;
+  /** The party being measured — the midpoint is drawn for THIS size when the curve certifies it. */
+  partySize?: number;
   current: RoundsAndSustain;
 }): PartyBenchmark | null {
-  const mid = midpointFor(opts.level, opts.mode);
+  const mid = midpointFor(opts.level, opts.mode, opts.partySize);
   if (!mid) return null;
   const { current } = opts;
   const rows: BenchmarkRow[] = [

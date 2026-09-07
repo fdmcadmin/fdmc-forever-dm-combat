@@ -197,3 +197,6 @@ jobs:
 
       - name: check mirror bodies
         run: npm run check:mirrors
+
+      - name: check party benchmark
+        run: npm run check:benchmark

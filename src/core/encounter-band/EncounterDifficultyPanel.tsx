@@ -386,6 +386,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     return partyBenchmark({
       level: partyLevel,
       mode: equipmentMode,
+      // Like for like: the current side is this size's profile, so the line must be too.
+      partySize,
       current: {
         round1: profile.dpr.round1 + partyFeats.dpr,
         round2: profile.dpr.round2 + partyFeats.dpr,
@@ -394,7 +396,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         sustain: profile.sustain + partyFeats.partyEhp + partyHealing.total,
       },
     });
-  }, [profile, resolved, partyLevel, equipmentMode, partyFeats, partyHealing]);
+  }, [profile, resolved, partyLevel, equipmentMode, partySize, partyFeats, partyHealing]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -737,6 +739,28 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               {"· bonds "}{(bondMitigation?.perRound ?? 0).toFixed(1)}{"/rd counted on the clock, not in sustain"}
                             </span>
                           )}
+                          {/*
+                            ⚠ SAY WHAT THE OFFENCE SIDE IS, BECAUSE A DELTA NEAR ZERO IS NOT A
+                            COMPLIMENT — IT IS THIS ROW COMPARED WITH ITSELF.
+
+                            `resolvePartyProfile` takes a level and a SIZE and no actors: the
+                            current side's R1..R4+ and sustain are the certified curve for this
+                            party's size, depleted for arriving spent. What the app genuinely
+                            reads off the chosen characters is DEFENCE (AC, saves, initiative),
+                            healing, bond mitigation, hit chance, and feat DPR — so those are the
+                            only things that can move this delta.
+
+                            Christopher, 2026-09-07: *"you are saying my party does the exact
+                            amount that the workbook balanced center does with this being 3/5
+                            being new players character?"* No — the app does not know what his
+                            five characters hit for. It knows what a certified five-player party
+                            at this level hits for. Until `partyDprFromActors` exists, that gap
+                            is stated here rather than hidden behind a number that looks earned.
+                          */}
+                          <span style={{ color: "#777", marginLeft: 8 }}
+                            title="resolvePartyProfile reads a level and a party size, not your characters. Offence is the certified curve for this size; only feats, healing, defence, bond mitigation and hit chance are read from the chosen actors. A near-zero delta means 'this size's line, plus what we can read', not 'your party is exactly average'.">
+                            · offence is the certified {partySize}P line + feats, not read from these characters
+                          </span>
                         </div>
                       )}
                       {/*
