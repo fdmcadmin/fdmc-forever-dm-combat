@@ -1954,7 +1954,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e5-the-scar-line",
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
-      kind: "fey", ac: 16, maxHp: 154, speed: "50 ft.",
+      kind: "fey", ac: 16, maxHp: 169, speed: "50 ft.",
       defenses: [],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "skirmisher",
@@ -1994,7 +1994,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e5-the-scar-line",
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
-      kind: "fiend", ac: 16, maxHp: 143, speed: "60 ft.",
+      kind: "fiend", ac: 16, maxHp: 157, speed: "60 ft.",
       defenses: [],
       attacksPerTurn: 3,
       size: "Large", classification: "elite", archetype: "bruiser",
@@ -2035,7 +2035,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e5-the-scar-line",
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
-      kind: "fiend", ac: 17, maxHp: 132, speed: "30 ft.",
+      kind: "fiend", ac: 17, maxHp: 145, speed: "30 ft.",
       defenses: [],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
