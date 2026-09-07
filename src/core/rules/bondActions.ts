@@ -353,13 +353,26 @@ export function withCompanionBondRider(
   const ownerBond = actor.moduleData?.ownerBond;
   if (!ownerBond) return actor;
 
-  const template = templates.find((t) => t.id === ownerBond.assignment.templateId);
+  /**
+   * ⚠ THE TEMPLATE CAN COME FROM THE CARD; THE PATH CANNOT.
+   *
+   * An owner whose bond is authored rather than assigned still names their template on a bond row,
+   * so the companion can tell WHICH bond it performs. What no card records is which Metamorphosis
+   * path was taken — that is only ever on the assignment, and a rider without a chosen path is not
+   * a rider that was earned. So this resolves the template either way and still requires the path,
+   * rather than inventing one.
+   */
+  const assignedId = ownerBond.assignment?.templateId;
+  const template = assignedId
+    ? templates.find((t) => t.id === assignedId)
+    : templates.find((t) => (ownerBond.cardBondLabels ?? [])
+        .some(l => l.trim().toLowerCase().startsWith(t.name.trim().toLowerCase())));
   if (!template || template.actor !== "companion") return actor;
 
-  const picked = ownerBond.assignment.chosenPathIndex;
+  const picked = ownerBond.assignment?.chosenPathIndex;
   if (picked === undefined) return actor;
 
-  const resolved = resolveBond(template, ownerBond.assignment, {
+  const resolved = resolveBond(template, ownerBond.assignment!, {
     level: ownerBond.ownerLevel ?? actor.level ?? 1,
     milestones: ownerBond.milestones ?? [],
     gates,

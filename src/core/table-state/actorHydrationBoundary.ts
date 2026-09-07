@@ -106,14 +106,27 @@ export function resolveActor(
       if (ownerWis) {
         stamped = { ...stamped, abilityScores: { ...stamped.abilityScores, wis: ownerWis } };
       }
-      if (ownerAssignment) {
+      /**
+       * ⚠ A BOND CAN BE ON THE CARD INSTEAD OF IN THE FIELD. A companion-performed bond is
+       * hand-built across two sheets and writes no assignment, so stamping only the assignment
+       * left the companion unable to tell that its owner is bonded at all. The row LABELS travel
+       * too — they name the template. They cannot name the chosen PATH, which is why a rider still
+       * needs an assignment and says so rather than guessing one.
+       */
+      const ownerCardBonds = ((overrides[ownerId]?.tabs ?? library[ownerId]?.tabs)?.bond ?? [])
+        .filter(b => (b as { actionKind?: string }).actionKind === "bond")
+        .map(b => String((b as { label?: string }).label ?? ""))
+        .filter(Boolean);
+
+      if (ownerAssignment || ownerCardBonds.length > 0) {
         stamped = {
           ...stamped,
           moduleData: {
             ...ownModule,
             // Keys are omitted rather than set to undefined — `exactOptionalPropertyTypes`.
             ownerBond: {
-              assignment: ownerAssignment,
+              ...(ownerAssignment ? { assignment: ownerAssignment } : {}),
+              ...(ownerCardBonds.length > 0 ? { cardBondLabels: ownerCardBonds } : {}),
               ...(typeof ownerLevel === "number" ? { ownerLevel } : {}),
               ...(ownerModule?.milestones ? { milestones: ownerModule.milestones } : {}),
             },

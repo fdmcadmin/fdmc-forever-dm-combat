@@ -96,7 +96,32 @@ export type PartySlotCapability = {
   byUse: Record<SlotUse, number>;
 };
 
-const HEAL_TEXT = /\bheal(s|ing|ed)?\b|regain[s]?\s+\d|restore[s]?\s+[^.]{0,20}hit points|temporary hit points/i;
+/**
+ * ⚠ THE SHEETS SAY "HP", AND THIS ONLY KNEW "hit points" — AND ONLY WITH A DIGIT AFTER IT.
+ *
+ * The old pattern was `regain[s]?\s+\d` and `restore[s]?\s+…hit points`, which misses
+ * three of the four wordings the live sheets actually use:
+ *
+ *   "restore 2d8+2 HP at level 1"                  -> missed ("HP", not "hit points")
+ *   "+5 HP"                                        -> missed
+ *   "regains a number of Hit Points"               -> missed (no digit follows "regains")
+ *   "restore 2d8+3 hit points."                    -> matched
+ *
+ * So Cure Wounds was classified as DAMAGE on two of the three casters in this party. That feeds
+ * the contested-tier split and the H/D/C counts on the panel, so a healer's slots were being
+ * counted as offence and the fork the DM is shown was wrong.
+ *
+ * ⚠ IT STILL MUST NOT MATCH DAMAGE. "HP" is only read as healing next to a restoring verb or a
+ * bare bonus, never on its own, so "3d6 damage" and a pool called "Hit Dice" stay out.
+ */
+const HEAL_TEXT = new RegExp(
+  [
+    "\\bheal(s|ing|ed)?\\b",
+    "(regain|restore|recover)[s]?\\b[^.]{0,25}(hit points|\\bhp\\b)",
+    "temporary hit points",
+  ].join("|"),
+  "i",
+);
 
 function allActions(actor: ActorLikeForSlots): ActionLike[] {
   const fromTabs = Object.values(actor.tabs ?? {}).flatMap(t => (Array.isArray(t) ? t : []));

@@ -28,6 +28,7 @@ import type { Actor } from "../types/actor";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { proficiencyBonus } from "../rules/dnd5e";
+import { resolveNamedResourceCost } from "../state/consumeActionResources";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 type AbilityId = (typeof ABILITIES)[number];
@@ -42,6 +43,8 @@ export type ResourceSpendingAction = {
   /** The named pool it spends, when the sheet says one. */
   resourceId?: string;
   resourceCost?: number;
+  /** The pool label `resolveNamedResourceCost` matched, when the cost is named rather than id'd. */
+  poolLabel?: string;
   /** Full damage expression, already resolved against this actor. */
   damage?: string;
   attack?: string;
@@ -96,6 +99,20 @@ function attackRollFor(raw: string | undefined, actor: Actor, isSpell: boolean):
   return spellBonus ? `${text}${spellBonus}` : text;
 }
 
+/**
+ * Does this action HEAL — read the same way `slotCapability` reads it, so there is one answer
+ * rather than two that can disagree. `outcomeMode: "healing"` is authored on some sheets and not
+ * others, and an untagged heal with a damage expression was being scheduled as an on-hit rider.
+ */
+const HEALS = new RegExp(
+  [
+    "\\bheal(s|ing|ed)?\\b",
+    "regain[s]?\\s+\\d",
+    "restore[s]?\\s+[^.]{0,20}hit points",
+    "temporary hit points",
+  ].join("|"),
+  "i",
+);
 function actionsOf(actor: Actor): Array<{ tab: string; action: Record<string, unknown> }> {
   const out: Array<{ tab: string; action: Record<string, unknown> }> = [];
   for (const [tab, list] of Object.entries(actor.tabs ?? {})) {
@@ -110,6 +127,9 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
   const spends: ResourceSpendingAction[] = [];
   const unreadable: string[] = [];
   const atWill: MainMonsterTemplate["actions"] = [];
+  /** This actor's own pool labels — what `resolveNamedResourceCost` matches a cost against. */
+  const poolLabels = ((actor.tabs?.resources ?? []) as unknown as Array<{ label?: string }>)
+    .map(x => ({ label: String(x.label ?? "") })).filter(x => x.label);
 
   for (const { tab, action } of actionsOf(actor)) {
     const m = md(action);
@@ -118,8 +138,19 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
     const isSpell = action.actionKind === "spell" || m.spellLevel !== undefined;
     const spellLevel = Number(m.spellLevel ?? 0) || 0;
 
-    // Healing is sustain, and `partyHealingFromActors` owns it. It is not offence.
-    if (m.outcomeMode === "healing") continue;
+    /**
+     * ⚠ HEALING IS NOT ALWAYS TAGGED, AND AN UNTAGGED HEAL WAS BEING PRICED AS DAMAGE.
+     *
+     * `outcomeMode: "healing"` is authored on some sheets and not others — the campaign Paladin's
+     * Cure Wounds carries none — so a heal with a damage expression and no attack roll fell
+     * through and was classified as an ON-HIT RIDER. Cure Wounds, Healing Word and Aid were all
+     * being scheduled as offence.
+     *
+     * The text is read the same way `slotCapability` reads it, so one answer to "does this heal"
+     * rather than two that can disagree. Sustain is owned by `partyHealingFromActors`.
+     */
+    const healText = `${label} ${m.details ?? ""} ${(action as { description?: string }).description ?? ""}`;
+    if (m.outcomeMode === "healing" || HEALS.test(healText)) continue;
     if (!damage && !m.attack) continue;
 
     /**
@@ -127,9 +158,17 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
      * charge or a free cast is a resource; the base must exclude it or it enters the checker
      * twice. `metadata.resourceId` is the authored link the sheets have always carried.
      */
+    /**
+     * ⚠ ASK THE RESOLVER, NOT A LIST OF FIELDS. Checking `resourceId` and `spellLevel` alone
+     * missed every action that names its cost through `slotCost` or its prose — Psionic Strike
+     * spends a Psionic Energy Die and was read as spending NOTHING, so it sat in the at-will base
+     * where "base DPR must exclude every resource" says it must not be.
+     */
+    const namedPool = resolveNamedResourceCost(action as never, poolLabels as never);
     const spendsResource = spellLevel > 0
       || Boolean(m.resourceId)
       || Boolean(m.charges)
+      || Boolean(namedPool)
       || m.spellSlotMode === "freeCast";
 
     if (spendsResource) {
@@ -142,6 +181,7 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
         id: String(action.id ?? label), label, tab,
         ...(spellLevel > 0 ? { spellLevel } : {}),
         ...(m.resourceId ? { resourceId: String(m.resourceId) } : {}),
+        ...(namedPool ? { poolLabel: namedPool } : {}),
         ...(m.resourceCost !== undefined ? { resourceCost: Number(m.resourceCost) } : {}),
         ...(damage ? { damage } : {}),
         ...(m.attack ? { attack: String(m.attack) } : {}),

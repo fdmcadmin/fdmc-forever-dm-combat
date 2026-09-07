@@ -176,7 +176,14 @@ export type BrokenChainModuleData = {
    * answer. It is derived state: never authored, never written back.
    */
   ownerBond?: {
-    assignment: BondAssignment;
+    /** Absent when the owner's bond is authored on their card rather than assigned. */
+    assignment?: BondAssignment;
+    /**
+     * The owner's authored bond-row labels, so a companion-performed bond that writes no
+     * assignment is still IDENTIFIABLE downstream. It names the template; it cannot name the
+     * chosen path, which only an assignment records.
+     */
+    cardBondLabels?: string[];
     /** The OWNER's level — the bond's stage is derived from it, not from the beast's. */
     ownerLevel?: number;
     milestones?: string[];
