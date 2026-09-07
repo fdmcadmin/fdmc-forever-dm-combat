@@ -87,7 +87,7 @@ export function shieldEquipped(actor: ActorLikeForFeats): boolean {
  * number — an unresolved variable is a missing input, and this file's rule is that a key is
  * omitted rather than defaulted.
  */
-function resolvedAttackText(raw: string | undefined, actor: ActorLikeForFeats): string | undefined {
+function resolvedFormulaText(raw: string | undefined, actor: ActorLikeForFeats): string | undefined {
   const text = String(raw ?? "").trim();
   if (!text) return undefined;
   if (!/@[A-Za-z]/.test(text)) return text;
@@ -159,9 +159,23 @@ export function attackProfile(actor: ActorLikeForFeats, targetAC: number): Attac
 
   let best: AttackProfile | undefined;
   for (const a of candidates) {
-    const attackBonus = parseAttackBonus(resolvedAttackText(a.metadata?.attack, actor));
+    const attackBonus = parseAttackBonus(resolvedFormulaText(a.metadata?.attack, actor));
     if (attackBonus === undefined) continue;
-    const perHitDamage = damageExpressionAverage(a.metadata?.damage);
+    /**
+     * ⚠ RESOLVE THE DAMAGE TOO, OR THE MODIFIER IS SILENTLY DROPPED — AND SO IS EVERYTHING
+     * AFTER IT.
+     *
+     * The attack string has been resolved since 0.8.21.4; the damage string was still passed raw.
+     * `damageExpressionAverage` cannot read an @-token, so "1d12+@STR" averaged 6.5 instead of
+     * 11.5 — and "1d8+@DEX+2" averaged 6.5, losing the magic weapon's +2 along with the DEX,
+     * because the unresolved term takes the rest of the expression with it.
+     *
+     * That understated every weapon this returns, which is the number the DPR-channel feats are
+     * priced against and the number a party's own offence is read from. Same rule as the bonus:
+     * a string that still carries an @-token after resolution is a missing input, not a partial
+     * number, so the candidate is skipped rather than averaged low.
+     */
+    const perHitDamage = damageExpressionAverage(resolvedFormulaText(a.metadata?.damage, actor));
     if (!(perHitDamage > 0)) continue;
 
     // A per-action override wins over the actor's Extra Attack, exactly as the card resolves it.
