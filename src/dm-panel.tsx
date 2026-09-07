@@ -95,6 +95,7 @@ import { buildActorSeatColorMap, withAlpha } from "./core/seats/seatColors";
 import { TokenAssignmentPanel } from "./core/tokens/TokenAssignmentPanel";
 import { loadMonsterRoster } from "./core/monsters/runtime/monsterRosterStorage";
 import "./styles.css";
+import { CONTENT_ATTRIBUTIONS } from "./modules/contentAttributions";
 
 // ─── Panel type ───────────────────────────────────────────────────────────────
 
@@ -1414,6 +1415,33 @@ function DmPanelApp() {
             </div>
           </div>
         )}
+
+        {/* ── LICENCE NOTICES ──────────────────────────────────────────────────────────────────
+            ⚠ THIS IS A CONDITION OF SHIPPING, NOT A CREDIT ROLL. `srdContent` says it plainly —
+            *"it travels with the content or the content does not ship"* — and then nothing
+            imported the string for as long as the SRD content has been in the app. Two CC-BY-4.0
+            documents ship now (5.2.1 creatures and species, 5.1 species), so both notices are
+            here, collapsed by default and never behind a build flag.
+
+            Christopher, 2026-09-07: *"make sure the dnd mod has both SRD attribution in it."* */}
+        <details style={{ marginTop: 14, padding: "6px 10px", background: "#0d0d14", border: "1px solid #1e1e2e", borderRadius: 5 }}>
+          <summary style={{ fontSize: 10, color: "#666", cursor: "pointer", letterSpacing: 0.5, textTransform: "uppercase" }}>
+            Licences &amp; attribution ({CONTENT_ATTRIBUTIONS.length})
+          </summary>
+          {CONTENT_ATTRIBUTIONS.map(a => (
+            <div key={a.label} style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: "#9d8cff" }}>
+                {a.label}
+                <span style={{ color: "#555" }}>{" · "}</span>
+                <a href={a.licenceUrl} target="_blank" rel="noreferrer noopener" style={{ color: "#4a9eff", textDecoration: "none" }}>
+                  {a.licence}
+                </a>
+              </div>
+              <div style={{ fontSize: 10, color: "#777", marginTop: 2 }}>{a.covers}</div>
+              <div style={{ fontSize: 10, color: "#8a8a9a", marginTop: 3, lineHeight: 1.45 }}>{a.notice}</div>
+            </div>
+          ))}
+        </details>
 
       </div>
     </div>

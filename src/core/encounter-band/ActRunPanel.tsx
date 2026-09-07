@@ -25,7 +25,25 @@ import { shortRestRecoveryFromActors } from "../../modules/dnd-5e/shortRestRecov
  * WHERE A SHORT REST'S NUMBER CAME FROM — carried out of the pricing pass so the control can show
  * the figure the run actually spent, instead of the published median it was printing regardless.
  */
-type RestRecovery = { fraction: number; source: "override" | "party" | "published"; detail?: string };
+/**
+ * WHAT A SHORT REST HANDS BACK, ON BOTH CLOCKS.
+ *
+ * ⚠ TWO NUMBERS, BECAUSE TWO DIFFERENT THINGS COME BACK. Hit Dice buy hit points and move the
+ * SUSTAIN clock; refreshed pools — Action Surge, Pact slots, Ki, an item's charges — buy damage
+ * and move the TEMPO one. The run carried a single figure counted from Hit Dice alone, so a
+ * Warlock party recovered no damage at all on a short rest even with four Pact slots back.
+ *
+ * Christopher, 2026-09-07: *"the baseline recovery for X class … should cover everything from
+ * health to charges on items."*
+ */
+type RestRecovery = {
+  /** Share of full SUSTAIN a short rest returns, from Hit Dice. */
+  fraction: number;
+  /** Share of the day's RESOURCE supply it returns, from every pool that refreshes. */
+  resourceFraction: number;
+  source: "override" | "party" | "published";
+  detail?: string;
+};
 import {
   resolveActRun,
   restBlocks,
@@ -151,25 +169,46 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
     );
     /** Resolved per step, because the share depends on that step's own full sustain. */
     const recoveryFor = (fullSustain: number): RestRecovery => {
+      /**
+       * ⚠ AN OVERRIDE IS ONE NUMBER AND IT SPEAKS FOR BOTH CLOCKS. A DM typing "30%" is saying what
+       * a short rest is worth to this party overall; splitting their single figure in two would be
+       * the app inventing a distinction they did not make.
+       */
       if (run?.shortRestRecovery !== undefined) {
-        return { fraction: Math.max(0, Math.min(1, run.shortRestRecovery)), source: "override" };
+        const f = Math.max(0, Math.min(1, run.shortRestRecovery));
+        return { fraction: f, resourceFraction: f, source: "override" };
       }
       const derived = shortRestRecoveryFromActors(actors as never[], fullSustain);
       if (derived) {
+        const dice = (derived.perActor ?? []).map(a => `${a.actor} ${a.pools}`).join(" · ");
+        const pools = derived.resources.length > 0
+          ? `${derived.resourcesBack.toFixed(0)} of ${derived.resourcesPerDay.toFixed(0)} day resources back: ${derived.resources.map(r => `${r.actor} ${r.resource}`).join(", ")}`
+          : "no pool on these sheets refreshes on a short rest";
         return {
           fraction: Math.max(0, Math.min(1, derived.fraction)),
+          resourceFraction: Math.max(0, Math.min(1, derived.resourceFraction)),
           source: "party",
-          detail: (derived.perActor ?? []).map(a => `${a.actor} ${a.pools}`).join(" · "),
+          detail: [dice, pools].filter(Boolean).join(" — "),
         };
       }
-      return { fraction: SHORT_REST_RECOVERY, source: "published" };
+      return { fraction: SHORT_REST_RECOVERY, resourceFraction: SHORT_REST_RECOVERY, source: "published" };
     };
-    let spent = 0;
+    /**
+     * ⚠ TWO CLOCKS, BECAUSE A SHORT REST DOES NOT REFILL THEM AT THE SAME RATE.
+     *
+     * `spentSustain` is hit points and is what a fight's cost is measured in. `spentResources` is
+     * the day's slots, pools and charges — it is spent by the same fights and refilled by the
+     * same rests, but a short rest hands back a Warlock's whole Pact suite and almost no HP, and a
+     * Wizard's the other way round. One number could only be right for one of them.
+     */
+    let spentSustain = 0;
+    let spentResources = 0;
     return resolved.map(step => {
       const encounter = encounters.find(e => e.id === step.encounterId);
-      const arrivingSpent = spent;
+      const arrivingSpent = spentSustain;
+      const arrivingResources = spentResources;
       if (!encounter) {
-        return { id: step.id, missing: true as const, arrivingSpent, result: null, cost: 0 };
+        return { id: step.id, missing: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
       }
       try {
         const entries = encounter.entries
@@ -179,7 +218,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
           }))
           .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
         if (entries.length === 0) {
-          return { id: step.id, missing: false as const, empty: true as const, arrivingSpent, result: null, cost: 0 };
+          return { id: step.id, missing: false as const, empty: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
         }
         // Party AC and save bonus come from the published defence curve for the run's mode — the
         // same two numbers the difficulty panel takes, derived the same way (the save bonus is the
@@ -194,8 +233,21 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         // Weakest bodies first — the same kill priority the difficulty panel simulates.
         const roster = [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity);
         const full = resolvePartyProfile({ level: step.partyLevel, size: partySize });
-        const profile = arrivingSpent > 0
-          ? resolvePartyProfile({ level: step.partyLevel, size: partySize, customSustain: full.sustain * (1 - arrivingSpent) })
+        /**
+         * ⚠ THE RUN NEVER DEPLETED ITS DAMAGE, ONLY ITS HIT POINTS.
+         *
+         * This passed `customSustain` and nothing else, so every fight in a run was fought at
+         * FRESH round-1 damage however deep into the block it was — the same fault the difficulty
+         * panel had. `arrivingSpent` is the input `resolvePartyProfile` already takes for it, and
+         * the resource clock is what belongs there: damage runs out when slots do, not when hit
+         * points do.
+         */
+        const profile = (arrivingSpent > 0 || arrivingResources > 0)
+          ? resolvePartyProfile({
+            level: step.partyLevel, size: partySize,
+            arrivingSpent: arrivingResources,
+            customSustain: full.sustain * (1 - arrivingSpent),
+          })
           : full;
         const result = simulateEncounter({
           party: {
@@ -210,10 +262,22 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         const taken = result.rounds[result.rounds.length - 1]?.cumulativeMonsterDamage ?? 0;
         const cost = full.sustain > 0 ? taken / full.sustain : 0;
         const rest = recoveryFor(full.sustain);
-        spent = nextArrivalSpent(spent, cost, step.restTaken, rest.fraction);
-        return { id: step.id, missing: false as const, arrivingSpent, result, cost, rest };
+        /**
+         * ⚠ THE SAME CARRY RULE, RUN ONCE PER CLOCK. `nextArrivalSpent` is gated and correct for
+         * one clock, so it is called twice rather than reimplemented for two — a Long rest still
+         * zeroes both, a skipped rest still carries both, and only the short-rest give-back
+         * differs between them.
+         *
+         * The resource clock advances by the same fight cost, because a fight that took 30% of the
+         * party's hit points is a fight in which they spent about that much of their kit; nothing
+         * published measures the two separately, and inventing a second cost would be exactly the
+         * unpublished exchange rate this pass keeps refusing to make up.
+         */
+        spentSustain = nextArrivalSpent(spentSustain, cost, step.restTaken, rest.fraction);
+        spentResources = nextArrivalSpent(spentResources, cost, step.restTaken, rest.resourceFraction);
+        return { id: step.id, missing: false as const, arrivingSpent, arrivingResources, result, cost, rest };
       } catch {
-        return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, result: null, cost: 0 };
+        return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
       }
     });
     // ⚠ `bondMitigation` IS A PARTY INPUT AND REACHES NO ROSTER FIGURE, so it must be named here
@@ -559,20 +623,41 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
                 */}
                 {(() => {
                   const rest: RestRecovery = priced.find(x => x.rest)?.rest
-                    ?? { fraction: SHORT_REST_RECOVERY, source: "published" };
+                    ?? { fraction: SHORT_REST_RECOVERY, resourceFraction: SHORT_REST_RECOVERY, source: "published" };
                   return (
                     <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 10, color: "#8a8a9a" }}>
                       A short rest returns
+                      {/* ⚠ CLEARING THE FIELD MUST DROP THE OVERRIDE, NOT WRITE ZERO.
+                          `Number("") || 0` is 0, and 0 is a DEFINED override — so emptying the box
+                          did not fall back to this party's own recovery, it asserted that a short
+                          rest returns nothing. The caption right beside it said "Clear it to read
+                          this party's own Hit Dice again", which was then untrue.
+                          Christopher: *"if i remove the 25% it sets it at 0 not at the baseline
+                          recovery for X class."* An empty box is the absence of an opinion. */}
                       <input type="number" min={0} max={100} value={Math.round(rest.fraction * 100)}
-                        onChange={e => patchRun(run.id, { shortRestRecovery: Math.max(0, Math.min(100, Number(e.target.value) || 0)) / 100 })}
+                        onChange={e => {
+                          const raw = e.target.value.trim();
+                          if (raw === "") { patchRun(run.id, { shortRestRecovery: undefined }); return; }
+                          const pct = Number(raw);
+                          if (!Number.isFinite(pct)) return;
+                          patchRun(run.id, { shortRestRecovery: Math.max(0, Math.min(100, pct)) / 100 });
+                        }}
+                        title="Empty this box to go back to what THIS party actually recovers — their Hit Dice, their short-rest class pools and their item charges. Typing 0 is a different statement: that a short rest returns nothing."
                         style={{ ...input, width: 46, textAlign: "center" }} />
                       % of sustain
+                      {/* ⚠ AND THE OTHER CLOCK, BECAUSE IT IS A DIFFERENT NUMBER. Hit Dice buy hit
+                          points; Action Surge, Pact slots and an item's charges buy damage, and a
+                          party can recover a lot of one and none of the other. */}
+                      <span style={{ color: rest.resourceFraction > 0 ? "#7fb069" : "#666" }}
+                        title="Every pool on these sheets that refreshes on a short rest — class resources, pact slots, free casts and item charges — as a share of what they carry across the whole day. This moves the DAMAGE clock; the sustain figure beside it moves the hit-point one.">
+                        {" + "}{Math.round(rest.resourceFraction * 100)}{"% of day resources"}
+                      </span>
                       <span style={{ color: "#555" }} title={rest.detail ?? undefined}>
                         {rest.source === "override"
-                          ? "— your override. Clear it to read this party's own Hit Dice again."
+                          ? "— your override, applied to both clocks. Clear the box to read this party again (typing 0 says a rest returns nothing, which is a different claim)."
                           : rest.source === "party"
-                            ? `— resolved from THIS party's Hit Dice${rest.detail ? ": " + rest.detail : ""}.`
-                            : "— the published median across 384 sampled parties. Choose a party and it resolves from their own Hit Dice."}
+                            ? `— resolved from THIS party${rest.detail ? ": " + rest.detail : ""}.`
+                            : "— the published median across 384 sampled parties. Choose a party and it resolves from their own Hit Dice and pools."}
                       </span>
                     </label>
                   );

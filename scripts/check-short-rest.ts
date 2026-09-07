@@ -104,5 +104,80 @@ console.log("\nAn empty party is a question, not a zero");
     shortRestRecoveryFromActors([single] as never, 0) === null);
 }
 
+/* ── RECOVERY COVERS THE POOLS, NOT JUST THE DICE ────────────────────────────────────────── */
+console.log("\nA short rest returns hit points AND everything that refreshes");
+{
+  /**
+   * Christopher, 2026-09-07: *"the baseline recovery for X class … should cover everything from
+   * health to charges on items."* The Short Rest Rules sheet says the same thing first: *"The
+   * external party runtime applies these rules to live state; the workbook does not … substitute a
+   * generic 25% recovery."*
+   *
+   * ⚠ TWO NUMBERS, NOT ONE AVERAGED. Hit Dice move the sustain clock and refreshed pools move the
+   * damage one, and the whole point is that a party can be strong on one and empty on the other.
+   */
+  const pool = (id: string, label: string, kind: string, additive: number, regain?: number | "all") => ({
+    id, label, actionKind: "resource", economyCost: [], logMode: "silent",
+    metadata: { resourceKind: kind, additive: String(additive), ...(regain !== undefined ? { shortRestRegain: regain } : {}) },
+  });
+
+  /** A Warlock: their whole Pact suite back, on a sheet whose Hit Dice buy very little. */
+  const warlock = {
+    name: "Pact", kind: "player", className: "Warlock", level: 5,
+    abilityScores: { con: { score: 10 } },
+    stats: { ac: 14, hp: { current: 30, max: 30 }, speed: "30 ft." },
+    tabs: { resources: [pool("pact", "Pact Magic L3", "spellSlot", 2, "all")] },
+  } as never;
+  const w = shortRestRecoveryFromActors([warlock], 400)!;
+  ok("a Warlock's pact slots come back in full", Math.abs(w.resourceFraction - 0.5) < 1e-9,
+    `${(w.resourceFraction * 100).toFixed(0)}% of the day's supply`);
+  ok("...counted as uses, not guessed", w.resourcesBack === 2 && w.resourcesPerDay === 4,
+    `${w.resourcesBack} of ${w.resourcesPerDay}`);
+  ok("...and named, so the figure is answerable", w.resources[0]?.resource === "Pact Magic L3",
+    w.resources.map(r => r.resource).join(", "));
+
+  /** ⚠ "CHARGES ON ITEMS" — an item pool that resets on a short rest is part of this. */
+  const withItem = {
+    ...(warlock as unknown as Record<string, unknown>),
+    tabs: {
+      resources: [pool("pact", "Pact Magic L3", "spellSlot", 2, "all")],
+      equipment: [{
+        id: "atk-wand", label: "Wand of Sparks", actionKind: "attack", economyCost: ["main"], logMode: "default",
+        metadata: { damage: "2d6", attack: "1d20+5", charges: { max: 3, reset: "shortRest" } },
+      }],
+    },
+  } as never;
+  const wi = shortRestRecoveryFromActors([withItem], 400)!;
+  ok("an item's short-rest charges are counted too", wi.resourcesBack === 5,
+    `${wi.resourcesBack} uses back`);
+  ok("...and the item pool is named", wi.resources.some(r => r.resource === "Wand of Sparks"),
+    wi.resources.map(r => r.resource).join(", "));
+
+  /** ⚠ A POOL THAT RETURNS NOTHING STILL COUNTS IN THE DENOMINATOR — a share of nothing is a lie. */
+  const wizard = {
+    name: "Slots", kind: "player", className: "Wizard", level: 5,
+    abilityScores: { con: { score: 10 } },
+    stats: { ac: 12, hp: { current: 28, max: 28 }, speed: "30 ft." },
+    tabs: { resources: [pool("s1", "Spell Slots L1", "spellSlot", 4)] },
+  } as never;
+  const wz = shortRestRecoveryFromActors([wizard], 400)!;
+  ok("a party whose pools do not refresh recovers no resources", wz.resourceFraction === 0);
+  ok("...but its pools still count as the day's supply", wz.resourcesPerDay === 4,
+    `${wz.resourcesPerDay} uses in the day`);
+
+  /** ⚠ MUTATION: take the short-rest regain away and the recovery must fall to zero. */
+  const noRegain = {
+    ...(warlock as unknown as Record<string, unknown>),
+    tabs: { resources: [pool("pact", "Pact Magic L3", "spellSlot", 2)] },
+  } as never;
+  ok("mutation: without a short-rest regain the pool returns nothing",
+    shortRestRecoveryFromActors([noRegain], 400)!.resourceFraction === 0);
+
+  /** The two halves are genuinely different numbers, which is the reason there are two. */
+  ok("the hit-point half is its own figure and is not the resource one",
+    Math.abs(w.fraction - w.resourceFraction) > 1e-9,
+    `HP ${(w.fraction * 100).toFixed(1)}% vs resources ${(w.resourceFraction * 100).toFixed(0)}%`);
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

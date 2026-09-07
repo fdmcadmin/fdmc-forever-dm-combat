@@ -9,14 +9,31 @@
  * refresh."* A Warlock table and a Rogue table do not recover alike, and the spread proves it —
  * p10 0.07 against p90 0.40.
  *
- * ── WHAT COUNTS AS SUSTAIN, AND WHAT DOES NOT ────────────────────────────────────────────────
- * The V3.0 Method draws the line and this module keeps it:
+ * ── TWO THINGS COME BACK, AND THEY ARE NOT THE SAME THING ────────────────────────────────────
  *
- *   · HIT DICE ARE SUSTAIN. They convert directly into hit points, which is what sustain measures.
- *   · REFRESHED POOLS ARE NOT. Action Surge, Channel Divinity and Pact slots coming back are
- *     TEMPO — they buy damage and options, not survivability. `shortRestRules.generated` records
- *     what refreshes and `classResources` grants it; neither belongs in a sustain figure, and
- *     folding them in would invent an exchange rate the workbook does not publish.
+ * Christopher, 2026-09-07: *"the baseline recovery for X class … should cover everything from
+ * health to charges on items."* He is right, and the workbook's own Short Rest Rules sheet says it
+ * first: *"The app reads this compact authority to resolve the actual actor it is showing. The
+ * external party runtime applies these rules to live state; the workbook does not simulate the
+ * 1,024 parties or substitute a generic 25% recovery."*
+ *
+ * So BOTH halves are computed, and they are kept apart because they are spent on different things:
+ *
+ *   · HIT DICE → SUSTAIN. They convert directly into hit points, which is what sustain measures.
+ *   · REFRESHED POOLS → TEMPO. Action Surge, Pact slots, Ki, Superiority Dice and an item's
+ *     short-rest charges buy damage and options, not survivability.
+ *
+ * ⚠ AND MIXING THEM INTO ONE FRACTION WOULD INVENT AN EXCHANGE RATE THE WORKBOOK DOES NOT PUBLISH.
+ * The earlier version of this file counted only the first and called it "the" recovery, which made
+ * a Warlock party recover nothing on a short rest even though four Pact slots came back. The fix
+ * is not to fold the pools into the HP number; it is to return the second fraction beside it and
+ * let the act run spend each on the clock it belongs to.
+ *
+ * ⚠ THE RESOURCE HALF IS COUNTED BY THE LEDGER, NOT BY A SECOND READING. `resourceLedgerFromActor`
+ * already resolves every pool on a sheet and already records `recoveredPerShortRest` against
+ * `totalUses` — spell slots, pact slots, class pools, free casts and item charges alike. Asking it
+ * is RULE ZERO; re-deriving "what comes back on a short rest" here would be a second answer that
+ * can disagree with the one the day budget is built from.
  *
  * ⚠ AND IT IS A CEILING, WHICH IS SAID RATHER THAN HIDDEN. The Method says a PC spends their
  * REMAINING dice. An act run tracks how spent the party is as one fraction, not per-actor dice, so
@@ -27,6 +44,7 @@
 
 import { hitDicePools } from "../../core/rules/multiclass";
 import { knownShortRestClass } from "./shortRestRules.generated";
+import { resourceLedgerFromActor } from "../../core/encounter-band/resourceLedger";
 
 export type ActorLikeForRest = {
   name?: string;
@@ -45,11 +63,35 @@ export type ShortRestActorRecovery = {
   hp: number;
 };
 
+/** A pool that comes back on a short rest, and how much of the day's supply it is. */
+export type ShortRestResourceRecovery = {
+  actor: string;
+  resource: string;
+  /** Uses returned at ONE scheduled short rest. */
+  back: number;
+  /** Uses this pool supplies across the whole day, so `back` can be read as a share. */
+  ofDay: number;
+};
+
 export type ShortRestRecovery = {
   /** Hit points the party can buy back by spending Hit Dice. */
   recoveredHp: number;
-  /** That as a share of full party sustain — the number `actRun` consumes. */
+  /**
+   * That as a share of full party sustain — the SUSTAIN clock's recovery, and what `actRun`
+   * consumes for hit points.
+   */
   fraction: number;
+  /**
+   * Uses returned across every short-rest pool the party carries — class resources, pact slots,
+   * free casts and item charges — as a share of the day's total supply.
+   *
+   * ⚠ THIS IS THE TEMPO CLOCK, NOT THE SUSTAIN ONE. It is what a Warlock gets back, and it is why
+   * counting only Hit Dice made a Pact Magic party read as recovering nothing.
+   */
+  resourceFraction: number;
+  resourcesBack: number;
+  resourcesPerDay: number;
+  resources: ShortRestResourceRecovery[];
   /** True while `recoveredHp` is the whole pool rather than what is actually left. */
   ceiling: boolean;
   perActor: ShortRestActorRecovery[];
@@ -151,10 +193,46 @@ export function shortRestRecoveryFromActors(
     });
   }
 
+  /**
+   * ⚠ THE OTHER HALF, ASKED OF THE LEDGER RATHER THAN RE-DERIVED.
+   *
+   * `resourceLedgerFromActor` already resolves every pool on a sheet — spell slots, pact slots,
+   * class resources, free casts and item charges — and already records how many uses each returns
+   * at ONE scheduled short rest against how many it supplies across the day. That is exactly the
+   * question here, so it is asked rather than answered a second time.
+   *
+   * ⚠ A POOL THAT RETURNS NOTHING STILL COUNTS IN THE DENOMINATOR. A party of Wizards recovers no
+   * resources on a short rest, and the honest way to say so is 0 out of their whole day's supply —
+   * not to omit them and report a share of nothing.
+   */
+  const resources: ShortRestResourceRecovery[] = [];
+  let resourcesBack = 0;
+  let resourcesPerDay = 0;
+  for (const actor of actors) {
+    let rows: ReturnType<typeof resourceLedgerFromActor>["rows"] = [];
+    try { rows = resourceLedgerFromActor(actor as never).rows; } catch { continue; }
+    for (const row of rows) {
+      if (!(row.totalUses > 0)) continue;
+      resourcesPerDay += row.totalUses;
+      if (row.recoveredPerShortRest <= 0) continue;
+      resourcesBack += row.recoveredPerShortRest;
+      resources.push({
+        actor: actor.name ?? "(unnamed)",
+        resource: row.resource,
+        back: row.recoveredPerShortRest,
+        ofDay: row.totalUses,
+      });
+    }
+  }
+
   if (perActor.length === 0) return null;
   return {
     recoveredHp,
     fraction: Math.min(1, recoveredHp / fullSustain),
+    resourceFraction: resourcesPerDay > 0 ? Math.min(1, resourcesBack / resourcesPerDay) : 0,
+    resourcesBack,
+    resourcesPerDay,
+    resources,
     ceiling: !narrowed,
     perActor,
     unresolved,

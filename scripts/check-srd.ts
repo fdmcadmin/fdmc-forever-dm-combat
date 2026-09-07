@@ -28,6 +28,8 @@ import { resolveMonsterLibrary } from "../src/core/monsters/dmMonsterLibrary";
 import { chassisSources, exportableRecords } from "../src/core/content/contentScope";
 import { damageTypesOf } from "../src/core/constants/damageTypes";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
+import { readFileSync } from "node:fs";
+import { CONTENT_ATTRIBUTIONS } from "../src/modules/contentAttributions";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -318,6 +320,42 @@ console.log("\nReference creatures reach the panels");
     !exportable.some((t: { name: string }) => t.name === "Kraken"),
     `${exportable.length} exportable`);
   ok("the DM's own campaign creatures are still chassis-eligible", chassis.length > 0);
+}
+
+/* ── THE LICENCE NOTICES ARE PRESENT AND ARE DISPLAYED ───────────────────────────────────── */
+console.log("\nBoth CC-BY notices ship, and something renders them");
+{
+  /**
+   * ⚠ AN ATTRIBUTION NOTHING DISPLAYS IS NOT AN ATTRIBUTION. `srdContent` has said it since it was
+   * written — *"it travels with the content or the content does not ship"* — and for as long as
+   * SRD content has been in the app the string had no consumer at all; `check:wiring` carried it
+   * as an accepted orphan export, which describes the wiring and not the obligation.
+   *
+   * Christopher, 2026-09-07: *"make sure the dnd mod has both SRD attribution in it."*
+   */
+  ok("both documents are listed", CONTENT_ATTRIBUTIONS.length === 2,
+    CONTENT_ATTRIBUTIONS.map(a => a.label).join(", "));
+  for (const a of CONTENT_ATTRIBUTIONS) {
+    ok(`${a.label}: the notice names the document and the licence`,
+      a.notice.includes("System Reference Document") && /Creative Commons Attribution 4\.0/.test(a.notice),
+      a.notice.slice(0, 60));
+    ok(`${a.label}: it links the licence text`, /creativecommons\.org/.test(a.licenceUrl));
+    ok(`${a.label}: it says what in this app came from it`, a.covers.trim().length > 20);
+  }
+  ok("5.2.1 and 5.1 are both covered, not the same one twice",
+    new Set(CONTENT_ATTRIBUTIONS.map(a => a.label)).size === 2
+    && CONTENT_ATTRIBUTIONS.some(a => a.label.includes("5.2.1"))
+    && CONTENT_ATTRIBUTIONS.some(a => a.label.endsWith("5.1")),
+    CONTENT_ATTRIBUTIONS.map(a => a.label).join(" / "));
+
+  /**
+   * ⚠ AND A SURFACE ACTUALLY RENDERS THEM. Asserting the array exists would pass on the exact
+   * state this gate was written to end — the notices sitting in a module nothing imports.
+   */
+  const panel = readFileSync("src/dm-panel.tsx", "utf8");
+  ok("the DM panel imports the notices", /CONTENT_ATTRIBUTIONS/.test(panel));
+  ok("...and renders each one's text, not just its label",
+    /\{a\.notice\}/.test(panel), "expected the notice body in the panel's JSX");
 }
 
 console.log(`\n${failures === 0 ? "PASS" : `FAIL — ${failures} check(s)`}`);
