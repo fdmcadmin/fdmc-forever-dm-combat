@@ -43,6 +43,8 @@ export type ActionLike = {
     effectKind?: string;
     details?: string;
     slotCost?: string;
+    /** What the sheets actually author. `spellSlotLevel` is kept for anything written the old way. */
+    spellLevel?: number;
     spellSlotLevel?: number;
   };
   text?: string;
@@ -112,7 +114,8 @@ function textOf(a: ActionLike): string {
  */
 function spendsASlot(a: ActionKindCheck): boolean {
   if (a.actionKind === "spell") {
-    const lvl = Number(a.metadata?.spellSlotLevel);
+    // Same field mismatch as below — the sheets say spellLevel.
+    const lvl = Number(a.metadata?.spellLevel ?? a.metadata?.spellSlotLevel);
     if (Number.isFinite(lvl) && lvl > 0) return true;
     return Boolean(a.metadata?.slotCost);
   }
@@ -153,7 +156,19 @@ export function slotCapabilityFromActors(
       if (conditions.length) uses.push("control");
       if (uses.length === 0) continue;
 
-      const lvl = Number(a.metadata?.spellSlotLevel);
+      /**
+       * ⚠ THE SHEETS SAY `spellLevel`, AND THIS READ `spellSlotLevel`.
+       *
+       * Across the live party 50 actions carry `spellLevel` and NONE carries `spellSlotLevel`, so
+       * every row resolved `slotLevel: undefined` and all of an actor's spells fell into one
+       * bucket. The panel's "contested" count was real but tier-blind: it reported one contested
+       * pseudo-tier per caster instead of naming which LEVEL is the fork.
+       *
+       * That is the whole point of this file — *"the contest is between spells over a slot"* — and
+       * a contest at no particular level cannot tell a DM which slot to spend. Both spellings are
+       * read so a sheet authored either way resolves.
+       */
+      const lvl = Number(a.metadata?.spellLevel ?? a.metadata?.spellSlotLevel);
       rows.push({
         actor: who,
         label: a.label ?? "(unnamed action)",

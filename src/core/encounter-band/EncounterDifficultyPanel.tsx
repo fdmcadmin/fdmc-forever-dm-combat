@@ -35,6 +35,10 @@ import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyBenchmark } from "./partyBenchmark";
+import { resourceLedgerFromActors, RESOURCE_DAY } from "./resourceLedger";
+import { actorAsCreature } from "./actorAsCreature";
+import { parseCreature } from "./parseCreature";
+import { traceCreature } from "./actionTrace";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
@@ -332,6 +336,51 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     () => (resolved ? slotCapabilityFromActors(chosen as never[]) : null),
     [chosen, resolved],
   );
+
+  /**
+   * ⚠ WHAT THE PARTY CAN LEGALLY SPEND ACROSS THE DAY, counted the workbook's way.
+   *
+   * `Resource Conversion`: total usable = starting + recovered + free, one Short Rest after fight
+   * three, and every use reserved ONCE across offense / sustain / other. This is the availability
+   * half only — it is displayed, not yet priced into R1..R4+, because the daily total is an audit
+   * figure and row 45 is explicit that it "is not a replacement for round scheduling".
+   */
+  const resourceLedger = useMemo(
+    () => (resolved ? resourceLedgerFromActors(chosen as never[]) : null),
+    [chosen, resolved],
+  );
+
+  /**
+   * ⚠ THE AT-WILL BASE — what the party does for free, all day.
+   *
+   * `Resource Conversion` row 5: *"Base DPR must exclude every resource listed below."* So this is
+   * the weapon routine and cantrips only; every slot, pool, free cast and charge is excluded and
+   * lives in the ledger above. `actorAsCreature` puts a PC into the shape the checker's existing
+   * scheduler already reads, so this is `traceCreature` doing the work rather than a second model.
+   *
+   * ⚠ IT IS NOT THE PARTY'S DPR AND IS LABELLED SO. The resource half is counted but not yet
+   * priced into the rounds, and presenting a base as a total is exactly the mistake this whole
+   * pass is undoing.
+   */
+  const atWillBase = useMemo(() => {
+    if (!resolved || targetAc === undefined) return null;
+    const tgt = {
+      ac: targetAc, partySize,
+      saveBonus: targetSave,
+      saves: { str: targetSave, dex: targetSave, con: targetSave, int: targetSave, wis: targetSave, cha: targetSave },
+    };
+    let r1 = 0;
+    let unreadable = 0;
+    for (const a of chosen) {
+      try {
+        const { creature, unreadable: gaps } = actorAsCreature(a as never);
+        unreadable += gaps.length;
+        const trace = traceCreature(parseCreature(creature), tgt as never, 4);
+        r1 += trace.rounds[0]?.totalExpectedDamage ?? 0;
+      } catch { /* a sheet this cannot read contributes nothing rather than a guess */ }
+    }
+    return { r1, unreadable };
+  }, [chosen, resolved, targetAc, targetSave, partySize]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought
@@ -741,6 +790,29 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               {slotCapability.byUse.control}{"C"}
                               {slotCapability.contested.length > 0
                                 && ` · ${slotCapability.contested.length} contested`}
+                            </span>
+                          )}
+                          {resourceLedger && resourceLedger.rows.length > 0 && (() => {
+                            const total = resourceLedger.rows.reduce((t, r) => t + r.totalUses, 0);
+                            const off = resourceLedger.rows.reduce((t, r) => t + r.offense, 0);
+                            const sus = resourceLedger.rows.reduce((t, r) => t + r.sustain, 0);
+                            const recovered = resourceLedger.rows.reduce((t, r) => t + r.recoveredPerShortRest, 0);
+                            return (
+                              <span style={{ color: "#777", marginLeft: 8 }}
+                                title={`Resource Conversion: ${RESOURCE_DAY.fightsPerLongRest} fights x ${RESOURCE_DAY.roundsPerFight} rounds, one Short Rest after fight ${RESOURCE_DAY.shortRestAfterFight}. Total usable = starting + recovered + free, and each use is reserved once across offense / sustain / other.` + String.fromCharCode(10, 10)
+                                  + resourceLedger.rows.map(r => `${r.actor} · ${r.resource}: ${r.startUses}+${r.recoveredPerShortRest}/rest+${r.freeUses} = ${r.totalUses}`
+                                    + ` → ${r.offense.toFixed(1)} off / ${r.sustain.toFixed(1)} sus / ${r.other.toFixed(1)} other${r.contested ? " (contested)" : ""}`).join(String.fromCharCode(10))}>
+                                {"· day budget "}{total.toFixed(0)}{" uses ("}{off.toFixed(0)}{" off / "}{sus.toFixed(0)}{" sus"}
+                                {recovered > 0 ? `, +${recovered.toFixed(0)} at the short rest` : ""}{")"}
+                              </span>
+                            );
+                          })()}
+                          {atWillBase && atWillBase.r1 > 0 && (
+                            <span style={{ color: "#777", marginLeft: 8 }}
+                              title={"The party's AT-WILL round-1 damage, read off the chosen characters and scheduled by the checker's own action tracer. Base DPR excludes every resource in the day budget, so this is weapons and cantrips only — not the party's total."
+                                + (atWillBase.unreadable > 0 ? " " + atWillBase.unreadable + " damaging entries could not be read." : "")}>
+                              {"· at-will R1 "}{atWillBase.r1.toFixed(1)}
+                              {atWillBase.unreadable > 0 ? ` · ${atWillBase.unreadable} unread` : ""}
                             </span>
                           )}
                                                     {(bondMitigation?.perRound ?? 0) > 0 && (() => {

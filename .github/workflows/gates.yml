@@ -209,3 +209,6 @@ jobs:
 
       - name: check party healing from actors
         run: npm run check:partyheal
+
+      - name: check resource ledger
+        run: npm run check:ledger
