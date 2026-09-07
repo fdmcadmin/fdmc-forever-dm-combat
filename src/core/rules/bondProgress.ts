@@ -41,6 +41,7 @@
  * summary strip, which is why they are deliberately independent.
  */
 
+import type { Actor } from "../types/actor";
 import {
   BOND_METAMORPHOSIS_STAGE,
   BOND_STAGE_NAMES,
@@ -276,6 +277,45 @@ export function assignBond(templateId: string, opts?: { companionActorId?: strin
  * A companion bond with no companion designated returns the character and REPORTS the gap,
  * rather than silently dropping the bond's actions on the floor.
  */
+/**
+ * WHICH BOND THIS CHARACTER HAS — from the assignment, or from the card when there is none.
+ *
+ * `moduleData.bondAssignment` is the machine record, and it is not the only place a bond is
+ * stated. A companion-performed bond is hand-built across two cards: the character keeps a
+ * controller row and the companion carries the effects, so no assignment is written and every
+ * lookup keyed on that field concludes the character has no bond at all.
+ *
+ * Christopher, 2026-09-07: *"Lyrielle has a bond why would it not be counted"*. She does — her
+ * card carries "Pack Instinct (Meta)" and the template is named "Pack Instinct". The bond was
+ * visible on the sheet the whole time; only the field was empty.
+ *
+ * ⚠ THIS IS A NAME MATCH ON A CLOSED SET, NOT PROSE INFERENCE. It compares an authored row LABEL
+ * against the fourteen authored template NAMES — both stated fields — and only for rows the sheet
+ * already marks `actionKind: "bond"`. It cannot invent a bond that is not named on the card.
+ *
+ * ⚠ AND THE ASSIGNMENT ALWAYS WINS. A DM who set one has made a statement; the card row is the
+ * fallback for the bonds that are authored rather than assigned.
+ */
+export function bondTemplateForActor(
+  actor: Pick<Actor, "moduleData" | "tabs">,
+  templates: readonly BondTemplate[],
+): BondTemplate | undefined {
+  const assigned = actor.moduleData?.bondAssignment?.templateId;
+  if (assigned) {
+    const hit = templates.find(t => t.id === assigned);
+    if (hit) return hit;
+  }
+  const rows = (actor.tabs?.bond ?? []) as Array<{ label?: string; actionKind?: string }>;
+  for (const row of rows) {
+    if (row?.actionKind !== "bond") continue;
+    const label = String(row.label ?? "").trim().toLowerCase();
+    if (!label) continue;
+    const hit = templates.find(t => label.startsWith(t.name.trim().toLowerCase()));
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
 export function bondPerformer(
   template: BondTemplate,
   assignment: BondAssignment,

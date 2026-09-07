@@ -39,6 +39,7 @@ import { resourceLedgerFromActors, RESOURCE_DAY } from "./resourceLedger";
 import { actorAsCreature } from "./actorAsCreature";
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
 import { classResourceLean } from "../../modules/dnd-5e/casterLean";
+import { bondTemplateForActor } from "../rules/bondProgress";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { partyDefenceFromActors } from "./partyDefenceFromActors";
@@ -357,9 +358,13 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
          * loadout split.
          */
         leanFor: (a) => {
-          const id = (a as { moduleData?: { bondAssignment?: { templateId?: string } } })
-            .moduleData?.bondAssignment?.templateId;
-          const bond = id ? BROKEN_CHAIN_BOND_TEMPLATES.find(t => t.id === id)?.resourceLean : undefined;
+          /**
+           * ⚠ THE BOND MAY BE ON THE CARD RATHER THAN IN THE FIELD. A companion-performed bond is
+           * hand-built across two sheets and writes no assignment, so reading only
+           * `bondAssignment` concluded the character had no bond at all —
+           * `bondTemplateForActor` reads both.
+           */
+          const bond = bondTemplateForActor(a as never, BROKEN_CHAIN_BOND_TEMPLATES)?.resourceLean;
           /**
            * ⚠ THE BOND FIRST, THEN THE CLASS. A bond is a stated choice about this character; a
            * half or third caster's lean is what the progression already implies. Lyrielle is the

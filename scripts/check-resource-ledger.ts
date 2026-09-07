@@ -24,6 +24,7 @@
 import { actorAsCreature } from "../src/core/encounter-band/actorAsCreature";
 import { resourceLedgerFromActor, RESOURCE_DAY, CONTESTED_ROLE_MAJORITY } from "../src/core/encounter-band/resourceLedger";
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../src/modules/the-broken-chain/content/bondTemplates";
+import { bondTemplateForActor } from "../src/core/rules/bondProgress";
 import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 
@@ -189,6 +190,32 @@ console.log(String.fromCharCode(10) + "A contested tier is broken by the ROLE, n
     Math.abs(absent.offense + absent.sustain + absent.other - absent.totalUses) < 1e-9
     && absent.notes.some(n => /does not appear at this tier/.test(n)),
     absent.notes.join(" | "));
+}
+
+/* ── 4. A bond stated on the CARD still counts ───────────────────────────────────────────── */
+console.log(String.fromCharCode(10) + "A bond on the card counts even with no assignment written");
+{
+  const T = BROKEN_CHAIN_BOND_TEMPLATES;
+  const withRow = { moduleData: {}, tabs: { bond: [{ label: "Pack Instinct (Meta)", actionKind: "bond" }] } };
+  ok("an unassigned character with an authored bond row resolves it",
+    bondTemplateForActor(withRow as never, T)?.id === "pack",
+    String(bondTemplateForActor(withRow as never, T)?.id));
+
+  const assigned = { moduleData: { bondAssignment: { templateId: "guardian" } },
+    tabs: { bond: [{ label: "Pack Instinct (Meta)", actionKind: "bond" }] } };
+  ok("...but a written assignment always wins over the row",
+    bondTemplateForActor(assigned as never, T)?.id === "guardian",
+    String(bondTemplateForActor(assigned as never, T)?.id));
+
+  /** ⚠ IT CANNOT INVENT A BOND. A row that names no template resolves nothing. */
+  const nameless = { moduleData: {}, tabs: { bond: [{ label: "Some Homebrew Thing", actionKind: "bond" }] } };
+  ok("a row naming no template resolves nothing",
+    bondTemplateForActor(nameless as never, T) === undefined);
+
+  /** The companion carries the EFFECTS, not the bond — its rows are features, not bond rows. */
+  const companion = { moduleData: {}, tabs: { bond: [{ label: "Protective Stance (Shielding Bond)", actionKind: "feature" }] } };
+  ok("a companion’s effect row is not mistaken for its owner’s bond",
+    bondTemplateForActor(companion as never, T) === undefined);
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
