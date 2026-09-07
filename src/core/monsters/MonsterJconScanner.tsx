@@ -140,6 +140,23 @@ export type MonsterReaderAction = {
    */
   routineSlots?: number;
   /**
+   * THIS ACTION COMPETES FOR ONE MULTIATTACK SLOT INSTEAD OF ADDING TO THE ROUTINE.
+   *
+   * The parser already infers this from a printed name — a card writes "Grab (replaces one Claw)"
+   * exactly that way. This is the same statement made as a field, for a block whose rule lives in
+   * a TRAIT rather than in the action's name. The Elemental Mirror's Role Attack: *"A mirror can
+   * replace its normal attack routine with a spell from its elemental package."*
+   *
+   * Its at-will attack cantrips were invisible to the scheduler: Claw and Bolt each declare
+   * `routineSlots: 1`, which exactly fills a 2-attack budget, so nothing else could ever be
+   * considered. Christopher: *"the at will being part of the multiattack isnt being counted."*
+   *
+   * ⚠ IT CANNOT INFLATE A ROUTINE. A replacer takes the WEAKEST slot and only when it is worth
+   * more than what it displaces, so marking a cantrip that is weaker than the printed attack
+   * changes nothing at all — which is the correct answer, not a missing one.
+   */
+  replacesRoutineSlot?: boolean;
+  /**
    * Extra damage this action carries on a hit — a name, dice, a cadence and a condition, rather
    * than dice folded into the damage string where none of those can be expressed.
    * See `monsterRider.ts`.

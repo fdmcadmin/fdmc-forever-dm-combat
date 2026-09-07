@@ -194,3 +194,6 @@ jobs:
 
       - name: check companion bond rider
         run: npm run check:bondrider
+
+      - name: check mirror bodies
+        run: npm run check:mirrors

@@ -830,7 +830,24 @@ export function EncounterLibraryPanel({
   function saveEdit(targetOverride?: "campaign" | "dm") {
     if (!editDraft) return;
     const target = targetOverride ?? saveTargetDraft ?? editDraft.owner ?? "dm";
-    upsertEncounter({ ...editDraft, owner: target }, target);
+    /**
+     * ⚠ SAVING A CAMPAIGN FIGHT INTO MY LIBRARY IS A COPY, AND A COPY NEEDS ITS OWN ID.
+     *
+     * `upsertEncounter` writes into the target owner's key and keeps whatever id it is handed, so
+     * this used to leave the SAME id in both libraries. `loadEncounterLibrary()` returns
+     * `[...campaign, ...dm]`, which made every `find(e => e.id === id)` in the app resolve to the
+     * campaign copy — the DM's own version was listed in the dropdown and could never be selected.
+     *
+     * That is what made Gate II unpickable: two options with the same value, so choosing the
+     * second selected the first, and the fight that got priced was the campaign one with no
+     * mirror bodies built. `repairDuplicateOwnerIds` splits the pairs already in a browser;
+     * this stops new ones being made.
+     */
+    const livesIn = editDraft.owner ?? "campaign";
+    const draft = target === "dm" && livesIn !== "dm"
+      ? { ...editDraft, id: `dm-${Date.now().toString(36)}` }
+      : editDraft;
+    upsertEncounter({ ...draft, owner: target }, target);
     refreshLibrary();
     setEditingId(null);
     setEditDraft(null);

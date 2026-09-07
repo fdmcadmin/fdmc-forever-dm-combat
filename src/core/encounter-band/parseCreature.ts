@@ -306,6 +306,8 @@ type RawAction = {
   targets?: number; onSave?: string; successDamage?: string; uses?: number;
   /** Authored Multiattack split. Unset keeps the convention — see `routineSlots`. */
   routineSlots?: number;
+  /** Authored twin of the "(replaces one Claw)" name convention — see MonsterReaderAction. */
+  replacesRoutineSlot?: boolean;
   /** Extra damage this action carries on a hit — see `MonsterRider`. */
   riders?: readonly MonsterRider[];
   /** The action's printed reach/range, one field — see MonsterReaderAction.range. */
@@ -413,7 +415,7 @@ function parseSection(
       successDamage: successDamageFor(a),
       recharge: parseRecharge(a.recharge, name),
       uses: parseUses(name, a.text),
-      replacesRoutineSlot: replacesRoutineSlot(name),
+      replacesRoutineSlot: a.replacesRoutineSlot ?? replacesRoutineSlot(name),
       // Authored only. Unset keeps the bite-claw-claw convention — see `routineSlots`.
       routineSlots: a.routineSlots,
       // Authored only. A rider is never inferred from prose — see `monsterRider.ts`.

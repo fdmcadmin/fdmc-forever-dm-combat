@@ -409,6 +409,39 @@ export function permanentlyDeleteEncounter(id: string): void {
  * (owner "dm", or ids like "dm-…" / "custom-…") back out of the campaign key.
  * No-op once the key is clean, so it's safe to call on every load.
  */
+/**
+ * ⚠ ONE ID IN TWO LIBRARIES IS ONE FIGHT AS FAR AS EVERY LOOKUP IS CONCERNED.
+ *
+ * `upsertEncounter` writes into the target owner's key and keeps the id it was given. Saving a
+ * CAMPAIGN fight into My Library therefore leaves the same id in both keys, and
+ * `loadEncounterLibrary()` returns `[...campaign, ...dm]` — so every `find(e => e.id === id)`
+ * in the app resolves to the campaign copy and the DM's own version can never be selected.
+ *
+ * Christopher, 2026-09-07, on Gate II: *"when i save my mirrors to the my campaign and try to
+ * check the enounter it keeps reverting to the library and says mirros are priced at 0"*, then
+ * *"look at how it keeps going back to the gate without the mirrors."* Both dropdown rows carried
+ * the SAME value, so picking the second one selected the first — the campaign copy, which has no
+ * bodies built. The mirrors were never priced at 0; a fight without mirrors was being priced.
+ *
+ * The DM's copy keeps its content and gets its own identity. It is re-idded rather than dropped
+ * because it is the one holding the work.
+ *
+ * No-op once the keys are disjoint, so it is safe to call on every load.
+ */
+function repairDuplicateOwnerIds(): void {
+  try {
+    const campaignIds = new Set(loadEncounterLibrary("campaign").map(e => e.id));
+    const dm = loadEncounterLibrary("dm");
+    let moved = 0;
+    const repaired = dm.map(e => {
+      if (!campaignIds.has(e.id)) return e;
+      moved++;
+      return { ...e, id: `dm-${e.id}-${Math.random().toString(36).slice(2, 8)}` };
+    });
+    if (moved > 0) saveEncounterLibrary(repaired, "dm");
+  } catch { /* storage unavailable — nothing to repair */ }
+}
+
 function cleanCampaignLibraryPollution(): void {
   try {
     const raw = safeStorage().getItem(CAMPAIGN_LIBRARY_KEY);
@@ -486,6 +519,9 @@ export function seedEncounterLibraryFromTemplates(templates: MainMonsterTemplate
   // Repair already-polluted browsers BEFORE the early-return path below, otherwise
   // a previously polluted campaign key would keep duplicating DM encounters.
   cleanCampaignLibraryPollution();
+
+  // A DM copy of a campaign fight must not share its id — see repairDuplicateOwnerIds.
+  repairDuplicateOwnerIds();
 
   // A stored campaign fight can outlive the creatures it was built from. Repair before the
   // early return, or a browser seeded pre-rebuild never sees the fix.
@@ -658,11 +694,33 @@ export function spawnEncounterInstances(
       instance.isNameRevealed = entry.startingVisibility === "full";
       if (entry.hiddenNameOverride) instance.hiddenName = entry.hiddenNameOverride;
 
-      // Number multiple instances: "Worg A", "Worg B"
-      if (entry.count > 1) {
+      /**
+       * Number multiple instances: "Worg A", "Worg B".
+       *
+       * ⚠ THE BODY'S NAME, NOT THE TEMPLATE'S — this threw the derived name away.
+       *
+       * `perBody[i]` is what the instance was built from, and for a template body that name is a
+       * CONSEQUENCE of the element pick: `bodyNameFor` resolves `bodyNameFormat` ("{pick} Mirror")
+       * against the chosen option. Reading `template.name` here overwrote it with the generic one,
+       * so five mirrors that had each chosen an element all came back as "Elemental Mirror A".."E"
+       * — while their own cards correctly showed the element in the damage line.
+       * Christopher: *"elemental mirror are the names instead of diriving them from the element
+       * that is chosen."*
+       *
+       * ⚠ AND THE SUFFIX IS FOR A COLLISION, NOT FOR A COUNT. Suffixing on `count > 1` alone would
+       * relabel distinct bodies "Nature Mirror A" and "Fire Mirror B", which numbers things that
+       * were never ambiguous. Two Worgs still read "Worg A"/"Worg B" because those names DO
+       * collide.
+       */
+      const bodyName = perBody[i].name || template.name;
+      const sameName = perBody.filter(b => (b.name || template.name) === bodyName).length;
+      if (entry.count > 1 && sameName > 1) {
         const suffix = String.fromCharCode(65 + i); // A, B, C...
-        instance.displayName = `${template.name} ${suffix}`;
-        instance.revealedName = `${template.visibility.revealedName || template.name} ${suffix}`;
+        instance.displayName = `${bodyName} ${suffix}`;
+        instance.revealedName = `${perBody[i].visibility?.revealedName || bodyName} ${suffix}`;
+      } else if (entry.count > 1) {
+        instance.displayName = bodyName;
+        instance.revealedName = perBody[i].visibility?.revealedName || bodyName;
       }
 
       instances.push(instance);
