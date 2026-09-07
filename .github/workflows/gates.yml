@@ -221,3 +221,6 @@ jobs:
 
       - name: check party class mitigation
         run: npm run check:classmit
+
+      - name: check SRD species traits
+        run: npm run check:species

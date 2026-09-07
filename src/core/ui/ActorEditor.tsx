@@ -9,6 +9,8 @@ import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraf
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
 import type { DamageResponse } from "../encounter-band/damageResponsePricing";
+import { resolveSpecies } from "../../modules/dnd-5e/srdSpecies";
+import { applySpeciesToTabs, type SpeciesApplication } from "../../modules/dnd-5e/applySpecies";
 import { abilityModifier, proficiencyBonus, savingThrowModifier, inferSaveProficiency } from "../rules/dnd5e";
 import { ActorEditorActionTab, CombatActionsTab } from "./ActorEditorActionTab";
 import { EquipmentBagEditor } from "./EquipmentBagEditor";
@@ -371,7 +373,9 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean }) {
+function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; onApplySpecies?: (race: string) => SpeciesApplication }) {
+  /** What the last species change did, so an automatic edit is never a silent one. */
+  const [speciesNote, setSpeciesNote] = useState<string | null>(null);
   /** Why the last path click was refused, in `chooseBondPath`'s own words. */
   const [bondPathRefusal, setBondPathRefusal] = useState<string | null>(null);
 
@@ -425,7 +429,45 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <label style={labelStyle}>Name <input type="text" value={draft.name} onChange={e => set("name", e.target.value)} style={inputStyle} /></label>
         <label style={labelStyle}>Subtitle <input type="text" value={draft.subtitle} onChange={e => set("subtitle", e.target.value)} style={inputStyle} /></label>
-        <label style={labelStyle}>Race <input type="text" value={draft.race} onChange={e => set("race", e.target.value)} style={inputStyle} /></label>
+        {/* ── RACE, AND THE TRAITS IT ALREADY IMPLIES ──────────────────────────────────────
+            ⚠ TYPING THE SAME PUBLISHED FACT TWICE IS HOW THE TWO COPIES DISAGREE. Lyrielle's
+            sheet carries a hand-typed "Wood Elf Traits" paragraph AND a hand-typed `35 ft`
+            speed, either of which can be wrong on its own. Christopher: *"the baseline class
+            traits and such should be in the SRD already and should be set to automatically add
+            the traits and movement."*
+
+            It fires when the RACE CHANGES to a different species — a deliberate edit — rather
+            than on every keystroke or every render, and it is additive: a row the DM wrote is
+            never removed, and a trait they already have is never duplicated. Nothing is written
+            to the actor until Save, so it is undoable by leaving. */}
+        <label style={labelStyle}>Race
+          <input type="text" value={draft.race} placeholder="Wood Elf" style={inputStyle}
+            onChange={e => {
+              const race = e.target.value;
+              const applied = onApplySpecies?.(race);
+              if (!applied) { set("race", race); setSpeciesNote(null); return; }
+              /* Speed comes from the species too — it is the movement half of the same fact. */
+              onChange({ ...draft, race, speed: applied.speed });
+              const bits: string[] = [];
+              if (applied.added.length > 0) bits.push(`added ${applied.added.length} trait${applied.added.length === 1 ? "" : "s"}: ${applied.added.join(", ")}`);
+              if (applied.removed.length > 0) bits.push(`removed ${applied.removed.length} from the previous species`);
+              bits.push(`speed ${applied.speed}`);
+              setSpeciesNote(`${applied.source} — ${bits.join(" · ")}`);
+            }} />
+          {speciesNote && (
+            <span style={{ fontSize: 11, color: "#7fb069", marginTop: 3, display: "block" }}>
+              {speciesNote}
+            </span>
+          )}
+          {/* ⚠ A PURE CHECK. Calling the applier here would rewrite the features tab on every
+              render, which is a side effect in a render path and would fight the DM as they type. */}
+          {!speciesNote && draft.race.trim() !== "" && !resolveSpecies(draft.race) && (
+            <span style={{ fontSize: 11, color: "#888", marginTop: 3, display: "block" }}
+              title="The SRD 5.2.1 species are Aasimar, Dragonborn, Dwarf, Elf, Gnome, Goliath, Halfling, Human, Orc and Tiefling — plus their lineages (Wood Elf, Drow, Infernal Tiefling, and so on). Anything else keeps whatever you typed; nothing is added and nothing is removed.">
+              Not an SRD 5.2.1 species — traits and speed stay exactly as you typed them.
+            </span>
+          )}
+        </label>
         <label style={labelStyle}>
           Class
           <input type="text" value={draft.className} onChange={e => set("className", e.target.value)}
@@ -990,6 +1032,21 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   }
 
   /**
+   * Fold a species' published traits into the features tab, and hand back the speed it grants.
+   *
+   * ⚠ IT LIVES HERE BECAUSE THE TABS DO. `ProfileTab` owns the profile draft and nothing else, so
+   * a species change reaching the FEATURES tab has to come back through the component that holds
+   * both. Returning null for an unrecognised race is what lets the Race field say "not an SRD
+   * species" without this function needing to know anything about how it is displayed.
+   */
+  function applySpecies(race: string): SpeciesApplication {
+    const applied = applySpeciesToTabs(race, tabsDraft);
+    if (!applied) return null;
+    setTabsDraft(applied.tabs);
+    return applied;
+  }
+
+  /**
    * Move (or copy) an action between tabs.
    *
    * Relocating one used to mean deleting it and retyping the whole thing — every formula,
@@ -1138,7 +1195,8 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           <ProfileTab draft={profileDraft} onChange={setProfileDraft} ownerOptions={ownerOptions.filter(o => o.id !== actor.id)} companionOptions={companionOptions.filter(o => o.id !== actor.id)} hasSpells={(tabsDraft.spells ?? []).length > 0}
             bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
             characterLevel={actor.level ?? 1}
-            canAssignBond={!proposeMode} />
+            canAssignBond={!proposeMode}
+            onApplySpecies={applySpecies} />
         )}
         {activeTab === "combat" && (
           <CombatActionsTab

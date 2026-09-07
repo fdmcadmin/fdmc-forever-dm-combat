@@ -18,6 +18,14 @@
  * what is banned is an auto-generated progression database, and this is neither generated nor a
  * progression.
  *
+ * ─── ⚠ THE LINEAGE HALF LIVES IN `srdSpecies`, NOT HERE ─────────────────────────────────────
+ *
+ * This file briefly carried its own "a Dwarf resists poison" list. It now reads the SRD 5.2.1
+ * species table, which is also what puts the trait rows on the character sheet — so a lineage
+ * cannot resist poison for the checker and something else in the DM's feature list. RULE ZERO:
+ * one table, two readers. What is left here is the CLASS half, which the species table has no
+ * business knowing about.
+ *
  * ─── ⚠ WHAT IS IN THE TABLE, AND THE LINE THAT KEEPS IT HONEST ──────────────────────────────
  *
  * ONLY entries that follow from the stated class or lineage with NO further choice. A Dwarf
@@ -43,6 +51,7 @@
 import type { Actor } from "../../core/types/actor";
 import type { DamageResponse } from "../../core/encounter-band/damageResponsePricing";
 import { classLevels } from "../../core/rules/multiclass";
+import { resolveSpecies } from "./srdSpecies";
 
 export type DerivedDamageResponse = DamageResponse & {
   /** The feature it comes from — "Dwarf · Dwarven Resilience". Shown wherever it is priced. */
@@ -65,26 +74,6 @@ type Rule = {
   /** Repeated onto the response so the "could not evaluate this" reporting still fires. */
   qualifier?: string;
 };
-
-/**
- * LINEAGE RULES. Matched as a WHOLE WORD inside the stated race, so "Wood Elf", "Mountain Dwarf"
- * and "Shield Dwarf" all resolve — the sheets write the subrace into the same field.
- *
- * ⚠ NOTHING HERE DEPENDS ON A CHOICE. Dragonborn (ancestry), Tiefling (2024 legacy) and Genasi
- * (element) all do, so they are deliberately absent and belong in the entered field.
- */
-const LINEAGE_RULES: ReadonlyArray<{ match: RegExp; rule: Rule }> = [
-  { match: /\bdwarf\b|\bdwarven\b|\bduergar\b/i,
-    rule: { types: ["poison"], response: "resistant", feature: "Dwarven Resilience" } },
-  { match: /\baasimar\b/i,
-    rule: { types: ["necrotic", "radiant"], response: "resistant", feature: "Celestial Resistance" } },
-  { match: /\btriton\b/i,
-    rule: { types: ["cold"], response: "resistant", feature: "Amphibious / Cold Resistance" } },
-  { match: /\byuan-?ti\b/i,
-    rule: { types: ["poison"], response: "immune", feature: "Magic Resistance / Poison Immunity" } },
-  { match: /\bstout halfling\b/i,
-    rule: { types: ["poison"], response: "resistant", feature: "Stout Resilience" } },
-];
 
 /**
  * CLASS RULES. One entry, because one class grants a damage resistance that follows from the class
@@ -116,7 +105,6 @@ function classNames(actor: Actor): string[] {
  */
 export function classDamageResponsesFor(actor: Actor): DerivedDamageResponse[] {
   const out: DerivedDamageResponse[] = [];
-  const race = String(actor.race ?? "");
   const push = (rule: Rule, source: string) => {
     for (const type of rule.types) {
       out.push({
@@ -129,9 +117,19 @@ export function classDamageResponsesFor(actor: Actor): DerivedDamageResponse[] {
     }
   };
 
-  for (const { match, rule } of LINEAGE_RULES) {
-    if (match.test(race)) push(rule, `${race} · ${rule.feature}`);
+  /**
+   * ⚠ THE LINEAGE HALF COMES FROM `srdSpecies`, NOT FROM A SECOND LIST HERE.
+   *
+   * This file carried its own "a Dwarf resists poison" table until the SRD species table existed.
+   * Two copies of a published fact is two places it can be wrong, and the failure would be silent
+   * and asymmetric — the character sheet showing one thing and the checker pricing another. RULE
+   * ZERO: one table, read by both.
+   */
+  const species = resolveSpecies(actor.race);
+  for (const r of species?.damageResponses ?? []) {
+    out.push({ type: r.type, response: r.response, source: `${species!.name} · ${r.feature}` });
   }
+
   for (const name of classNames(actor)) {
     for (const { match, rule } of CLASS_RULES) {
       if (match.test(name)) push(rule, `${name} · ${rule.feature}`);
