@@ -260,13 +260,53 @@ export function resolveFeature(
      * is worth.
      */
     const controls = conditionsImposedBy({ conditions: feature.conditions, text: feature.text });
+    const text = feature.text ?? "";
+    /**
+     * ⚠ FORCED MOVEMENT AND TERRAIN ARE CONTROL, AND THIS DID NOT KNOW THE WORDS.
+     *
+     * The condition list catches a NAMED condition — Grease says "falls prone" and resolves. It
+     * says nothing about an effect that moves a body or denies it ground, so the Air Mirror's Gust
+     * ("pushed 5 feet"), its Vortex Warp ("teleports it") and the Nature Mirror's Venomroot Bloom
+     * ("difficult terrain") were reported as MISSING DAMAGE — a message asking the DM to invent
+     * dice for spells that print none by design.
+     *
+     * The condition resolver already publishes the channel these land in: REACHABILITY. So they are
+     * named as control and pointed at that channel, which is what the contract asks for — "price
+     * its direct, deterministic consequence on action uptime, hit probability, reachability, or
+     * sustain."
+     */
+    const REACHABILITY = new RegExp([
+      "difficult terrain",
+      "(pushed|pulled|shoved|slid)\\s+(up to\\s+)?\\d+\\s*(feet|ft)",
+      "teleports?\\b",
+      "speed is (halved|reduced)",
+      "knocked (prone|back)",
+    ].join("|"), "i");
+    /**
+     * ⚠ AND A SELF-BUFF IS NEITHER DAMAGE NOR CONTROL. The Earth Mirror's Sunstone Aegis grants
+     * ITSELF +2 AC. Asking for its damage sends the DM looking for dice that were never printed;
+     * calling it control would file a defence under the party's uptime. It is effective HP and it
+     * belongs in the creature's defences with a multiplier and its provenance, where the coverage
+     * gate can see it — so it is reported as that, naming the thing to do.
+     */
+    const SELF_DEFENCE = new RegExp([
+      "granting\\s+\\+?\\d+\\s*AC",
+      "\\+\\d+\\s*AC\\b",
+      "temporary hit points",
+    ].join("|"), "i");
     const readsAsControl = controls.length > 0
-      || /\b(?:speed is (?:halved|reduced)|cannot|can'?t|prevent|suppress|halved|rooted|held|blocked|disadvantage)\b/i
-        .test(feature.text ?? "");
+      || REACHABILITY.test(text)
+      || /\b(?:speed is (?:halved|reduced)|cannot|can\'?t|prevent|suppress|halved|rooted|held|blocked|disadvantage)\b/i.test(text);
+    const readsAsSelfDefence = !readsAsControl && SELF_DEFENCE.test(text);
     if (readsAsControl) {
       notes.push(
-        `Control effect with no damage line${controls.length ? ` (${controls.join(", ")})` : ""} — priced through its consequence, not as damage.`,
+        `Control effect with no damage line${controls.length ? ` (${controls.join(", ")})` : ""}${controls.length === 0 && REACHABILITY.test(text) ? " [reachability]" : ""} — priced through its consequence, not as damage.`,
       );
+    } else if (readsAsSelfDefence) {
+      assumptions.push({
+        feature: name, flag: "NEEDS DM INPUT", field: "damage",
+        detail: "This raises the creature's OWN defence rather than dealing damage — it is effective HP, not a damage line. Record it in the creature's defences with a multiplier and where that multiplier came from; entering a damage figure here would price a shield as a weapon.",
+      });
     } else {
       assumptions.push({
         feature: name, flag: "NEEDS DM INPUT", field: "damage",
