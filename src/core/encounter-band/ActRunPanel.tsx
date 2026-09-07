@@ -47,7 +47,7 @@ import {
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import { rosterFromTemplates } from "./rosterFromLibrary";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
-import { simulateEncounter, resolvePartyProfile } from "./checkerV2";
+import { simulateEncounter, resolvePartyProfile, bondArrangement } from "./checkerV2";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -142,6 +142,11 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
    */
   const priced = useMemo(() => {
     const partySize = Math.max(1, run?.partySize ?? 4);
+    const bondArrange = bondArrangement(
+      run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard",
+      bondMitigation?.perRound ?? 0,
+      Boolean(bondMitigation),
+    );
     /** Resolved per step, because the share depends on that step's own full sustain. */
     const recoveryFor = (fullSustain: number): RestRecovery => {
       if (run?.shortRestRecovery !== undefined) {
@@ -177,7 +182,8 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         // Party AC and save bonus come from the published defence curve for the run's mode — the
         // same two numbers the difficulty panel takes, derived the same way (the save bonus is the
         // mean of the six ability rows). Nothing here invents a party defence.
-        const defence = partyDefenceAt(step.partyLevel, run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard");
+        // The denominator follows the same arrangement the clock does — see `bondArrangement`.
+        const defence = partyDefenceAt(step.partyLevel, bondArrange.baselineMode);
         const saveBonus = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
         // The full library, not just this fight — a summoned creature is never already on the field.
         const built = rosterFromTemplates(entries, step.partyLevel, {
@@ -192,7 +198,8 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         const result = simulateEncounter({
           party: {
             size: profile.size, sustain: profile.sustain, dpr: profile.dpr,
-            mitigationPerRound: bondMitigation?.perRound ?? 0,
+            // Counted once — see `bondArrangement`.
+            mitigationPerRound: bondArrange.mitigation,
           },
           roster,
         });

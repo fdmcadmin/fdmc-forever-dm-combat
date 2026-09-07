@@ -203,3 +203,6 @@ jobs:
 
       - name: check short rest
         run: npm run check:shortrest
+
+      - name: check bond double count
+        run: npm run check:bonddouble

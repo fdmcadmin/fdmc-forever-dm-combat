@@ -761,6 +761,59 @@ export type EncounterResult = {
   rounds: SimulationRound[];
 };
 
+/**
+ * BONDS ARE COUNTED ONCE — AND THE BASELINE HAS TO BE THE BOND-FREE ONE TO DO IT.
+ *
+ * The workbook names two internally consistent arrangements:
+ *
+ *   1. a BOND-FREE sustain denominator, plus live Bond prevention applied once on the combat
+ *      clock — *"Recommended for the current UI"*. "The existing WotC Standard 617 baseline meets
+ *      that requirement; the existing Broken Chain baseline does not."
+ *   2. an ALL-IN Broken Chain sustain that already contains Bonds, and no second subtraction.
+ *
+ * ⚠ THE APP WAS DOING NEITHER. `mitigationPerRound` was passed unconditionally while the
+ * denominator followed the selected mode, so Broken Chain mode took the all-in BC row AND took the
+ * party's Bond prevention off incoming damage a second time.
+ *
+ * ⚠ AND ARRANGEMENT 2 IS THE WRONG FIX HERE, WHICH IS WHY IT IS NOT THE ONE IMPLEMENTED. Making BC
+ * mode consistent by dropping the subtraction is coherent arithmetic and it discards the thing the
+ * app actually knows: THIS party's bonds, read off their own sheets since 0.8.14.0. The certified
+ * BC row carries the certification average instead. Arrangement 1 keeps the live reading, so that
+ * is the one taken — the denominator moves to the bond-free row whenever live bonds are on the
+ * clock, and the panel says it did.
+ *
+ * The toggle test the spec gives: turn Bonds off and the clock must change EXACTLY once, while the
+ * sustain denominator does not move at all.
+ */
+export function bondArrangement(
+  selectedMode: "wotcStandard" | "brokenChain",
+  perRound: number,
+  /**
+   * ⚠ IS THE APP READING THIS PARTY'S OWN BONDS AT ALL — not "is the figure above zero".
+   *
+   * Deriving the arrangement from the VALUE fails the spec's own toggle test: bonds at 0 would
+   * hand the denominator back to the Broken Chain row, so turning them off moved the baseline as
+   * well as the clock. The arrangement is a structural choice about where bonds live, and it does
+   * not change because today's number happens to be zero.
+   */
+  readsLiveBonds: boolean,
+): { baselineMode: "wotcStandard" | "brokenChain"; mitigation: number; reason: string } {
+  if (!readsLiveBonds) {
+    return {
+      baselineMode: selectedMode,
+      mitigation: 0,
+      reason: "no party chosen, so the published row stands on its own",
+    };
+  }
+  return {
+    baselineMode: "wotcStandard",
+    mitigation: Math.max(0, perRound || 0),
+    reason: selectedMode === "brokenChain"
+      ? "applied once on the clock, against the bond-free baseline — the Broken Chain row already contains bonds and cannot be the denominator while they are also being subtracted"
+      : "applied once on the clock, against the bond-free WotC Standard baseline",
+  };
+}
+
 export function simulateEncounter(opts: {
   party: {
     size: number; sustain: number; dpr: Partial<RoundProfile>;

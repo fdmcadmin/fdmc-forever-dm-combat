@@ -25,6 +25,7 @@ import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import {
   simulateEncounter, resolvePartyProfile, effectiveHpPerBody,
   type DamageAllocation, type EncounterResult,
+  bondArrangement,
 } from "./checkerV2";
 import {
   GENERIC_CHECKER_LEVELS, isProjectedLevel, partySizeHpMultiplier,
@@ -315,6 +316,14 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   );
 
   /**
+   * ⚠ ONE ARRANGEMENT, DECIDED ONCE. The baseline and the clock have to agree about where bonds
+   * live, so both read this — see `bondArrangement`. `equipmentMode` stays the DM's SELECTION;
+   * `bondBaselineMode` is what the comparison is actually drawn against.
+   */
+  const bondArrange = bondArrangement(equipmentMode, bondMitigation?.perRound ?? 0, bondMitigation !== null);
+  const bondBaselineMode = bondArrange.baselineMode;
+
+  /**
    * ⚠ CAPACITY, NEVER A TOTAL. These slots are already inside the DPR curve; the point is that
    * nothing said so, and nothing said what else they could have been. One Action per turn makes
    * these alternatives, so they are counted as OPTIONS and never added to sustain or to damage.
@@ -338,10 +347,10 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   const profile = useMemo(() => {
     try {
       return resolvePartyProfile({
-        level: partyLevel, size: partySize, equipmentMode, arrivingSpent,
+        level: partyLevel, size: partySize, equipmentMode: bondBaselineMode, arrivingSpent,
       });
     } catch { return null; }
-  }, [partyLevel, partySize, equipmentMode, arrivingSpent]);
+  }, [partyLevel, partySize, bondBaselineMode, arrivingSpent]);
 
   /**
    * ⚠ FEATS LAND ON THE LINES THAT ALREADY EXIST, not on a panel of their own.
@@ -385,7 +394,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     if (!profile || !resolved) return null;
     return partyBenchmark({
       level: partyLevel,
-      mode: equipmentMode,
+      mode: bondBaselineMode,
       // Like for like: the current side is this size's profile, so the line must be too.
       partySize,
       current: {
@@ -396,7 +405,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         sustain: profile.sustain + partyFeats.partyEhp + partyHealing.total,
       },
     });
-  }, [profile, resolved, partyLevel, equipmentMode, partySize, partyFeats, partyHealing]);
+  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, partyHealing]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -412,7 +421,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
            * drift this file keeps paying for.
            */
           initiative: actorDefence?.initiative ?? saves.dex,
-          mitigationPerRound: bondMitigation?.perRound ?? 0,
+          // Counted once — see `bondArrangement`.
+          mitigationPerRound: bondArrange.mitigation,
         },
         roster: roster.roster,
         settings: { damageAllocation: allocation, targetSafetyMargin },
@@ -733,12 +743,22 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                                 && ` · ${slotCapability.contested.length} contested`}
                             </span>
                           )}
-                                                    {(bondMitigation?.perRound ?? 0) > 0 && (
-                            <span style={{ color: "#777", marginLeft: 8 }}
-                              title="Bond mitigation lengthens rounds-to-fall directly in the simulation. Adding it to sustain as well would count it twice.">
-                              {"· bonds "}{(bondMitigation?.perRound ?? 0).toFixed(1)}{"/rd counted on the clock, not in sustain"}
-                            </span>
-                          )}
+                                                    {(bondMitigation?.perRound ?? 0) > 0 && (() => {
+                            /*
+                              ⚠ WHICH ARRANGEMENT IS IN FORCE, SAID OUT LOUD. This read "counted on
+                              the clock, not in sustain" in both modes, which is only true of the
+                              bond-free WotC Standard baseline. The Broken Chain row is certified
+                              from BC actor state INCLUDING active legal Bonds, so on that side the
+                              honest sentence is the opposite one.
+                            */
+                            const bm = bondArrange;
+                            return (
+                              <span style={{ color: "#777", marginLeft: 8 }}
+                                title="Bonds are counted once: either inside the sustain denominator or on the combat clock, never both. Toggling bonds off must move the clock exactly once.">
+                                {"· bonds "}{(bondMitigation?.perRound ?? 0).toFixed(1)}{"/rd — "}{bm.reason}
+                              </span>
+                            );
+                          })()}
                           {/*
                             ⚠ SAY WHAT THE OFFENCE SIDE IS, BECAUSE A DELTA NEAR ZERO IS NOT A
                             COMPLIMENT — IT IS THIS ROW COMPARED WITH ITSELF.
