@@ -1473,9 +1473,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e1-the-first-court",
     encounterLabel: "Act 3 E1 - The First Court",
     stats: {
-      kind: "fey", ac: 17, maxHp: 59, speed: "30 ft., climb 20 ft.",
+      kind: "fey", ac: 17, maxHp: 71, speed: "30 ft., climb 20 ft.",
       defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Root-Road and Deep-Footed are movement and anti-prone; neither reduces damage taken. Plain HP bar." },
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "v3.44: Sure-Footed is anti-prone and anti-forced-movement only; it reduces no damage taken. Root-Road and Deep-Footed are retired. Plain HP bar." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "bruiser",
@@ -1491,14 +1491,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "10 (+0)" },
     ],
     traits: [
-      { name: "Root-Road", kind: "trait", text: "As a bonus action, choose two spaces of natural ground within 20 feet. Until the start of the next turn, a visible root seam joins them. Snarlroot can treat the seam as normal ground even across roots, brush, or a low obstacle, and it can move along the seam without provoking opportunity attacks." },
-      { name: "Deep-Footed", kind: "trait", text: "While touching natural ground, Snarlroot has advantage on saves against being knocked prone or moved against its will." },
+      { name: "Sure-Footed", kind: "trait", text: "While touching natural ground, Snarlroot has Advantage on saving throws against effects that would give it the Prone condition or move it against its will." },
     ],
     actions: [
-      { name: "Knotted Club", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft." },
-      { name: "Sweeping Growth (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", text: "Choose one creature on natural ground within 20 ft. It makes a DC 15 Strength save. On a failure, roots carry it up to 15 ft. along the ground to an unoccupied space and it cannot take reactions until the start of its next turn. On a success, it can be moved up to 5 ft. only." },
+      { name: "Rooted Heave", kind: "action", economyCost: "bonus", save: "STR DC 15", targets: 1, text: "Snarlroot chooses one creature standing on natural ground within 20 feet. The target must succeed on a DC 15 Strength saving throw or be pulled up to 10 feet toward Snarlroot." },
+      { name: "Knotted Club", kind: "attack", roll: "1d20+7", damage: "2d8 + 3", damageType: "Bludgeoning", range: "reach 5 ft." },
+      { name: "Sweeping Growth (Recharge 5–6)", kind: "action", save: "STR DC 15", onSave: "none", recharge: "5-6", targets: 1, text: "Strength Saving Throw: DC 15, one creature on natural ground within 20 feet. Failure: Roots carry the target up to 15 feet along the ground to an unoccupied space, and the target can't take Reactions until the start of its next turn. Success: The roots can move the target up to 5 feet only." },
     ],
     reactions: [
+      { name: "Backlash Roots", kind: "action", save: "STR DC 15", text: "When a creature within 5 feet hits Snarlroot with a melee attack, roots kick up beneath the attacker. The attacker must succeed on a DC 15 Strength saving throw or be pushed up to 10 feet directly away from Snarlroot and have the Prone condition." },
     ],
     resources: [],
     notes: [
@@ -1512,9 +1513,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e1-the-first-court",
     encounterLabel: "Act 3 E1 - The First Court",
     stats: {
-      kind: "fey", ac: 16, maxHp: 76, speed: "40 ft.",
+      kind: "fey", ac: 16, maxHp: 91, speed: "40 ft.",
       defenses: [
-        { name: "Bark-Ribbed", ehpMultiplier: 1.028819, provenance: "interpolated", note: "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). Reduces B/P/S by 3, first time each round." },
+        { name: "Barkhide", ehpMultiplier: 1.028819, provenance: "interpolated", note: "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). Reduces B/P/S by 3, the first time each round. v3.44 RENAMED this from Bark-Ribbed; the mechanic is unchanged, and `check:traits` caught the rename because the defence row stopped matching a trait that still exists." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "guardian",
@@ -1530,14 +1531,14 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "12 (+1)" },
     ],
     traits: [
-      { name: "Bark-Ribbed", kind: "trait", text: "The first time each round the Warden takes bludgeoning, piercing, or slashing damage, reduce it by 3." },
+      { name: "Barkhide", kind: "trait", text: "The first time each round the Warden takes bludgeoning, piercing, or Slashing damage, reduce it by 3." },
     ],
     actions: [
-      { name: "Name the Threshold", kind: "action", economyCost: "bonus", text: "Bonus Action: choose a 15-ft. line of natural ground within 15 ft. Until the start of the Warden’s next turn, the line is visibly braced by roots and bent branches. The Warden can use Bar the Way when a hostile creature crosses that line." },
-      { name: "Long Spear", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "1d10 + @STR", damageType: "Piercing", range: "reach 10 ft." },
+      { name: "Draw the Threshold", kind: "action", economyCost: "bonus", text: "The Warden names a visible 15-foot line of natural ground within 15 feet. The line remains until the start of the Warden's next turn and can trigger Threshold Spear." },
+      { name: "Long Spear", kind: "attack", roll: "1d20+6", damage: "1d12 + 3", damageType: "Piercing", range: "reach 10 ft." },
     ],
     reactions: [
-      { name: "Bar the Way", kind: "reaction", save: "STR DC 15", text: "When a hostile creature crosses the named threshold, move up to 10 ft. without provoking. If the Warden ends within reach, the creature makes a DC 15 Strength save. On a failure, its speed becomes 0 for the rest of the turn. On a success, its remaining speed is reduced by 10 ft." },
+      { name: "Threshold Spear", kind: "action", text: "When a hostile creature crosses the Warden's named threshold, the Warden makes one Long Spear attack against it. On a hit, the creature's Speed becomes 0 for the rest of the turn." },
     ],
     resources: [],
     notes: [
@@ -1551,9 +1552,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e1-the-first-court",
     encounterLabel: "Act 3 E1 - The First Court",
     stats: {
-      kind: "fey", ac: 14, maxHp: 36, speed: "30 ft., fly 30 ft.",
+      kind: "fey", ac: 14, maxHp: 38, speed: "30 ft., fly 30 ft.",
       defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Leafway and Pollen Map are mobility and tracking. Plain HP bar." },
+        { name: "Moth-Dust Veil", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "v3.44 ADDS THIS TRAIT: the first ranged attack made against Larkskein each round from more than 30 feet has Disadvantage. That is the workbook's First-attack-each-round-at-disadvantage rule (+0.047749) — but with a RANGE CONDITION the multiplier does not carry, so it is a CEILING: a melee party never triggers it. Leafway and Pollen Map remain mobility and tracking and add nothing." },
       ],
       size: "Small", classification: "elite", archetype: "mystic",
       skills: [{ label: "Stealth", modifier: 7 }, { label: "Perception", modifier: 8 }],
@@ -1570,12 +1571,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     traits: [
       { name: "Leafway", kind: "trait", text: "When initiative is rolled, choose two living plants or natural growths within 30 ft. Until the end of Larkskein’s first turn, it can spend 5 ft. of movement to move from adjacent to one to adjacent to the other. This is movement through the Wood, not teleportation, and deals no damage." },
       { name: "Pollen Map", kind: "trait", text: "When Larkskein hits a creature, that creature leaves a faint visible trail until the start of Larkskein’s next turn; it cannot benefit from being hidden from Larkskein during that time." },
+      { name: "Moth-Dust Veil", kind: "trait", text: "The first ranged attack made against Larkskein each round from more than 30 feet away has Disadvantage." },
     ],
     actions: [
-      { name: "Glass-Thorn", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", damageType: "Piercing", range: "range 90 ft." },
+      { name: "Pollen Relay", kind: "action", economyCost: "bonus", targets: 1, text: "Larkskein chooses one creature affected by its Pollen Map and one ally it can see within 60 feet. Until the start of Larkskein's next turn, the ally knows the marked creature's direction and ignores Half Cover against it." },
+      { name: "Glass-Thorn", kind: "attack", roll: "1d20+8", damage: "3d8 + 5", damageType: "Piercing", range: "range 90 ft." },
       { name: "Folded Distance (Recharge 5–6)", kind: "action", recharge: "5-6", text: "Choose a 15-ft.-radius area within 60 ft. Until the start of Larkskein’s next turn, creatures treat every 10 ft. moved inside the area as 5 ft. when moving toward the center and 15 ft. when moving away. No creature loses an action or is forcibly moved." },
     ],
     reactions: [
+      { name: "Borrowed Pattern", kind: "action", text: "When a creature affected by Pollen Map makes an attack roll, Larkskein records the angle. Larkskein has Advantage on the next Glass-Thorn attack it makes against that creature before the end of its next turn." },
     ],
     resources: [],
     notes: [
@@ -1589,9 +1593,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e2-the-cut-below",
     encounterLabel: "Act 3 E2 - The Cut Below",
     stats: {
-      kind: "fiend", ac: 17, maxHp: 39, speed: "40 ft., climb 20 ft.",
+      kind: "fiend", ac: 17, maxHp: 41, speed: "40 ft., climb 20 ft.",
       defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1, note: "First Nails and Snap to the Nail are repositioning. Plain HP bar." },
+        { name: "Quill Brace", ehpMultiplier: 1.028819, provenance: "interpolated", note: "v3.44 ADDS THIS TRAIT: the first time each round Quillshrike is hit by a RANGED attack, reduce the damage by 3. Same interpolation the Hollow Warden's flat DR 3 uses (+0.028819), and a CEILING for the same reason as Larkskein's veil — the ranged condition is not inside the multiplier. Driven Stakes and Drive a Nail are repositioning and add nothing; First Nails and Snap to the Nail are retired." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
@@ -1607,14 +1611,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "14 (+2)" },
     ],
     traits: [
-      { name: "First Nails", kind: "trait", text: "When initiative is rolled, place two visible nail marks in spaces within 20 ft. Quillshrike may then move up to half speed toward one of them. No attack or save occurs." },
+      { name: "Driven Stakes", kind: "trait", text: "When initiative is rolled, place two visible nail marks in spaces within 20 ft. Quillshrike may then move up to half speed toward one of them. No attack or save occurs." },
+      { name: "Quill Brace", kind: "trait", text: "The first time each round Quillshrike is hit by a ranged attack, reduce the damage by 3." },
     ],
     actions: [
-      { name: "Snap to the Nail", kind: "action", economyCost: "bonus", text: "Bonus Action: choose one nail mark within 30 ft. Move up to 15 ft. in a straight line toward it without provoking opportunity attacks, then remove that mark. This movement scars the ground it crosses until the start of the next turn." },
-      { name: "Razor Quill", kind: "attack", roll: "1d20 + @ATK", damage: "1d12 + @MAIN", damageType: "Slashing", riders: [{ name: "Psychic rider", damage: "1d6", damageType: "Psychic", cadence: "once-per-turn" }], range: "reach 5 ft." },
-      { name: "Black Fan (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "4d8", text: "15-ft. cone, DC 16 Dexterity save; 18 (4d8) piercing on a failure, half on a success. The ground in the cone becomes visibly scored by straight black cuts until the end of the next round." },
+      { name: "Drive a Nail", kind: "action", economyCost: "bonus", text: "Quillshrike places one visible nail mark in an unoccupied space it can see within 30 feet. It can have no more than three nail marks at once; placing a fourth removes the oldest." },
+      { name: "Razor Quill", kind: "attack", roll: "1d20+8", damage: "2d8 + 4", damageType: "Slashing", range: "reach 5 ft.", riders: [{ name: "Razor Quill rider", damage: "1d8", damageType: "Psychic", cadence: "once-per-turn" }] },
+      { name: "Black Fan (Recharge 5–6)", kind: "action", damage: "6d6", damageType: "Piercing", save: "DEX DC 16", onSave: "half", recharge: "5-6", text: "Dexterity Saving Throw: DC 16, each creature in a 15-foot Cone. Failure: 21 (6d6) Piercing damage. Success: Half damage. The ground in the Cone becomes visibly scored by straight black cuts until the end of the next round." },
     ],
     reactions: [
+      { name: "Barbed Recall", kind: "attack", roll: "1d20+8", damage: "1d4 + 5", damageType: "Piercing", range: "range 30 feet", text: "When a hostile creature ends its movement within 5 feet of one of Quillshrike's nail marks, Quillshrike removes that mark and makes the following attack against the creature from the mark's space:" },
     ],
     resources: [],
     notes: [
@@ -1628,9 +1634,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e2-the-cut-below",
     encounterLabel: "Act 3 E2 - The Cut Below",
     stats: {
-      kind: "fiend", ac: 15, maxHp: 68, speed: "30 ft.",
+      kind: "fiend", ac: 15, maxHp: 79, speed: "30 ft.",
       defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Breakroot is terrain, Marrow Grip is a speed debuff on the target. Plain HP bar." },
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "v3.44: Crushed Passage is terrain, Hooked Wound is a speed debuff on the TARGET, and Hooked Stance is anti-prone. None of the three reduces damage taken. Breakroot and Marrow Grip are retired. Plain HP bar." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "bruiser",
@@ -1646,14 +1652,17 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "12 (+1)" },
     ],
     traits: [
-      { name: "Breakroot", kind: "trait", text: "The first 10 ft. of natural difficult terrain Marrowstalk enters on a turn costs no extra movement. The spaces it crosses become scarred until the start of its next turn; natural difficult terrain in those spaces is suppressed, and a hostile creature entering a scarred space spends 5 extra ft. of movement." },
-      { name: "Marrow Grip", kind: "trait", text: "A creature hit by Hooking Claw has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack." },
+      { name: "Crushed Passage", kind: "trait", text: "The first 10 ft. of natural difficult terrain Marrowstalk enters on a turn costs no extra movement. The spaces it crosses become scarred until the start of its next turn; natural difficult terrain in those spaces is suppressed, and a hostile creature entering a scarred space spends 5 extra ft. of movement." },
+      { name: "Hooked Wound", kind: "trait", text: "A creature hit by Hooking Claw has its speed reduced by 10 ft. until the start of Marrowstalk’s next turn; multiple hits do not stack." },
+      { name: "Hooked Stance", kind: "trait", text: "Marrowstalk has Advantage on saving throws against effects that would give it the Prone condition or move it against its will." },
     ],
     actions: [
-      { name: "Hooking Claw", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: "Slashing", range: "reach 10 ft." },
-      { name: "Crushing Cast (Recharge 5–6)", kind: "action", save: "STR DC 15", recharge: "5-6", damage: "4d8", text: "One creature within 10 ft. makes a DC 15 Strength save. Failure: 18 (4d8) bludgeoning, knocked prone, and moved up to 10 ft. into a space Marrowstalk can see. Success: half damage and not moved." },
+      { name: "Hook and Hammer", kind: "attack", economyCost: "bonus", roll: "1d20+7", damage: "1d6 + 4", damageType: "Bludgeoning", range: "reach 5 feet", targets: 1, text: "Immediately after Marrowstalk hits one creature with both Hooking Claw attacks on the same turn, it makes one Heavy Knee attack against that creature:" },
+      { name: "Hooking Claw", kind: "attack", roll: "1d20+7", damage: "2d8 + 3", damageType: "Slashing", range: "reach 10 ft." },
+      { name: "Crushing Cast (Recharge 5–6)", kind: "action", damage: "6d6", damageType: "Bludgeoning", save: "STR DC 15", onSave: "half", recharge: "5-6", targets: 1, text: "Strength Saving Throw: DC 15, one creature within 10 feet. Failure: 21 (6d6) Bludgeoning damage, the target has the Prone condition, and Marrowstalk moves it up to 10 feet into a space Marrowstalk can see. Success: Half damage only; the target is not moved." },
     ],
     reactions: [
+      { name: "Turn the Hook", kind: "action", text: "When a creature within 10 feet hits Marrowstalk with a melee attack, Marrowstalk moves the attacker to another unoccupied space within its reach. This forced movement does not provoke Opportunity Attacks." },
     ],
     resources: [],
     notes: [
@@ -1667,9 +1676,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e2-the-cut-below",
     encounterLabel: "Act 3 E2 - The Cut Below",
     stats: {
-      kind: "fiend", ac: 17, maxHp: 46, speed: "30 ft.",
+      kind: "fiend", ac: 17, maxHp: 55, speed: "30 ft.",
       defenses: [
-        { name: "Shatter the Stake", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "Workbook: First attack each round at disadvantage (+0.047749). Spends a stake to impose disadvantage on one attack; two stakes." },
+        { name: "Recalculate the Facet", ehpMultiplier: 1, note: "⚠ v3.44 CHANGED THE MECHANIC, NOT JUST THE NAME. The old Shatter the Stake spent a stake to impose Disadvantage on an ATTACK, which is the workbook's First-attack-each-round-at-disadvantage rule (+0.047749). The v3.44 reaction rerolls a failed DEX/INT/WIS SAVE instead. Those are different defences: one reduces incoming attack damage, the other buys one save against an effect — and no calibrated row prices a save reroll, so carrying the old multiplier forward would have priced an attack defence the creature no longer has. DECIDED 1.0, with the gap stated: the reroll is real and unpriced, the same way Legendary Resistance is." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
@@ -1688,12 +1697,12 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Refracted Origin", kind: "trait", text: "When making a ranged spell attack, Shardbound can have the attack originate from itself or from one of its stakes it can see. Range is measured from the chosen origin. This can bend a sight line but does not increase damage." },
     ],
     actions: [
-      { name: "Survey Stake", kind: "action", economyCost: "bonus", text: "Bonus Action: create one crystal stake in an unoccupied space within 30 ft. Maximum two stakes; creating a third removes the oldest. A stake is an object (AC 13, 8 HP) and provides no cover." },
-      { name: "Crystal Bolt", kind: "attack", roll: "1d20 + @ATK", damage: "2d6 + @MAIN", damageType: "Force", range: "range 100 ft." },
-      { name: "Refracted Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "5d8", text: "Draw a 60-ft. line from Shardbound or one visible stake. Creatures in the line make a DC 16 Dexterity save; 22 (5d8) force on failure, half on success." },
+      { name: "Raise Prism", kind: "action", economyCost: "bonus", text: "Shardbound creates one crystal stake in an unoccupied space it can see within 30 feet. It can have no more than two stakes at once; creating a third destroys the oldest." },
+      { name: "Crystal Bolt", kind: "attack", roll: "1d20+8", damage: "2d8 + 5", damageType: "Force", range: "range 100 ft." },
+      { name: "Refracted Lance (Recharge 5–6)", kind: "action", damage: "7d6 + 2", damageType: "Force", save: "DEX DC 16", onSave: "half", recharge: "5-6", text: "Shardbound draws a 60-foot Line from itself or one visible stake. Dexterity Saving Throw: DC 16, each creature in the Line. Failure: 26 (7d6 + 2) Force damage. Success: Half damage." },
     ],
     reactions: [
-      { name: "Shatter the Stake", kind: "reaction", text: "When Shardbound is targeted by an attack, it can destroy one visible stake within 30 ft. to impose disadvantage on that attack. Once per round." },
+      { name: "Recalculate the Facet", kind: "action", text: "When Shardbound fails a Dexterity, Intelligence, or Wisdom saving throw, it destroys one crystal stake it can see within 30 feet and rerolls the save. It must use the new roll." },
     ],
     resources: [],
     notes: [
@@ -1707,7 +1716,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e3-gate-i-crone-and-mare",
     encounterLabel: "Act 3 E3 - Gate I: The Crone and the Mare",
     stats: {
-      kind: "fey", ac: 15, maxHp: 111, speed: "30 ft., swim 30 ft.",
+      kind: "fey", ac: 15, maxHp: 120, speed: "30 ft., swim 30 ft.",
       defenses: [
         { name: "Control spellcasting", ehpMultiplier: 1.108348, rule: "Opposing damage uptime -10%", note: "Workbook: Opposing damage uptime -10% (+0.108348). Entangle, Web and Hold Person cost the party attacking turns; this is a CLOCK tax, not resistance." },
       ],
@@ -1730,15 +1739,18 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "14 (+2)" },
     ],
     traits: [
-      { name: "Spellcasting", kind: "trait", roll: "1d20 + 9", text: "7th-level spellcaster; spell save DC 17, +9 to hit. Slots 4 / 3 / 3 / 1. Core control list: Entangle, Web, Hold Person. A spell replaces Multiattack." },
+      { name: "Spellcasting", kind: "trait", text: "The Crone is a 7th-level spellcaster. Wisdom is her spellcasting ability (spell save DC 17, +9 to hit with spell attacks). She has four 1st-level slots, three 2nd-level slots, three 3rd-level slots, and one 4th-level slot. At will: Chill Touch, Thorn Whip. Core control list: Entangle, Web, Hold Person. A spell replaces Multiattack." },
       { name: "Night-Garden Native", kind: "trait", text: "The Crone ignores difficult terrain created by plants and vegetation, and nonmagical plants do not impede her movement." },
     ],
     actions: [
-      { name: "Claw", kind: "attack", roll: "1d20 + @STR+@PROF", damage: "2d8 + @STR", damageType: "Slashing", range: "reach 5 ft." },
-      { name: "Venomous Eruption (1/Day)", kind: "action", save: "WIS DC 17", damage: "6d8", text: "Choose a point within 60 ft.; creatures in a 20-ft.-radius sphere make a DC 17 Wisdom save. Failure: 27 (6d8) poison damage and poisoned until the end of the creature’s next turn. Success: half damage and not poisoned." },
-      { name: "Blighted Vitality (Recharge 4–6)", kind: "action", save: "CON DC 17", recharge: "4-6", text: "Choose up to two creatures within 60 ft. Each makes a DC 17 Constitution save. On a failure, healing received is halved until the end of the Crone’s second turn after the effect begins. Reapplying the effect does not extend or stack the duration." },
+      { name: "Misty Step (2/Day)", kind: "action", economyCost: "bonus", uses: 2, text: "The Crone casts Misty Step without expending a spell slot." },
+      { name: "Claw", kind: "attack", roll: "1d20+7", damage: "2d10 + 5", damageType: "Slashing", range: "reach 5 ft." },
+      { name: "Venomous Eruption", kind: "action", damage: "11d6", damageType: "Poison", save: "WIS DC 17", onSave: "half", text: "The Crone chooses a point within 60 feet. Wisdom Saving Throw: DC 17, each creature in a 20-foot-radius Sphere centered on that point. Failure: 39 (11d6) Poison damage, and the creature has the Poisoned condition until the end of its next turn. Success: Half damage only. This action expends the Crone's 4th-level spell slot." },
+      { name: "Blighted Vitality (Recharge 4–6)", kind: "action", save: "CON DC 17", recharge: "4-6", targets: 2, text: "Constitution Saving Throw: DC 17, up to two creatures within 60 feet. Failure: Healing the target receives is halved until the end of the Crone's second turn after the effect begins. Reapplying the effect doesn't extend or stack its duration." },
+      { name: "Control Spells", kind: "action", text: "Entangle, Hold Person, and Fear use the Crone’s spell save DC 17 and normal spell-slot costs. A spell replaces Multiattack." },
     ],
     reactions: [
+      { name: "Briar-Cast Opportunity", kind: "action", text: "When a creature provokes an Opportunity Attack from the Crone, she casts Thorn Whip at that creature instead of making an Opportunity Attack." },
     ],
     resources: [],
     notes: [
@@ -1755,7 +1767,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       // Recovered 2026-09-01: its own printed attack bonus requires it. Stated rather than left to the
       // CR-less floor, which silently resolved every @DC and @ATK on this creature at +2.
       proficiencyBonus: 3,
-      kind: "fiend", ac: 13, maxHp: 90, speed: "50 ft.",
+      kind: "fiend", ac: 13, maxHp: 122, speed: "50 ft.",
       defenses: [
         { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, persistent: true, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
         { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
@@ -1765,36 +1777,24 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       skills: [{ label: "Perception", modifier: 5 }],
     },
     abilities: [
-      { label: "STR", value: "20 (+5)", save: 8 },
-      { label: "DEX", value: "14 (+2)" },
-      { label: "CON", value: "14 (+2)", save: 7 },
+      { label: "STR", value: "20 (+5)" },
+      { label: "DEX", value: "18 (+4)" },
+      { label: "CON", value: "14 (+2)" },
       { label: "INT", value: "10 (+0)" },
-      { label: "WIS", value: "16 (+3)" },
-      { label: "CHA", value: "17 (+3)" },
+      { label: "WIS", value: "14 (+2)" },
+      { label: "CHA", value: "15 (+2)" },
     ],
     traits: [
-      { name: "Darkmane (Constant)", kind: "trait", text: "Darkmare creates one-way magical obscurement around itself. Non-allied creatures are obscured through the effect; Darkmare and its allies see normally." },
-      { name: "Umbral Passage", kind: "trait", text: "At the start of Darkmare’s turn, it may move or teleport up to 30 ft. and carry one willing allied creature inside Darkmane with it. Umbral Passage fails while Darkmare’s speed is below 34 ft.; that is the encounter’s pinning threshold." },
+      { name: "Darkmane (Constant)", kind: "trait", text: "Darkmare is the centre of a constant 30-foot-radius one-way magical veil. The radius is locked and the aura moves with Darkmare. Attack rolls against Darkmare and allied creatures inside Darkmane have Disadvantage. While Darkmare has no allied creature inside Darkmane, it has Advantage on saving throws against spells and magical effects." },
     ],
     actions: [
-      { name: "Horn", kind: "attack", roll: "1d20 + 8", damage: "2d8 + @MAIN", damageType: "Cold", range: "reach 5 ft." },
-      { name: "Hooves", kind: "attack", roll: "1d20 + 8", damage: "2d6 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft." },
-      /**
-       * ⚠ A SPELL, NOT A TRAIT. Christopher, 2026-09-01: *"the darkmare's shadow shroud isnt a
-       * trait its a defensive spell, if we keep adding it as a trait and keeping it as a spell
-       * then this is what causes the issues."* It was authored BOTH ways — one trait and one
-       * spell action with the same text — so every reader had to pick, and the two could drift.
-       * The trait is gone; this is the only Shadow Shroud.
-       *
-       * ⚠ AND A SPELL IS A LEGITIMATE DEFENCE. Workbook V2.2's SRD Spell Registry prices Shield,
-       * Blur and Mirror Image exactly this way — by decomposing the spell into Standard Mechanics
-       * primitives. Shadow Shroud decomposes as `temporary_ac_modifier(+2, until end of next
-       * turn)` + attack disadvantage until the first hit, which is what the defence row's
-       * interpolated x1.056615 is pricing.
-       */
-      { name: "Shadow Shroud (1/Day)", kind: "spell", spellSlotLevel: 3, text: "Action: Darkmare AND one additional creature within 60 ft. are shrouded. Each target gains +2 AC until the end of Darkmare’s next turn, and attacks against that target have disadvantage until that target is hit once. The disadvantage ends on that target’s first hit and does not end the other’s; the +2 AC runs to its full duration either way. Using Shadow Shroud is Darkmare’s Action, so it makes no Multiattack that turn." },
+      { name: "Umbral Passage", kind: "action", economyCost: "bonus", text: "Darkmare moves or teleports up to 30 feet and can carry one willing allied creature inside Darkmane. It cannot use this Bonus Action while its Speed is below 34 feet." },
+      { name: "Horn", kind: "attack", roll: "1d20+8", damage: "2d12 + 4", damageType: "Cold", range: "reach 5 ft." },
+      { name: "Hooves", kind: "attack", roll: "1d20+8", damage: "2d8 + 5", damageType: "Bludgeoning", range: "reach 5 ft." },
+      { name: "Shadow Shroud (1/Day)", kind: "action", uses: 1, targets: 1, text: "Action: choose Darkmare and one creature within 60 ft. Both targets gain +2 AC until the end of Darkmare’s next turn, and attacks against each target have Disadvantage until that target is hit once. The Disadvantage ends for a target on its first hit; the AC duration does not." },
     ],
     reactions: [
+      { name: "Dusk Interpose", kind: "action", text: "When an allied creature inside Darkmane is targeted by an attack while Darkmare is within 10 feet of it, Darkmare and that ally swap spaces. If Darkmare is a legal target, it becomes the target of the attack." },
     ],
     resources: [],
     notes: [
@@ -1808,9 +1808,9 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e4-the-hollow-feast",
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
-      kind: "fey", ac: 16, maxHp: 55, speed: "35 ft.",
+      kind: "fey", ac: 16, maxHp: 90, speed: "35 ft.",
       defenses: [
-        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: forced movement is priced by the runtime trace, never as raw HP. Unyielding Bearing is a prone save, not survivability." },
+        { name: "No effective-HP trait", ehpMultiplier: 1, note: "Doc v3_13: forced movement is priced by the runtime trace, never as raw HP. v3.44 renames Unyielding Bearing to Deep Stance and Keep Your Distance to Royal Rebuff; both are still a prone save and a push, not survivability." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "bruiser",
@@ -1826,14 +1826,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "18 (+4)" },
     ],
     traits: [
-      { name: "Keep Your Distance", kind: "trait", text: "Once on each of the Regent's turns when it hits a creature with a melee attack, it can push that creature up to 5 ft. directly away from itself." },
-      { name: "Unyielding Bearing", kind: "trait", text: "The Regent has advantage on saving throws against being knocked prone." },
+      { name: "Royal Rebuff", kind: "trait", text: "Once on each of the Regent’s turns when it hits a creature with a melee attack, it can push that creature up to 5 ft. directly away from itself." },
+      { name: "Deep Stance", kind: "trait", text: "The Regent has Advantage on saving throws against effects that would give it the Prone condition." },
     ],
     actions: [
-      { name: "Thorn Talon", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", damageType: "Slashing", range: "reach 10 ft.", text: "Multiattack: two Thorn Talon attacks." },
-      { name: "Invitation Withdrawn (Recharge 5-6)", kind: "action", save: "STR DC 16", recharge: "5-6", damage: "4d8", text: "Each enemy of the Regent's choice within 15 ft. makes a DC 16 Strength save. On a failure, a creature takes 18 (4d8) slashing damage, is pushed 15 ft. directly away from the Regent, and cannot take reactions until the start of its next turn. On a success, it takes half damage and is pushed 5 ft. This action REPLACES the Regent's Multiattack." },
+      { name: "Thorn Decree", kind: "action", economyCost: "bonus", targets: 1, damage: "2d6", damageType: "Piercing", text: "The Regent marks one creature it can see within 30 feet until the start of the Regent's next turn. The first time the marked creature damages a creature other than the Regent, it takes 7 (2d6) Piercing damage after the triggering damage is resolved." },
+      { name: "Thorn Talon", kind: "attack", roll: "1d20+8", damage: "2d10 + 5", damageType: "Slashing", range: "reach 10 ft." },
+      { name: "Invitation Withdrawn (Recharge 5–6)", kind: "action", damage: "4d8 + 2", damageType: "Slashing", save: "STR DC 16", onSave: "half", recharge: "5-6", text: "Strength Saving Throw: DC 16, each enemy of the Regent's choice within 15 feet. Failure: 20 (4d8 + 2) Slashing damage, the creature is pushed 15 feet directly away from the Regent, and it can't take Reactions until the start of its next turn. Success: Half damage, and the creature is pushed 5 feet. This action replaces the Regent's Multiattack." },
     ],
     reactions: [
+      { name: "Royal Reprisal", kind: "action", text: "When a creature marked by Thorn Decree damages one of the Regent's allies, the Regent makes one Thorn Talon attack against the marked creature if it is within reach." },
     ],
     resources: [],
     notes: [
@@ -1848,12 +1850,12 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e4-the-hollow-feast",
     encounterLabel: "Act 3 E4 - The Hollow Feast",
     stats: {
-      kind: "fiend", ac: 18, maxHp: 46, speed: "25 ft.",
+      kind: "fiend", ac: 18, maxHp: 75, speed: "25 ft.",
       defenses: [
         // ⚠ TAKE THE BLOW IS NOT AN EHP MULTIPLIER, BY INSTRUCTION. It reduces an ALLY's damage
         // by 8 and costs the Bulwark 4 unpreventable damage — it moves damage rather than
         // removing it, and the encounter page says to price it in the runtime trace.
-        { name: "Interpose — no effective-HP contribution", ehpMultiplier: 1, note: "Doc v3_13: Interpose is priced by the runtime trace. It redirects damage to the guardian; it does not add effective HP to the roster." },
+        { name: "Take the Blow — no effective-HP contribution", ehpMultiplier: 1, note: "Doc v3_13: this is priced by the runtime trace. It redirects an attack to the guardian; it does not add effective HP to the roster. v3.44 renames Interpose to Take the Blow and the mechanic is unchanged. Braced Form (anti-prone), Interposing Bulk (difficult terrain through its reach) and Hunker Wide (Speed 0 for Half Cover) are position, not damage reduction." },
       ],
       attacksPerTurn: 2,
       size: "Large", classification: "strong", archetype: "guardian",
@@ -1869,14 +1871,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "12 (+1)" },
     ],
     traits: [
-      { name: "Braced Form", kind: "trait", text: "The Bulwark has advantage on saving throws and ability checks made to resist being knocked prone or moved against its will." },
-      { name: "Interposing Bulk", kind: "trait", text: "A hostile creature moving through the Bulwark's reach toward a creature on the opposite side of the Bulwark treats that movement as difficult terrain." },
+      { name: "Braced Form", kind: "trait", text: "The Bulwark has Advantage on saving throws and ability checks made to resist effects that would give it the Prone condition or move it against its will." },
+      { name: "Interposing Bulk", kind: "trait", text: "A hostile creature moving through the Bulwark’s reach toward a creature on the opposite side of the Bulwark treats that movement as difficult terrain." },
     ],
     actions: [
-      { name: "Heavy Fist", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft.", text: "Multiattack: two Heavy Fist attacks." },
+      { name: "Hunker Wide", kind: "action", economyCost: "bonus", text: "Until the start of the Bulwark's next turn, its Speed becomes 0 and allied creatures within 5 feet of it have Half Cover." },
+      { name: "Heavy Fist", kind: "attack", roll: "1d20+7", damage: "1d12 + 4", damageType: "Bludgeoning", range: "reach 5 ft." },
     ],
     reactions: [
-      { name: "Interpose", kind: "reaction", text: "When another creature within 10 ft. of the Bulwark is hit by an attack, the Bulwark can move up to 5 ft. toward that creature without provoking opportunity attacks. If it ends within 5 ft. of that creature, reduce the triggering damage by 8. The Bulwark then takes 4 damage that cannot be reduced or prevented. Once per round." },
+      { name: "Take the Blow", kind: "action", text: "When an allied creature within 5 feet is targeted by an attack, the Bulwark becomes the target if it is a legal target." },
     ],
     resources: [],
     notes: [
@@ -1901,7 +1904,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * Recorded here because the drift is a trap: anyone diffing this library against a v3.14 copy
        * will find exactly one mismatch and be tempted to correct the right value into the wrong one.
        */
-      kind: "fey", ac: 17, maxHp: 82, speed: "30 ft.",
+      kind: "fey", ac: 17, maxHp: 134, speed: "30 ft.",
       defenses: [
       /**
        * ⚠ THE APP CREDITED NOTHING AND THE WORKBOOK CREDITS ×1.108. "No effective-HP trait" was
@@ -1909,7 +1912,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * on saves against charm and fear is a real defence. Under-counting is as much a divergence
        * as over-counting.
        */
-      { name: "Workbook profile tm (Perfect Host · persistent aura)", ehpMultiplier: 1.108348, provenance: "workbook-profile",
+      { name: "Workbook profile tm (Impeccable Manners · persistent aura)", ehpMultiplier: 1.108348, provenance: "workbook-profile",
         note: "Calibrated whole-kit multiplier, authored here." },
     ],
       attacksPerTurn: 2,
@@ -1926,20 +1929,20 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "20 (+5)", saveProficient: true },
     ],
     traits: [
-      { name: "Perfect Host", kind: "trait", text: "The Host has advantage on saving throws against being charmed or frightened." },
-      { name: "Even-Handed Hospitality", kind: "trait", text: "At the start of each of the Host's turns while neutral, choose exactly one party creature and one creature opposing the party within 60 ft. A creature chosen on the previous Host turn cannot be chosen again. Both gain Courtesy until the start of the Host's next turn." },
-      { name: "Courtesy", kind: "trait", text: "The target's speed increases by 10 ft. The first 5 ft. it willingly moves while Courtesy lasts does not provoke opportunity attacks." },
+      { name: "Impeccable Manners", kind: "trait", text: "The Host has Advantage on saving throws against being Charmed or Frightened." },
+      { name: "Even-Handed Hospitality", kind: "trait", targets: 1, text: "When the Host uses Seat the Table while neutral, it chooses exactly one party creature and one creature opposing the party within 60 feet. A creature chosen by the previous use of Seat the Table cannot be chosen again. Both creatures gain Courtesy until the start of the Host's next turn." },
+      { name: "Courtesy", kind: "trait", text: "The target’s speed increases by 10 ft. The first 5 ft. it willingly moves while Courtesy lasts does not provoke Opportunity Attacks." },
       { name: "Hospitality Broken", kind: "trait", text: "If a party creature damages the Host, or the party reduces a Fey allied with the Host to 0 HP, the Host becomes hostile to the party immediately. The death of a Fiend does not trigger this trait." },
-      { name: "Courtesy Withdrawn", kind: "trait", text: "While hostile, Even-Handed Hospitality continues to choose one creature from each side. The allied target receives Courtesy. The party target instead receives Discourtesy." },
-      { name: "Discourtesy", kind: "trait", text: "The target's speed is reduced by 10 ft. The first time it willingly moves on its turn, it cannot take reactions until that movement ends." },
-      { name: "An Unwelcome Guest", kind: "trait", text: "While hostile, once per turn when the Host damages a creature affected by Discourtesy, it can move that creature up to 5 ft. to an unoccupied space it can see. This movement does not provoke opportunity attacks." },
     ],
     actions: [
-      // ⚠ BOTH ARE HOSTILE-ONLY. The Host contributes NO attack DPR while neutral — the
-      // encounter page prices its opening trace at 0 and its hostile trace at ~19 DPR.
-      { name: "Withering Word (Hostile Only)", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", damageType: "Psychic", range: "reach 10 ft. or range 60 ft.", text: "Hostile only — the Host makes no attack while neutral." },
+      { name: "Seat the Table", kind: "action", economyCost: "bonus", text: "The Host chooses the two legal targets for Even-Handed Hospitality or, while hostile, Courtesy Withdrawn. The effects last until the start of the Host's next turn." },
+      { name: "Courtesy Withdrawn", kind: "action", text: "While the Host is hostile, Seat the Table instead chooses one allied creature and one party creature within 60 feet. The allied creature gains Courtesy, and the party creature gains Discourtesy, until the start of the Host's next turn." },
+      { name: "Discourtesy", kind: "action", text: "The target’s speed is reduced by 10 ft. The first time it willingly moves on its turn, it cannot take reactions until that movement ends." },
+      { name: "An Unwelcome Guest", kind: "action", text: "While hostile, once per turn when the Host damages a creature affected by Discourtesy, it can move that creature up to 5 ft. to an unoccupied space it can see. This movement does not provoke Opportunity Attacks." },
+      { name: "Withering Word (Hostile Only)", kind: "attack", roll: "1d20+8", damage: "1d10 + 5", damageType: "Psychic", range: "reach 10 ft. or range 60 ft." },
     ],
     reactions: [
+      { name: "Breach of Etiquette", kind: "action", text: "When a creature with Courtesy damages another creature, Courtesy ends on the triggering creature and it gains Discourtesy until the start of the Host's next turn." },
     ],
     resources: [],
     notes: [
@@ -1954,8 +1957,11 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e5-the-scar-line",
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
-      kind: "fey", ac: 16, maxHp: 169, speed: "50 ft.",
-      defenses: [],
+      kind: "fey", ac: 16, maxHp: 140, speed: "50 ft.",
+      defenses: [
+        { name: "Rootbound Guard", ehpMultiplier: 1.038413, provenance: "interpolated", note: "v3.44 ADDS THIS TRAIT: the first time each round the Warden takes damage while touching natural ground, reduce it by 4. Interpolated on the same line the Hollow Warden's DR 3 sits on — the workbook anchors fixed prevention at 8/round (+0.076838), so 4/round is half of it (+0.038413). ⚠ CEILING: the ground condition is not inside the multiplier, and this fight is fought on natural ground, so it is close to the real value here and would not be elsewhere." },
+        { name: "Living Footing", ehpMultiplier: 1, note: "DECIDED 1.0. Terrain immunity is movement, not survivability — it changes where the Warden can be, never how much damage reaches it." },
+      ],
       attacksPerTurn: 2,
       size: "Large", classification: "elite", archetype: "skirmisher",
       skills: [{ label: "Athletics", modifier: 7 }, { label: "Perception", modifier: 7 }],
@@ -1971,14 +1977,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Living Footing", kind: "trait", text: "Natural difficult terrain created by plants or undergrowth costs the Warden no extra movement." },
+      { name: "Rootbound Guard", kind: "trait", text: "The first time each round the Warden takes damage while touching natural ground, reduce that damage by 4." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", text: "The Rootwake Warden makes two Branch Lance or Sunthorn attacks in any combination." },
-      { name: "Branch Lance", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 5", damageType: "Piercing", range: "reach 10 ft." },
-      { name: "Sunthorn", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 5", damageType: "Radiant", range: "range 90 ft." },
-      { name: "Entangling Passage (Recharge 5–6)", kind: "action", save: "DEX DC 15", recharge: "5-6", damage: "2d6 + 5", damageType: "Bludgeoning", text: "The Warden moves up to its Speed without provoking Opportunity Attacks. When it moves within 5 ft. of a hostile creature during this movement, it can force that creature to make a DC 15 Dexterity saving throw (maximum two creatures per use). Failure: 12 (2d6 + 5) bludgeoning damage, and the target has the Restrained condition until the end of the Warden's next turn. Success: half damage only." },
+      { name: "Wake the Route", kind: "action", economyCost: "bonus", text: "The Warden marks a 20-foot path of natural ground it can see within 30 feet. Until the start of its next turn, the path is normal terrain for the Warden and its allies and difficult terrain for its enemies." },
+      { name: "Branch Lance", kind: "attack", roll: "1d20+7", damage: "2d6 + 5", damageType: "Piercing", range: "reach 10 ft." },
+      { name: "Sunthorn", kind: "attack", roll: "1d20+7", damage: "2d6 + 5", damageType: "Radiant", range: "range 90 ft." },
+      { name: "Entangling Passage (Recharge 5–6)", kind: "action", save: "DEX DC 15", onSave: "half", damage: "2d8 + 5", damageType: "Bludgeoning", targets: 2, recharge: "5-6", text: "The Warden moves up to its Speed without provoking Opportunity Attacks. When it moves within 5 feet of a hostile creature during this movement, it can force that creature to make a DC 15 Dexterity saving throw (maximum two creatures per use). Failure: 14 (2d8 + 5) Bludgeoning damage, and the target has the Restrained condition until the end of the Warden’s next turn. Success: Half damage only." },
     ],
     reactions: [
+      { name: "Rootbound Counsel", kind: "action", text: "When an ally standing on the Warden's marked path makes a Dexterity saving throw, the Warden gives that ally Advantage on the save." },
     ],
     resources: [],
     notes: [
@@ -1994,8 +2002,11 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e5-the-scar-line",
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
-      kind: "fiend", ac: 16, maxHp: 157, speed: "60 ft.",
-      defenses: [],
+      kind: "fiend", ac: 16, maxHp: 130, speed: "60 ft.",
+      defenses: [
+        { name: "Stormhide", ehpMultiplier: 1.038413, provenance: "interpolated", note: "v3.44 ADDS THIS TRAIT: the first time each round the Ravager takes Lightning, Thunder, or ranged weapon damage, reduce it by 4. Interpolated at half the workbook's 8/round fixed-prevention anchor (+0.038413), the same line the Rootwake Warden's Rootbound Guard uses. ⚠ CEILING, AND A GENEROUS ONE: it is TYPED and ranged-conditional. A melee party dealing no lightning or thunder triggers it never, and the multiplier cannot express that — the party damage mix would have to price it, the way a creature's typed resistances already are." },
+        { name: "Long-Striding", ehpMultiplier: 1, note: "DECIDED 1.0. Ignoring the first 10 ft of difficult terrain is movement; it reduces no damage taken." },
+      ],
       attacksPerTurn: 3,
       size: "Large", classification: "elite", archetype: "bruiser",
       skills: [{ label: "Athletics", modifier: 7 }, { label: "Acrobatics", modifier: 7 }, { label: "Perception", modifier: 4 }],
@@ -2011,15 +2022,17 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     ],
     traits: [
       { name: "Long-Striding", kind: "trait", text: "The Ravager ignores the first 10 feet of difficult terrain it enters on each of its turns." },
+      { name: "Stormhide", kind: "trait", text: "The first time each round the Ravager takes Lightning, Thunder, or ranged weapon damage, reduce that damage by 4." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", text: "The Stormscar Ravager makes one Claw attack, one Hooves attack, then one Serrated Tail attack." },
-      { name: "Claw", kind: "attack", roll: "1d20 + 7", damage: "1d10 + 5", damageType: "Slashing", range: "reach 5 ft." },
-      { name: "Hooves", kind: "attack", roll: "1d20 + 7", damage: "2d6 + 5", damageType: "Bludgeoning", range: "reach 5 ft.", text: "Strength Saving Throw: DC 16, a Large or smaller target hit by this attack. Failure: the target has the Prone condition." },
-      { name: "Serrated Tail", kind: "attack", roll: "1d20 + 7", damage: "1d12 + 5", damageType: "Slashing", range: "reach 10 ft." },
-      { name: "Stormscar Lance (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "7d8 + 3", damageType: "Lightning", text: "Dexterity Saving Throw: DC 16, each creature in a 60-foot-long, 10-foot-wide Line. Failure: 34 (7d8 + 3) lightning damage. Success: half damage." },
+      { name: "Static Bound", kind: "action", economyCost: "bonus", text: "If the Ravager has moved at least 20 feet during its turn, it moves up to 15 additional feet without provoking Opportunity Attacks." },
+      { name: "Claw", kind: "attack", roll: "1d20+7", damage: "2d8 + 4", damageType: "Slashing", range: "reach 5 ft." },
+      { name: "Crushing Foreclaw", kind: "attack", roll: "1d20+7", damage: "2d8 + 4", damageType: "Bludgeoning", range: "reach 5 ft.", save: "STR DC 16", text: "Strength Saving Throw: DC 16, a Large or smaller target hit by this attack. Failure: The target has the Prone condition." },
+      { name: "Serrated Tail", kind: "attack", roll: "1d20+7", damage: "2d8 + 4", damageType: "Slashing", range: "reach 10 ft." },
+      { name: "Stormscar Lance (Recharge 5–6)", kind: "action", damage: "8d8 + 2", damageType: "Lightning", save: "DEX DC 16", onSave: "half", recharge: "5-6", text: "Dexterity Saving Throw: DC 16, each creature in a 60-foot-long, 10-foot-wide Line. Failure: 38 (8d8 + 2) Lightning damage. Success: Half damage." },
     ],
     reactions: [
+      { name: "Intercepting Leap", kind: "action", damage: "2d8", damageType: "Lightning", save: "DEX DC 16", onSave: "half", text: "When a hostile creature the Ravager can see within 40 feet moves at least 20 feet during its turn toward one of the Ravager’s allies and ends that movement within 10 feet of that ally, the Ravager leaps up to 30 feet to an unoccupied space adjacent to the creature. Dexterity Saving Throw: DC 16, the moving creature. Failure: 9 (2d8) Lightning damage, and the creature is Pinned until the start of its next turn. While Pinned, its Speed is 0. Success: Half damage only. The Pinned condition ends early if the Ravager moves or has the Incapacitated condition." },
     ],
     resources: [],
     notes: [
@@ -2035,8 +2048,11 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e5-the-scar-line",
     encounterLabel: "Act 3 E5 - The Scar Line",
     stats: {
-      kind: "fiend", ac: 17, maxHp: 145, speed: "30 ft.",
-      defenses: [],
+      kind: "fiend", ac: 17, maxHp: 120, speed: "30 ft.",
+      defenses: [
+        { name: "Chain Screen", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "v3.44 ADDS THIS TRAIT: while at least one claim chain is free, the first ranged attack each round has Disadvantage. That is the workbook's First-attack-each-round-at-disadvantage rule exactly (+0.047749). ⚠ IT SWITCHES OFF WHEN BOTH CHAINS GRAPPLE, which the multiplier cannot express — a Exactor holding two PCs is undefended by this and priced as though it were not." },
+        { name: "Two Claim Chains", ehpMultiplier: 1, note: "DECIDED 1.0. The chains are the Exactor's OFFENCE and its grapple economy; the constraint that a grappling chain cannot attack is a limit on it, not a defence." },
+      ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "tactician",
       skills: [{ label: "Athletics", modifier: 8 }, { label: "Insight", modifier: 5 }],
@@ -2051,15 +2067,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "16 (+3)" },
     ],
     traits: [
-      { name: "Two Claim Chains", kind: "trait", text: "The Exactor has two chains. Each chain can Grapple one creature at a time. A chain that is Grappling a creature cannot attack another target until that grapple ends." },
+      { name: "Two Claim Chains", kind: "trait", targets: 1, text: "The Exactor has two chains. Each chain can Grapple one creature at a time. A chain that is Grappling a creature cannot attack another target until that grapple ends." },
+      { name: "Chain Screen", kind: "trait", text: "While at least one claim chain is free, the first ranged attack made against the Exactor each round has Disadvantage." },
     ],
     actions: [
-      { name: "Multiattack", kind: "action", text: "The Claimchain Exactor makes two Claim Chain attacks, using only chains that are not already Grappling a creature." },
-      { name: "Claim Chain", kind: "attack", roll: "1d20 + 8", damage: "1d10 + 6", damageType: "Slashing", range: "reach 10 ft.", text: "If the target is Large or smaller and the chain is free, the Exactor can give the target the Grappled condition (escape DC 16)." },
-      { name: "Conjure Tether (Recharge 5–6)", kind: "action", save: "DEX DC 16", recharge: "5-6", damage: "2d6 + 6", damageType: "Fire", text: "Dexterity Saving Throw: DC 16, one creature the Exactor can see within 60 feet. Failure: 13 (2d6 + 6) fire damage, the target is pulled up to 20 ft. toward the Exactor, and it has the Restrained condition until the end of the Exactor's next turn. Success: half damage only." },
+      { name: "Balance the Chains", kind: "action", economyCost: "bonus", targets: 1, text: "The Exactor pulls each creature Grappled by a claim chain up to 10 feet toward a point it chooses between them. If only one creature is Grappled, the Exactor instead pulls that creature up to 10 feet toward itself." },
+      { name: "Claim Chain", kind: "attack", roll: "1d20+8", damage: "2d6 + 5", damageType: "Slashing", range: "reach 10 ft.", text: "If the target is Large or smaller and the chain is free, the Exactor can give the target the Grappled condition (escape DC 16)." },
+      { name: "Conjure Tether (Recharge 5–6)", kind: "action", damage: "2d8 + 6", damageType: "Fire", save: "DEX DC 16", onSave: "half", recharge: "5-6", targets: 1, text: "Dexterity Saving Throw: DC 16, one creature the Exactor can see within 60 feet. Failure: 15 (2d8 + 6) Fire damage, the target is pulled up to 20 feet toward the Exactor, and it has the Restrained condition until the end of the Exactor’s next turn. Success: Half damage only." },
     ],
     reactions: [
-      { name: "Unnerving Claim", kind: "reaction", save: "WIS DC 16", text: "Trigger: a creature within 30 ft. that the Exactor can see starts its turn. Response: Wisdom Saving Throw: DC 16, the triggering creature. Failure: the creature has the Frightened condition until the start of its next turn. A creature can be affected by this Reaction only once per encounter." },
+      { name: "Collect Interest", kind: "action", damage: "2d6", damageType: "Fire", targets: 1, text: "When a creature Grappled by a claim chain uses a Bonus Action or Reaction, the creature takes 7 (2d6) Fire damage after the triggering action is resolved." },
     ],
     resources: [],
     notes: [
@@ -2075,7 +2092,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e7-the-last-court",
     encounterLabel: "Act 3 E7 - The Last Court",
     stats: {
-      kind: "fey", ac: 16, maxHp: 86, speed: "35 ft.",
+      kind: "fey", ac: 16, maxHp: 108, speed: "35 ft.",
       defenses: [
         { name: "Seasoned by Severity", ehpMultiplier: 1, note: "DECIDED 1.0, not unassessed. Advantage on STR/DEX saves and immunity to charmed and frightened. The workbook publishes Condition immunity with a NULL contribution, and a monster's own save quality never enters effective HP because the party's damage is a curve rather than a save. Nothing here reduces damage taken." },
       ],
@@ -2093,13 +2110,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "19 (+4)" },
     ],
     traits: [
-      { name: "Seasoned by Severity", kind: "trait", text: "The Reeve has advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions." },
+      { name: "Seasoned by Severity", kind: "trait", text: "The Reeve has Advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions." },
     ],
     actions: [
-      { name: "Shearing Cut", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + @MAIN", damageType: "Slashing", range: "reach 5 ft.", text: "Multiattack: the Reeve makes two attacks, choosing Shearing Cut or Spoiling Cut for each." },
-      { name: "Spoiling Cut", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", damageType: "Slashing", range: "reach 5 ft.", text: "The target must succeed on a DC 17 Constitution saving throw or, until the start of the Reeve’s next turn, damage it deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses." },
+      { name: "Deepen the Cut", kind: "action", economyCost: "bonus", targets: 1, damage: "2d6", damageType: "Slashing", text: "The Reeve chooses one creature affected by Spoiling Cut within 30 feet. The first time that creature damages a creature other than the Reeve before the start of the Reeve's next turn, it takes 7 (2d6) Slashing damage after the triggering damage is resolved." },
+      { name: "Shearing Cut", kind: "attack", roll: "1d20+9", damage: "3d10 + 5", damageType: "Slashing", range: "reach 5 ft., one target", targets: 1 },
+      { name: "Spoiling Cut", kind: "attack", roll: "1d20+9", damage: "2d10 + 4", damageType: "Slashing", range: "reach 5 ft", save: "CON DC 17", text: "Constitution Saving Throw: DC 17, the target. Failure: Until the start of the Reeve's next turn, damage the target deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses." },
     ],
     reactions: [
+      { name: "Final Pruning", kind: "action", text: "When an ally the Reeve can see within 30 feet is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally." },
     ],
     resources: [],
     notes: [
@@ -2115,7 +2134,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e7-the-last-court",
     encounterLabel: "Act 3 E7 - The Last Court",
     stats: {
-      kind: "fey", ac: 16, maxHp: 86, speed: "30 ft.",
+      kind: "fey", ac: 16, maxHp: 108, speed: "30 ft.",
       defenses: [
         { name: "Fey Mind", ehpMultiplier: 1, note: "DECIDED 1.0, not unassessed. Advantage on saves against being charmed, and magic cannot put her to sleep. Condition defence, which the workbook publishes with a NULL contribution. No damage is reduced." },
       ],
@@ -2133,13 +2152,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "20 (+5)", saveProficient: true },
     ],
     traits: [
-      { name: "Fey Mind", kind: "trait", text: "Gloam Harrow has advantage on saving throws against being Charmed, and magic cannot put her to sleep." },
+      { name: "Fey Mind", kind: "trait", text: "Gloam Harrow has Advantage on saving throws against being Charmed, and magic cannot put her to sleep." },
     ],
     actions: [
-      { name: "Winter Needle", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: ["Cold", "Psychic"], range: "range 90 ft." },
-      { name: "Winter’s Toll", kind: "action", text: "Choose a point within 60 ft. Until the start of Harrow’s next turn, a 15-ft.-radius area is steeped in biting Fey glamour. Harrow’s allies in the area gain +3 to attack rolls and saving throws. Hostile creatures in the area take -3 to attack rolls and saving throws. The area ends early if Harrow is incapacitated." },
+      { name: "Cruel Instruction", kind: "action", economyCost: "bonus", text: "One ally inside Winter's Toll can use its Reaction to make one weapon attack." },
+      { name: "Winter Needle", kind: "attack", roll: "1d20+8", damage: "2d10 + 4", damageType: ["Cold","Psychic"], range: "range 90 ft., one target", targets: 1 },
+      { name: "Winter’s Toll", kind: "action", text: "Gloam Harrow chooses a point she can see within 60 feet. Until the start of her next turn, a 15-foot-radius area centered on that point is steeped in biting Fey glamour. Harrow’s allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to attack rolls and saving throws. The area ends early if Harrow is Incapacitated." },
     ],
     reactions: [
+      { name: "Cold Counsel", kind: "action", text: "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses." },
     ],
     resources: [],
     notes: [
@@ -2155,7 +2176,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e7-the-last-court",
     encounterLabel: "Act 3 E7 - The Last Court",
     stats: {
-      kind: "fiend", ac: 17, maxHp: 81, speed: "30 ft., fly 40 ft.",
+      kind: "fiend", ac: 17, maxHp: 101, speed: "30 ft., fly 40 ft.",
       defenses: [
         { name: "Magic Resistance", ehpMultiplier: 1.115824, rule: "Magic Resistance", note: "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects." },
       ],
@@ -2173,14 +2194,14 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "14 (+2)" },
     ],
     traits: [
-      { name: "Magic Resistance", kind: "trait", text: "Brandwing has advantage on saving throws against spells and other magical effects." },
+      { name: "Magic Resistance", kind: "trait", text: "Brandwing has Advantage on saving throws against spells and other magical effects." },
     ],
     actions: [
-      { name: "Red Script", kind: "action", economyCost: "bonus", damage: "1d8", text: "Bonus Action: choose one creature within 90 ft. Clear Angle: ignore half and three-quarters cover against it, and the first Ember Lance this turn gains +2 to hit. Closing Stroke: the first Ember Lance that hits it this turn deals an extra 4 (1d8) fire damage. Only one Red Script can be active at a time." },
-      { name: "Ember Lance", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", text: "Multiattack: Brandwing makes two Ember Lance attacks.", damageType: ["Fire", "Psychic"], range: "range 120 ft." },
+      { name: "Write the Ending", kind: "action", economyCost: "bonus", targets: 1, damage: "2d6", damageType: "Psychic", text: "Brandwing chooses one creature within 90 feet and writes one clause until the end of the turn. Clear Angle: Brandwing's Ember Lance attacks against the creature ignore Half Cover, Three-Quarters Cover, and Disadvantage. Closing Stroke: The first Ember Lance that hits the creature while it has half its Hit Points or fewer deals an extra 7 (2d6) Psychic damage." },
+      { name: "Ember Lance", kind: "attack", roll: "1d20+9", damage: "3d12 + 5", damageType: ["Fire","Psychic"], range: "range 120 ft., one target", targets: 1 },
     ],
     reactions: [
-      { name: "Cinder Skip", kind: "reaction", text: "When Brandwing is hit by an attack or targeted by a spell, the triggering attack or spell resolves completely. Brandwing then teleports up to 15 ft. to an unoccupied space it can see." },
+      { name: "Cinder Skip", kind: "action", text: "When Brandwing is hit by an attack or targeted by a spell, the attack or spell resolves completely, then Brandwing teleports up to 15 feet to an unoccupied space it can see. The space it leaves and the space it enters briefly flare with infernal fire. Demon Knight of" },
     ],
     resources: [],
     notes: [
@@ -2196,7 +2217,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e8-the-occupied-acre",
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
-      kind: "fiend", ac: 16, maxHp: 110, speed: "30 ft.",
+      kind: "fiend", ac: 16, maxHp: 130, speed: "30 ft.",
       defenses: [
         { name: "Oppressive Presence + Commanding Presence", ehpMultiplier: 1, note: "UNPRICED, and left at 1.0 deliberately. Forcing one instance of every multi-target Action onto the Knight is the workbook's Damage transfer / redirection, which it publishes with a NULL contribution - the one category it declines to price. It is also not this creature's own sustain: it moves damage from its allies ONTO the Knight, so a per-creature multiplier above 1.0 would be backwards. Needs a roster-level decision." },
       ],
@@ -2214,14 +2235,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "17 (+3)" },
     ],
     traits: [
-      { name: "Barbed Plate", kind: "trait", text: "When a creature within 5 ft. hits the Knight with a melee attack that deals bludgeoning, piercing, or slashing damage, that attacker takes piercing damage equal to the Knight’s Constitution modifier (4). The triggering attack resolves normally." },
+      { name: "Retaliatory Shock", kind: "trait", text: "When the Demon Knight of Punishment takes bludgeoning, piercing, or Slashing damage, each enemy within 10 feet of the Knight takes Piercing damage equal to the Knight's Constitution modifier + 2 (6). The triggering damage resolves normally." },
       { name: "Oppressive Presence", kind: "trait", text: "When a hostile creature uses an Action that creates two or more creature-targeting instances and the Knight is a legal target, at least one of those instances must target the Knight. This does not apply to single-target Actions or effects that target only a point, area, object, or space, and it never overrides the effect’s normal targeting restrictions." },
+      { name: "Shattered Plate", kind: "trait", text: "The first time each round the Knight takes bludgeoning, piercing, or Slashing damage, reduce it by 3." },
     ],
     actions: [
-      { name: "Iron Grasp", kind: "attack", roll: "1d20 + @ATK", damage: "1d10 + @MAIN", damageType: "Bludgeoning", range: "reach 5 ft.", text: "One Large or smaller creature. On a hit, the target is grappled (escape DC 16). Until the grapple ends, the target is restrained. The Knight can restrain only one creature this way at a time." },
+      { name: "Reckless Sentence", kind: "action", economyCost: "bonus", text: "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage." },
+      { name: "Iron Grasp", kind: "attack", roll: "1d20+8", damage: "2d8 + 4", damageType: "Bludgeoning", range: "reach 5 ft., one Large or smaller creature", targets: 1, text: "and the target has the Grappled condition (escape DC 16). Until the grapple ends, the target also has the Restrained condition. The Knight can restrain only one creature this way at a time." },
     ],
     reactions: [
-      { name: "Commanding Presence", kind: "reaction", text: "When a hostile creature the Knight can see within 30 ft. uses an Action that creates two or more creature-targeting instances, the Knight can react before targets are designated. If it is a legal target, one additional target instance must target the Knight. This cannot force more instances onto the Knight than the effect legally permits; increasing the effect’s target count can therefore create additional free target instances." },
+      { name: "Commanding Presence", kind: "action", text: "When a hostile creature the Knight can see within 30 feet uses an Action that creates two or more creature-targeting instances, before targets are chosen, one additional instance must target the Knight if it is a legal target. This cannot force more instances onto the Knight than the effect legally permits." },
     ],
     resources: [],
     notes: [
@@ -2237,9 +2260,10 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e8-the-occupied-acre",
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
-      kind: "fiend", ac: 15, maxHp: 100, speed: "40 ft.",
+      kind: "fiend", ac: 15, maxHp: 122, speed: "40 ft.",
       defenses: [
-        { name: "No notable defensive traits", ehpMultiplier: 1, note: "Two-Handed Hold, Cast Aside and the grapples are CONTROL - they move bodies and deny position, they do not reduce damage taken. v3.23: AC 15 is intentional, the party should be able to hit it while still working through 130 HP. A plain HP bar is the correct read." },
+        { name: "Four-Limbed Brace", ehpMultiplier: 1.038413, provenance: "interpolated", note: "v3.44 ADDS THIS REACTION: when an attack hits the Breaker while it is Grappling, reduce that damage by 4 — and it must then release one grappled creature. Interpolated at half the workbook's 8/round fixed-prevention anchor (+0.038413). ⚠ AND IT COSTS THE THING THE BREAKER IS FOR: every use hands back a captive, so a party that keeps hitting it takes the grapples off one at a time. The multiplier prices the damage prevented and NOT that cost, so it is a ceiling on the defence and understates the tempo the party wins back." },
+        { name: "No notable defensive traits", ehpMultiplier: 1, note: "v3.44: Two-Handed Hold, Pile the Captives and the grapples are CONTROL - they move bodies and deny position, they do not reduce damage taken. Cast Aside is retired. Four-Point Brace is anti-prone. v3.23: AC 15 is intentional, the party should be able to hit it while still working through its HP. A plain HP bar is the correct read for the body." },
       ],
       attacksPerTurn: 4,
       size: "Large", classification: "elite", archetype: "bruiser",
@@ -2255,14 +2279,16 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "17 (+3)" },
     ],
     traits: [
-      { name: "Two-Handed Hold", kind: "trait", text: "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends." },
+      { name: "Two-Handed Hold", kind: "trait", targets: 2, text: "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends." },
+      { name: "Four-Point Brace", kind: "trait", text: "The Breaker has Advantage on saving throws against effects that would give it the Prone condition or move it against its will." },
     ],
     actions: [
-      { name: "Grasping Limb", kind: "attack", roll: "1d20 + @ATK", damage: "1d6 + @MAIN", routineSlots: 2, damageType: "Bludgeoning", range: "reach 10 ft.", text: "One Medium or smaller creature. On a hit, the target is grappled (escape DC 17). A grasping limb already holding a creature cannot make its assigned Grasping Limb attack against another target." },
-      { name: "Heavy Blow", kind: "attack", roll: "1d20 + @ATK", damage: "1d8 + @MAIN", routineSlots: 2, damageType: "Bludgeoning", range: "reach 5 ft." },
-      { name: "Cast Aside", kind: "action", economyCost: "free", text: "1/Turn. After the Breaker hits with Grasping Limb, it may move one creature grappled by it to another unoccupied space within 10 ft. of the Breaker. This forced movement does not provoke opportunity attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends." },
+      { name: "Pile the Captives", kind: "action", economyCost: "bonus", text: "The Breaker moves each creature Grappled by it to another unoccupied space within its reach. If two creatures moved this way end adjacent to each other, each has Disadvantage on the next ability check it makes to escape the Breaker's Grapple before the start of the Breaker's next turn." },
+      { name: "Grasping Limb", kind: "attack", routineSlots: 2, roll: "1d20+9", damage: "2d6 + 4", damageType: "Bludgeoning", range: "reach 10 ft., one Medium or smaller creature", text: "and the target has the Grappled condition (escape DC 17). A limb already holding a creature can't attack another target." },
+      { name: "Heavy Blow", kind: "attack", routineSlots: 2, roll: "1d20+9", damage: "2d8 + 5", damageType: "Bludgeoning", range: "reach 5 ft", targets: 1, text: "Cast Aside (1/Turn). After the Breaker hits with Grasping Limb, it can move one creature Grappled by it to another unoccupied space within 10 feet. This forced movement doesn't provoke Opportunity Attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends." },
     ],
     reactions: [
+      { name: "Four-Limbed Brace", kind: "action", targets: 1, text: "When an attack hits the Breaker while it is Grappling a creature, reduce the triggering damage by 4. The Breaker must then release one creature it is Grappling." },
     ],
     resources: [],
     notes: [
@@ -2278,7 +2304,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e8-the-occupied-acre",
     encounterLabel: "Act 3 E8 - The Occupied Acre",
     stats: {
-      kind: "fiend", ac: 18, maxHp: 90, speed: "40 ft.",
+      kind: "fiend", ac: 18, maxHp: 113, speed: "40 ft.",
       defenses: [
         { name: "Blur", ehpMultiplier: 1.227798, provenance: "derived", note: "DERIVED from two published sources, not estimated. Attack rolls against the Reaver have disadvantage, permanently and against every attack. v9 Pricing Resolver row 21 publishes the math: base p=clamp((21+AB-AC)/20,.05,.95), disadvantage=p^2. The AC increase equivalent to turning p into p-squared is dAC=20p(1-p), which is remarkably flat across every plausible hit chance - 5.00 at p=0.50, 4.95 at p=0.55, 4.80 at p=0.60 - so permanent disadvantage IS +5 AC. Priced through the app-s own AC_CONTRIBUTION bands and their published combining rule: +3 (0.140100) + +2 (0.087698) = 0.227798. Cross-check: the calibrated All attacks at disadvantage - 1 round row is +0.129416, so permanent reads 1.76x a single round, which is the right order for a three-to-four round fight." },
       ],
@@ -2296,13 +2322,24 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { label: "CHA", value: "14 (+2)" },
     ],
     traits: [
-      { name: "Blur", kind: "trait", text: "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect." },
-      { name: "Scent the Expense", kind: "trait", text: "Whenever a hostile creature the Reaver can see within 60 ft. expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class-feature uses, item charges, and similar resources count; recurring once-per-turn riders and other effects that do not consume a limited use do not. At the start of the Reaver’s turn, its current quarry locks until the end of that turn and cannot be replaced during that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 10 (4d4) fire damage." },
+      { name: "Shifting Outline", kind: "trait", text: "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have Disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect." },
+      { name: "Scent the Expense", kind: "trait", text: "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 11 (3d6 + 1) Fire damage" },
     ],
     actions: [
-      { name: "Rending Talon", kind: "attack", roll: "1d20 + @ATK", damage: "1d10+@MAIN", text: "Multiattack: the Reaver makes two Rending Talon attacks.", damageType: "Slashing", riders: [{ name: "Fire rider", damage: "2d6", damageType: "Fire", cadence: "per-hit" }], range: "reach 5 ft." },
+      { name: "Close on the Expense", kind: "action", economyCost: "bonus", text: "The Reaver moves up to half its Speed toward its locked quarry. This movement provokes Opportunity Attacks normally. If the Reaver ends within 5 feet of the quarry, it has Advantage on the next Rending Talon attack it makes against that creature before the end of the turn." },
+      /**
+       * ⚠ TWO RIDERS ON ONE ATTACK, AND THE CONVERTER READ ONE. The printed line carries a
+       * per-hit Fire packet AND a once-per-turn bonus against the Reaver's quarry. Folded into
+       * prose the second was worth nothing; folded into `damage` it would have been billed on
+       * every hit. They differ in CADENCE, which is the whole reason a rider is its own fact.
+       */
+      { name: "Rending Talon", kind: "attack", roll: "1d20+8", damage: "2d10 + 3", damageType: "Slashing", range: "reach 5 ft.", riders: [
+        { name: "Searing Edge", damage: "2d6", damageType: "Fire", cadence: "per-hit" },
+        { name: "Quarry Strike", damage: "3d6 + 1", damageType: "Fire", cadence: "once-per-turn", note: "Only against the creature the Reaver marked with Choose the Quarry. Counted as met: the mark is a Bonus Action the Reaver spends on the target it is attacking, so it is the Reaver's own choice rather than a condition the party controls." },
+      ] },
     ],
     reactions: [
+      { name: "Choose the Quarry", kind: "action", text: "When a sight-dependent attack misses the Reaver because of Shifting Outline, the attacker becomes the Reaver's quarry, replacing any previous quarry. The Reaver has Advantage on the next Rending Talon attack it makes against that creature before the end of its next turn." },
     ],
     resources: [],
     notes: [
@@ -2318,7 +2355,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e9-gate-iii-veil-torn-dragon",
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
-      kind: "dragon", ac: 15, maxHp: 55, speed: "30 ft., fly 60 ft.",
+      kind: "dragon", ac: 15, maxHp: 60, speed: "30 ft., fly 60 ft.",
       defenses: [
         { name: "Moon-Slick Scales", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "Workbook: First attack each round at disadvantage (+0.047749). Applies to the first opportunity attack each round." },
       ],
@@ -2336,21 +2373,24 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     },
     abilities: [
       { label: "STR", value: "14 (+2)" },
-      { label: "DEX", value: "18 (+4)", saveProficient: true },
-      { label: "CON", value: "14 (+2)" },
-      { label: "INT", value: "14 (+2)" },
+      { label: "DEX", value: "15 (+2)", saveProficient: true },
+      { label: "CON", value: "16 (+3)" },
+      { label: "INT", value: "10 (+0)" },
       { label: "WIS", value: "14 (+2)" },
-      { label: "CHA", value: "16 (+3)", saveProficient: true },
+      { label: "CHA", value: "10 (+0)", saveProficient: true },
     ],
     traits: [
-      { name: "Moon-Slick Scales", kind: "trait", text: "The first opportunity attack made against the wyrmling each round has disadvantage." },
+      { name: "Veil Skim", kind: "trait", text: "The first time each round the guard moves at least 20 feet before it is targeted by a ranged attack, it gains a +2 bonus to AC against that attack." },
     ],
     actions: [
-      { name: "Broken Gleam", kind: "action", economyCost: "bonus", text: "Bonus Action: Disengage and move up to 10 ft. This movement cannot rise vertically unless it starts from higher ground." },
-      { name: "Bite", kind: "attack", roll: "1d20 + 7", damage: "2d6 + @MAIN piercing + 1d6 radiant", text: "Melee Weapon Attack: +7 to hit, reach 5 ft.; Hit: 11 (2d6 + 4) piercing plus 3 (1d6) radiant." },
-      { name: "Moonshard Breath (Recharge 5–6)", kind: "action", save: "DEX DC 14", recharge: "5-6", damage: "4d6", text: "30-ft. line, 5 ft. wide; DC 14 Dexterity save (Charisma-based); 14 (4d6) radiant on failure, half on success." },
+      { name: "Patrol Ground", kind: "action", economyCost: "bonus", text: "The guard moves up to 20 feet without provoking Opportunity Attacks. Until the start of its next turn, the area within 10 feet of it is Guarded Ground and is Difficult Terrain for hostile creatures." },
+      { name: "Bite", kind: "attack", roll: "1d20+4", damage: "2d8 + 3", damageType: "Piercing", range: "reach 5 ft." },
+      { name: "Claw", kind: "attack", roll: "1d20+4", damage: "2d8 + 3", damageType: "Slashing", range: "reach 5 ft.", riders: [{ name: "Claw rider", damage: "1d8", damageType: "Fire", cadence: "per-hit" }] },
+      { name: "Tail", kind: "attack", roll: "1d20+4", damage: "2d8 + 2", damageType: "Bludgeoning", range: "reach 10 ft", save: "STR DC 12", text: "Strength Saving Throw: DC 12, a Large or smaller target hit by this attack. Failure: The target has the Prone condition." },
+      { name: "Veil Breath (Recharge 6)", kind: "action", damage: "5d6 + 1", damageType: "Fire", save: "DEX DC 12", onSave: "half", text: "Dexterity Saving Throw: DC 12, each creature in a 20-foot Cone. Failure: 19 (5d6 + 1) Fire damage. Success: Half damage." },
     ],
     reactions: [
+      { name: "Perimeter Strike", kind: "action", text: "When a hostile creature enters the guard’s Guarded Ground or moves at least 5 feet within it, the guard moves up to 10 feet to an unoccupied space adjacent to that creature without provoking Opportunity Attacks and makes one Claw attack against it. On a hit, the creature’s Speed becomes 0 for the rest of the current turn." },
     ],
     resources: [],
     notes: [
@@ -2397,7 +2437,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e9-gate-iii-veil-torn-dragon",
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
-      kind: "dragon", ac: 19, maxHp: 195, speed: "40 ft.; Broken Lift only",
+      kind: "dragon", ac: 19, maxHp: 244, speed: "40 ft.; Broken Lift only",
       defenses: [
         { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
       ],
@@ -2408,26 +2448,34 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       proficiencyBonus: 4,
     },
     abilities: [
-      { label: "STR", value: "20 (+5)" },
-      { label: "DEX", value: "18 (+4)" },
+      { label: "STR", value: "16 (+3)" },
+      { label: "DEX", value: "16 (+3)" },
       { label: "CON", value: "20 (+5)", saveProficient: true },
-      { label: "INT", value: "18 (+4)" },
-      { label: "WIS", value: "18 (+4)", saveProficient: true },
-      { label: "CHA", value: "20 (+5)", saveProficient: true },
+      { label: "INT", value: "20 (+5)" },
+      { label: "WIS", value: "20 (+5)", saveProficient: true },
+      { label: "CHA", value: "22 (+6)", saveProficient: true },
     ],
     traits: [
-      { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the dragon fails a saving throw, it can choose to succeed instead." },
-      { name: "Moonmark (2/Day)", kind: "trait", save: "DEX DC 17", text: "Action: choose a point within 60 ft.; a 15-ft. radius fills with pale motes until the start of the dragon’s next turn. Creatures of the dragon’s choice in the area make a DC 17 Dexterity save. On a failure, they cannot benefit from invisibility and the first attack against them before the effect ends has advantage. No damage." },
+      { name: "Legendary Resistance (1/Day)", kind: "trait", uses: 1, text: "If the dragon fails a saving throw, it can choose to succeed instead." },
     ],
     actions: [
-      { name: "Broken Lift (Recharge 5–6)", kind: "action", economyCost: "bonus", recharge: "5-6", text: "Bonus Action: launch and glide up to 40 ft., ignoring ground terrain and opportunity attacks. It must end on a surface that supports it; it has no standing fly speed." },
-      { name: "Bite", kind: "attack", roll: "1d20 + 9", damage: "2d10+@STR", damageType: "Piercing", riders: [{ name: "Cold rider", damage: "2d6", damageType: "Cold", cadence: "per-hit" }], range: "reach 10 ft." },
-      { name: "Claw", kind: "attack", roll: "1d20 + 9", damage: "2d6 + 5", damageType: "Slashing", range: "reach 5 ft." },
-      { name: "Fractured Dream Breath (Recharge 5–6)", kind: "action", save: "CON DC 17", recharge: "5-6", text: "60-ft. cone, DC 17 Constitution save. Failure: until the end of the target’s next turn, speed is halved, it cannot take reactions, and the first attack against it has advantage. The first time the target takes damage, the no-reactions and advantage portions end immediately, but the speed reduction remains until the normal duration ends." },
-      { name: "Moonfall Breath (Recharge 5–6)", kind: "action", save: "DEX DC 17", recharge: "5-6", damage: "8d8", text: "90-ft. line, 10 ft. wide; DC 17 Dexterity save; 36 (8d8) radiant on failure, half on success. The two breath options share the same recharge." },
-      { name: "Tail Sweep", kind: "action", roll: "1d20 + 9", damage: "1d8 + 5", legendaryCost: 1, damageType: "Bludgeoning", range: "reach 15 ft.", text: "Once per round at the end of another creature’s turn, make one Tail attack: without provoking from the target hit." },
+      { name: "Broken Lift", kind: "action", economyCost: "bonus", text: "The dragon launches and glides up to 40 feet, ignoring ground terrain and Opportunity Attacks. It must end on a surface that supports it; it has no flying Speed." },
+      { name: "Bite", kind: "attack", roll: "1d20+7", damage: "3d10 + 3", damageType: "Piercing", range: "reach 10 ft.", riders: [{ name: "Bite rider", damage: "2d6", damageType: "Cold", cadence: "per-hit" }] },
+      { name: "Claw", kind: "attack", roll: "1d20+7", damage: "3d6 + 3", damageType: "Slashing", range: "reach 5 ft." },
+      { name: "Veilstorm Breath (Recharge 5–6)", kind: "action", damage: "10d8", damageType: "Lightning", save: "DEX DC 18", onSave: "half", recharge: "5-6", text: "Dexterity Saving Throw: DC 18, each creature in a 90-foot-long, 10-foot-wide Line. Failure: 45 (10d8) Lightning damage. Success: Half damage." },
+      /**
+       * ⚠ SAME FAULT AS THE HARROWER'S MIND HOOK: the document prints "LEGENDARY ACTION Tail
+       * Sweep" inside the REACTIONS block, so the extractor filed a legendary action as a
+       * reaction and glued the LAIR ACTIONS heading onto its text. `legendaryCost` is what
+       * `legendaryPerRound: 1` schedules against.
+       */
+      { name: "Tail Sweep", kind: "attack", legendaryCost: 1, roll: "1d20+7", damage: "2d6 + 3", damageType: "Bludgeoning", range: "reach 15 ft.", text: "Once per round at the end of another creature's turn, the dragon makes one Tail attack. and the dragon can move 5 feet without provoking Opportunity Attacks from the target hit." },
+      { name: "Ground Remembers Wrong", kind: "action", save: "STR DC 17", text: "Strength Saving Throw: DC 17, each creature in up to three 10-foot squares of natural ground within 90 feet. Failure: The lair slides the creature up to 10 feet to a safe space chosen by the lair." },
+      { name: "Branches Close", kind: "action", text: "A 15-ft.-radius sphere within 90 ft. becomes heavily obscured by overlapping leaves and wrong-angle branches until the next initiative count 20." },
+      { name: "Borrowed Sky", kind: "action", save: "STR DC 17", onSave: "none", targets: 1, text: "The lair chooses one creature within 90 feet and moves it up to 20 feet horizontally and 10 feet vertically, placing it safely on a surface. An unwilling creature can resist. Strength Saving Throw: DC 17, the target. Success: The target isn't moved." },
     ],
     reactions: [
+      { name: "Last Flight", kind: "action", text: "When a Veilbound Drake Guard the dragon can see within 60 feet is reduced to 0 Hit Points, the dragon recharges Veilstorm Breath." },
     ],
     resources: [],
     notes: [
@@ -2462,10 +2510,12 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     isTemplate: true,
     bodyNameFormat: "{pick} Mirror",
     stats: {
-      kind: "aberration", ac: 15, maxHp: 90, speed: "30 ft.",
+      // v3.44: "Its 124 HP is fixed; party-size scaling changes the number of mirrors, not the body."
+      kind: "aberration", ac: 15, maxHp: 124, speed: "30 ft.",
       attacksPerTurn: 2,
       defenses: [
         { name: "Elemental Guard", ehpMultiplier: 1.075916, rule: "Telegraphed alternating immunity/resistance", note: "Workbook: Telegraphed alternating immunity/resistance (+0.075916), exact. Read from the trait text by traitClassifier on \"immunity that rotates each turn\" - the mirror had NO defences at all, so a Gate boss priced at flat 90 raw HP with its signature ability worth zero." },
+        { name: "Reactive Refraction", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "v3.44 ADDS A REACTION TO EVERY MIRROR: when an attack targets it, it can impose Disadvantage on that attack, decided before the roll. That is the workbook’s First-attack-each-round-at-disadvantage rule exactly (+0.047749) — the mirror spends its normal Reaction, so it is once per round by the Reaction budget rather than by its own wording. It stacks with Elemental Guard on ONE pass fraction because they answer different questions: the Guard removes a damage TYPE, this one removes a hit." },
       ],
       /**
        * ⚠ PHYSICAL RESISTANCE IS PER LINE, AND THE MIRROR HAD NONE AT ALL.
@@ -2547,8 +2597,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
        * the body took ({primary}), and the to-hit and damage modifier come from the creature's own
        * scores after the archetype reshape — @MAIN is its highest stat, @PROF comes from CR.
        */
-      { name: "Claw", kind: "attack", roll: "1d20+@MAIN+@PROF", damage: "2d6+@MAIN {primary}", routineSlots: 1, text: "Melee Weapon Attack, reach 5 ft. The archetype sets the modifier; the element sets the damage type." },
-      { name: "Bolt", kind: "attack", roll: "1d20+@MAIN+@PROF", damage: "2d6+@MAIN {primary}", routineSlots: 1, text: "Ranged Spell Attack, range 60 ft. The archetype sets the modifier; the element sets the damage type." },
+      { name: "Claw", kind: "attack", roll: "1d20+@MAIN+@PROF", damage: "3d6+@MAIN {primary}", routineSlots: 1, text: "Melee Weapon Attack, reach 5 ft. The archetype sets the modifier; the element sets the damage type." },
+      { name: "Bolt", kind: "attack", roll: "1d20+@MAIN+@PROF", damage: "3d6+@MAIN {primary}", routineSlots: 1, text: "Ranged Spell Attack, range 60 ft. The archetype sets the modifier; the element sets the damage type." },
       { name: "Gravefrost Reflections", kind: "reaction", setId: "element", setOption: "Ice", uses: 1, damage: "2d6", save: "WIS DC @DC", text: "1/Day, Reaction when the mirror is targeted by an attack. Three ice-and-shadow reflections appear for up to 1 minute. While a reflection remains, when an attack would hit the mirror, roll a d20; on a 6 or higher the attack destroys a reflection instead. A reflection uses the mirror's AC. When the last reflection is destroyed, the creature that destroyed it takes 2d6 cold or necrotic damage (mirror's choice) and must succeed on a Wisdom saving throw or be frightened of the mirror until the end of its next turn." },
       { name: "Ray of Frost", kind: "spell", replacesRoutineSlot: true, setId: "element", setOption: "Ice", roll: "1d20+@SPELL", damage: "2d8 cold", damageType: "Cold", range: "range 60 ft.", text: "At-will cantrip.," },
       { name: "Misty Step", kind: "spell", setId: "element", setOption: "Ice", uses: 3, text: "3/day. Bonus Action. The mirror teleports up to 30 feet to an unoccupied space it can see. No damage." },
@@ -2568,7 +2618,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       { name: "Gust", kind: "spell", economyCost: "bonus", setId: "element", setOption: "Air", save: "STR DC @DC", text: "At-will cantrip. One creature within 30 ft. makes a Strength save or is pushed 5 feet away, or the mirror moves an unattended object or creates a harmless gust. No damage." },
       { name: "Vortex Warp", kind: "spell", setId: "element", setOption: "Air", uses: 3, save: "CON DC @DC", text: "3/day. One creature within 90 ft. makes a Constitution save. On a failure, the mirror teleports it to an unoccupied space it can see within 90 feet. No damage." },
     ],
-    reactions: [],
+    reactions: [
+      /**
+       * ⚠ v3.44 GIVES EVERY MIRROR A REACTION AND THIS ARRAY WAS EMPTY. Six bodies each imposing
+       * Disadvantage on one attack a round is a real defence on the whole Gate, and it was priced
+       * at nothing — see the matching `Reactive Refraction` row in `defenses`, which is where the
+       * effective HP is counted. Written here so the combat window can actually offer it.
+       */
+      { name: "Reactive Refraction", kind: "action", text: "When an attack targets the mirror, it can impose Disadvantage on that attack. The mirror decides before the attack roll. This reaction uses the mirror's normal Reaction and does not require a counterpart, Bond match, or ongoing mark." },
+    ],
     resources: [],
     notes: [
       "Elemental Guard must remain deterministic and readable. The active immunity changes every turn; players should be able to route damage around it.",
@@ -2615,11 +2673,11 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e10-the-center",
     encounterLabel: "Act 3 E10 - The Center",
     stats: {
-      kind: "aberration", ac: 17, maxHp: 179, speed: "30 ft.",
+      kind: "aberration", ac: 17, maxHp: 232, speed: "30 ft.",
       defenses: [
         { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
       ],
-      attacksPerTurn: 2,
+      attacksPerTurn: 3,
       size: "Medium", classification: "act-boss", archetype: "tactician",
       legendaryPerRound: 1,
       skills: [{ label: "Arcana", modifier: 10 }, { label: "Perception", modifier: 8 }],
@@ -2628,24 +2686,40 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     abilities: [
       { label: "STR", value: "14 (+2)" },
       { label: "DEX", value: "12 (+1)" },
-      { label: "CON", value: "16 (+3)" },
+      { label: "CON", value: "18 (+4)" },
       { label: "INT", value: "22 (+6)", saveProficient: true },
       { label: "WIS", value: "18 (+4)", saveProficient: true },
       { label: "CHA", value: "18 (+4)" },
     ],
     traits: [
-      { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the Harrower fails a saving throw, it can choose to succeed instead." },
+      { name: "Legendary Resistance (1/Day)", kind: "trait", uses: 1, text: "If the Harrower fails a saving throw, it can choose to succeed instead." },
+      { name: "Spellcasting", kind: "trait", text: "The Harrower is a 9th-level spellcaster. Intelligence is its spellcasting ability (spell save DC 18, +10 to hit with spell attacks). It can cast the following spells, requiring no material components: At will: Mage Hand, Minor Illusion. 2/Day Each: Dispel Magic, Misty Step. 1/Day Each: Confusion, Counterspell, Phantasmal Killer, Telekinesis. Tactical Casting below overrides the normal Action cost of Dispel Magic and the repeat Action of Telekinesis." },
       { name: "Residual Hunger", kind: "trait", text: "Once per round when a creature within 60 ft. expends a spell slot or limited-use class or item resource, Harrower may move up to 10 ft. without provoking. Nothing is stolen or suppressed." },
       { name: "Wrong Origin", kind: "trait", text: "A Rift Lance may originate from Harrower or from one fracture it can see. Range is measured from the origin. This changes geometry, not damage." },
     ],
     actions: [
-      { name: "Fracture Seed", kind: "action", economyCost: "bonus", text: "Bonus Action: place one visible fracture in an unoccupied space within 40 ft. Maximum two. A fracture occupies no space and provides no cover. It lasts until the Harrower creates a third or is incapacitated." },
-      { name: "Rift Lance", kind: "attack", roll: "1d20 + @ATK", damage: "2d8 + 6", damageType: "Psychic", range: "range 120 ft." },
-      { name: "Unmake Distance (Recharge 5–6)", kind: "action", save: "INT DC 18", recharge: "5-6", damage: "6d8", text: "30-ft. cone from Harrower or a fracture, DC 18 Intelligence save; 27 (6d8) psychic on failure, half on success. A failed creature is also moved up to 15 ft. toward or away from the origin, Harrower’s choice." },
-      { name: "Mind Hook", kind: "action", save: "WIS DC 18", legendaryCost: 1, damage: "2d6", text: "Once per round at the end of another creature’s turn, one creature within 30 ft. of Harrower or a fracture makes a DC 18 Wisdom save. Failure: 7 (2d6) psychic and moved 10 ft. toward the origin; success: no effect." },
+      { name: "Tactical Casting", kind: "action", economyCost: "bonus", text: "Misty Step (2/Day) and Dispel Magic (2/Day) are Bonus Actions for the Harrower. After Misty Step resolves, it can leave one visible fracture in the space it departed, to a maximum of two fractures. While concentrating on Telekinesis, the spell’s later creature/object exertion uses a Bonus Action instead of an Action." },
+      { name: "Rift Lance", kind: "attack", roll: "1d20+10", damage: "5d10 + 4", damageType: "Psychic", range: "range 120 ft." },
+      { name: "Unmake Distance (Recharge 5–6)", kind: "action", damage: "11d6 + 6", damageType: "Psychic", save: "INT DC 18", onSave: "half", recharge: "5-6", text: "Intelligence Saving Throw: DC 18, each creature in a 30-foot Cone originating from the Harrower or one fracture. Failure: 45 (11d6 + 6) Psychic damage, and the Harrower moves the creature up to 15 feet toward or away from the origin. Success: Half damage only; the creature isn't moved." },
+      /**
+       * ⚠ A LEGENDARY ACTION IS AN ACTION WITH A COST, NOT A REACTION. The document prints
+       * "LEGENDARY ACTION Mind Hook" inside its REACTIONS block, so the extractor filed it there —
+       * where `legendaryPerRound: 1` would never reach it and the Harrower's off-turn damage would
+       * be scheduled against the shared Reaction budget it does not spend.
+       */
+      { name: "Mind Hook", kind: "action", legendaryCost: 1, damage: "5d8 + 4", damageType: "Psychic", save: "WIS DC 18", onSave: "half", targets: 1, text: "Once per round at the end of another creature's turn, Wisdom Saving Throw: DC 18, one creature within 30 feet of the Harrower or a fracture. Failure: 27 (5d8 + 4) Psychic damage, and the creature is moved 10 feet toward the origin. Success: Half damage only; the creature isn't moved." },
+      /**
+       * ⚠ THE THREE ESCALATION ACTIONS. Once per round after a hostile turn, each usable ONCE PER
+       * ENCOUNTER — so each carries `uses: 1`, which is what stops the trace firing them every
+       * round the way the Crone's once-per-day burst was fired four times before `uses` was read.
+       */
+      { name: "Opening Fold", kind: "action", legendaryCost: 1, uses: 1, text: "ESCALATION ACTION, once per encounter. The Harrower places two fractures in unoccupied spaces it can see within 90 feet. These fractures do not count against the maximum created by Residual Hunger. The Harrower or the Colossus can then move up to half its Speed." },
+      { name: "Crossed Lines", kind: "action", legendaryCost: 1, uses: 1, save: "INT DC 18", text: "ESCALATION ACTION, once per encounter. The Harrower chooses two 15-foot-radius Spheres centered on different fractures. Until the end of the next round, the two areas are adjacent. Each hostile creature in either area must succeed on a DC 18 Intelligence saving throw or be unable to take Reactions until the end of its next turn." },
+      { name: "Collapse the Map", kind: "action", legendaryCost: 1, uses: 1, damage: "5d8", damageType: "Psychic", save: "INT DC 18", onSave: "half", text: "ESCALATION ACTION, once per encounter. Intelligence Saving Throw: DC 18, each hostile creature within 30 feet of the Harrower or one of its fractures. Failure: 22 (5d8) Psychic damage, and the Harrower moves the creature up to 15 feet toward one fracture. Success: Half damage only, and the creature isn't moved. After the saving throws are resolved, all fractures created by Opening Fold disappear." },
     ],
     reactions: [
-      { name: "Fold Thought", kind: "reaction", text: "After an attack targeting Harrower resolves, move up to 10 ft. without provoking; once per round." },
+      { name: "Counterspell (1/Day)", kind: "action", uses: 1, text: "The Harrower casts Counterspell." },
+      { name: "Fracture Exchange", kind: "action", text: "When an attack targets the Harrower and it can see a fracture within 60 feet, the Harrower swaps places with that fracture before the attack resolves. The attack then resolves against the Harrower in its new space if it remains a legal target; otherwise, the attack misses. The fracture moves to the Harrower’s former space." },
     ],
     resources: [],
     notes: [
@@ -2660,10 +2734,10 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     encounterId: "act3-e10-the-center",
     encounterLabel: "Act 3 E10 - The Center",
     stats: {
-      kind: "aberration", ac: 18, maxHp: 200, speed: "35 ft.",
+      kind: "aberration", ac: 18, maxHp: 261, speed: "35 ft.",
       defenses: [
         { name: "Legendary Resistance (1/Day)", ehpMultiplier: 1.042458, rule: "Legendary Resistance - 1 use", note: "Workbook: Legendary Resistance - 1 use (+0.042458), exact." },
-        { name: "Body Between", ehpMultiplier: 1.232313, rule: "Fixed prevention - 12/round", note: "Workbook: Fixed prevention - 12/round (+0.232313), exact. Reduces the triggering damage by 12 once per round." },
+        { name: "Weight of Grief", ehpMultiplier: 1, note: "⚠ v3.44 REPLACED A DAMAGE DEFENCE WITH A CONDITION REDIRECT, and the old multiplier would have been a straight overprice. Body Between reduced the triggering damage by 12 once per round — the workbook's exact Fixed prevention 12/round row (+0.232313). Weight of Grief reduces NO DAMAGE: it takes a failed save's forced movement or condition off the Thought Harrower and onto the Colossus. That is protection for a DIFFERENT body against a DIFFERENT thing, and it belongs to the control model, not to this creature's effective HP. DECIDED 1.0." },
       ],
       attacksPerTurn: 2,
       size: "Huge", classification: "act-boss", archetype: "guardian",
@@ -2672,23 +2746,23 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     },
     abilities: [
       { label: "STR", value: "22 (+6)", saveProficient: true },
-      { label: "DEX", value: "10 (+0)" },
+      { label: "DEX", value: "16 (+3)" },
       { label: "CON", value: "22 (+6)", saveProficient: true },
-      { label: "INT", value: "10 (+0)" },
-      { label: "WIS", value: "14 (+2)" },
+      { label: "INT", value: "8 (-1)" },
+      { label: "WIS", value: "10 (+0)" },
       { label: "CHA", value: "10 (+0)" },
     ],
     traits: [
-      { name: "Legendary Resistance (1/Day)", kind: "trait", text: "If the Colossus fails a saving throw, it can choose to succeed instead." },
-      { name: "Impossible Mass", kind: "trait", text: "Advantage on saves against being knocked prone or moved against its will." },
+      { name: "Legendary Resistance (1/Day)", kind: "trait", uses: 1, text: "If the Colossus fails a saving throw, it can choose to succeed instead." },
+      { name: "Impossible Mass", kind: "trait", text: "The Colossus has Advantage on saving throws against effects that would give it the Prone condition or move it against its will." },
     ],
     actions: [
-      { name: "Anchor the Wrong", kind: "action", economyCost: "bonus", text: "Bonus Action: until the start of the next turn, speed becomes 0, reach increases by 5 ft., and it cannot be moved against its will. It can end this effect early at the start of its turn." },
-      { name: "Fist", kind: "attack", roll: "1d20 + @ATK", damage: "2d10 + @MAIN", damageType: "Bludgeoning", range: "reach 10 ft." },
-      { name: "Collapse Space (Recharge 5–6)", kind: "action", save: "STR DC 18", recharge: "5-6", damage: "5d8", text: "Creatures of the Colossus’s choice within 15 ft. make a DC 18 Strength save. Failure: 22 (5d8) force and knocked prone. Success: half damage and not prone." },
+      { name: "Anchor the Wrong", kind: "action", economyCost: "bonus", text: "Until the start of its next turn, the Colossus's Speed becomes 0, its reach increases by 5 feet, and it cannot be moved against its will." },
+      { name: "Slam", kind: "attack", roll: "1d20+10", damage: "5d12 + 5", damageType: "Bludgeoning", range: "reach 10 ft." },
+      { name: "Collapse Space (Recharge 5–6)", kind: "action", damage: "7d8 + 7", damageType: "Force", save: "STR DC 18", onSave: "half", recharge: "5-6", text: "Strength Saving Throw: DC 18, each creature of the Colossus's choice within 15 feet. Failure: 39 (7d8 + 7) Force damage, and the creature has the Prone condition. Success: Half damage only." },
     ],
     reactions: [
-      { name: "Body Between", kind: "reaction", text: "When another creature within 15 ft. takes damage, move up to 10 ft. toward it without provoking. If the Colossus ends within 5 ft., reduce the triggering damage by 12; the Colossus then takes 6 psychic damage that cannot be reduced. Once per round." },
+      { name: "Weight of Grief", kind: "action", text: "When the Thought Harrower within 30 feet fails a saving throw and the effect would move it against its will or give it a condition, the Colossus becomes the target of the effect instead, provided the effect could affect the Colossus. The Colossus makes no new saving throw." },
     ],
     resources: [],
     notes: [

@@ -298,6 +298,24 @@ export function resolveFeature(
       || REACHABILITY.test(text)
       || /\b(?:speed is (?:halved|reduced)|cannot|can\'?t|prevent|suppress|halved|rooted|held|blocked|disadvantage)\b/i.test(text);
     const readsAsSelfDefence = !readsAsControl && SELF_DEFENCE.test(text);
+    /**
+     * ⚠ AND HELPING AN ALLY IS NEITHER DAMAGE NOR CONTROL. The Rootwake Warden's Rootbound Counsel
+     * gives an ALLY Advantage on a save; Gloam Harrow's Cold Counsel moves one out of an attack.
+     * Both name a saving throw, so the parser reads a save DC off the creature and then asks for
+     * the damage that goes with it — damage that was never printed and never will be.
+     *
+     * Reported as what it is. The value is real and the app has no channel for it: it changes an
+     * ALLY's roll, which lands on that ally's own trace rather than on this creature's damage. A
+     * damage figure entered here would price a buff as a weapon, exactly as the self-defence case
+     * would price a shield as one.
+     */
+    const ALLY_SUPPORT = new RegExp([
+      "\\b(?:an?|one|its|the)\\s+ally\\b",
+      "\\ballied creature\\b",
+      "\\bgives that ally\\b",
+      "\\ballies (?:in|within|gain|have)\\b",
+    ].join("|"), "i");
+    const readsAsAllySupport = !readsAsControl && !readsAsSelfDefence && ALLY_SUPPORT.test(text);
     if (readsAsControl) {
       notes.push(
         `Control effect with no damage line${controls.length ? ` (${controls.join(", ")})` : ""}${controls.length === 0 && REACHABILITY.test(text) ? " [reachability]" : ""} — priced through its consequence, not as damage.`,
@@ -306,6 +324,11 @@ export function resolveFeature(
       assumptions.push({
         feature: name, flag: "NEEDS DM INPUT", field: "damage",
         detail: "This raises the creature's OWN defence rather than dealing damage — it is effective HP, not a damage line. Record it in the creature's defences with a multiplier and where that multiplier came from; entering a damage figure here would price a shield as a weapon.",
+      });
+    } else if (readsAsAllySupport) {
+      assumptions.push({
+        feature: name, flag: "ESTIMATED", field: "damage",
+        detail: "This HELPS AN ALLY rather than dealing damage — it names a saving throw only because it changes one somebody else makes. Priced at nothing HERE on purpose: the value lands on the ally's own trace, not on this creature's damage, and entering a figure would price a buff as a weapon. Nothing is missing from the block.",
       });
     } else {
       assumptions.push({

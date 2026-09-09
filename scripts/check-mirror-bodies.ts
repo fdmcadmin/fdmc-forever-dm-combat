@@ -182,5 +182,36 @@ console.log("\nSunstone Aegis raises the mirror's OWN defence and is reported as
     strippedSaid.slice(0, 90));
 }
 
+/* ── 5. Helping an ally is neither damage nor control ─────────────────────────────────────── */
+console.log("\nAn ally buff is reported as one, not as missing damage");
+{
+  /**
+   * ⚠ THE THIRD BRANCH, AND IT WAS MISSING. The Rootwake Warden's Rootbound Counsel gives an ALLY
+   * Advantage on a save. It names a saving throw, so the parser reads a save DC off the creature
+   * and then asked for the damage that goes with it — damage that was never printed. Reported now
+   * as what it is, at ESTIMATED rather than NEEDS DM INPUT, because nothing is missing.
+   */
+  const counsel = {
+    name: "Rootbound Counsel", saveDc: 15,
+    text: "When an ally standing on the Warden's marked path makes a Dexterity saving throw, the Warden gives that ally Advantage on the save.",
+  };
+  const r = resolveFeature(counsel as never);
+  const said = r.assumptions.map(a => a.detail).join(" ");
+  ok("an ally buff is read as helping an ally", /HELPS AN ALLY/.test(said), said.slice(0, 100));
+  ok("...and flagged ESTIMATED, not NEEDS DM INPUT",
+    r.assumptions.every(a => a.flag === "ESTIMATED"), r.assumptions.map(a => a.flag).join(", "));
+  ok("...so it is not sent back as a missing damage number",
+    !/Enter the damage, or state what it does/.test(said));
+
+  /**
+   * ⚠ MUTATION: point the same sentence at an ENEMY and it must stop being an ally buff. A branch
+   * that fires on every save-mentioning feature would swallow real gaps.
+   */
+  const hostile = { ...counsel, text: "When a hostile creature makes a Dexterity saving throw, the Warden gives it Disadvantage." };
+  const hostileSaid = resolveFeature(hostile as never).assumptions.map(a => a.detail).join(" ");
+  ok("mutation: the same shape aimed at an enemy is NOT read as an ally buff",
+    !/HELPS AN ALLY/.test(hostileSaid), hostileSaid.slice(0, 90));
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);
