@@ -37,6 +37,7 @@ import type { LairSpec, LairOption } from "../monsters/lair";
 import { lairDamagePerRound, unpricedLairOptions } from "../monsters/lair";
 import { materializeSummon } from "../monsters/summon";
 import { classifyTrait } from "./traitClassifier";
+import { traitRule } from "./compactImport";
 import { summonerContextFor } from "./summonRoster";
 import type { SustainFactor } from "./checkerV2";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -166,6 +167,58 @@ function summonBaseHp(
 }
 
 /**
+ * WHAT A LAIR OPTION IS WORTH WHEN ITS TEXT PRICES NOTHING — read from the STATED effect.
+ *
+ * ⚠ WHY THIS IS NOT THE SAME QUESTION A CREATURE TRAIT ASKS. `classifyTrait` prices DEFENCES: it
+ * reads a trait and asks how much damage it stops. Forced movement stops none. On a CREATURE that
+ * is the end of it — Doc v3_13 is explicit that a creature's push is priced by the runtime trace,
+ * because the creature has a trace and the displacement changes what its own next action can
+ * reach. A LAIR HAS NO TRACE. It acts on initiative 20, has no body, makes no attack, and nothing
+ * downstream ever asks what its forced movement cost. So it was worth exactly zero.
+ *
+ * ⚠ AND THE WORKBOOK PUBLISHES THE ROW FOR IT. `Opposing damage uptime -10%` (+0.108348) is the
+ * calibrated line for control that costs the party attacking turns — the same row the Veilwood
+ * Crone's pure-control spells are priced on, for the same reason: a character who spends their
+ * movement getting back into reach is a character not spending it on damage.
+ *
+ * ⚠ DIVIDED BY THE ROTATION, because a lair picks ONE option a round and cannot repeat it. This is
+ * the same division the damage mean and the classifier path already apply.
+ */
+function pricedByEffect(
+  option: LairOption,
+  rotation: number,
+): { stackGroup: string; label: string; hostContribution: number; note?: string } | null {
+  const uptime = traitRule("Opposing damage uptime -10%");
+
+  if (option.effect === "forced_movement") {
+    const contribution = Number(uptime?.contribution ?? 0);
+    if (!(contribution > 0)) return null;
+    return {
+      stackGroup: uptime!.stack_group ?? "damage_uptime",
+      label: "Opposing damage uptime -10% (movement the party spends returning)",
+      hostContribution: contribution / rotation,
+    };
+  }
+
+  /**
+   * ⚠ A PORTAL IS NOT A TAX, AND PRICING IT AS ONE WOULD BE INVENTING A COST. Two spaces become
+   * adjacent for EVERYBODY — the party can use the link as freely as the lair's owner, and a party
+   * that wants to close distance benefits from it more than a stationary boss does. Decided at
+   * zero and SAID, which is a different thing from the "nothing prices this" it used to report.
+   */
+  if (option.effect === "portal") {
+    return {
+      stackGroup: "terrain_portal_or_adjacency_link",
+      label: "neutral terrain",
+      hostContribution: 0,
+      note: `"${option.name}" (portal) — priced at nothing DELIBERATELY. The link is open to both sides, so it is terrain rather than control; a party closing distance gains from it at least as much as the lair's owner. Nothing is missing from the block.`,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Turn one creature's lair into the rows the checker prices, plus what it had to assume.
  *
  * `library` resolves a summon's `templateId`. A spec naming a creature that is not there is
@@ -211,6 +264,37 @@ export function lairRosterGroups(
     if (o.effect === "damage") continue;
     const match = classifyTrait(o.name, o.text);
     if (!match) {
+      /**
+       * ⚠ THE STATED `effect` PRICES WHAT THE PROSE COULD NOT.
+       *
+       * `classifyTrait` reads TEXT, and it is built for creature traits — for defences that reduce
+       * damage. A lair that slides three characters ten feet reduces no damage at all, so it
+       * matched nothing and reported "no calibrated rule prices this" on four options across two
+       * Act 3 bosses. Christopher, 2026-09-08: *"every lair and escalating action should be
+       * priceable."*
+       *
+       * It is, and `LairEffect` already says so in its own doc — *"named for the workbook
+       * primitive that prices it, so the mapping is checkable"*. The mapping was simply never
+       * wired. This reads the STATED field rather than the prose, so it is the authored fact and
+       * not an inference.
+       */
+      const priced = pricedByEffect(o, rotation);
+      if (priced) {
+        if (!seenGroups.has(priced.stackGroup)) {
+          seenGroups.add(priced.stackGroup);
+          if (priced.hostContribution !== 0) {
+            control.hostFactors.push({
+              stackGroup: priced.stackGroup,
+              label: `${o.name} — ${priced.label}`,
+              contribution: priced.hostContribution,
+            });
+          }
+        }
+        if (priced.note) {
+          assumptions.push({ creature: name, flag: "ESTIMATED", field: "lair", detail: priced.note });
+        }
+        continue;
+      }
       // ⚠ ONE LINE. The panel prints `detail` verbatim, and the section header already says these
       // score 0 until they are filled in — repeating it per row, with advice attached, is how a
       // report that should be scannable becomes a wall nobody reads.
@@ -372,6 +456,30 @@ export function lairRosterGroups(
     const { round, certain } = arrivalRoundFor(lair, option);
     addSummon(option.summon, option.name, round, certain);
   }
+
+  /**
+   * ⚠ SAY THE LAIR IS THERE — ONCE, AND ON PURPOSE.
+   *
+   * *"A fight where the environment takes a turn on initiative 20 is not the same fight as one
+   * where it does not, and a checker that reports nothing reads as 'there is no lair' rather than
+   * 'the lair costs no damage'."* That was true when every unpriced option printed a NEEDS DM
+   * INPUT line — the lair announced itself by listing its own failures. Now that the options
+   * price, the failures are gone and so was the announcement: `check:summons` caught it in the
+   * same run that fixed the pricing.
+   *
+   * So the line is deliberate rather than a by-product, and it states what the lair COSTS instead
+   * of what could not be read.
+   */
+  const uptimeShare = control.hostFactors.reduce((t, f) => t + f.contribution, 0);
+  assumptions.push({
+    creature: name, flag: "ESTIMATED", field: "lair",
+    detail: `${name} has a lair: ${lair.options.length} option${lair.options.length === 1 ? "" : "s"}, one taken each round on initiative 20 and never the same one twice running.`
+      + (damage > 0 ? ` It deals ${damage.toFixed(1)} damage a round on average.` : " It deals no damage.")
+      + (Math.abs(uptimeShare) > 1e-9
+        ? ` Its control is priced at ${uptimeShare >= 0 ? "+" : ""}${(uptimeShare * 100).toFixed(1)}% effective HP on the bodies inside it.`
+        : " Its non-damaging options price at nothing.")
+      + (unpriced.length > 0 ? ` ${unpriced.length} option${unpriced.length === 1 ? "" : "s"} could not be read at all.` : ""),
+  });
 
   return { groups, assumptions, control };
 }

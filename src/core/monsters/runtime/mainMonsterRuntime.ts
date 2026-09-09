@@ -64,6 +64,21 @@ export type MonsterDefense = {
    */
   provenance?: "workbook-profile" | "interpolated" | "derived" | "uncalibrated";
   /**
+   * ⚠ THIS DEFENCE BELONGS TO ONE ACTION-SET PICK, NOT TO EVERY BODY BUILT FROM THIS CHASSIS.
+   *
+   * `damageResponses` has been per-body since the Mirror's front line got its physical resistance
+   * — *"this is per target body and per damage packet. Do not create one universal Mirror
+   * resistance profile."* A DEFENCE can be per-body for exactly the same reason and had no way to
+   * say so: the Earth Mirror's Sunstone Aegis grants ITSELF +2 AC, and with only a chassis-wide
+   * `defenses` array the choice was to overprice five bodies that do not have it or to price the
+   * one that does at nothing. It was priced at nothing, and reported as a gap every run.
+   *
+   * Set both fields to scope the row, matching the `setId`/`setOption` an action already carries.
+   * Unset means the defence belongs to every body, which is what every existing row means.
+   */
+  setId?: string;
+  setOption?: string;
+  /**
    * THIS DEFENCE NEVER EXPIRES — so the calibrated anchor is a FLOOR, not the answer.
    *
    * ⚠ EVERY ACCURACY RULE IN THE WORKBOOK IS DURATION-LIMITED. "All attacks at disadvantage - 1

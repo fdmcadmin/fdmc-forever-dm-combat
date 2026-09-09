@@ -41,6 +41,15 @@ export type ParsedCreature = {
   attacksPerTurn: number;
   features: ParsedFeature[];
   assumptions: FeatureAssumption[];
+  /**
+   * The names of the defences this creature has ALREADY RECORDED.
+   *
+   * WARN CARRIED SO A REPORT CAN STOP ASKING FOR SOMETHING THAT WAS DONE. A feature that raises
+   * the creature own defence is told to "record it in the creature defences with a
+   * multiplier" — and once it IS recorded, the same sentence keeps appearing as NEEDS DM INPUT
+   * on every run. The resolver had no way to see the answer to its own question.
+   */
+  recordedDefences: string[];
 };
 
 /** "DC 17 Wisdom saving throw" / "WIS DC 17" / "DC 14 STR save" → 17. */
@@ -557,7 +566,8 @@ export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature 
       detail: "This creature has a Multiattack but its sequence could not be read, so the Action budget is one attack per turn — almost certainly too few. Enter Attacks per turn." });
   }
 
-  return { name, ac, maxHp: template.stats.maxHp, attacksPerTurn, features, assumptions };
+  return { name, ac, maxHp: template.stats.maxHp, attacksPerTurn, features, assumptions,
+    recordedDefences: (template.stats.defenses ?? []).map(d => String(d.name)) };
 }
 
 /**

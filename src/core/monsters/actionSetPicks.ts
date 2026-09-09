@@ -276,8 +276,27 @@ export function materializeTemplateBody(
    * The archetype is the common case, so the bug was live for every body that has one. Two spreads
    * of the same key in one literal is the shape to watch for: the second is not a merge.
    */
+  /**
+   * ⚠ A SET-SCOPED DEFENCE BELONGS TO THE BODY THAT PICKED THAT OPTION, AND ONLY TO IT.
+   *
+   * The same rule `damageResponses` follows one block up. The Earth Mirror's Sunstone Aegis grants
+   * ITSELF +2 AC; with a chassis-wide `defenses` array the only choices were to overprice five
+   * bodies that do not have it or price the one that does at nothing — and it was priced at
+   * nothing, and reported as a gap on every run.
+   *
+   * A row with no `setId` belongs to every body, which is what every pre-existing row means, so
+   * this filters nothing that was not deliberately scoped.
+   */
+  const picks = body.actionPicks ?? {};
+  const defenses = (built.stats.defenses ?? []).filter(d => {
+    if (!d.setId) return true;
+    const chosen = (picks as Record<string, readonly string[] | undefined>)[d.setId] ?? [];
+    return d.setOption === undefined || chosen.includes(d.setOption);
+  });
+
   const stats = {
     ...built.stats,
+    defenses,
     damageResponses: responses,
     ...(body.archetype ? { archetype: body.archetype } : {}),
   };

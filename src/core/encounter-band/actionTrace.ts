@@ -140,7 +140,9 @@ export function traceCreature(
      * really does 12.1.
      */
     if (feature.gated) continue;
-    const resolved = resolveFeature(feature);
+    // The creature's own recorded defences travel with it, so a self-buff that HAS been priced
+    // reports as priced instead of repeating the request to price it.
+    const resolved = resolveFeature(feature, { recordedDefences: creature.recordedDefences });
     assumptions.push(...resolved.assumptions);
     const { expected, basis, assumptions: dmgAssumptions } =
       expectedDamageForFeature(resolved, feature, target);

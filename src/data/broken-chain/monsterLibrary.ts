@@ -2516,6 +2516,15 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       defenses: [
         { name: "Elemental Guard", ehpMultiplier: 1.075916, rule: "Telegraphed alternating immunity/resistance", note: "Workbook: Telegraphed alternating immunity/resistance (+0.075916), exact. Read from the trait text by traitClassifier on \"immunity that rotates each turn\" - the mirror had NO defences at all, so a Gate boss priced at flat 90 raw HP with its signature ability worth zero." },
         { name: "Reactive Refraction", ehpMultiplier: 1.047749, rule: "First attack each round at disadvantage", note: "v3.44 ADDS A REACTION TO EVERY MIRROR: when an attack targets it, it can impose Disadvantage on that attack, decided before the roll. That is the workbook’s First-attack-each-round-at-disadvantage rule exactly (+0.047749) — the mirror spends its normal Reaction, so it is once per round by the Reaction budget rather than by its own wording. It stacks with Elemental Guard on ONE pass fraction because they answer different questions: the Guard removes a damage TYPE, this one removes a hit." },
+        /**
+         * ⚠ SCOPED TO THE EARTH BODY, because only the Earth package carries Sunstone Aegis.
+         * `resolveFeature` has reported it every run as "raises the creature's OWN defence — record
+         * it in the creature's defences", and there was nowhere to record it: a chassis-wide row
+         * would have given all five other mirrors a shield they do not have. `setId`/`setOption`
+         * is what `materializeTemplateBody` now filters on, the same way it already resolves the
+         * per-body typed responses.
+         */
+        { name: "Sunstone Aegis", setId: "element", setOption: "Earth", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615) — the same value the Darkmare's Shadow Shroud carries, because it is the same effect. ⚠ AND IT IS ONCE PER DAY: the anchor prices a one-round window and Sunstone Aegis gets exactly one of those in the fight, so this is if anything generous. The blinding save it also imposes is CONTROL and is not counted here." },
       ],
       /**
        * ⚠ PHYSICAL RESISTANCE IS PER LINE, AND THE MIRROR HAD NONE AT ALL.

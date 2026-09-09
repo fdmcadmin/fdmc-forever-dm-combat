@@ -11,6 +11,8 @@ import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonst
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 import { effectiveHpPerBody } from "../src/core/encounter-band/checkerV2";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
+import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
+import { lairRosterGroups } from "../src/core/encounter-band/lairRoster";
 
 const tpl = (templateId: string, name: string, maxHp: number, ac: number, extra: Partial<MainMonsterTemplate> = {}) => ({
   templateId, name,
@@ -140,6 +142,64 @@ eq("locked keeps DM creations", hpOf(r5, "custom-goblin"), 22);
     traitChanged.traits.length);
 }
 
+
+/* ── ACT 3 ASKS THE DM FOR NOTHING ───────────────────────────────────────────────────────── */
+console.log("\nAct 3 resolves without a single NEEDS DM INPUT");
+{
+  /**
+   * Christopher, 2026-09-08: *"nothing in act 3 should be needs dm input, every lair and
+   * escalating action should be priceable."*
+   *
+   * ⚠ AND THE ASSERTION IS THE COUNT, NOT A LIST OF KNOWN ONES. Naming the four that existed would
+   * pass forever while a fifth appeared beside them. Zero is the contract.
+   */
+  const d = partyDefenceAt(7, "brokenChain");
+  const target = {
+    ac: d.ac, partySize: 4,
+    saveBonus: (d.str + d.dex + d.con + d.int + d.wis + d.cha) / 6,
+    saves: { str: d.str, dex: d.dex, con: d.con, int: d.int, wis: d.wis, cha: d.cha },
+  };
+  const gaps: string[] = [];
+  for (const t of BROKEN_CHAIN_MONSTER_LIBRARY) {
+    if (!String(t.templateId).includes(":act3:")) continue;
+    const built = rosterFromTemplates([{ template: t, quantity: 1 }], 7, target as never, BROKEN_CHAIN_MONSTER_LIBRARY as never);
+    for (const a of built.assumptions) {
+      if (a.flag === "NEEDS DM INPUT") gaps.push(`${t.name} · ${a.field}: ${a.detail.slice(0, 80)}`);
+    }
+  }
+  eq("no Act 3 creature reports NEEDS DM INPUT", gaps.length, 0);
+  if (gaps.length) for (const g of gaps) console.log("      " + g);
+
+  /**
+   * ⚠ AND THE LAIRS PRICE AT SOMETHING, or "zero gaps" would be satisfied by a lair that reports
+   * nothing because nothing reads it. A forced-movement option costs the party movement, and the
+   * workbook's `Opposing damage uptime -10%` is the row for that.
+   */
+  const lairs = BROKEN_CHAIN_MONSTER_LIBRARY.filter(t => (t as { lair?: unknown }).lair
+    && String(t.templateId).includes(":act3:"));
+  eq("both Act 3 lairs are present", lairs.length, 2);
+  for (const t of lairs) {
+    const b = lairRosterGroups(t as never, BROKEN_CHAIN_MONSTER_LIBRARY as never);
+    const priced = b.control.hostFactors.filter(f => /uptime/i.test(f.label));
+    eq(`${t.name}: its forced movement is priced on the uptime row`, priced.length >= 1, true);
+    eq(`${t.name}: and at a real figure`, priced.every(f => Math.abs(f.contribution) > 0), true);
+  }
+
+  /**
+   * ⚠ MUTATION: strip the stated effect and the option must fall back to reporting a gap. A
+   * mapping keyed on a field that is never read would pass every assertion above.
+   */
+  const dragon = BROKEN_CHAIN_MONSTER_LIBRARY.find(t => t.name === "Veil-Torn Dragon") as never as {
+    lair: { options: Array<Record<string, unknown>> };
+  };
+  const stripped = {
+    ...(dragon as unknown as Record<string, unknown>),
+    lair: { ...dragon.lair, options: dragon.lair.options.map(o => ({ ...o, effect: undefined })) },
+  };
+  const after = lairRosterGroups(stripped as never, BROKEN_CHAIN_MONSTER_LIBRARY as never);
+  eq("mutation: with the stated effect removed, the option reports a gap again",
+    after.assumptions.some(a => a.flag === "NEEDS DM INPUT"), true);
+}
 
 console.log(problems.length ? `\nFAILED: ${problems.join(", ")}` : "\nALL PASS");
 process.exit(problems.length ? 1 : 0);

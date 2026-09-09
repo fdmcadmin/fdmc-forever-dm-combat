@@ -185,7 +185,11 @@ export function spellDamageAtCastLevel(
  */
 export function resolveFeature(
   feature: ParsedFeature,
-  options: { srdVersion?: SrdVersion } = {},
+  options: {
+    srdVersion?: SrdVersion;
+    /** Defence names this creature already carries — see the self-defence branch below. */
+    recordedDefences?: readonly string[];
+  } = {},
 ): ResolvedFeature {
   const notes: string[] = [];
   const assumptions: FeatureAssumption[] = [];
@@ -321,10 +325,22 @@ export function resolveFeature(
         `Control effect with no damage line${controls.length ? ` (${controls.join(", ")})` : ""}${controls.length === 0 && REACHABILITY.test(text) ? " [reachability]" : ""} — priced through its consequence, not as damage.`,
       );
     } else if (readsAsSelfDefence) {
-      assumptions.push({
-        feature: name, flag: "NEEDS DM INPUT", field: "damage",
-        detail: "This raises the creature's OWN defence rather than dealing damage — it is effective HP, not a damage line. Record it in the creature's defences with a multiplier and where that multiplier came from; entering a damage figure here would price a shield as a weapon.",
-      });
+      /**
+       * ⚠ AND IF IT IS ALREADY RECORDED, STOP ASKING. This sentence told the DM to put the effect
+       * in the creature's defences — and then kept saying it after they had, because the resolver
+       * could not see the answer to its own question. A report that repeats a satisfied request is
+       * how a panel earns being ignored.
+       */
+      const recorded = (options.recordedDefences ?? []).some(d => d.trim().toLowerCase() === name.trim().toLowerCase());
+      assumptions.push(recorded
+        ? {
+          feature: name, flag: "ESTIMATED", field: "damage",
+          detail: `This raises the creature's OWN defence rather than dealing damage, and it is ALREADY RECORDED as the defence "${name}" — so it is priced there as effective HP and contributes no damage here. Nothing is missing.`,
+        }
+        : {
+          feature: name, flag: "NEEDS DM INPUT", field: "damage",
+          detail: "This raises the creature's OWN defence rather than dealing damage — it is effective HP, not a damage line. Record it in the creature's defences with a multiplier and where that multiplier came from; entering a damage figure here would price a shield as a weapon.",
+        });
     } else if (readsAsAllySupport) {
       assumptions.push({
         feature: name, flag: "ESTIMATED", field: "damage",
