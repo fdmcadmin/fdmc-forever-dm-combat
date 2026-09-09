@@ -88,6 +88,7 @@ jobs:
           npm run check:reactions
           npm run check:activation
           npm run check:summons
+          npm run check:summontracker
           npm run check:timed
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published

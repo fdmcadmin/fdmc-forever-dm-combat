@@ -14,6 +14,7 @@ import type { Actor } from "../types/actor";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import type { FdmcCombatPhase } from "../table-state/fdmcRoomLiveState";
 import type { ActorActionEconomyMap } from "../types/actionEconomy";
+import type { ResolvedSummon } from "../state/activeSummons";
 import { MONSTER_COLOR, NEUTRAL_SEAT_COLOR, withAlpha } from "../seats/seatColors";
 import { getActorInitiativeModifier } from "../state/initiative";
 
@@ -36,6 +37,16 @@ export type Combatant = {
   ownerId?: string;
   /** Companion actors that act on this combatant's turn */
   companions?: Combatant[];
+  /**
+   * A summoned body rather than a seated character — a Divine Steed, an Eldritch Cannon, the
+   * Covenant bond-creature. Drives the "until round N" note and marks the row as temporary.
+   */
+  summon?: {
+    /** The record's id, so the row can be dismissed. */
+    recordId: string;
+    /** The last round it is up. Undefined = until it drops or is dismissed. */
+    expiresAfterRound?: number;
+  };
 };
 
 export type CombatTrackerProps = {
@@ -60,6 +71,12 @@ export type CombatTrackerProps = {
   /** Roll an actor's initiative through Dice+ (player-owned). The result writes back via
    *  onSetInitiative once Dice+ returns. Falls back to a local roll when absent/unavailable. */
   onRollInitiative?: (combatantId: string) => void;
+  /**
+   * Send a summoned body away before the fight ends — dismissed, destroyed, or the DM ruling it
+   * gone. Without this the only exits are dropping to 0 HP and End Combat, and a Steed has no
+   * duration to end it.
+   */
+  onDismissSummon?: (recordId: string) => void;
   /** Swap two combatants' initiative values — Alert feat, class features, DM call */
   onSwapInitiative?: (idA: string, idB: string) => void;
   /**
@@ -130,10 +147,57 @@ export function buildCombatants(
   initiativeByMonsterInstanceId: Record<string, number | null>,
   isDmMode: boolean,
   liveHpByActorId: Record<string, { current: number; max: number }> = {},
+  /**
+   * The summoned bodies standing THIS round, already resolved against their casters.
+   *
+   * ⚠ THE CALLER DECIDES WHICH ROUND, and passes only what is up. This function has no round of
+   * its own and must not grow one: `resolveActiveSummons` is where duration lives, and a second
+   * opinion here is how a body ends up on the field one round after the tracker says it left.
+   */
+  summons: readonly ResolvedSummon[] = [],
 ): Combatant[] {
   // Separate companions from main actors
   const companions = actors.filter(a => a.kind === "companion");
   const mainActors = actors.filter(a => a.kind !== "companion");
+
+  /**
+   * One row per BODY. A call that brings three bodies is three combatants with three HP pools —
+   * the workbook's own rule for a created body, "its own HP, initiative/action schedule, duration".
+   * A single row carrying `x3` would give the table one pool to erase them all with.
+   */
+  const summonRows = (s: ResolvedSummon): Array<{ id: string; name: string; maxHp: number; source: ResolvedSummon }> => {
+    const maxHp = Math.max(1, Math.round(Number(s.body.stats?.maxHp) || 1));
+    if (s.count <= 1) return [{ id: s.id, name: s.name, maxHp, source: s }];
+    return Array.from({ length: s.count }, (_, i) => ({
+      id: `${s.id}#${i + 1}`,
+      name: `${s.name} ${i + 1}`,
+      maxHp,
+      source: s,
+    }));
+  };
+
+  const summonCombatant = (
+    row: { id: string; name: string; maxHp: number; source: ResolvedSummon },
+    initiative: number | null,
+  ): Combatant => {
+    const hp = liveHpByActorId[row.id] ?? { current: row.maxHp, max: row.maxHp };
+    return {
+      id: row.id,
+      name: row.name,
+      kind: "actor" as const,
+      initiative,
+      // A summoned body has no sheet to derive from; the DM sets its place in the order.
+      initiativeBonus: 0,
+      hp,
+      isActive: row.id === activeId,
+      isDead: hp.current <= 0,
+      ownerId: row.source.ownerId,
+      summon: {
+        recordId: row.source.id,
+        ...(row.source.expiresAfterRound !== undefined ? { expiresAfterRound: row.source.expiresAfterRound } : {}),
+      },
+    };
+  };
 
   const mainActorCombatants: Combatant[] = mainActors.map(actor => {
     // Live HP takes precedence over library value — covers damage taken during combat
@@ -154,6 +218,18 @@ export function buildCombatants(
         ownerId: actor.id,
       }));
 
+    /**
+     * ⚠ `summoner-turn` NESTS, AND THAT IS THE WHOLE POINT OF THE FIELD. The Covenant bond-creature
+     * "acts on your turn" and Faelar "acts during Lyrielle's turn" — the same slot, because they are
+     * the same thing. Giving one of these its own row hands the party a free extra turn every round,
+     * which is exactly what `SummonSpec.acts` was written to prevent.
+     */
+    const ownedSummons = summons
+      .filter(s => s.acts === "summoner-turn" && s.ownerId === actor.id)
+      .flatMap(s => summonRows(s).map(row => summonCombatant(row, initiativeByActorId[actor.id] ?? null)));
+
+    const nested = [...ownedCompanions, ...ownedSummons];
+
     return {
       id: actor.id,
       name: actor.name,
@@ -163,7 +239,7 @@ export function buildCombatants(
       hp,
       isActive: actor.id === activeId,
       isDead: hp.current <= 0,
-      companions: ownedCompanions.length > 0 ? ownedCompanions : undefined,
+      companions: nested.length > 0 ? nested : undefined,
     };
   });
 
@@ -201,7 +277,17 @@ export function buildCombatants(
     displayName: m.displayName,
   }));
 
-  return [...mainActorCombatants, ...orphanedCompanions, ...monsterCombatants];
+  /**
+   * ⚠ A BODY WHOSE CASTER IS NOT IN THIS FIGHT STILL APPEARS. It is on the field either way, and a
+   * summon that silently vanishes because the DM benched its owner is indistinguishable at the
+   * table from one that was never called — the same rule the orphaned-companion pass above follows.
+   */
+  const mainActorIds = new Set(mainActors.map(a => a.id));
+  const summonCombatants: Combatant[] = summons
+    .filter(s => s.acts !== "summoner-turn" || !mainActorIds.has(s.ownerId))
+    .flatMap(s => summonRows(s).map(row => summonCombatant(row, initiativeByActorId[row.id] ?? null)));
+
+  return [...mainActorCombatants, ...orphanedCompanions, ...monsterCombatants, ...summonCombatants];
 }
 
 // ─── HP condition color ───────────────────────────────────────────────────────
@@ -246,6 +332,7 @@ export function CombatTracker({
   onSetInitiative,
   onRollInitiative,
   onSwapInitiative,
+  onDismissSummon,
   condensed = false,
 }: CombatTrackerProps) {
   const viewerActorIdSet = new Set(viewerActorIds ?? []);
@@ -510,7 +597,33 @@ export function CombatTracker({
                 {combatant.kind === "monster" && (
                   <span style={{ fontSize: 10, color: withAlpha(monsterColor, 0.7), marginLeft: 4 }}>⚔</span>
                 )}
+                {/* A summoned body says how long it has. "Until 5" is the whole reason the record
+                    carries a round — a body with no end date reads as permanent, and that is the
+                    Covenant creature "always being on". */}
+                {combatant.summon && (
+                  <span style={{ fontSize: 9, color: "#8a8aa0", marginLeft: 5 }}>
+                    ✦{combatant.summon.expiresAfterRound !== undefined
+                      ? ` until R${combatant.summon.expiresAfterRound}`
+                      : ""}
+                  </span>
+                )}
               </button>
+
+              {/* Dismiss — a summoned body leaves the field. DM only: a player who could remove a
+                  body from the chart could remove the one that was about to be hit. */}
+              {!condensed && isDmMode && combatant.summon && onDismissSummon && (
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); onDismissSummon(combatant.summon!.recordId); }}
+                  title={`Dismiss ${combatant.name} — it leaves the field`}
+                  style={{
+                    fontSize: 10, padding: "1px 5px", flexShrink: 0, background: "transparent",
+                    border: "1px solid #3a3a4e", borderRadius: 3, color: "#8a8aa0", cursor: "pointer",
+                  }}
+                >
+                  ✕
+                </button>
+              )}
 
               {/* Benched badge — sitting this fight out (negative initiative) */}
               {rowOut && (
@@ -658,6 +771,11 @@ export function CombatTracker({
                 >
                   {companion.name}
                   <span style={{ fontSize: 9, color: isActive ? "#8a8aa0" : "#444", marginLeft: 4 }}>acts on {combatant.name}'s turn</span>
+                  {companion.summon?.expiresAfterRound !== undefined && (
+                    <span style={{ fontSize: 9, color: isActive ? "#8a8aa0" : "#444", marginLeft: 4 }}>
+                      ✦ until R{companion.summon.expiresAfterRound}
+                    </span>
+                  )}
                 </button>
                 {/* Economy dots — companion row */}
                 {!condensed && isDmMode && actionStateByActorId && (() => {

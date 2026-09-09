@@ -32,6 +32,9 @@ import { FDMC_ROOM_LIVE_STATE_KEY } from "./core/table-state/sharedTableState";
 import { subscribeFdmcRoomStateKey } from "./core/table-state/roomStateBridge";
 import { normalizeFdmcRoomLiveState, createEmptyRoomLiveState, type FdmcRoomLiveState } from "./core/table-state/fdmcRoomLiveState";
 import type { Actor } from "./core/types/actor";
+import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
+import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
+import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
 import "./styles.css";
 
 const COMBAT_WINDOW_POPOVER_ID = "fdm-combat";
@@ -274,6 +277,20 @@ function CombatWindowApp() {
     }
   }, []);
 
+  /**
+   * The summoned bodies standing this round.
+   *
+   * ⚠ THE RECORDS ARRIVE, NOT THE BODIES. A stat block will not fit in the table's shared 16KB, so
+   * what crosses is `{owner, spec, round}` and this window materializes the body itself from the
+   * library it already has — the same library the DM's panel resolves, precedence rule included.
+   */
+  const summonActors = useMemo(
+    () => Object.values(actorsById).filter(a => a.kind === "player" || a.kind === "companion"),
+    [actorsById],
+  );
+  const summonLibrary = useMemo(() => resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library, []);
+  const { activeSummons } = useActiveSummonsState(summonActors, roomState.combat.round, summonLibrary);
+
   // Player-view combatants: player-safe naming (isDmMode=false) + hidden monsters excluded
   // inside the pane.
   //
@@ -293,8 +310,9 @@ function CombatWindowApp() {
     return sortCombatants(buildCombatants(
       actors, roster, roomState.combat.activeActorId,
       initiativeByActor, initiativeByMonster, false, liveHpByActorId,
+      activeSummons,
     ));
-  }, [actorsById, roster, roomState]);
+  }, [actorsById, roster, roomState, activeSummons]);
 
   // ── Minimize ────────────────────────────────────────────────────────────────
   // The window is an opaque overlay on the map, so during token work the DM was

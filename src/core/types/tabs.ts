@@ -1,4 +1,5 @@
 import type { ActionCost } from "./actionEconomy";
+import type { SummonSpec } from "../monsters/summon";
 
 export type TabId =
   | "main"
@@ -367,6 +368,20 @@ export type ActorActionMetadata = {
    * nothing, and defaulting to half would quietly halve those. Creature parsing has carried this
    * distinction since row 10; PC actions had no field for it at all.
    */
+  /**
+   * WHAT THIS ACTION CALLS — the Divine Steed, the Eldritch Cannon, the Covenant bond-creature.
+   *
+   * ⚠ THE SUMMON SYSTEM WAS BUILT FOR THIS AND HAD NO WAY IN. `summon.ts` resolves every formula
+   * the three named cases need — the Steed's AC `10+@SLOT` and HP `5+10*@SLOT`, the Cannon's
+   * `5*@LEVEL`, the bond-creature's `@HITDIEMAX + @LEVEL` — each against the CASTER's proficiency,
+   * spell attack and save DC, and `check:summons` proves the arithmetic with a Paladin as the
+   * summoner. But `summon` sat on `MonsterReaderAction` only, so the one thing that could declare
+   * a summon was a CREATURE, and the Paladin whose spell it is could not.
+   *
+   * Christopher, 2026-09-08: *"the whole reason there is a summon system was for things like
+   * this."* Same `SummonSpec` the creature side uses — one model, two callers, never two shapes.
+   */
+  summon?: SummonSpec;
   successDamage?: string;
   diceLabel?: string;
   initiativeBonus?: number;

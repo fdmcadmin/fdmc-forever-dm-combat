@@ -27,6 +27,7 @@ import { useActorStatusState, createActorStatus } from "./core/state/useActorSta
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import { useCombatLog } from "./core/combat-log/useCombatLog";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
+import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
 import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
 import { loadActorLibrary, loadActorOverrides, resolveActorFromLibrary } from "./core/seats/dmActorLibrary";
 import { loadCachedActors, cacheActors } from "./core/seats/playerActorCache";
@@ -219,6 +220,19 @@ function ActorPopout() {
   // resetActorTracker / resetActorStatuses are deliberately NOT taken: they write this seat's
   // own copy. Every tracker change here goes through commitTracker so the GM stays the writer.
   const { getActorStatus, setActorTracker } = useActorStatusState(actorList);
+  /**
+   * A summon cast from the popout lands on the same chart as one cast from the main window.
+   *
+   * ⚠ THE ROUND IS THE ROOM’S, NOT THIS WINDOW’S. The popout has no combat of its own, and
+   * stamping every casting round 1 would make a two-round Covenant creature summoned on round 4
+   * arrive already expired. `roomLiveState` is the shared answer and is already read here.
+   *
+   * The library is left empty on purpose: only a `templateId` needs one, and a popout is not
+   * where the DM’s creature library lives. An inline body — the Cannon, the bond-creature —
+   * resolves with no library at all, and a template that cannot resolve REPORTS rather than
+   * silently producing a wrong body.
+   */
+  const { summonBody } = useActiveSummonsState(actorList, roomLiveState.combat.round);
   const { addEntry, removePendingEntries } = useCombatLog();
   const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, consumeItemCharge, restoreItemCharge, spendResource } = useResourceCounterState(actorList);
   const { status: diceBridgeStatus, lastEvent: diceBridgeLastEvent, sendRollRequest, sendDicePlusRollRequest, sendMockRollResult } = useOwlbearDiceBridge();
@@ -439,6 +453,18 @@ function ActorPopout() {
             { destination: "ALL" }).catch(() => undefined);
         }}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actor.tabs.resources ?? []), castLevel })}
+        onSummonBody={(action, slotLevel) => {
+          const spec = action.metadata?.summon;
+          if (!spec) return;
+          summonBody({
+            id: `summon:${actor.id}:${action.id}`,
+            ownerId: actor.id,
+            actionId: action.id,
+            spec: JSON.parse(JSON.stringify(spec)) as typeof spec,
+            summonedOnRound: Math.max(1, roomLiveState.combat.round),
+            ...(slotLevel !== undefined ? { slotLevel } : {}),
+          });
+        }}
         onSaveCall={(action, save) => {
           broadcastSavePrompt(actor.name, action, save);
           addEntry({ actorName: actor.name, actionName: "Save Call", tabId: "system", message: `⚠ SAVE — ${actor.name}'s ${action}: each target must make a ${save} saving throw.` });

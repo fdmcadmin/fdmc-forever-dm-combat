@@ -143,6 +143,9 @@ import { takeSnapshot, mirrorWallets } from "./core/state/autoBackup";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { bondMilestoneForEncounter } from "./modules/the-broken-chain/content/bondGates";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
+import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
+import type { ActorAction } from "./core/types/tabs";
+import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
 import { appendLogEntry, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "./core/export/encounterLogExport";
 
@@ -960,6 +963,50 @@ export default function App() {
     resetActorTurn,
     resetAllTurns,
   } = useActionEconomyState(isDmMode ? bundledActors : seatActors);
+
+  /**
+   * ── Summoned bodies ───────────────────────────────────────────────────────
+   *
+   * Christopher: *"these arent showing in the combat chart for the divine stead and the eldritch
+   * cannon"*. The arithmetic was finished and proved; nothing turned a casting into a row.
+   *
+   * ⚠ THE LIBRARY IS READ THROUGH `resolveMonsterLibrary`, not off the bundle. A Steed the DM has
+   * edited is the Steed that arrives — the precedence rule lives in one place and this is not a
+   * second one.
+   */
+  const summonLibrary = useMemo(() => resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library, []);
+  const {
+    activeSummons,
+    summonBody,
+    dismissSummon,
+    clearSummons,
+  } = useActiveSummonsState(
+    isDmMode ? bundledActors : seatActors,
+    roomLiveState.combat.round,
+    summonLibrary,
+  );
+
+  /**
+   * A summon-bearing action was used — record the body.
+   *
+   * ⚠ THE RECORD IS KEYED ON OWNER + ACTION, so re-casting Find Steed moves the arrival round
+   * instead of stabling a second horse, and two different summons from one caster both stand.
+   * The round it arrives on is the round the table is actually in; out of combat that is 1, which
+   * is the honest answer for a Steed called on the road.
+   */
+  function handleSummonBody(ownerId: string, action: ActorAction, slotLevel?: number) {
+    const spec = action.metadata?.summon;
+    if (!spec) return;
+    summonBody({
+      id: `summon:${ownerId}:${action.id}`,
+      ownerId,
+      actionId: action.id,
+      // Copied, not referenced — the body on the field is the one that was called.
+      spec: JSON.parse(JSON.stringify(spec)) as typeof spec,
+      summonedOnRound: Math.max(1, roomLiveState.combat.round),
+      ...(slotLevel !== undefined ? { slotLevel } : {}),
+    });
+  }
 
   // ── Committed roll ────────────────────────────────────────────────────────
   const {
@@ -2124,6 +2171,7 @@ export default function App() {
         initiativeByMonster,
         true,
         liveHpByActorId,
+        activeSummons,
       );
     }
 
@@ -2132,7 +2180,7 @@ export default function App() {
     // actors until the roster arrives. Active flag is recomputed from live combat state.
     const partyCombatants: Combatant[] = partyRoster.length > 0
       ? partyRoster.map(c => ({ ...c, isActive: c.id === roomLiveState.combat.activeActorId }))
-      : buildCombatants(actors, [], roomLiveState.combat.activeActorId, initiativeByActor, {}, false, liveHpByActorId);
+      : buildCombatants(actors, [], roomLiveState.combat.activeActorId, initiativeByActor, {}, false, liveHpByActorId, activeSummons);
 
     // Monsters come from the player-safe broadcast — ratio HP only, never true numbers.
     const playerMonsterCombatants: Combatant[] = playerMonsters.map(m => ({
@@ -2147,7 +2195,7 @@ export default function App() {
     }));
 
     return [...partyCombatants, ...playerMonsterCombatants];
-  }, [actors, monsterCandidates, playerMonsters, partyRoster, roomLiveState, isDmMode, getActorInitiative, liveHpByActorId]);
+  }, [actors, monsterCandidates, playerMonsters, partyRoster, roomLiveState, isDmMode, getActorInitiative, liveHpByActorId, activeSummons]);
 
   // ── DM: broadcast the player-safe party roster (actor combatants only — never monster
   // HP) so every PC's tracker shows ally HP. Re-broadcasts when the party's HP / init /
@@ -2427,6 +2475,12 @@ export default function App() {
     // without a rest, so without this a party fighting twice between short rests would carry
     // an empty Quickstep Boots into the second fight.
     resetEncounterCharges();
+    /**
+     * ⚠ EVERY SUMMONED BODY LEAVES WITH THE FIGHT. A Steed has no duration, so nothing else would
+     * ever remove it — the next encounter would open with last week’s horse still on the chart.
+     * This is the same reasoning armed effects and rage use one line above.
+     */
+    clearSummons();
     addEntry({ actorName: "System", actionName: "Combat End", tabId: "system", message: "Combat ended. Seats and HP preserved." });
     // OFFER the log after every combat — a living record is only living if each fight can be
     // kept, and most fights never involve a boss. Deliberately an offer, never an automatic
@@ -4284,6 +4338,7 @@ export default function App() {
           onStartCombat={handleStartCombat}
           onNextTurn={handleNextTurn}
           onEndCombat={handleEndCombat}
+          onDismissSummon={dismissSummon}
           onSelectCombatant={(id) => {
             const actor = actors.find(a => a.id === id);
             if (actor) { setSelectedActorId(id); setActiveMonsterInstanceId(""); return; }
@@ -4389,6 +4444,7 @@ export default function App() {
         onSetGrip={(action, grip) => requestGripChange(actorToShow.id, action, grip)}
         combatActive={roomLiveState.combat.phase === "combat"}
         onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []), castLevel })}
+        onSummonBody={(action, slotLevel) => handleSummonBody(actorToShow.id, action, slotLevel)}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
         onUpdateCoins={isDmMode ? ((c) => void setActorCoins(actorToShow.id, c)) : undefined}
@@ -4779,6 +4835,7 @@ export default function App() {
                 onSetGrip={(action, grip) => requestGripChange(focusedActorId, action, grip)}
                 combatActive={roomLiveState.combat.phase === "combat"}
                 onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []), castLevel })}
+                onSummonBody={(action, slotLevel) => handleSummonBody(focusedActorId, action, slotLevel)}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}
                 onUpdateCoins={isDmMode ? ((c) => void setActorCoins(focusedActorId, c)) : undefined}

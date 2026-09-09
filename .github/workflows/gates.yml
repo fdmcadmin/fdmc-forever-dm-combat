@@ -113,6 +113,12 @@ jobs:
       - name: check summons
         run: npm run check:summons
 
+      # ⚠ THE OTHER HALF OF check:summons, which says in its own words that it asserts the
+      # arithmetic and NOT that a body appeared. This one asserts the body: a casting becomes a
+      # row on the combat chart, acts decides whether it takes a turn, and a duration ends it.
+      - name: check a summon reaches the combat chart
+        run: npm run check:summontracker
+
       - name: check timed bodies
         run: npm run check:timed
 

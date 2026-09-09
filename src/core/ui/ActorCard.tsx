@@ -149,6 +149,14 @@ type ActorCardProps = {
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
+  /**
+   * A summon-bearing action was used — put its body on the combat chart.
+   *
+   * ⚠ SEPARATE FROM `onConsumeActionResources` ON PURPOSE. That one is gated on the action not
+   * rolling its own damage and on it naming a pool; a body appears because the action was USED,
+   * whatever it cost. Sharing the hook is how the Steed and the Cannon stayed invisible.
+   */
+  onSummonBody?: (action: ActorAction, slotLevel?: number) => void;
   /** A save-forcing action fired — the host decides targets (picker) and announces it. */
   onSaveCall?: (actionName: string, save: string) => void;
   /** Character gold (gp) — legacy; superseded by `coins`. */
@@ -931,6 +939,7 @@ export function ActorCard({
   onToggleEquipped,
   onSetGrip,
   onConsumeActionResources,
+  onSummonBody,
   onSaveCall,
   coins,
   onUpdateCoins,
@@ -3872,6 +3881,38 @@ export function ActorCard({
         actionName: action.label,
         tabId: "system",
         message: `${actor.name} conjures ${conjured.label ?? action.label} — ${conjured.damage}${conjured.damageType ? ` ${conjured.damageType}` : ""} attack available ${conjured.duration ?? "while it lasts"}, no further slot.`,
+      });
+    }
+
+    /**
+     * SUMMONS: using the action puts a BODY on the field — the Divine Steed, the Eldritch Cannon,
+     * the Covenant bond-creature.
+     *
+     * ⚠ THIS FIRES ON THE USE, NOT ON THE SPEND, and the distinction is the whole bug. The
+     * resource path below is gated on `!rollsItsOwn` and on the action naming a pool, so a summon
+     * whose action rolls anything — or spends nothing at all — would never have reached it. A body
+     * appears because the caster used the action; what it cost is a separate question answered
+     * separately. It is deliberately BEFORE the readied-key and used-slot returns for the same
+     * reason: those govern the ECONOMY, and a body already called does not un-appear because the
+     * bonus action was spent.
+     *
+     * The slot rides along because the Steed is almost entirely a function of it — AC "10 + 1 per
+     * spell level", HP "5 + 10 per spell level". `getCastLevel` is the same reading the spend path
+     * uses, so the body and the slot it cost can never disagree.
+     */
+    const summonSpec = action.metadata?.summon;
+    if (summonSpec) {
+      const castAt = getCastLevel(action);
+      onSummonBody?.(action, castAt > 0 ? castAt : undefined);
+      const lasts = summonSpec.durationRounds
+        ? ` It lasts ${summonSpec.durationRounds} round${summonSpec.durationRounds === 1 ? "" : "s"}.`
+        : "";
+      onLog({
+        actorName: actor.name,
+        actionName: action.label,
+        tabId: "system",
+        message: `${actor.name} summons ${summonSpec.name ?? "a body"}${castAt > 0 ? ` at level ${castAt}` : ""}`
+          + ` — it is on the combat chart now.${lasts}`,
       });
     }
 
