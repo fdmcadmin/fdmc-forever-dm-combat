@@ -81,5 +81,37 @@ console.log("\n2. and the picker offers those levels");
     /mode === "freeCast" && level === base/.test(code));
 }
 
+console.log("\n3. and the cost column belongs to the author");
+{
+  /**
+   * ⚠ REPRODUCED LIVE, 2026-09-10. Find Steed's cost cleared, saved, editor reopened — back to
+   * "1/Long Rest". Christopher: *"i remove the 1/LR but keep the 1 free cast and it is reverting
+   * the cost back to 1/LR."*
+   *
+   * `rowToAction` recomputed the label from the uses box on every save, so the column could not be
+   * retyped OR cleared: both roads ended at the same derived string. `formatSlotLabel` already has
+   * the right precedence — typed wins, blank derives "L{level}" — and a class feature needed no
+   * exception to it, because what makes it one is `spellSlotMode`, set from the uses box and never
+   * from the label.
+   */
+  const src = readFileSync(resolve(ROOT, "src/core/ui/SpellTableEditor.tsx"), "utf8");
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+
+  ok("the cost label is no longer forced from the uses box",
+    !/isClassFeature\s*\?\s*`\$\{cfUses\}\/Long Rest`/.test(code));
+  ok("...it comes from the shared formatter, which lets a typed value win",
+    /const slotLabel = formatSlotLabel\(row\)/.test(code));
+  ok("...and blank still derives the level rather than a pool label",
+    /if \(row\.slotCost\.trim\(\)\) return row\.slotCost\.trim\(\)/.test(code));
+
+  /**
+   * ⚠ AND CLEARING THE LABEL MUST NOT REMOVE THE FREE CAST. They are different fields answering
+   * different questions: the uses box decides whether the spell is a class feature, the label only
+   * decides what the column reads. "Keep the 1 free cast" is the other half of the request.
+   */
+  ok("the free cast still comes from the uses box, not the label",
+    /isClassFeature \? \{ spellSlotMode: "freeCast" as const, classFeatureUses: cfUses \}/.test(code));
+}
+
 console.log(failures ? `\nFAILED (${failures})` : "\nALL PASS");
 process.exit(failures ? 1 : 0);

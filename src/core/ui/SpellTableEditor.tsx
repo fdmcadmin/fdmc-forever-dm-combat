@@ -105,9 +105,28 @@ function rowToAction(row: SpellRow): ActorAction {
   // Class-feature spell: spends a dedicated 1-per-long-rest resource (not a spell slot).
   const cfUses = Number.parseInt(row.classFeatureUses, 10);
   const isClassFeature = Number.isFinite(cfUses) && cfUses > 0;
-  const slotLabel = isClassFeature
-    ? `${cfUses}/Long Rest`
-    : formatSlotLabel(row);
+  /**
+   * ⚠ THE COST COLUMN IS THE AUTHOR'S, AND IT USED TO BE OVERWRITTEN ON EVERY SAVE.
+   *
+   * Christopher, 2026-09-10: *"i remove the 1/LR but keep the 1 free cast and it is reverting the
+   * cost back to 1/LR"* — reproduced live on Find Steed: cleared, saved, and back to "1/Long Rest"
+   * when the card was reopened.
+   *
+   * This read `isClassFeature ? \`${cfUses}/Long Rest\` : formatSlotLabel(row)`, so the moment the
+   * uses box held a number the cost column was recomputed and whatever the author had put there
+   * was discarded. Typing a different label did nothing; CLEARING it did nothing either, because
+   * both roads ended at the same derived string.
+   *
+   * `formatSlotLabel` already has the right precedence — a typed label wins, and blank derives
+   * "L{level}" from the level. A class-feature spell needs no exception to that: what makes it a
+   * class feature is `spellSlotMode` and `classFeatureUses`, which are set from the uses box a few
+   * lines below and are not touched here. The label was only ever a display string.
+   *
+   * ⚠ EXISTING SHEETS DO NOT MOVE. Every class-feature spell authored so far has "N/Long Rest"
+   * STORED in `metadata.slotCost` and read back into the row, so it is a typed label and keeps
+   * winning. Only clearing the box changes anything — which is the thing that was asked for.
+   */
+  const slotLabel = formatSlotLabel(row);
   const detailParts = [
     row.details,
     isClassFeature ? `Class feature — ${cfUses}/Long Rest` : "",
