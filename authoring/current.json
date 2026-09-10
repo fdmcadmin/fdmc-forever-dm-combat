@@ -1,8 +1,389 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-09-04T09:29:39.076Z",
-  "digest": "fnv1a-9e19133e-120073",
-  "monsters": [],
+  "exportedAt": "2026-09-10T06:50:16.949Z",
+  "digest": "fnv1a-15fe3049-132381",
+  "monsters": [
+    {
+      "templateId": "broken-chain:act3:elemental-mirror:v1",
+      "name": "Elemental Mirror",
+      "encounterId": "act3-e6-gate-ii-the-mirrors",
+      "encounterLabel": "Act 3 E6 - Gate II: The Mirrors",
+      "isTemplate": true,
+      "bodyNameFormat": "{pick} Mirror",
+      "stats": {
+        "kind": "aberration",
+        "ac": 15,
+        "maxHp": 115,
+        "speed": "30 ft.",
+        "attacksPerTurn": 2,
+        "defenses": [
+          {
+            "name": "Elemental Guard",
+            "ehpMultiplier": 1.075916,
+            "rule": "Telegraphed alternating immunity/resistance",
+            "note": "Workbook: Telegraphed alternating immunity/resistance (+0.075916), exact. Read from the trait text by traitClassifier on \"immunity that rotates each turn\" - the mirror had NO defences at all, so a Gate boss priced at flat 90 raw HP with its signature ability worth zero."
+          },
+          {
+            "name": "Reactive Refraction",
+            "ehpMultiplier": 1.047749,
+            "rule": "First attack each round at disadvantage",
+            "note": "v3.44 ADDS A REACTION TO EVERY MIRROR: when an attack targets it, it can impose Disadvantage on that attack, decided before the roll. That is the workbook’s First-attack-each-round-at-disadvantage rule exactly (+0.047749) — the mirror spends its normal Reaction, so it is once per round by the Reaction budget rather than by its own wording. It stacks with Elemental Guard on ONE pass fraction because they answer different questions: the Guard removes a damage TYPE, this one removes a hit."
+          },
+          {
+            "name": "Sunstone Aegis",
+            "setId": "element",
+            "setOption": "Earth",
+            "ehpMultiplier": 1.056615,
+            "provenance": "interpolated",
+            "note": "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615) — the same value the Darkmare's Shadow Shroud carries, because it is the same effect. ⚠ AND IT IS ONCE PER DAY: the anchor prices a one-round window and Sunstone Aegis gets exactly one of those in the fight, so this is if anything generous. The blinding save it also imposes is CONTROL and is not counted here."
+          }
+        ],
+        "damageResponses": [],
+        "size": "Medium",
+        "classification": "elite",
+        "cr": 7,
+        "oneBodyPerPc": true
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)"
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "CON",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "INT",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "WIS",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "CHA",
+          "value": "10 (+0)"
+        }
+      ],
+      "actionSets": [
+        {
+          "id": "element",
+          "label": "Element package",
+          "pick": 1,
+          "namesBody": true,
+          "note": "Primary locks its paired secondary. Do not duplicate a package across the roster.",
+          "optionVars": {
+            "Ice": {
+              "primary": "ice",
+              "secondary": "necrotic",
+              "pair": "Ice/Necrotic",
+              "group": "Defensive-solid",
+              "line": "front",
+              "physical1": "bludgeoning",
+              "physical2": ""
+            },
+            "Earth": {
+              "primary": "earth",
+              "secondary": "radiant",
+              "pair": "Earth/Radiant",
+              "group": "Defensive-solid",
+              "line": "front",
+              "physical1": "bludgeoning",
+              "physical2": ""
+            },
+            "Nature": {
+              "primary": "nature",
+              "secondary": "poison",
+              "pair": "Nature/Poison",
+              "group": "Defensive-solid",
+              "line": "front",
+              "physical1": "bludgeoning",
+              "physical2": ""
+            },
+            "Fire": {
+              "primary": "fire",
+              "secondary": "lightning",
+              "pair": "Fire/Lightning",
+              "group": "Offensive-fluid",
+              "line": "back",
+              "physical1": "piercing",
+              "physical2": "slashing"
+            },
+            "Water": {
+              "primary": "water",
+              "secondary": "acid",
+              "pair": "Water/Acid",
+              "group": "Offensive-fluid",
+              "line": "back",
+              "physical1": "piercing",
+              "physical2": "slashing"
+            },
+            "Air": {
+              "primary": "air",
+              "secondary": "force",
+              "pair": "Air/Force",
+              "group": "Offensive-fluid",
+              "line": "back",
+              "physical1": "piercing",
+              "physical2": "slashing"
+            }
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "Elemental Guard",
+          "kind": "trait",
+          "text": "At the start of each turn, choose one element in the mirror’s pair as the active guard: the mirror is immune to that damage type and resistant to the paired type until the start of its next turn. The active immunity is visibly telegraphed before affected players commit damage."
+        },
+        {
+          "name": "Inherent Bond",
+          "kind": "trait",
+          "text": "The mirror has the DM-assigned Bond and Metamorphosis path selected during construction. It resolves with its printed timing and one activation per round."
+        },
+        {
+          "name": "Primary Convergence",
+          "kind": "trait",
+          "text": "A signature spell consumes the mirror’s action. In one round, no more than one Offensive mirror and one Defensive mirror can use a 1/day signature spell."
+        },
+        {
+          "name": "Role Attack",
+          "kind": "trait",
+          "text": "Use the chosen archetype’s Attack line. Claws and Bolts deal 2d6 + the listed damage modifier for that archetype. A mirror can replace its normal attack routine with a spell from its elemental package."
+        },
+        {
+          "name": "Constructed Answer",
+          "kind": "trait",
+          "text": "The mirror is built from an archetype, an element package and one bond at its Metamorphosis path. It is close enough to a party's roles to be insulting, and never an exact copy."
+        },
+        {
+          "name": "Signature Limit",
+          "kind": "trait",
+          "text": "Roster-limited: at most one 1/day signature effect per round across the whole mirror encounter, and at most one Offensive and one Defensive mirror may use a signature in any one round."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Claw",
+          "kind": "attack",
+          "roll": "1d20+@MAIN+@PROF",
+          "damage": "3d6+@MAIN {primary}",
+          "routineSlots": 1,
+          "text": "Melee Weapon Attack, reach 5 ft. The archetype sets the modifier; the element sets the damage type."
+        },
+        {
+          "name": "Bolt",
+          "kind": "attack",
+          "roll": "1d20+@MAIN+@PROF",
+          "damage": "3d6+@MAIN {primary}",
+          "routineSlots": 1,
+          "text": "Ranged Spell Attack, range 60 ft. The archetype sets the modifier; the element sets the damage type."
+        },
+        {
+          "name": "Gravefrost Reflections",
+          "kind": "reaction",
+          "setId": "element",
+          "setOption": "Ice",
+          "uses": 1,
+          "damage": "2d6",
+          "save": "WIS DC @DC",
+          "text": "1/Day, Reaction when the mirror is targeted by an attack. Three ice-and-shadow reflections appear for up to 1 minute. While a reflection remains, when an attack would hit the mirror, roll a d20; on a 6 or higher the attack destroys a reflection instead. A reflection uses the mirror's AC. When the last reflection is destroyed, the creature that destroyed it takes 2d6 cold or necrotic damage (mirror's choice) and must succeed on a Wisdom saving throw or be frightened of the mirror until the end of its next turn."
+        },
+        {
+          "name": "Ray of Frost",
+          "kind": "spell",
+          "replacesRoutineSlot": true,
+          "setId": "element",
+          "setOption": "Ice",
+          "roll": "1d20+@SPELL",
+          "damage": "2d8 cold",
+          "damageType": "Cold",
+          "range": "range 60 ft.",
+          "text": "At-will cantrip.,"
+        },
+        {
+          "name": "Misty Step",
+          "kind": "spell",
+          "setId": "element",
+          "setOption": "Ice",
+          "uses": 3,
+          "text": "3/day. Bonus Action. The mirror teleports up to 30 feet to an unoccupied space it can see. No damage."
+        },
+        {
+          "name": "Sunstone Aegis",
+          "kind": "action",
+          "setId": "element",
+          "setOption": "Earth",
+          "uses": 1,
+          "save": "CON DC @DC",
+          "text": "1/Day, Action. Luminous stone closes around the mirror until the start of its next turn, granting +2 AC. The first time each creature targets the mirror with an attack during the effect, that creature makes a Constitution saving throw before the attack. On a failed save, it is blinded until the end of the current turn. A creature makes this save only once per casting."
+        },
+        {
+          "name": "Mold Earth",
+          "kind": "spell",
+          "economyCost": "bonus",
+          "setId": "element",
+          "setOption": "Earth",
+          "text": "At-will cantrip. Move or shape a 5-foot cube of dirt or stone within 30 ft. — excavate it, change its colour, or make it difficult terrain until the mirror's concentration ends. No damage."
+        },
+        {
+          "name": "Guiding Bolt",
+          "kind": "spell",
+          "setId": "element",
+          "setOption": "Earth",
+          "uses": 3,
+          "roll": "1d20+@SPELL",
+          "damage": "4d6 radiant",
+          "damageType": "Radiant",
+          "range": "range 120 ft.",
+          "text": "3/day.,"
+        },
+        {
+          "name": "Venomroot Bloom",
+          "kind": "action",
+          "setId": "element",
+          "setOption": "Nature",
+          "uses": 1,
+          "save": "CON DC @DC",
+          "text": "1/Day, Action. Choose a point within 60 feet. Poisonous roots erupt in a 20-foot-radius area until the start of the mirror's next turn. The area is difficult terrain for creatures other than the mirror. A creature that enters the area for the first time on a turn or starts its turn there makes a Constitution saving throw. On a failed save, its speed becomes 0 and it is poisoned until the start of its next turn. On a success, its speed is halved until the start of its next turn."
+        },
+        {
+          "name": "Thorn Whip",
+          "kind": "spell",
+          "replacesRoutineSlot": true,
+          "setId": "element",
+          "setOption": "Nature",
+          "roll": "1d20+@SPELL",
+          "damage": "2d6 piercing",
+          "damageType": "Piercing",
+          "range": "reach 30 ft.",
+          "text": "At-will cantrip.,"
+        },
+        {
+          "name": "Ray of Sickness",
+          "kind": "spell",
+          "setId": "element",
+          "setOption": "Nature",
+          "uses": 3,
+          "roll": "1d20+@SPELL",
+          "damage": "2d8 poison",
+          "damageType": "Poison",
+          "range": "range 60 ft.",
+          "text": "3/day. On a hit, the target makes a Constitution saving throw or has the Poisoned condition until the end of the mirror's next turn."
+        },
+        {
+          "name": "Stormcharged Fireball",
+          "kind": "action",
+          "setId": "element",
+          "setOption": "Fire",
+          "uses": 1,
+          "damage": "3d6 {primary} + 3d6 {secondary}",
+          "save": "DEX DC @DC",
+          "text": "1/Day, Action. Choose a point within 90 feet. A 15-foot-radius sphere erupts with fire threaded by lightning. Each creature in the area makes a Dexterity saving throw, taking 3d6 fire plus 3d6 lightning damage on a failed save, or half as much on a success."
+        },
+        {
+          "name": "Fire Bolt",
+          "kind": "spell",
+          "replacesRoutineSlot": true,
+          "setId": "element",
+          "setOption": "Fire",
+          "roll": "1d20+@SPELL",
+          "damage": "2d10 fire",
+          "damageType": "Fire",
+          "range": "range 120 ft.",
+          "text": "At-will cantrip., A flammable object hit by this spell ignites if it is not being worn or carried."
+        },
+        {
+          "name": "Thunderwave",
+          "kind": "spell",
+          "setId": "element",
+          "setOption": "Fire",
+          "uses": 3,
+          "damage": "2d8 thunder",
+          "save": "CON DC @DC",
+          "text": "3/day. Each creature in a 15-foot cube originating from the mirror makes a Constitution save, taking 2d8 thunder damage and being pushed 10 feet away on a failure, or half damage and no push on a success."
+        },
+        {
+          "name": "Caustic Tide",
+          "kind": "action",
+          "setId": "element",
+          "setOption": "Water",
+          "uses": 1,
+          "damage": "2d8 bludgeoning + 2d8 {secondary}",
+          "save": "DEX DC @DC",
+          "text": "1/Day, Action. A 30-foot-long, 10-foot-wide wave surges from the mirror. Creatures in the wave make a Dexterity saving throw, taking 2d8 bludgeoning plus 2d8 acid damage and falling prone on a failed save. On a success, a creature takes half damage and does not fall prone."
+        },
+        {
+          "name": "Shape Water",
+          "kind": "spell",
+          "economyCost": "bonus",
+          "setId": "element",
+          "setOption": "Water",
+          "text": "At-will cantrip. Move or shape a 5-foot cube of water within 30 ft., freeze it, or change its colour. No damage."
+        },
+        {
+          "name": "Grease",
+          "kind": "spell",
+          "setId": "element",
+          "setOption": "Water",
+          "uses": 3,
+          "save": "DEX DC @DC",
+          "text": "3/day. A 10-foot square within 60 ft. becomes difficult terrain. A creature there when it appears, or entering or ending its turn there, makes a Dexterity save or falls prone. No damage."
+        },
+        {
+          "name": "Gravitic Squall",
+          "kind": "action",
+          "setId": "element",
+          "setOption": "Air",
+          "uses": 1,
+          "damage": "2d8 thunder + 2d8 {secondary}",
+          "save": "STR DC @DC",
+          "text": "1/Day, Action. A 30-foot cone of compressed air and force tears outward. Creatures in the cone make a Strength saving throw, taking 2d8 thunder plus 2d8 force damage on a failed save, and the mirror pushes or pulls each failed target 15 feet. On a success, a creature takes half damage and is not moved."
+        },
+        {
+          "name": "Gust",
+          "kind": "spell",
+          "economyCost": "bonus",
+          "setId": "element",
+          "setOption": "Air",
+          "save": "STR DC @DC",
+          "text": "At-will cantrip. One creature within 30 ft. makes a Strength save or is pushed 5 feet away, or the mirror moves an unattended object or creates a harmless gust. No damage."
+        },
+        {
+          "name": "Vortex Warp",
+          "kind": "spell",
+          "setId": "element",
+          "setOption": "Air",
+          "uses": 3,
+          "save": "CON DC @DC",
+          "text": "3/day. One creature within 90 ft. makes a Constitution save. On a failure, the mirror teleports it to an unoccupied space it can see within 90 feet. No damage."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Reactive Refraction",
+          "kind": "action",
+          "text": "When an attack targets the mirror, it can impose Disadvantage on that attack. The mirror decides before the attack roll. This reaction uses the mirror's normal Reaction and does not require a counterpart, Bond match, or ongoing mark."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "Elemental Guard must remain deterministic and readable. The active immunity changes every turn; players should be able to route damage around it.",
+        "Use different prime archetypes so the fight reads as a party-shaped system rather than identical attackers. At 3 players use three, at 4 use four, at 5 use five.",
+        "Party-size scaling is the MIRROR EXCEPTION: each mirror stays at 90 HP and AC 15, and the encounter scales only by matching the number of mirrors to the number of PCs."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Mirror",
+        "revealedName": "Elemental Mirror"
+      }
+    }
+  ],
   "equipment": [
     {
       "id": "bc-tools-repairs",
