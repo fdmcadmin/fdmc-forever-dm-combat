@@ -573,7 +573,23 @@ export function rosterFromTemplates(
      * authored. Once the DM has built them, they ARE the roster — and applying the per-PC rule on
      * top would multiply again, turning four authored mirrors into sixteen at 4P.
      */
-    const perPc = Boolean(template.stats.oneBodyPerPc) && !fromAuthoredBody;
+    /**
+     * ⚠ TWO DIFFERENT QUESTIONS, AND THEY WERE ONE FLAG.
+     *
+     *   perPc          — does PARTY SIZE decide how many bodies? No, once the DM has authored them.
+     *   flatHpPerBody  — is this body's HP fixed? YES, always, and authorship cannot change that.
+     *
+     * The Mirror's own line says which: *"Its 124 HP is fixed; party-size scaling changes the
+     * number of mirrors, not the body."* That is a fact about the CREATURE, so it reads off the
+     * template — while `perPc` is a fact about THIS CALL.
+     *
+     * Passing `perPc` for both applied the party-size HP band to every authored body: measured at
+     * ×1.00 / ×1.25 / ×1.50 for 4P / 5P / 6P, so five authored Mirrors priced as six and six as
+     * nine. The gate missed it because it only ever built the DERIVED path, where the two answers
+     * happen to coincide.
+     */
+    const hpIsFixed = Boolean(template.stats.oneBodyPerPc);
+    const perPc = hpIsFixed && !fromAuthoredBody;
     const bodies = perPc ? Math.max(1, Math.round(target.partySize ?? 4)) : quantity;
 
     return {
@@ -586,7 +602,7 @@ export function rosterFromTemplates(
        * rather than being assigned a place in the order.
        */
       initiativeMod: creatureInitiativeModifier({ abilities: template.abilities }),
-      flatHpPerBody: perPc,
+      flatHpPerBody: hpIsFixed,
       baseHp: parsed.maxHp,
       acMultiplier: profile.acMultiplier,
       traitFactors,

@@ -32,6 +32,8 @@ import { materializeTemplateBody } from "../src/core/monsters/actionSetPicks";
 import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
+import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
+import { effectiveHpPerBody } from "../src/core/encounter-band/checkerV2";
 import { resolveFeature } from "../src/core/encounter-band/featureResolver";
 
 let failures = 0;
@@ -211,6 +213,61 @@ console.log("\nAn ally buff is reported as one, not as missing damage");
   const hostileSaid = resolveFeature(hostile as never).assumptions.map(a => a.detail).join(" ");
   ok("mutation: the same shape aimed at an enemy is NOT read as an ally buff",
     !/HELPS AN ALLY/.test(hostileSaid), hostileSaid.slice(0, 90));
+}
+
+/* ── AN AUTHORED BODY'S HP IS STILL FIXED ─────────────────────────────────────────────────── */
+console.log("\nAuthoring the bodies does not make them scale with party size");
+{
+  /**
+   * ⚠ THIS GATE ONLY EVER BUILT THE DERIVED PATH, AND THAT IS WHY IT PASSED THROUGH A REAL BUG.
+   *
+   * `rosterFromLibrary` answered two different questions with one flag:
+   *   · does PARTY SIZE decide the body count?  — no, once the DM has authored them
+   *   · is the body's HP fixed?                 — yes, always
+   *
+   * Authoring the bodies correctly turned the first off, and turned the second off with it, so
+   * the party-size HP band landed on every authored Mirror: ×1.00 / ×1.25 / ×1.50 at 4P / 5P / 6P.
+   * Five authored Mirrors priced as six, six as nine. The derived path is the one where both
+   * answers coincide, which is exactly why testing only it proved nothing.
+   *
+   * The Mirror's own line: *"Its 124 HP is fixed; party-size scaling changes the number of
+   * mirrors, not the body."*
+   */
+  const el = Object.keys(naming?.optionVars ?? {})[0] ?? "Ice";
+  const d = partyDefenceAt(7, "brokenChain");
+  const tgt = (size: number) => ({
+    ac: d.ac, partySize: size,
+    saveBonus: (d.str + d.dex + d.con + d.int + d.wis + d.cha) / 6,
+    saves: { str: d.str, dex: d.dex, con: d.con, int: d.int, wis: d.wis, cha: d.cha },
+  });
+  const authoredAt = (size: number) => {
+    const built = rosterFromTemplates([{
+      template: mirror, quantity: 1,
+      bodies: Array.from({ length: size }, (_, i) => ({ id: `b${i}`, name: "", actionPicks: { [naming.id]: [el] } })),
+    } as never], 7, tgt(size) as never, L as never);
+    const rows = built.roster.filter((g: any) => /mirror/i.test(String(g.name)));
+    return { rows, per: rows.length ? Number(effectiveHpPerBody(rows[0] as never, size).toFixed(4)) : NaN };
+  };
+
+  const per: number[] = [];
+  for (const size of [4, 5, 6]) {
+    const a = authoredAt(size);
+    ok(`${size}P authors ${size} bodies, and the count is the DM's not the party's`, a.rows.length === size, String(a.rows.length));
+    ok(`${size}P authored body declares its HP flat`, (a.rows[0] as any)?.flatHpPerBody === true, String((a.rows[0] as any)?.flatHpPerBody));
+    per.push(a.per);
+  }
+  // The band would give 1.00 / 1.25 / 1.50 here. One value across all three proves it is off.
+  ok("an authored body is the same EHP at every party size", new Set(per).size === 1, per.join(" / "));
+
+  /**
+   * ⚠ AND THE DERIVED PATH STILL AGREES WITH IT, so the fix did not simply move the band from one
+   * path to the other. Same creature, same HP, whoever built the bodies.
+   */
+  const derived = [4, 5, 6].map(size => {
+    const built = rosterFromTemplates([{ template: mirror, quantity: 1 }], 7, tgt(size) as never, L as never);
+    return Number(effectiveHpPerBody(built.roster[0] as never, size).toFixed(4));
+  });
+  ok("a derived body is the same EHP at every party size too", new Set(derived).size === 1, derived.join(" / "));
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
