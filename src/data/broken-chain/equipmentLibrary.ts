@@ -584,6 +584,14 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-frostmarrow-spear",
+    "riders": [
+      {
+        "id": "frostmarrow-bite",
+        "label": "Frostmarrow",
+        "cadence": "perRound",
+        "condition": "On a hit: DC 13 Constitution save or its Speed drops by 10 ft until the end of its next turn."
+      }
+    ],
     "name": "Frostmarrow Spear",
     "type": "weapon",
     "category": "Melee Versatile",
@@ -600,6 +608,21 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-rimecleaver-versatile-thrown-handaxe-equivalent-1-no-attunement",
+    "riders": [
+      {
+        "id": "rimecleaver-rimebite",
+        "label": "Rimebite",
+        "formula": "1d6",
+        "damageType": "Cold",
+        "cadence": "perRound"
+      },
+      {
+        "id": "rimecleaver-step",
+        "label": "Cleaving Step",
+        "cadence": "perRound",
+        "condition": "When a hit with this weapon drops a creature to 0 HP: move up to 10 ft without provoking."
+      }
+    ],
     "name": "Rimecleaver",
     "type": "weapon",
     "category": "Melee Two-Handed",
@@ -616,6 +639,14 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-splitfrost-blade",
+    "riders": [
+      {
+        "id": "splitfrost-split",
+        "label": "Splitfrost",
+        "cadence": "perRound",
+        "condition": "On a hit: that creature's first attack roll against you before the start of your next turn has disadvantage."
+      }
+    ],
     "name": "Splitfrost Blade",
     "type": "weapon",
     "category": "Finesse",
@@ -632,6 +663,15 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-coldsnap-bow",
+    "riders": [
+      {
+        "id": "coldsnap-bite",
+        "label": "Coldsnap",
+        "formula": "1d4",
+        "damageType": "Cold",
+        "cadence": "perRound"
+      }
+    ],
     "name": "Coldsnap Bow",
     "type": "weapon",
     "category": "Ranged",
@@ -757,6 +797,15 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-lake-ice-blade",
+    "riders": [
+      {
+        "id": "lake-ice-bite",
+        "label": "Lake-Ice",
+        "formula": "1d6",
+        "damageType": "Cold",
+        "cadence": "perRound"
+      }
+    ],
     "name": "Lake-Ice Flail",
     "type": "weapon",
     "category": "Melee One-Handed",
@@ -774,6 +823,21 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-shattered-vigil",
+    "riders": [
+      {
+        "id": "shattered-vigil-bite",
+        "label": "Shattered Vigil",
+        "formula": "1d8",
+        "damageType": "Cold",
+        "cadence": "perRound"
+      },
+      {
+        "id": "shattered-vigil-topple",
+        "label": "Vigil Broken",
+        "cadence": "shortRest",
+        "condition": "On a hit: DC 14 Strength save or knocked prone. Once per short or long rest."
+      }
+    ],
     "name": "Shattered Vigil",
     "type": "weapon",
     "category": "Melee Two-Handed",
@@ -791,6 +855,16 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-hollow-fang",
+    "riders": [
+      {
+        "id": "hollow-fang-bite",
+        "label": "Hollow Fang",
+        "formula": "1d6",
+        "damageType": "Cold",
+        "cadence": "perRound",
+        "condition": "If you are at or below half your HP maximum when this lands, you regain 1d4 HP. Not against a Construct or Undead."
+      }
+    ],
     "name": "Hollow Fang",
     "type": "weapon",
     "category": "Finesse",
@@ -808,6 +882,16 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-starvation-brand",
+    "riders": [
+      {
+        "id": "starvation-brand-bite",
+        "label": "Starvation",
+        "formula": "1d6",
+        "damageType": "Cold",
+        "cadence": "perRound",
+        "condition": "Until the start of your next turn, that creature regains only half as many HP from any healing, rounding down."
+      }
+    ],
     "name": "Starvation Brand",
     "type": "weapon",
     "category": "Ranged",
@@ -825,6 +909,16 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
   },
   {
     "id": "tbc-voidtempered-blade-versatile-longsword",
+    "riders": [
+      {
+        "id": "voidtempered-bite",
+        "label": "Voidtempered",
+        "formula": "1d8",
+        "damageType": "Cold",
+        "cadence": "perRound",
+        "condition": "Only on a turn you also cast a spell."
+      }
+    ],
     "name": "Voidtempered Blade",
     "isSpellFocus": true,
     "type": "magic",
