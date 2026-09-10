@@ -100,17 +100,22 @@ const SEGMENTS = ACT3_SEGMENTS.map(seg => ({ label: `Level ${seg.level}`, level:
  * that caused it, exactly as `check:baseline` is accepted.
  */
 const REFERENCE: Record<string, { completion: string; monsterDamage: number }> = {
-  "act3-e1-the-first-court": { completion: "R3", monsterDamage: 45 },
-  "act3-e2-the-cut-below": { completion: "R3", monsterDamage: 105 },
-  "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 130 },
-  "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 55 },
-  "act3-e5-the-scar-line": { completion: "R3", monsterDamage: 91 },
-  // ⚠ FAIL R4 — a WIPE in this model, and it is the fight to look at in the app with a real party.
-  "campaign-mt3nm2j9": { completion: "FAIL R4", monsterDamage: 256 },
-  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 85 },
-  "act3-e8-the-occupied-acre": { completion: "R3", monsterDamage: 75 },
-  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 215 },
-  "act3-e10-the-center": { completion: "R4", monsterDamage: 243 },
+  "act3-e1-the-first-court": { completion: "R2", monsterDamage: 40 },
+  "act3-e2-the-cut-below": { completion: "R2", monsterDamage: 111 },
+  "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 167 },
+  "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 63 },
+  /**
+   * ⚠ THE FIGHT TO LOOK AT. 267 damage over five rounds is 54% of a level-7 pool, where every
+   * other fight in the act costs 9-40%. It is what walks the party into Gate II at 41% spent
+   * instead of the 25-30% Christopher states, and it is the one figure here that is recorded
+   * rather than accepted.
+   */
+  "act3-e5-the-scar-line": { completion: "R5", monsterDamage: 267 },
+  "campaign-mt3nm2j9": { completion: "FAIL R4", monsterDamage: 307 },
+  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 137 },
+  "act3-e8-the-occupied-acre": { completion: "R4", monsterDamage: 135 },
+  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 238 },
+  "act3-e10-the-center": { completion: "R4", monsterDamage: 376 },
 };
 
 const TOLERANCE = 5;

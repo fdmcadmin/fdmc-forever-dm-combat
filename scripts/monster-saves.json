@@ -32,7 +32,7 @@
  "Marrowstalk": "str7 dex3 con7 int0 wis0 cha1",
  "Shardbound": "str0 dex6 con2 int8 wis1 cha1",
  "Veilwood Crone": "str4 dex4 con7 int4 wis9 cha2",
- "Darkmare": "str8 dex4 con7 int0 wis2 cha2",
+ "Darkmare": "str5 dex4 con2 int0 wis2 cha2",
  "Briar Regent": "str8 dex2 con3 int2 wis6 cha4",
  "Folded Bulwark": "str7 dex0 con7 int-1 wis2 cha1",
  "Velvet Host": "str1 dex3 con7 int3 wis2 cha8",
@@ -45,9 +45,9 @@
  "Demon Knight of Punishment": "str4 dex2 con8 int2 wis6 cha3",
  "Breaker": "str9 dex2 con8 int1 wis7 cha3",
  "Demonic Reaver": "str0 dex8 con1 int3 wis8 cha2",
- "Veilbound Drake Guard": "str2 dex4 con3 int0 wis2 cha0",
+ "Veilbound Drake Guard": "str2 dex4 con3 int0 wis2 cha2",
  "Veil-Torn Dragon": "str3 dex3 con9 int5 wis9 cha10",
  "Elemental Mirror": "str4 dex3 con2 int1 wis1 cha0",
- "Thought Harrower": "str2 dex1 con4 int10 wis8 cha8",
+ "Thought Harrower": "str2 dex1 con4 int10 wis8 cha4",
  "Grief Colossus": "str10 dex3 con10 int-1 wis0 cha0"
 }

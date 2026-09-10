@@ -285,6 +285,15 @@ export function resolveFeature(
       "teleports?\\b",
       "speed is (halved|reduced)",
       "knocked (prone|back)",
+      /**
+       * ⚠ MOVING A BODY IS REACHABILITY WHETHER OR NOT THE VERB IS "PUSHED". The Veil-Torn Dragon's
+       * lair SLIDES a creature to a safe space, Borrowed Sky MOVES one 20 feet horizontally, and
+       * the Thought Harrower's Crossed Lines makes two areas ADJACENT. All three name a saving
+       * throw and print no damage, because relocating somebody IS the effect. Matching only the
+       * passive verbs asked a DM to invent dice for them.
+       */
+      "\\b(?:moves?|slides?|repositions?)\\s+(?:it|them|that creature|the creature|one creature|the target|up to)",
+      "\\bareas? are adjacent\\b",
     ].join("|"), "i");
     /**
      * ⚠ AND A SELF-BUFF IS NEITHER DAMAGE NOR CONTROL. The Earth Mirror's Sunstone Aegis grants
@@ -297,6 +306,14 @@ export function resolveFeature(
       "granting\\s+\\+?\\d+\\s*AC",
       "\\+\\d+\\s*AC\\b",
       "temporary hit points",
+      /**
+       * ⚠ A REROLL IS A DEFENCE. Shardbound's Recalculate the Facet spends a stake to REROLL a
+       * failed save; Legendary Resistance simply succeeds instead. Neither prints damage and
+       * neither is control — they raise the CREATURE'S OWN survival, which is effective HP and
+       * belongs in its defences with a multiplier, exactly like a +2 AC self-buff.
+       */
+      "rerolls? the (?:save|saving throw)",
+      "can choose to succeed instead",
     ].join("|"), "i");
     const readsAsControl = controls.length > 0
       || REACHABILITY.test(text)
@@ -320,6 +337,29 @@ export function resolveFeature(
       "\\ballies (?:in|within|gain|have)\\b",
     ].join("|"), "i");
     const readsAsAllySupport = !readsAsControl && !readsAsSelfDefence && ALLY_SUPPORT.test(text);
+    /**
+     * ⚠ A SPELLCASTING HEADER IS A CONTENTS PAGE, NOT AN ACTION.
+     *
+     * "The Crone is a 7th-level spellcaster. Wisdom is her spellcasting ability (spell save DC 17,
+     * +9 to hit)… At will: … 2/Day Each: …" prints a save DC and an attack bonus and no damage,
+     * because the damage belongs to the SPELLS — which are their own features and are traced as
+     * such. The parser saw the DC, asked for the matching damage, and sent a DM looking for dice
+     * that are printed one line further down under a different name.
+     *
+     * ⚠ THE TEST IS THE SLOT VOCABULARY, NOT THE WORD "SPELL". A fireball is a spell and does have
+     * damage; only a header enumerates AVAILABILITY — "At will", "N/Day Each", "Nth-level
+     * spellcaster", "spell slots". Matching the bare word would have swallowed every spell in the
+     * library, which is the failure this whole branch exists to avoid in the other direction.
+     */
+    const SPELL_HEADER = new RegExp([
+      "\\b\\d+(?:st|nd|rd|th)-level spellcaster\\b",
+      "\\bat will\\s*:",
+      "\\b\\d+\\s*/\\s*day each\\s*:",
+      "\\bspell[- ]slot costs?\\b",
+      "\\bspell slots\\b",
+    ].join("|"), "i");
+    const readsAsSpellHeader = !readsAsControl && !readsAsSelfDefence && !readsAsAllySupport
+      && SPELL_HEADER.test(text);
     if (readsAsControl) {
       notes.push(
         `Control effect with no damage line${controls.length ? ` (${controls.join(", ")})` : ""}${controls.length === 0 && REACHABILITY.test(text) ? " [reachability]" : ""} — priced through its consequence, not as damage.`,
@@ -341,6 +381,11 @@ export function resolveFeature(
           feature: name, flag: "NEEDS DM INPUT", field: "damage",
           detail: "This raises the creature's OWN defence rather than dealing damage — it is effective HP, not a damage line. Record it in the creature's defences with a multiplier and where that multiplier came from; entering a damage figure here would price a shield as a weapon.",
         });
+    } else if (readsAsSpellHeader) {
+      assumptions.push({
+        feature: name, flag: "ESTIMATED", field: "damage",
+        detail: "This LISTS the creature's spells and states the DC they share — it is a header, not an action. Priced at nothing HERE on purpose: each spell is its own feature and is traced as one, so a damage figure entered here would count the whole spell list a second time. Nothing is missing from the block.",
+      });
     } else if (readsAsAllySupport) {
       assumptions.push({
         feature: name, flag: "ESTIMATED", field: "damage",

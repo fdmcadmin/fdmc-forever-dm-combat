@@ -1769,7 +1769,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
       proficiencyBonus: 3,
       kind: "fiend", ac: 13, maxHp: 122, speed: "50 ft.",
       defenses: [
-        { name: "Darkmane (constant obscurement)", ehpMultiplier: 1.11326, persistent: true, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent." },
+        { name: "Darkmane (Constant)", ehpMultiplier: 1.11326, persistent: true, rule: "Concealment until first attack hits each round", note: "Workbook: Concealment until first attack hits each round (+0.113260). One-way magical obscurement, permanent. v3.44 names the trait \"Darkmane (Constant)\" and the row follows it, because check:traits matches a defence to the trait it prices BY NAME. ⚠ THE SECOND HALF IS DECIDED, NOT MISSED: the trait also grants Advantage on saves against spells WHILE NO ALLY IS INSIDE the veil, which is Magic Resistance (+0.115824). It is deliberately NOT added — Darkmare is fielded beside the Veilwood Crone and spends the fight keeping her inside Darkmane, so the condition that would switch it on is the one the pair is built to avoid. Pricing it would charge the party for a defence this roster gives up on purpose." },
         { name: "Shadow Shroud (1/Day)", ehpMultiplier: 1.056615, provenance: "interpolated", note: "Workbook: temporary AC, interpolated to +2 AC for 1 round from the +5 AC anchor (+0.056615)." },
       ],
       attacksPerTurn: 2,
@@ -2219,6 +2219,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 16, maxHp: 130, speed: "30 ft.",
       defenses: [
+        { name: "Shattered Plate", ehpMultiplier: 1.028819, provenance: "interpolated", note: "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). The first time each round the Knight takes bludgeoning, piercing or slashing damage, reduce it by 3 — the SAME mechanic and the same interpolation as the Hollow Warden’s Barkhide. ⚠ NOT the calibrated \"Flat DR 3 per damaging hit [volatile]\" row (+0.377915): that one pays on EVERY hit, and this trait pays once a round. The classifier reaches for the per-hit row because the words match; the cadence is what separates them." },
         { name: "Oppressive Presence + Commanding Presence", ehpMultiplier: 1, note: "UNPRICED, and left at 1.0 deliberately. Forcing one instance of every multi-target Action onto the Knight is the workbook's Damage transfer / redirection, which it publishes with a NULL contribution - the one category it declines to price. It is also not this creature's own sustain: it moves damage from its allies ONTO the Knight, so a per-creature multiplier above 1.0 would be backwards. Needs a roster-level decision." },
       ],
       attacksPerTurn: 1,
@@ -2306,7 +2307,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     stats: {
       kind: "fiend", ac: 18, maxHp: 113, speed: "40 ft.",
       defenses: [
-        { name: "Blur", ehpMultiplier: 1.227798, provenance: "derived", note: "DERIVED from two published sources, not estimated. Attack rolls against the Reaver have disadvantage, permanently and against every attack. v9 Pricing Resolver row 21 publishes the math: base p=clamp((21+AB-AC)/20,.05,.95), disadvantage=p^2. The AC increase equivalent to turning p into p-squared is dAC=20p(1-p), which is remarkably flat across every plausible hit chance - 5.00 at p=0.50, 4.95 at p=0.55, 4.80 at p=0.60 - so permanent disadvantage IS +5 AC. Priced through the app-s own AC_CONTRIBUTION bands and their published combining rule: +3 (0.140100) + +2 (0.087698) = 0.227798. Cross-check: the calibrated All attacks at disadvantage - 1 round row is +0.129416, so permanent reads 1.76x a single round, which is the right order for a three-to-four round fight." },
+        { name: "Shifting Outline", ehpMultiplier: 1.227798, provenance: "derived", note: "v3.44 RENAMES THIS TRAIT from Blur; the pricing is unchanged and the row follows the name because check:traits matches a defence to the trait it prices BY NAME. DERIVED from two published sources, not estimated. Attack rolls against the Reaver have disadvantage, permanently and against every attack. v9 Pricing Resolver row 21 publishes the math: base p=clamp((21+AB-AC)/20,.05,.95), disadvantage=p^2. The AC increase equivalent to turning p into p-squared is dAC=20p(1-p), which is remarkably flat across every plausible hit chance - 5.00 at p=0.50, 4.95 at p=0.55, 4.80 at p=0.60 - so permanent disadvantage IS +5 AC. Priced through the app-s own AC_CONTRIBUTION bands and their published combining rule: +3 (0.140100) + +2 (0.087698) = 0.227798. Cross-check: the calibrated All attacks at disadvantage - 1 round row is +0.129416, so permanent reads 1.76x a single round, which is the right order for a three-to-four round fight." },
       ],
       attacksPerTurn: 2,
       size: "Medium", classification: "elite", archetype: "skirmisher",
@@ -2351,7 +2352,8 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
   },
   {
     templateId: "broken-chain:act3:veil-torn-wyrmling:v1",
-    name: "Veil-Torn Wyrmling",
+    // v3.44 renames this creature; the templateId is unchanged, because an id is not a label.
+    name: "Veilbound Drake Guard",
     encounterId: "act3-e9-gate-iii-veil-torn-dragon",
     encounterLabel: "Act 3 E9 - Gate III: The Veil-Torn Dragon",
     stats: {
@@ -2396,7 +2398,7 @@ export const BUNDLED_MONSTER_LIBRARY: MainMonsterTemplate[] = [
     notes: [
       "A smaller dragon whose movements still look graceful until the canopy tugs it half a beat too early. Both wyrmlings use the same standalone block.",
     ],
-    visibility: { defaultState: "hp-bar", hiddenName: "Veil-Torn Wyrmling", revealedName: "Veil-Torn Wyrmling" },
+    visibility: { defaultState: "hp-bar", hiddenName: "Veilbound Drake Guard", revealedName: "Veilbound Drake Guard" },
   },
   {
     templateId: "broken-chain:act3:veil-torn-dragon:v1",
