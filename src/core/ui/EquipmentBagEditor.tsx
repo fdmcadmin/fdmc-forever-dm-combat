@@ -1067,6 +1067,20 @@ export function itemToAttackAction(item: EquipmentItem): ActorAction {
       // draw from the same charges. It only works if the charges are actually here.
       ...(item.charges ? { charges: item.charges } : {}),
       cost: ITEM_ACTIVATION_LABEL[activation],
+      /**
+       * ⚠ THE RIDER RIDES THE SWING, AND THIS IS WHERE IT WAS BEING DROPPED.
+       *
+       * `itemToAction` — the generic "use this item" action — has always carried `riders`. This
+       * function builds the WEAPON ATTACK, which is the only place a once-per-round on-hit rider
+       * can ever fire, and it carried the attack, the damage, the crit, the range and the charges
+       * and not the riders. So Rimecleaver's 1d6 cold reached the equipment row and never the
+       * swing.
+       *
+       * Two gates stood in front of the same feature: the editor could not WRITE a rider on a
+       * plain weapon (it sat inside the chassis panel, fixed at 0.8.40.1), and this could not
+       * CARRY one. Fixing either alone would have looked like it worked and changed nothing.
+       */
+      ...(item.riders?.length ? { riders: item.riders } : {}),
       // Information on the attack: range, then the chosen Weapon Mastery's rules text.
       details: [
         item.range ? `Range: ${item.range}` : undefined,

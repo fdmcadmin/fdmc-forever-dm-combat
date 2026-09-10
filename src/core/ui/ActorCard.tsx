@@ -2318,11 +2318,41 @@ export function ActorCard({
     }
   }, [isActiveTurn, turnSignature, riderTurn]);
 
-  /** Every once-per-turn rider this character carries, across every tab. */
+  /**
+   * Every once-per-turn rider this character carries, across every tab.
+   *
+   * ⚠ TWO SOURCES, ONE CHIP. `metadata.turnRider` is the authored action rider (Hew, Distant
+   * Strike). `metadata.riders` is the EQUIPMENT rider carried off the item — Rimecleaver's 1d6
+   * cold, the Coldsnap Bow's 1d4 — and it asks the identical question, "have you used it this
+   * turn?", so it gets the identical answer rather than a second claim UI beside it.
+   *
+   * Christopher, 2026-09-10: *"things like the rimecleaver and some of the wendigo wights cant be
+   * built correctly."* Three gates stood in front of one feature and each hid the next: the editor
+   * could not WRITE a rider on a plain weapon, `itemToAttackAction` did not CARRY one onto the
+   * swing, and nothing here READ one. Fixing any one alone would have looked like it worked.
+   *
+   * ⚠ ONLY perTurn / perRound COME HERE. A `shortRest` or `perEncounter` rider is a different
+   * question with a different reset, and quietly treating it as per-turn would hand the table a
+   * once-a-rest effect every round.
+   */
   const turnRiders = useMemo(() => {
-    return Object.values(actor.tabs).flat()
-      .filter((a): a is ActorAction => Boolean(a?.metadata?.turnRider))
+    const all = Object.values(actor.tabs).flat().filter(Boolean) as ActorAction[];
+    const authored = all
+      .filter(a => Boolean(a.metadata?.turnRider))
       .map(a => ({ action: a, rider: a.metadata!.turnRider! }));
+    const fromEquipment = all.flatMap(a =>
+      (a.metadata?.riders ?? [])
+        .filter(r => r.cadence === "perTurn" || r.cadence === "perRound")
+        .map(r => ({
+          // The claim is keyed per RIDER, not per action: a weapon may print two.
+          action: { ...a, id: `${a.id}::rider::${r.id}` } as ActorAction,
+          rider: {
+            kind: "damage" as const,
+            damage: [r.formula, r.damageType].filter(Boolean).join(" "),
+            label: r.label || a.label,
+          },
+        })));
+    return [...authored, ...fromEquipment];
   }, [actor.tabs]);
 
   function claimTurnRider(actionId: string, label: string, rider: { kind: "extraAttack" | "damage"; damage?: string; label?: string }) {

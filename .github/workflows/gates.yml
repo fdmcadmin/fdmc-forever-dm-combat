@@ -141,6 +141,10 @@ jobs:
       - name: check temporary actions and focused reactions
         run: npm run check:tempactions
 
+      # A rider on a plain weapon has to survive three hops: written, carried onto the swing, read.
+      - name: check an item rider reaches the swing
+        run: npm run check:itemriders
+
       - name: check timed bodies
         run: npm run check:timed
 
