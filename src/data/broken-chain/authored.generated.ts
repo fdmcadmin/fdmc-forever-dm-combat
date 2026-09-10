@@ -3107,15 +3107,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "mastery": "Sap",
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "frostmarrow-bite",
-        "label": "Frostmarrow",
-        "cadence": "perRound",
-        "condition": "On a hit: DC 13 Constitution save or its Speed drops by 10 ft until the end of its next turn."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-rimecleaver-versatile-thrown-handaxe-equivalent-1-no-attunement",
@@ -3131,22 +3123,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "mastery": "Graze",
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "rimecleaver-rimebite",
-        "label": "Rimebite",
-        "formula": "1d6",
-        "damageType": "Cold",
-        "cadence": "perRound"
-      },
-      {
-        "id": "rimecleaver-step",
-        "label": "Cleaving Step",
-        "cadence": "perRound",
-        "condition": "When a hit with this weapon drops a creature to 0 HP: move up to 10 ft without provoking."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-splitfrost-blade",
@@ -3162,15 +3139,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "mastery": "Vex",
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "splitfrost-split",
-        "label": "Splitfrost",
-        "cadence": "perRound",
-        "condition": "On a hit: that creature's first attack roll against you before the start of your next turn has disadvantage."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-coldsnap-bow",
@@ -3186,16 +3155,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "mastery": "Slow",
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "coldsnap-bite",
-        "label": "Coldsnap",
-        "formula": "1d4",
-        "damageType": "Cold",
-        "cadence": "perRound"
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-icebound-reliquary",
@@ -3360,16 +3320,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "lake-ice-bite",
-        "label": "Lake-Ice",
-        "formula": "1d6",
-        "damageType": "Cold",
-        "cadence": "perRound"
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-shattered-vigil",
@@ -3389,22 +3340,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "shortRest"
     },
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "shattered-vigil-bite",
-        "label": "Shattered Vigil",
-        "formula": "1d8",
-        "damageType": "Cold",
-        "cadence": "perRound"
-      },
-      {
-        "id": "shattered-vigil-topple",
-        "label": "Vigil Broken",
-        "cadence": "shortRest",
-        "condition": "On a hit: DC 14 Strength save or knocked prone. Once per short or long rest."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-hollow-fang",
@@ -3421,17 +3357,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "hollow-fang-bite",
-        "label": "Hollow Fang",
-        "formula": "1d6",
-        "damageType": "Cold",
-        "cadence": "perRound",
-        "condition": "If you are at or below half your HP maximum when this lands, you regain 1d4 HP. Not against a Construct or Undead."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-starvation-brand",
@@ -3448,17 +3374,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "starvation-brand-bite",
-        "label": "Starvation",
-        "formula": "1d6",
-        "damageType": "Cold",
-        "cadence": "perRound",
-        "condition": "Until the start of your next turn, that creature regains only half as many HP from any healing, rounding down."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-voidtempered-blade-versatile-longsword",
@@ -3478,17 +3394,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
     "attunementRequired": true,
-    "isLocked": true,
-    "riders": [
-      {
-        "id": "voidtempered-bite",
-        "label": "Voidtempered",
-        "formula": "1d8",
-        "damageType": "Cold",
-        "cadence": "perRound",
-        "condition": "Only on a turn you also cast a spell."
-      }
-    ]
+    "isLocked": true
   },
   {
     "id": "tbc-wight-iron-plate",
@@ -6419,10 +6325,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-04fa2a79-134235";
+export const AUTHORED_DIGEST = "fnv1a-15fe3049-132381";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-10T21:14:27.192Z";
+export const AUTHORED_AT = "2026-09-10T21:18:20.059Z";
 
 /**
  * Merge authored content over a bundled list by id.
