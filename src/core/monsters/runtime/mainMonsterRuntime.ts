@@ -542,8 +542,16 @@ export type MainEncounterMonsterInstance = MonsterCombatCandidate & {
    * hand. Optional, because a DM-built one-off creature belongs to no authored encounter.
    */
   encounterId?: string;
-  /** Challenge Rating — the source of this creature's proficiency bonus for saves. */
+  /** Challenge Rating — one source of this creature's proficiency bonus for saves. */
   cr?: number;
+  /**
+   * The PRINTED proficiency bonus, which `creatureProficiencyBonus` prefers over CR.
+   *
+   * ⚠ WITHOUT IT AN AUTHORED CREATURE LOSES ITS SAVES. Every Act 3 block prints this and states no
+   * CR, so an instance carrying only `cr` had nothing to derive from and fell to the +2 floor —
+   * a Claimchain Exactor whose template saves at +8 rolled +7.
+   */
+  proficiencyBonus?: number;
 };
 
 /**
@@ -851,8 +859,22 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     speed: template.stats.speed,
     sourceFlavor: "FDMC Monster Template",
     abilityScores: template.abilities,
-    // CR rides along so the card computes save proficiency at the creature's own bonus.
+    /**
+     * ⚠ BOTH HALVES OF THE PROFICIENCY ANSWER RIDE ALONG, AND ONLY ONE USED TO.
+     *
+     * The intent was already written here — "CR rides along so the card computes save proficiency
+     * at the creature's own bonus" — but `creatureProficiencyBonus` reads the PRINTED bonus first
+     * and derives from CR only when there is none. Every authored Act 3 block prints
+     * `proficiencyBonus` and states NO CR, so the instance carried an undefined CR, nothing to
+     * derive from, and the card fell back to the CR-less +2 floor.
+     *
+     * Christopher: *"saves on both the player and the monsters still roll base not the +@PROF."*
+     * The Claimchain Exactor's template resolves STR +5 with PB 3 to a save of +8; its spawned
+     * instance read +7. The card, the template and `check:saves` were three readers of one fact
+     * and the instance was the one missing the field.
+     */
     cr: template.stats.cr,
+    proficiencyBonus: template.stats.proficiencyBonus,
     actions: template.actions,
     reactions: template.reactions,
     traits: template.traits,
