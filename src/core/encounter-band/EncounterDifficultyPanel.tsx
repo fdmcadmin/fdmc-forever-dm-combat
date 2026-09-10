@@ -516,6 +516,31 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    */
   const offenceSource: "read" | "certified" = currentParty && currentParty.round1Dpr > 0 ? "read" : "certified";
 
+  /**
+   * WHAT THIS PARTY CAN ABSORB — ONE FIGURE, READ BY BOTH SURFACES.
+   *
+   * ⚠ THE BENCHMARK AND THE SIMULATION USED TO DISAGREE ABOUT IT. The difficulty rating added
+   * feat EHP and read healing; the simulation added neither, so the survivor counts, the clear
+   * round and the margin were all computed for a party with strictly LESS sustain than the row
+   * beside them claimed. That is the same "two parties on one screen" fault fixed for DPR at
+   * 0.8.36.0 — *"explain why the R1 shows 138 damage, but the party shows able to do only 94.3"* —
+   * still standing on the sustain side, and it is what makes a projected down unbelievable: the
+   * fight is run against a party the panel does not think it is looking at.
+   *
+   * ⚠ AND `fiveRoundSustain` IS STILL NOT IN IT. `currentPartyMetrics` sums per-actor max HP plus
+   * the healing the ledger reserved; `profile.sustain` is the certified EHP for this size and
+   * `partyHealing.total` is that same healing read a second way. Adding all three would count the
+   * party's hit points twice and its healing three times — the double-count `Resource Conversion`
+   * row 46 forbids ("Do not add a second free sustain pool"). It is reported beside the row
+   * instead, where it can be compared.
+   */
+  const partySustain = useMemo(
+    () => profile
+      ? profile.sustain * (classMitigation?.multiplier ?? 1) + partyFeats.partyEhp + partyHealing.total
+      : 0,
+    [profile, classMitigation, partyFeats, partyHealing],
+  );
+
   const benchmark = useMemo(() => {
     if (!profile || !resolved) return null;
     /**
@@ -538,19 +563,11 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       partySize,
       current: {
         ...dpr,
-        /**
-         * ⚠ SUSTAIN STAYS ON THE CERTIFIED FLOOR PLUS WHAT IS READ, AND `fiveRoundSustain` IS NOT
-         * ADDED TO IT. `currentPartyMetrics` sums per-actor max HP plus the healing the ledger
-         * reserved for sustain; `profile.sustain` is the certified EHP for this size and
-         * `partyHealing.total` is the same healing read a second way. Adding all three would
-         * count this party's hit points twice and its healing three times — the exact
-         * double-count `Resource Conversion` row 46 forbids ("Do not add a second free sustain
-         * pool"). The read figure is reported beside the row instead, where it can be compared.
-         */
-        sustain: profile.sustain * (classMitigation?.multiplier ?? 1) + partyFeats.partyEhp + partyHealing.total,
+        // The one figure — see `partySustain`. The simulation below reads the same one.
+        sustain: partySustain,
       },
     });
-  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, partyHealing, currentParty, offenceSource, classMitigation]);
+  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, currentParty, offenceSource, partySustain]);
 
   const result = useMemo<EncounterResult | null>(() => {
     if (roster.roster.length === 0 || !profile) return null;
@@ -559,14 +576,20 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         party: {
           size: profile.size,
           /**
-           * ⚠ A RESISTANCE IS EFFECTIVE HP, AND IT BELONGS HERE RATHER THAN IN THE CLOCK.
+           * ⚠ THE SAME FIGURE THE ROW ABOVE IS RATED FROM — see `partySustain`.
            *
-           * The certified sustain line is the 4,096-party field, whose parties are abstract and
-           * carry no typed responses — so this multiplier adds something the baseline genuinely
-           * does not have, the same way feat EHP does. It is 1.0 whenever nothing is stated, so a
-           * party that has entered no responses is unchanged.
+           * This read `profile.sustain * classMitigation` alone: the resistance multiplier but
+           * NOT the feat EHP and NOT the healing the panel had already read off the sheets. So
+           * the fight was simulated against a smaller party than the difficulty row described,
+           * and every survivor count and clear round came out of that smaller one.
+           *
+           * A resistance is effective HP and belongs here rather than in the clock — the
+           * certified line is the 4,096-party field, whose parties are abstract and carry no
+           * typed responses, so the multiplier adds something the baseline genuinely lacks, the
+           * same way feat EHP does. It is 1.0 when nothing is stated. All of that is still true;
+           * it is simply true in one place now.
            */
-          sustain: profile.sustain * (classMitigation?.multiplier ?? 1),
+          sustain: partySustain,
           /**
            * ⚠ THE SIMULATION MUST SWING THE SAME PARTY THE PANEL SAYS IT READ.
            *
@@ -613,7 +636,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
      */
     // ⚠ `classMitigation` REACHES NO ROSTER FIGURE EITHER, so it must be named or a party that
     // states a resistance would not re-price the fight until something else moved.
-  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, classMitigation, currentParty, offenceSource, actorDefence, saves.dex]);
+  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, classMitigation, currentParty, offenceSource, actorDefence, saves.dex, partySustain]);
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party

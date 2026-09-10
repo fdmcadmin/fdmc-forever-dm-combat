@@ -18,6 +18,9 @@
  */
 
 import { midpointFor, partyBenchmark } from "../src/core/encounter-band/partyBenchmark";
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { PARTY_CURVE_V2 } from "../src/core/encounter-band/partyCurveV2";
 
 let failures = 0;
@@ -99,6 +102,41 @@ console.log("\nAnd a real difference still shows");
   const r1 = b.rows.find((r: any) => r.key === "round1");
   ok("a party genuinely 20 DPR over its line reads +20", near(r1.delta, 20, 0.01),
     `+${r1.delta.toFixed(2)}`);
+}
+
+/* ── ONE SUSTAIN, TWO READERS ─────────────────────────────────────────────────────────────── */
+console.log("\nThe rated party and the simulated party are the same party");
+{
+  /**
+   * ⚠ THEY WERE NOT, AND IT IS WHY A PROJECTED DOWN READ AS UNBELIEVABLE.
+   *
+   * The difficulty row rated a party at `certified x resistance + feat EHP + read healing`, while
+   * the simulation beside it ran on `certified x resistance` alone. Every survivor count, clear
+   * round and margin therefore came out of a party with strictly LESS sustain than the row above
+   * them described — feats and a healer's whole output silently absent from the fight.
+   *
+   * This is the sustain half of the fault fixed for DPR at 0.8.36.0: *"explain why the R1 shows
+   * 138 damage, but the party shows able to do only 94.3."* Two parties, one screen.
+   *
+   * ⚠ THE ASSERTION IS ON THE SOURCE because the panel is a component and the defect is which
+   * expression each call site reads. A value test cannot see two call sites agreeing by accident.
+   */
+  const panel = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "..",
+    "src/core/encounter-band/EncounterDifficultyPanel.tsx"), "utf8");
+  const code = panel.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+
+  ok("the panel derives ONE party sustain", /const partySustain = useMemo/.test(code));
+  const readers = code.match(/sustain: partySustain\b/g) ?? [];
+  ok("...and both the benchmark and the simulation read it", readers.length === 2,
+    `${readers.length} reader(s)`);
+
+  /**
+   * ⚠ AND NEITHER REBUILDS IT. `profile.sustain * …` beside a `sustain:` key is the shape that
+   * diverged; the two copies drifted the moment one gained a term the other did not.
+   */
+  const rebuilt = /sustain:\s*profile\.sustain\s*\*/.exec(code);
+  ok("neither call site recomputes the expression", rebuilt === null,
+    rebuilt ? `found ${JSON.stringify(rebuilt[0])}` : "");
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
