@@ -744,7 +744,13 @@ const MOVE_TARGETS: Array<{ id: TabId; label: string }> = [
   { id: "features", label: "Class Actions" },
   { id: "checks", label: "Checks" },
   { id: "resources", label: "Resources" },
-  { id: "outOfCombat", label: "Out of Combat" },
+  /**
+   * ⚠ AND OUT OF COMBAT IS NOT OFFERED EITHER, FOR THE SAME REASON AS FEATS — ONLY WORSE.
+   *
+   * The card stopped rendering that tab at P-SHEET, so every row moved there since has been
+   * invisible on the sheet and present in the export. Offering it was offering a hole. The tab
+   * still READS (it folds into Features), so nothing already filed is stranded.
+   */
 ];
 
 export function ActorEditorActionTab({ tabId, actions, onChange, resourceLabels, classRows, onMoveToTab }: ActorEditorActionTabProps) {

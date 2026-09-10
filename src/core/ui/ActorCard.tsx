@@ -583,10 +583,22 @@ const orderedTabs: TabId[] = [
  * only about the card, which is a play surface: the data does not move, so nothing is
  * stranded, and an actor authored either way reads the same.
  */
+/**
+ * ⚠ AND `outOfCombat` IS THE SAME HOLE, FOUND WHILE ANSWERING THE NOTES ONE.
+ *
+ * P-SHEET dropped it from `orderedTabs` because Short and Long Rest became buttons — but the id
+ * stayed in `TabId`, the editor still OFFERS it as a move destination, and the export still
+ * writes it. So a row filed there since is carried in the JSON with no surface anywhere that
+ * shows it: Christopher, 2026-09-10, *"why is stuff like this hiding in a json for export, this
+ * leads to reading these wrong."*
+ *
+ * Folding beats hiding, and it is the shape feats already uses. If what is down there IS a
+ * retired rest row, surfacing it is how it finally gets deleted.
+ */
 function tabContents(actor: Actor, tabId: TabId): ActorAction[] {
   const own = actor.tabs[tabId] ?? [];
   if (tabId !== "features") return own;
-  return [...own, ...(actor.tabs.feats ?? [])];
+  return [...own, ...(actor.tabs.feats ?? []), ...(actor.tabs.outOfCombat ?? [])];
 }
 
 function hasStatusTrackers(status: ActorStatusTrackerState) {
@@ -5617,6 +5629,16 @@ export function ActorCard({
         <ActorNotesPanel
           actorName={actor.name}
           notes={actorNotes}
+          /**
+           * The tab's OWN rows — `tabContents` rather than `actor.tabs.notes` so this reads like
+           * every other tab. Nothing else on the card renders them, and the export carries them,
+           * which is how two of them hid on every party sheet for months.
+           */
+          sheetNotes={tabContents(actor, "notes").map((note) => ({
+            id: note.id,
+            label: note.label,
+            details: note.metadata?.details ?? note.description,
+          }))}
           onAddNote={onAddActorNote}
           onDeleteNote={onDeleteActorNote}
         />

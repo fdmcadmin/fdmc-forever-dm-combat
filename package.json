@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.40.7",
+  "version": "0.8.40.8",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -64,6 +64,7 @@
     "check:reshape": "npx tsx scripts/check-reshape.ts",
     "check:srd": "npx tsx scripts/check-srd.ts",
     "check:notes": "npx tsx scripts/check-notes.ts",
+    "check:hiddentabs": "npx tsx scripts/check-hidden-tabs.ts",
     "check:wiring": "npx tsx scripts/check-wiring.ts",
     "import:srd:audit": "node scripts/import-srd-audit.mjs",
     "gen:feats": "node scripts/gen-feats.mjs",

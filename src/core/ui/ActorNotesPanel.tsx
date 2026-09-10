@@ -7,14 +7,39 @@ function noteModeLabel(mode: ActorNoteVisibility) {
   return mode === "dm" ? "DM Note" : "Player Note";
 }
 
+/**
+ * A note that lives ON THE CHARACTER — `actor.tabs.notes` — as opposed to the session notes
+ * this panel was built for.
+ */
+export type SheetNote = { id: string; label: string; details?: string };
+
 export function ActorNotesPanel({
   actorName,
   notes,
+  sheetNotes = [],
   onAddNote,
   onDeleteNote,
 }: {
   actorName: string;
   notes: ActorNote[];
+  /**
+   * ⚠ TWO THINGS WERE CALLED "NOTES" AND ONLY ONE OF THEM HAD A SCREEN.
+   *
+   * Christopher, 2026-09-10: *"why are there note being exported with my json when that character
+   * has no notes"*, then *"every one of my actors have them and i have not put in any of them and
+   * they dont show up in any section or any place to remove them."*
+   *
+   * `actor.tabs.notes` is a real tab in `TabId`, is written by the character editor's Notes step,
+   * and rides in every export because export writes `actor.tabs` whole. The CARD's Notes tab
+   * rendered `getActorNotes(actor)` instead — the session note store, a different list with a
+   * different shape — so anything filed on the sheet had no reader on the play surface at all.
+   * Reference rows imported with the original sheets (an AC breakdown, a proficiency list) have
+   * been riding along invisibly ever since, surfacing only in the JSON where they read as fact.
+   *
+   * They are shown here READ-ONLY: the card has no path that writes `actor.tabs`, and inventing
+   * one to delete a note would be a second writer for a thing the editor already owns.
+   */
+  sheetNotes?: readonly SheetNote[];
   onAddNote: (text: string, visibility?: ActorNoteVisibility) => ActorNote | null;
   onDeleteNote: (noteId: string) => void;
 }) {
@@ -93,6 +118,27 @@ export function ActorNotesPanel({
             <button className="secondary-button compact quiet-button" type="button" onClick={closeEditor}>
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {sheetNotes.length > 0 && (
+        <div className="sheet-notes-section">
+          <div className="notes-section-heading-row">
+            <h3>On the Sheet</h3>
+            <span>{sheetNotes.length}</span>
+          </div>
+          <p className="placeholder-note">
+            Saved on {actorName} and carried in every export. Edit or delete them in the character
+            editor&rsquo;s Notes step.
+          </p>
+          <div className="notes-stack">
+            {sheetNotes.map((note) => (
+              <article className="saved-note-card sheet-note-card" key={note.id}>
+                <strong>{note.label}</strong>
+                {note.details && <p>{note.details}</p>}
+              </article>
+            ))}
           </div>
         </div>
       )}

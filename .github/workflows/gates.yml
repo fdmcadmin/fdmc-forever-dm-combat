@@ -149,6 +149,12 @@ jobs:
       - name: check nothing is stranded on the retired feats tab
         run: npm run check:featstab
 
+      # The general form of the line above: `actor.tabs` is exported whole, so every id in TabId
+      # reaches the JSON — and two of them had no reader on the card, which is how an AC breakdown
+      # and a proficiency list rode along on every party sheet unseen.
+      - name: check nothing the export carries is hidden from the sheet
+        run: npm run check:hiddentabs
+
       - name: check timed bodies
         run: npm run check:timed
 
