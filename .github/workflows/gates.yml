@@ -132,6 +132,10 @@ jobs:
       - name: check an action can arm a repeatable attack
         run: npm run check:armedattack
 
+      # A 1/Long Rest spell still upcasts - the base level is free, above it spends a slot.
+      - name: check a free cast can be upcast
+        run: npm run check:freecast
+
       - name: check timed bodies
         run: npm run check:timed
 

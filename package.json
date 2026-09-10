@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.39.0",
+  "version": "0.8.39.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -51,6 +51,7 @@
     "check:hppatch": "npx tsx scripts/check-monster-hp-patch.ts",
     "check:resourcecost": "npx tsx scripts/check-resource-cost.ts",
     "check:armedattack": "npx tsx scripts/check-armed-attack.ts",
+    "check:freecast": "npx tsx scripts/check-freecast-upcast.ts",
     "check:timed": "npx tsx scripts/check-timed-bodies.ts",
     "import:srd": "node scripts/import-srd.mjs",
     "check:engine": "npx tsx scripts/check-engine.ts",

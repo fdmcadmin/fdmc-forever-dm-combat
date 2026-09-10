@@ -3496,9 +3496,28 @@ export function ActorCard({
       return [];
     }
 
-    // Pact slots cast at one fixed level, and a free cast spends no slot at all.
+    /**
+     * ⚠ A FREE CAST STILL UPCASTS, AND THE SPEND PATH ALREADY KNEW THAT.
+     *
+     * Christopher, 2026-09-10: *"why are 1/LR spells not showing the upcast boxes."* Because this
+     * returned nothing for them, on the reasoning that "a free cast spends no slot at all" — true
+     * of the FREE one and false of every level above it.
+     *
+     * `consumeActionResources` has been built for exactly this since it was written. Branch 1:
+     *
+     *     const upcast = castLevel !== undefined && authored > 0 && castLevel > authored;
+     *     if (!upcast) { …spend the named pool… }
+     *     // Upcast, or the pool is spent: branch 2 takes it from here and spends the slot.
+     *
+     * So the base level comes out of the 1/Long Rest pool and anything above it spends a real
+     * slot — and the picker was the only thing standing between the player and that behaviour.
+     * Two readers of one fact, and this was the one that was wrong.
+     *
+     * ⚠ PACT STILL RETURNS NOTHING, and for a different reason that has not changed: a pact slot
+     * casts at ONE fixed level, so there is no range to choose from.
+     */
     const mode = action.metadata?.spellSlotMode;
-    if (mode === "freeCast" || mode === "pact") {
+    if (mode === "pact") {
       return [];
     }
 
@@ -3511,6 +3530,20 @@ export function ActorCard({
     const levels = Array.from({ length: top - base + 1 }, (_, i) => base + i);
 
     return levels.map(level => {
+      /**
+       * ⚠ THE BASE LEVEL OF A FREE CAST IS NOT A SLOT, so it must not report one. The spend path
+       * takes it from the action's own named pool (`consumeNamedResource(actorId, action.label)`)
+       * and only falls through to a slot ABOVE that level. Showing the L1 slot count against the
+       * free cast would tell a player they have four when they have one.
+       */
+      if (mode === "freeCast" && level === base) {
+        const pool = (actor.tabs.resources ?? []).find(r => r.label.trim().toLowerCase() === action.label.trim().toLowerCase());
+        if (!pool) return { level, remaining: null, max: null };
+        const parsed = Number.parseInt(pool.metadata?.additive ?? "", 10);
+        const poolMax = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+        return { level, remaining: resourceCounters?.[pool.id] ?? poolMax, max: poolMax };
+      }
+
       const res = slotResourceForLevel(level);
       if (!res) {
         return { level, remaining: null, max: null };
