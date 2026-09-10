@@ -82,8 +82,14 @@ console.log("\n3. the card reads it, through the chip it already had");
   const card = codeOf("src/core/ui/ActorCard.tsx");
   ok("turnRiders reads equipment riders as well as authored ones",
     /a\.metadata\?\.riders \?\? \[\]/.test(card));
+  /**
+   * ⚠ KEYED ON THE RIDER, NOT THE ACTION — for two reasons at once. A weapon may print two riders,
+   * so an action-level key would collapse them into one chip; and one item reaches the sheet as
+   * two actions, so an action-level key would print each rider twice. The rider's own id answers
+   * both, which is why the key carries no action id at all.
+   */
   ok("...keyed per RIDER, because a weapon may print two",
-    /::rider::/.test(card));
+    /id: `rider::\$\{r\.id \|\| r\.label\}`/.test(card));
   /**
    * ⚠ ONLY THE PER-TURN CADENCES. A shortRest or perEncounter rider has a different reset, and
    * treating it as per-turn would hand the table a once-a-rest effect every round.
@@ -116,6 +122,43 @@ console.log("\n4. and it is claimed where the other toggles are");
    */
   ok("...and the panel stays open for a character whose ONLY toggle is a rider",
     /buffs\.length === 0 && !showTwf && turnRiders\.length === 0/.test(card));
+}
+
+console.log("\n5. one item reaches the sheet as TWO actions — and claims ONE chip");
+{
+  /**
+   * ⚠ AN EQUIPPED WEAPON IS BOTH ROWS. `itemToAction` builds the equipment entry and
+   * `itemToAttackAction` builds the swing; both carry the item's riders, which is correct — the
+   * rider belongs to the ITEM. Mapping over every action without deduping printed each one twice:
+   * *"now it is on there twice."*
+   */
+  const rowRiders = ((itemToAction(rimecleaver, false) as never as { metadata?: { riders?: Array<{ id: string }> } }).metadata?.riders ?? []);
+  const swingRiders = ((itemToAttackAction(rimecleaver, false) as never as { metadata?: { riders?: Array<{ id: string }> } }).metadata?.riders ?? []);
+  ok("both actions carry the rider", rowRiders.length === 1 && swingRiders.length === 1);
+  ok("...and they are the SAME rider by id, so it can be deduped",
+    rowRiders[0]?.id === swingRiders[0]?.id, `${rowRiders[0]?.id} vs ${swingRiders[0]?.id}`);
+
+  const card = codeOf("src/core/ui/ActorCard.tsx");
+  ok("the card dedupes riders before claiming them", /const seen = new Set<string>\(\)/.test(card));
+  ok("...keyed on the rider's own id", /const key = r\.id \|\| /.test(card));
+}
+
+console.log("\n6. editing the sheet's copy does not strip the item");
+{
+  /**
+   * ⚠ OPENING THE EDITOR USED TO DELETE THEM. `actionToItem` reads an attached action back into an
+   * item, and saving writes that item down — so a field missing THERE is stripped from the sheet
+   * by the act of looking at it. Christopher: *"it deletes it if i open up the character editor."*
+   *
+   * Asserted on the source because the function is component-local. The list has to stay complete;
+   * `charges` and `convergence` are already here for the same reason, and each was a bug first.
+   */
+  const equip = codeOf("src/core/ui/EquipmentBagEditor.tsx");
+  const at = equip.indexOf("function actionToItem");
+  const end = equip.indexOf("\n  }", at);
+  const body = equip.slice(at, end);
+  ok("actionToItem carries riders home", /riders: m\.riders/.test(body));
+  ok("...and the chassis state with them", /chassis: m\.chassis/.test(body) && /pbToDamage: m\.pbToDamage/.test(body));
 }
 
 console.log(failures ? `\nFAILED (${failures})` : "\nALL PASS");

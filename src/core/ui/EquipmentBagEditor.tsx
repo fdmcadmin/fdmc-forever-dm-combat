@@ -1738,6 +1738,22 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       // so narrow them back on the way home. Same objects, round-tripped.
       effect: m.effect as EquipmentEffect | undefined,
       statEffects: m.statEffects as StatEffect[] | undefined,
+      /**
+       * ⚠ THE RIDERS COME HOME TOO, AND NOT DOING SO DELETED THEM.
+       *
+       * Christopher, 2026-09-10: *"it deletes it if i open up the character editor."* Opening the
+       * editor reads the attached action back into an item with this function, and saving writes
+       * that item down — so anything missing HERE is silently stripped from the sheet by the act
+       * of looking at it. Riders reached the card and did not survive being edited.
+       *
+       * The same round-trip note two lines up already says why this list has to be complete: a
+       * player editing their own copy must not lose what the item is.
+       */
+      riders: m.riders as ItemRider[] | undefined,
+      chassis: m.chassis as EquipmentItem["chassis"],
+      chassisBonus: m.chassisBonus,
+      pbToDamage: m.pbToDamage,
+      grip: m.grip as EquipmentItem["grip"],
       category: action.category,
       tags: action.tags,
     });

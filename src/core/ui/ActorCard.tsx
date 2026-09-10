@@ -2340,12 +2340,30 @@ export function ActorCard({
     const authored = all
       .filter(a => Boolean(a.metadata?.turnRider))
       .map(a => ({ action: a, rider: a.metadata!.turnRider! }));
+    /**
+     * ⚠ ONE ITEM REACHES THE SHEET AS TWO ACTIONS, AND THAT DOUBLED EVERY CHIP.
+     *
+     * An equipped weapon becomes BOTH the equipment row (`itemToAction`) and the swing
+     * (`itemToAttackAction`), and both now carry the item's riders. Mapping over every action
+     * therefore produced "Rimebite · Cleaving Step · Rimebite · Cleaving Step" — Christopher,
+     * 2026-09-10: *"now it is on there twice."*
+     *
+     * A rider belongs to the ITEM, not to whichever action happens to be carrying it, so the key
+     * is the rider's own id. First one wins; the rest are the same rider seen again.
+     */
+    const seen = new Set<string>();
     const fromEquipment = all.flatMap(a =>
       (a.metadata?.riders ?? [])
         .filter(r => r.cadence === "perTurn" || r.cadence === "perRound")
+        .filter(r => {
+          const key = r.id || `${a.label}:${r.label}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
         .map(r => ({
           // The claim is keyed per RIDER, not per action: a weapon may print two.
-          action: { ...a, id: `${a.id}::rider::${r.id}` } as ActorAction,
+          action: { ...a, id: `rider::${r.id || r.label}` } as ActorAction,
           rider: {
             kind: "damage" as const,
             damage: [r.formula, r.damageType].filter(Boolean).join(" "),
