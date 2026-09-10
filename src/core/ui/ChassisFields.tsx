@@ -266,12 +266,15 @@ export function ChassisFields({ draft, set, libraryItems = [] }: Props) {
                 <div style={{ display: "flex", gap: 5 }}>
                   <select value={r.cadence} onChange={e => patchRider({ cadence: e.target.value as ItemRider["cadence"] })}
                     style={{ flex: 1, padding: "3px 6px", fontSize: 11, background: "#0d0d14", border: "1px solid #333", borderRadius: 3, color: "#ddd" }}>
-                    <option value="perTurn">Once per turn</option>
-                    <option value="perRound">Once per round</option>
-                    <option value="perEncounter">Once per encounter</option>
-                    <option value="shortRest">Short rest</option>
-                    <option value="longRest">Long rest</option>
-                    <option value="atWill">At will</option>
+                    {/* The label says WHEN IT COMES BACK, not just how often. "Once per round"
+                        alone left an author guessing whether it refreshed on their turn or on the
+                        round rolling over, which is the whole difference between the two. */}
+                    <option value="perTurn">Once per turn — back when your turn starts</option>
+                    <option value="perRound">Once per round — back when the round rolls over</option>
+                    <option value="perEncounter">Once per encounter — back at End Combat</option>
+                    <option value="shortRest">Once per short rest</option>
+                    <option value="longRest">Once per long rest</option>
+                    <option value="atWill">At will — no limit</option>
                   </select>
                   <input type="text" value={r.damageType ?? ""} placeholder="damage type (blank = weapon's)"
                     onChange={e => patchRider({ damageType: e.target.value || undefined })}

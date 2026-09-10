@@ -3231,9 +3231,15 @@ export function ActorCard({
   function renderWeaponBuffPanel() {
     const buffs = getWeaponBuffs();
     const showTwf = hasLightWeapon();
-    // Render for the TWF toggle even with no fighting styles — a Fighter dual-wielding
-    // without a style still needs it, and gating on `buffs` alone hid it from them.
-    if (buffs.length === 0 && !showTwf) return null;
+    /**
+     * Render for the TWF toggle even with no fighting styles — a Fighter dual-wielding
+     * without a style still needs it, and gating on `buffs` alone hid it from them.
+     *
+     * ⚠ AND FOR RIDERS, FOR THE SAME REASON ONE STEP ON. A Barbarian with no fighting style and no
+     * light weapon carrying a Rimecleaver has exactly one toggle to show, and this guard would
+     * have returned null and eaten it — the identical bug the TWF clause above already fixed once.
+     */
+    if (buffs.length === 0 && !showTwf && turnRiders.length === 0) return null;
     return (
       <section className="armed-effects-panel" aria-label="Fighting styles and weapon buffs">
         <div className="armed-effects-header">
@@ -3241,6 +3247,48 @@ export function ActorCard({
           <span>toggle on while active</span>
         </div>
         <div className="armed-effect-chip-list">
+          {/**
+            * ONCE-PER-ROUND RIDERS — here, with the other toggles, because that is what they are.
+            *
+            * ⚠ THEY USED TO RENDER BESIDE THE RESOURCE POOLS, on the reasoning that a spent rider
+            * is "something you have or have spent". True, and it put them nowhere near the thing
+            * they behave like. Christopher, 2026-09-10: *"they are not above the thing were GWM and
+            * TWF"* — he went looking among the toggles, which is exactly where a toggle belongs.
+            *
+            * Great Weapon Master, Two-Weapon Fighting and Rimecleaver's Rimebite are the same
+            * gesture: a thing you flip on when it applies. One strip, one place to look.
+            */}
+        {turnRiders.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 0" }}>
+            {turnRiders.map(({ action, rider }) => {
+              const spent = ridersUsed.has(action.id);
+              const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage ?? "rider");
+              return (
+                <button key={action.id} type="button" disabled={spent}
+                  onClick={() => claimTurnRider(action.id, rider.label?.trim() || action.label, rider)}
+                  title={spent
+                    ? `${action.label} — already used this turn. Comes back when your turn starts.`
+                    : `${action.label} — ${rider.kind === "extraAttack"
+                        ? "claim one extra attack, made with the weapon already in hand"
+                        : `claim ${rider.damage ?? "the rider"} on this hit`}. Once per turn.`}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    padding: "1px 8px", borderRadius: 10, fontSize: 10,
+                    cursor: spent ? "default" : "pointer",
+                    background: spent ? "transparent" : "rgba(224,123,57,0.16)",
+                    border: `1px solid ${spent ? "#2a2a3e" : "rgba(224,123,57,0.5)"}`,
+                    color: spent ? "#555" : "#e07b39",
+                  }}>
+                  <strong style={{ fontWeight: 700 }}>{spent ? "○" : "◆"}</strong>
+                  {/* A blank rider label inherits the item name — the Gifts leave it blank on
+                      purpose, because the effect is named by the weapon it rides. */}
+                  {rider.label?.trim() || action.label}
+                  <span style={{ opacity: 0.75 }}>{what}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
           {showTwf && (
             <button
               type="button"
@@ -5462,40 +5510,6 @@ export function ActorCard({
             could disagree with the sheet, and a rest refills the pills because it refills
             the pools. A spent pip goes hollow rather than vanishing, so the size of the
             pool stays readable at zero. */}
-        {/* Once-per-turn riders. Beside the pools because they are the same kind of thing —
-            something you have or have spent — and they must be readable from any tab, since
-            the attack they modify is on Main and the feat that grants them is not. */}
-        {turnRiders.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 0" }}>
-            {turnRiders.map(({ action, rider }) => {
-              const spent = ridersUsed.has(action.id);
-              const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage ?? "rider");
-              return (
-                <button key={action.id} type="button" disabled={spent}
-                  onClick={() => claimTurnRider(action.id, rider.label?.trim() || action.label, rider)}
-                  title={spent
-                    ? `${action.label} — already used this turn. Comes back when your turn starts.`
-                    : `${action.label} — ${rider.kind === "extraAttack"
-                        ? "claim one extra attack, made with the weapon already in hand"
-                        : `claim ${rider.damage ?? "the rider"} on this hit`}. Once per turn.`}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "1px 8px", borderRadius: 10, fontSize: 10,
-                    cursor: spent ? "default" : "pointer",
-                    background: spent ? "transparent" : "rgba(224,123,57,0.16)",
-                    border: `1px solid ${spent ? "#2a2a3e" : "rgba(224,123,57,0.5)"}`,
-                    color: spent ? "#555" : "#e07b39",
-                  }}>
-                  <strong style={{ fontWeight: 700 }}>{spent ? "○" : "◆"}</strong>
-                  {/* A blank rider label inherits the item name — the Gifts leave it blank on
-                      purpose, because the effect is named by the weapon it rides. */}
-                  {rider.label?.trim() || action.label}
-                  <span style={{ opacity: 0.75 }}>{what}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {slotPills.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 2px" }}>

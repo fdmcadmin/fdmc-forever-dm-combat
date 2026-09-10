@@ -92,5 +92,31 @@ console.log("\n3. the card reads it, through the chip it already had");
     /r\.cadence === "perTurn" \|\| r\.cadence === "perRound"/.test(card));
 }
 
+console.log("\n4. and it is claimed where the other toggles are");
+{
+  const card = codeOf("src/core/ui/ActorCard.tsx");
+  /**
+   * ⚠ PLACEMENT IS PART OF THE FEATURE. The chips first rendered beside the RESOURCE POOLS, on the
+   * reasoning that a spent rider is "something you have or have spent". Christopher went looking
+   * among the toggles and did not find them: *"they are not above the thing were GWM and TWF."*
+   * Great Weapon Master, Two-Weapon Fighting and Rimebite are the same gesture — a thing you flip
+   * on when it applies — so they belong in one strip.
+   */
+  const panelAt = card.indexOf("function renderWeaponBuffPanel");
+  const chipsAt = card.indexOf("turnRiders.map", panelAt);
+  const nextFn = card.indexOf("function renderTemporaryActionsPanel", panelAt);
+  ok("the rider chips render inside the Fighting Styles & Buffs panel",
+    panelAt > 0 && chipsAt > panelAt && chipsAt < nextFn,
+    `panel@${panelAt} chips@${chipsAt} next@${nextFn}`);
+
+  /**
+   * ⚠ AND THE PANEL MUST NOT BAIL BEFORE SHOWING THEM. It returns null with no fighting style and
+   * no light weapon — which describes a Barbarian holding a Rimecleaver, whose only toggle IS the
+   * rider. The TWF clause fixed this same hole once already.
+   */
+  ok("...and the panel stays open for a character whose ONLY toggle is a rider",
+    /buffs\.length === 0 && !showTwf && turnRiders\.length === 0/.test(card));
+}
+
 console.log(failures ? `\nFAILED (${failures})` : "\nALL PASS");
 process.exit(failures ? 1 : 0);
