@@ -155,11 +155,12 @@ jobs:
       - name: check nothing the export carries is hidden from the sheet
         run: npm run check:hiddentabs
 
-      # And the half that matters more: the imported reference prose comes OFF, in bulk, and only
-      # what can be named by id or by shape — an authored note and an authored tracker note are in
-      # the fixture precisely so an over-broad pattern fails here rather than on a party sheet.
-      - name: check the imported reference notes are stripped, and only those
-        run: npm run check:refnotes
+      # And the answer to what was hiding: the combat summary is DERIVED — saves, PB, initiative,
+      # the AC breakdown, per-class spell attack and save DC — and no migration deletes the typed
+      # copy. 0.8.40.9 shipped exactly such a migration against a rule recorded in two commits and
+      # no gate; this is the gate.
+      - name: check the combat summary is derived and the typed copy survives
+        run: npm run check:sheetsummary
 
       - name: check timed bodies
         run: npm run check:timed

@@ -55,6 +55,7 @@ import { CommittedRollPanel, type ReadiedRollCandidate } from "./CommittedRollPa
 import { getRerollSources } from "../state/rerollSources";
 import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
+import { deriveSheetSummary, formatSheetSummary } from "../rules/sheetSummary";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
@@ -5629,6 +5630,17 @@ export function ActorCard({
         <ActorNotesPanel
           actorName={actor.name}
           notes={actorNotes}
+          /**
+           * ⚠ THE GENERATED HALF OF WHAT THE IMPORTED "COMBAT NOTES" ROW WAS TYPED TO SAY.
+           *
+           * Saves, PB, initiative, the AC breakdown WITH the items that made it, and the per-class
+           * spell attack and save DC — all off `classes[]` and the ability scores, the same source
+           * the profile step's casting lines already read. Derived on render and stored nowhere:
+           * a written copy stops matching the first time the character levels.
+           */
+          summaryLines={formatSheetSummary(
+            deriveSheetSummary(actor, deriveActorStats(actor, undefined, status)),
+          )}
           /**
            * The tab's OWN rows — `tabContents` rather than `actor.tabs.notes` so this reads like
            * every other tab. Nothing else on the card renders them, and the export carries them,

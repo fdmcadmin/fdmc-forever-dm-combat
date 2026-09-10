@@ -952,6 +952,15 @@ button {
  * inherit the two-column grid that reserves a slot for one, or the label and the body land
  * side by side.
  */
+/* Derived, so it reads as a readout rather than as something anyone typed. */
+.sheet-summary-line {
+  margin: 0;
+  line-height: 1.45;
+  color: #7be08a;
+  border-left: 2px solid rgba(123, 224, 138, 0.35);
+  padding-left: 9px;
+}
+
 .sheet-note-card {
   grid-template-columns: 1fr;
   gap: 5px;
