@@ -124,6 +124,10 @@ jobs:
       - name: check a creature HP patch survives the trip
         run: npm run check:hppatch
 
+      # An action spends what it COSTS, not one. The editor asked which pool and never how many.
+      - name: check an action spends what it costs
+        run: npm run check:resourcecost
+
       - name: check timed bodies
         run: npm run check:timed
 

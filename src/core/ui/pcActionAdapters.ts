@@ -151,6 +151,14 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
       range: normalized.range,
       cost: normalized.actionCost,
       slotCost: normalized.slotCost,
+      /**
+       * ⚠ WHICH POOL WAS CARRIED AND HOW MANY WAS NOT. `metadata.resourceCost` is honoured by the
+       * spend path (`consumeNamedResource(..., resourceCost ?? 1)`) and by the checker, and this
+       * adapter is the last hop out of the editor — so an authored price died here and every
+       * action spent exactly one. Christopher: *"quicken spell consume 2 point vs the only 1 i
+       * can set as the spender."* Quicken is 2 Sorcery Points; Purify Poison is 5.
+       */
+      resourceCost: normalized.resourceCost,
       details: normalized.description,
       concentration: normalized.consumesSpellSlot ? "yes" : undefined,
       withModifier: normalized.checkAbility,

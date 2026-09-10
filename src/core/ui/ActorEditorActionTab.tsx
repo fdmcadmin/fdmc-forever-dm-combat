@@ -125,6 +125,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     critDamage: action.metadata?.crit,
     range: action.metadata?.range,
     slotCost: action.metadata?.slotCost,
+    resourceCost: action.metadata?.resourceCost,
     description: action.description ?? action.metadata?.details,
     source: action.category,
     visibility: action.logMode === "silent" ? "hidden" : "player",
@@ -451,15 +452,42 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
       {/* Spends resource — tag this action to a pool so using it deducts a charge
           (e.g. Vow of Enmity -> Channel Divinity). Spells use the slot level instead. */}
       {draft.tab !== "spell" && resourceLabels.length > 0 && (
-        <label style={{ fontSize: 12 }}>
-          Spends resource <span style={{ color: "#555", fontSize: 10 }}>(deducts one use when this action is used)</span>
-          <select value={draft.slotCost ?? ""} onChange={e => set("slotCost", e.target.value || undefined)}
-            style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
-            <option value="">— none —</option>
-            {draft.slotCost && !resourceLabels.includes(draft.slotCost) && <option value={draft.slotCost}>{draft.slotCost} (current)</option>}
-            {resourceLabels.map(label => <option key={label} value={label}>{label}</option>)}
-          </select>
-        </label>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <label style={{ fontSize: 12, flex: 1 }}>
+            Spends resource <span style={{ color: "#555", fontSize: 10 }}>(deducted when this action is used)</span>
+            <select value={draft.slotCost ?? ""} onChange={e => set("slotCost", e.target.value || undefined)}
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+              <option value="">— none —</option>
+              {draft.slotCost && !resourceLabels.includes(draft.slotCost) && <option value={draft.slotCost}>{draft.slotCost} (current)</option>}
+              {resourceLabels.map(label => <option key={label} value={label}>{label}</option>)}
+            </select>
+          </label>
+          {/**
+            * ⚠ HOW MANY, WHICH THE EDITOR NEVER ASKED. `metadata.resourceCost` has been honoured by
+            * the spend path since Lay on Hands needed it — `consumeNamedResource(..., resourceCost ?? 1)`
+            * — and read by the checker's `actorAsCreature`. Nothing in the app ever WROTE it, so
+            * every action spent exactly one no matter what it costs.
+            *
+            * Christopher: *"meta magic: quicken spell consume 2 point vs the only 1 i can set as
+            * the spender."* Quicken is 2 Sorcery Points, Lay on Hands' Purify Poison is 5, and
+            * both were spending 1. The pool was authorable; the price was not.
+            */}
+          {draft.slotCost && (
+            <label style={{ fontSize: 12, width: 92 }}>
+              How many
+              <input
+                type="number" min={1} step={1}
+                value={draft.resourceCost ?? 1}
+                onChange={e => {
+                  const n = Number.parseInt(e.target.value, 10);
+                  // 1 is the default, so it is stored as "unset" rather than written out.
+                  set("resourceCost", Number.isFinite(n) && n > 1 ? n : undefined);
+                }}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
+              />
+            </label>
+          )}
+        </div>
       )}
 
       {/* ONCE-PER-TURN RIDER. Arms a chip the player claims; refreshed when their turn starts.

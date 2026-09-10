@@ -45,6 +45,11 @@ export type PcActionDraft = {
   reach?: string;
   resourceName?: string;
   slotCost?: string;
+  /**
+   * How many of `slotCost` one use spends. Default 1, and only written when it is not.
+   * Quicken Spell is 2 Sorcery Points; Lay on Hands - Purify Poison is 5.
+   */
+  resourceCost?: number;
   spellLevel?: number;
   usableSpellLevels?: number[];
   defaultCastLevel?: number;
@@ -141,6 +146,7 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.reach?.trim() ? { reach: draft.reach.trim() } : {}),
     ...(draft.resourceName?.trim() ? { resourceName: draft.resourceName.trim() } : {}),
     ...(draft.slotCost?.trim() ? { slotCost: draft.slotCost.trim() } : {}),
+    ...(draft.slotCost?.trim() && Number(draft.resourceCost) > 1 ? { resourceCost: Number(draft.resourceCost) } : {}),
     ...(spellLevel !== undefined ? { spellLevel } : {}),
     ...(Array.isArray(draft.usableSpellLevels) && draft.usableSpellLevels.length ? { usableSpellLevels: Array.from(new Set(draft.usableSpellLevels.map((level) => cleanNumber(level, 0)))).sort((a, b) => a - b) } : {}),
     ...(draft.defaultCastLevel !== undefined ? { defaultCastLevel: cleanNumber(draft.defaultCastLevel, 0) } : {}),
