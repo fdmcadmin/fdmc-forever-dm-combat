@@ -90,6 +90,7 @@ import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui
 import { FDMC_ACCENTS } from "./core/constants/theme";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
+import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
 import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
@@ -1781,14 +1782,25 @@ export default function App() {
 
   function updateMonsterInstance(
     instanceId: string,
-    patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "tempHp" | "status" | "visibilityState" | "hiddenName" | "isNameRevealed">>
+    /**
+     * ⚠ `maxHp` IS PART OF THE PATCH. The Pace dial rescales a creature by moving current AND max
+     * together so the bar does not jump; leaving max out of this type meant the new value arrived
+     * only by the untyped spread, while the `hp` string below and the room-metadata write both
+     * kept the OLD max. Two of three readers disagreed with the third about the same creature.
+     */
+    patch: Partial<Pick<MainEncounterMonsterInstance, "currentHp" | "maxHp" | "tempHp" | "status" | "visibilityState" | "hiddenName" | "isNameRevealed">>
   ) {
     setMonsterCandidates(current => {
       const next = current.map(m => {
         const enc = m as MainEncounterMonsterInstance;
         if (enc.instanceId !== instanceId) return m;
-        const currentHp = typeof patch.currentHp === "number" ? patch.currentHp : enc.currentHp;
-        return { ...enc, ...patch, currentHp, hp: `${currentHp}/${enc.maxHp}` } as MainEncounterMonsterInstance;
+        // The shared merge — the same one the combat window and the popout use.
+        const hp = monsterHpFromPatch(enc, patch);
+        return {
+          ...enc, ...patch,
+          currentHp: hp.current, maxHp: hp.max, tempHp: hp.temp,
+          hp: `${hp.current}/${hp.max}`,
+        } as MainEncounterMonsterInstance;
       });
       saveMonsterRoster(next as MainEncounterMonsterInstance[]);
       broadcastMonsterRoster(next as MainEncounterMonsterInstance[]);
@@ -1798,7 +1810,8 @@ export default function App() {
     if (typeof patch.currentHp === "number") {
       const inst = monsterCandidates.find(m => (m as MainEncounterMonsterInstance).instanceId === instanceId) as MainEncounterMonsterInstance | undefined;
       if (inst) {
-        const nextState = patchMonsterHp(roomLiveState, instanceId, { current: patch.currentHp, max: inst.maxHp, temp: patch.tempHp ?? inst.tempHp ?? 0 });
+        // Same merge again — the room copy must not disagree with the roster copy about max.
+        const nextState = patchMonsterHp(roomLiveState, instanceId, monsterHpFromPatch(inst, patch));
         void commitRoomState(nextState);
         // P7/P8: log HP change
         const delta = patch.currentHp - inst.currentHp;

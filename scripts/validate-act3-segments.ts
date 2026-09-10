@@ -38,6 +38,9 @@ import { AUTHORED_ENCOUNTERS } from "../src/data/broken-chain/authored.generated
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 import { simulateEncounter, resolvePartyProfile } from "../src/core/encounter-band/checkerV2";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
+import { nextArrivalSpent } from "../src/core/encounter-band/actRun";
+import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
+import { ACT3_SEGMENTS } from "./act3Layout";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
 const lib = BROKEN_CHAIN_MONSTER_LIBRARY as MainMonsterTemplate[];
@@ -57,20 +60,24 @@ const byId = (id: string): MainMonsterTemplate => {
 };
 
 /**
- * WHAT LEVEL THE PARTY WALKS EACH FIGHT AT, and where a full rest falls.
+ * WHERE THE FIGHTS FALL — the shared layout, and the engine's rest model on top of it.
  *
- * This is the one campaign fact the encounter records do not carry — an encounter knows its roster,
- * not when in the act it is met. Keyed by AUTHORED ID so a rename cannot break it.
+ * ⚠ THIS FILE USED TO CARRY ITS OWN `SEGMENTS` AND NO RESTS AT ALL, and both halves of that were
+ * wrong. Christopher, 2026-09-08: *"why would something as a validate need to care about the act
+ * when something like this is suppose to be engine based"*.
+ *
+ * It should not, and it no longer does. `actRun.ts` is the rest model — *"LAYER: engine. Acts,
+ * rests and level gates are not a 5e idea and not a Broken Chain one"* — and `nextArrivalSpent`
+ * plus the published `SHORT_REST_RECOVERY` are what apply one. The only thing that stays here is
+ * the campaign fact an encounter record cannot carry, and even that is now shared with
+ * `act3-run.ts` rather than copied: see `act3Layout.ts`.
+ *
+ * What the second copy cost, exactly: carrying raw sustain with NO rest walked the party into
+ * Gate II at 62% spent and reported a round-2 wipe. Christopher: *"no gate 2 doesnt wipe on round
+ * 2 why is that measured."* It does not — from a correct arrival state it does not, and the
+ * v3.45 Mirror replay shows six of eight cohort parties clearing it.
  */
-const SEGMENTS: Array<{ label: string; level: number; encounterIds: string[] }> = [
-  { label: "Level 6", level: 6, encounterIds: [
-    "act3-e1-the-first-court", "act3-e2-the-cut-below", "act3-e3-gate-i-crone-and-mare"] },
-  { label: "Level 7", level: 7, encounterIds: [
-    "act3-e4-the-hollow-feast", "act3-e5-the-scar-line", "campaign-mt3nm2j9"] },
-  { label: "Level 8", level: 8, encounterIds: [
-    "act3-e7-the-last-court", "act3-e8-the-occupied-acre", "act3-e9-gate-iii-veil-torn-dragon"] },
-  { label: "Level 9", level: 9, encounterIds: ["act3-e10-the-center"] },
-];
+const SEGMENTS = ACT3_SEGMENTS.map(seg => ({ label: `Level ${seg.level}`, level: seg.level, steps: seg.steps }));
 
 /**
  * WHAT THIS ENGINE MEASURED, at 0.8.11.5, against the authored library.
@@ -108,7 +115,7 @@ const REFERENCE: Record<string, { completion: string; monsterDamage: number }> =
 
 const TOLERANCE = 5;
 
-function runFight(encounterId: string, level: number, sustainNow: number, fullSustain: number) {
+function runFight(encounterId: string, level: number, arrivingSpent: number, fullSustain: number) {
   const enc = AUTHORED_ENCOUNTERS.find(e => e.id === encounterId);
   if (!enc) throw new Error(`authored encounter missing: ${encounterId}`);
 
@@ -118,7 +125,13 @@ function runFight(encounterId: string, level: number, sustainNow: number, fullSu
 
   const entries = enc.entries.map(e => ({ template: byId(e.templateId), quantity: e.count }));
   const built = rosterFromTemplates(entries, level, { ac: defence.ac, saveBonus: saveAvg, partySize: PARTY_SIZE, saves });
-  const profile = resolvePartyProfile({ level, size: PARTY_SIZE, equipmentMode: MODE, customSustain: sustainNow });
+  /**
+   * ⚠ `arrivingSpent`, NOT `customSustain`. Christopher, 2026-09-01: *"you are wrong that the %
+   * of spent didn't effect dpr."* A depleted party also KILLS slower, so scaling only the pool
+   * left a spent party opening every fight with a full nova. `act3-run.ts` was corrected for this
+   * a week before this file was; the copy is how the correction got un-made.
+   */
+  const profile = resolvePartyProfile({ level, size: PARTY_SIZE, equipmentMode: MODE, arrivingSpent });
   const result = simulateEncounter({
     /**
      * ⚠ THE DEX LINE IS THE PARTY'S INITIATIVE, AND LEAVING IT OUT IS NOT NEUTRAL. Omitted, the
@@ -127,19 +140,22 @@ function runFight(encounterId: string, level: number, sustainNow: number, fullSu
      * This script has to schedule the party the same way the panel does or it is measuring a
      * fight nobody plays.
      */
-    party: { size: PARTY_SIZE, sustain: sustainNow, dpr: profile.dpr, initiative: defence.dex },
+    party: { size: PARTY_SIZE, sustain: profile.sustain, dpr: profile.dpr, initiative: defence.dex },
     roster: built.roster, settings: { damageAllocation: "focus_fire" },
   });
   const last = result.rounds[result.rounds.length - 1];
   const spent = last?.cumulativeMonsterDamage ?? 0;
+  /** What this fight cost, as a share of the FULL pool — the unit `nextArrivalSpent` carries. */
+  const cost = fullSustain > 0 ? spent / fullSustain : 0;
   return {
     name: enc.name,
     completion: result.completionRound !== null ? `R${result.completionRound}`
       : result.fatalRound !== null ? `FAIL R${result.fatalRound}` : "—",
     monsterDamage: spent,
     usedPct: (spent / fullSustain) * 100,
-    left: sustainNow - spent,
-    leftPct: ((sustainNow - spent) / fullSustain) * 100,
+    cost,
+    left: fullSustain * (1 - Math.min(1, arrivingSpent + cost)),
+    leftPct: (1 - Math.min(1, arrivingSpent + cost)) * 100,
     assumptions: built.assumptions,
   };
 }
@@ -159,10 +175,12 @@ const measured: Record<string, { completion: string; monsterDamage: number }> = 
 for (const seg of SEGMENTS) {
   const full = resolvePartyProfile({ level: seg.level, size: PARTY_SIZE, equipmentMode: MODE }).sustain;
   console.log(`${W(`FULL REST / ${seg.label}`, 34)}${W("—", 8)}${W("—", 14)}${W("—", 8)}${full.toFixed(0)} / ${full.toFixed(0)}`);
-  let sustainNow = full;
+  /** Arrival state, as a SHARE of the full pool — the unit the engine carries rests in. */
+  let spent = 0;
 
-  for (const id of seg.encounterIds) {
-    const r = runFight(id, seg.level, sustainNow, full);
+  for (const step of seg.steps) {
+    const id = step.id;
+    const r = runFight(id, seg.level, spent, full);
     measured[id] = { completion: r.completion, monsterDamage: Math.round(r.monsterDamage) };
 
     const ref = REFERENCE[id];
@@ -173,7 +191,19 @@ for (const seg of SEGMENTS) {
       drift.push(`${r.name}: engine ${r.monsterDamage.toFixed(0)} vs measured ${ref.monsterDamage} (${(r.monsterDamage - ref.monsterDamage).toFixed(0)})`);
     }
     for (const a of r.assumptions) if (a.flag === "NEEDS DM INPUT") notPriced.push(`${r.name}: ${a.creature} · ${a.field}`);
-    sustainNow = r.left;
+
+    /**
+     * ⚠ THE REST IS THE ENGINE'S, NOT THIS FILE'S. `nextArrivalSpent` is where Long resets to 0,
+     * Short gives back the published `SHORT_REST_RECOVERY`, and None carries it all. Re-deriving
+     * any of that here is what produced a Gate II wipe that does not happen.
+     */
+    spent = nextArrivalSpent(spent, r.cost, step.restAfter, SHORT_REST_RECOVERY);
+    if (step.restAfter !== "None") {
+      const label = step.restAfter === "Long"
+        ? "LONG REST — full reset"
+        : `SHORT REST +${(SHORT_REST_RECOVERY * 100).toFixed(1)}%${step.restConfirmed ? "" : "  [placement UNCONFIRMED]"}`;
+      console.log(`${W("", 34)}${W("", 8)}${W("", 14)}${W("", 8)}${label} → next arrives at ${((1 - spent) * 100).toFixed(1)}%`);
+    }
   }
   console.log("");
 }

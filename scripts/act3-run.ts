@@ -26,6 +26,7 @@ import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
 import { effectiveHpPerBody, simulateEncounter, resolvePartyProfile } from "../src/core/encounter-band/checkerV2";
 import { SHORT_REST_RECOVERY } from "../src/core/encounter-band/partyResourceCurve";
 import { nextArrivalSpent } from "../src/core/encounter-band/actRun";
+import { ACT3_SEGMENTS as SEGMENTS } from "./act3Layout";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
 const lib = BROKEN_CHAIN_MONSTER_LIBRARY as MainMonsterTemplate[];
@@ -50,31 +51,6 @@ const SIZE = 4;
  * well as its pool, so a party walking into the Mirrors two fights deep kills slower than a fresh
  * one and the fight runs longer. See the note on `spent` below.
  */
-type Step = { id: string; restAfter: "Short" | "Long" | "None"; restConfirmed: boolean };
-const SEGMENTS: Array<{ level: number; steps: Step[] }> = [
-  { level: 6, steps: [
-    { id: "act3-e1-the-first-court", restAfter: "Short", restConfirmed: false },
-    { id: "act3-e2-the-cut-below", restAfter: "Short", restConfirmed: false },
-    { id: "act3-e3-gate-i-crone-and-mare", restAfter: "Long", restConfirmed: true },
-  ] },
-  { level: 7, steps: [
-    // ⚠ NO REST BETWEEN THESE TWO. Christopher, 2026-09-01: *"the rest happens between the scar
-    // line and the mirrors."* The first version rested after every fight, which is why the Mirrors
-    // arrived at 100% — they do not, and F4 + F5 are fought back to back.
-    { id: "act3-e4-the-hollow-feast", restAfter: "None", restConfirmed: true },
-    { id: "act3-e5-the-scar-line", restAfter: "Short", restConfirmed: true },
-    { id: "campaign-mt3nm2j9", restAfter: "Long", restConfirmed: true },
-  ] },
-  { level: 8, steps: [
-    { id: "act3-e7-the-last-court", restAfter: "Short", restConfirmed: false },
-    { id: "act3-e8-the-occupied-acre", restAfter: "Short", restConfirmed: false },
-    { id: "act3-e9-gate-iii-veil-torn-dragon", restAfter: "Long", restConfirmed: true },
-  ] },
-  { level: 9, steps: [
-    { id: "act3-e10-the-center", restAfter: "Long", restConfirmed: true },
-  ] },
-];
-
 /** The workbook's own Encounter Results sheet, for the side-by-side. */
 const WB: Record<string, { rounds: number; cost: number }> = {
   "act3-e1-the-first-court": { rounds: 3, cost: 15.2 },

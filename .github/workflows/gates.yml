@@ -119,6 +119,11 @@ jobs:
       - name: check a summon reaches the combat chart
         run: npm run check:summontracker
 
+      # A creature HP patch is merged in ONE place. Three hand-written copies each dropped the
+      # patch's own max, so the Pace dial damaged creatures instead of rescaling them.
+      - name: check a creature HP patch survives the trip
+        run: npm run check:hppatch
+
       - name: check timed bodies
         run: npm run check:timed
 

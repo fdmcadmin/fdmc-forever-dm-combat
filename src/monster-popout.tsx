@@ -16,6 +16,7 @@ import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { useMonsterPopout } from "./core/monster-state/useMonsterPopout";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import "./styles.css";
+import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 
 const params = new URLSearchParams(window.location.search);
 const INSTANCE_ID = params.get("instanceId") ?? "";
@@ -53,11 +54,8 @@ function MonsterPopoutApp() {
         monster={monster}
         isDmView={true}
         onHpChange={(patch) => {
-          commitHp({
-            current: typeof patch.currentHp === "number" ? patch.currentHp : monster.currentHp,
-            max: monster.maxHp,
-            temp: typeof patch.tempHp === "number" ? patch.tempHp : monster.tempHp,
-          });
+          // ⚠ THE SHARED MERGE — this dropped the patch's max, same as the combat window did.
+          commitHp(monsterHpFromPatch(monster, patch));
         }}
         onSendDicePlusRequest={sendDicePlusRollRequest}
         diceBridgeLastEvent={diceBridgeLastEvent}

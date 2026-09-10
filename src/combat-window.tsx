@@ -35,6 +35,7 @@ import type { Actor } from "./core/types/actor";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
 import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
+import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 import "./styles.css";
 
 const COMBAT_WINDOW_POPOVER_ID = "fdm-combat";
@@ -419,11 +420,9 @@ function CombatWindowApp() {
                 monster={m}
                 isDmView={true}
                 onHpChange={(patch) => {
-                  commitHpFor(m.instanceId, {
-                    current: typeof patch.currentHp === "number" ? patch.currentHp : m.currentHp,
-                    max: m.maxHp,
-                    temp: typeof patch.tempHp === "number" ? patch.tempHp : m.tempHp,
-                  }, patch.isNameRevealed);
+                  // ⚠ THE SHARED MERGE. This used to hardcode `max: m.maxHp` and drop the patch's
+                  // own max, which broke the Pace dial — see `monsterHpPatch.ts`.
+                  commitHpFor(m.instanceId, monsterHpFromPatch(m, patch), patch.isNameRevealed);
                 }}
                 onSendDicePlusRequest={sendDicePlusRollRequest}
                 diceBridgeLastEvent={diceBridgeLastEvent}
