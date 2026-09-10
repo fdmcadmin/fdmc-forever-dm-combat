@@ -44,6 +44,25 @@ export type PcActionDraft = {
   range?: string;
   reach?: string;
   resourceName?: string;
+  /**
+   * ARMS A REPEATABLE ATTACK — Flame Blade, and anything where the CAST and the SWING are two
+   * different costs. Blank means the action arms nothing.
+   *
+   * Christopher, 2026-09-10: *"flame blade is different its a bonus action to cast and then a
+   * magic action to use"*, and *"there is no spot to put the flame blade as a armed attack."*
+   * `metadata.grantsArmedAttack` has supported exactly this shape for a while — casting arms a
+   * chip, each later use pays only the attack's own cost and spends no slot — and nothing in the
+   * editor could write it, so the only way to author one was by hand.
+   */
+  armedAttackDamage?: string;
+  armedAttackType?: string;
+  /** Optional override. Blank defaults to `1d20+@SPELL`, which follows the caster's own stat. */
+  armedAttackFormula?: string;
+  armedAttackCrit?: string;
+  armedAttackRange?: string;
+  /** What each USE costs — the Magic action for Flame Blade. Defaults to the main action. */
+  armedAttackCost?: string[];
+  armedAttackDuration?: string;
   slotCost?: string;
   /**
    * How many of `slotCost` one use spends. Default 1, and only written when it is not.
@@ -145,6 +164,16 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.range?.trim() ? { range: draft.range.trim() } : {}),
     ...(draft.reach?.trim() ? { reach: draft.reach.trim() } : {}),
     ...(draft.resourceName?.trim() ? { resourceName: draft.resourceName.trim() } : {}),
+    // The damage is the trigger: no damage, no armed attack. Everything else only qualifies one.
+    ...(draft.armedAttackDamage?.trim() ? {
+      armedAttackDamage: draft.armedAttackDamage.trim(),
+      ...(draft.armedAttackType?.trim() ? { armedAttackType: draft.armedAttackType.trim() } : {}),
+      ...(draft.armedAttackFormula?.trim() ? { armedAttackFormula: draft.armedAttackFormula.trim() } : {}),
+      ...(draft.armedAttackCrit?.trim() ? { armedAttackCrit: draft.armedAttackCrit.trim() } : {}),
+      ...(draft.armedAttackRange?.trim() ? { armedAttackRange: draft.armedAttackRange.trim() } : {}),
+      ...(draft.armedAttackCost?.length ? { armedAttackCost: draft.armedAttackCost } : {}),
+      ...(draft.armedAttackDuration?.trim() ? { armedAttackDuration: draft.armedAttackDuration.trim() } : {}),
+    } : {}),
     ...(draft.slotCost?.trim() ? { slotCost: draft.slotCost.trim() } : {}),
     ...(draft.slotCost?.trim() && Number(draft.resourceCost) > 1 ? { resourceCost: Number(draft.resourceCost) } : {}),
     ...(spellLevel !== undefined ? { spellLevel } : {}),

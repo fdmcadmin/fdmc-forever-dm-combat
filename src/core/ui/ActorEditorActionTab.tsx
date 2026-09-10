@@ -126,6 +126,13 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     range: action.metadata?.range,
     slotCost: action.metadata?.slotCost,
     resourceCost: action.metadata?.resourceCost,
+    armedAttackDamage: action.metadata?.grantsArmedAttack?.damage,
+    armedAttackType: action.metadata?.grantsArmedAttack?.damageType,
+    armedAttackFormula: action.metadata?.grantsArmedAttack?.attack,
+    armedAttackCrit: action.metadata?.grantsArmedAttack?.crit,
+    armedAttackRange: action.metadata?.grantsArmedAttack?.range,
+    armedAttackCost: action.metadata?.grantsArmedAttack?.cost as string[] | undefined,
+    armedAttackDuration: action.metadata?.grantsArmedAttack?.duration,
     description: action.description ?? action.metadata?.details,
     source: action.category,
     visibility: action.logMode === "silent" ? "hidden" : "player",
@@ -489,6 +496,73 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           )}
         </div>
       )}
+
+      {/**
+        * ARMS A REPEATABLE ATTACK — the Flame Blade shape.
+        *
+        * ⚠ THE CAST AND THE SWING ARE TWO DIFFERENT COSTS. Christopher: *"flame blade is different
+        * its a bonus action to cast and then a magic action to use."* Authoring that as one card
+        * with an attack on it makes the cast's Bonus Action appear to buy the attack — true on the
+        * turn it is cast and false on every turn after, which is most of them.
+        *
+        * The card above sets what the CAST costs; this sets what each USE costs. Filling in the
+        * damage is what arms it, so a card that leaves this blank behaves exactly as before.
+        */}
+      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px", display: "grid", gap: 8 }}>
+        <div style={{ fontSize: 12, color: "#9d8cff" }}>
+          Arms a repeatable attack <span style={{ color: "#555", fontSize: 10 }}>
+            (blank = none — casting arms a chip; each later use pays only the cost below and spends no slot)
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <label style={{ fontSize: 12, flex: "1 1 160px" }}>
+            Attack damage <span style={{ color: "#555", fontSize: 10 }}>(3d6, 2d10+@INT…)</span>
+            <input type="text" value={draft.armedAttackDamage ?? ""} placeholder="blank = no armed attack"
+              onChange={e => set("armedAttackDamage", e.target.value || undefined)}
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+          </label>
+          <label style={{ fontSize: 12, flex: "1 1 120px" }}>
+            Damage type
+            <input type="text" value={draft.armedAttackType ?? ""} placeholder="fire"
+              onChange={e => set("armedAttackType", e.target.value || undefined)}
+              style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+          </label>
+        </div>
+        {draft.armedAttackDamage?.trim() && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <label style={{ fontSize: 12, flex: "1 1 150px" }}>
+              Each use costs
+              <select
+                value={(draft.armedAttackCost ?? ["main"])[0] ?? "main"}
+                onChange={e => set("armedAttackCost", [e.target.value])}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+                <option value="main">Magic / Main action</option>
+                <option value="bonus">Bonus action</option>
+                <option value="reaction">Reaction</option>
+                <option value="free">Free</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 130px" }}>
+              Attack formula <span style={{ color: "#555", fontSize: 10 }}>(blank = 1d20+@SPELL)</span>
+              <input type="text" value={draft.armedAttackFormula ?? ""} placeholder="1d20+@SPELL"
+                onChange={e => set("armedAttackFormula", e.target.value || undefined)}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 110px" }}>
+              Range / reach
+              <input type="text" value={draft.armedAttackRange ?? ""} placeholder="reach 5 ft"
+                onChange={e => set("armedAttackRange", e.target.value || undefined)}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 150px" }}>
+              Lasts <span style={{ color: "#555", fontSize: 10 }}>(shown on the chip)</span>
+              <input type="text" value={draft.armedAttackDuration ?? ""} placeholder="Concentration, up to 10 min"
+                onChange={e => set("armedAttackDuration", e.target.value || undefined)}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+          </div>
+        )}
+      </div>
 
       {/* ONCE-PER-TURN RIDER. Arms a chip the player claims; refreshed when their turn starts.
           Two payloads, one mechanism: an extra attack (Hew off a crit, Distant Strike) or a

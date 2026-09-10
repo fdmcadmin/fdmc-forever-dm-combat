@@ -150,6 +150,25 @@ export function adaptPcActionToActorAction(draft: PcActionDraft): ActorAction {
       saveAbility: normalized.saveAbility,
       range: normalized.range,
       cost: normalized.actionCost,
+      /**
+       * ⚠ THE CAST AND THE SWING ARE TWO DIFFERENT COSTS, and one card holds both.
+       *
+       * Flame Blade is a Bonus Action to cast and a Magic action per swing. Authoring it as one
+       * card with an attack on it makes the bonus action appear to buy the attack — right on the
+       * turn it is cast and wrong on every turn after. `grantsArmedAttack` is the shape that
+       * separates them, and until now nothing in the editor could write it.
+       */
+      ...(normalized.armedAttackDamage ? {
+        grantsArmedAttack: {
+          damage: normalized.armedAttackDamage,
+          ...(normalized.armedAttackType ? { damageType: normalized.armedAttackType } : {}),
+          ...(normalized.armedAttackFormula ? { attack: normalized.armedAttackFormula } : {}),
+          ...(normalized.armedAttackCrit ? { crit: normalized.armedAttackCrit } : {}),
+          ...(normalized.armedAttackRange ? { range: normalized.armedAttackRange } : {}),
+          ...(normalized.armedAttackCost?.length ? { cost: normalized.armedAttackCost as never } : {}),
+          ...(normalized.armedAttackDuration ? { duration: normalized.armedAttackDuration } : {}),
+        },
+      } : {}),
       slotCost: normalized.slotCost,
       /**
        * ⚠ WHICH POOL WAS CARRIED AND HOW MANY WAS NOT. `metadata.resourceCost` is honoured by the
