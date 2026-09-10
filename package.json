@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.40.6",
+  "version": "0.8.40.7",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -55,6 +55,7 @@
     "check:tempactions": "npx tsx scripts/check-temp-actions.ts",
     "audit:loot": "npx tsx scripts/audit-loot-items.ts",
     "check:itemriders": "npx tsx scripts/check-item-riders.ts",
+    "check:featstab": "npx tsx scripts/check-feats-tab.ts",
     "check:timed": "npx tsx scripts/check-timed-bodies.ts",
     "import:srd": "node scripts/import-srd.mjs",
     "check:engine": "npx tsx scripts/check-engine.ts",

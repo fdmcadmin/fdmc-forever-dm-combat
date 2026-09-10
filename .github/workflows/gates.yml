@@ -145,6 +145,10 @@ jobs:
       - name: check an item rider reaches the swing
         run: npm run check:itemriders
 
+      # Feats live on Features. A tab the card reads and the editor cannot open is invisible data.
+      - name: check nothing is stranded on the retired feats tab
+        run: npm run check:featstab
+
       - name: check timed bodies
         run: npm run check:timed
 

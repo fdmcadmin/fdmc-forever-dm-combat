@@ -25,8 +25,11 @@
 import type { Actor } from "../types/actor";
 import type { ActorAction } from "../types/tabs";
 
-const KEY = "fdmc.featsIntoFeatures.migration.v1";
-const VERSION = "0.8.5.0-feats-into-features";
+/**
+ * ⚠ THE ONE-SHOT KEY IS GONE, NOT RENAMED. `fdmc.featsIntoFeatures.migration.v1` used to make
+ * this run once per browser; a stored copy of it is now inert and harmless. Leaving the constant
+ * behind would invite someone to re-guard on it, which is the bug.
+ */
 
 export type FeatMergeReport = { actors: number; moved: number };
 
@@ -62,12 +65,22 @@ export function mergeFeatsIntoFeatures(actor: Actor): { actor: Actor; moved: num
 export function migrateFeatsIntoFeatures(
   load: () => Record<string, Actor>,
   save: (actors: Record<string, Actor>) => void,
-  force = false,
 ): FeatMergeReport {
   const report: FeatMergeReport = { actors: 0, moved: 0 };
-  try {
-    if (!force && window.localStorage.getItem(KEY) === VERSION) return report;
-  } catch { return report; }
+  /**
+   * ⚠ NO ONE-SHOT KEY ANY MORE, AND THAT KEY WAS THE BUG.
+   *
+   * This returned early once `fdmc.featsIntoFeatures.migration.v1` was set, so anything that
+   * reached the `feats` tab AFTERWARDS stayed there for good. Christopher, 2026-09-10: *"where is
+   * the great weapon master on ripsnarls's features because its not there on mine and i cant edit
+   * something i cant see"* — it was on `feats`, read by the card (which scans every tab) and
+   * invisible to the editor step, which read `features` alone.
+   *
+   * *"we discussed removing all of the things out of feats because it is a tab we dont need."* A
+   * tab that is not needed has to be empty EVERY time, not once. The sweep is free when there is
+   * nothing to move — `mergeFeatsIntoFeatures` returns `moved: 0` and nothing is written — so it
+   * runs on every load and the tab cannot silently refill.
+   */
 
   const library = load();
   const next: Record<string, Actor> = {};
@@ -79,6 +92,5 @@ export function migrateFeatsIntoFeatures(
   }
   if (changed) save(next);
 
-  try { window.localStorage.setItem(KEY, VERSION); } catch { /* ok */ }
   return report;
 }

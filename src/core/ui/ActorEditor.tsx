@@ -1114,7 +1114,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   function stepCount(tab: EditorTab): number {
     switch (tab) {
       case "combat": return (tabsDraft.main ?? []).length + (tabsDraft.bonus ?? []).length;
-      case "features": return (tabsDraft.features ?? []).length;
+      // Both tabs, because the step edits both — see the Features step for why `feats` can still
+      // hold entries. A count that disagreed with the list is how a stranded entry stays hidden.
+      case "features": return (tabsDraft.features ?? []).length + (tabsDraft.feats ?? []).length;
       case "bonds": return (tabsDraft.bond ?? []).length;
       case "spells": return (tabsDraft.spells ?? []).length;
       case "resources": return (tabsDraft.resources ?? []).length;
@@ -1242,7 +1244,32 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "features" && (
-          <ActorEditorActionTab classRows={editorClassRows} tabId="features" actions={tabsDraft.features ?? []} onChange={handleTabActions("features")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />
+          /**
+           * ⚠ THIS STEP READS BOTH TABS, BECAUSE A ONE-SHOT MIGRATION CANNOT BE THE ONLY ROUTE.
+           *
+           * Christopher, 2026-09-10: *"where is the great weapon master on ripsnarls's features
+           * because its not there on mine and i cant edit something i cant see."*
+           *
+           * Feats and features are ONE tab now, and `migrateFeatsIntoFeatures` moves the old ones
+           * across — but it is keyed one-shot per browser (`fdmc.featsIntoFeatures.migration.v1`,
+           * already present in his storage). Anything that reaches `feats` AFTER that key is set
+           * is stranded: the card still reads both tabs, so Great Weapon Master kept showing as a
+           * toggle and driving damage, while the only step that could edit it read `features`
+           * alone and never saw it.
+           *
+           * The migration's own note says the readers "stay tolerant so nothing depends on the
+           * move having happened". The EDITOR is a reader, and it was the one place that was not.
+           * Reading both and writing to `features` also completes the move for any actor the
+           * one-shot missed — lazily, the next time someone opens the tab.
+           */
+          <ActorEditorActionTab
+            classRows={editorClassRows}
+            tabId="features"
+            actions={[...(tabsDraft.features ?? []), ...(tabsDraft.feats ?? [])]}
+            onChange={(next) => setTabsDraft(d => ({ ...d, features: next, feats: [] }))}
+            onMoveToTab={handleMoveActionToTab}
+            resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)}
+          />
         )}
         {activeTab === "bonds" && (
           <ActorEditorActionTab classRows={editorClassRows} tabId="bond" actions={tabsDraft.bond ?? []} onChange={handleTabActions("bond")} onMoveToTab={handleMoveActionToTab} resourceLabels={(tabsDraft.resources ?? []).map(r => r.label).filter(Boolean)} />

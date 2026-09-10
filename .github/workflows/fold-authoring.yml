@@ -95,6 +95,7 @@ jobs:
           npm run check:freecast
           npm run check:tempactions
           npm run check:itemriders
+          npm run check:featstab
           npm run check:timed
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
