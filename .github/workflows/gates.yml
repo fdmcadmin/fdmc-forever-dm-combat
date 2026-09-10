@@ -136,6 +136,11 @@ jobs:
       - name: check a free cast can be upcast
         run: npm run check:freecast
 
+      # A granted attack is a button with the swings the spell says, and a reaction spell can
+      # be pinned beside the Opportunity Attack.
+      - name: check temporary actions and focused reactions
+        run: npm run check:tempactions
+
       - name: check timed bodies
         run: npm run check:timed
 

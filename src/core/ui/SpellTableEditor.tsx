@@ -45,6 +45,17 @@ type SpellRow = {
   details: string;
   category: string;
   economyCost: "main" | "bonus" | "reaction";
+  /**
+   * FOCUSED REACTION — pin a reaction spell to the shortcut strip beside the Opportunity Attack.
+   *
+   * Christopher, 2026-09-10: *"make there be a check on spell reactions that lets it be a focused
+   * reaction and using that reaction still works as if clicking the spell."*
+   *
+   * The second half already holds: a pinned shortcut carrying `sourceTabId`/`sourceActionId`
+   * resolves back to the FULL source action, so firing it runs the spell exactly as the card
+   * would — its roll, its slot, its upcast. Only the tick was missing.
+   */
+  focusedReaction: boolean;
   /** Class-feature spell: uses per long rest. "" / "0" = normal slot-cast spell. */
   classFeatureUses: string;
   /** Weapon-buff rider (Hungering Blade): damage added to weapon attacks while toggled on. */
@@ -143,6 +154,12 @@ function rowToAction(row: SpellRow): ActorAction {
     displayMode: "card",
     category: row.category || (row.level === 0 ? "Cantrips" : `Level ${row.level} Spells`),
     concentration: row.concentration,
+    /**
+     * ⚠ ONLY A REACTION CAN BE PINNED, and the gate downstream says so:
+     * `isPinnedReactionAction` requires `pinReaction` AND a reaction economy cost. Writing the
+     * flag onto an Action-cost spell would put a tick in the editor that does nothing on the card.
+     */
+    ...(row.focusedReaction && row.economyCost === "reaction" ? { pinReaction: true } : {}),
     // One tag, for the level the spell STARTS at. The castable range is base→9 by rule.
     tags: [`spell-level:${row.level}`],
     metadata: {
@@ -227,6 +244,7 @@ function actionToRow(action: ActorAction): SpellRow {
     details: plainDetails,
     category: action.category ?? "Spells",
     economyCost: cost === "bonus" ? "bonus" : cost === "reaction" ? "reaction" : "main",
+    focusedReaction: Boolean(action.pinReaction),
     classFeatureUses: action.metadata?.spellSlotMode === "freeCast" && action.metadata?.classFeatureUses
       ? String(action.metadata.classFeatureUses)
       : "",
@@ -265,6 +283,7 @@ function makeBlankRow(): SpellRow {
     details: "",
     category: "Spells",
     economyCost: "main",
+    focusedReaction: false,
     classFeatureUses: "",
     weaponBuffDamage: "",
     castingClass: "",
@@ -325,8 +344,8 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
       </p>
 
       {/* Column headers */}
-      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 64px 90px 80px 48px 28px", gap: 4, padding: "3px 6px", background: "#0d0d14", borderRadius: 4 }}>
-        {["✓", "Spell Name", "Level", "Slot Cost", "Economy", "Conc", ""].map(h => (
+      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 64px 90px 80px 52px 48px 28px", gap: 4, padding: "3px 6px", background: "#0d0d14", borderRadius: 4 }}>
+        {["✓", "Spell Name", "Level", "Slot Cost", "Economy", "Focus", "Conc", ""].map(h => (
           <span key={h} style={{ fontSize: 10, color: "#7b68ee", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600 }}>{h}</span>
         ))}
       </div>
@@ -335,7 +354,7 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
         <div key={row.id} style={{ borderRadius: 4, border: `1px solid ${row.include ? "#7b68ee33" : "#2a2a2a"}`, overflow: "hidden" }}>
           {/* Main row */}
           <div
-            style={{ display: "grid", gridTemplateColumns: "28px 1fr 64px 90px 80px 48px 28px", gap: 4, alignItems: "center", padding: "4px 6px", background: row.include ? "#1a1a2e" : "#111", cursor: "pointer" }}
+            style={{ display: "grid", gridTemplateColumns: "28px 1fr 64px 90px 80px 52px 48px 28px", gap: 4, alignItems: "center", padding: "4px 6px", background: row.include ? "#1a1a2e" : "#111", cursor: "pointer" }}
             onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
           >
             <input type="checkbox" checked={row.include}
@@ -378,6 +397,26 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
               <option value="bonus">Bonus</option>
               <option value="reaction">Reaction</option>
             </select>
+
+            {/**
+              * FOCUSED REACTION — only offered once the spell IS a reaction, because that is the
+              * only shape the card can pin. `isPinnedReactionAction` requires the flag AND a
+              * reaction cost, so a tick on an Action-cost spell would be a control that does
+              * nothing.
+              *
+              * Firing it runs the whole spell: a pinned shortcut carrying its source ids resolves
+              * back to the full action, so the roll, the slot and the upcast are the card's own.
+              */}
+            {row.economyCost === "reaction" ? (
+              <label
+                onClick={e => e.stopPropagation()}
+                title="Pin this reaction beside the Opportunity Attack. Using it rolls and spends exactly as clicking the spell does."
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10, color: row.focusedReaction ? "#9be9a8" : "#666" }}>
+                <input type="checkbox" checked={row.focusedReaction}
+                  onChange={e => setRow(idx, { focusedReaction: e.target.checked })} />
+                Focus
+              </label>
+            ) : <span />}
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
               <input type="checkbox" checked={row.concentration}

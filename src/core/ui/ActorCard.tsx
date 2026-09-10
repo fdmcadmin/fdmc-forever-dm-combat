@@ -242,6 +242,22 @@ type ArmedEffect = {
     range?: string;
     cost?: ActionCost[];
     duration?: string;
+    /**
+     * HOW MANY TIMES THIS CAST MAY SWING, and what is left of them.
+     *
+     * Christopher, 2026-09-10: *"when the spell is created we simply let the field like scorching
+     * ray handle the counts we just put a 2 there and when the spell is recast each time it can be
+     * used that many times."*
+     *
+     * ⚠ THE COUNT IS THE SPELL'S OWN, read through `spellAttackRollCount` — the SAME field that
+     * gives Scorching Ray three rays and a fourth per upcast level. Finger guns put a 2 there and
+     * get two swings; nothing new had to be invented, and an upcast scales it for free.
+     *
+     * ⚠ AND IT IS NOT EXTRA ATTACK. The count comes from the SPELL, never from the actor, which
+     * is what keeps this away from `attacksPerAction` and the Nick/Light interaction.
+     */
+    usesTotal?: number;
+    usesLeft?: number;
   };
 };
 
@@ -2221,6 +2237,22 @@ export function ActorCard({
     const armed = effect.armedAttack;
     if (!armed) return;
 
+    /**
+     * ⚠ THIS CAST'S SWINGS ARE FINITE WHEN THE SPELL SAYS SO. Finger guns is two; spending a
+     * third would be inventing an attack the spell never granted. The chip STAYS at zero — the
+     * blade is still lit, it just has nothing left this cast — because clearing it would read as
+     * the spell ending early.
+     */
+    if (typeof armed.usesLeft === "number" && armed.usesLeft <= 0) {
+      onLog({
+        actorName: actor.name,
+        actionName: effect.label,
+        tabId: "system",
+        message: `${actor.name} has used all ${armed.usesTotal ?? 1} of ${effect.label} this cast — recast it to use it again.`,
+      });
+      return;
+    }
+
     const costs = armed.cost ?? ["main"];
     if (costs.length > 0 && hasUsedCostSlot(costs)) {
       onLog({
@@ -2230,6 +2262,11 @@ export function ActorCard({
         message: `${actor.name} has already spent that action this turn — ${effect.label} must wait.`,
       });
       return;
+    }
+
+    // One swing spent, recorded before the roll so a held roll cannot be re-primed for free.
+    if (typeof armed.usesLeft === "number") {
+      upsertArmedEffect({ ...effect, armedAttack: { ...armed, usesLeft: armed.usesLeft - 1 } });
     }
 
     const readiedKey = `conjured-attack:${effect.id}:${Date.now()}`;
@@ -3211,6 +3248,73 @@ export function ActorCard({
     );
   }
 
+  /**
+   * TEMPORARY ACTIONS — a real button row for a spell that granted one, beside the Opportunity
+   * Attack rather than buried in the effects strip.
+   *
+   * Christopher, 2026-09-10: *"it needs to be a button like the OA"*, and *"flame blade isnt a
+   * armed effect its a magic action which would need to be a clickable like the OA and it rolls
+   * the hit from the spell attack and then the damage from that spell."*
+   *
+   * ⚠ THE MECHANISM WAS ALREADY RIGHT AND THE PLACEMENT WAS NOT. `primeArmedAttack` has always
+   * rolled the spell attack then its damage, for the swing's own cost and no further slot. It was
+   * reachable only through a small button inside a chip in the armed-effects strip, which reads as
+   * a status marker rather than something you DO. Same call, given a row of its own.
+   *
+   * The chip stays: it is what says the blade is still lit and offers the ✕ that ends it.
+   */
+  function renderTemporaryActionsPanel() {
+    const armedAttacks = getVisibleArmedEffects().filter(e => e.armedAttack);
+    if (armedAttacks.length === 0) return null;
+
+    return (
+      <section className="card-section" aria-label="Temporary actions">
+        <h3 className="section-heading">Temporary Actions</h3>
+        <div className="pinned-grid">
+          {armedAttacks.map(effect => {
+            const armed = effect.armedAttack!;
+            const costs = armed.cost ?? ["main"];
+            const spent = costs.length > 0 && hasUsedCostSlot(costs);
+            const left = armed.usesLeft;
+            const total = armed.usesTotal;
+            const exhausted = typeof left === "number" && left <= 0;
+            const costLabel = costs.includes("bonus") ? "Bonus" : costs.includes("reaction") ? "Reaction" : "Action";
+            return (
+              <button
+                key={effect.id}
+                type="button"
+                disabled={spent || exhausted}
+                onClick={() => primeArmedAttack(effect)}
+                title={exhausted
+                  ? `${effect.label} has no uses left this cast — recast it.`
+                  : `${effect.label}: ${armed.damage}${armed.damageType ? ` ${armed.damageType}` : ""}. Costs the ${costLabel}; no further slot.`}
+                style={{
+                  textAlign: "left", padding: "6px 9px", borderRadius: 6, cursor: spent || exhausted ? "default" : "pointer",
+                  background: exhausted ? "#141420" : "#1d2433",
+                  border: `1px solid ${exhausted ? "#2a2a3e" : "#4f9dff66"}`,
+                  color: exhausted ? "#666" : "#cfe6f5", opacity: spent && !exhausted ? 0.55 : 1,
+                  display: "flex", flexDirection: "column", gap: 2,
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600 }}>
+                  {effect.label}
+                  {typeof left === "number" && typeof total === "number" && total > 1 && (
+                    <span style={{ marginLeft: 6, fontSize: 10, color: exhausted ? "#666" : "#9be9a8" }}>{left}/{total}</span>
+                  )}
+                </span>
+                <span style={{ fontSize: 10, color: "#8a8aa0" }}>
+                  {armed.damage}{armed.damageType ? ` ${armed.damageType}` : ""} · {costLabel}
+                  {armed.range ? ` · ${armed.range}` : ""}
+                  {exhausted ? " · spent this cast" : spent ? " · action already used" : ""}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
   function renderArmedEffectsPanel() {
     const visibleEffects = getVisibleArmedEffects();
 
@@ -3894,10 +3998,26 @@ export function ActorCard({
       // the class default and any `spell-uses-*` tag honoured. Authoring "1d20+6" here
       // would silently stop being right the moment the character levels.
       const conjuredAttack = conjured.attack?.trim() || "1d20+@SPELL";
+      /**
+       * ⚠ HOW MANY SWINGS THIS CAST BUYS — the SPELL's own count, not the actor's.
+       *
+       * `spellAttackRollCount` is the field that gives Scorching Ray three rays and one more per
+       * upcast level. Christopher: *"we simply let the field like scorching ray handle the counts
+       * we just put a 2 there."* Finger guns put a 2 there and get two swings; Flame Blade leaves
+       * it blank and gets one. Reading the same field means an upcast scales the swings for free
+       * and nothing here has to know what a ray is.
+       *
+       * ⚠ AND IT REFILLS ON A RECAST, because `upsertArmedEffect` replaces the chip by id — one
+       * cast, that many uses, every time.
+       */
+      const conjuredUses = Math.max(1, spellAttackRollCount({
+        ...action.metadata,
+        selectedCastLevel: getCastLevel(action),
+      }));
       upsertArmedEffect({
         id: `conjured:${action.id}`,
         label: conjured.label ?? action.label,
-        details: `${conjured.damage}${conjured.damageType ? ` ${conjured.damageType}` : ""} — ${conjured.duration ?? action.metadata?.duration ?? "while it lasts"}. Click to attack; costs no further slot.`,
+        details: `${conjured.damage}${conjured.damageType ? ` ${conjured.damageType}` : ""} — ${conjured.duration ?? action.metadata?.duration ?? "while it lasts"}. ${conjuredUses > 1 ? `${conjuredUses} uses this cast. ` : ""}Click to attack; costs no further slot.`,
         source: action.label,
         armedAttack: {
           attack: conjuredAttack,
@@ -3907,6 +4027,8 @@ export function ActorCard({
           range: conjured.range,
           cost: conjured.cost ?? ["main"],
           duration: conjured.duration ?? action.metadata?.duration,
+          usesTotal: conjuredUses,
+          usesLeft: conjuredUses,
         },
       });
       onLog({
@@ -5053,6 +5175,7 @@ export function ActorCard({
 
       {renderWeaponBuffPanel()}
 
+      {renderTemporaryActionsPanel()}
       {renderArmedEffectsPanel()}
 
       {renderClassOptionsPanel()}

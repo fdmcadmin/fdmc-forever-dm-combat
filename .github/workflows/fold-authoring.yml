@@ -93,6 +93,7 @@ jobs:
           npm run check:resourcecost
           npm run check:armedattack
           npm run check:freecast
+          npm run check:tempactions
           npm run check:timed
 
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
