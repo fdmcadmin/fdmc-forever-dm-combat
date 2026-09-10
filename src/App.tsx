@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
 import { migrateFeatsIntoFeatures } from "./core/campaign/migrateFeatsIntoFeatures";
+import { migrateImportedReferenceNotes } from "./core/campaign/stripImportedReferenceNotes";
 import appManifest from "../public/manifest.json";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
@@ -869,6 +870,19 @@ export default function App() {
      * migrated keeps working — the migration moves the DATA, it is not a precondition.
      */
     migrateFeatsIntoFeatures(loadActorLibrary, saveActorLibrary);
+    /**
+     * ⚠ AND THE IMPORTED REFERENCE PROSE COMES OFF, FOR EVERY ACTOR AT ONCE.
+     *
+     * Christopher: *"now i have to go through every single character and delete 2 to 3 different
+     * fields."* He should not. The report is logged rather than swallowed because the sweep
+     * deliberately removes only what it can name — anything else still filed on the two
+     * hidden-prone tabs is printed by actor, so a row nobody has named yet is found by reading
+     * the console instead of by guessing at it.
+     */
+    const strip = migrateImportedReferenceNotes(loadActorLibrary, saveActorLibrary);
+    if (strip.actors > 0 || Object.keys(strip.remaining).length > 0) {
+      console.info("[fdmc] imported reference notes", strip);
+    }
   }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).

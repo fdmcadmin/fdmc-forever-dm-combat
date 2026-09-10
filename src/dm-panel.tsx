@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
 import { migrateFeatsIntoFeatures } from "./core/campaign/migrateFeatsIntoFeatures";
+import { migrateImportedReferenceNotes } from "./core/campaign/stripImportedReferenceNotes";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 
@@ -215,6 +216,14 @@ function DmPanelApp() {
      * migrated keeps working — the migration moves the DATA, it is not a precondition.
      */
     migrateFeatsIntoFeatures(loadActorLibrary, saveActorLibrary);
+    /**
+     * Both entry points sweep, because either one can be the first thing opened — and a sweep
+     * that only runs in one of them is a sweep the other can outrun.
+     */
+    const strip = migrateImportedReferenceNotes(loadActorLibrary, saveActorLibrary);
+    if (strip.actors > 0 || Object.keys(strip.remaining).length > 0) {
+      console.info("[fdmc] imported reference notes", strip);
+    }
   }, []);
 
   // ── Token panel: monster roster from localStorage ─────────────────────────
