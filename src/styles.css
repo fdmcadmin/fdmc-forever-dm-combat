@@ -961,6 +961,11 @@ button {
   padding-left: 9px;
 }
 
+.sheet-summary-gap {
+  color: #e8b64c;
+  border-left-color: rgba(232, 182, 76, 0.45);
+}
+
 .sheet-note-card {
   grid-template-columns: 1fr;
   gap: 5px;

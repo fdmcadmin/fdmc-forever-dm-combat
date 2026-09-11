@@ -18,6 +18,7 @@ export function ActorNotesPanel({
   notes,
   sheetNotes = [],
   summaryLines = [],
+  referenceLines = [],
   onAddNote,
   onDeleteNote,
 }: {
@@ -33,6 +34,17 @@ export function ActorNotesPanel({
    * how the typed half gets retired by eye instead of by a migration that deletes it.
    */
   summaryLines?: readonly string[];
+  /**
+   * The DM reference — hit dice, speed against the 30 ft baseline, darkvision, resistances with
+   * the feature each comes from, every class pool the tables grant at this level, and the DM's own
+   * line for a custom race or class.
+   *
+   * ⚠ DERIVED IS NOT AUTHORED, AND THIS BLOCK SAYS BOTH. *"just because it is derived doesnt mean
+   * a trait or a class resource got created for it."* A resistance prints here whether or not a
+   * feature row exists for it, and a class pool the sheet has no Resources entry for gets a ⚠ line
+   * of its own rather than being listed as though it were present.
+   */
+  referenceLines?: readonly string[];
   /**
    * ⚠ TWO THINGS WERE CALLED "NOTES" AND ONLY ONE OF THEM HAD A SCREEN.
    *
@@ -142,6 +154,24 @@ export function ActorNotesPanel({
           <div className="notes-stack">
             {summaryLines.map((line) => (
               <p className="sheet-summary-line" key={line}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {referenceLines.length > 0 && (
+        <div className="sheet-summary-section">
+          <div className="notes-section-heading-row">
+            <h3>Reference</h3>
+            <span>derived</span>
+          </div>
+          <div className="notes-stack">
+            {referenceLines.map((line) => (
+              <p
+                /* A pool the sheet is missing is a FAULT, not a readout, and is coloured as one. */
+                className={line.startsWith("⚠") ? "sheet-summary-line sheet-summary-gap" : "sheet-summary-line"}
+                key={line}
+              >{line}</p>
             ))}
           </div>
         </div>

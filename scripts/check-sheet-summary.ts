@@ -21,7 +21,7 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deriveSheetSummary, formatSheetSummary } from "../src/core/rules/sheetSummary";
+import { deriveSheetSummary, formatSheetSummary, deriveDmReference, formatDmReference } from "../src/core/rules/sheetSummary";
 import { deriveActorStats } from "../src/core/state/deriveActorStats";
 import type { Actor } from "../src/core/types/actor";
 
@@ -150,7 +150,93 @@ console.log("\n5. it is rendered above the typed rows, and stored nowhere");
     !/classFeatureTracker\s*[:=]/.test(mod) && !/save\w*\(/.test(mod));
 }
 
-console.log("\n6. and no migration deletes the typed copy");
+console.log("\n6. the DM reference reads the tables, not the sheet's authoring");
+{
+  /**
+   * ⚠ THE ASSERTION THIS WHOLE BLOCK EXISTS FOR. Christopher: *"just because it is derived doesnt
+   * mean a trait or a class resource got created for it."* This Dwarf has NO feature rows and NO
+   * resource pools — the fixture's tabs are empty on purpose — and the reference still has to know
+   * about Dwarven Resilience, 120 ft darkvision and a Rage pool.
+   */
+  const dwarf = { ...barbarian, race: "Dwarf" } as unknown as Actor;
+  const ref = deriveDmReference(dwarf);
+  const lines = formatDmReference(ref);
+
+  ok("a species resistance is derived with NO feature row authored",
+    ref.damageResponses.some(r => r.type === "poison" && r.response === "resistant"),
+    JSON.stringify(ref.damageResponses));
+  ok("...and it names the feature it came from",
+    ref.damageResponses.some(r => /Dwarven Resilience/.test(r.source)),
+    ref.damageResponses.map(r => r.source).join("; "));
+  ok("darkvision is derived", ref.darkvisionFt === 120, String(ref.darkvisionFt));
+  ok("...and prints on the speed line", lines.some(l => l.includes("Darkvision 120 ft")), lines.join(" | "));
+  ok("species traits are listed so they need not be authored as features",
+    ref.speciesTraits.length > 0 && lines.some(l => l.startsWith("Dwarf traits:")));
+
+  ok("hit dice come out of the class", lines.some(l => l === "Hit Dice: 9d12."), lines.join(" | "));
+
+  const rage = ref.resources.find(r => /Rage/i.test(r.label));
+  ok("the class pool is derived", Boolean(rage), ref.resources.map(r => r.label).join(", "));
+  ok("...and flagged as NOT on the sheet, because nothing authored it", rage?.onSheet === false);
+  ok("...with its own warning line",
+    lines.some(l => l.startsWith("⚠ No pool on the sheet for:") && /Rage/.test(l)), lines.join(" | "));
+
+  /**
+   * ⚠ MUTATION: AUTHOR THE POOL AND THE WARNING HAS TO GO. A flag that is always true reports
+   * nothing — this is the half that proves `onSheet` is read from `tabs.resources` and not
+   * hard-coded.
+   */
+  const withPool = { ...dwarf, tabs: { ...dwarf.tabs, resources: [{ id: "res-rage", label: "Rage", actionKind: "resource" }] } } as unknown as Actor;
+  const after = deriveDmReference(withPool);
+  ok("mutation: authoring the pool clears the flag",
+    after.resources.find(r => /Rage/i.test(r.label))?.onSheet === true);
+  ok("...and removes the warning line",
+    !formatDmReference(after).some(l => l.startsWith("⚠ No pool on the sheet for:") && /Rage/.test(l)));
+}
+
+console.log("\n7. speed is measured against the 30 ft baseline, and homebrew is typed");
+{
+  /**
+   * *"things like +10 movement and things that those races get or if a class would increase above
+   * the baseline 30 ft or even reduce below it."*
+   */
+  const wood = { ...barbarian, race: "Wood Elf" } as unknown as Actor;
+  const ref = deriveDmReference(wood);
+  ok("a species that deviates says so", Boolean(ref.speed.note), String(ref.speed.note));
+  ok("...naming the difference from 30", /\+5 on the 30 ft baseline/.test(ref.speed.note ?? ""), String(ref.speed.note));
+
+  const plain = deriveDmReference({ ...barbarian, race: "Human" } as unknown as Actor);
+  ok("mutation: a 30 ft species adds no line", plain.speed.note === undefined, String(plain.speed.note));
+
+  /**
+   * ⚠ THE HOMEBREW FIELD IS `classFeatureTracker.note` — the field 0.7.10.25 kept as *"the one
+   * field holding something nothing else knows."* A custom race's resistance has no table to come
+   * from, so it is typed, and it prints in the same block as the derived lines.
+   */
+  const custom = {
+    ...barbarian, race: "Skarn (homebrew)",
+    classFeatureTracker: { label: "", value: "", note: "Resistance: radiant, necrotic. Speed 40 ft." },
+  } as unknown as Actor;
+  const lines = formatDmReference(deriveDmReference(custom));
+  ok("the DM's own line is carried", lines.includes("Resistance: radiant, necrotic. Speed 40 ft."), lines.join(" | "));
+  ok("...and an unknown race derives no species claim", deriveDmReference(custom).speciesName === undefined);
+}
+
+console.log("\n8. it is on the DM's editor and not the level-up panel");
+{
+  const editor = codeOf("src/core/ui/ActorEditor.tsx");
+  ok("the reference is computed from the DRAFT, not the saved actor",
+    /deriveDmReference\(\{\s*\.\.\.actor,/.test(editor) && /level: Number\(profileDraft\.level\)/.test(editor));
+  /**
+   * ⚠ READING `tabsDraft` IS PART OF IT. The missing-pool line compares against `tabs.resources`;
+   * off the saved tabs it would keep warning about a pool just added on the Resources step.
+   */
+  ok("...including the resources being edited right now", /tabs: tabsDraft,/.test(editor));
+  ok("mutation: it is withheld in propose mode — the level-up side",
+    /referenceLines=\{proposeMode \? undefined : profileReference\}/.test(editor));
+}
+
+console.log("\n9. and no migration deletes the typed copy");
 {
   /**
    * ⚠ NAMED AND SEARCHED FOR. 0.8.40.9's `stripImportedReferenceNotes` removed note rows and blanked

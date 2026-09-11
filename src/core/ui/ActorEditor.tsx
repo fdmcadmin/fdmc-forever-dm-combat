@@ -4,7 +4,7 @@ import { chooseBondPath, resolveBond } from "../rules/bondProgress";
 // The fourteen bonds are MOD content; the editor is engine. They arrive here the same way the
 // monster editor gets them — assembled at the seam, never imported by the control itself.
 import { BROKEN_CHAIN_BOND_TEMPLATES } from "../../modules/the-broken-chain/content/bondTemplates";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { loadPendingDrafts, savePendingDraft, removePendingDraft, newPendingDraftId, type PendingDraft } from "../state/pendingDrafts";
 import type { Actor, AbilityId, AbilityScores, ActorKind } from "../types/actor";
 import type { ActorAction, TabId, TabActionMap } from "../types/tabs";
@@ -18,6 +18,7 @@ import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { parseClassLevels, hitDicePools } from "../rules/multiclass";
 import { resourcesForClasses, classHasResources } from "../../modules/dnd-5e/classResources";
 import { castingAbilityForClass } from "../rules/multiclass";
+import { deriveDmReference, formatDmReference } from "../rules/sheetSummary";
 import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
@@ -377,7 +378,7 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; onApplySpecies?: (race: string, ruleset?: SrdRuleset) => SpeciesApplication }) {
+function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, referenceLines, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; referenceLines?: readonly string[]; onApplySpecies?: (race: string, ruleset?: SrdRuleset) => SpeciesApplication }) {
   /** What the last species change did, so an automatic edit is never a silent one. */
   const [speciesNote, setSpeciesNote] = useState<string | null>(null);
   /** Why the last path click was refused, in `chooseBondPath`'s own words. */
@@ -793,6 +794,30 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
         );
       })()}
 
+      {/*
+        ── DM REFERENCE ──────────────────────────────────────────────────────────────────────
+        Christopher: *"a compiled of resources (because these arent getting into the right place
+        all the time) … a list of HP dice and other things for a DM to quick glance where things
+        like darkvision, resistances, and other derived thing from the SRD … those class and race
+        trait would then not need to be made as a feature."*
+
+        ⚠ DERIVED IS NOT AUTHORED — *"just because it is derived doesnt mean a trait or a class
+        resource got created for it."* The ⚠ line names every class pool the tables grant that has
+        no entry on the Resources step, which is the fault that was being discovered mid-fight.
+      */}
+      {referenceLines && referenceLines.length > 0 && (
+        <div style={{ margin: "4px 0 0", padding: "8px 10px", background: "#13131f", border: "1px solid #2a2a3e", borderRadius: 6 }}>
+          <span style={{ fontSize: 10, color: "#7be08a", textTransform: "uppercase", letterSpacing: 1 }}>
+            DM Reference · derived, never stored
+          </span>
+          {referenceLines.map(line => (
+            <p key={line} style={{ margin: "3px 0 0", fontSize: 11, lineHeight: 1.45, color: line.startsWith("⚠") ? "#e8b64c" : "#8fa8b8" }}>
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+
       <h4 style={{ margin: "4px 0 0" }}>Class Feature Tracker</h4>
       {/* LABEL AND VALUE ARE GONE. They were hand-typed copies of things the engine derives —
           a class pool belongs in Resources where it can be spent and restored, and spell DC /
@@ -800,7 +825,14 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
           nothing else knows. The stored label/value are left untouched on existing actors. */}
       <label style={{ ...labelStyle }}>Note
         <input type="text" value={draft.classFeatureNote} onChange={e => set("classFeatureNote", e.target.value)}
-          placeholder="Anything the sheet cannot derive" style={inputStyle} />
+          /**
+           * ⚠ THIS IS THE HOMEBREW FIELD, AND THE PLACEHOLDER NOW SAYS SO. *"this is also where the
+           * Dm would put notes for custom races and classes."* The SRD tables above answer for the
+           * ten published species and the twelve classes; a homebrew lineage's resistance or a
+           * third-party class's movement is exactly the thing no table can know, and it prints in
+           * the same Reference block on the card.
+           */
+          placeholder="Custom race / class — e.g. Resistance: radiant, necrotic. Speed 40 ft." style={inputStyle} />
       </label>
 
       {/*
@@ -956,6 +988,35 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
    */
   const editorClassRows = parseClassLevels(profileDraft.className, profileDraft.multiclassLevels);
   const [tabsDraft, setTabsDraft] = useState<TabActionMap>(() => ({ ...actor.tabs }));
+
+  /**
+   * THE DM REFERENCE, COMPUTED OFF THE DRAFT RATHER THAN OFF THE SAVED ACTOR.
+   *
+   * Christopher: *"any changes to a character sheet or a lvl up was broken, it still had stuff from
+   * level 5 in it."* A block that only refreshed on save would reproduce that fault in a new place
+   * — type the new level, and the reference still describes the old one until you commit. Every
+   * field it reads is overlaid from the draft, so raising a level or changing a race moves the hit
+   * dice, the resistances and the missing-pool warning as you type.
+   *
+   * ⚠ `tabs: tabsDraft` MATTERS AS MUCH AS THE LEVEL. The missing-pool line compares the class
+   * tables against `tabs.resources`; reading the SAVED tabs would keep warning about a pool you
+   * just added on the Resources step.
+   */
+  const profileReference = useMemo(() => formatDmReference(deriveDmReference({
+    ...actor,
+    race: profileDraft.race,
+    srdRuleset: profileDraft.srdRuleset,
+    className: profileDraft.className,
+    level: Number(profileDraft.level) || actor.level,
+    classes: parseClassLevels(profileDraft.className, profileDraft.multiclassLevels),
+    stats: { ...actor.stats, speed: profileDraft.speed || actor.stats.speed },
+    damageResponses: profileDraft.damageResponses,
+    classFeatureTracker: {
+      ...(actor.classFeatureTracker ?? { label: "", value: "" }),
+      note: profileDraft.classFeatureNote,
+    },
+    tabs: tabsDraft,
+  } as Actor)), [actor, profileDraft, tabsDraft]);
   const [showDanger, setShowDanger] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   // Surface save failures in the UI instead of silently swallowing them (the click
@@ -1232,6 +1293,13 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
             bondOptions={BROKEN_CHAIN_BOND_TEMPLATES}
             characterLevel={actor.level ?? 1}
             canAssignBond={!proposeMode}
+            /**
+             * ⚠ DM SIDE ONLY. Christopher: *"this should be a section that shows on the character
+             * editor on the Dm side but doesnt need to be there on the level up side."*
+             * `proposeMode` IS the player-facing level-up request panel — the same test the
+             * equipment editor uses to decide who is sitting here.
+             */
+            referenceLines={proposeMode ? undefined : profileReference}
             onApplySpecies={applySpecies} />
         )}
         {activeTab === "combat" && (

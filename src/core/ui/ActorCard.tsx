@@ -55,7 +55,7 @@ import { CommittedRollPanel, type ReadiedRollCandidate } from "./CommittedRollPa
 import { getRerollSources } from "../state/rerollSources";
 import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
-import { deriveSheetSummary, formatSheetSummary } from "../rules/sheetSummary";
+import { deriveSheetSummary, formatSheetSummary, deriveDmReference, formatDmReference } from "../rules/sheetSummary";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
@@ -5641,6 +5641,14 @@ export function ActorCard({
           summaryLines={formatSheetSummary(
             deriveSheetSummary(actor, deriveActorStats(actor, undefined, status)),
           )}
+          /**
+           * ⚠ THE QUICK-GLANCE HALF, AND IT IS FOR BOTH SEATS. *"when a dm or player is like i took
+           * X damage type, they should be able to see something besides the class trait."* A
+           * resistance is a RULE about this character, so it is shown to whoever is holding the
+           * card — hiding it from the player is the situation that sends them hunting through
+           * feature rows for a trait nobody authored.
+           */
+          referenceLines={formatDmReference(deriveDmReference(actor))}
           /**
            * The tab's OWN rows — `tabContents` rather than `actor.tabs.notes` so this reads like
            * every other tab. Nothing else on the card renders them, and the export carries them,
