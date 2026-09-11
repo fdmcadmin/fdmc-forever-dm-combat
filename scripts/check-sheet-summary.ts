@@ -256,7 +256,7 @@ console.log("\n8. passives come off the check rows the sheet already has");
   ok("...and its guess is the bare modifier", p("Investigation").value === 9, String(p("Investigation").value));
   const line = formatDmReference(ref).find(l => l.startsWith("Passive:"))!;
   ok("...and the line says so out loud",
-    /Investigation 9 \(no check row — unproficient assumed\)/.test(line), line);
+    /Investigation 9 \(no proficiency stated — unproficient assumed\)/.test(line), line);
 
   /**
    * ⚠ A FLAT FORMULA HAS TO WORK TOO. Sheets in this party carry both styles, and reading the RAW

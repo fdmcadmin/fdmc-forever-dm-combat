@@ -162,6 +162,13 @@ jobs:
       - name: check the combat summary is derived and the typed copy survives
         run: npm run check:sheetsummary
 
+      # The eighteen skills come from the SRD, not from a campaign helper five sheets happened to
+      # use — and the Checks tab the card renders is now one the editor can open. Every generated
+      # row carries 6380 6380tokens: the party currently holds 90 frozen totals, right at the level they
+      # were typed and silently stale after an ASI.
+      - name: check the SRD skill checks and the Checks step
+        run: npm run check:skillchecks
+
       - name: check timed bodies
         run: npm run check:timed
 

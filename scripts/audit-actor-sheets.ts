@@ -85,15 +85,38 @@ for (const actor of actors) {
   }
 
   /**
-   * ⚠ A SHEET THE TABLES CANNOT ANSWER FOR IS REPORTED AS SUCH, not silently skipped. An Illrigger
-   * and a Kobold are both real entries in this party and neither is SRD; everything on those rows
-   * is the only copy there is, and the rebuild must not treat a silent section as an empty one.
+   * ⚠ A SHEET THE TABLES CANNOT ANSWER FOR IS REPORTED AS SUCH, not silently skipped — but only
+   * where an answer was ever OWED.
+   *
+   * Christopher, 2026-09-10: *"Faelar needs no class name its a beast of the land and its tagged to
+   * the beast master"*, and *"Rimekin … comes from one of the new books, they are usable but they
+   * are not in the list."* Neither is a fault, and printing them as findings buries the two that
+   * are. A companion has no class by design; a species from a book the SRD does not cover is a
+   * legitimate sheet whose race is simply typed. The line says which of the two it is.
    */
+  const isCompanion = (actor as { kind?: string }).kind === "companion";
   if (!ref.speciesName && actor.race) {
-    console.log(`   ⓘ ${actor.race} is not one of the SRD species — nothing on this sheet's race is derived, so none of it is redundant.`);
+    console.log(`   ⓘ ${actor.race} is outside the SRD's ten species — its traits are typed, and nothing on this sheet's race is redundant.`);
   }
-  if (ref.resources.length === 0) {
-    console.log(`   ⓘ the class tables have no entry for "${actor.className ?? ""}" — its pools are authored, not derived.`);
+  if (ref.resources.length === 0 && !isCompanion && (actor.className ?? "").trim() !== "") {
+    console.log(`   ⓘ the class tables have no entry for "${actor.className}" — its pools are authored, not derived.`);
+  }
+
+  /**
+   * ⚠ NO CHECK ROWS IS A FAULT, AND IT HAS ONE CAUSE. Nothing outside the hand-built module helper
+   * ever made them: *"why did raphael not get the checks, this wasnt build by me but generated."*
+   */
+  const checks = actor.tabs?.checks ?? [];
+  if (checks.length === 0) {
+    console.log("   ⓘ this sheet stores no check rows — the eighteen SRD skills are generated, so they render; tick proficiency on the Checks step where it applies.");
+  } else {
+    const frozen = checks.filter(c => {
+      const f = c.metadata?.attack ?? c.description ?? "";
+      return f && !/@/.test(f);
+    });
+    if (frozen.length > 0) {
+      console.log(`   ⚠ ${frozen.length} of ${checks.length} check rows are FROZEN TOTALS — correct at the level they were typed, silently stale after an ASI or a proficiency step. Tick them on the Checks step to rebuild as formulas.`);
+    }
   }
 
   console.log("");

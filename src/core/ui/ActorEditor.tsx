@@ -23,6 +23,7 @@ import { deriveDmReference, formatDmReference } from "../rules/sheetSummary";
 import { deriveActorStats } from "../state/deriveActorStats";
 import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
+import { SkillChecksEditor } from "./SkillChecksEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
 import { tabAccent } from "./tabVisuals";
 
@@ -113,6 +114,7 @@ type EditorTab =
   | "bonds"
   | "spells"
   | "resources"
+  | "checks"
   | "feats"
   | "equipment"
   | "notes";
@@ -124,6 +126,7 @@ const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
   bonds: "Bond",
   spells: "Spells",
   resources: "Resources",
+  checks: "Checks",
   feats: "Feats",
   equipment: "Equipment",
   notes: "Notes",
@@ -140,7 +143,7 @@ const EDITOR_TAB_LABELS: Record<EditorTab, string> = {
  * still accepts it, and an entry can still be MOVED to Features by hand from the move menu. What
  * goes away is the editor step that invites a DM to put something there in the first place.
  */
-const EDITOR_TABS: EditorTab[] = ["profile", "combat", "features", "bonds", "spells", "resources", "equipment", "notes"];
+const EDITOR_TABS: EditorTab[] = ["profile", "combat", "features", "bonds", "spells", "resources", "checks", "equipment", "notes"];
 
 // Distinct color accent per creator step (P-UX1). Derived from the shared
 // `tabVisuals` source of truth so the creator's tabs match the character sheet's
@@ -153,6 +156,7 @@ const EDITOR_TAB_ACCENT: Record<EditorTab, string> = {
   bonds: tabAccent("bond"),
   spells: tabAccent("spells"),
   resources: tabAccent("features"),
+  checks: tabAccent("checks"),
   feats: tabAccent("feats"),
   equipment: tabAccent("equipment"),
   notes: tabAccent("notes"),
@@ -174,6 +178,13 @@ const STEP_HINT: Record<EditorTab, string> = {
   bonds: "Optional — bonds & primed additives (Rage, Focus, Pressure, Dark Bargain…).",
   spells: "Optional — spells and slot levels.",
   resources: "Optional — resource pools and class features.",
+  /**
+   * ⚠ THIS STEP DID NOT EXIST, AND THE CARD HAS BEEN RENDERING THE TAB THE WHOLE TIME. Five sheets
+   * carry all eighteen rows because the hand-built module helper made them; one carries none,
+   * because there was no route to make them. Same shape as the retired feats tab: a tab the card
+   * reads and the editor cannot open is invisible data.
+   */
+  checks: "The eighteen SRD skills. Tick proficiency — the formula is derived, so an ASI or a proficiency step moves every row at once.",
   /**
    * ⚠ UNREACHABLE — the Feats step was removed and feats live on Features. Kept only because
    * `EditorTab` still includes the id, so this record must stay total.
@@ -1227,6 +1238,7 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       case "bonds": return (tabsDraft.bond ?? []).length;
       case "spells": return (tabsDraft.spells ?? []).length;
       case "resources": return (tabsDraft.resources ?? []).length;
+      case "checks": return (tabsDraft.checks ?? []).length;
       case "feats": return (tabsDraft.feats ?? []).length;
       case "equipment": return (tabsDraft.equipment ?? []).length;
       case "notes": return (tabsDraft.notes ?? []).length;
@@ -1471,6 +1483,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               setTabsDraft(d => ({ ...d, ...updates }));
             }}
           />
+        )}
+        {activeTab === "checks" && (
+          <SkillChecksEditor actions={tabsDraft.checks ?? []} onChange={handleTabActions("checks")} />
         )}
         {activeTab === "notes" && (
           <ActorEditorActionTab classRows={editorClassRows} tabId="notes" actions={tabsDraft.notes ?? []} onChange={handleTabActions("notes")} onMoveToTab={handleMoveActionToTab} />

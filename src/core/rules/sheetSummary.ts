@@ -56,6 +56,7 @@ import { resolveSpecies } from "../../modules/dnd-5e/srdSpecies";
 import { damageResponsesForActor } from "../../modules/dnd-5e/classDamageResponses";
 import { resourcesForClasses } from "../../modules/dnd-5e/classResources";
 import { shortRestRulesFor } from "../../modules/dnd-5e/shortRestRules.generated";
+import { resolveSkillChecks } from "../../modules/dnd-5e/srdSkills";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 export type AbilityId = (typeof ABILITIES)[number];
@@ -281,14 +282,32 @@ function flatTotal(resolved: string): number {
   return total;
 }
 
+/**
+ * ⚠ THE VALUE COMES OFF THE RESOLVED ROW; THE FLAG COMES OFF THE STORED ONE.
+ *
+ * Once `resolveSkillChecks` publishes all eighteen, EVERY skill has a row — so "has a row" stopped
+ * meaning anything and the flag had to move. What it asks now is whether the sheet has STATED
+ * anything about this skill: a generated row is the mod's default, and a default says unproficient
+ * because it has no way to know otherwise. A proficient character nobody has ticked still reads
+ * low, and the flag is the only thing that says so.
+ *
+ * The gate caught this the moment the resolver landed — `hasRow` was true for all three on a sheet
+ * storing two, which is a flag that cannot fail.
+ */
 function passivesFor(actor: Actor, stats: DerivedStats): PassiveScore[] {
   const resolve = (f: string) => resolveFormulaVars(f, actor, stats);
-  const rows = actor.tabs?.checks ?? [];
+  const stored = actor.tabs?.checks ?? [];
+  const rows = resolveSkillChecks(stored);
+  const statedLabels = new Set(stored.map(r => (r.label ?? "").trim().toLowerCase()));
   return PASSIVE_SKILLS.map(({ skill, ability }) => {
-    const row = rows.find(r => (r.label ?? "").trim().toLowerCase() === skill.toLowerCase());
-    if (!row) return { skill, ability, value: 10 + stats[ability].modifier, hasRow: false };
-    const formula = row.metadata?.attack ?? row.description ?? "";
-    return { skill, ability, value: 10 + flatTotal(resolve(formula)), hasRow: true };
+    const key = skill.toLowerCase();
+    const row = rows.find(r => (r.label ?? "").trim().toLowerCase() === key);
+    const formula = row?.metadata?.attack ?? row?.description ?? "";
+    return {
+      skill, ability,
+      value: formula ? 10 + flatTotal(resolve(formula)) : 10 + stats[ability].modifier,
+      hasRow: statedLabels.has(key),
+    };
   });
 }
 
@@ -518,7 +537,7 @@ export function formatDmReference(ref: DmReference): string[] {
      */
     lines.push(
       "Passive: " + ref.passives.map(p =>
-        `${p.skill} ${p.value}${p.hasRow ? "" : " (no check row — unproficient assumed)"}`
+        `${p.skill} ${p.value}${p.hasRow ? "" : " (no proficiency stated — unproficient assumed)"}`
       ).join(", ") + ".",
     );
   }

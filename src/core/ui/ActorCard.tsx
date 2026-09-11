@@ -56,6 +56,7 @@ import { getRerollSources } from "../state/rerollSources";
 import type { RerollSource } from "../state/rerollSources";
 import { deriveActorStats } from "../state/deriveActorStats";
 import { deriveSheetSummary, formatSheetSummary, deriveDmReference, formatDmReference } from "../rules/sheetSummary";
+import { resolveSkillChecks } from "../../modules/dnd-5e/srdSkills";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey, chargeBearingActions } from "../state/itemCharges";
@@ -598,6 +599,13 @@ const orderedTabs: TabId[] = [
  */
 function tabContents(actor: Actor, tabId: TabId): ActorAction[] {
   const own = actor.tabs[tabId] ?? [];
+  /**
+   * ⚠ THE EIGHTEEN SKILLS ARE PUBLISHED BY THE MOD, NOT STORED ON THE SHEET. Christopher:
+   * *"they are listed as srd so shouldnt need to be created once the dnd mode is loaded."* A sheet
+   * stores only its DEVIATIONS — a proficiency tick, a house formula — and `resolveSkillChecks`
+   * fills the rest. This is what gives Raphael eighteen rows without anyone authoring one.
+   */
+  if (tabId === "checks") return resolveSkillChecks(own);
   if (tabId !== "features") return own;
   return [...own, ...(actor.tabs.feats ?? []), ...(actor.tabs.outOfCombat ?? [])];
 }
