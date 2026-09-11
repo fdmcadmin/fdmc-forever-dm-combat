@@ -99,6 +99,14 @@ for (const actor of actors) {
   const isCompanion = (actor as { kind?: string }).kind === "companion";
   if (!ref.speciesName && actor.race) {
     console.log(`   ⓘ ${actor.race} is outside the SRD's ten species — its traits are typed, and nothing on this sheet's race is redundant.`);
+  } else if (ref.speciesName && ref.speciesPools.length === 0) {
+    /**
+     * ⚠ THE THIRD CATEGORY, SAID OUT LOUD. Christopher, on the Aasimar: *"It will be handled the
+     * same way the Rimekin is as a entered race and a authored rest pool."* A species the app
+     * RESOLVES but the recovery workbook does not price is neither derived nor missing — its pools
+     * are authored — and a silent section would leave a reader to guess which of the three it is.
+     */
+    console.log(`   ⓘ ${ref.speciesName} resolves its traits, but the recovery registry prices no pool for it — any species pool here is authored on the sheet.`);
   }
   if (ref.resources.length === 0 && !isCompanion && (actor.className ?? "").trim() !== "") {
     console.log(`   ⓘ the class tables have no entry for "${actor.className}" — its pools are authored, not derived.`);

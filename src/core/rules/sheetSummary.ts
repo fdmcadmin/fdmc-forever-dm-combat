@@ -234,6 +234,12 @@ export type DmReference = {
   darkvisionFt?: number;
   /** Species traits, so a race trait need not be authored as a feature to be readable. */
   speciesName?: string;
+  /**
+   * WHICH DOCUMENT ANSWERED for this race, which is not always the one the sheet asked for.
+   * Printed beside a species claim so a pool that exists in only one edition is visibly an
+   * edition's claim rather than a bare assertion.
+   */
+  speciesRuleset?: "5.2.1" | "5.1";
   speciesTraits: { name: string; text: string }[];
   /** Resistances, immunities and vulnerabilities with the feature each comes from. */
   damageResponses: { type: string; response: string; source: string; gatedByResource?: string }[];
@@ -375,6 +381,7 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
     speed: { sheet: sheetSpeed, speciesFt: species?.speedFt, note: speedNote },
     darkvisionFt: species?.darkvisionFt,
     speciesName: species?.name,
+    speciesRuleset: species?.ruleset,
     speciesTraits: (species?.traits ?? []).map(t => ({ name: t.name, text: t.text })),
     damageResponses: damageResponsesForActor(actor).map(r => ({
       type: r.type, response: r.response, source: r.source, gatedByResource: r.gatedByResource,
@@ -385,8 +392,22 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
      * the Elf entry, and the workbook keys its rows on the species; asking it about "Wood Elf"
      * would find nothing and report a Lineage's free casts as absent on every elf in the party.
      */
+    /**
+     * ⚠ THE RULESET THAT ANSWERED, NOT THE ONE THE SHEET ASKED FOR.
+     *
+     * `resolveSpecies` documents this exactly: *"Which document actually answered — not always the
+     * one requested"*, because a race in only ONE of the two resolves there whatever the sheet
+     * says. Passing `actor.srdRuleset` meant a sheet stating 5.2.1 with a Half-Orc resolved its
+     * traits from 5.1 and then asked the recovery registry about a 5.2.1 Half-Orc, which does not
+     * exist — so Relentless Endurance came back as no pool at all, silently.
+     *
+     * Christopher, 2026-09-11: *"wood elf is on the SRD 5.1 not the 5.2.1 which is why Lyrielle
+     * shows species pool not on the sheet."* Her sheet states 5.2.1 and the Elf resolves in BOTH,
+     * so that one is not this bug — see the note on `speciesRuleset` below — but hunting it found
+     * this one, which would have cost every Half-Orc and Half-Elf in the party their racial pool.
+     */
     speciesPools: speciesRecoveryFor(
-      actor.srdRuleset ?? "5.2.1",
+      species?.ruleset ?? actor.srdRuleset ?? "5.2.1",
       species?.species.name,
       characterLevel(actor),
     ).map(r => ({
@@ -633,7 +654,8 @@ export function formatDmReference(ref: DmReference): string[] {
   if (speciesGaps.length > 0) {
     lines.push(
       "⚠ Species pools not on the sheet: "
-      + speciesGaps.map(p => `${p.resource} (short ${p.shortRest}, long ${p.longRest})`).join(", ") + ".",
+      + speciesGaps.map(p => `${p.resource} (short ${p.shortRest}, long ${p.longRest})`).join(", ")
+      + `${ref.speciesRuleset ? ` — per SRD ${ref.speciesRuleset}` : ""}.`,
     );
   }
 
