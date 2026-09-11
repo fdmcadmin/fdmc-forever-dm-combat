@@ -21,7 +21,7 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deriveSheetSummary, formatSheetSummary, deriveDmReference, formatDmReference } from "../src/core/rules/sheetSummary";
+import { deriveSheetSummary, formatSheetSummary, deriveDmReference, formatDmReference, redundantSheetRows } from "../src/core/rules/sheetSummary";
 import { deriveActorStats } from "../src/core/state/deriveActorStats";
 import { classResourceRowsToAdd } from "../src/modules/dnd-5e/classResourceActions";
 import type { Actor } from "../src/core/types/actor";
@@ -349,7 +349,61 @@ console.log("\n10. the subclass is checked against the registry — named, not s
     lines.join(" | "));
 }
 
-console.log("\n11. it is on the DM's editor and not the level-up panel");
+console.log("\n11. what the sheet no longer needs is FLAGGED, and only where it was derived");
+{
+  /**
+   * Christopher: *"it should be able to flag what is not needed in the features as the extra
+   * actions that are already made, this way when we purge the action/traits/features/spells and
+   * rebuild them we can do it correctly."*
+   */
+  const orc = {
+    ...barbarian, race: "Orc",
+    tabs: { ...barbarian.tabs,
+      features: [
+        { id: "darkvision-rip", label: "Darkvision", actionKind: "feature", metadata: { details: "120 ft." } },
+        { id: "relentless-rip", label: "Relentless Endurance", actionKind: "feature", metadata: { details: "…" } },
+        { id: "mastery-rip", label: "Weapon Mastery", actionKind: "feature", metadata: { details: "…" } },
+        // Carries a mechanic — must survive.
+        { id: "rage-rip", label: "Rage", actionKind: "feature", economyCost: ["bonus"], metadata: { details: "+2 damage", damage: "2" } },
+      ],
+      outOfCombat: [{ id: "short-rest-rip", label: "Short Rest", actionKind: "utility", metadata: {} }],
+    },
+  } as unknown as Actor;
+  const flagged = redundantSheetRows(orc, deriveDmReference(orc, deriveActorStats(orc)));
+  const labels = flagged.map(f => f.label);
+
+  ok("a derived species trait is flagged", labels.includes("Darkvision") && labels.includes("Relentless Endurance"), labels.join(", "));
+  ok("a retired mechanism is flagged", labels.includes("Weapon Mastery") && labels.includes("Short Rest"));
+  ok("...each saying what covers it now",
+    flagged.every(f => f.coveredBy.length > 0),
+    JSON.stringify(flagged.map(f => `${f.label} → ${f.coveredBy}`)));
+
+  /**
+   * ⚠ THE ROW THAT DOES SOMETHING SURVIVES. Rage's resistance IS derived, so its NAME matches —
+   * and on a sheet where that row also carries the damage toggle, flagging it would invite deleting
+   * the toggle. The derivation reproduces the text beside a feature, never its mechanics.
+   */
+  ok("mutation: a row carrying a mechanic is NEVER flagged", !labels.includes("Rage"), labels.join(", "));
+
+  /**
+   * ⚠ AND THE SAME LABEL ON A SHEET NOTHING DERIVED IS UNTOUCHED. Kobold is not one of the SRD's
+   * ten species, so a Darkvision row there is the only copy that exists. A word-list rule would
+   * delete it — which is exactly how a party loses Pack Tactics in a cleanup.
+   */
+  const kobold = { ...orc, race: "Kobold" } as unknown as Actor;
+  const koboldFlags = redundantSheetRows(kobold, deriveDmReference(kobold, deriveActorStats(kobold)));
+  ok("mutation: an undeived species leaves its trait rows alone",
+    !koboldFlags.some(f => f.label === "Darkvision"),
+    koboldFlags.map(f => f.label).join(", "));
+  ok("...but a retired mechanism is still flagged on it",
+    koboldFlags.some(f => f.label === "Short Rest"));
+
+  /** ⚠ IT RETURNS A LIST. Nothing in this module writes, which is the whole lesson of 0.8.40.9. */
+  const mod = codeOf("src/core/rules/sheetSummary.ts");
+  ok("the flagger removes nothing", !/\.splice\(|delete /.test(mod));
+}
+
+console.log("\n12. it is on the DM's editor and not the level-up panel");
 {
   const editor = codeOf("src/core/ui/ActorEditor.tsx");
   ok("the reference is computed from the DRAFT, not the saved actor",
@@ -363,7 +417,7 @@ console.log("\n11. it is on the DM's editor and not the level-up panel");
     /referenceLines=\{proposeMode \? undefined : profileReference\}/.test(editor));
 }
 
-console.log("\n12. and no migration deletes the typed copy");
+console.log("\n13. and no migration deletes the typed copy");
 {
   /**
    * ⚠ NAMED AND SEARCHED FOR. 0.8.40.9's `stripImportedReferenceNotes` removed note rows and blanked

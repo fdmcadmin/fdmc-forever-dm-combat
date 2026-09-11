@@ -46,6 +46,7 @@
  */
 
 import type { Actor } from "../types/actor";
+import type { ActorAction } from "../types/tabs";
 import type { DerivedStats } from "../state/deriveActorStats";
 import { proficiencyBonus } from "./dnd5e";
 import { castingAbilityForClass, classLevels, characterLevel, hitDicePools, type CastingAbility } from "./multiclass";
@@ -249,6 +250,12 @@ export type DmReference = {
    * against the libraries"* — this is the subclass half, as far as the libraries can answer.
    */
   subclassPools: { resource: string; earliestLevel: number | null; onSheet: boolean }[];
+  /**
+   * Rows the derivation now supplies — flagged, never removed. Filled by `deriveDmReference` once
+   * the rest of the reference is known, because "redundant" is measured against what was actually
+   * derived for THIS actor.
+   */
+  covered: RedundantRow[];
   /** The DM's own line — custom races, homebrew classes, anything the tables cannot know. */
   dmNote?: string;
 };
@@ -330,7 +337,7 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
     ? `${species.name} walks ${species.speedFt} ft — ${species.speedFt > 30 ? "+" : ""}${species.speedFt - 30} on the 30 ft baseline.`
     : undefined;
 
-  return {
+  const ref: DmReference = {
     hitDice: hitDicePools(actor),
     speed: { sheet: sheetSpeed, speciesFt: species?.speedFt, note: speedNote },
     darkvisionFt: species?.darkvisionFt,
@@ -340,6 +347,7 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
       type: r.type, response: r.response, source: r.source, gatedByResource: r.gatedByResource,
     })),
     resources,
+    covered: [], // filled below — "redundant" is measured against the finished reference
     passives: passivesFor(actor, stats),
     /**
      * ⚠ A ROW SAYING "none" IS AN ANSWER, NOT A HOLE — the registry's own words. Most subclasses
@@ -358,6 +366,114 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
     ),
     dmNote: actor.classFeatureTracker?.note?.trim() || undefined,
   };
+
+  /**
+   * ⚠ LAST, AND ON THE FINISHED OBJECT. Whether a row is redundant depends on what THIS reference
+   * derived — a Darkvision row is a duplicate on an Aasimar and the only copy on a Kobold — so the
+   * flagger cannot run until the species, responses and pools are all resolved.
+   */
+  ref.covered = redundantSheetRows(actor, ref);
+  return ref;
+}
+
+/* ══ WHAT THE SHEET NO LONGER NEEDS TO CARRY ═══════════════════════════════════════════════════
+ *
+ * Christopher: *"it should be able to flag what is not needed in the features as the extra actions
+ * that are already made, this way when we purge the action/traits/features/spells and rebuild them
+ * we can do it correctly."*
+ *
+ * ⚠ FLAGGED, NEVER REMOVED — and that sentence is load-bearing after 0.8.40.9. This returns a LIST.
+ * Nothing here writes, and the rebuild is a decision made by a person looking at it.
+ *
+ * ⚠ MATCHED AGAINST WHAT WAS ACTUALLY DERIVED FOR **THIS** ACTOR, NOT AGAINST A WORD LIST. A
+ * Darkvision row is redundant on an Aasimar because `resolveSpecies` answered for that sheet; the
+ * same row on a Kobold is the ONLY copy that exists, because the SRD's ten species do not include
+ * one and nothing derived it. A name-based rule would delete the second along with the first —
+ * which is how a party loses Pack Tactics and Sunlight Sensitivity in a cleanup.
+ */
+export type RedundantRow = {
+  tab: "features" | "feats" | "outOfCombat" | "main" | "bonus";
+  id: string;
+  label: string;
+  /** What now covers it — shown so the call is reviewable rather than trusted. */
+  coveredBy: string;
+};
+
+/** Mechanisms that replaced a row outright, and the thing that replaced them. */
+const RETIRED_ROWS: readonly { match: RegExp; coveredBy: string }[] = [
+  { match: /^short rest$/i, coveredBy: "the Short Rest button" },
+  { match: /^long rest$/i, coveredBy: "the Long Rest button" },
+  { match: /^weapon mastery$/i, coveredBy: "the Weapon Mastery picker" },
+];
+
+export function redundantSheetRows(actor: Actor, ref: DmReference): RedundantRow[] {
+  const out: RedundantRow[] = [];
+  const norm = (s: string) => (s ?? "").trim().toLowerCase();
+
+  /** Species trait names, and the "<Species> Traits" summary row a sheet often carries instead. */
+  const traitNames = new Set(ref.speciesTraits.map(t => norm(t.name)));
+  const speciesSummary = ref.speciesName ? norm(`${ref.speciesName} traits`) : null;
+
+  /**
+   * The feature half of a derived response's source — "Aasimar · Celestial Resistance" names the
+   * row a sheet would have authored for it.
+   */
+  const responseFeatures = new Set(
+    ref.damageResponses.map(r => norm(r.source.split("·").pop() ?? "")).filter(Boolean),
+  );
+
+  const poolLabels = new Set(ref.resources.filter(r => r.onSheet).map(r => norm(r.label)));
+
+  /**
+   * ⚠ ONLY A PURE REFERENCE ROW IS EVER CALLED REDUNDANT.
+   *
+   * A row that carries `statEffects`, an action cost, dice or a linked pool DOES something — the
+   * derivation reproduces the TEXT beside it, never the mechanics. Rage is the case that proves
+   * it: the species/class tables derive its resistance, so a name match flags the row, and on a
+   * sheet where that row also carries the +2 damage toggle, dropping it would take the toggle with
+   * it. The rebuild is allowed to lose a paragraph; it is not allowed to lose a rider.
+   */
+  const isReferenceOnly = (row: ActorAction) =>
+    !(row.metadata?.statEffects as unknown[] | undefined)?.length
+    && !(row.economyCost ?? []).length
+    && !row.metadata?.attack
+    && !row.metadata?.damage
+    && !row.metadata?.resourceCost
+    && !row.metadata?.resourceId;
+
+  for (const tab of ["features", "feats", "outOfCombat"] as const) {
+    for (const row of (actor.tabs?.[tab] ?? [])) {
+      const label = norm(row.label);
+      if (!label) continue;
+      if (!isReferenceOnly(row)) continue;
+
+      const retired = RETIRED_ROWS.find(r => r.match.test(row.label.trim()));
+      if (retired) { out.push({ tab, id: row.id, label: row.label, coveredBy: retired.coveredBy }); continue; }
+
+      if (speciesSummary && label === speciesSummary) {
+        out.push({ tab, id: row.id, label: row.label, coveredBy: `the derived ${ref.speciesName} trait list` });
+        continue;
+      }
+      if (traitNames.has(label)) {
+        out.push({ tab, id: row.id, label: row.label, coveredBy: `${ref.speciesName} · derived species trait` });
+        continue;
+      }
+      if (responseFeatures.has(label)) {
+        out.push({ tab, id: row.id, label: row.label, coveredBy: "a derived damage response" });
+        continue;
+      }
+      /**
+       * ⚠ ONLY WHEN THE POOL IS ACTUALLY ON THE SHEET. A "Rage" feature row beside a real Rage
+       * pool is a duplicate; the same row with NO pool is the only place the feature is recorded,
+       * and flagging it would invite deleting the last copy.
+       */
+      if (poolLabels.has(label)) {
+        out.push({ tab, id: row.id, label: row.label, coveredBy: "a Resources pool of the same name" });
+      }
+    }
+  }
+
+  return out;
 }
 
 /**
@@ -430,6 +546,19 @@ export function formatDmReference(ref: DmReference): string[] {
       "⚠ Subclass grants, not on the sheet: "
       + subMissing.map(p => p.resource + (p.earliestLevel ? ` (from level ${p.earliestLevel})` : "")).join(", ")
       + " — add each with its own uses; the registry names them but not how many.",
+    );
+  }
+
+  /**
+   * ⚠ "COVERED" IS NOT A WARNING AND IS NOT MARKED AS ONE. Nothing is broken — these rows simply
+   * have a second source now, and the line exists so the purge-and-rebuild has a list to work
+   * from rather than a memory. Christopher: *"this way when we purge the action/traits/features/
+   * spells and rebuild them we can do it correctly."*
+   */
+  if (ref.covered.length > 0) {
+    lines.push(
+      "Now derived, so the sheet need not carry it: "
+      + ref.covered.map(c => `${c.label} (${c.coveredBy})`).join(", ") + ".",
     );
   }
 
