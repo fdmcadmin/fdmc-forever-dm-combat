@@ -345,6 +345,34 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
     (actor.tabs?.resources ?? []).map(r => (r.label ?? "").trim().toLowerCase()).filter(Boolean),
   );
 
+  /**
+   * IS THIS GRANTED POOL ON THE SHEET?
+   *
+   * ⚠ AN EXACT-LABEL MATCH CALLS A POOL MISSING BECAUSE IT WAS NAMED WELL. Christopher, 2026-09-11:
+   * *"why is favored enemy listed as missing"* — it is not. Lyrielle carries it as **"Hunter's Mark
+   * - Favored Enemy"**, because on a Ranger that pool IS the free Hunter's Mark casts, and a DM who
+   * writes the more useful label got told they had nothing.
+   *
+   * So a sheet label CONTAINING the granted name counts as that pool. Bounded by non-word
+   * characters on both sides, which is what stops "Rage" matching "Outrage" or "Barrage" — the
+   * failure an unbounded `includes` would trade for this one.
+   *
+   * ⚠ ONE DIRECTION ONLY. The sheet's label may be longer than the table's and never shorter: a
+   * pool called "Enemy" must not satisfy "Favored Enemy", because that is a different thing named
+   * vaguely rather than the same thing named well.
+   */
+  const poolOnSheet = (granted: string) => {
+    const want = granted.trim().toLowerCase();
+    if (!want) return false;
+    if (haveLabels.has(want)) return true;
+    /** "Channel Divinity (Cleric)" is the disambiguated form of a pool the sheet may hold plainly. */
+    const bare = want.replace(/\s*\([^)]*\)\s*$/, "").trim();
+    if (bare && haveLabels.has(bare)) return true;
+    const needle = bare || want;
+    const bounded = new RegExp(`(^|[^a-z0-9])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9]|$)`, "i");
+    return [...haveLabels].some(have => bounded.test(have));
+  };
+
   const resources: ReferenceResource[] = resourcesForClasses(classRows).map(r => ({
     label: r.label,
     max: r.max,
@@ -352,13 +380,11 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
     className: r.className,
     level: r.level,
     /**
-     * ⚠ MATCHED ON THE LABEL, WHICH IS WHAT `resourcesForClasses` ALREADY DE-DUPLICATES ON, and
-     * what the Resources fill button matches when it adds only what is missing. Two readers of one
-     * fact have to use one rule.
+     * ⚠ ONE MATCHER FOR ALL THREE KINDS OF POOL — class, subclass and species. Three copies of a
+     * label rule is three chances for them to disagree about whether a sheet has something, which
+     * is how "Favored Enemy" was reported missing off a sheet that carried it.
      */
-    onSheet: haveLabels.has(r.label.trim().toLowerCase())
-      // "Channel Divinity (Cleric)" is the disambiguated form of a pool the sheet may hold plainly.
-      || haveLabels.has(r.label.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase()),
+    onSheet: poolOnSheet(r.label),
   }));
 
   const species = resolveSpecies(actor.race, actor.srdRuleset);
@@ -414,7 +440,7 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
       resource: r.resource,
       shortRest: r.shortRestMode,
       longRest: r.longRestMode,
-      onSheet: haveLabels.has(r.resource.trim().toLowerCase()),
+      onSheet: poolOnSheet(r.resource),
     })),
     covered: [], // filled below — "redundant" is measured against the finished reference
     passives: passivesFor(actor, stats),
@@ -442,7 +468,7 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
         .map(rule => ({
           resource: rule.resource,
           earliestLevel: rule.minLevel || null,
-          onSheet: haveLabels.has(rule.resource.trim().toLowerCase()),
+          onSheet: poolOnSheet(rule.resource),
         })),
     ),
     /**

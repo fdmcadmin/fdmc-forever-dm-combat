@@ -193,6 +193,35 @@ console.log("\n6. the DM reference reads the tables, not the sheet's authoring")
     after.resources.find(r => /Rage/i.test(r.label))?.onSheet === true);
   ok("...and removes the warning line",
     !formatDmReference(after).some(l => l.startsWith("⚠ No pool on the sheet for:") && /Rage/.test(l)));
+
+  /**
+   * ⚠ A POOL NAMED WELL IS STILL THAT POOL. Christopher, 2026-09-11: *"why is favored enemy listed
+   * as missing"* — it was not missing. Lyrielle carries it as "Hunter's Mark - Favored Enemy",
+   * because on a Ranger that pool IS the free Hunter's Mark casts, and exact-label matching
+   * punished the DM for writing the more useful label.
+   */
+  const poolNamed = (label: string) => {
+    const a = { ...dwarf, tabs: { ...dwarf.tabs, resources: [{ id: "r", label, actionKind: "resource" }] } } as unknown as Actor;
+    return deriveDmReference(a, deriveActorStats(a)).resources.find(r => /^Rage$/i.test(r.label))?.onSheet;
+  };
+  ok("a longer sheet label containing the granted name counts", poolNamed("Frenzy - Rage") === true);
+  ok("...and so does a trailing qualifier", poolNamed("Rage (Barbarian)") === true);
+
+  /**
+   * ⚠ BOUNDED ON BOTH SIDES, WHICH IS THE FAILURE AN UNBOUNDED `includes` WOULD TRADE FOR. These
+   * three are the reason the matcher is a regexp and not a substring test.
+   */
+  ok("mutation: Outrage does NOT satisfy Rage", poolNamed("Outrage") === false);
+  ok("mutation: Barrage does NOT satisfy Rage", poolNamed("Barrage") === false);
+  /**
+   * ⚠ AND ONE DIRECTION ONLY. A pool called "Enemy" must not satisfy "Favored Enemy" — that is a
+   * different thing named vaguely, not the same thing named well.
+   */
+  const ranger = { ...barbarian, className: "Ranger", level: 5,
+    tabs: { ...barbarian.tabs, resources: [{ id: "r", label: "Enemy", actionKind: "resource" }] } } as unknown as Actor;
+  ok("mutation: a SHORTER label does not satisfy a longer granted name",
+    deriveDmReference(ranger, deriveActorStats(ranger)).resources
+      .find(r => /Favored Enemy/i.test(r.label))?.onSheet === false);
 }
 
 console.log("\n7. speed is measured against the 30 ft baseline, and homebrew is typed");
