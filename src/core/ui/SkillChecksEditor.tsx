@@ -21,16 +21,40 @@ import { useMemo } from "react";
 import type { ActorAction } from "../types/tabs";
 import {
   SRD_SKILLS, SKILL_BY_NAME, skillCheckRow, skillFormula,
-  proficiencyFromFormula,
+  proficiencyFromFormula, classifyFrozenCheck,
 } from "../../modules/dnd-5e/srdSkills";
+
+/** The flat total a frozen row states, or null when the row is already a formula. */
+function frozenTotalOf(formula: string): number | null {
+  if (!formula || /@/.test(formula)) return null;
+  const withoutDice = formula.replace(/\b\d*d\d+\b/gi, "");
+  let total = 0;
+  let sawOne = false;
+  for (const m of withoutDice.matchAll(/([+-]?)\s*(\d+)/g)) {
+    total += (m[1] === "-" ? -1 : 1) * Number(m[2]);
+    sawOne = true;
+  }
+  return sawOne ? total : null;
+}
 
 export function SkillChecksEditor({
   actions,
+  abilityModifier,
+  proficiencyBonus,
   onChange,
 }: {
   actions: ActorAction[];
+  /**
+   * ⚠ NEEDED ONLY TO READ A FROZEN ROW. Deciding whether `1d20+7` meant proficiency takes the
+   * character's own modifier and PB; passed in rather than re-derived so this panel cannot
+   * disagree with the card about what a number means.
+   */
+  abilityModifier: (ability: string) => number;
+  proficiencyBonus: number;
   onChange: (next: ActorAction[]) => void;
 }) {
+  const modOf = abilityModifier;
+  const pb = proficiencyBonus;
   const byLabel = useMemo(() => {
     const m = new Map<string, ActorAction>();
     for (const a of actions) m.set((a.label ?? "").trim().toLowerCase(), a);
@@ -82,8 +106,19 @@ export function SkillChecksEditor({
         <tbody>
           {SRD_SKILLS.map(skill => {
             const row = byLabel.get(skill.name.toLowerCase());
-            const formula = row?.metadata?.attack ?? row?.description ?? "";
-            const { proficient, expertise } = proficiencyFromFormula(formula);
+            const formula = String(row?.metadata?.attack ?? row?.description ?? "");
+            const fromTokens = proficiencyFromFormula(formula);
+            /**
+             * ⚠ A FROZEN ROW STATES A TOTAL, AND THE TICKS CAN STILL READ IT. `1d20+7` has no
+             * `@PROF` in it, so token-reading calls it unproficient — which shows every frozen
+             * proficient skill unticked, and ticking it would then look like a change rather than
+             * a transcription. `classifyFrozenCheck` recovers what the number was saying, the same
+             * way `npm run fix:checks` does, so the two never disagree about one row.
+             */
+            const frozenTotal = frozenTotalOf(formula);
+            const reading = frozenTotal === null ? null : classifyFrozenCheck(frozenTotal, modOf(skill.ability), pb);
+            const proficient = reading ? reading === "proficient" || reading === "expertise" : fromTokens.proficient;
+            const expertise = reading ? reading === "expertise" : fromTokens.expertise;
             /**
              * ⚠ A ROW WHOSE FORMULA IS A BARE NUMBER IS CALLED OUT. It cannot say whether it
              * includes proficiency, so the tick state is a guess — saying so is the difference

@@ -67,6 +67,32 @@ export function skillFormula(skill: SrdSkill, proficient: boolean, expertise = f
   return `1d20+@${skill.ability.toUpperCase()}${prof}`;
 }
 
+/**
+ * WHAT A FROZEN TOTAL WAS TRYING TO SAY.
+ *
+ * Christopher, 2026-09-11: *"fix the checks on all character and creatures."* Every check row in
+ * the party stored a NUMBER — `1d20+7` — which states a total and not its parts. The parts are
+ * recoverable exactly: the modifier plus nothing, plus the proficiency bonus, or plus it twice.
+ *
+ * ⚠ AND THE FOURTH ANSWER IS THE ONE THAT MATTERS. A total none of the three explains has
+ * something else in it — an item, a feat, Reliable Talent, a racial bonus — and calling it
+ * "proficient" would silently delete that bonus the moment the row became `@STR+@PROF`.
+ * `"unexplained"` is a real answer and every caller has to handle it rather than round to the
+ * nearest guess.
+ *
+ * ⚠ PB IS CHECKED FOR ZERO. At PB 0 the three cases collapse into one and everything would read as
+ * expertise; a companion carrying no printed bonus is exactly that case.
+ */
+export type FrozenCheckReading = "unproficient" | "proficient" | "expertise" | "unexplained";
+
+export function classifyFrozenCheck(total: number, modifier: number, proficiencyBonus: number): FrozenCheckReading {
+  if (total === modifier) return "unproficient";
+  if (proficiencyBonus <= 0) return "unexplained";
+  if (total === modifier + proficiencyBonus) return "proficient";
+  if (total === modifier + proficiencyBonus * 2) return "expertise";
+  return "unexplained";
+}
+
 /** Read a row's formula back: does it claim proficiency, and expertise? */
 export function proficiencyFromFormula(formula: string | undefined): { proficient: boolean; expertise: boolean } {
   const hits = (formula ?? "").match(/@PROF/g)?.length ?? 0;

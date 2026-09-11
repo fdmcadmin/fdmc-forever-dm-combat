@@ -1485,7 +1485,18 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
           />
         )}
         {activeTab === "checks" && (
-          <SkillChecksEditor actions={tabsDraft.checks ?? []} onChange={handleTabActions("checks")} />
+          <SkillChecksEditor
+            actions={tabsDraft.checks ?? []}
+            /**
+             * From the DRAFT scores, so reading a frozen row uses the character as the Profile
+             * step currently has them rather than as they were last saved.
+             */
+            abilityModifier={(ability) =>
+              Math.floor(((Number(profileDraft.abilities[ability as AbilityId]?.score) || 10) - 10) / 2)}
+            proficiencyBonus={Number(actor.proficiencyBonus) > 0
+              ? Number(actor.proficiencyBonus)
+              : proficiencyBonus(Number(profileDraft.level) || 1)}
+            onChange={handleTabActions("checks")} />
         )}
         {activeTab === "notes" && (
           <ActorEditorActionTab classRows={editorClassRows} tabId="notes" actions={tabsDraft.notes ?? []} onChange={handleTabActions("notes")} onMoveToTab={handleMoveActionToTab} />

@@ -71,6 +71,7 @@ const SECTION_ACCENT = {
   traits:    "#9a7b4f",
 } as const;
 import { rollFormulaLocally } from "../dice/localRoller";
+import { SKILL_BY_NAME } from "../../modules/dnd-5e/srdSkills";
 
 /** How long a roll waits on a dice app before the math takes over. Long enough that a
  *  slow-but-working Dice+ still wins the race; short enough that the table isn't stuck. */
@@ -1149,19 +1150,33 @@ export function MonsterActorCard({
   // PER-CREATURE. A creature that declares its own skills shows exactly those; only a
   // creature with none falls back to the generic trio, so a Drifter stops advertising
   // Acrobatics it never had.
+  /**
+   * ⚠ THE FALLBACK WAS THE BUG THE COMMENT ABOVE IT SAID HAD BEEN FIXED.
+   *
+   * `stats.skills` documents its own contract — *"Unset = derive nothing"* — and the note beside it
+   * records the fault it was added for: *"the card previously hardcoded Stealth/Perception/
+   * Acrobatics for every creature alike."* The per-creature branch fixed that for creatures that
+   * DECLARE skills. Every creature that declares none kept getting the same hardcoded trio, which
+   * is the original bug still running in the `else`.
+   *
+   * It reads as a real proficiency at the table. A Pale Drifter with no Stealth on its stat block
+   * offered a Stealth button, and the number under it was a bare DEX check — right for an ability
+   * check, wrong for the skill it was labelled as, and a DM has no way to tell those apart from a
+   * button.
+   *
+   * Christopher, 2026-09-11: *"fix the checks on all character and creatures."* A creature with no
+   * skills now shows NO named skills; its six ability checks are right there and they are what it
+   * actually has. The skill's governing ability is carried through where the creature names one,
+   * so an authored row stops rendering with a blank ability column.
+   */
   const skillChecks = useMemo(() => {
-    const authored = (monster as { skills?: { label: string; modifier: number }[] }).skills;
-    if (authored && authored.length > 0) {
-      return authored.map(s => ({ label: s.label, ability: "", modifier: s.modifier }));
-    }
-    const modFor = (ability: string) =>
-      abilityChecks.find((a) => a.label.toUpperCase().includes(ability))?.modifier ?? 0;
-    return [
-      { label: "Stealth", ability: "DEX", modifier: modFor("DEX") },
-      { label: "Perception", ability: "WIS", modifier: modFor("WIS") },
-      { label: "Acrobatics", ability: "DEX", modifier: modFor("DEX") },
-    ];
-  }, [abilityChecks, monster]);
+    const authored = (monster as { skills?: { label: string; modifier: number }[] }).skills ?? [];
+    return authored.map(s => ({
+      label: s.label,
+      ability: (SKILL_BY_NAME.get(s.label.trim().toLowerCase())?.ability ?? "").toUpperCase(),
+      modifier: s.modifier,
+    }));
+  }, [monster]);
 
   const checkRoll = committedRoll && committedRoll.actionId.startsWith("check-") ? committedRoll : null;
 

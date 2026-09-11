@@ -20,7 +20,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   SRD_SKILLS, SKILL_BY_NAME, skillCheckId, skillFormula, skillCheckRow,
-  proficiencyFromFormula, resolveSkillChecks,
+  proficiencyFromFormula, resolveSkillChecks, classifyFrozenCheck,
 } from "../src/modules/dnd-5e/srdSkills";
 import { deriveDmReference } from "../src/core/rules/sheetSummary";
 import { deriveActorStats } from "../src/core/state/deriveActorStats";
@@ -136,7 +136,45 @@ console.log("\n5. the eighteen are GENERATED, not created");
     /onChange\(proficient \? \[\.\.\.others, skillCheckRow\(skill, true, expertise\)\] : others\)/.test(ed));
 }
 
-console.log("\n6. the editor can open the tab the card renders");
+console.log("\n6. a frozen total says what it was trying to say");
+{
+  /**
+   * Christopher, 2026-09-11: *"fix the checks on all character and creatures."* Ninety rows in the
+   * party stored a NUMBER; the parts are recoverable exactly, and `npm run fix:checks` and the
+   * Checks step must agree about every one of them or a tick would look like an edit.
+   *
+   * Ripsnarl: Athletics `1d20+7`, STR +4, PB +3.
+   */
+  ok("mod alone is unproficient", classifyFrozenCheck(4, 4, 3) === "unproficient");
+  ok("mod + PB is proficient", classifyFrozenCheck(7, 4, 3) === "proficient");
+  ok("mod + PB twice is expertise", classifyFrozenCheck(10, 4, 3) === "expertise");
+  ok("a negative modifier still reads", classifyFrozenCheck(-1, -1, 3) === "unproficient");
+  ok("...and proficient on top of one", classifyFrozenCheck(2, -1, 3) === "proficient");
+
+  /**
+   * ⚠ THE FOURTH ANSWER IS THE ONE THAT PROTECTS THE SHEET. A total nothing explains has an item,
+   * a feat or Reliable Talent in it; calling it proficient would delete that bonus the instant the
+   * row became `@STR+@PROF`.
+   */
+  ok("mutation: an unexplained total is NOT rounded to the nearest guess",
+    classifyFrozenCheck(9, 4, 3) === "unexplained");
+  ok("...nor is one that is merely close", classifyFrozenCheck(8, 4, 3) === "unexplained");
+
+  /**
+   * ⚠ AT PB 0 THE THREE CASES COLLAPSE. A companion with no printed bonus would otherwise read as
+   * expertise on every skill whose total happens to equal its modifier.
+   */
+  ok("mutation: PB 0 explains only the bare modifier",
+    classifyFrozenCheck(4, 4, 0) === "unproficient" && classifyFrozenCheck(5, 4, 0) === "unexplained");
+
+  /** And the editor reads frozen rows through the same function, not through the token reader. */
+  const ed = codeOf("src/core/ui/SkillChecksEditor.tsx");
+  ok("the Checks step reads a frozen row with the same classifier", /classifyFrozenCheck\(frozenTotal, modOf/.test(ed));
+  ok("...and falls back to the token reader only when there is no frozen total",
+    /reading \? reading === "proficient" \|\| reading === "expertise" : fromTokens\.proficient/.test(ed));
+}
+
+console.log("\n7. the editor can open the tab the card renders");
 {
   const editor = codeOf("src/core/ui/ActorEditor.tsx");
   /**
@@ -162,7 +200,7 @@ console.log("\n6. the editor can open the tab the card renders");
   ok("custom checks are listed, not swept up", /SKILL_BY_NAME\.has\(/.test(ed));
 }
 
-console.log("\n7. and the passive reads a generated row");
+console.log("\n8. and the passive reads a generated row");
 {
   /**
    * ⚠ THE END-TO-END ONE. A generated Perception row has to produce the passive, or the two halves
