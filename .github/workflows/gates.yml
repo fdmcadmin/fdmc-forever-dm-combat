@@ -169,6 +169,17 @@ jobs:
       - name: check the SRD skill checks and the Checks step
         run: npm run check:skillchecks
 
+      # The twelve classes and their subclasses, imported from the official SRD PDFs, cross-checked
+      # against the four hand tables that held class facts before them.
+      - name: check the SRD class table against the hand tables
+        run: npm run check:srdclasses
+
+      # The corrected rest-recovery registry: classes, subclasses AND species, short rest and long,
+      # strictly keyed by edition. A 5.1 Dragonborn recharges its breath on a short rest; a 5.2.1
+      # one does not, and flattening the two hands an edition a free recharge every hour.
+      - name: check the recovery registry
+        run: npm run check:recovery
+
       - name: check timed bodies
         run: npm run check:timed
 

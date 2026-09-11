@@ -55,8 +55,9 @@ import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveSpecies } from "../../modules/dnd-5e/srdSpecies";
 import { damageResponsesForActor } from "../../modules/dnd-5e/classDamageResponses";
 import { resourcesForClasses } from "../../modules/dnd-5e/classResources";
-import { shortRestRulesFor } from "../../modules/dnd-5e/shortRestRules.generated";
 import { resolveSkillChecks } from "../../modules/dnd-5e/srdSkills";
+import { speciesRecoveryFor, classRecoveryFor } from "../../modules/dnd-5e/recoveryRegistry.generated";
+import { srdClass } from "../../modules/dnd-5e/srdClasses.generated";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 export type AbilityId = (typeof ABILITIES)[number];
@@ -252,6 +253,19 @@ export type DmReference = {
    */
   subclassPools: { resource: string; earliestLevel: number | null; onSheet: boolean }[];
   /**
+   * Pools the SPECIES grants, from the corrected recovery workbook.
+   *
+   * ⚠ THIS IS THE HALF I SAID COULD NOT BE DONE. The species traits state their uses in PROSE —
+   * *"Proficiency Bonus times per Long Rest"* — and `never-infer-data-from-prose` forbids parsing
+   * that. The `v4_Recovery_Corrected` workbook publishes them as DATA instead, keyed by edition:
+   * an Orc's Adrenaline Rush comes back on a short rest, Relentless Endurance does not, and the
+   * 5.1 Dragonborn's Breath Weapon refreshes on either while the 5.2.1 one does not. Transcription
+   * was never needed — the authority already existed.
+   */
+  speciesPools: { resource: string; shortRest: string; longRest: string; onSheet: boolean }[];
+  /** The SRD row for each of this character's classes, where the document covers it. */
+  classReference: { className: string; hitDie: string; savingThrows: string[]; skillChoice: string; srdSubclass: string }[];
+  /**
    * Rows the derivation now supplies — flagged, never removed. Filled by `deriveDmReference` once
    * the rest of the reference is known, because "redundant" is measured against what was actually
    * derived for THIS actor.
@@ -366,6 +380,21 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
       type: r.type, response: r.response, source: r.source, gatedByResource: r.gatedByResource,
     })),
     resources,
+    /**
+     * ⚠ MATCHED ON THE SPECIES THE SHEET RESOLVED TO, NOT THE RACE STRING. "Wood Elf" resolves to
+     * the Elf entry, and the workbook keys its rows on the species; asking it about "Wood Elf"
+     * would find nothing and report a Lineage's free casts as absent on every elf in the party.
+     */
+    speciesPools: speciesRecoveryFor(
+      actor.srdRuleset ?? "5.2.1",
+      species?.species.name,
+      characterLevel(actor),
+    ).map(r => ({
+      resource: r.resource,
+      shortRest: r.shortRestMode,
+      longRest: r.longRestMode,
+      onSheet: haveLabels.has(r.resource.trim().toLowerCase()),
+    })),
     covered: [], // filled below — "redundant" is measured against the finished reference
     passives: passivesFor(actor, stats),
     /**
@@ -374,15 +403,42 @@ export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReferenc
      * has nothing" into "never checked", so they are filtered out HERE by name rather than being
      * mistaken for a gap.
      */
+    /**
+     * ⚠ THE CORRECTED WORKBOOK IS THE AUTHORITY HERE, NOT THE OLDER SHORT-REST REGISTRY.
+     *
+     * Christopher: *"ensure the recovery from the workbooks is in the app since it under represents
+     * what each class and subclass could be recovered on short."* `shortRestRules.generated.ts`
+     * answers one question — what comes back on a SHORT rest — and `recoveryRegistry.generated.ts`
+     * answers both, keyed by edition. A subclass pool read from the narrower table reported "none"
+     * for rules the corrected sheet prices.
+     *
+     * The older registry is still read by `resourcesForClasses` for its recovery LINE, which is a
+     * different question and the reason both files still exist.
+     */
     subclassPools: classRows.flatMap(r =>
-      shortRestRulesFor(r.name, r.subclassName, r.level)
-        .filter(rule => rule.scope === "subclass" && rule.resource.toLowerCase() !== "none")
+      classRecoveryFor(actor.srdRuleset ?? "5.2.1", r.name, r.subclassName, r.level)
+        .filter(rule => rule.subclassName && rule.engineKind !== "none")
         .map(rule => ({
           resource: rule.resource,
-          earliestLevel: rule.earliestLevel,
+          earliestLevel: rule.minLevel || null,
           onSheet: haveLabels.has(rule.resource.trim().toLowerCase()),
         })),
     ),
+    /**
+     * The SRD's own row for this class — hit die, saves, skill choice and the subclass it
+     * publishes. Printed so a DM can see what the sheet is supposed to look like, and so a
+     * subclass the SRD does not carry is visibly a house choice rather than a silent one.
+     */
+    classReference: classRows
+      .map(r => ({ stated: r.name, srd: srdClass(r.name) }))
+      .filter(x => x.srd)
+      .map(x => ({
+        className: x.srd!.name,
+        hitDie: x.srd!.hitDie,
+        savingThrows: x.srd!.savingThrows,
+        skillChoice: `choose ${x.srd!.skillChoiceCount} of ${x.srd!.skillChoices}`,
+        srdSubclass: x.srd!.subclass,
+      })),
     dmNote: actor.classFeatureTracker?.note?.trim() || undefined,
   };
 
@@ -542,6 +598,15 @@ export function formatDmReference(ref: DmReference): string[] {
     );
   }
 
+  /**
+   * ⚠ WHAT THE SRD SAYS THIS CLASS IS, beside what the sheet says it is. A subclass the document
+   * does not publish is a house choice, and printing the SRD's own beside it makes that visible
+   * rather than leaving a DM to wonder which of the two the app believes.
+   */
+  for (const c of ref.classReference) {
+    lines.push(`${c.className}: Hit Die ${c.hitDie} · saves ${c.savingThrows.join(", ")} · SRD subclass ${c.srdSubclass}.`);
+  }
+
   if (ref.speciesTraits.length > 0) {
     lines.push(`${ref.speciesName} traits: ` + ref.speciesTraits.map(t => t.name).join(", ") + ".");
   }
@@ -559,6 +624,19 @@ export function formatDmReference(ref: DmReference): string[] {
    * with a max and can be added by a button; these are named by the registry with no size, so the
    * line asks for a look rather than offering a fix.
    */
+  /**
+   * ⚠ SPECIES POOLS ARE SIZED AND CADENCED, so unlike the subclass line this one can say both
+   * rests. An Orc's Adrenaline Rush comes back on a SHORT rest and Relentless Endurance does not,
+   * and a sheet with neither pool is missing two different things.
+   */
+  const speciesGaps = ref.speciesPools.filter(p => !p.onSheet);
+  if (speciesGaps.length > 0) {
+    lines.push(
+      "⚠ Species pools not on the sheet: "
+      + speciesGaps.map(p => `${p.resource} (short ${p.shortRest}, long ${p.longRest})`).join(", ") + ".",
+    );
+  }
+
   const subMissing = ref.subclassPools.filter(p => !p.onSheet);
   if (subMissing.length > 0) {
     lines.push(

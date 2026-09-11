@@ -71,11 +71,13 @@ for (const actor of actors) {
 
   const missing = ref.resources.filter(r => !r.onSheet);
   const subMissing = ref.subclassPools.filter(p => !p.onSheet);
-  if (missing.length > 0 || subMissing.length > 0) {
+  const speciesMissing = ref.speciesPools.filter(p => !p.onSheet);
+  if (missing.length > 0 || subMissing.length > 0 || speciesMissing.length > 0) {
     console.log("   MISSING — granted by the tables, no pool on the sheet");
     for (const m of missing) console.log(`     ${m.label} ${m.max} · ${m.className}, from level ${m.level} · resets ${m.reset}`);
     for (const s of subMissing) console.log(`     ${s.resource} · subclass${s.earliestLevel ? `, from level ${s.earliestLevel}` : ""} · uses not in any table — set them by hand`);
-    totalMissing += missing.length + subMissing.length;
+    for (const s of speciesMissing) console.log(`     ${s.resource} · species · short rest ${s.shortRest}, long rest ${s.longRest}`);
+    totalMissing += missing.length + subMissing.length + speciesMissing.length;
   }
 
   if (covered.length > 0) {
