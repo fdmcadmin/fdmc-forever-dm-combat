@@ -23,6 +23,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveSheetSummary, formatSheetSummary, deriveDmReference, formatDmReference } from "../src/core/rules/sheetSummary";
 import { deriveActorStats } from "../src/core/state/deriveActorStats";
+import { classResourceRowsToAdd } from "../src/modules/dnd-5e/classResourceActions";
 import type { Actor } from "../src/core/types/actor";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -159,7 +160,7 @@ console.log("\n6. the DM reference reads the tables, not the sheet's authoring")
    * about Dwarven Resilience, 120 ft darkvision and a Rage pool.
    */
   const dwarf = { ...barbarian, race: "Dwarf" } as unknown as Actor;
-  const ref = deriveDmReference(dwarf);
+  const ref = deriveDmReference(dwarf, deriveActorStats(dwarf));
   const lines = formatDmReference(ref);
 
   ok("a species resistance is derived with NO feature row authored",
@@ -187,7 +188,7 @@ console.log("\n6. the DM reference reads the tables, not the sheet's authoring")
    * hard-coded.
    */
   const withPool = { ...dwarf, tabs: { ...dwarf.tabs, resources: [{ id: "res-rage", label: "Rage", actionKind: "resource" }] } } as unknown as Actor;
-  const after = deriveDmReference(withPool);
+  const after = deriveDmReference(withPool, deriveActorStats(withPool));
   ok("mutation: authoring the pool clears the flag",
     after.resources.find(r => /Rage/i.test(r.label))?.onSheet === true);
   ok("...and removes the warning line",
@@ -201,11 +202,11 @@ console.log("\n7. speed is measured against the 30 ft baseline, and homebrew is 
    * the baseline 30 ft or even reduce below it."*
    */
   const wood = { ...barbarian, race: "Wood Elf" } as unknown as Actor;
-  const ref = deriveDmReference(wood);
+  const ref = deriveDmReference(wood, deriveActorStats(wood));
   ok("a species that deviates says so", Boolean(ref.speed.note), String(ref.speed.note));
   ok("...naming the difference from 30", /\+5 on the 30 ft baseline/.test(ref.speed.note ?? ""), String(ref.speed.note));
 
-  const plain = deriveDmReference({ ...barbarian, race: "Human" } as unknown as Actor);
+  const plain = deriveDmReference({ ...barbarian, race: "Human" } as unknown as Actor, deriveActorStats(barbarian));
   ok("mutation: a 30 ft species adds no line", plain.speed.note === undefined, String(plain.speed.note));
 
   /**
@@ -217,16 +218,142 @@ console.log("\n7. speed is measured against the 30 ft baseline, and homebrew is 
     ...barbarian, race: "Skarn (homebrew)",
     classFeatureTracker: { label: "", value: "", note: "Resistance: radiant, necrotic. Speed 40 ft." },
   } as unknown as Actor;
-  const lines = formatDmReference(deriveDmReference(custom));
+  const lines = formatDmReference(deriveDmReference(custom, deriveActorStats(custom)));
   ok("the DM's own line is carried", lines.includes("Resistance: radiant, necrotic. Speed 40 ft."), lines.join(" | "));
-  ok("...and an unknown race derives no species claim", deriveDmReference(custom).speciesName === undefined);
+  ok("...and an unknown race derives no species claim", deriveDmReference(custom, deriveActorStats(custom)).speciesName === undefined);
 }
 
-console.log("\n8. it is on the DM's editor and not the level-up panel");
+console.log("\n8. passives come off the check rows the sheet already has");
+{
+  /**
+   * ⚠ NO SKILL LIST ANYWHERE. Christopher: *"we already have the skills in checks but the question
+   * is how do we let it happen without needed to add every skills for someone to check if they are
+   * proficient with."* The row IS the declaration and its formula IS the proficiency, so a sheet
+   * with two check rows derives two passives and is flagged on the third.
+   */
+  const seen = {
+    ...barbarian,
+    tabs: { ...barbarian.tabs, checks: [
+      // Proficient: the formula carries @PROF. WIS 10 → +0, PB +3 → passive 13.
+      { id: "check-perception", label: "Perception", actionKind: "check", metadata: { attack: "1d20+@WIS+@PROF" } },
+      // Not proficient. WIS 10 → passive 10.
+      { id: "check-insight", label: "Insight", actionKind: "check", metadata: { attack: "1d20+@WIS" } },
+    ] },
+  } as unknown as Actor;
+  const ref = deriveDmReference(seen, deriveActorStats(seen));
+  const p = (skill: string) => ref.passives.find(x => x.skill === skill)!;
+
+  ok("a proficient check row reads 10 + mod + PB", p("Perception").value === 13, String(p("Perception").value));
+  ok("an unproficient one reads 10 + mod", p("Insight").value === 10, String(p("Insight").value));
+  ok("both are marked as having a row", p("Perception").hasRow && p("Insight").hasRow);
+
+  /**
+   * ⚠ AND THE MISSING ONE IS FLAGGED RATHER THAN ASSERTED. INT 8 → 9, which is right for an
+   * unproficient character and three low for a proficient one; the flag is the difference between
+   * a number and a claim.
+   */
+  ok("a skill with no row is flagged", p("Investigation").hasRow === false);
+  ok("...and its guess is the bare modifier", p("Investigation").value === 9, String(p("Investigation").value));
+  const line = formatDmReference(ref).find(l => l.startsWith("Passive:"))!;
+  ok("...and the line says so out loud",
+    /Investigation 9 \(no check row — unproficient assumed\)/.test(line), line);
+
+  /**
+   * ⚠ A FLAT FORMULA HAS TO WORK TOO. Sheets in this party carry both styles, and reading the RAW
+   * formula for `@PROF` would score one of them and silently return 10 for the other.
+   */
+  const flat = {
+    ...barbarian,
+    tabs: { ...barbarian.tabs, checks: [
+      { id: "check-perception", label: "Perception", actionKind: "check", metadata: { attack: "1d20+5" } },
+    ] },
+  } as unknown as Actor;
+  ok("mutation: a flat-number check row still scores",
+    deriveDmReference(flat, deriveActorStats(flat)).passives.find(x => x.skill === "Perception")?.value === 15);
+}
+
+console.log("\n9. one builder makes the resource row, and the tick actually adds it");
+{
+  /**
+   * ⚠ THE BUILDER WAS INLINE IN THE RESOURCES STEP, which is why nothing else could add a pool.
+   * Christopher: *"the derived is suppose to add those fields to the resources correct? if it isnt
+   * then we have the srd in the mod in the actor section for no reason."*
+   */
+  const rows = [{ name: "Barbarian", level: 9 }];
+  const toAdd = classResourceRowsToAdd(rows, []);
+  ok("the shared builder produces rows", toAdd.length > 0, toAdd.map(r => r.label).join(", "));
+  ok("...as spendable resource actions",
+    toAdd.every(r => r.actionKind === "resource" && r.metadata?.additive !== undefined));
+  ok("...carrying the registry's short-rest regain where it names one",
+    toAdd.some(r => r.metadata?.shortRestRegain !== undefined),
+    JSON.stringify(toAdd.map(r => ({ l: r.label, s: r.metadata?.shortRestRegain }))));
+
+  /**
+   * ⚠ ADDS ONLY WHAT IS MISSING — 0.7.10.25's rule, and the reason this is an add and not a sync:
+   * *"an existing pool keeps its current count, because a half-spent Rage must not be silently
+   * refilled."*
+   */
+  ok("mutation: a pool already on the sheet is not offered again",
+    classResourceRowsToAdd(rows, ["Rage"]).every(r => !/^Rage$/i.test(r.label)));
+  ok("...matched case-insensitively", classResourceRowsToAdd(rows, ["rage"]).every(r => !/^Rage$/i.test(r.label)));
+
+  const editor = codeOf("src/core/ui/ActorEditor.tsx");
+  ok("the Resources step uses the shared builder, not a private copy",
+    /missing\.map\(classResourceToAction\)/.test(editor));
+  ok("...and no inline row-builder is left behind", !/id: `res-\$\{slugifyForActionId/.test(editor));
+  ok("the Has class resources tick fills on the way IN", /if \(e\.target\.checked\) \{/.test(editor));
+  /**
+   * ⚠ ON THE WAY IN ONLY. Unticking is not a statement that a half-spent pool should be destroyed.
+   */
+  /**
+   * The fill is reached ONLY from inside the checked branch — asserted by shape rather than by
+   * hunting for an absence, because "no removal anywhere in a 1400-line file" is not a thing a
+   * regex can honestly claim.
+   */
+  ok("...and the fill is reachable only from the checked branch",
+    /if \(e\.target\.checked\) \{\s*const added = onFillClassResources/.test(editor));
+  ok("...the untick path only clears the note", /\} else \{\s*setFillNote\(null\);\s*\}/.test(editor));
+  ok("it reads the DRAFT class, not the saved one",
+    /parseClassLevels\(profileDraft\.className, profileDraft\.multiclassLevels\)/.test(editor));
+  /**
+   * ⚠ AND THE ⚠ LINE IS ACTIONABLE WHERE IT IS READ. A warning that can only be acted on by
+   * leaving for another step is a warning that gets read and forgotten.
+   */
+  ok("the DM Reference offers the fix beside the warning",
+    /referenceLines\.some\(l => l\.startsWith\("⚠ No pool on the sheet"\)\) && onFillClassResources/.test(editor));
+}
+
+console.log("\n10. the subclass is checked against the registry — named, not sized");
+{
+  /**
+   * ⚠ THE HONEST LIMIT, STATED AS A TEST. `classResources.ts` says in its own header that it has
+   * *"13 classes and NO subclasses"*, so there is no max to grant. The short-rest registry DOES
+   * name the resource and its level, which is enough to say the sheet is missing one without
+   * inventing how many uses it has.
+   */
+  const champion = { ...barbarian, className: "Fighter", subclassName: "Champion", level: 9 } as unknown as Actor;
+  const ref = deriveDmReference(champion, deriveActorStats(champion));
+  const lines = formatDmReference(ref);
+
+  ok("a class pool still carries its max", ref.resources.some(r => r.max !== undefined && r.max !== ""));
+  ok("subclass rows are read from the registry", Array.isArray(ref.subclassPools));
+  /**
+   * ⚠ A ROW SAYING "none" IS AN ANSWER, NOT A HOLE — the registry's own words. Most subclasses
+   * grant nothing and say so explicitly; those must never surface as a missing pool.
+   */
+  ok("mutation: a registry row reading \"none\" is never reported as missing",
+    !lines.some(l => /Subclass grants[^.]*\bnone\b/i.test(l)), lines.join(" | "));
+  ok("...and the subclass line asks for uses rather than inventing them",
+    ref.subclassPools.length === 0
+    || lines.some(l => l.includes("the registry names them but not how many")),
+    lines.join(" | "));
+}
+
+console.log("\n11. it is on the DM's editor and not the level-up panel");
 {
   const editor = codeOf("src/core/ui/ActorEditor.tsx");
   ok("the reference is computed from the DRAFT, not the saved actor",
-    /deriveDmReference\(\{\s*\.\.\.actor,/.test(editor) && /level: Number\(profileDraft\.level\)/.test(editor));
+    /const preview = \{\s*\.\.\.actor,/.test(editor) && /level: Number\(profileDraft\.level\)/.test(editor));
   /**
    * ⚠ READING `tabsDraft` IS PART OF IT. The missing-pool line compares against `tabs.resources`;
    * off the saved tabs it would keep warning about a pool just added on the Resources step.
@@ -236,7 +363,7 @@ console.log("\n8. it is on the DM's editor and not the level-up panel");
     /referenceLines=\{proposeMode \? undefined : profileReference\}/.test(editor));
 }
 
-console.log("\n9. and no migration deletes the typed copy");
+console.log("\n12. and no migration deletes the typed copy");
 {
   /**
    * ⚠ NAMED AND SEARCHED FOR. 0.8.40.9's `stripImportedReferenceNotes` removed note rows and blanked

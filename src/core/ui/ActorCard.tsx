@@ -5648,7 +5648,7 @@ export function ActorCard({
            * card — hiding it from the player is the situation that sends them hunting through
            * feature rows for a trait nobody authored.
            */
-          referenceLines={formatDmReference(deriveDmReference(actor))}
+          referenceLines={formatDmReference(deriveDmReference(actor, deriveActorStats(actor, undefined, status)))}
           /**
            * The tab's OWN rows — `tabContents` rather than `actor.tabs.notes` so this reads like
            * every other tab. Nothing else on the card renders them, and the export carries them,

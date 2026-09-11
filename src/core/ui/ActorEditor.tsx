@@ -17,8 +17,10 @@ import { EquipmentBagEditor } from "./EquipmentBagEditor";
 import { masteryCountForClass, MASTERY_CLASSES } from "../rules/weaponMastery";
 import { parseClassLevels, hitDicePools } from "../rules/multiclass";
 import { resourcesForClasses, classHasResources } from "../../modules/dnd-5e/classResources";
+import { grantedClassResources, missingClassResources, classResourceToAction, classResourceRowsToAdd } from "../../modules/dnd-5e/classResourceActions";
 import { castingAbilityForClass } from "../rules/multiclass";
 import { deriveDmReference, formatDmReference } from "../rules/sheetSummary";
+import { deriveActorStats } from "../state/deriveActorStats";
 import { slugifyForActionId } from "./pcActionTypes";
 import { ResourceTableEditor } from "./ResourceTableEditor";
 import { SpellTableEditor } from "./SpellTableEditor";
@@ -378,11 +380,13 @@ const ACTOR_TYPE_OPTIONS: { value: ActorKind; label: string }[] = [
   { value: "npc", label: "NPC / Ally" },
 ];
 
-function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, referenceLines, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; referenceLines?: readonly string[]; onApplySpecies?: (race: string, ruleset?: SrdRuleset) => SpeciesApplication }) {
+function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasSpells, bondOptions = [], characterLevel, canAssignBond = false, referenceLines, onFillClassResources, onApplySpecies }: { draft: ProfileDraft; onChange: (d: ProfileDraft) => void; ownerOptions: OwnerOption[]; companionOptions?: OwnerOption[]; hasSpells?: boolean; bondOptions?: BondTemplate[]; characterLevel?: number; canAssignBond?: boolean; referenceLines?: readonly string[]; onFillClassResources?: () => number; onApplySpecies?: (race: string, ruleset?: SrdRuleset) => SpeciesApplication }) {
   /** What the last species change did, so an automatic edit is never a silent one. */
   const [speciesNote, setSpeciesNote] = useState<string | null>(null);
   /** Why the last path click was refused, in `chooseBondPath`'s own words. */
   const [bondPathRefusal, setBondPathRefusal] = useState<string | null>(null);
+  /** What the "Has class resources" tick just did, so an automatic edit is never a silent one. */
+  const [fillNote, setFillNote] = useState<string | null>(null);
 
   function set<K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) {
     onChange({ ...draft, [key]: value });
@@ -705,10 +709,31 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
       {!classHasResources(draft.className) && (
         <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
           <input type="checkbox" checked={draft.hasClassResource}
-            onChange={e => set("hasClassResource", e.target.checked)} />
+            /**
+             * ⚠ THE LABEL SAID "adds them on the Resources tab" AND IT ADDED NOTHING.
+             *
+             * Christopher: *"we also have the has class pools check mark on here which if clicked
+             * should read the class and subclass and races and check them against the libraries."*
+             * The tick only ever set a flag declaring that a pool EXISTS somewhere; the thing that
+             * creates one was sealed inside the Resources step. Now it calls the same builder that
+             * step does, on the way in — and only on the way in, because unticking is not a
+             * statement that a half-spent pool should be destroyed.
+             */
+            onChange={e => {
+              set("hasClassResource", e.target.checked);
+              if (e.target.checked) {
+                const added = onFillClassResources?.() ?? 0;
+                setFillNote(added > 0
+                  ? `Added ${added} pool${added === 1 ? "" : "s"} on the Resources tab.`
+                  : "Every pool the tables grant is already on the Resources tab.");
+              } else {
+                setFillNote(null);
+              }
+            }} />
           Has class resources <span style={{ color: "#667" }}>— adds them on the Resources tab</span>
         </label>
       )}
+      {fillNote && <p style={{ margin: "2px 0 0", fontSize: 10, color: "#7be08a" }}>{fillNote}</p>}
       {draft.hasClassResource && !classHasResources(draft.className) && (
         <p style={{ margin: "2px 0 0", fontSize: 10, color: "#667" }}>
           Add each pool on the <strong style={{ color: "#8a8aa0" }}>Resources</strong> tab — name, uses and
@@ -815,6 +840,24 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
               {line}
             </p>
           ))}
+          {/*
+            ⚠ THE WARNING IS WHERE THE FIX BELONGS. A ⚠ line that can only be acted on by leaving
+            for another step is a line that gets read and forgotten — which is how a character
+            reaches a fight with no Rage counter. Same builder as the Resources step and the tick.
+          */}
+          {referenceLines.some(l => l.startsWith("⚠ No pool on the sheet")) && onFillClassResources && (
+            <button type="button"
+              onClick={() => {
+                const added = onFillClassResources();
+                setFillNote(added > 0
+                  ? `Added ${added} pool${added === 1 ? "" : "s"} on the Resources tab.`
+                  : "Nothing to add.");
+              }}
+              style={{ marginTop: 6, fontSize: 11, padding: "3px 9px", borderRadius: 4,
+                       border: "1px solid #e8b64c", background: "#2a2416", color: "#e8b64c", cursor: "pointer" }}>
+              Add the missing pools
+            </button>
+          )}
         </div>
       )}
 
@@ -1002,7 +1045,8 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
    * tables against `tabs.resources`; reading the SAVED tabs would keep warning about a pool you
    * just added on the Resources step.
    */
-  const profileReference = useMemo(() => formatDmReference(deriveDmReference({
+  const profileReference = useMemo(() => {
+    const preview = {
     ...actor,
     race: profileDraft.race,
     srdRuleset: profileDraft.srdRuleset,
@@ -1016,7 +1060,9 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
       note: profileDraft.classFeatureNote,
     },
     tabs: tabsDraft,
-  } as Actor)), [actor, profileDraft, tabsDraft]);
+  } as Actor;
+  return formatDmReference(deriveDmReference(preview, deriveActorStats(preview)));
+  }, [actor, profileDraft, tabsDraft]);
   const [showDanger, setShowDanger] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   // Surface save failures in the UI instead of silently swallowing them (the click
@@ -1300,6 +1346,23 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
              * equipment editor uses to decide who is sitting here.
              */
             referenceLines={proposeMode ? undefined : profileReference}
+            /**
+             * ⚠ READ THE CLASS, THE SUBCLASS AND THE LEVEL OFF THE DRAFT, NOT THE SAVED ACTOR.
+             * The tick is most often pressed while BUILDING a character — the class was typed a
+             * moment ago and has never been saved. Reading `actor` would grant a Fighter's pools
+             * to a sheet that now says Paladin.
+             */
+            onFillClassResources={() => {
+              const rows = parseClassLevels(profileDraft.className, profileDraft.multiclassLevels);
+              const classRows = rows.length > 0
+                ? rows.map(r => ({ name: r.name, level: r.level, subclassName: actor.subclassName }))
+                : [{ name: profileDraft.className, level: Number(profileDraft.level) || 1, subclassName: actor.subclassName }];
+              const toAdd = classResourceRowsToAdd(classRows, (tabsDraft.resources ?? []).map(r => r.label));
+              if (toAdd.length > 0) {
+                setTabsDraft(d => ({ ...d, resources: [...(d.resources ?? []), ...toAdd] }));
+              }
+              return toAdd.length;
+            }}
             onApplySpecies={applySpecies} />
         )}
         {activeTab === "combat" && (
@@ -1360,37 +1423,22 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
               const rows = editorClassRows.length > 0
                 ? editorClassRows
                 : [{ name: profileDraft.className, level: Number(profileDraft.level) || 1 }];
-              const granted = resourcesForClasses(rows);
-              const existing = new Set((tabsDraft.resources ?? []).map(r => r.label?.toLowerCase()));
-              const missing = granted.filter(g => !existing.has(g.label.toLowerCase()));
+              /**
+               * ⚠ ONE BUILDER, THREE SURFACES. The row-building used to live inline right here,
+               * which is why the DM Reference could only WARN that a pool was missing and the
+               * "Has class resources" tick could only declare one. All three now call the same
+               * module; a second copy would be two builders free to disagree about
+               * `shortRestRegain` — the field that decides whether a Rage comes back.
+               */
+              const granted = grantedClassResources(rows);
+              const missing = missingClassResources(rows, (tabsDraft.resources ?? []).map(r => r.label));
               if (granted.length === 0) return null;
               return (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
                   <button type="button" disabled={missing.length === 0}
                     onClick={() => handleTabActions("resources")([
                       ...(tabsDraft.resources ?? []),
-                      ...missing.map(g => ({
-                        id: `res-${slugifyForActionId(g.label)}`,
-                        label: g.label,
-                        actionKind: "resource" as const,
-                        economyCost: [],
-                        logMode: "silent" as const,
-                        displayMode: "compact" as const,
-                        category: "Resources",
-                        tags: [],
-                        metadata: {
-                          resourceKind: g.kind,
-                          /* From the workbook registry, so an auto-granted Rage returns one use on a
-                             short rest instead of waiting for a DM to type it in by hand. */
-                          ...(g.shortRestRegain !== undefined ? { shortRestRegain: g.shortRestRegain } : {}),
-                          cost: g.reset === "shortRest" ? "Short Rest" : g.reset === "longRest" ? "Long Rest" : g.reset,
-                          details: [`Pool: ${g.max}`, `Reset: ${g.reset}`,
-                            /* The workbook registry's own recovery line, where it names one. */
-                            g.shortRest ? `Short rest: ${g.shortRest}` : "",
-                            g.note].filter(Boolean).join(" · "),
-                          additive: String(g.max),
-                        },
-                      })),
+                      ...missing.map(classResourceToAction),
                     ])}
                     style={{ fontSize: 11, padding: "4px 10px", borderRadius: 4, border: "1px solid #7b68ee",
                              background: missing.length ? "#2a3550" : "#111",

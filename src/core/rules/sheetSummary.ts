@@ -28,11 +28,17 @@
  *   derived   saves (scores + `saveProficient` + PB), proficiency bonus, initiative (DEX plus any
  *             trait bonus), AC with the items that made it, speed, HP, and per-class spell attack
  *             and save DC.
- *   typed     proficiencies and languages; passive Perception / Insight / Investigation;
- *             darkvision and other senses. **No per-skill proficiency is stored anywhere in the
- *             actor model**, so a passive score cannot be derived — computing `10 + modifier` and
- *             calling it Passive Perception would print a number that is wrong for every character
- *             proficient in the skill. A wrong derived number is worse than an honest typed one.
+ *   typed     COMBAT proficiencies — armour, weapons, tools — and languages. Christopher:
+ *             *"combat proficencies are the only thing that need to be there."* Nothing in the
+ *             actor model records them and no table can infer them from a class name once a sheet
+ *             has a single exception on it.
+ *
+ * ⚠ PASSIVES MOVED FROM THE SECOND COLUMN TO THE FIRST, AND WITHOUT A SKILL LIST. They were typed
+ * because no per-skill proficiency is stored — but the sheet was already stating it: *"we already
+ * have the skills in checks."* A Perception row reading `1d20+@WIS+@PROF` says proficient and
+ * `1d20+@WIS` says not, and resolving either one and dropping the d20 leaves exactly the number a
+ * passive is 10 plus. No eighteen-skill grid, no new field, no second copy of a fact the sheet
+ * already holds — and where a row is simply absent the score is flagged rather than asserted.
  *
  * That split is why the imported sheets carried TWO note rows and not one, and it is the reason
  * neither is deleted here: the derived half stops being worth reading, the typed half is the only
@@ -44,9 +50,11 @@ import type { DerivedStats } from "../state/deriveActorStats";
 import { proficiencyBonus } from "./dnd5e";
 import { castingAbilityForClass, classLevels, characterLevel, hitDicePools, type CastingAbility } from "./multiclass";
 import { getActorInitiativeModifier } from "../state/initiative";
+import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { resolveSpecies } from "../../modules/dnd-5e/srdSpecies";
 import { damageResponsesForActor } from "../../modules/dnd-5e/classDamageResponses";
 import { resourcesForClasses } from "../../modules/dnd-5e/classResources";
+import { shortRestRulesFor } from "../../modules/dnd-5e/shortRestRules.generated";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 export type AbilityId = (typeof ABILITIES)[number];
@@ -197,6 +205,25 @@ export type ReferenceResource = {
   onSheet: boolean;
 };
 
+/**
+ * A passive score, read off the check row the sheet already has.
+ *
+ * ⚠ NO SKILL LIST, AND NO PER-SKILL PROFICIENCY FIELD. Christopher: *"we already have the skills in
+ * checks but the question is how do we let it happen without needed to add every skills for someone
+ * to check if they are proficient with."*
+ *
+ * The answer is that the check row IS the declaration. A row exists because somebody added the
+ * skill, and its formula already carries the whole modifier — `1d20+@WIS+@PROF` for a proficient
+ * Perception, `1d20+@WIS` for an unproficient one. Resolving that formula and dropping the d20
+ * leaves exactly the number a passive is 10 plus. Adding eighteen skills to every sheet so one of
+ * them can be ticked would be building a second copy of a fact the sheet already states.
+ *
+ * `hasRow: false` means the sheet has no such check. The score is then 10 + the raw ability
+ * modifier and is FLAGGED — an unproficient guess is right for some characters and low by the
+ * proficiency bonus for others, and the flag is the difference between a number and a claim.
+ */
+export type PassiveScore = { skill: string; ability: AbilityId; value: number; hasRow: boolean };
+
 export type DmReference = {
   /** "5d10 + 1d6" — mixed, never pretending to be N of one size. */
   hitDice: { die: string; count: number }[];
@@ -209,11 +236,56 @@ export type DmReference = {
   damageResponses: { type: string; response: string; source: string; gatedByResource?: string }[];
   /** Every pool the class tables grant at this level, flagged for whether the sheet has it. */
   resources: ReferenceResource[];
+  /** Passive Perception / Insight / Investigation, off the sheet's own check rows. */
+  passives: PassiveScore[];
+  /**
+   * Pools the SUBCLASS grants, checked against the short-rest registry.
+   *
+   * ⚠ NAMED, NOT SIZED, AND THAT IS THE HONEST LIMIT. `classResources.ts` says so in its own
+   * header — *"this table has 13 classes and NO subclasses"* — so there is no MAX to grant. The
+   * registry does name the resource and the level it arrives at, which is enough to say *"your
+   * subclass has one of these and your sheet does not"* without inventing how many uses it has.
+   * Christopher: *"which if clicked should read the class and subclass and races and check them
+   * against the libraries"* — this is the subclass half, as far as the libraries can answer.
+   */
+  subclassPools: { resource: string; earliestLevel: number | null; onSheet: boolean }[];
   /** The DM's own line — custom races, homebrew classes, anything the tables cannot know. */
   dmNote?: string;
 };
 
-export function deriveDmReference(actor: Actor): DmReference {
+/** The three passives a table actually asks for. */
+const PASSIVE_SKILLS: readonly { skill: string; ability: AbilityId }[] = [
+  { skill: "Perception", ability: "wis" },
+  { skill: "Insight", ability: "wis" },
+  { skill: "Investigation", ability: "int" },
+];
+
+/**
+ * Sum every flat term left after the dice are removed.
+ *
+ * ⚠ ON THE RESOLVED STRING, NOT THE AUTHORED ONE. A sheet may write `1d20+@WIS+@PROF` or a flat
+ * `1d20+5` — both are in the party's files — and only the resolver knows what the tokens are worth.
+ * Reading the raw formula would work for one style and silently return 0 for the other.
+ */
+function flatTotal(resolved: string): number {
+  const withoutDice = resolved.replace(/\b\d*d\d+\b/gi, "");
+  let total = 0;
+  for (const m of withoutDice.matchAll(/([+-]?)\s*(\d+)/g)) total += (m[1] === "-" ? -1 : 1) * Number(m[2]);
+  return total;
+}
+
+function passivesFor(actor: Actor, stats: DerivedStats): PassiveScore[] {
+  const resolve = (f: string) => resolveFormulaVars(f, actor, stats);
+  const rows = actor.tabs?.checks ?? [];
+  return PASSIVE_SKILLS.map(({ skill, ability }) => {
+    const row = rows.find(r => (r.label ?? "").trim().toLowerCase() === skill.toLowerCase());
+    if (!row) return { skill, ability, value: 10 + stats[ability].modifier, hasRow: false };
+    const formula = row.metadata?.attack ?? row.description ?? "";
+    return { skill, ability, value: 10 + flatTotal(resolve(formula)), hasRow: true };
+  });
+}
+
+export function deriveDmReference(actor: Actor, stats: DerivedStats): DmReference {
   const rows = classLevels(actor);
   /**
    * A single-class character grows no `classes[]`, so `classLevels` returns []. The class tables
@@ -268,6 +340,22 @@ export function deriveDmReference(actor: Actor): DmReference {
       type: r.type, response: r.response, source: r.source, gatedByResource: r.gatedByResource,
     })),
     resources,
+    passives: passivesFor(actor, stats),
+    /**
+     * ⚠ A ROW SAYING "none" IS AN ANSWER, NOT A HOLE — the registry's own words. Most subclasses
+     * grant nothing of their own and say so explicitly; dropping those rows would turn "checked,
+     * has nothing" into "never checked", so they are filtered out HERE by name rather than being
+     * mistaken for a gap.
+     */
+    subclassPools: classRows.flatMap(r =>
+      shortRestRulesFor(r.name, r.subclassName, r.level)
+        .filter(rule => rule.scope === "subclass" && rule.resource.toLowerCase() !== "none")
+        .map(rule => ({
+          resource: rule.resource,
+          earliestLevel: rule.earliestLevel,
+          onSheet: haveLabels.has(rule.resource.trim().toLowerCase()),
+        })),
+    ),
     dmNote: actor.classFeatureTracker?.note?.trim() || undefined,
   };
 }
@@ -306,6 +394,19 @@ export function formatDmReference(ref: DmReference): string[] {
     }
   }
 
+  if (ref.passives.length > 0) {
+    /**
+     * ⚠ A MISSING CHECK ROW IS SAID OUT LOUD. The score is then an unproficient guess, right for
+     * some characters and low by the proficiency bonus for others — printing it bare would be the
+     * hand-typed note's own failure mode with a new author.
+     */
+    lines.push(
+      "Passive: " + ref.passives.map(p =>
+        `${p.skill} ${p.value}${p.hasRow ? "" : " (no check row — unproficient assumed)"}`
+      ).join(", ") + ".",
+    );
+  }
+
   if (ref.speciesTraits.length > 0) {
     lines.push(`${ref.speciesName} traits: ` + ref.speciesTraits.map(t => t.name).join(", ") + ".");
   }
@@ -316,6 +417,20 @@ export function formatDmReference(ref: DmReference): string[] {
   }
   if (missing.length > 0) {
     lines.push("⚠ No pool on the sheet for: " + missing.map(r => `${r.label} (${r.className}, gained at level ${r.level})`).join(", ") + ".");
+  }
+
+  /**
+   * ⚠ SEPARATE LINE, SEPARATE WORDING, BECAUSE IT IS A WEAKER CLAIM. The class pools above come
+   * with a max and can be added by a button; these are named by the registry with no size, so the
+   * line asks for a look rather than offering a fix.
+   */
+  const subMissing = ref.subclassPools.filter(p => !p.onSheet);
+  if (subMissing.length > 0) {
+    lines.push(
+      "⚠ Subclass grants, not on the sheet: "
+      + subMissing.map(p => p.resource + (p.earliestLevel ? ` (from level ${p.earliestLevel})` : "")).join(", ")
+      + " — add each with its own uses; the registry names them but not how many.",
+    );
   }
 
   if (ref.dmNote) lines.push(ref.dmNote);
