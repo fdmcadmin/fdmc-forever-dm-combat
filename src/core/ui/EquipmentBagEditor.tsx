@@ -330,7 +330,19 @@ export type EquipmentItem = {
     role: "input" | "output";
     enabled: boolean;
     mechanicalTag?: string;
+    /**
+     * INPUTS: which act this component drops in — "A1".."A4".
+     *
+     * ⚠ IT WAS ALWAYS HERE AND NEVER SHOWN. Christopher: *"i want to add the A1-A4 back onto the
+     * convergence input items."* All 33 inputs carry it (8/9/8/8); the card and the bag simply
+     * never rendered it, so a player holding one had no way to know where it came from.
+     */
     actLabel?: string;
+    /**
+     * OUTPUTS: the completed tier — "T1".."T4". Transcribed from loot doc v6, which states it on
+     * each item's own line. T3 is absent because the app has never built that tier.
+     */
+    tier?: string;
     flavorTag?: string;
     inputIds?: string[];
     outputId?: string;
@@ -964,7 +976,19 @@ export function itemToAction(item: EquipmentItem, equipped: boolean): ActorActio
         item.attunementRequired ? "Requires attunement" : undefined,
         // ◈ is the Convergence mark used in the library and the forge picker; it belongs on
         // the player's own item too, or they cannot tell an input from ordinary kit.
-        item.convergence ? `◈ Convergence${item.convergence.mechanicalTag ? ` · ${item.convergence.mechanicalTag}` : ""}` : undefined,
+        /**
+         * ⚠ THE ACT AND THE TIER ARE THE POINT OF THE CHIP, AND THEY WERE NOT ON IT.
+         *
+         * Christopher, 2026-09-11: *"i want to add the A1-A4 back onto the convergence input items
+         * and then the T1-T4 back onto the output items, this will help player to determine where
+         * they got those items."* Every input has carried `actLabel` since 0.7.1.0 and the chip
+         * showed only the mechanical tag, so a player holding two components could see WHAT they
+         * did and not WHERE either came from — which is the half a recipe needs.
+         */
+        item.convergence
+          ? `◈ Convergence · ${item.convergence.tier ?? item.convergence.actLabel ?? item.convergence.role ?? ""}`
+            + (item.convergence.mechanicalTag ? ` · ${item.convergence.mechanicalTag}` : "")
+          : undefined,
         item.value ? `Value: ${item.value}` : undefined,
         item.weight ? `Weight: ${item.weight}` : undefined,
       ].filter(Boolean).join(" · "),
@@ -998,8 +1022,18 @@ export function itemToAction(item: EquipmentItem, equipped: boolean): ActorActio
       // Convergence identity travels WITH the item. Players cannot author these, but they
       // must be able to see they are holding one — the forge panel is player-initiated, so
       // an unmarked input is an item the player never knows to bring.
+      /**
+       * ⚠ CARRY THE ACT AND THE TIER TOO. This mapping took role and mechanicalTag only, so the
+       * moment an item was attached to a character its provenance was gone — the library knew
+       * "A2" and the sheet did not, which is exactly the fact a player needs to plan a recipe.
+       */
       convergence: item.convergence
-        ? { role: item.convergence.role, mechanicalTag: item.convergence.mechanicalTag }
+        ? {
+            role: item.convergence.role,
+            mechanicalTag: item.convergence.mechanicalTag,
+            actLabel: item.convergence.actLabel,
+            tier: item.convergence.tier,
+          }
         : undefined,
       // Chassis state rides the action so the card can offer the grip switch and re-derive the
       // dice without resolving the item back out of the library — same rule as statEffects.
@@ -1731,8 +1765,20 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       attunementRequired: m.attunementRequired,
       // Round-tripped so editing a sheet's copy does not quietly strip the item's Convergence
       // identity — the one thing about it a player is not allowed to author.
+      /**
+       * ⚠ AND HOME AGAIN WITH THEM. `actionToItem` reads an attached action back into an item and
+       * saving writes that item down, so a field missing HERE is stripped from the sheet by the
+       * act of opening the editor — the fault the weapon riders shipped with at 0.8.40.6:
+       * *"it deletes it if i open up the character editor."*
+       */
       convergence: (m.convergence?.role === "input" || m.convergence?.role === "output")
-        ? { role: m.convergence.role, enabled: true, mechanicalTag: m.convergence.mechanicalTag }
+        ? {
+            role: m.convergence.role,
+            enabled: true,
+            mechanicalTag: m.convergence.mechanicalTag,
+            actLabel: m.convergence.actLabel,
+            tier: m.convergence.tier,
+          }
         : undefined,
       // `metadata` stores these with widened `string` types (it is the generic action shape),
       // so narrow them back on the way home. Same objects, round-tripped.

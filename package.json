@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.48.0",
+  "version": "0.8.49.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -68,6 +68,7 @@
     "check:sheetsummary": "npx tsx scripts/check-sheet-summary.ts",
     "check:skillchecks": "npx tsx scripts/check-skill-checks.ts",
     "check:srdclasses": "npx tsx scripts/check-srd-classes.ts",
+    "check:convergence": "npx tsx scripts/check-convergence-tags.ts",
     "check:recovery": "npx tsx scripts/check-recovery-registry.ts",
     "audit:sheets": "npx tsx scripts/audit-actor-sheets.ts",
     "fix:checks": "npx tsx scripts/fix-frozen-checks.ts",

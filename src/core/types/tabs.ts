@@ -407,7 +407,14 @@ export type ActorActionMetadata = {
    * Carried on the action rather than resolved from the library for the same reason as
    * `attunementRequired` and `slot` — the card must not need a library lookup to render.
    */
-  convergence?: { role?: string; mechanicalTag?: string };
+  convergence?: {
+    role?: string;
+    mechanicalTag?: string;
+    /** Inputs: the act it drops in, "A1".."A4" — where the player got it. */
+    actLabel?: string;
+    /** Outputs: the completed tier, "T1".."T4". */
+    tier?: string;
+  };
   /** F05 — resource kind for rest reset behavior */
   resourceKind?: ResourceKind;
   /**

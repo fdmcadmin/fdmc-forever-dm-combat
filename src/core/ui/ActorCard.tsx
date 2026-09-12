@@ -1430,10 +1430,20 @@ export function ActorCard({
    * already does, so it needs nothing the player does not already have.
    */
   const convergenceById = useMemo(() => {
-    const map = new Map<string, { role?: string; mechanicalTag?: string }>();
+    const map = new Map<string, { role?: string; mechanicalTag?: string; actLabel?: string; tier?: string }>();
     for (const item of loadEquipmentLibrary()) {
       if (item.convergence) {
-        map.set(item.id, { role: item.convergence.role, mechanicalTag: item.convergence.mechanicalTag });
+        /**
+         * ⚠ THE BACKFILL CARRIES THE PROVENANCE TOO. It copied role and mechanicalTag only, so an
+         * item attached before this field existed came back marked as convergence with no act and
+         * no tier — visible as a component, useless for working out a recipe.
+         */
+        map.set(item.id, {
+          role: item.convergence.role,
+          mechanicalTag: item.convergence.mechanicalTag,
+          actLabel: item.convergence.actLabel,
+          tier: item.convergence.tier,
+        });
       }
     }
     return map;

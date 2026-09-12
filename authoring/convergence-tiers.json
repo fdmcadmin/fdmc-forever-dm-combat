@@ -1,0 +1,1134 @@
+{
+  "schema": "fdmc.campaign-authoring.v1",
+  "exportedAt": "2026-09-12T17:25:46.468Z",
+  "note": "Convergence output tier labels T1-T4, transcribed from loot doc v6. Encounters carried through unchanged.",
+  "equipment": [
+    {
+      "id": "bc-anchor-thread",
+      "name": "Anchor Thread",
+      "type": "magic",
+      "description": "A braided metallic thread that tightens when the bearer loses footing. Tags: Recipe: Movement + Stability · Completed: Stability",
+      "mechanicsText": "Once per long rest, when an effect would move you against your will or knock you prone, you can ignore the forced movement or remain standing.",
+      "isUsable": false,
+      "tier": "1",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement + Stability",
+        "tier": "T1"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-clarity-hood",
+      "name": "Clarity Hood",
+      "effect": {
+        "type": "reroll",
+        "rerollMethod": "reroll",
+        "condition": "a failed save vs Charmed, Frightened, or an illusion"
+      },
+      "type": "magic",
+      "description": "A light hood whose inner weave sharpens at the edge of false images and invasive emotion. Tags: Recipe: Defense + Utility · Completed: Utility",
+      "mechanicsText": "Once per long rest, when you fail a saving throw against being Charmed or Frightened, or against an illusion spell or effect, reroll the save and use the new result.",
+      "isUsable": false,
+      "tier": "1",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Defense + Utility",
+        "tier": "T1"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-step-stabilizer",
+      "activation": "bonus",
+      "name": "Step Stabilizer",
+      "type": "magic",
+      "description": "A small paired set of heel plates that seem to find the next safe piece of ground first. Tags: Recipe: Movement + Utility · Completed: Movement",
+      "mechanicsText": "Natural difficult terrain costs you no extra movement. Once per short or long rest, you can take the Disengage action as a Bonus Action.",
+      "isUsable": false,
+      "tier": "1",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement + Utility",
+        "tier": "T1"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-reinforced-wrap",
+      "activation": "reaction",
+      "name": "Reinforced Wrap",
+      "type": "magic",
+      "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands. Tags: Recipe: Defense + Stability · Completed: Defense",
+      "mechanicsText": "Once per long rest, when an attack hits you, you can use your Reaction to reduce the damage by 1d10.",
+      "isUsable": true,
+      "damage": "1d10",
+      "tier": "1",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Defense + Stability",
+        "tier": "T1"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-lensing-glass",
+      "activation": "bonus",
+      "name": "Lensing Glass",
+      "type": "magic",
+      "description": "A clear lens that catches edges the eye normally loses. Tags: Recipe: Cleanse + Utility · Completed: Cleanse",
+      "mechanicsText": "As a Bonus Action, expend 1 charge. Until the end of your next turn, you can see Invisible creatures and see through magical visual obscurement within 30 feet. The glass regains all expended charges when you finish a long rest.",
+      "isUsable": false,
+      "tier": "1",
+      "act": "Act 2",
+      "charges": {
+        "max": 2,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Cleanse + Utility",
+        "tier": "T1"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-splitgrain-grip",
+      "name": "Splitgrain Grip",
+      "type": "magic",
+      "damage": "1d6",
+      "description": "A narrow weapon wrap split along two opposing grains. When the bearer commits to a strike, one grain drives forward while the other seems to pull the hand toward the next opening. Tags: Recipe: Offensive + Movement · Completed: Offensive",
+      "mechanicsText": "Once per long rest, when you hit a creature with a weapon attack, you can deal an additional 1d6 damage of one damage type dealt by the attack. Immediately after the attack, you can move up to 10 feet without provoking opportunity attacks from that creature.",
+      "isUsable": false,
+      "tier": "1",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "longRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Offensive + Movement",
+        "tier": "T1"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-drift-anchor",
+      "name": "Drift Anchor",
+      "type": "magic",
+      "description": "A compact Ward anchor that grows heavy only when the world tries to move its bearer. Tags: Recipe: Movement + Stability · Completed: Stability",
+      "mechanicsText": "You have advantage on saving throws against being moved against your will or knocked prone. Once per day at dawn recharge, when either effect would happen, you can ignore it entirely.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement + Stability",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-hollowlight",
+      "name": "Hollowlight",
+      "effect": {
+        "type": "reroll",
+        "rerollMethod": "reroll",
+        "condition": "a failed save vs Blinded, Charmed, Frightened or Restrained"
+      },
+      "type": "magic",
+      "description": "A pale light source that does not brighten darkness so much as make it stop lying. Tags: Recipe: Cleanse + Utility · Completed: Utility",
+      "mechanicsText": "You can see through magical darkness within 30 feet. Once per day, when you fail a saving throw against being Blinded, Charmed, Frightened, or Restrained, you can reroll the save and use the new result.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Cleanse + Utility",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-quickstep",
+      "activation": "bonus",
+      "name": "Quickstep",
+      "type": "magic",
+      "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next. Tags: Recipe: Movement + Utility · Completed: Movement",
+      "mechanicsText": "Your speed increases by 5 feet and difficult terrain costs you no extra movement. Once per day, you can take the Dash action as a Bonus Action; your movement does not provoke opportunity attacks until the end of that turn.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement + Utility",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-edgeworn",
+      "name": "Edgeworn",
+      "type": "magic",
+      "description": "A thin grip plate whose sharpened inner grain seems to carry a committed blow through protections that should have turned it aside. Tags: Recipe: Offensive + Cleanse · Completed: Offensive",
+      "mechanicsText": "Once per day, when you hit with a weapon attack, choose one damage type dealt by the hit. For that hit, resistance to the chosen type is ignored, and immunity to the chosen type is treated as resistance.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Offensive + Cleanse",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-driftveil",
+      "activation": "reaction",
+      "name": "Driftveil",
+      "type": "magic",
+      "description": "A short mantle that pulls sideways at the instant a blow finds its wearer. Tags: Recipe: Defense + Movement · Completed: Defense",
+      "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to move up to 10 feet without provoking opportunity attacks and reduce the triggering attack’s damage by 1d8.",
+      "isUsable": true,
+      "damage": "1d8",
+      "tier": "2",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Defense + Movement",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-clearward-mantle",
+      "activation": "bonus",
+      "name": "Clearward Mantle",
+      "type": "magic",
+      "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
+      "mechanicsText": "You have advantage on saving throws against gaining the Poisoned condition. Once per day, as a Bonus Action, end one of the following conditions on yourself: Blinded, Charmed, Frightened, or Poisoned.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 2",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Defense + Cleanse",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-turnstep-relay",
+      "activation": "reaction",
+      "name": "Turnstep Relay",
+      "type": "magic",
+      "description": "A narrow pair of hinged plates whose inner marks click toward the next threat a heartbeat before it moves. Tags: Recipe: Movement + Tactical · Completed: Tactical",
+      "mechanicsText": "Once per day, when a hostile creature you can see within 30 feet starts its turn, you can use your Reaction to move up to half your Speed without provoking opportunity attacks. This movement occurs before that creature takes any action or movement.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 3",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement + Tactical",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-opening-thorn",
+      "name": "Opening Thorn",
+      "type": "magic",
+      "description": "A hooked thorn that opens into a bright seam when a strike creates the exact moment another combatant can exploit. Tags: Recipe: Offensive + Tactical · Completed: Tactical",
+      "mechanicsText": "Once per day, when you deal damage to a creature, you can expose an opening until the start of your next turn. The next attack roll made by another creature against that target has advantage. If that attack hits, the attacker can immediately move up to 10 feet without provoking opportunity attacks from the target.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 3",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Offensive + Tactical",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-heldroot-knot",
+      "name": "Heldroot Knot",
+      "type": "magic",
+      "description": "A loop of braided root and fine silver thread that closes around spent magic before an interruption can carry it away. Tags: Recipe: Utility + Continuity · Completed: Continuity",
+      "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The creature's Reaction otherwise resolves normally.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 3",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Utility + Continuity",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-rootfast-loop",
+      "name": "Rootfast Loop",
+      "type": "magic",
+      "description": "A seamless ring of living root that refuses to open under strain, even when every fiber in it should have separated. Tags: Recipe: Stability + Continuity · Completed: Continuity",
+      "mechanicsText": "Once per day, when you fail a Constitution saving throw to maintain Concentration, you can succeed instead.",
+      "isUsable": false,
+      "tier": "2",
+      "act": "Act 3",
+      "charges": {
+        "max": 1,
+        "reset": "manual",
+        "note": "Recharges at dawn"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Stability + Continuity",
+        "tier": "T2"
+      },
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-blinkstep",
+      "name": "Blinkstep — Tempered",
+      "type": "magic",
+      "activation": "bonus",
+      "description": "The Catalyst fills every old fracture in the ankle clasps with clean, luminous lines without erasing the pitted age of the metal. The two pieces remain unmistakably the same worn pair, but their edges now separate into brief translucent afterimages whenever the bearer moves, each afterimage appearing one perfect step ahead before folding back into the clasps. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Encounter: teleport up to 30 feet to an unoccupied space you can see. Passive — your Speed increases by 10 feet.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "encounter"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Movement",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-applied-insight",
+      "name": "Applied Insight — Tempered",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "The Catalyst runs through the clouded facets as bright internal veins, clearing them without replacing the old lens. The scorched brass frame unfolds into two thin nested rings that turn around the original setting on their own. What was once the single clear face now becomes whichever facet the item needs, visibly aligning itself with the task at hand. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Reaction · 1/Short Rest: after you or an ally within 30 feet fails an ability check, add 1d12 to the result, potentially succeeding. Passive — after each Long Rest, choose one skill or tool; you gain proficiency with it until your next Long Rest.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Utility",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-deferred-wound",
+      "name": "Deferred Wound — Tempered",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "The Catalyst settles into the guard's dark seams like molten light and binds the old segmented plates without smoothing away their dents. Hair-thin luminous bridges now span the gaps between sections. When damage is deferred, the light gathers visibly inside those bridges; when the wound is fully cleared, the stored glow collapses inward and leaves a brief protective sheen over the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Reaction · 1/Short Rest: Deferred Wound uses 2d10 instead of 2d8. Passive — if all deferred damage is cleared before it resolves at round end, you gain Temporary Hit Points equal to your Proficiency Bonus.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Defense",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-true-ground",
+      "name": "True Ground — Tempered",
+      "type": "magic",
+      "activation": "bonus",
+      "description": "The Catalyst traces the old ankle band with concentric lines of pale light, turning the worn cracks into a deliberate geometric pattern. The black stone and metal remain unchanged in shape, but a faint ring of the same pattern now appears on the ground whenever the bearer anchors themselves. If they are displaced, that luminous imprint holds their place until they return to it. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Encounter: the anchor lasts until the start of your next turn and also answers hostile teleportation, returning you to the anchor or nearest space you can occupy after the hostile displacement resolves. Passive — once per round, reduce forced movement applied to you by 10 feet.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "encounter"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Stability",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-condition-vessel",
+      "name": "Condition Vessel — Tempered",
+      "type": "magic",
+      "activation": "action",
+      "description": "The Catalyst threads through the tarnished cage and turns each bar into a bright channel feeding the original crystal vessel. The crystal itself becomes perfectly clear between uses, while its old colored stains survive as thin veins around the edge. When a condition is drawn out, its color flashes inside the vessel and is consumed by the Catalyst light instead of passing into the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Magic Action · 1/Short Rest: end one listed Condition on a willing creature within 30 feet; the extracted condition ends without transferring to you. Passive — you have advantage on saving throws against Charmed, Frightened, and Poisoned.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Cleanse",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-rupture",
+      "name": "Rupture — Tempered",
+      "type": "magic",
+      "activation": "free",
+      "description": "The Catalyst does not close the wrist ring's old splits; it makes them precise. Brilliant white-gold light burns inside each ember crack, and several razor-thin segments now hover a hair's breadth from the original iron while remaining bound to it. On a committed hit, the floating pieces snap into alignment and drive the ring's stored force through the same wound before drifting apart again. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — Rider · 1/Short Rest: when you hit, deal an additional 2d12 damage of one damage type dealt by the attack, and the target cannot regain Hit Points until the start of your next turn. Passive — once on each of your turns, one damage die showing 1 may count as 2.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Offensive",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-threat-positioning",
+      "name": "Threat Positioning — Tempered",
+      "type": "magic",
+      "activation": "free",
+      "description": "The Catalyst rebuilds nothing that was missing from the old compass-disc; instead it surrounds the original broken pointers with a thin luminous orbit. The dark disc remains scratched and incomplete beneath the glass, while the new ring moves freely above it. When initiative is set, one line of light locks onto the chosen threat and the orbit visibly turns until the bearer's place and the threat's place exchange. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Short Rest, immediately after Initiative is rolled and before the first turn: exchange your Initiative with one visible hostile creature. Initiative is never moved mid-round, and this cannot create double or skipped turns. Passive — when a hostile creature immediately before you in Initiative finishes its turn, gain +2 to your next saving throw before the end of your next turn.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Tactical",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    },
+    {
+      "id": "bc-t4-preserved-reaction",
+      "name": "Preserved Reaction — Tempered",
+      "type": "magic",
+      "activation": "reaction",
+      "description": "The Catalyst weaves a bright filament through the original silver-and-root braid, following every old bend instead of replacing it. The once-slack strand now carries a second luminous echo beside it. When the item preserves a Reaction, the physical braid tightens around the bearer while the echo flashes toward the triggering threat, making the item look momentarily connected to both the response that was kept and the interruption it denied. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+      "mechanicsText": "Active — 1/Short Rest: use the A4 Preserved Reaction substitution. If a hostile creature caused the trigger, its next attempted Reaction before the start of its next turn is suppressed; then the suppression ends. Passive — Held Intent: when you Ready a non-spell action or movement and its trigger does not occur before the start of your next turn, it remains Readied until the end of that turn. Only one Readied intent can be preserved this way.",
+      "isUsable": false,
+      "tier": "4",
+      "act": "Act 4",
+      "sourceEncounter": "CONVERGENCE TIER 4 — TEMPERED SINGULARS",
+      "attunementRequired": true,
+      "charges": {
+        "max": 1,
+        "reset": "shortRest"
+      },
+      "convergence": {
+        "role": "output",
+        "enabled": true,
+        "mechanicalTag": "Continuity",
+        "tier": "T4"
+      },
+      "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
+      "isLocked": true
+    }
+  ],
+  "encounters": [
+    {
+      "id": "act1-thornfang-pack",
+      "name": "A1 The Split Treeline",
+      "actTag": "Act 1",
+      "classification": "normal",
+      "entries": [
+        {
+          "templateId": "broken-chain:act1:thornfang-wolf:v1",
+          "count": 2,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Patient Wolf"
+        },
+        {
+          "templateId": "broken-chain:act1:thornfang-packlord:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Great Wolf"
+        }
+      ],
+      "owner": "campaign",
+      "order": 1
+    },
+    {
+      "id": "act1-greenwood-reaver",
+      "name": "A1 The Eastern Farmstead",
+      "actTag": "Act 1",
+      "classification": "normal",
+      "entries": [
+        {
+          "templateId": "broken-chain:act1:greenwood-reaver:v1",
+          "count": 2,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Raider Captain"
+        }
+      ],
+      "owner": "campaign",
+      "order": 2
+    },
+    {
+      "id": "act1-mosshide-owlbear",
+      "name": "A1 The Creekside Den",
+      "actTag": "Act 1",
+      "classification": "mid-boss",
+      "entries": [
+        {
+          "templateId": "broken-chain:act1:mosshide-owlbear:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Shape in the Trees"
+        },
+        {
+          "templateId": "broken-chain:act1:mosshide-cub:v1",
+          "count": 2,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Things in the Den"
+        }
+      ],
+      "owner": "campaign",
+      "order": 3
+    },
+    {
+      "id": "act1-threadbare-spider-nest",
+      "name": "A1 The Webbed Crossing",
+      "actTag": "Act 1",
+      "classification": "normal",
+      "entries": [
+        {
+          "templateId": "broken-chain:act1:threadbare-spider:v1",
+          "count": 4,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Spider"
+        }
+      ],
+      "owner": "campaign",
+      "order": 4
+    },
+    {
+      "id": "act1-swamp-ambush",
+      "name": "A1 The Swamp Road",
+      "actTag": "Act 1",
+      "classification": "normal",
+      "entries": [
+        {
+          "templateId": "broken-chain:act1:swamp-ambusher:v1",
+          "count": 4,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Bandit"
+        }
+      ],
+      "owner": "campaign",
+      "order": 5
+    },
+    {
+      "id": "fort-cervan-band",
+      "name": "A1 The Road Fort",
+      "classification": "elite",
+      "entries": [
+        {
+          "templateId": "broken-chain:fort:cervan-thornwarden:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Fort Commander"
+        },
+        {
+          "templateId": "broken-chain:fort:fortbreaker-reaver:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Shouting One"
+        },
+        {
+          "templateId": "broken-chain:fort:gloamknife-stray:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Wrong Shadow"
+        }
+      ],
+      "owner": "campaign",
+      "order": 6,
+      "actTag": "Act 1"
+    },
+    {
+      "id": "act1-boss",
+      "name": "A1 The Ruined Keep",
+      "actTag": "Act 1",
+      "classification": "act-boss",
+      "entries": [
+        {
+          "templateId": "broken-chain:boss:mirage-stalker:v1",
+          "count": 1,
+          "startingVisibility": "condition",
+          "hiddenNameOverride": "Something Wrong in the Keep"
+        }
+      ],
+      "order": 7,
+      "owner": "campaign"
+    },
+    {
+      "id": "act2-s1-e1-hollow-pack",
+      "name": "A2 The Northgate Road",
+      "actTag": "Act 2",
+      "classification": "strong",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2-s1:pale-stalker:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Patient Wolf"
+        },
+        {
+          "templateId": "broken-chain:act2-s1:pack-hunter:v1",
+          "count": 2,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Corrupted Hunter"
+        }
+      ],
+      "owner": "campaign",
+      "order": 1
+    },
+    {
+      "id": "act2-s1-e2-frozen-hollow",
+      "name": "A2 The Frozen Hollow",
+      "actTag": "Act 2",
+      "classification": "elite",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2-s1:icebound-zombie:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Icebound Corpse"
+        },
+        {
+          "templateId": "broken-chain:act2-s1:hollow-mourner:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Hollow Mourner"
+        },
+        {
+          "templateId": "broken-chain:act2-s2:corrupted-hunter:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Corrupted Hunter"
+        }
+      ],
+      "owner": "campaign",
+      "order": 2
+    },
+    {
+      "id": "act2-s2-e2-last-directive",
+      "name": "A2 The Desecrated Cemetery",
+      "actTag": "Act 2",
+      "classification": "elite",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2-s2:soul-gorged-guardian:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Broken Guardian"
+        },
+        {
+          "templateId": "broken-chain:act2-s2:grave-light:v1",
+          "count": 3,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Grave Light"
+        }
+      ],
+      "owner": "campaign",
+      "order": 3
+    },
+    {
+      "id": "act2-s3-village-defense",
+      "name": "A2 Northgate Night Defense",
+      "actTag": "Act 2",
+      "classification": "mid-boss",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2:lesser-wendigo:v1",
+          "count": 2,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Rooftop Shape"
+        }
+      ],
+      "owner": "campaign",
+      "order": 4
+    },
+    {
+      "id": "act2-s4-frozen-sentinels",
+      "name": "A2 The River Crossing",
+      "actTag": "Act 2",
+      "classification": "elite",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2:frozen-sentinel:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Ward Armor in the Road"
+        },
+        {
+          "templateId": "broken-chain:act2:rime-wight:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Standing Soldier"
+        },
+        {
+          "templateId": "broken-chain:act2:frozen-husk:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Something Standing That Shouldn't"
+        },
+        {
+          "templateId": "broken-chain:act2:frost-weaver:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Shape That Weaves the Cold"
+        }
+      ],
+      "owner": "campaign",
+      "order": 5
+    },
+    {
+      "id": "act2-s4-pale-drifter",
+      "name": "A2 The Hill Clearing",
+      "actTag": "Act 2",
+      "classification": "elite",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2:pale-drifter:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Light at the Tree Line"
+        },
+        {
+          "templateId": "broken-chain:act2:frozen-cloak:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Cold That Follows the Light"
+        }
+      ],
+      "owner": "campaign",
+      "order": 6
+    },
+    {
+      "id": "act2-s5-wendigo-wight",
+      "name": "A2 The Frozen Lake",
+      "actTag": "Act 2",
+      "classification": "act-boss",
+      "entries": [
+        {
+          "templateId": "broken-chain:act2:wendigo-wight:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "The Thing at the Center of the Lake"
+        }
+      ],
+      "owner": "campaign",
+      "order": 7
+    },
+    {
+      "id": "act3-e1-the-first-court",
+      "name": "A3 The First Court",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:snarlroot:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Snarlroot"
+        },
+        {
+          "templateId": "broken-chain:act3:hollow-warden:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Hollow Warden"
+        },
+        {
+          "templateId": "broken-chain:act3:larkskein:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Larkskein"
+        }
+      ],
+      "owner": "campaign",
+      "order": 1
+    },
+    {
+      "id": "act3-e2-the-cut-below",
+      "name": "A3 The Cut Below",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:quillshrike:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Quillshrike"
+        },
+        {
+          "templateId": "broken-chain:act3:marrowstalk:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Marrowstalk"
+        },
+        {
+          "templateId": "broken-chain:act3:shardbound:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Shardbound"
+        }
+      ],
+      "owner": "campaign",
+      "order": 2
+    },
+    {
+      "id": "act3-e3-gate-i-crone-and-mare",
+      "name": "A3 Gate I: Twilight Pond",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:veilwood-crone:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Veilwood Crone"
+        },
+        {
+          "templateId": "broken-chain:act3:darkmare:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Darkmare",
+          "spellPicks": {
+            "3": [
+              "Shadow Shroud "
+            ]
+          }
+        }
+      ],
+      "owner": "campaign",
+      "order": 3
+    },
+    {
+      "id": "act3-e4-the-hollow-feast",
+      "name": "A3 The Hollow Feast",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:briar-regent:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Briar Regent"
+        },
+        {
+          "templateId": "broken-chain:act3:folded-bulwark:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Folded Bulwark"
+        },
+        {
+          "templateId": "broken-chain:act3:velvet-host:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Velvet Host"
+        }
+      ],
+      "owner": "campaign",
+      "order": 4
+    },
+    {
+      "id": "act3-e5-the-scar-line",
+      "name": "A3 The Scar Line",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:rootwake-warden:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Rootwake Warden"
+        },
+        {
+          "templateId": "broken-chain:act3:stormscar-ravager:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Stormscar Ravager"
+        },
+        {
+          "templateId": "broken-chain:act3:claimchain-exactor:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Claimchain Exactor"
+        }
+      ],
+      "owner": "campaign",
+      "order": 5
+    },
+    {
+      "id": "campaign-mt3nm2j9",
+      "name": "A3 Gate II: Open Clearing",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:elemental-mirror:v1",
+          "count": 4,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Mirror",
+          "bodies": [
+            {
+              "id": "bmt86707w",
+              "name": ""
+            },
+            {
+              "id": "bmt86712r",
+              "name": ""
+            },
+            {
+              "id": "bmt8671fm",
+              "name": ""
+            },
+            {
+              "id": "bmt8672ed",
+              "name": ""
+            }
+          ]
+        }
+      ],
+      "owner": "campaign",
+      "actTag": "Act 3",
+      "order": 6
+    },
+    {
+      "id": "act3-e7-the-last-court",
+      "name": "Act 3 - The Last Court",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:blackbough-reeve:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Blackbough Reeve"
+        },
+        {
+          "templateId": "broken-chain:act3:gloam-harrow:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Gloam Harrow"
+        },
+        {
+          "templateId": "broken-chain:act3:brandwing:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Brandwing"
+        }
+      ],
+      "owner": "campaign",
+      "order": 7
+    },
+    {
+      "id": "act3-e8-the-occupied-acre",
+      "name": "Act 3 - The Occupied Acre",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:demonic-reaver:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Demonic Reaver"
+        },
+        {
+          "templateId": "broken-chain:act3:breaker:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Breaker"
+        },
+        {
+          "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Demon Knight of Punishment"
+        }
+      ],
+      "owner": "campaign",
+      "order": 8
+    },
+    {
+      "id": "act3-e9-gate-iii-veil-torn-dragon",
+      "name": "A3 Gate III: Veilscar Hollow",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:veil-torn-wyrmling:v1",
+          "count": 2,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Veil-Torn Wyrmling"
+        },
+        {
+          "templateId": "broken-chain:act3:veil-torn-dragon:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Veil-Torn Dragon"
+        }
+      ],
+      "owner": "campaign",
+      "order": 9
+    },
+    {
+      "id": "act3-e10-the-center",
+      "name": "A3 The Center",
+      "actTag": "Act 3",
+      "entries": [
+        {
+          "templateId": "broken-chain:act3:thought-harrower:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Thought Harrower"
+        },
+        {
+          "templateId": "broken-chain:act3:grief-colossus:v1",
+          "count": 1,
+          "startingVisibility": "hp-bar",
+          "hiddenNameOverride": "Grief Colossus"
+        }
+      ],
+      "owner": "campaign",
+      "order": 10
+    }
+  ]
+}

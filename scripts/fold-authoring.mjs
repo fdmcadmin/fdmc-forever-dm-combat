@@ -13,7 +13,7 @@
  * becomes content that ships. Run it, build, push.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const SCHEMA = "fdmc.campaign-authoring.v1";
@@ -140,6 +140,30 @@ const equipment = Array.isArray(payload.equipment) ? payload.equipment : [];
 // Older exports predate encounters. Absent is legal and folds to an empty array rather than
 // failing — a file made before the field existed is not a corrupt file.
 const encounters = Array.isArray(payload.encounters) ? payload.encounters : [];
+
+/**
+ * ⚠ BUT "LEGAL" AND "INTENDED" ARE DIFFERENT THINGS, AND THIS ONE BIT ME.
+ *
+ * Creatures and equipment MERGE by id; encounters REPLACE. So a payload written to change one
+ * field on some items — no `encounters` key, because it has nothing to say about them — does not
+ * leave them alone. It empties them. Folding an equipment-only payload on 2026-09-11 deleted all
+ * 24 authored encounters, 587 lines, and only `check:pools` failing on the very next command
+ * turned that into a scare instead of a loss.
+ *
+ * An older export legitimately has no encounters AND is folding into a tree that has none either.
+ * Wiping a populated set with an absent key is the case that is always a mistake, so it needs the
+ * author to say so out loud.
+ */
+if (encounters.length === 0) {
+  const current = existsSync(OUT) ? readFileSync(OUT, "utf8") : "";
+  const populated = /export const AUTHORED_ENCOUNTERS: EncounterDefinition\[\] = \[\s*\{/.test(current);
+  if (populated && !process.argv.includes("--drop-encounters")) {
+    console.error("REFUSED: this payload carries no encounters and the authored file has some.");
+    console.error("  Encounters REPLACE on fold, so folding this would delete every one of them.");
+    console.error("  Carry them through in the payload, or pass --drop-encounters if you mean it.");
+    process.exit(1);
+  }
+}
 
 // The export states its own digest. A mismatch means the file was edited between export and
 // fold — refuse rather than publish something the app never produced.

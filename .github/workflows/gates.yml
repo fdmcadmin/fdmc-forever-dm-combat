@@ -164,7 +164,7 @@ jobs:
 
       # The eighteen skills come from the SRD, not from a campaign helper five sheets happened to
       # use — and the Checks tab the card renders is now one the editor can open. Every generated
-      # row carries 6380 6380tokens: the party currently holds 90 frozen totals, right at the level they
+      # row carries at-tokens: the party currently holds 90 frozen totals, right at the level they
       # were typed and silently stale after an ASI.
       - name: check the SRD skill checks and the Checks step
         run: npm run check:skillchecks
@@ -179,6 +179,11 @@ jobs:
       # one does not, and flattening the two hands an edition a free recharge every hour.
       - name: check the recovery registry
         run: npm run check:recovery
+
+      # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
+      # the label survives being attached to a character and read back by the editor.
+      - name: check the convergence act and tier labels
+        run: npm run check:convergence
 
       - name: check timed bodies
         run: npm run check:timed

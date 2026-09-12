@@ -1017,7 +1017,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "1",
     "act": "Act 2",
     "charges": {"max":1,"reset":"longRest"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability","tier":"T1"},
     "isLocked": true
   },
   {
@@ -1031,7 +1031,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "1",
     "act": "Act 2",
     "charges": {"max":1,"reset":"longRest"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Utility"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Utility","tier":"T1"},
     "isLocked": true
   },
   {
@@ -1045,7 +1045,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "1",
     "act": "Act 2",
     "charges": {"max":1,"reset":"shortRest"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility","tier":"T1"},
     "isLocked": true
   },
   {
@@ -1060,7 +1060,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "1",
     "act": "Act 2",
     "charges": {"max":1,"reset":"longRest"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Stability"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Stability","tier":"T1"},
     "isLocked": true
   },
   {
@@ -1074,7 +1074,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "1",
     "act": "Act 2",
     "charges": {"max":2,"reset":"longRest"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility","tier":"T1"},
     "isLocked": true
   },
   {
@@ -1088,7 +1088,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "1",
     "act": "Act 2",
     "charges": {"max":1,"reset":"longRest"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Movement"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Movement","tier":"T1"},
     "isLocked": true
   },
   {
@@ -1101,7 +1101,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Stability","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1115,7 +1115,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Cleanse + Utility","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1129,7 +1129,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Utility","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1142,7 +1142,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Cleanse"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Cleanse","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1157,7 +1157,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Movement"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Movement","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1171,7 +1171,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 2",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Cleanse"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Defense + Cleanse","tier":"T2"},
     "isLocked": true
   },
 
@@ -1320,7 +1320,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 3",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Tactical"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Movement + Tactical","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1333,7 +1333,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 3",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Tactical"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Offensive + Tactical","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1346,7 +1346,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 3",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Utility + Continuity"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Utility + Continuity","tier":"T2"},
     "isLocked": true
   },
   {
@@ -1359,7 +1359,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "tier": "2",
     "act": "Act 3",
     "charges": {"max":1,"reset":"manual","note":"Recharges at dawn"},
-    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Stability + Continuity"},
+    "convergence": {"role":"output","enabled":true,"mechanicalTag":"Stability + Continuity","tier":"T2"},
     "isLocked": true
   },
   {
