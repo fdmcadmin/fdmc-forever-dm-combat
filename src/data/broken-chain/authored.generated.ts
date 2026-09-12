@@ -6349,10 +6349,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-bb4b2cc5-31835";
+export const AUTHORED_DIGEST = "fnv1a-15fe3049-132381";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-12T18:13:36.132Z";
+export const AUTHORED_AT = "2026-09-12T18:15:30.806Z";
 
 /**
  * Merge authored content over a bundled list by id.
