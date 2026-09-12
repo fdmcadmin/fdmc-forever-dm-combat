@@ -3507,8 +3507,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Movement + Stability",
-      "tier": "T1"
+      "mechanicalTag": "Movement + Stability"
     },
     "isLocked": true
   },
@@ -3533,8 +3532,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Defense + Utility",
-      "tier": "T1"
+      "mechanicalTag": "Defense + Utility"
     },
     "isLocked": true
   },
@@ -3555,8 +3553,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Movement + Utility",
-      "tier": "T1"
+      "mechanicalTag": "Movement + Utility"
     },
     "isLocked": true
   },
@@ -3578,8 +3575,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Defense + Stability",
-      "tier": "T1"
+      "mechanicalTag": "Defense + Stability"
     },
     "isLocked": true
   },
@@ -3600,8 +3596,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Cleanse + Utility",
-      "tier": "T1"
+      "mechanicalTag": "Cleanse + Utility"
     },
     "isLocked": true
   },
@@ -3622,8 +3617,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Offensive + Movement",
-      "tier": "T1"
+      "mechanicalTag": "Offensive + Movement"
     },
     "isLocked": true
   },
@@ -3644,8 +3638,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Movement + Stability",
-      "tier": "T2"
+      "mechanicalTag": "Movement + Stability"
     },
     "isLocked": true
   },
@@ -3671,8 +3664,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Cleanse + Utility",
-      "tier": "T2"
+      "mechanicalTag": "Cleanse + Utility"
     },
     "isLocked": true
   },
@@ -3694,8 +3686,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Movement + Utility",
-      "tier": "T2"
+      "mechanicalTag": "Movement + Utility"
     },
     "isLocked": true
   },
@@ -3716,8 +3707,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Offensive + Cleanse",
-      "tier": "T2"
+      "mechanicalTag": "Offensive + Cleanse"
     },
     "isLocked": true
   },
@@ -3740,8 +3730,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Defense + Movement",
-      "tier": "T2"
+      "mechanicalTag": "Defense + Movement"
     },
     "isLocked": true
   },
@@ -3763,8 +3752,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Defense + Cleanse",
-      "tier": "T2"
+      "mechanicalTag": "Defense + Cleanse"
     },
     "isLocked": true
   },
@@ -3786,8 +3774,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Movement + Tactical",
-      "tier": "T2"
+      "mechanicalTag": "Movement + Tactical"
     },
     "isLocked": true
   },
@@ -3808,8 +3795,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Offensive + Tactical",
-      "tier": "T2"
+      "mechanicalTag": "Offensive + Tactical"
     },
     "isLocked": true
   },
@@ -3830,8 +3816,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Utility + Continuity",
-      "tier": "T2"
+      "mechanicalTag": "Utility + Continuity"
     },
     "isLocked": true
   },
@@ -3852,8 +3837,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Stability + Continuity",
-      "tier": "T2"
+      "mechanicalTag": "Stability + Continuity"
     },
     "isLocked": true
   },
@@ -5591,8 +5575,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Movement",
-      "tier": "T4"
+      "mechanicalTag": "Movement"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5616,8 +5599,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Utility",
-      "tier": "T4"
+      "mechanicalTag": "Utility"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5641,8 +5623,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Defense",
-      "tier": "T4"
+      "mechanicalTag": "Defense"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5666,8 +5647,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Stability",
-      "tier": "T4"
+      "mechanicalTag": "Stability"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5691,8 +5671,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Cleanse",
-      "tier": "T4"
+      "mechanicalTag": "Cleanse"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5716,8 +5695,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Offensive",
-      "tier": "T4"
+      "mechanicalTag": "Offensive"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5741,8 +5719,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Tactical",
-      "tier": "T4"
+      "mechanicalTag": "Tactical"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -5766,8 +5743,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "convergence": {
       "role": "output",
       "enabled": true,
-      "mechanicalTag": "Continuity",
-      "tier": "T4"
+      "mechanicalTag": "Continuity"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
     "isLocked": true
@@ -6349,10 +6325,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-2e13449b-32123";
+export const AUTHORED_DIGEST = "fnv1a-15fe3049-132381";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-12T17:25:46.641Z";
+export const AUTHORED_AT = "2026-09-12T17:29:29.110Z";
 
 /**
  * Merge authored content over a bundled list by id.
