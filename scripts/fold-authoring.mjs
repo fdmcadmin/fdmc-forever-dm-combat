@@ -343,10 +343,45 @@ const previousArray = (name) => {
     process.exit(1);
   }
 };
+/**
+ * ⚠ A PUBLISH FOLDS NEW CONTENT IN; IT DOES NOT REPLACE WHAT IT DOES NOT MENTION.
+ *
+ * Christopher, 2026-09-12: *"why is the publish not folding in new content while retaining old
+ * content."* Because this did `byId.set(id, item)` — an incoming item REPLACED the previous entry
+ * entirely, so every field the exporting browser had never heard of was deleted by the act of
+ * publishing an item that happened to share its id.
+ *
+ * `fdmc-author-bot`'s 17:30Z fold is the case: it carried 24 convergence outputs whose
+ * `convergence` object predated the tier labels, and all 24 tiers went. The nine weapon riders at
+ * 0.8.40.5 were the same fault, and the fix then was to move the data to the seed — a workaround
+ * for this, not a cure. Christopher: *"we are not suppose to be writing to the seeded section
+ * everything is suppose to be authored publishes."* So the cure goes here.
+ *
+ * The rule is the one `mergeAuthored` already states for the seed↔authored merge, applied at the
+ * fold: **a field the incoming copy does not MENTION is not a decision to remove it.** Plain
+ * objects merge key-wise so a nested `convergence` keeps its tier; arrays and primitives replace,
+ * because an authored array IS a complete statement of that list.
+ *
+ * ⚠ `--replace` STILL EXISTS AND STILL MEANS WHOLESALE. Clearing a field deliberately is the rare
+ * case and it should be the one that has to say so.
+ */
+const isPlainObject = v =>
+  typeof v === "object" && v !== null && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
+
+const foldOver = (previous, incoming) => {
+  if (!previous || !isPlainObject(previous) || !isPlainObject(incoming)) return incoming;
+  const out = { ...previous };
+  for (const [k, v] of Object.entries(incoming)) {
+    if (v === undefined) continue;
+    out[k] = isPlainObject(v) && isPlainObject(previous[k]) ? foldOver(previous[k], v) : v;
+  }
+  return out;
+};
+
 const mergeById = (label, incoming, idOf, previous) => {
   if (REPLACE) return incoming;
   const byId = new Map(previous.map(p => [idOf(p), p]));
-  for (const item of incoming) byId.set(idOf(item), item);
+  for (const item of incoming) byId.set(idOf(item), foldOver(byId.get(idOf(item)), item));
   const kept = [...byId.values()];
   const carried = previous.filter(p => !incoming.some(i => idOf(i) === idOf(p)));
   if (carried.length) {
@@ -421,9 +456,30 @@ export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) =>
      * the seed's value returns. That is the rarer case and a visible one, and it is a far smaller
      * price than a library that can never be improved again.
      */
-    const stated = Object.fromEntries(
-      Object.entries(over as Record<string, unknown>).filter(([, v]) => v !== undefined),
-    );
+    /**
+     * ⚠ AND THE SAME RULE HAS TO REACH ONE LEVEL DOWN, WHICH IT DID NOT.
+     *
+     * Christopher published at 2026-09-12T17:30Z and all 24 convergence TIER labels vanished —
+     * the identical shape as the nine weapon riders at 0.8.40.5, arriving through a door that was
+     * supposed to be shut. The field-wise merge above was already correct; it was only one level
+     * deep. \`convergence\` is a nested OBJECT, so an authored copy stating
+     * \`{role, enabled, mechanicalTag}\` replaced the seed's \`{role, enabled, mechanicalTag, tier}\`
+     * WHOLE, and the tier went with it.
+     *
+     * The reasoning two paragraphs up applies unchanged inside a nested object: a key the authored
+     * copy does not MENTION is not a decision to remove it. So plain objects merge key-wise and
+     * everything else — arrays, dates, primitives — still replaces outright, because an authored
+     * array IS a complete statement of that list.
+     */
+    const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+      typeof v === "object" && v !== null && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
+
+    const stated: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(over as Record<string, unknown>)) {
+      if (v === undefined) continue;
+      const seeded = (b as Record<string, unknown>)[k];
+      stated[k] = isPlainObject(v) && isPlainObject(seeded) ? { ...seeded, ...v } : v;
+    }
     return { ...(b as Record<string, unknown>), ...stated } as T;
   });
   const bundledIds = new Set(bundled.map(idOf));
