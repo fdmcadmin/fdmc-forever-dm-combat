@@ -61,9 +61,22 @@ export function savingThrowModifier(opts: {
 export function inferSaveProficiency(opts: {
   save: number;
   modifier: number;
-  level: number;
+  /** A character's level, when the bonus follows from it. Ignored if `explicitBonus` is given. */
+  level?: number;
+  /**
+   * ⚠ THE PRINTED BONUS, AND IT HAS TO BE ACCEPTED HERE TOO.
+   *
+   * `savingThrowModifier` has taken one since monsters started printing a bonus with no CR; this
+   * function did not, so the two halves of the same question — "what does this save read?" and
+   * "does that reading mean proficient?" — used different bonuses. A creature printing +4 with no
+   * CR had its save COMPUTED at +4 and then read back against +2, which marks a correct save as a
+   * deliberate override and sticks an explicit number on a creature that never needed one.
+   */
+  explicitBonus?: number;
 }): { saveProficient: boolean; keepExplicit: boolean } {
-  const pb = proficiencyBonus(opts.level);
+  const pb = typeof opts.explicitBonus === "number"
+    ? opts.explicitBonus
+    : proficiencyBonus(opts.level ?? 1);
   if (opts.save === opts.modifier + pb) return { saveProficient: true, keepExplicit: false };
   if (opts.save === opts.modifier) return { saveProficient: false, keepExplicit: false };
   return { saveProficient: false, keepExplicit: true };

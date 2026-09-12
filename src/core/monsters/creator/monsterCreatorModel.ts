@@ -271,19 +271,47 @@ export function creatureSaveModifier(
  * proficiency bonus above the modifier WAS a proficient save, one equal to the modifier was not,
  * and anything else is bespoke and keeps its explicit number.
  */
+/**
+ * ⚠ IT TOOK THE CR AND NOT THE STATS, SO THE PRINTED BONUS WAS INVISIBLE TO IT.
+ *
+ * Christopher, 2026-09-12: *"the brandwing is at +7 to hit the baseline is a +9 (+5 from dex and
+ * +4 from PB) […] i have to go through every single creature and put the actual cr into the boxes
+ * because the prof bonus box you have set is not being counted"*, and: *"the difference in the
+ * brandwing from me putting the actual cr in should not happen."*
+ *
+ * He is exactly right. `creatureSaves` — what the CHECKER reads — goes through
+ * `creatureSaveModifier(entry, stats)` and honours the printed bonus. This function, which is what
+ * the EDITOR shows, took `cr` alone: with CR blank it fell to `Math.max(1, cr ?? 1)` = 1 and
+ * produced a +2 bonus, so Brandwing's DEX 20 read **save +7** beside a Prof. bonus box saying 4 and
+ * a caption reading *"using +4 as printed"*. Two readers of one fact disagreeing inside one panel,
+ * and the panel's own caption was the one telling the truth.
+ *
+ * ⚠ AND THE COST WAS NOT COSMETIC. A DM reading +7 and "correcting" it types an explicit save,
+ * which BAKES the wrong number onto the creature — where `inferSaveProficiency` then reads it back
+ * as a deliberate override. Entering a CR to make the display agree does the same thing from the
+ * other end: it changes a creature that already stated its bonus.
+ *
+ * Now it takes the same `stats` object the checker does, so there is one answer to "what is this
+ * creature's proficiency bonus" and both surfaces read it.
+ */
 export function creatureSaveDisplay(
   entry: { value: string; save?: number; saveProficient?: boolean } | undefined,
-  cr: number | undefined,
+  stats: { cr?: number; proficiencyBonus?: number } | number | undefined,
 ): { save: number; proficient: boolean; explicit: boolean } {
   if (!entry) return { save: 0, proficient: false, explicit: false };
   const modifier = abilityModifier(parseAbilityScore(entry.value));
-  const level = Math.max(1, Math.floor(cr ?? 1));
+  /**
+   * A bare number is still accepted so no caller breaks silently, and it means what it always
+   * meant — the CR — but it is the legacy shape and the stats object is the one to pass.
+   */
+  const resolved = typeof stats === "number" ? { cr: stats } : stats;
+  const explicitBonus = creatureProficiencyBonus(resolved);
   if (typeof entry.save === "number") {
-    const read = inferSaveProficiency({ save: entry.save, modifier, level });
+    const read = inferSaveProficiency({ save: entry.save, modifier, explicitBonus });
     return { save: entry.save, proficient: read.saveProficient, explicit: read.keepExplicit };
   }
   return {
-    save: savingThrowModifier({ modifier, saveProficient: entry.saveProficient, level }),
+    save: savingThrowModifier({ modifier, saveProficient: entry.saveProficient, explicitBonus }),
     proficient: Boolean(entry.saveProficient),
     explicit: false,
   };

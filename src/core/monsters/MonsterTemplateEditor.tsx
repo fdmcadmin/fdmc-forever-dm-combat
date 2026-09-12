@@ -1506,7 +1506,7 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             const entry = draft.abilities.find(a => a.label.toUpperCase().startsWith(label));
             // Reads the REAL save — an authored explicit value included — so the tick can never
             // sit empty next to a save the creature actually has.
-            const { save, proficient, explicit } = creatureSaveDisplay(entry, draft.stats.cr);
+            const { save, proficient, explicit } = creatureSaveDisplay(entry, draft.stats);
             return (
               <div key={label}>
                 <span style={{ ...labelStyle, textAlign: "center", fontWeight: 700 }}>{label}</span>

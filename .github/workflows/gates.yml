@@ -185,6 +185,11 @@ jobs:
       - name: check the convergence act and tier labels
         run: npm run check:convergence
 
+      # One proficiency bonus, every reader. Four places have now held the same fault: a creature
+      # printing +4 with no CR had its saves read at +2 in the editor while the checker used +4.
+      - name: check every proficiency reader agrees
+        run: npm run check:profbonus
+
       - name: check timed bodies
         run: npm run check:timed
 
