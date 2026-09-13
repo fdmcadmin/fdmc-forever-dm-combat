@@ -101,6 +101,7 @@ const SEGMENTS = ACT3_SEGMENTS.map(seg => ({ label: `Level ${seg.level}`, level:
  */
 const REFERENCE: Record<string, { completion: string; monsterDamage: number }> = {
   // 0.8.55.1 re-recorded the drift 0.8.50.1–0.8.52.1 shipped without recording; MASTER bisects it commit by commit.
+  // The Last Court's 184 includes the 2026-09-13T20:34Z publish (Ember Lance's Psychic line 1d6 → 1d12): +15.
   "act3-e1-the-first-court": { completion: "R2", monsterDamage: 48 },
   "act3-e2-the-cut-below": { completion: "R2", monsterDamage: 111 },
   "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 167 },
@@ -113,7 +114,7 @@ const REFERENCE: Record<string, { completion: string; monsterDamage: number }> =
    */
   "act3-e5-the-scar-line": { completion: "R4", monsterDamage: 246 },
   "campaign-mt3nm2j9": { completion: "FAIL R4", monsterDamage: 307 },
-  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 169 },
+  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 184 },
   "act3-e8-the-occupied-acre": { completion: "R4", monsterDamage: 179 },
   "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 245 },
   "act3-e10-the-center": { completion: "R4", monsterDamage: 376 },

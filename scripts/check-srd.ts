@@ -238,24 +238,27 @@ console.log("\nThe Broken Chain reads the same way");
    * to be answered against every type the roll carries, so the field holds them all. A RIDER is
    * the other thing — extra dice with their own type — and the two must not be conflated.
    */
-  const dual = acts.filter(a => Array.isArray(a.damageType));
-  ok("the dual-typed rolls are expressed as a list", dual.some(a => a.where === "Gloam Harrow — Winter Needle"),
-    dual.map(a => `${a.where} ${JSON.stringify(a.damageType)}`).join("; "));
-  ok("and damageTypesOf reads every type off them",
-    dual.length > 0 && dual.every(a => damageTypesOf(a.damageType as string[]).length >= 2),
-    dual.map(a => damageTypesOf(a.damageType as string[]).join("+")).join(", "));
   /**
-   * ⚠ EMBER LANCE LEFT THE LIST BY AUTHORING, NOT BY ACCIDENT (0.8.50.1). Christopher: *"1 action
-   * choose a damage type and then write 2nd dice line and a damage type."* The published Lance is a Fire
-   * roll plus its own typed Psychic line — two packets on one hit, each answered against its own
-   * resistance. This gate pinned "exactly two lists" and went red on that publish; it now names the
-   * list it protects and proves the Lance took the second-line form rather than losing its Psychic.
+   * ⚠ SUPERSEDED BY AUTHORING: BOTH TWO-TYPE HITS ARE NOW A ROLL PLUS A SECOND DAMAGE LINE.
+   *
+   * Christopher, 0.8.50.1: *"1 action choose a damage type and then write 2nd dice line and a damage
+   * type."* Ember Lance took that form in 0.8.50.1 and Winter Needle in the 2026-09-13T20:34Z publish —
+   * each hit is two packets, each answered against its own resistance, which is what the list was for.
+   * This gate pinned "exactly two lists" and went red on the first of those publishes. A list is still
+   * legal data (the SRD and a DM's creature can carry one), so the reader is still proven on one.
    */
-  const lance = acts.find(a => a.where === "Brandwing — Ember Lance") as { damageType?: unknown; extraDamage?: { damage?: string; damageType?: string }[] } | undefined;
-  ok("Ember Lance is a typed roll plus its own typed second damage line",
-    !!lance && typeof lance.damageType === "string"
-      && (lance.extraDamage ?? []).some(x => !!x.damage && !!x.damageType && x.damageType !== lance.damageType),
-    lance ? `${JSON.stringify(lance.damageType)} + ${JSON.stringify(lance.extraDamage)}` : "not found");
+  const dual = acts.filter(a => Array.isArray(a.damageType));
+  ok("any campaign roll still typed as a list carries every type", dual.every(a => damageTypesOf(a.damageType as string[]).length >= 2),
+    dual.map(a => `${a.where} ${JSON.stringify(a.damageType)}`).join("; ") || "none left in the campaign");
+  ok("and damageTypesOf reads every type off a list", damageTypesOf(["Cold", "Psychic"]).length === 2);
+  type TwoLine = { damageType?: unknown; extraDamage?: { damage?: string; damageType?: string }[] };
+  for (const where of ["Brandwing — Ember Lance", "Gloam Harrow — Winter Needle"]) {
+    const hit = acts.find(a => a.where === where) as TwoLine | undefined;
+    ok(`${where} is a typed roll plus its own typed second damage line`,
+      !!hit && typeof hit.damageType === "string"
+        && (hit.extraDamage ?? []).some(x => !!x.damage && !!x.damageType && x.damageType !== hit.damageType),
+      hit ? `${JSON.stringify(hit.damageType)} + ${JSON.stringify(hit.extraDamage)}` : "not found");
+  }
 
   /**
    * ⚠ THE ELEMENTAL MIRROR IS NOT TOUCHED, BY RULING. Christopher: *"dont touch the mirror."* Its
