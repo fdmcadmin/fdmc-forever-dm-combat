@@ -151,12 +151,23 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
    *
    * Christopher chose *"Reader layer first"* for the v5 pricer: every authored clause shown as its broad
    * readers, with a duration and endpoint for anything that lasts, and NEEDS_INPUT where the workbook's
-   * Runtime Contract says a composition is incomplete. It prices nothing. See `broadReaderGate.ts`.
+   * Runtime Contract says a composition is incomplete. See `broadReaderGate.ts`.
+   *
+   * Phase 2 (*"complete phase 2"*): a save-ends state also says how many turns it is expected to stand
+   * against THIS panel's reference party — its matching save, capped at a four-round encounter.
    */
   const readerReport = useMemo<ReaderReport | null>(() => {
     if (!template || unbuiltTemplate) return null;
-    try { return composeReaders(template); } catch { return null; }
-  }, [template, unbuiltTemplate]);
+    const refBandRow = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
+    const d = partyDefenceAt(refBandRow.referenceLevel, refMode);
+    try {
+      return composeReaders(template, {
+        saves: { str: d.str, dex: d.dex, con: d.con, int: d.int, wis: d.wis, cha: d.cha },
+        saveBonus: (d.str + d.dex + d.con + d.int + d.wis + d.cha) / 6,
+        horizonTurns: 4,
+      });
+    } catch { return null; }
+  }, [template, unbuiltTemplate, refBand, refMode]);
 
   const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
   const defence = partyDefenceAt(band.referenceLevel, refMode);
@@ -305,6 +316,11 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
                       {m.finals.length > 0 && (
                         <span style={{ color: "#7fcf9f" }} title={m.finals.map(f => f.evidence).join("; ")}>
                           {" → "}{m.finals.map(f => `${f.id} ${f.pattern}`).join(", ")}
+                        </span>
+                      )}
+                      {m.duration && (
+                        <span style={{ color: "#d6b86a" }} title={m.duration.basis}>
+                          {` · stands ${m.duration.expectedTurns.toFixed(2)} of ${m.duration.maxTurns} turns (${m.duration.reader})`}
                         </span>
                       )}
                       {m.example && (

@@ -217,6 +217,11 @@ jobs:
       - name: check the v5 broad reader layer
         run: npm run check:broadreaders
 
+      # v5 phase 2: concentration hold (BR073), two-turn / N-round cycles (BR066/BR067) and save-ends
+      # (BR075-BR077) priced; a concentration zone loses its later turns only when the party hits its caster.
+      - name: check the v5 duration readers are priced
+        run: npm run check:durationreaders
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

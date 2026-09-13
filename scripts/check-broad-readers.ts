@@ -106,7 +106,7 @@ ok("readers are listed in the workbook's parse order", (() => {
 
 console.log("\n4. the estimator shows it");
 const panel = readFileSync(resolve(ROOT, "src/core/encounter-band/CreatureEstimatorPanel.tsx"), "utf8");
-ok("the panel composes readers for the chosen creature", /composeReaders\(template\)/.test(panel));
+ok("the panel composes readers for the chosen creature", /composeReaders\(template[,)]/.test(panel));
 ok("...and prints READY or NEEDS_INPUT with each mechanic's readers and endpoint", /READER COMPOSITION: READY/.test(panel) && /NEEDS_INPUT: \{n\}/.test(panel));
 
 console.log("\n5. the library, reported (not a gate)");

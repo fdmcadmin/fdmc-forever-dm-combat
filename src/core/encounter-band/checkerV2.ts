@@ -41,6 +41,7 @@ import {
   type PartyEquipmentMode,
 } from "./partyCurveV2";
 import { hostileFractionActingFirst } from "./initiativeOrder";
+import { concentrationHold, cycleActiveShare } from "./durationPricing";
 import { depleteRoundValue } from "./partyResourceCurve";
 
 export { partySizeHpMultiplier };
@@ -499,6 +500,26 @@ export type RosterGroup = {
    * weakest-first) must keep these in front, or the sort silently undoes the rule.
    */
   killOrderFirst?: boolean;
+  /**
+   * THIS ROW'S VALUE STANDS ON A CONCENTRATION SPELL — v5 BR066 + BR073 (Winter's Toll).
+   *
+   * `dpr` is the effect standing every turn of its cycle. The simulation replaces it with
+   * max(0, activeShare × dependent + fixed), where activeShare is the average share of the recast cycle
+   * that stood given the party's damage into the holder last round (`durationPricing.ts`), and scales the
+   * row's `partyDamageFactor` loss by the same share. At a share of 1 — a holder nobody has hit — that is
+   * exactly `dpr`, so nothing moves until the party reaches the caster.
+   */
+  concentration?: {
+    /** The body concentrating. The party's damage into it calls the Constitution saves. */
+    holderGroupId: string;
+    conSave: number;
+    /** The printed duration in the holder's turns — the recast cycle. Winter's Toll: 2. */
+    activeTurns: number;
+    /** Per round: what exists only while the effect stands. */
+    dependent: Partial<RoundProfile>;
+    /** Per round: what is spent or gained whether or not it holds — the Action given up is negative. */
+    fixed: Partial<RoundProfile>;
+  };
 };
 
 /**
@@ -686,6 +707,8 @@ export function encounterEhpAt(roster: PreparedGroup[], round: number): number {
 
 export function encounterDprAt(
   roster: PreparedGroup[], cumulativePartyDamage: number, round: number,
+  /** Per concentration row, the share of its cycle that stood — see `RosterGroup.concentration`. Absent = all of it. */
+  activeShare?: ReadonlyMap<string, number>,
 ): number {
   return roster.reduce((total, group) => {
     // A body not on the field this round contributes nothing — see `groupPresentIn`.
@@ -699,7 +722,11 @@ export function encounterDprAt(
       if (parent && livingBodies(parent, cumulativePartyDamage) <= 0) return total;
     }
     const alive = livingBodies(group, cumulativePartyDamage);
-    const bodyDpr = roundValue(group.dpr, round);
+    const c = group.concentration;
+    const share = c && group.id ? activeShare?.get(group.id) : undefined;
+    const bodyDpr = c && share !== undefined
+      ? Math.max(0, share * roundValue(c.dependent, round) + roundValue(c.fixed, round))
+      : roundValue(group.dpr, round);
     return total + alive * bodyDpr * group.dprUptime;
   }, 0);
 }
@@ -811,6 +838,8 @@ export type SimulationRound = {
   completesNow: boolean;
   fatalNow: boolean;
   status: "ONGOING" | "COMPLETE" | "FATAL" | "PARTY_DOWN";
+  /** Each concentration row this round — v5 BR066 + BR073. Absent when the roster has none. */
+  concentration?: { id: string; name: string; damageToHolder: number; hold: number; activeShare: number }[];
 };
 
 export type EncounterResult = {
@@ -1012,8 +1041,40 @@ export function simulateEncounter(opts: {
      * that is the `pcsStart === 0` guard, and the loop breaks on it.
      */
     /**
+     * ⚠ A CONCENTRATION EFFECT STANDS ON ITS LATER TURNS ONLY IF ITS CASTER HELD IT — v5 BR066 + BR073.
+     *
+     * *"Two-turn value = V_turn1 + P_ACTIVE_2 × V_turn2; P_ACTIVE_2 includes source survival,
+     * concentration, repeat saves, and break conditions."* Source survival is already `endsWithGroupId`.
+     * Concentration is the party's damage into the holder over the last round: each PC's share of it one
+     * damage instance and one Constitution save (`durationPricing.concentrationHold`). The row's dependent
+     * value then carries the average share of its recast cycle that stood — (1 + hold) / 2 for two turns —
+     * the same cycle average its round-2+ burden already uses for the Action given up.
+     *
+     * While the party is killing something else the holder takes nothing, the hold is 1, and every
+     * number is exactly what it was. Round 1 is the cast: nothing has been dealt to it yet.
+     */
+    const activeShare = new Map<string, number>();
+    const concentrationReport: NonNullable<SimulationRound["concentration"]> = [];
+    for (const group of prepared) {
+      const c = group.concentration;
+      if (!c || !group.id) continue;
+      const previous = rounds[rounds.length - 1];
+      const holder = prepared.find(g => g.id === c.holderGroupId);
+      let damageToHolder = 0;
+      let hold = 1;
+      if (previous && holder && previous.partyDamage > 0) {
+        damageToHolder = Math.max(0, damageIntoGroup(holder, previous.cumulativePartyDamage)
+          - damageIntoGroup(holder, previous.cumulativePartyDamage - previous.partyDamage));
+        hold = concentrationHold(c.conSave, damageToHolder, previous.partyDamage / partySize).hold;
+      }
+      const share = cycleActiveShare(c.activeTurns, hold);
+      activeShare.set(group.id, share);
+      concentrationReport.push({ id: group.id, name: String(group.name ?? group.id), damageToHolder, hold, activeShare: share });
+    }
+    /**
      * ⚠ A HINDERING ZONE TAKES ITS SHARE OFF THE PARTY'S OWN DAMAGE — while its holder stands.
-     * Every active `partyDamageFactor` multiplies; a row bound to a dead creature no longer counts.
+     * Every active `partyDamageFactor` multiplies; a row bound to a dead creature no longer counts, and a
+     * concentration row's loss counts for the share of its cycle that stood.
      * With none present this is exactly 1, so every other fight is unchanged.
      */
     const partyFactor = prepared.reduce((factor, group) => {
@@ -1023,7 +1084,8 @@ export function simulateEncounter(opts: {
         const parent = prepared.find(g => g.id === group.endsWithGroupId);
         if (parent && livingBodies(parent, cumulativePartyDamage) <= 0) return factor;
       }
-      return factor * Math.max(0, f);
+      const share = group.concentration && group.id ? activeShare.get(group.id) ?? 1 : 1;
+      return factor * Math.max(0, 1 - share * (1 - f));
     }, 1);
     const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential * partyFactor;
     const partyDamageBefore = cumulativePartyDamage;
@@ -1041,8 +1103,8 @@ export function simulateEncounter(opts: {
     const ehpOnField = encounterEhpAt(prepared, round);
     const completesNow = completionRound === null && ehpOnField > 0
       && cumulativePartyDamage + EPSILON >= ehpOnField;
-    const monsterDprStart = encounterDprAt(prepared, partyDamageBefore, round);
-    const monsterDprEnd = encounterDprAt(prepared, cumulativePartyDamage, round);
+    const monsterDprStart = encounterDprAt(prepared, partyDamageBefore, round, activeShare);
+    const monsterDprEnd = encounterDprAt(prepared, cumulativePartyDamage, round, activeShare);
     /**
      * ⚠ Monster damage is NOT scaled by PCs standing — survivors remain valid targets.
      *
@@ -1100,6 +1162,7 @@ export function simulateEncounter(opts: {
       monsterEhpLeft: Math.max(0, ehpOnField - cumulativePartyDamage),
       monsterDprStart, monsterDprEnd, monsterDamage, cumulativeMonsterDamage,
       downs, damagedButStanding, standing, completesNow, fatalNow, status,
+      ...(concentrationReport.length ? { concentration: concentrationReport } : {}),
     });
     if (completionRound !== null) break;
     if (standing === 0) break;

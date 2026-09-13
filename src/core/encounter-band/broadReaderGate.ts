@@ -34,6 +34,7 @@ import type { ParsedFeature } from "./featureResolver";
 import { conditionsImposedBy } from "./controlPricing";
 import { auditCoverage, mechanicsOf } from "./coverageGate";
 import { readConcentration } from "./mechanicText";
+import { repeatFailChance, saveEndsActiveTurns, type SaveEndsTiming } from "./durationPricing";
 import { isMultiattackAction } from "../monsters/multiattackText";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
 
@@ -48,6 +49,18 @@ export type MechanicComposition = {
   needsInput: string[];
   /** The workbook's Reader Compositions example this clause shares the most readers with (≥ 3, endpoints included). */
   example?: { id: string; pattern: string; shared: number; of: number };
+  /**
+   * A save-ends state priced against the reference party — v5 BR075 / BR076 / BR077 (phase 2): how many of
+   * the target's turns it is expected to stand. Present only when a party is given and the clause has a DC.
+   */
+  duration?: { reader: string; expectedTurns: number; maxTurns: number; basis: string };
+};
+
+/** The party a save-ends clause is priced against. `horizonTurns` caps a minute at the encounter (BR068). */
+export type ReaderParty = {
+  saves?: Partial<Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>>;
+  saveBonus?: number;
+  horizonTurns?: number;
 };
 export type ReaderReport = {
   mechanics: MechanicComposition[];
@@ -366,7 +379,7 @@ function finalize(channel: string, name: string, u: Uses, passive: boolean, text
  * traits, actions, reactions, legendary and lair actions — so each feature is paired with the entry it
  * came from, and the entry's own fields (extra damage lines, concentration, a summon) are read with it.
  */
-export function composeReaders(template: MainMonsterTemplate): ReaderReport {
+export function composeReaders(template: MainMonsterTemplate, party?: ReaderParty): ReaderReport {
   const any = template as unknown as Record<string, RawEntry[] | undefined>;
   const sections: [string, RawEntry[]][] = [
     ["trait", any.traits ?? []], ["action", any.actions ?? []], ["reaction", any.reactions ?? []],
@@ -408,6 +421,28 @@ export function composeReaders(template: MainMonsterTemplate): ReaderReport {
     }
     const passive = feature.activationType === "trait" || feature.activationType === "free";
     const m = finalize(channel, raw.name ?? "unnamed", u, passive, norm(raw.text));
+    /**
+     * v5 phase 2 — a save-ends state, priced. The repeat save is the clause's own DC against the party's
+     * matching save; the cap is a printed minute or round count, and never more than the encounter.
+     * ⚠ NO PRICE READS THIS. The checker does not price a condition a monster imposes as lost party turns,
+     * so this is how long the state stands — shown, not yet charged.
+     */
+    const saveEnds = (["BR075", "BR076", "BR077"] as const).find(id => u.evidence.has(id));
+    const bonus = party && feature.saveDc !== undefined
+      ? (feature.saveAbility ? party.saves?.[feature.saveAbility] : undefined) ?? party.saveBonus
+      : undefined;
+    if (saveEnds && feature.saveDc !== undefined && typeof bonus === "number") {
+      const timing: SaveEndsTiming = saveEnds === "BR075" ? "start" : saveEnds === "BR076" ? "end" : "interval";
+      const horizon = Math.max(1, Math.floor(party?.horizonTurns ?? 4));
+      const printed = u.evidence.has("BR068") ? 10 : u.evidence.has("BR067") ? Number(norm(raw.text).match(/\b(\d+) (?:turns|rounds)\b/)?.[1] ?? horizon) : horizon;
+      const maxTurns = Math.min(horizon, printed);
+      const fail = repeatFailChance(feature.saveDc, bonus);
+      const { expectedTurns } = saveEndsActiveTurns(timing, fail, maxTurns);
+      m.duration = {
+        reader: saveEnds, expectedTurns, maxTurns,
+        basis: `DC ${feature.saveDc} against ${bonus >= 0 ? "+" : ""}${Number(bonus.toFixed(1))}: ${Math.round(fail * 100)}% fail each repeat save at the ${timing === "start" ? "start" : "end"} of its turn → ${expectedTurns.toFixed(2)} of ${maxTurns} turns`,
+      };
+    }
     // r41 per sentence: a clause no primitive routes still composes if the reader cues read it.
     for (const sentence of blockedBy.get(key) ?? []) {
       const alone = newUses();

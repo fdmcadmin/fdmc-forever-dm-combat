@@ -53,6 +53,7 @@ import { resolveFeature, expectedDamageForFeature, type ParsedFeature } from "./
 import { damageExpressionAverage } from "./damageExpression";
 import type { RosterGroup } from "./checkerV2";
 import { creatureSaves } from "../monsters/creator/monsterCreatorModel";
+import { readConcentration } from "./mechanicText";
 
 type Target = Parameters<typeof traceCreature>[1] & {
   /** The party's chance to hit, 0–1 — the chosen actors', else the balanced centre line's. Never guessed. */
@@ -120,6 +121,8 @@ export type ZoneBurden = {
   burden: number[];
   /** What survives of the party's damage while the zone stands, or undefined if it cannot be priced. */
   partyDamageFactor?: number;
+  /** Present when the zone is concentration: the holder's CON save and the recast cycle in turns. */
+  concentration?: { conSave: number; activeTurns: number };
 };
 
 export type RosterInteractionResult = {
@@ -169,6 +172,14 @@ function bestSingleAttack(parsed: ParsedCreature, target: Target): { name: strin
     if (!best || value > best.value) best = { name: f.name, value };
   }
   return best;
+}
+
+/** Every authored entry on a template, whatever list it sits in — for the fields the parser does not carry. */
+function rawEntries(template: MainMonsterTemplate): { name?: string; text?: string; concentration?: boolean }[] {
+  const t = template as unknown as Record<string, unknown>;
+  return ["traits", "actions", "bonusActions", "reactions", "legendaryActions", "lairActions"]
+    .flatMap(k => (Array.isArray(t[k]) ? t[k] as { name?: string; text?: string; concentration?: boolean }[] : []))
+    .filter(Boolean);
 }
 
 function roundTotals(parsed: ParsedCreature, target: Target): number[] {
@@ -380,10 +391,35 @@ export function rosterInteractions(
       });
 
       const burden = ROUNDS.map(i => Math.max(0, allyGain[i] + saveGain[i] + (extraAttack?.[i] ?? 0) - actionGivenUp[i]));
+      /**
+       * ⚠ A CONCENTRATION ZONE STANDS ONLY WHILE ITS CASTER HOLDS IT — v5 BR066 + BR073.
+       *
+       * Christopher, 2026-09-13: *"the Winter's Toll also needs to be concentration."* `burden` is the zone
+       * standing every turn of its cycle — what the workbook's cells price and `check:rosterinteractions`
+       * reproduces. What concentration takes off it depends on how much of the party's damage reaches the
+       * caster, which only the round-by-round checker knows, so the row carries the split and the checker
+       * applies the hold (`RosterGroup.concentration`):
+       *
+       *   dependent  what exists only while the zone stands: the allies' +N, the PCs' −M saves, and an
+       *              extra attack that needs an ally inside it
+       *   fixed      what is spent or gained regardless: the Action given up (negative), an extra attack
+       *              that needs no zone
+       *
+       * max(0, dependent + fixed) is exactly `burden`, so a caster nobody hits prices as it did.
+       */
+      const zoneRaw = zoneF ? rawEntries(entry.template).find(a => sameActionName(String(a.name ?? ""), zoneF.name)) : undefined;
+      const concentrating = !!zoneRaw && (zoneRaw.concentration ?? Boolean(readConcentration(zoneRaw.text)));
+      const extraRequired = extraF ? (extraF.rosterInteraction as { requiresZone?: string }).requiresZone : undefined;
+      const extraNeedsZone = !!(zoneF && extraRequired && sameActionName(extraRequired, zoneF.name));
+      const dependent = ROUNDS.map(i => allyGain[i] + saveGain[i] + (extraNeedsZone ? extraAttack?.[i] ?? 0 : 0));
+      const fixed = ROUNDS.map(i => (extraNeedsZone ? 0 : extraAttack?.[i] ?? 0) - actionGivenUp[i]);
+      const conSave = concentrating ? creatureSaves((entry.template.abilities ?? []) as never, entry.template.stats as never).con : 0;
+      const profile = (v: number[]) => ({ round1: v[0], round2: v[1], round3: v[2], round4Plus: v[3] });
       const label = [zoneF?.name, extraF?.name].filter(Boolean).join(" + ");
       out.burdens.push({
         source: entry.name, zone: zoneF?.name ?? "", extraAttackName: extraF?.name, alliesInside, pcsInside,
         allyGain, saveGain, extraAttack, extraAttackFrom, actionGivenUp, burden, partyDamageFactor,
+        ...(concentrating ? { concentration: { conSave, activeTurns: duration } } : {}),
       });
 
       if (burden.some(b => b > 0) || (partyDamageFactor !== undefined && partyDamageFactor < 1)) {
@@ -402,6 +438,9 @@ export function rosterInteractions(
           endsWithGroupId: entry.id,
           initiativeMod: entry.initiativeMod,
           ...(partyDamageFactor !== undefined ? { partyDamageFactor } : {}),
+          ...(concentrating ? { concentration: {
+            holderGroupId: entry.id, conSave, activeTurns: duration, dependent: profile(dependent), fixed: profile(fixed),
+          } } : {}),
         });
       }
 
@@ -431,7 +470,10 @@ export function rosterInteractions(
       ].filter(Boolean);
       note(entry.name, "ESTIMATED",
         `${label}: +${burden[0].toFixed(1)} damage in round 1, +${burden[1].toFixed(1)} a round after — ${parts.join("; ") || "nothing it can add"}.`
-        + (unresolved.length ? ` Not priced: ${unresolved.join("; ")}.` : ""));
+        + (unresolved.length ? ` Not priced: ${unresolved.join("; ")}.` : "")
+        + (concentrating && zoneF
+          ? ` ${zoneF.name} is concentration: its turns after the first stand only if ${entry.name} (CON ${conSave >= 0 ? "+" : ""}${conSave}) holds it through the party's damage — the checker prices that hold round by round (v5 BR066 + BR073).`
+          : ""));
     }
 
     // ── target substitution — a target event, named rather than priced ─────────────────────
