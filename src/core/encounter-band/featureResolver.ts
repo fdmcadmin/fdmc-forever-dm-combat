@@ -123,6 +123,8 @@ export type ParsedFeature = {
   grantsAdvantage?: "own-attacks";
   /** How often the trigger this response waits for actually happens, 0–1. Unset = always. */
   triggerChance?: number;
+  /** What this does to OTHER creatures — priced by `rosterInteractions.ts`, never by the trace. */
+  rosterInteraction?: import("../monsters/rosterInteraction").RosterInteraction;
   /**
    * How many Multiattack slots this attack takes, when the block STATES a split.
    *

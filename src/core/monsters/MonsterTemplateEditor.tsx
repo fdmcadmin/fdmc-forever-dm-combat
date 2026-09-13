@@ -1069,7 +1069,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
           const attackNames = [...draft.actions, ...draft.reactions]
             .filter(x => x.name !== a.name && (x.roll?.trim() || x.damage?.trim() || x.save?.trim()))
             .map(x => x.name);
-          return (
+          const ri = a.rosterInteraction;
+          const zoneNames = [...draft.actions, ...draft.reactions, ...draft.traits]
+            .filter(x => x.rosterInteraction?.kind === "roll_modifier_zone")
+            .map(x => x.name);
+          const zoneNum = (key: "allyAttack" | "allySave" | "hostileAttack" | "hostileSave" | "durationRounds", label: string, title: string) => (
+            <div style={{ width: 70 }}>
+              <span style={labelStyle}>{label}</span>
+              <input type="number" style={{ ...inputStyle, textAlign: "center" }} title={title}
+                value={ri?.kind === "roll_modifier_zone" && typeof ri[key] === "number" ? String(ri[key]) : ""}
+                onChange={e => ri?.kind === "roll_modifier_zone" && updateListItem(list, realIdx, {
+                  rosterInteraction: { ...ri, [key]: e.target.value === "" ? undefined : Number(e.target.value) },
+                })} />
+            </div>
+          );
+          return (<>
             <div style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 4, paddingLeft: 10, borderLeft: "2px solid #2a5a4a" }}>
               <div style={{ flex: 2, minWidth: 130 }}>
                 <span style={labelStyle}>Makes one attack with</span>
@@ -1094,7 +1108,52 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                   onChange={e => updateListItem(list, realIdx, { triggerChance: e.target.value === "" ? undefined : Math.max(0, Math.min(100, Number(e.target.value))) / 100 })} />
               </div>
             </div>
-          );
+            {/* ── WHAT IT DOES TO THE OTHER CREATURES IN THE FIGHT ──────────────────────────────
+                Christopher: *"why can we price aoe spells that do damage but not aoe spells that buff
+                and hinder."* Priced after the roster is assembled (workbook: Act3 Roster
+                Interactions), never as a multiplier on this creature. No value is pre-filled — the
+                modifiers are the author's to state. */}
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-end", flexWrap: "wrap", marginTop: 4, paddingLeft: 10, borderLeft: "2px solid #4a2a5a" }}>
+              <div style={{ flex: 2, minWidth: 170 }}>
+                <span style={labelStyle}>Affects other creatures</span>
+                <select value={ri?.kind ?? ""} style={inputStyle}
+                  title="An effect whose value lands on another creature in the fight. The checker prices it once the encounter roster is assembled."
+                  onChange={e => {
+                    const kind = e.target.value;
+                    updateListItem(list, realIdx, {
+                      rosterInteraction: kind === "roll_modifier_zone" ? { kind }
+                        : kind === "ally_extra_attack" ? { kind }
+                        : kind === "forced_target_order" ? { kind }
+                        : kind === "target_substitution" ? { kind }
+                        : undefined,
+                    });
+                  }}>
+                  <option value="">— none —</option>
+                  <option value="roll_modifier_zone">a zone that modifies rolls</option>
+                  <option value="ally_extra_attack">an ally makes one attack</option>
+                  <option value="forced_target_order">the party must target this creature first</option>
+                  <option value="target_substitution">moves a targeted ally / swaps the target</option>
+                </select>
+              </div>
+              {ri?.kind === "roll_modifier_zone" && (<>
+                {zoneNum("allyAttack", "Ally atk", "Added to allies' attack rolls inside the zone, e.g. 3.")}
+                {zoneNum("allySave", "Ally save", "Added to allies' saving throws inside the zone.")}
+                {zoneNum("hostileAttack", "Foe atk", "Added to hostile attack rolls inside the zone, e.g. -3.")}
+                {zoneNum("hostileSave", "Foe save", "Added to hostile saving throws inside the zone.")}
+                {zoneNum("durationRounds", "Turns", "How many turns one casting lasts. The creature re-spends its Action once per this many rounds.")}
+              </>)}
+              {(ri?.kind === "ally_extra_attack" || ri?.kind === "target_substitution") && (
+                <div style={{ flex: 2, minWidth: 140 }}>
+                  <span style={labelStyle}>Only inside</span>
+                  <select value={ri.requiresZone ?? ""} style={inputStyle}
+                    onChange={e => updateListItem(list, realIdx, { rosterInteraction: { ...ri, requiresZone: e.target.value || undefined } })}>
+                    <option value="">— anywhere —</option>
+                    {zoneNames.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
+          </>);
         })()}
         {/* ── SUMMON — the body this action or spell calls ───────────────────────────────────
             ⚠ THE ENGINE HAD NO AUTHORING SURFACE. `summon.ts` resolved every formula and the

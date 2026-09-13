@@ -554,11 +554,6 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "ehpMultiplier": 1.028819,
           "provenance": "interpolated",
           "note": "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). The first time each round the Knight takes bludgeoning, piercing or slashing damage, reduce it by 3 — the SAME mechanic and the same interpolation as the Hollow Warden’s Barkhide. ⚠ NOT the calibrated \"Flat DR 3 per damaging hit [volatile]\" row (+0.377915): that one pays on EVERY hit, and this trait pays once a round. The classifier reaches for the per-hit row because the words match; the cadence is what separates them."
-        },
-        {
-          "name": "Oppressive Presence + Commanding Presence",
-          "ehpMultiplier": 1,
-          "note": "UNPRICED, and left at 1.0 deliberately. Forcing one instance of every multi-target Action onto the Knight is the workbook's Damage transfer / redirection, which it publishes with a NULL contribution - the one category it declines to price. It is also not this creature's own sustain: it moves damage from its allies ONTO the Knight, so a per-creature multiplier above 1.0 would be backwards. Needs a roster-level decision."
         }
       ],
       "attacksPerTurn": 1,
@@ -640,7 +635,10 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Commanding Presence",
         "kind": "action",
-        "text": "When a hostile creature the Knight can see within 30 feet takes an Action that can target the Demon Knight, that Action must target the Knight if the Knight is within the Action’s range and is a legal target. If the Action can affect multiple creatures, the Knight must be included among its targets"
+        "text": "When a hostile creature the Knight can see within 30 feet takes an Action that can target the Demon Knight, that Action must target the Knight if the Knight is within the Action’s range and is a legal target. If the Action can affect multiple creatures, the Knight must be included among its targets",
+        "rosterInteraction": {
+          "kind": "forced_target_order"
+        }
       }
     ],
     "resources": [],
@@ -958,7 +956,11 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Cruel Instruction",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack."
+        "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack.",
+        "rosterInteraction": {
+          "kind": "ally_extra_attack",
+          "requiresZone": "Winter’s Toll"
+        }
       },
       {
         "name": "Winter Needle",
@@ -975,20 +977,40 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Winter’s Toll",
         "kind": "action",
-        "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15-foot-radius area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Harrow’s allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to attack rolls and saving throws. The area ends early if Harrow is Incapacitated."
+        "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15-foot-radius area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Harrow’s allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to attack rolls and saving throws. The area ends early if Harrow is Incapacitated.",
+        "rosterInteraction": {
+          "kind": "roll_modifier_zone",
+          "allyAttack": 3,
+          "allySave": 3,
+          "hostileAttack": -3,
+          "hostileSave": -3,
+          "durationRounds": 2
+        }
       },
       {
         "name": "Winter’s Toll",
         "kind": "spell",
         "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15 FT cube area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Allies in the area gain a +3 bonus to attack rolls and saving throws while hostile creatures in the area have a −3 penalty to attack rolls and saving throws. Concentration",
-        "range": "60 FT, 15 FT cube."
+        "range": "60 FT, 15 FT cube.",
+        "rosterInteraction": {
+          "kind": "roll_modifier_zone",
+          "allyAttack": 3,
+          "allySave": 3,
+          "hostileAttack": -3,
+          "hostileSave": -3,
+          "durationRounds": 2
+        }
       }
     ],
     "reactions": [
       {
         "name": "Cold Counsel",
         "kind": "action",
-        "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses."
+        "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses.",
+        "rosterInteraction": {
+          "kind": "target_substitution",
+          "requiresZone": "Winter’s Toll"
+        }
       }
     ],
     "resources": [],
@@ -6897,10 +6919,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-2ca5554f-159235";
+export const AUTHORED_DIGEST = "fnv1a-f21cb6b2-159211";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-13T07:03:52.596Z";
+export const AUTHORED_AT = "2026-09-13T16:35:43.247Z";
 
 /**
  * Merge authored content over a bundled list by id.

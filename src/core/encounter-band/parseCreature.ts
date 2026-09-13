@@ -31,6 +31,7 @@ import { isMultiattackAction, multiattackCountFromText } from "../monsters/multi
 import { parseSaveAbility } from "./partyDefenceCurve";
 import type { MonsterRider } from "../monsters/monsterRider";
 import { damagePacket, type DamageLine } from "../monsters/damageLines";
+import type { RosterInteraction } from "../monsters/rosterInteraction";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
 
@@ -332,6 +333,8 @@ type RawAction = {
   riders?: readonly MonsterRider[];
   /** Authored pricing routes for an action with no damage of its own — see MonsterReaderAction. */
   attackWith?: string; grantsAdvantage?: "own-attacks"; triggerChance?: number;
+  /** What this action does to other creatures — priced by the roster pass. See `rosterInteraction.ts`. */
+  rosterInteraction?: RosterInteraction;
   /** The action's printed reach/range, one field — see MonsterReaderAction.range. */
   range?: string; conditions?: string[];
 };
@@ -446,6 +449,8 @@ function parseSection(
       attackWith: a.attackWith?.trim() || undefined,
       grantsAdvantage: a.grantsAdvantage,
       triggerChance: a.triggerChance,
+      // Authored only; priced after the roster is assembled, never on this creature.
+      rosterInteraction: a.rosterInteraction,
       spellSlotLevel: a.spellSlotLevel,
       spellName: detectSpell(name, a.text),
       gated: a.gated,

@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.50.2",
+  "version": "0.8.51.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -73,6 +73,7 @@
     "check:recovery": "npx tsx scripts/check-recovery-registry.ts",
     "check:damagelines": "npx tsx scripts/check-damage-lines.ts",
     "check:pricingroutes": "npx tsx scripts/check-pricing-routes.ts",
+    "check:rosterinteractions": "npx tsx scripts/check-roster-interactions.ts",
     "audit:sheets": "npx tsx scripts/audit-actor-sheets.ts",
     "fix:checks": "npx tsx scripts/fix-frozen-checks.ts",
     "check:wiring": "npx tsx scripts/check-wiring.ts",

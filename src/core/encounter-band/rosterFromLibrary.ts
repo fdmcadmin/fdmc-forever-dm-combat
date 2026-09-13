@@ -29,6 +29,7 @@ import type { TemplateBodyChoice } from "../monsters/encounterLibrary";
 import { materializeTemplateBody } from "../monsters/actionSetPicks";
 import { lairRosterGroups } from "./lairRoster";
 import { summonRosterGroups } from "./summonRoster";
+import { rosterInteractions } from "./rosterInteractions";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { neutralDamageMix } from "../../modules/dnd-5e/neutralDamageProfile";
@@ -705,6 +706,32 @@ export function rosterFromTemplates(
     lairGroups.push(...rows);
   }
   roster.push(...lairGroups);
+
+  /**
+   * ⚠ WHAT ONE CREATURE DOES TO THE OTHERS — the step that did not exist. See `rosterInteractions.ts`.
+   *
+   * Christopher: *"why can we price aoe spells that do damage but not aoe spells that buff and
+   * hinder."* Every row above is a creature priced alone. Winter's Toll, Cruel Instruction and
+   * Commanding Presence change OTHER rows, so they are priced here, once the roster exists — never as
+   * a multiplier on their source (workbook: Act3 Roster Interactions).
+   *
+   * ⚠ AFTER THE LAIR, so a lair's pressure fraction is measured off the creatures and never amplifies
+   * an ally buff. The creature rows are `roster[0 .. expanded.length)` until the reorder below.
+   */
+  const interactions = rosterInteractions(
+    expanded.map((e, i) => ({
+      id: String(roster[i].id), name: String(roster[i].name), template: e.template,
+      quantity: Number(roster[i].quantity), initiativeMod: roster[i].initiativeMod,
+    })),
+    target,
+  );
+  assumptions.push(...interactions.assumptions);
+  if (interactions.killOrderFirst.length > 0) {
+    // The roster IS kill-priority order. A stable sort keeps everyone else exactly where they were.
+    const first = new Set(interactions.killOrderFirst);
+    roster.sort((a, b) => Number(first.has(String(b.id))) - Number(first.has(String(a.id))));
+  }
+  roster.push(...(interactions.rows as unknown as typeof roster));
 
   /**
    * ⚠ AND THE BODIES A CREATURE'S OWN ACTIONS CALL. Christopher: *"summons always come from spells

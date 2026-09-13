@@ -22,6 +22,7 @@ type JconScanStatus =
   | "error";
 
 import type { DamageLine } from "./damageLines";
+import type { RosterInteraction } from "./rosterInteraction";
 
 export type MonsterReaderAction = {
   name: string;
@@ -195,6 +196,12 @@ export type MonsterReaderAction = {
    * the author says how often it holds and the response is weighted by it.
    */
   triggerChance?: number;
+  /**
+   * What this action does to OTHER creatures in the fight — a zone that modifies rolls, an ally's
+   * extra attack, a forced target order, a target swap. Priced after the roster is assembled, never
+   * as a multiplier on this creature. See `rosterInteraction.ts`.
+   */
+  rosterInteraction?: RosterInteraction;
   /**
    * What a SUCCESSFUL save still takes. v7 `parser.success_patterns`: half / none / a printed
    * alternate.

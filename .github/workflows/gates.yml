@@ -191,6 +191,12 @@ jobs:
       - name: check authored pricing routes
         run: npm run check:pricingroutes
 
+      # What one creature does to the others — Winter's Toll, Cruel Instruction, Commanding Presence —
+      # is priced after the roster is assembled, and reproduces the v4 Roster Interaction workbook's
+      # burden cells to the last digit from its own packets.
+      - name: check roster interactions
+        run: npm run check:rosterinteractions
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels
