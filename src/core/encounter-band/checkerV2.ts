@@ -493,6 +493,12 @@ export type RosterGroup = {
    * row. See `rosterInteractions.ts`.
    */
   partyDamageFactor?: number;
+  /**
+   * THIS GROUP LEADS THE KILL ORDER — a passive forced target ("every creature-targeting Action must
+   * target it"). Stamped by the roster pass; any caller that re-sorts the roster (the panels sort
+   * weakest-first) must keep these in front, or the sort silently undoes the rule.
+   */
+  killOrderFirst?: boolean;
 };
 
 /**

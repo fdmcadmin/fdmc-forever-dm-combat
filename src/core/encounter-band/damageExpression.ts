@@ -122,6 +122,16 @@ export type PartyDefence = {
    */
   hitChance?: number;
   /**
+   * The share of the party's damage delivered by ATTACK ROLLS, 0–1 — the part a −N to its attacks can
+   * touch. Supplied for the unchosen party from the balanced centre line's own actors
+   * (`centerLineAccuracy.ts`); absent for a chosen party, which is then treated as all attacks.
+   */
+  partyAttackShare?: number;
+  /** The party's save DCs, one per actor — for a +N to the saves of the creatures it targets. */
+  partySaveDcs?: number[];
+  /** Where `hitChance` came from, so a roster line can say so: the chosen actors or the centre line. */
+  partyAccuracySource?: "chosen" | "center";
+  /**
    * What this party actually DEALS, by damage type — from `partyDamageMixFromActors`.
    *
    * It rides on the defence bag because a typed resistance is priced against the party the same

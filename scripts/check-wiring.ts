@@ -301,7 +301,6 @@ const KNOWN_SCRIPT_ONLY_EXPORTS: readonly string[] = [
   "core/encounter-band/reachability.ts → priceGrappled",
   "core/encounter-band/reachability.ts → priceProne",
   "core/encounter-engine/index.ts → engine",
-  "core/monsters/creator/monsterCreatorModel.ts → creatureSaves",
   "core/monsters/lair.ts → legalLairOptions",
   "core/rules/healingResolution.ts → expectedHealingAtLevel",
   "core/rules/healingResolution.ts → healingMultiplierFromText",

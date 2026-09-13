@@ -66,6 +66,8 @@ import { actRunExportText, actRunExportFilename, type ActRunExportRow } from "./
 import { downloadExport } from "../export/encounterLogExport";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import { rosterFromTemplates } from "./rosterFromLibrary";
+import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs } from "./centerLineAccuracy";
+import { meanTargetAc } from "./incomingSaveExposure";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 import { simulateEncounter, resolvePartyProfile, bondArrangement } from "./checkerV2";
 import { partyBondMitigationFromActors } from "../../modules/the-broken-chain/bondMitigationFromActors";
@@ -227,11 +229,23 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         const defence = partyDefenceAt(step.partyLevel, bondArrange.baselineMode);
         const saveBonus = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
         // The full library, not just this fight — a summoned creature is never already on the field.
+        /**
+         * ⚠ A RUN PRICES AGAINST THE BALANCED CENTRE LINE'S ACCURACY — the certified curve's own
+         * actors resolved against this fight's AC. A run never had a party hit chance at all, so a −3
+         * zone or a persistent disadvantage defence read differently here than on the fight panel.
+         */
+        const runMode = run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard";
         const built = rosterFromTemplates(entries, step.partyLevel, {
           ac: defence.ac, saveBonus, partySize, damageMix: partyDamageMix,
+          hitChance: centerLineHitChance(step.partyLevel, runMode, partySize, meanTargetAc(entries)),
+          partyAttackShare: centerLineAttackShare(step.partyLevel, runMode, partySize),
+          partySaveDcs: centerLineSaveDcs(step.partyLevel, runMode, partySize),
+          partyAccuracySource: "center",
         }, monsterLibrary);
         // Weakest bodies first — the same kill priority the difficulty panel simulates.
-        const roster = [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity);
+        // A passive forced target leads regardless of HP — the weakest-first sort must not undo it.
+        const roster = [...built.roster].sort((a, b) =>
+          Number(Boolean(b.killOrderFirst)) - Number(Boolean(a.killOrderFirst)) || a.baseHp * a.quantity - b.baseHp * b.quantity);
         const full = resolvePartyProfile({ level: step.partyLevel, size: partySize });
         /**
          * ⚠ THE RUN NEVER DEPLETED ITS DAMAGE, ONLY ITS HIT POINTS.

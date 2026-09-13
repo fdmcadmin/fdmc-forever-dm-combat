@@ -729,6 +729,9 @@ export function rosterFromTemplates(
   if (interactions.killOrderFirst.length > 0) {
     // The roster IS kill-priority order. A stable sort keeps everyone else exactly where they were.
     const first = new Set(interactions.killOrderFirst);
+    for (const group of roster) {
+      if (first.has(String(group.id))) (group as typeof group & { killOrderFirst?: boolean }).killOrderFirst = true;
+    }
     roster.sort((a, b) => Number(first.has(String(b.id))) - Number(first.has(String(a.id))));
   }
   // A forced-target REACTION keeps its place and takes one party Action a round — see `damageIntoGroup`.

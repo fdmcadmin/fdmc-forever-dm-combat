@@ -48,6 +48,7 @@ import { partyMitigationFromActors, rosterDamageMix } from "./partyMitigationFro
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { slotCapabilityFromActors } from "../../modules/dnd-5e/slotCapability";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
+import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs } from "./centerLineAccuracy";
 import { parseAttackBonus } from "./parseCreature";
 import { attackHitProbability } from "./checkerV2";
 import { attackProfile } from "../../modules/dnd-5e/featContextFromActor";
@@ -248,9 +249,24 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     const chances = (chosen as unknown[])
       .map(a => targetAC === undefined ? undefined : attackProfile(a as never, targetAC)?.hitChance)
       .filter((h): h is number => typeof h === "number" && h > 0);
-    const hitChance = chances.length ? chances.reduce((s, h) => s + h, 0) / chances.length : undefined;
-    return { targetAC, saveExposure: incomingSaveExposure(entries), hitChance };
-  }, [encounter, monsterLibrary, chosen]);
+    const chosenHit = chances.length ? chances.reduce((s, h) => s + h, 0) / chances.length : undefined;
+    /**
+     * ⚠ NO CHOSEN PARTY IS NOT NO PARTY. Christopher: *"make sure the checker can price against the
+     * unchosen party dpr balanced center line."* The checker already runs the certified centre curve for
+     * DPR and sustain when nobody is chosen; its ACCURACY is now the same centre's own actors resolved
+     * against this fight's AC (`centerLineAccuracy.ts`) — so a −3 zone or a persistent disadvantage
+     * defence prices the same way it does for a real party, instead of falling back to a floor.
+     */
+    const center = chosenHit === undefined;
+    return {
+      targetAC,
+      saveExposure: incomingSaveExposure(entries),
+      hitChance: chosenHit ?? centerLineHitChance(partyLevel, equipmentMode, partySize, targetAC),
+      partyAttackShare: center ? centerLineAttackShare(partyLevel, equipmentMode, partySize) : undefined,
+      partySaveDcs: center ? centerLineSaveDcs(partyLevel, equipmentMode, partySize) : undefined,
+      partyAccuracySource: (center ? "center" : "chosen") as "center" | "chosen",
+    };
+  }, [encounter, monsterLibrary, chosen, partyLevel, equipmentMode, partySize]);
 
 
   const roster = useMemo(() => {
@@ -268,9 +284,17 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     // Kill priority: weakest bodies first — a party that is paying attention clears the cheap
     // ones to cut incoming damage. The simulation depletes groups in exactly this order.
     // The full library, not just this fight — a summoned creature is never already on the field.
-    const built = rosterFromTemplates(entries, partyLevel, { ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix, hitChance: fightInputs.hitChance }, monsterLibrary);
+    const built = rosterFromTemplates(entries, partyLevel, {
+      ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix,
+      hitChance: fightInputs.hitChance,
+      partyAttackShare: fightInputs.partyAttackShare,
+      partySaveDcs: fightInputs.partySaveDcs,
+      partyAccuracySource: fightInputs.partyAccuracySource,
+    }, monsterLibrary);
     return {
-      roster: [...built.roster].sort((a, b) => a.baseHp * a.quantity - b.baseHp * b.quantity),
+      // A passive forced target leads regardless of HP — the weakest-first sort must not undo it.
+      roster: [...built.roster].sort((a, b) =>
+        Number(Boolean(b.killOrderFirst)) - Number(Boolean(a.killOrderFirst)) || a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
   }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs]);

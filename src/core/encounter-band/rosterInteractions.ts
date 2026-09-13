@@ -52,10 +52,16 @@ import { traceCreature } from "./actionTrace";
 import { resolveFeature, expectedDamageForFeature, type ParsedFeature } from "./featureResolver";
 import { damageExpressionAverage } from "./damageExpression";
 import type { RosterGroup } from "./checkerV2";
+import { creatureSaves } from "../monsters/creator/monsterCreatorModel";
 
 type Target = Parameters<typeof traceCreature>[1] & {
-  /** The chosen party's own chance to hit, 0–1. Absent without a chosen party — never guessed. */
+  /** The party's chance to hit, 0–1 — the chosen actors', else the balanced centre line's. Never guessed. */
   hitChance?: number;
+  /** The attack-roll share of the party's damage. See `PartyDefence.partyAttackShare`. */
+  partyAttackShare?: number;
+  /** The party's save DCs, one per actor. See `PartyDefence.partySaveDcs`. */
+  partySaveDcs?: number[];
+  partyAccuracySource?: "chosen" | "center";
 };
 type Zone = Extract<RosterInteraction, { kind: "roll_modifier_zone" }>;
 
@@ -283,14 +289,49 @@ export function rosterInteractions(
         }
       }
 
-      let partyDamageFactor: number | undefined;
+      /**
+       * ── WHAT THE PARTY LOSES WHILE THE ZONE STANDS ──
+       *
+       *   attacks   PCs inside × the attack share of its damage × (1 − p′/p)
+       *   saves     allies inside, as a share of the bodies the party is hitting
+       *             × the save share of its damage × (1 − fail′/fail), each actor's own DC against the
+       *             allies' own saves (the mean of their six), +N on the allies' side
+       *
+       * ⚠ SAVE EFFECTS ARE TAKEN AS ALL-OR-NOTHING. A save-for-half spell loses less than this when an
+       * ally saves; the actors' packets do not say which of their effects halve.
+       */
+      const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+      const attackShare = typeof target.partyAttackShare === "number" && Number.isFinite(target.partyAttackShare)
+        ? clamp01(target.partyAttackShare) : 1;
+      let attackLoss: number | undefined;
       if (zone && hostileAttack !== 0 && pcShare > 0) {
         const p = Number(target.hitChance);
         if (Number.isFinite(p) && p > 0) {
           const pShifted = Math.min(0.95, Math.max(0.05, p + hostileAttack * 0.05));
-          partyDamageFactor = 1 - pcShare * (1 - pShifted / p);
+          attackLoss = pcShare * attackShare * (1 - pShifted / p);
         }
       }
+      let saveLoss: number | undefined;
+      const allySaveBonus = Number(zone?.allySave ?? 0);
+      const dcs = target.partySaveDcs ?? [];
+      const otherBodies = all.filter(a => a !== source);
+      const otherBodyCount = otherBodies.reduce((s, a) => s + Number(a.entry.quantity), 0);
+      if (zone && allySaveBonus !== 0 && dcs.length > 0 && typeof target.partyAttackShare === "number" && otherBodyCount > 0) {
+        const inside = coverageModel === "half-roster"
+          ? Math.min(otherBodyCount, rosterBodies / 2)
+          : rankedCoverage(ZONE_COVERAGE.allies, otherBodyCount).reduce((s, w) => s + w, 0);
+        const saveOf = (t: MainMonsterTemplate) => {
+          const s = creatureSaves((t.abilities ?? []) as never, t.stats as never);
+          return (s.str + s.dex + s.con + s.int + s.wis + s.cha) / 6;
+        };
+        const allySave = otherBodies.reduce((s, a) => s + Number(a.entry.quantity) * saveOf(a.entry.template), 0) / otherBodyCount;
+        const failAt = (bonus: number) => dcs.reduce((s, dc) => s + clamp01((dc - bonus - 1) / 20), 0) / dcs.length;
+        const fail = failAt(allySave);
+        saveLoss = fail > 0 ? (inside / rosterBodies) * (1 - attackShare) * (1 - failAt(allySave + allySaveBonus) / fail) : 0;
+      }
+      const partyDamageFactor = attackLoss === undefined && saveLoss === undefined
+        ? undefined
+        : Math.max(0, 1 - (attackLoss ?? 0) - (saveLoss ?? 0));
 
       // ── Cruel Instruction: one ally inside makes one normal attack ──
       let extraAttack: number[] | undefined;
@@ -374,14 +415,19 @@ export function rosterInteractions(
         extraAttack ? `${extraAttackFrom} as the extra attack (+${extraAttack[1].toFixed(1)})` : undefined,
         actionGivenUp[0] > 0 ? `less ${actionGivenUp[0].toFixed(1)} of ${entry.name}'s own Action in round 1, ${actionGivenUp[1].toFixed(1)} after` : undefined,
         partyDamageFactor !== undefined
-          ? `the party deals ${pct(1 - partyDamageFactor)} less while it stands (${hostileAttack} to hit for ${pcsInside.toFixed(2)} of ${partySize} PCs)`
+          ? `the ${target.partyAccuracySource === "center" ? "balanced centre party" : "party"} deals ${pct(1 - partyDamageFactor)} less while it stands (`
+            + [attackLoss !== undefined ? `${hostileAttack} to hit for ${pcsInside.toFixed(2)} of ${partySize} PCs: −${pct(attackLoss)}` : "",
+              saveLoss !== undefined ? `${allySaveBonus > 0 ? "+" : ""}${allySaveBonus} to allies' saves: −${pct(saveLoss)}` : ""].filter(Boolean).join("; ")
+            + ")"
           : undefined,
       ].filter(Boolean);
       const unresolved = [
-        zone && hostileAttack !== 0 && partyDamageFactor === undefined
-          ? `${hostileAttack} to the party's attacks needs a chosen party's hit chance`
+        zone && hostileAttack !== 0 && attackLoss === undefined
+          ? `${hostileAttack} to the party's attacks needs the party's hit chance`
           : "",
-        zone?.allySave ? `${zone.allySave > 0 ? "+" : ""}${zone.allySave} to allies' saves needs the party's save DCs, which the checker does not read` : "",
+        zone && allySaveBonus !== 0 && saveLoss === undefined
+          ? `${allySaveBonus > 0 ? "+" : ""}${allySaveBonus} to allies' saves needs the party's save DCs (a chosen party does not supply them yet)`
+          : "",
       ].filter(Boolean);
       note(entry.name, "ESTIMATED",
         `${label}: +${burden[0].toFixed(1)} damage in round 1, +${burden[1].toFixed(1)} a round after — ${parts.join("; ") || "nothing it can add"}.`

@@ -207,6 +207,11 @@ jobs:
       - name: check monster concentration
         run: npm run check:monsterconcentration
 
+      # With no chosen party the checker prices accuracy against the balanced centre line: the certified
+      # endpoint parties' own actors, each resolved against the fight's AC and saves. No hit chance stored.
+      - name: check the centre line's accuracy
+        run: npm run check:centeraccuracy
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

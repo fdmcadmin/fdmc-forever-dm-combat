@@ -122,7 +122,7 @@ const stripped = (t: MainMonsterTemplate) => ({ ...t,
 ok("  (mutation) without the authored interaction there is no row",
   !build(["Blackbough Reeve", "Gloam Harrow", "Brandwing"], stripped).roster.some(g => String(g.id).endsWith(":roster")));
 ok("with no chosen party, the −3 on the party's attacks is named, not dropped",
-  f7.assumptions.some(a => /Not priced: .*party's attacks needs a chosen party's hit chance/.test(a.detail)));
+  f7.assumptions.some(a => /Not priced: .*party's attacks needs the party's hit chance/.test(a.detail)));
 const f7Party = rosterFromTemplates(["Blackbough Reeve", "Gloam Harrow", "Brandwing"].map(n => ({ template: byName(n), quantity: 1 })), 8, { ...target, hitChance: 0.65 } as never);
 const f7PartyRow = f7Party.roster.find(g => g.id === "broken-chain:act3:gloam-harrow:v1:roster") as { partyDamageFactor?: number } | undefined;
 ok("with a chosen party, the Toll row carries the party's lost damage", (f7PartyRow?.partyDamageFactor ?? 1) < 1, `×${f7PartyRow?.partyDamageFactor?.toFixed(3)}`);
