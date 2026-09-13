@@ -100,21 +100,22 @@ const SEGMENTS = ACT3_SEGMENTS.map(seg => ({ label: `Level ${seg.level}`, level:
  * that caused it, exactly as `check:baseline` is accepted.
  */
 const REFERENCE: Record<string, { completion: string; monsterDamage: number }> = {
-  "act3-e1-the-first-court": { completion: "R2", monsterDamage: 40 },
+  // 0.8.55.1 re-recorded the drift 0.8.50.1–0.8.52.1 shipped without recording; MASTER bisects it commit by commit.
+  "act3-e1-the-first-court": { completion: "R2", monsterDamage: 48 },
   "act3-e2-the-cut-below": { completion: "R2", monsterDamage: 111 },
   "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 167 },
-  "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 63 },
+  "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 68 },
   /**
-   * ⚠ THE FIGHT TO LOOK AT. 267 damage over five rounds is 54% of a level-7 pool, where every
-   * other fight in the act costs 9-40%. It is what walks the party into Gate II at 41% spent
-   * instead of the 25-30% Christopher states, and it is the one figure here that is recorded
-   * rather than accepted.
+   * ⚠ THE FIGHT TO LOOK AT. 246 damage over four rounds is 50% of a level-7 pool (267 over five,
+   * 54%, before the 9/13 publish), where every other fight in the act costs 9-40%. It is what walks
+   * the party into Gate II over-spent against the 25-30% Christopher states, and it is the one figure
+   * here that is recorded rather than accepted.
    */
-  "act3-e5-the-scar-line": { completion: "R5", monsterDamage: 267 },
+  "act3-e5-the-scar-line": { completion: "R4", monsterDamage: 246 },
   "campaign-mt3nm2j9": { completion: "FAIL R4", monsterDamage: 307 },
-  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 137 },
-  "act3-e8-the-occupied-acre": { completion: "R4", monsterDamage: 135 },
-  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 238 },
+  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 169 },
+  "act3-e8-the-occupied-acre": { completion: "R4", monsterDamage: 179 },
+  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 245 },
   "act3-e10-the-center": { completion: "R4", monsterDamage: 376 },
 };
 

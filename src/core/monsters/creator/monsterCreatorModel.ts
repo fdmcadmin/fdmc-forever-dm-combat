@@ -28,19 +28,12 @@ export type AbilityLabel = (typeof ABILITY_ORDER)[number];
  * do the same arithmetic — two private copies of "score over 10, halved" is how the two
  * lanes quietly drift apart. Swapping the ruleset has to move both at once.
  */
-import { abilityModifier, savingThrowModifier, inferSaveProficiency, proficiencyBonus } from "../../rules/dnd5e";
-export { abilityModifier };
+import { abilityModifier, parseAbilityScore, savingThrowModifier, inferSaveProficiency, proficiencyBonus } from "../../rules/dnd5e";
+export { abilityModifier, parseAbilityScore };
 
 export function formatAbilityEntry(label: string, score: number): { label: string; value: string } {
   const mod = abilityModifier(score);
   return { label, value: `${score} (${mod >= 0 ? "+" : ""}${mod})` };
-}
-
-/** Parses "16 (+3)" / "16" / "+3"-less values back to a score. Returns 10 on garbage. */
-export function parseAbilityScore(value: string): number {
-  const match = value.trim().match(/^(\d+)/);
-  const score = match ? Number.parseInt(match[1], 10) : NaN;
-  return Number.isFinite(score) ? score : 10;
 }
 
 /** Reads a template's six scores in canonical order (missing entries default 10). */

@@ -14,6 +14,20 @@ export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }
 
+/**
+ * Parses "16 (+3)" / "16" / "+3"-less values back to a score. Returns 10 on garbage.
+ *
+ * ⚠ LIVES HERE, NOT IN THE MONSTER CREATOR. The initiative order reads a creature's DEX with it, and
+ * the initiative order is inside the packaged engine. Imported from `monsterCreatorModel` it dragged
+ * the creator → `mainMonsterRuntime` → lair → summon → `MonsterJconScanner.tsx` into the engine
+ * compile, which has no JSX, and `engine:package` failed. The creator re-exports it.
+ */
+export function parseAbilityScore(value: string): number {
+  const match = value.trim().match(/^(\d+)/);
+  const score = match ? Number.parseInt(match[1], 10) : NaN;
+  return Number.isFinite(score) ? score : 10;
+}
+
 /** Proficiency bonus by character level: +2 at 1st, stepping every four levels. */
 export function proficiencyBonus(level: number): number {
   return Math.floor((Math.max(1, level) - 1) / 4) + 2;

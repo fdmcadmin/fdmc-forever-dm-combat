@@ -51,8 +51,8 @@
  * tracker's job, and it already does it with `getActorInitiativeModifier`.
  */
 
-import { abilityModifier } from "../rules/dnd5e";
-import { parseAbilityScore } from "../monsters/creator/monsterCreatorModel";
+// Both from the ruleset: this file is inside the packaged engine, and the monster creator is not (see dnd5e.ts).
+import { abilityModifier, parseAbilityScore } from "../rules/dnd5e";
 
 /**
  * P(a body with `mod` acts before a body with `partyMod`), both rolling a d20.
