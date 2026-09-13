@@ -186,6 +186,11 @@ jobs:
       - name: check second damage lines reach every reader
         run: npm run check:damagelines
 
+      # An action with no damage of its own — a mark, a response that makes another attack, a grant
+      # of Advantage — is priced by what it does to the turn's attacks, never left at 0.
+      - name: check authored pricing routes
+        run: npm run check:pricingroutes
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

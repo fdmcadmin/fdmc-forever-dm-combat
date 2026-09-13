@@ -1060,6 +1060,42 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
             </div>
           </div>
         )}
+        {/* ── WHAT AN ACTION WITH NO DAMAGE OF ITS OWN IS WORTH ─────────────────────────────
+            Christopher, 2026-09-13: *"there should be nothing that is priced at 0."* A response
+            that makes another of this creature's attacks, or a Bonus Action that gives its own
+            attacks Advantage, carries no dice — so it priced at 0 and was never scheduled. These
+            say what it does as fields; the checker prices it from the attacks already authored. */}
+        {!a.damage?.trim() && (() => {
+          const attackNames = [...draft.actions, ...draft.reactions]
+            .filter(x => x.name !== a.name && (x.roll?.trim() || x.damage?.trim() || x.save?.trim()))
+            .map(x => x.name);
+          return (
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 4, paddingLeft: 10, borderLeft: "2px solid #2a5a4a" }}>
+              <div style={{ flex: 2, minWidth: 130 }}>
+                <span style={labelStyle}>Makes one attack with</span>
+                <select value={a.attackWith ?? ""} style={inputStyle}
+                  title="A reaction or bonus action whose payload is another of this creature's attacks — priced as that attack."
+                  onChange={e => updateListItem(list, realIdx, { attackWith: e.target.value || undefined })}>
+                  <option value="">— none —</option>
+                  {attackNames.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#aab", paddingBottom: 6 }}
+                title="Advantage on this creature's own attacks for the turn it is used — priced from the attacks scheduled that turn.">
+                <input type="checkbox" checked={a.grantsAdvantage === "own-attacks"}
+                  onChange={e => updateListItem(list, realIdx, { grantsAdvantage: e.target.checked ? "own-attacks" : undefined })} />
+                Advantage on own attacks
+              </label>
+              <div style={{ width: 80 }}>
+                <span style={labelStyle}>Trigger %</span>
+                <input type="number" min={0} max={100} placeholder="always" style={{ ...inputStyle, textAlign: "center" }}
+                  value={typeof a.triggerChance === "number" ? String(Math.round(a.triggerChance * 100)) : ""}
+                  title="How often the trigger it waits for happens. Blank = every round. The app cannot know what the party will do, so the author states it."
+                  onChange={e => updateListItem(list, realIdx, { triggerChance: e.target.value === "" ? undefined : Math.max(0, Math.min(100, Number(e.target.value))) / 100 })} />
+              </div>
+            </div>
+          );
+        })()}
         {/* ── SUMMON — the body this action or spell calls ───────────────────────────────────
             ⚠ THE ENGINE HAD NO AUTHORING SURFACE. `summon.ts` resolved every formula and the
             roster walk priced the result, but no `.tsx` wrote a `SummonSpec`, so the only way
@@ -1875,15 +1911,32 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                     Only a rule with no recognised resolution model is a real gap, and only that
                     one is coloured as a problem. */}
                 {(() => {
+                  /**
+                   * ⚠ THE COLUMN ASKED ONE QUESTION AND THE ROW BESIDE IT HAD ALREADY ANSWERED IT.
+                   * Christopher, 2026-09-13, on the seven Act 3 creatures: *"almost everyone of them
+                   * had a box like this, why are there stuff that is still listed as unpriced."*
+                   * Their defences carry a DECLARED `ehpMultiplier` with its provenance — the checker
+                   * prices from that number — but this column only ever looked for a calibrated
+                   * `rule`, so a settled ×1.116 printed UNPRICED in orange beside "Prices as
+                   * (declared)". The two readers disagreed about one fact.
+                   *
+                   * The order is the checker's: a calibrated rule, then the declared number, then a
+                   * decided 1.0 with its reason. Only a row with none of those is a gap.
+                   */
+                  const declared = !rule && typeof d.ehpMultiplier === "number" && (d.provenance || d.note);
                   const model = rule ? pricingModelOf(rule) : "unpriced";
-                  const isGap = !rule || model === "unpriced";
+                  const isGap = !rule && !declared;
+                  const shown = rule?.multiplier != null ? `×${rule.multiplier.toFixed(3)}`
+                    : declared ? `×${(d.ehpMultiplier as number).toFixed(3)}`
+                    : PRICING_MODEL_LABEL[model];
                   return (
                     <div style={{ width: 110 }}>
-                      <span style={labelStyle}>EHP × (derived)</span>
-                      <div title={rule ? PRICING_MODEL_WHY[model] : undefined}
-                        style={{ ...inputStyle, background: "#0d0d16", cursor: "default", fontSize: model === "multiplier" ? undefined : 10,
-                                 color: rule?.multiplier != null ? "#dfe4ff" : isGap ? "#e07b39" : "#8fb8ff" }}>
-                        {rule?.multiplier != null ? `×${rule.multiplier.toFixed(3)}` : PRICING_MODEL_LABEL[model]}
+                      <span style={labelStyle}>EHP × ({declared ? "declared" : "derived"})</span>
+                      <div title={rule ? PRICING_MODEL_WHY[model] : declared ? (d.provenance ?? d.note) : PRICING_MODEL_WHY.unpriced}
+                        style={{ ...inputStyle, background: "#0d0d16", cursor: "default",
+                                 fontSize: rule?.multiplier != null || declared ? undefined : 10,
+                                 color: rule?.multiplier != null || declared ? "#dfe4ff" : isGap ? "#e07b39" : "#8fb8ff" }}>
+                        {shown}
                       </div>
                     </div>
                   );

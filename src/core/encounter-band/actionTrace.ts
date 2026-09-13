@@ -24,6 +24,7 @@ import type { ParsedCreature } from "./parseCreature";
 import type { SaveAbility } from "./partyDefenceCurve";
 import { riderWeight, describeRider, type MonsterRider } from "../monsters/monsterRider";
 import { damageExpressionAverage } from "./damageExpression";
+import { withAdvantage } from "./controlPricing";
 import {
   resolveFeature, expectedDamageForFeature,
   type ParsedFeature, type FeatureAssumption,
@@ -82,6 +83,11 @@ type Budgeted = {
   targets: number;
   delayed: number;
 };
+
+/** An author-stated probability, 0–1. Unset reads as certain — the rider convention. */
+function certain(chance: number | undefined): number {
+  return Number.isFinite(chance as number) ? Math.min(1, Math.max(0, chance as number)) : 1;
+}
 
 /** Probability a recharge ability is up, once it has been spent. (max − min + 1) / 6. */
 function rechargeProbability(range: string | undefined): number {
@@ -196,6 +202,33 @@ export function traceCreature(
       targets: feature.targets ?? 1,
       delayed: resolved.delayedAverage,
     });
+  }
+
+  /**
+   * ⚠ A RESPONSE THAT MAKES ONE OF THIS CREATURE'S ATTACKS IS WORTH THAT ATTACK.
+   *
+   * The Blackbough Reeve's Final Pruning: *"it makes one Shearing Cut attack against that
+   * creature."* It had no damage field, so it priced at 0 and the Reaction went unspent every round.
+   * `attackWith` names the attack; the value is that attack's own priced use — hit chance, riders
+   * and all — weighted by how often the author says the trigger happens.
+   */
+  for (const b of budgeted) {
+    const ref = b.feature.attackWith?.trim().toLowerCase();
+    if (!ref || b.perUse > 0) continue;
+    const made = budgeted.find(x => x !== b && x.feature.name.trim().toLowerCase() === ref);
+    if (!made) {
+      assumptions.push({
+        feature: b.feature.name, flag: "NEEDS DM INPUT", field: "damage",
+        detail: `"${b.feature.name}" makes one "${b.feature.attackWith}" attack, but this creature has no action by that name.`,
+      });
+      continue;
+    }
+    const chance = certain(b.feature.triggerChance);
+    b.perUse = made.perUse * chance;
+    b.hitChance = made.hitChance;
+    b.method = "attack_with";
+    b.targets = made.targets;
+    b.expectation = `one ${made.feature.name}: ${made.expectation}${chance < 1 ? ` × ${(chance * 100).toFixed(0)}% trigger` : ""}`;
   }
 
   const routineAll = budgeted
@@ -341,6 +374,9 @@ export function traceCreature(
       });
     }
 
+    // The attacks this turn actually makes — what a setup Bonus Action is priced against below.
+    const altTakesTurn = Boolean(alt && alt.perUse > 0 && (alt.perUse > routineTotal || routine.length === 0));
+    const turnAttacks: Budgeted[] = altTakesTurn && alt ? [alt] : slots;
     if (alt && alt.perUse > 0 && (alt.perUse > routineTotal || routine.length === 0)) {
       const used = spent.get(alt) ?? 0;
       // Round 1 it is available outright; later rounds it is up on its recharge probability.
@@ -428,16 +464,61 @@ export function traceCreature(
     const SHARED_BUDGET: ReadonlySet<ActionChannel> = new Set<ActionChannel>(["reaction", "bonus_action"]);
     const budgetSpent = new Set<ActionChannel>();
 
-    const eligible = otherChannels
+    /**
+     * ⚠ A SETUP IS WORTH WHAT IT DOES TO THIS TURN'S ATTACKS, SO IT IS PRICED HERE, WHERE THEY ARE
+     * KNOWN — and it used to be priced at exactly 0 and never scheduled.
+     *
+     * Christopher, 2026-09-13: *"there should be nothing that is priced at 0."* Two shapes of bonus
+     * action carry no damage of their own and are still the reason the turn does damage:
+     *
+     *   · a MARK whose once-per-turn rider lands on this turn's attacks — Brandwing's Closing Stroke.
+     *     The workbook's Act 3 Action Pricing books exactly this as the Ember Lance routine's
+     *     "Once/Turn Extra": P(at least one of the turn's attacks hits) × the rider.
+     *   · ADVANTAGE on the creature's own attacks — the Demon Knight's Reckless Sentence, workbook
+     *     `attack_advantage_grant`: each scheduled attack's hit chance goes from p to 1 − (1 − p)².
+     *     A scheduled attack's value is its damage × p, so the gain is value × (p_adv / p − 1) —
+     *     the model's own formula, not a percentage laid on top.
+     *
+     * Both compete for the one Bonus Action by expected value like anything else on that budget.
+     */
+    const turnHit = 1 - turnAttacks.reduce((miss, t) => miss * (1 - t.hitChance), 1);
+    const setupValue = (b: Budgeted): { value: number; expectation: string } | undefined => {
+      const chance = certain(b.feature.triggerChance);
+      const chanceNote = chance < 1 ? ` × ${(chance * 100).toFixed(0)}% trigger` : "";
+      if (b.turnRiders.length > 0 && turnAttacks.length > 0) {
+        const value = chance * b.turnRiders.reduce(
+          (sum, r) => sum + damageExpressionAverage(r.damage) * certain(r.chance) * turnHit, 0);
+        return {
+          value,
+          expectation: `${b.turnRiders.map(describeRider).join("; ")} · ${(turnHit * 100).toFixed(0)}% at least one of this turn's ${turnAttacks.length} attack${turnAttacks.length === 1 ? "" : "s"} hits${chanceNote}`,
+        };
+      }
+      if (b.feature.grantsAdvantage === "own-attacks" && turnAttacks.length > 0) {
+        const attacks = turnAttacks.filter(t => t.feature.attackBonus !== undefined && t.hitChance > 0);
+        const value = chance * attacks.reduce((sum, t) => sum + t.perUse * (withAdvantage(t.hitChance) / t.hitChance - 1), 0);
+        return {
+          value,
+          expectation: `Advantage on ${attacks.length} attack${attacks.length === 1 ? "" : "s"} (${attacks.map(t => `${(t.hitChance * 100).toFixed(0)}% → ${(withAdvantage(t.hitChance) * 100).toFixed(0)}%`).join(", ")})${chanceNote}`,
+        };
+      }
+      return undefined;
+    };
+
+    const valued = otherChannels
       .filter(b => {
         const used = spent.get(b) ?? 0;
-        if (b.usesLeft !== null && used >= b.usesLeft) return false;
-        return b.perUse > 0;
+        return !(b.usesLeft !== null && used >= b.usesLeft);
       })
+      .map(b => {
+        const setup = b.perUse > 0 ? undefined : setupValue(b);
+        return { b, value: setup ? setup.value : b.perUse, expectation: setup ? setup.expectation : b.expectation };
+      })
+      .filter(v => v.value > 0)
       // Best first, so a capped channel's single slot goes to the strongest legal option.
-      .sort((a, b) => b.perUse - a.perUse);
+      .sort((x, y) => y.value - x.value);
+    const eligible = valued.map(v => v.b);
 
-    for (const b of eligible) {
+    for (const { b, value: perUse, expectation } of valued) {
       /**
        * ⚠ A RESPONSE THAT SAYS IT IS NOT A REACTION KEEPS ITS OWN BUDGET.
        *
@@ -464,10 +545,10 @@ export function traceCreature(
       spent.set(b, used + 1);
       if (capped) budgetSpent.add(b.channel);
       scheduled.push({
-        feature: b.feature.name, channel: b.channel, method: b.method,
+        feature: b.feature.name, channel: b.channel, method: b.perUse > 0 ? b.method : "setup",
         castLevel: b.castLevel, targets: b.targets,
-        expectation: b.expectation + (availability < 1 ? ` × ${(availability * 100).toFixed(0)}% available` : ""),
-        expectedDamage: b.perUse * availability,
+        expectation: expectation + (availability < 1 ? ` × ${(availability * 100).toFixed(0)}% available` : ""),
+        expectedDamage: perUse * availability,
         resourceSpent: b.usesLeft !== null ? `1 of ${b.usesLeft} uses` : b.recharge ? `recharge ${b.recharge}` : null,
         note: capped
           ? `Spends this turn's ${b.channel === "reaction" ? "Reaction" : "Bonus Action"} — nothing else on that budget resolves until it refreshes.`

@@ -134,7 +134,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Final Pruning",
         "kind": "action",
-        "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally."
+        "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally.",
+        "attackWith": "Shearing Cut"
       }
     ],
     "resources": [],
@@ -236,10 +237,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       },
       {
         "name": "Closing Stroke",
-        "kind": "attack",
-        "roll": "",
-        "damage": "",
-        "damageType": "Fire",
+        "kind": "action",
         "range": "90 ft.",
         "targets": 1,
         "riders": [
@@ -624,7 +622,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Reckless Sentence",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage."
+        "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage.",
+        "grantsAdvantage": "own-attacks"
       },
       {
         "name": "Iron Grasp",
@@ -6898,10 +6897,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-6f9239ed-159217";
+export const AUTHORED_DIGEST = "fnv1a-2ca5554f-159235";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-13T06:49:21.800Z";
+export const AUTHORED_AT = "2026-09-13T07:03:52.596Z";
 
 /**
  * Merge authored content over a bundled list by id.

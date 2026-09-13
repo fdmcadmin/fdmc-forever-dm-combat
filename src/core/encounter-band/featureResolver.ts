@@ -114,6 +114,16 @@ export type ParsedFeature = {
   /** Printed as taking the place of a routine attack — competes for ONE Multiattack slot. */
   replacesRoutineSlot?: boolean;
   /**
+   * This response MAKES ONE ATTACK with the named action of the same creature — a reaction or bonus
+   * action whose damage is another action's. Authored, never read out of "it makes one X attack".
+   * See `MonsterReaderAction.attackWith`.
+   */
+  attackWith?: string;
+  /** `attack_advantage_grant` on this creature's own attacks for the turn. See `MonsterReaderAction`. */
+  grantsAdvantage?: "own-attacks";
+  /** How often the trigger this response waits for actually happens, 0–1. Unset = always. */
+  triggerChance?: number;
+  /**
    * How many Multiattack slots this attack takes, when the block STATES a split.
    *
    * ⚠ ONLY WHEN IT IS AUTHORED. Left unset, the routine keeps the D&D convention the trace has
@@ -241,7 +251,15 @@ export function resolveFeature(
   }
 
   // ── 3. UNREADABLE — say so, never substitute ───────────────────────────────
-  if (/\d+d\d+/.test(feature.text ?? "")) {
+  /**
+   * ⚠ DICE THAT AN AUTHORED ROUTE ALREADY CARRIES ARE NOT MISSING. Brandwing's Closing Stroke prints
+   * "an extra 7 (2d6) Psychic damage" and has no damage field ON PURPOSE — the 2d6 is its rider, and
+   * the trace prices it against the turn's attacks. Asking for a damage expression there would put
+   * the rider's dice on the mark itself and bill them twice.
+   */
+  const routed = Boolean(feature.attackWith || feature.grantsAdvantage
+    || (feature.riders ?? []).some(r => r.damage?.trim()));
+  if (!routed && /\d+d\d+/.test(feature.text ?? "")) {
     assumptions.push({
       feature: name, flag: "NEEDS DM INPUT", field: "damage",
       detail: "Dice appear in the printed text but no damage field was entered, so this scores 0. Enter the damage expression.",

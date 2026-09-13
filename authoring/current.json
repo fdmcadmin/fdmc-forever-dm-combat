@@ -876,10 +876,7 @@
         },
         {
           "name": "Closing Stroke",
-          "kind": "attack",
-          "roll": "",
-          "damage": "",
-          "damageType": "Fire",
+          "kind": "action",
           "range": "90 ft.",
           "targets": 1,
           "riders": [
@@ -1151,7 +1148,8 @@
         {
           "name": "Final Pruning",
           "kind": "action",
-          "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally."
+          "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally.",
+          "attackWith": "Shearing Cut"
         }
       ],
       "resources": [],
@@ -1250,7 +1248,8 @@
           "name": "Reckless Sentence",
           "kind": "action",
           "economyCost": "bonus",
-          "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage."
+          "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage.",
+          "grantsAdvantage": "own-attacks"
         },
         {
           "name": "Iron Grasp",
@@ -5239,5 +5238,5 @@
       "order": 10
     }
   ],
-  "note": "The 2026-09-13 publish with Brandwing's Ember Lance rewritten as one hit with a second typed damage line, and rider types moved out of the dice box. Folded after the unmodified publish."
+  "note": "The 2026-09-13 publish with Brandwing's Ember Lance rewritten as one hit with a second typed damage line, and rider types moved out of the dice box. Folded after the unmodified publish. Final Pruning makes one Shearing Cut (attackWith); Reckless Sentence grants Advantage on the Knight's own attacks; Closing Stroke is a mark with no roll or damage of its own."
 }

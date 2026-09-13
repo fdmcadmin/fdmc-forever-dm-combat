@@ -172,6 +172,30 @@ export type MonsterReaderAction = {
    */
   riders?: MonsterRider[];
   /**
+   * THIS RESPONSE MAKES ONE ATTACK WITH ANOTHER OF THIS CREATURE'S ACTIONS — by name.
+   *
+   * Christopher, 2026-09-13: *"there should be nothing that is priced at 0."* The Blackbough Reeve's
+   * Final Pruning is a reaction whose whole payload is *"it makes one Shearing Cut attack"*, and
+   * with no damage field of its own it priced at exactly 0 and was never scheduled. The damage is
+   * already authored — on Shearing Cut — so the field names it rather than copying its dice, and a
+   * later change to Shearing Cut reaches the reaction too. Workbook primitive: `attack_roll_event`.
+   */
+  attackWith?: string;
+  /**
+   * `attack_advantage_grant` — this action gives the creature Advantage on its OWN attacks for the
+   * turn it is used (the Demon Knight's Reckless Sentence). Priced as the difference Advantage makes
+   * to the attacks actually scheduled that turn: `1 − (1 − p)²` against `p`.
+   */
+  grantsAdvantage?: "own-attacks";
+  /**
+   * How often the trigger a response waits for actually HAPPENS, 0–1. Unset means every round.
+   *
+   * ⚠ A PROBABILITY THE AUTHOR STATES, exactly like a rider's `chance`. "When an ally below half is
+   * attacked" is a condition the app cannot evaluate — it does not know what the party will do — so
+   * the author says how often it holds and the response is weighted by it.
+   */
+  triggerChance?: number;
+  /**
    * What a SUCCESSFUL save still takes. v7 `parser.success_patterns`: half / none / a printed
    * alternate.
    *

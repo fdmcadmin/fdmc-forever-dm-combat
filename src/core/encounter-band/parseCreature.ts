@@ -330,6 +330,8 @@ type RawAction = {
   replacesRoutineSlot?: boolean;
   /** Extra damage this action carries on a hit — see `MonsterRider`. */
   riders?: readonly MonsterRider[];
+  /** Authored pricing routes for an action with no damage of its own — see MonsterReaderAction. */
+  attackWith?: string; grantsAdvantage?: "own-attacks"; triggerChance?: number;
   /** The action's printed reach/range, one field — see MonsterReaderAction.range. */
   range?: string; conditions?: string[];
 };
@@ -440,6 +442,10 @@ function parseSection(
       routineSlots: a.routineSlots,
       // Authored only. A rider is never inferred from prose — see `monsterRider.ts`.
       riders: a.riders?.filter(r => r?.name?.trim() && r?.damage?.trim()),
+      // Authored pricing routes for an action with no damage of its own. Never read from prose.
+      attackWith: a.attackWith?.trim() || undefined,
+      grantsAdvantage: a.grantsAdvantage,
+      triggerChance: a.triggerChance,
       spellSlotLevel: a.spellSlotLevel,
       spellName: detectSpell(name, a.text),
       gated: a.gated,
