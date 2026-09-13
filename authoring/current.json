@@ -1031,7 +1031,8 @@
             "hostileAttack": -3,
             "hostileSave": -3,
             "durationRounds": 2
-          }
+          },
+          "concentration": true
         },
         {
           "name": "Winter’s Toll",
@@ -1045,7 +1046,8 @@
             "hostileAttack": -3,
             "hostileSave": -3,
             "durationRounds": 2
-          }
+          },
+          "concentration": true
         }
       ],
       "reactions": [
@@ -5260,5 +5262,5 @@
       "order": 10
     }
   ],
-  "note": "The 2026-09-13 publish with Brandwing's Ember Lance rewritten as one hit with a second typed damage line, and rider types moved out of the dice box. Folded after the unmodified publish. Final Pruning makes one Shearing Cut (attackWith); Reckless Sentence grants Advantage on the Knight's own attacks; Closing Stroke is a mark with no roll or damage of its own. Roster interactions per the v4 Roster Interaction workbook: Winter’s Toll zone, Cruel Instruction ally attack, Cold Counsel target substitution, Commanding Presence forced target order; the retired ×1.000 presence defense row removed."
+  "note": "The 2026-09-13 publish with Brandwing's Ember Lance rewritten as one hit with a second typed damage line, and rider types moved out of the dice box. Folded after the unmodified publish. Final Pruning makes one Shearing Cut (attackWith); Reckless Sentence grants Advantage on the Knight's own attacks; Closing Stroke is a mark with no roll or damage of its own. Roster interactions per the v4 Roster Interaction workbook: Winter’s Toll zone, Cruel Instruction ally attack, Cold Counsel target substitution, Commanding Presence forced target order; the retired ×1.000 presence defense row removed. Winter’s Toll requires concentration."
 }

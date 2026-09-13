@@ -202,6 +202,11 @@ jobs:
       - name: check mechanics read from the rules text
         run: npm run check:mechanictext
 
+      # A creature's spell can need concentration: a box on monster spells, read from the text when
+      # unset, and a card that shows what the creature holds and ends it when a second one goes up.
+      - name: check monster concentration
+        run: npm run check:monsterconcentration
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

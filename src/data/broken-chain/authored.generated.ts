@@ -985,7 +985,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "hostileAttack": -3,
           "hostileSave": -3,
           "durationRounds": 2
-        }
+        },
+        "concentration": true
       },
       {
         "name": "Winter’s Toll",
@@ -999,7 +1000,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
           "hostileAttack": -3,
           "hostileSave": -3,
           "durationRounds": 2
-        }
+        },
+        "concentration": true
       }
     ],
     "reactions": [
@@ -6919,10 +6921,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-f21cb6b2-159211";
+export const AUTHORED_DIGEST = "fnv1a-7e81729e-159253";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-13T16:35:43.247Z";
+export const AUTHORED_AT = "2026-09-13T17:49:52.527Z";
 
 /**
  * Merge authored content over a bundled list by id.

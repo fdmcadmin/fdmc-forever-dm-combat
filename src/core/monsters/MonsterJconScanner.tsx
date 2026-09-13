@@ -206,6 +206,16 @@ export type MonsterReaderAction = {
    */
   rosterInteraction?: RosterInteraction;
   /**
+   * THIS SPELL OR EFFECT NEEDS CONCENTRATION — the same flag a PC action carries (`ActorAction.concentration`).
+   *
+   * Christopher, 2026-09-13: *"the Winter's toll also needs to be concentration but i cant choose those
+   * on monster spells."* The PC sheet has had it since the spell-table editor; a creature had no field
+   * and no box, so the card could not show what the creature was holding or end it when a second
+   * concentration spell went up. Unset reads the text ("Concentration", "Duration: Concentration");
+   * an explicit `false` overrides a sentence that says otherwise. See `mechanicText.readConcentration`.
+   */
+  concentration?: boolean;
+  /**
    * What a SUCCESSFUL save still takes. v7 `parser.success_patterns`: half / none / a printed
    * alternate.
    *

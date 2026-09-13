@@ -45,7 +45,7 @@ import {
 } from "./creator/monsterCreatorModel";
 import type { MonsterRider } from "./monsterRider";
 import { TRAIT_RULES, traitRule, resolveTraitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
-import { readRosterInteraction, readAttackWith, readGrantsAdvantage, readMarkRiders } from "../encounter-band/mechanicText";
+import { readRosterInteraction, readAttackWith, readGrantsAdvantage, readMarkRiders, readConcentration } from "../encounter-band/mechanicText";
 import { classifyTraits, classifyTrait } from "../encounter-band/traitClassifier";
 import { DAMAGE_TYPES } from "../constants/damageTypes";
 import { describeStatBlockAction } from "../../modules/dnd-5e/statBlockGrammar";
@@ -932,6 +932,21 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                   Pool
                 </label>
               )}
+              {/* ⚠ CONCENTRATION HAD NO BOX ON A CREATURE. Christopher: *"the Winter's toll also needs
+                  to be concentration but i cant choose those on monster spells."* Ticked by default
+                  when the text already says so; unticking writes an explicit false. */}
+              {(() => {
+                const fromText = Boolean(readConcentration(a.text));
+                const on = a.concentration ?? fromText;
+                return (
+                  <label style={{ width: 58, alignSelf: "flex-end", display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: on ? "#b89cff" : "#777", cursor: "pointer", paddingBottom: 4 }}
+                    title={`Concentration — the card tracks what the creature is holding, and a second concentration spell ends the first.${a.concentration === undefined && fromText ? " Read from the text; untick to override." : ""}`}>
+                    <input type="checkbox" checked={on}
+                      onChange={e => updateListItem(list, realIdx, { concentration: e.target.checked === fromText ? undefined : e.target.checked })} />
+                    Conc.
+                  </label>
+                );
+              })()}
             </>
           )}
           <button type="button" onClick={() => removeListItem(list, realIdx)}

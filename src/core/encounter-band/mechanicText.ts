@@ -134,6 +134,23 @@ export function readGrantsAdvantage(text: string | undefined): TextRead<"own-att
 }
 
 /**
+ * CONCENTRATION AS THE DURATION — "Concentration", "Duration: Concentration, up to 1 minute",
+ * "(Concentration)", "requires concentration".
+ *
+ * ⚠ NOT A SPELL THAT MENTIONS SOMEONE ELSE'S CONCENTRATION. "the target loses concentration" and
+ * "breaks concentration" describe an effect on the target, and reading them as this creature's own
+ * duration would end the creature's other spell on every use.
+ */
+export function readConcentration(text: string | undefined): TextRead<true> | undefined {
+  const t = norm(text);
+  if (!t) return undefined;
+  if (/\b(?:loses?|lose|break|breaks|broken|ends?|disrupts?|interrupts?)\s+(?:its |their |the target's |that creature's )?concentration\b/i.test(t)
+    && !/\bduration:\s*concentration\b/i.test(t)) return undefined;
+  const hit = t.match(/\bduration:\s*concentration\b[^.]*|\brequires concentration\b|\(concentration(?:,[^)]*)?\)|(?:^|[.;:]\s*)concentration(?:\s*,?\s*up to\b[^.]*)?\s*(?:\.|$)/i);
+  return hit ? { value: true, evidence: hit[0].replace(/^[.;:]\s*/, "").trim() } : undefined;
+}
+
+/**
  * A MARK'S PAYLOAD: "The first time Brandwing hits the marked target with Ember Lance, the target takes
  * an extra 7 (2d6) Psychic damage." One hit a turn at most, so it is a once-per-turn rider.
  *

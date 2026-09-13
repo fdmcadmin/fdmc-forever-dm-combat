@@ -40,6 +40,12 @@ import {
 } from "../integrations/useOwlbearDiceBridge";
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
 import { damagePacket } from "../monsters/damageLines";
+import { readConcentration } from "../encounter-band/mechanicText";
+
+/** Does this action need concentration — the authored box, else the text ("Concentration"). */
+function needsConcentration(action: MonsterReaderAction): boolean {
+  return action.concentration ?? Boolean(readConcentration(action.text));
+}
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction, isMonsterLegendaryAction } from "../monsters/runtime/mainMonsterRuntime";
 import { CLASSIFICATION_LABEL } from "../monsters/runtime/mainMonsterRuntime";
@@ -483,6 +489,12 @@ function ActionCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: action.text ? 2 : 0 }}>
             <strong style={{ fontSize: 12, color: isDischarged ? "#e07b39" : isMultiattackInProgress ? "#e07b39" : isReaction ? "#888" : "#ddd" }}>{action.name}</strong>
+            {needsConcentration(action) && (
+              <span title="Concentration — casting another concentration spell ends this one."
+                style={{ fontSize: 9, padding: "1px 5px", borderRadius: 8, background: "#1c1630", border: "1px solid #9b8ac466", color: "#b89cff" }}>
+                Concentration
+              </span>
+            )}
             {action.recharge && (
               <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 8, background: isDischarged ? "#3a1a00" : "#1a1a2e", border: `1px solid ${isDischarged ? "#e07b3966" : "#444"}`, color: isDischarged ? "#e07b39" : "#666" }}>
                 Recharge {action.recharge}
@@ -801,6 +813,15 @@ export function MonsterActorCard({
    * turn-reset broadcast fires, so no new signal is needed.
    */
   const [legendaryUsed, setLegendaryUsed] = useState(0);
+  /**
+   * WHAT THIS CREATURE IS CONCENTRATING ON — the spell's name, or null.
+   *
+   * Christopher: *"the Winter's toll also needs to be concentration but i cant choose those on monster
+   * spells."* A PC card has tracked this since the spell table; a creature had nothing, so a DM had to
+   * remember that the Harrow's Toll ends if she casts a second concentration spell or fails the save.
+   * Like spell slots it lasts across turns — it ends when replaced or when the DM drops it.
+   */
+  const [concentratingOn, setConcentratingOn] = useState<string | null>(null);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [spellsOpen, setSpellsOpen] = useState(false);
 
@@ -1015,6 +1036,14 @@ export function MonsterActorCard({
       setDischargedActionIds(prev => new Set([...prev, slugify(action.name)]));
     }
     addLog(`${publicName} readies ${action.name}.`);
+    // A second concentration spell ends the first — the same rule the PC card applies.
+    if (needsConcentration(action)) {
+      if (concentratingOn && concentratingOn !== action.name) {
+        addLog(`${publicName} stops concentrating on ${concentratingOn}.`);
+      }
+      setConcentratingOn(action.name);
+      if (concentratingOn !== action.name) addLog(`${publicName} is concentrating on ${action.name}.`);
+    }
     if (attackFormula && onSendDicePlusRequest) {
       const req: DiceBridgeRollRequest = {
         protocol: "forever-dm-combat.roll.request.v1",
@@ -1401,6 +1430,20 @@ export function MonsterActorCard({
               <EconomyDot label="Bonus" used={economy.bonusUsed} onClick={() => { const next = { ...economy, bonusUsed: !economy.bonusUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
             )}
             <EconomyDot label="Reaction" used={economy.reactionUsed} onClick={() => { const next = { ...economy, reactionUsed: !economy.reactionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
+            {/* Concentration — lit while the creature holds a spell; click to drop it (failed save,
+                Incapacitated, or the DM ends it). Same look as the PC card's Conc dot. */}
+            {concentratingOn && (
+              <div role="button" tabIndex={0}
+                title={`Concentrating on ${concentratingOn} — click to end it (failed Constitution save, Incapacitated, or dropped).`}
+                onClick={() => { addLog(`${publicName} loses concentration on ${concentratingOn}.`); setConcentratingOn(null); }}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { addLog(`${publicName} loses concentration on ${concentratingOn}.`); setConcentratingOn(null); } }}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" }}>
+                <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#9b8ac4", border: "1px solid #b89cff", boxShadow: "0 0 6px #9b8ac488" }} />
+                <span style={{ fontSize: 9, color: "#9b8ac4", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap", maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  Conc · {concentratingOn}
+                </span>
+              </div>
+            )}
             {/* Spell slots — DM-local, persist across turns until a long rest / fight end */}
             {spellSlots.map(s => {
               const left = slotRemaining(s.level) ?? 0;
