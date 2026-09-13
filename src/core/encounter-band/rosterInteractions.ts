@@ -10,39 +10,38 @@
  *                             assembled. They never become a flat multiplier on the source body."
  *   Runtime Contract r24     "A creature-level 0 or x1.000 is not a priced answer."
  *
- * ── WINTER'S TOLL + CRUEL INSTRUCTION (Act3 Roster Interactions, A3F7) ───────────────────────────
+ * ── WINTER'S TOLL + CRUEL INSTRUCTION ───────────────────────────────────────────────────────────
  *
- * *"Existing hit-chance formula, +3 attack modifier, half-roster coverage, Harrow Action replacement,
- * best-ally extra attack."* The workbook's burden cells are typed values, so the formula was recovered
- * from them and reproduces all four to the last digit (WOTC 13.500234375 / 16.937734375, BC
- * 13.437890625 / 16.812890625 — asserted by `check:rosterinteractions`):
- *
- *   burden(round) = coverage × Σ allies (routine at +N − routine)          the zone's offence
- *                 + best ally's one normal attack at +N                     Cruel Instruction
+ *   burden(round) = Σ ranked allies  coverage_k × (trace at AC − N − trace)       the zone's offence
+ *                 + share of PCs inside × Σ allies (trace at PC saves − M − trace)  PCs' worse saves
+ *                 + best ally's one normal attack at AC − N                         Cruel Instruction
  *                 − the source's own Action damage × (1 in round 1, 1/duration after)
  *
- *   coverage = (roster bodies / 2) / allied attack bodies, capped at 1 — "1.5 of the two eligible
- *   allied attack bodies in expectation". The half-roster convention, NOT floored: the workbook's 1.5.
+ *   and, while the source stands, the party's own damage × (1 − share of PCs inside × (1 − p′/p)).
  *
- * The routine at +N is the ally's own trace against AC − N, so every attack the trace schedules —
- * riders, reactions that make attacks, setups — gains exactly what +N gives it, clamps and all.
+ * ⚠ WHO IS INSIDE — Christopher's placement, not the workbook's half-roster. *"the winter toll … would
+ * always be centered on 1 ally, with it possibly hitting both in rare instances so maybe 30% for both
+ * and 100% for a single"*, and for the party, *"the same style we did for the aoe pricing against
+ * parties so about 1/3 the time for more then 1 and 75% for 1 in the area … each additional PC is lower
+ * and lower % to be effected after 2nd one."* See `ZONE_COVERAGE`.
  *
- * ⚠ THE OTHER HALF IS NOT IN THIS NUMBER, AND SAYS SO. *"Affected hostile attack/save events must be
- * recomputed separately; never hidden in creature HP."* The −3 on the party's attacks and saves is a
- * defence EVENT; the checker has no per-attack event layer, and the workbook's own adjusted DPR leaves
- * it out too. It is reported on the roster line, not silently dropped.
+ * The workbook's half-roster rule is kept as `coverage: "half-roster"`, because its Act3 Roster
+ * Interactions burden cells were priced with it — `check:rosterinteractions` reproduces all four cells
+ * to the last digit that way, which is what proves the FORMULA; the campaign prices with the placement.
  *
- * ── COMMANDING PRESENCE (A3F8) ──────────────────────────────────────────────────────────────────
+ * ⚠ THE PARTY'S HIT CHANCE IS READ, NEVER GUESSED. Without a chosen party `hitChance` is absent, and a
+ * −N on the party's attacks is named as needing one rather than priced off an invented accuracy — the
+ * same rule `PartyDefence.hitChance` states for every persistent defence.
  *
- * *"No EHP multiplier. The effect preserves Reaver/Breaker by changing kill order while Knight is
- * legal. Use the existing kill-order/body-timing model."* The roster IS kill-priority order
- * (`prepareRoster`), so the creature moves to the front of it. The whole-body attrition that follows
- * prices the rest: its allies live longer, and keep dealing damage longer.
+ * ── COMMANDING PRESENCE ─────────────────────────────────────────────────────────────────────────
  *
- * ── COLD COUNSEL (A3F7) ─────────────────────────────────────────────────────────────────────────
+ * A PASSIVE forced target leads the kill order. A REACTION redirects ONE party Action a round — see
+ * `RosterGroup.redirectsPartyActionsPerRound` and `checkerV2.damageIntoGroup`.
  *
- * *"ROSTER EVENT REQUIRED … Never silently treat this as zero."* Burden 0 in the workbook, pending a
- * target-event resolver the checker does not have. Named on the roster line for exactly that reason.
+ * ── COLD COUNSEL ────────────────────────────────────────────────────────────────────────────────
+ *
+ * *"ROSTER EVENT REQUIRED … Never silently treat this as zero."* Named on the roster line; the checker
+ * has no per-attack target-event layer.
  */
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -54,8 +53,34 @@ import { resolveFeature, expectedDamageForFeature, type ParsedFeature } from "./
 import { damageExpressionAverage } from "./damageExpression";
 import type { RosterGroup } from "./checkerV2";
 
-type Target = Parameters<typeof traceCreature>[1];
+type Target = Parameters<typeof traceCreature>[1] & {
+  /** The chosen party's own chance to hit, 0–1. Absent without a chosen party — never guessed. */
+  hitChance?: number;
+};
 type Zone = Extract<RosterInteraction, { kind: "roll_modifier_zone" }>;
+
+/**
+ * How likely the k-th body is to be inside a zone the creature places, first body first.
+ *
+ *   allies    1.00, 0.30, …   "always centered on 1 ally … maybe 30% for both"
+ *   the party 0.75, 1/3,  …   "75% for 1 in the area … about 1/3 the time for more then 1"
+ *
+ * After the second, each body continues the SAME step — the ratio between the first two — so every
+ * additional body is "lower and lower": allies 9%, 2.7%…; PCs 14.8%, 6.6%…
+ */
+export const ZONE_COVERAGE = {
+  allies: { first: 1, second: 0.3 },
+  party: { first: 0.75, second: 1 / 3 },
+} as const;
+
+export function rankedCoverage(model: { first: number; second: number }, bodies: number): number[] {
+  const out: number[] = [];
+  const step = model.first > 0 ? model.second / model.first : 0;
+  for (let k = 0; k < Math.max(0, Math.floor(bodies)); k++) {
+    out.push(k === 0 ? model.first : model.second * Math.pow(step, k - 1));
+  }
+  return out;
+}
 
 export type InteractionEntry = {
   /** The roster group id — a creature's templateId. */
@@ -72,17 +97,23 @@ export type ZoneBurden = {
   source: string;
   zone: string;
   extraAttackName?: string;
-  coverage: number;
-  eligibleBodies: number;
-  /** Per round 1..4+: the zone's offence on the allies it covers. */
+  /** Expected allied attack bodies inside the zone. */
+  alliesInside: number;
+  /** Expected PCs inside the zone. */
+  pcsInside: number;
+  /** Per round 1..4+: the +N on the allies it covers. */
   allyGain: number[];
+  /** Per round: the allies' save effects landing more often on the PCs inside. */
+  saveGain: number[];
   /** Per round: the best ally's extra attack. */
   extraAttack?: number[];
   extraAttackFrom?: string;
-  /** Per round: what the source gives up of its own Action to keep the zone up. */
+  /** Per round: what the source gives up of its own Action. */
   actionGivenUp: number[];
   /** Per round: the burden added to the encounter. */
   burden: number[];
+  /** What survives of the party's damage while the zone stands, or undefined if it cannot be priced. */
+  partyDamageFactor?: number;
 };
 
 export type RosterInteractionResult = {
@@ -94,6 +125,15 @@ export type RosterInteractionResult = {
   redirects: { id: string; actionsPerRound: number }[];
   assumptions: InteractionAssumption[];
   burdens: ZoneBurden[];
+};
+
+export type RosterInteractionOptions = {
+  /**
+   * `placement` (default) — Christopher's placement, `ZONE_COVERAGE`.
+   * `half-roster` — the workbook's own convention, (roster bodies / 2) spread evenly over the allied
+   * attack bodies and half the party; what its Act3 Roster Interactions cells were priced with.
+   */
+  coverage?: "placement" | "half-roster";
 };
 
 const ROUNDS = [0, 1, 2, 3] as const;
@@ -130,16 +170,31 @@ function roundTotals(parsed: ParsedCreature, target: Target): number[] {
   return ROUNDS.map(i => rounds[i]?.totalExpectedDamage ?? rounds[rounds.length - 1]?.totalExpectedDamage ?? 0);
 }
 
-export function rosterInteractions(entries: readonly InteractionEntry[], target: Target): RosterInteractionResult {
+/** The same party with every save moved by `delta` — a −3 to hostile saving throws. */
+function withSavesShifted(target: Target, delta: number): Target {
+  const saves = target.saves
+    ? Object.fromEntries(Object.entries(target.saves).map(([k, v]) => [k, Number(v) + delta])) as Target["saves"]
+    : undefined;
+  return { ...target, saveBonus: target.saveBonus + delta, ...(saves ? { saves } : {}) };
+}
+
+export function rosterInteractions(
+  entries: readonly InteractionEntry[],
+  target: Target,
+  options: RosterInteractionOptions = {},
+): RosterInteractionResult {
   const out: RosterInteractionResult = { rows: [], killOrderFirst: [], redirects: [], assumptions: [], burdens: [] };
   const live = entries.filter(e => Number(e.quantity) > 0);
   // An interaction needs somebody to interact WITH. A creature priced alone keeps its own numbers.
   if (live.length < 2) return out;
 
+  const coverageModel = options.coverage ?? "placement";
   const all = live.map(entry => ({ entry, parsed: parseCreature(entry.template) }));
   const rosterBodies = live.reduce((sum, e) => sum + Number(e.quantity), 0);
+  const partySize = Math.max(1, Math.round(Number(target.partySize ?? 4)));
   const note = (creature: string, flag: InteractionAssumption["flag"], detail: string) =>
     out.assumptions.push({ creature, flag, field: "roster", detail });
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
 
   for (const source of all) {
     const { entry, parsed } = source;
@@ -164,10 +219,9 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
         note(entry.name, "ESTIMATED",
           `${forced.name}: ${entry.name} is first in the kill order — every creature-targeting Action must target it while it is legal, so its allies stay up longer. No EHP multiplier; area and point effects keep their own targeting.`);
       } else {
-        const size = Math.max(1, Math.round(Number(target.partySize ?? 4)));
         out.redirects.push({ id: entry.id, actionsPerRound: 1 });
         note(entry.name, "ESTIMATED",
-          `${forced.name} (once a round): one party Action each round must target ${entry.name} while it stands — 1 of ${size} PCs' damage goes into it before the kill order, so its allies are reached later. No EHP multiplier.`);
+          `${forced.name} (once a round): one party Action each round must target ${entry.name} while it stands — 1 of ${partySize} PCs' damage goes into it before the kill order, so its allies are reached later. No EHP multiplier.`);
       }
     }
 
@@ -184,19 +238,61 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
       const allies = all.filter(a => a !== source && makesAttackRolls(a.parsed));
       const eligibleBodies = allies.reduce((sum, a) => sum + Number(a.entry.quantity), 0);
       const allyAttack = Number(zone?.allyAttack ?? 0);
+      const hostileAttack = Number(zone?.hostileAttack ?? 0);
+      const hostileSave = Number(zone?.hostileSave ?? 0);
       const duration = Math.max(1, Math.round(Number(zone?.durationRounds ?? 1)));
-      const coverage = zone && eligibleBodies > 0 ? Math.min(1, (rosterBodies / 2) / eligibleBodies) : 0;
       const shifted: Target = { ...target, ac: target.ac - allyAttack };
 
+      // ── the +N on allied attacks: who is inside, best ally first ──
       const allyGain = ROUNDS.map(() => 0);
-      if (zone && allyAttack !== 0) {
-        for (const ally of allies) {
+      let alliesInside = 0;
+      if (zone && allyAttack !== 0 && eligibleBodies > 0) {
+        const perBody = allies.flatMap(ally => {
           const base = roundTotals(ally.parsed, target);
           const boosted = roundTotals(ally.parsed, shifted);
-          for (const i of ROUNDS) allyGain[i] += coverage * Number(ally.entry.quantity) * (boosted[i] - base[i]);
+          const gain = ROUNDS.map(i => boosted[i] - base[i]);
+          return Array.from({ length: Number(ally.entry.quantity) }, () => gain);
+        });
+        if (coverageModel === "half-roster") {
+          const even = Math.min(1, (rosterBodies / 2) / eligibleBodies);
+          alliesInside = even * eligibleBodies;
+          for (const gain of perBody) for (const i of ROUNDS) allyGain[i] += even * gain[i];
+        } else {
+          // The zone is centred on the ally it helps most; the rest are caught less and less often.
+          const ranked = [...perBody].sort((a, b) => b[1] - a[1]);
+          const weights = rankedCoverage(ZONE_COVERAGE.allies, ranked.length);
+          alliesInside = weights.reduce((s, w) => s + w, 0);
+          ranked.forEach((gain, k) => { for (const i of ROUNDS) allyGain[i] += weights[k] * gain[i]; });
         }
       }
 
+      // ── the PCs inside: their −M saves, and their −N attacks ──
+      const pcsInside = !zone ? 0
+        : coverageModel === "half-roster" ? partySize / 2
+        : rankedCoverage(ZONE_COVERAGE.party, partySize).reduce((s, w) => s + w, 0);
+      const pcShare = Math.min(1, pcsInside / partySize);
+
+      const saveGain = ROUNDS.map(() => 0);
+      if (zone && hostileSave !== 0 && pcShare > 0) {
+        const worseSaves = withSavesShifted(target, hostileSave);
+        // Every other creature — one whose damage is all saves makes no attack roll and still gains.
+        for (const ally of all.filter(a => a !== source)) {
+          const base = roundTotals(ally.parsed, target);
+          const landed = roundTotals(ally.parsed, worseSaves);
+          for (const i of ROUNDS) saveGain[i] += pcShare * Number(ally.entry.quantity) * Math.max(0, landed[i] - base[i]);
+        }
+      }
+
+      let partyDamageFactor: number | undefined;
+      if (zone && hostileAttack !== 0 && pcShare > 0) {
+        const p = Number(target.hitChance);
+        if (Number.isFinite(p) && p > 0) {
+          const pShifted = Math.min(0.95, Math.max(0.05, p + hostileAttack * 0.05));
+          partyDamageFactor = 1 - pcShare * (1 - pShifted / p);
+        }
+      }
+
+      // ── Cruel Instruction: one ally inside makes one normal attack ──
       let extraAttack: number[] | undefined;
       let extraAttackFrom: string | undefined;
       if (extraF) {
@@ -212,6 +308,7 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
             if (attack && (!best || attack.value > best.value)) best = { ...attack, who: ally.entry.name };
           }
           if (best) {
+            // The zone is centred on an ally, so one is always inside to be instructed.
             extraAttack = ROUNDS.map(() => best!.value);
             extraAttackFrom = `${best.who}'s ${best.name}`;
           }
@@ -222,10 +319,7 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
        * What the source gives up of its own Action to do this.
        *
        *   a zone cast as an Action          all of round 1, then once per `duration` to keep it up
-       *   an extra attack given as an Action (no zone)   every round it is used — the Greenwood
-       *                                     Reaver's Cruel Command spends the Reaver's whole Action to
-       *                                     hand an ally one attack, so the ally's swing is only worth
-       *                                     what it beats the Reaver's own routine by
+       *   an extra attack given as an Action (no zone)   every round it is used
        *
        * A Bonus Action costs no Action — the Harrow's Cruel Instruction is that case.
        */
@@ -244,14 +338,14 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
         return 0;
       });
 
-      const burden = ROUNDS.map(i => Math.max(0, allyGain[i] + (extraAttack?.[i] ?? 0) - actionGivenUp[i]));
+      const burden = ROUNDS.map(i => Math.max(0, allyGain[i] + saveGain[i] + (extraAttack?.[i] ?? 0) - actionGivenUp[i]));
       const label = [zoneF?.name, extraF?.name].filter(Boolean).join(" + ");
       out.burdens.push({
-        source: entry.name, zone: zoneF?.name ?? "", extraAttackName: extraF?.name, coverage, eligibleBodies,
-        allyGain, extraAttack, extraAttackFrom, actionGivenUp, burden,
+        source: entry.name, zone: zoneF?.name ?? "", extraAttackName: extraF?.name, alliesInside, pcsInside,
+        allyGain, saveGain, extraAttack, extraAttackFrom, actionGivenUp, burden, partyDamageFactor,
       });
 
-      if (burden.some(b => b > 0)) {
+      if (burden.some(b => b > 0) || (partyDamageFactor !== undefined && partyDamageFactor < 1)) {
         out.rows.push({
           id: `${entry.id}:roster`,
           name: `${entry.name} — ${label} (on its allies)`,
@@ -266,22 +360,32 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
           // The zone ends when its source is Incapacitated — the roster's nearest statement of that.
           endsWithGroupId: entry.id,
           initiativeMod: entry.initiativeMod,
+          ...(partyDamageFactor !== undefined ? { partyDamageFactor } : {}),
         });
       }
 
-      const pct = (x: number) => `${Math.round(x * 100)}%`;
       const parts = [
         zone && allyAttack !== 0
-          ? `${allyAttack > 0 ? "+" : ""}${allyAttack} to hit for ${pct(coverage)} of ${eligibleBodies} allied attack bod${eligibleBodies === 1 ? "y" : "ies"} (+${allyGain[1].toFixed(1)})`
+          ? `${allyAttack > 0 ? "+" : ""}${allyAttack} to hit for ${alliesInside.toFixed(2)} of ${eligibleBodies} allied attack bod${eligibleBodies === 1 ? "y" : "ies"} inside (+${allyGain[1].toFixed(1)})`
+          : undefined,
+        zone && hostileSave !== 0 && saveGain[1] > 0
+          ? `${hostileSave} to the saves of ${pcsInside.toFixed(2)} PCs inside (+${saveGain[1].toFixed(1)})`
           : undefined,
         extraAttack ? `${extraAttackFrom} as the extra attack (+${extraAttack[1].toFixed(1)})` : undefined,
         actionGivenUp[0] > 0 ? `less ${actionGivenUp[0].toFixed(1)} of ${entry.name}'s own Action in round 1, ${actionGivenUp[1].toFixed(1)} after` : undefined,
+        partyDamageFactor !== undefined
+          ? `the party deals ${pct(1 - partyDamageFactor)} less while it stands (${hostileAttack} to hit for ${pcsInside.toFixed(2)} of ${partySize} PCs)`
+          : undefined,
       ].filter(Boolean);
-      const unresolved = zone && (zone.hostileAttack || zone.hostileSave || zone.allySave)
-        ? ` Not in this number: ${[zone.allySave ? `${zone.allySave > 0 ? "+" : ""}${zone.allySave} to allies' saves` : "", zone.hostileAttack ? `${zone.hostileAttack} to hostile attacks` : "", zone.hostileSave ? `${zone.hostileSave} to hostile saves` : ""].filter(Boolean).join(", ")} — defence events the checker does not resolve yet.`
-        : "";
+      const unresolved = [
+        zone && hostileAttack !== 0 && partyDamageFactor === undefined
+          ? `${hostileAttack} to the party's attacks needs a chosen party's hit chance`
+          : "",
+        zone?.allySave ? `${zone.allySave > 0 ? "+" : ""}${zone.allySave} to allies' saves needs the party's save DCs, which the checker does not read` : "",
+      ].filter(Boolean);
       note(entry.name, "ESTIMATED",
-        `${label}: +${burden[0].toFixed(1)} damage in round 1, +${burden[1].toFixed(1)} a round after — ${parts.join("; ") || "nothing it can add"}.${unresolved}`);
+        `${label}: +${burden[0].toFixed(1)} damage in round 1, +${burden[1].toFixed(1)} a round after — ${parts.join("; ") || "nothing it can add"}.`
+        + (unresolved.length ? ` Not priced: ${unresolved.join("; ")}.` : ""));
     }
 
     // ── target substitution — a target event, named rather than priced ─────────────────────

@@ -484,6 +484,15 @@ export type RosterGroup = {
    * the creatures ahead of it in the order are reached that much later. See `damageIntoGroup`.
    */
   redirectsPartyActionsPerRound?: number;
+  /**
+   * WHAT SURVIVES OF THE PARTY'S OWN DAMAGE while this group is on the field — 1 is all of it.
+   *
+   * A zone that gives the PCs inside it −3 to hit takes that share off what the party deals, for as
+   * long as the creature holding it stands. It belongs on the party's clock, not in any creature's HP
+   * (workbook: *"never hidden in creature HP"*), and it ends through `endsWithGroupId` like any bound
+   * row. See `rosterInteractions.ts`.
+   */
+  partyDamageFactor?: number;
 };
 
 /**
@@ -996,7 +1005,21 @@ export function simulateEncounter(opts: {
      * projected casualties counts the same attrition twice. A total-party-down is still terminal —
      * that is the `pcsStart === 0` guard, and the loop breaks on it.
      */
-    const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential;
+    /**
+     * ⚠ A HINDERING ZONE TAKES ITS SHARE OFF THE PARTY'S OWN DAMAGE — while its holder stands.
+     * Every active `partyDamageFactor` multiplies; a row bound to a dead creature no longer counts.
+     * With none present this is exactly 1, so every other fight is unchanged.
+     */
+    const partyFactor = prepared.reduce((factor, group) => {
+      const f = Number(group.partyDamageFactor ?? 1);
+      if (!(f < 1) || !groupPresentIn(group, round)) return factor;
+      if (group.endsWithGroupId) {
+        const parent = prepared.find(g => g.id === group.endsWithGroupId);
+        if (parent && livingBodies(parent, cumulativePartyDamage) <= 0) return factor;
+      }
+      return factor * Math.max(0, f);
+    }, 1);
+    const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential * partyFactor;
     const partyDamageBefore = cumulativePartyDamage;
     cumulativePartyDamage += partyDamage;
     /**

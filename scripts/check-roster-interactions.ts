@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
-import { rosterInteractions, type InteractionEntry } from "../src/core/encounter-band/rosterInteractions";
+import { rosterInteractions, rankedCoverage, ZONE_COVERAGE, type InteractionEntry } from "../src/core/encounter-band/rosterInteractions";
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 import { simulateEncounter, resolvePartyProfile, prepareRoster, damageIntoGroup } from "../src/core/encounter-band/checkerV2";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
@@ -26,6 +26,7 @@ const ok = (label: string, cond: boolean, detail = "") => {
   if (!cond) failures++;
 };
 const near = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) <= eps;
+const party0 = () => resolvePartyProfile({ level: 8, size: 4, equipmentMode: "brokenChain" });
 const byName = (n: string) => L.find(t => t.name === n) as MainMonsterTemplate;
 const withLists = (t: MainMonsterTemplate, lists: Record<string, unknown[]>, attacksPerTurn?: number) =>
   ({ ...t, traits: [], reactions: [], ...lists, lair: undefined,
@@ -51,8 +52,13 @@ const court = (harrow: MainMonsterTemplate): InteractionEntry[] => [
   { id: "brandwing", name: "Brandwing", template: brandwing, quantity: 1 },
 ];
 /** The workbook prices each PC's defence and takes the mean — so does this. */
+/**
+ * ⚠ ON THE WORKBOOK'S OWN COVERAGE. Its cells were priced with the half-roster convention, so that is
+ * what reproduces them; it proves the formula. The campaign prices with Christopher's placement —
+ * section 1b.
+ */
 const meanBurden = (acs: number[], harrow = harrowOf()) => {
-  const per = acs.map(ac => rosterInteractions(court(harrow), { ac, saveBonus: 4, partySize: 4 }).burdens[0]?.burden ?? [0, 0, 0, 0]);
+  const per = acs.map(ac => rosterInteractions(court(harrow), { ac, saveBonus: 4, partySize: 4 }, { coverage: "half-roster" }).burdens[0]?.burden ?? [0, 0, 0, 0]);
   return [0, 1].map(i => per.reduce((s, b) => s + b[i], 0) / per.length);
 };
 const wotc = meanBurden([18, 15, 13, 15]);
@@ -66,6 +72,32 @@ ok("  (mutation) without the zone there is no +3 and no Action given up", noZone
 const typo = rosterInteractions(court(harrowOf(true, { kind: "ally_extra_attack", requiresZone: "Winter's Tol" })), { ac: 15, saveBonus: 4 });
 ok("an extra attack naming a zone that does not exist is reported", typo.assumptions.some(a => a.flag === "NEEDS DM INPUT" && /no zone action/.test(a.detail)));
 ok("a creature priced alone gets no roster row", rosterInteractions([court(harrowOf())[1]], { ac: 15, saveBonus: 4 }).rows.length === 0);
+
+// ── 1b. Christopher's placement ────────────────────────────────────────────────────────────────
+console.log("\n1b. the placement: centred on the best ally, the party caught less and less");
+const allyW = rankedCoverage(ZONE_COVERAGE.allies, 3);
+const partyW = rankedCoverage(ZONE_COVERAGE.party, 4);
+ok("allies: 100%, then 30%, then lower", near(allyW[0], 1) && near(allyW[1], 0.3) && allyW[2] < allyW[1], allyW.map(w => w.toFixed(3)).join(", "));
+ok("the party: 75%, then 1/3, then lower and lower", near(partyW[0], 0.75) && near(partyW[1], 1 / 3) && partyW[2] < partyW[1] && partyW[3] < partyW[2],
+  partyW.map(w => w.toFixed(3)).join(", "));
+{
+  const t = { ac: 15, saveBonus: 4, partySize: 4 };
+  const placed = rosterInteractions(court(harrowOf()), t).burdens[0];
+  const half = rosterInteractions(court(harrowOf()), t, { coverage: "half-roster" }).burdens[0];
+  // At AC 15 both hit on 75%, 90% with +3. Brandwing gains more: 2×16×0.15 plus its once-per-turn
+  // 4.5 moving from P(≥1 of 2) = 1 − 0.25² to 1 − 0.10²; the Reeve 2×14×0.15.
+  const reeveGain = 2 * 14 * 0.15;
+  const brandGain = 2 * 16 * 0.15 + 4.5 * ((1 - 0.1 * 0.1) - (1 - 0.25 * 0.25));
+  ok("the zone's offence is 100% of the best ally's gain + 30% of the other's",
+    near(placed.allyGain[1], brandGain + 0.3 * reeveGain, 1e-9), `${placed.allyGain[1].toFixed(4)} vs ${(brandGain + 0.3 * reeveGain).toFixed(4)}`);
+  ok("  (mutation) the half-roster split prices it differently", !near(placed.allyGain[1], half.allyGain[1], 1e-6), `half-roster ${half.allyGain[1].toFixed(4)}`);
+  ok("the party inside is 0.75 + 1/3 + … of 4", near(placed.pcsInside, partyW.reduce((s, w) => s + w, 0)), placed.pcsInside.toFixed(4));
+  ok("with no chosen party the −3 on its attacks is not guessed", placed.partyDamageFactor === undefined);
+  const withParty = rosterInteractions(court(harrowOf()), { ...t, hitChance: 0.65 }).burdens[0];
+  const share = placed.pcsInside / 4;
+  ok("with a chosen party at 65%, it deals share × (1 − 50/65) less", near(withParty.partyDamageFactor ?? 1, 1 - share * (1 - 0.5 / 0.65), 1e-9),
+    `×${withParty.partyDamageFactor?.toFixed(4)}`);
+}
 
 // ── 2. the published creatures, through the real roster build ──────────────────────────────────
 console.log("\n2. the Last Court and the Occupied Acre, as published");
@@ -89,7 +121,17 @@ const stripped = (t: MainMonsterTemplate) => ({ ...t,
   reactions: (t.reactions ?? []).map(a => ({ ...a, rosterInteraction: undefined, text: a.rosterInteraction ? "" : a.text })) }) as MainMonsterTemplate;
 ok("  (mutation) without the authored interaction there is no row",
   !build(["Blackbough Reeve", "Gloam Harrow", "Brandwing"], stripped).roster.some(g => String(g.id).endsWith(":roster")));
-ok("the unresolved −3 defence side is named, not dropped", f7.assumptions.some(a => /defence events the checker does not resolve yet/.test(a.detail)));
+ok("with no chosen party, the −3 on the party's attacks is named, not dropped",
+  f7.assumptions.some(a => /Not priced: .*party's attacks needs a chosen party's hit chance/.test(a.detail)));
+const f7Party = rosterFromTemplates(["Blackbough Reeve", "Gloam Harrow", "Brandwing"].map(n => ({ template: byName(n), quantity: 1 })), 8, { ...target, hitChance: 0.65 } as never);
+const f7PartyRow = f7Party.roster.find(g => g.id === "broken-chain:act3:gloam-harrow:v1:roster") as { partyDamageFactor?: number } | undefined;
+ok("with a chosen party, the Toll row carries the party's lost damage", (f7PartyRow?.partyDamageFactor ?? 1) < 1, `×${f7PartyRow?.partyDamageFactor?.toFixed(3)}`);
+{
+  const res = simulateEncounter({ party: { size: 4, sustain: party0().sustain, dpr: party0().dpr }, roster: f7Party.roster }) as unknown as { rounds: { round: number; partyDamage: number; partyPotential: number }[] };
+  const r1 = res.rounds[0];
+  ok("...and the simulation deals that much less while the Harrow stands", r1.partyDamage < r1.partyPotential,
+    `R1 ${r1.partyDamage.toFixed(1)} of ${r1.partyPotential.toFixed(1)}`);
+}
 ok("Cold Counsel is named as a target event", f7.assumptions.some(a => /^Cold Counsel:/.test(a.detail)));
 
 const acre = ["Demonic Reaver", "Breaker", "Demon Knight of Punishment"];
