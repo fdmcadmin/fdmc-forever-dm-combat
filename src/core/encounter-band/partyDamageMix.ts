@@ -60,13 +60,13 @@ import { BASE_WEAPONS } from "../constants/baseWeapons";
 export { normalizeDamageType };
 
 /** Deliberately narrow, so any actor-like object works — same approach as `partyHealingFromActors`. */
-type RiderLike = { formula?: string; damageType?: string };
+type RiderLike = { formula?: string; damageType?: string | readonly string[] };
 type ActionLike = {
   label?: string;
   actionKind?: string;
   metadata?: {
     damage?: string;
-    damageType?: string;
+    damageType?: string | readonly string[];
     spell?: { damage?: string; damageType?: string };
     riders?: RiderLike[];
   };
@@ -204,9 +204,25 @@ function damageLinesOf(action: ActionLike): Array<{ type: string; amount: number
   const lines: Array<{ type: string; amount: number }> = [];
   const fromWeapon = weaponDamageType(action.label);
 
-  const add = (formula: string | undefined, type: string | undefined) => {
+  const add = (formula: string | undefined, type: string | readonly string[] | undefined) => {
+    /**
+     * ⚠ ONE ROLL, TWO TYPES IS AN ARRAY, AND IT CRASHED THIS. A creature's Winter Needle is
+     * `["Cold", "Psychic"]`; `normalizeDamageType` called `.trim()` on the array and threw, so any
+     * roster containing it took the whole party damage mix down with it.
+     *
+     * The amount is shared evenly across the named types. The block does not say how a single roll
+     * divides between two types, so an even split is the one reading that states nothing extra.
+     */
+    if (Array.isArray(type)) {
+      const named = type.map(t => normalizeDamageType(String(t))).filter(Boolean);
+      const amount = damageExpressionAverage(formula);
+      if (named.length > 0 && amount > 0) {
+        for (const t of named) lines.push({ type: t, amount: amount / named.length });
+        return;
+      }
+    }
     // A stated `damageType` is the whole answer and needs no parsing.
-    const stated = normalizeDamageType(type);
+    const stated = normalizeDamageType(Array.isArray(type) ? undefined : (type as string | undefined));
     if (stated) {
       const amount = damageExpressionAverage(formula);
       if (amount > 0) lines.push({ type: stated, amount });

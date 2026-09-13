@@ -34,10 +34,13 @@ export type MonsterRider = {
   /** The extra dice — `"1d6"`. Read the same way any damage field is. */
   damage: string;
   /**
-   * ⚠ THE RIDER CARRIES ITS OWN DAMAGE TYPE, because a second type is the whole reason it is a
-   * rider and not just more dice on the main line. "9 (2d6+2) Slashing plus 3 (1d6) Fire" is two
-   * types, and folding them into one string loses the one the resistances need.
+   * ⚠ THE RIDER CARRIES ITS OWN DAMAGE TYPE — but an UNCONDITIONAL second type on every hit is not
+   * a rider any more. "9 (2d6+2) Slashing plus 3 (1d6) Fire" used to be written as one, and that
+   * shape halved the main dice on a save while billing the rider in full, doubled only the main
+   * dice on a crit, and never rolled the rider at the table. It belongs in the action's
+   * `extraDamage` now, as part of the one hit; see `damageLines.ts`.
    *
+   * A rider's type still matters for what a rider IS — extra damage with a cadence or a condition.
    * Capitalised as the SRD prints it. See `statBlockGrammar`.
    */
   damageType?: string | readonly string[];

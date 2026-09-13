@@ -58,13 +58,32 @@ import { resolveFormulaVars } from "../state/resolveFormulaVars";
  * three things under different field names, so the adapter is a rename and the model stays single.
  */
 export function rosterDamageMix(
-  templates: ReadonlyArray<{ name?: string; actions?: ReadonlyArray<{ name?: string; damage?: string; damageType?: string }> }>,
+  templates: ReadonlyArray<{
+    name?: string;
+    actions?: ReadonlyArray<{
+      name?: string; damage?: string; damageType?: string | readonly string[];
+      extraDamage?: ReadonlyArray<{ damage: string; damageType?: string | readonly string[] }>;
+    }>;
+  }>,
 ): PartyDamageMix {
   return partyDamageMixFromActors(templates.map(t => ({
     name: t.name,
     actions: (t.actions ?? []).map(a => ({
       label: a.name,
-      metadata: { damage: a.damage, damageType: a.damageType },
+      /**
+       * ⚠ A SECOND DAMAGE LINE IS ITS OWN TYPE, SO IT TRAVELS AS ITS OWN TYPED LINE. It rides the
+       * `riders` slot the mix already reads with a stated type — the adapter stays a rename, and
+       * the 1d6 psychic on an Ember Lance is weighed as psychic rather than dropped.
+       *
+       * The type may be an ARRAY here — one roll, two types, the Winter Needle's cold and psychic —
+       * and passing that straight through crashed the mix: `(type ?? "").trim is not a function`.
+       * `damageLinesOf` now accepts both shapes.
+       */
+      metadata: {
+        damage: a.damage,
+        damageType: a.damageType,
+        riders: (a.extraDamage ?? []).map(line => ({ formula: line.damage, damageType: line.damageType })),
+      },
     })),
   })) as never);
 }

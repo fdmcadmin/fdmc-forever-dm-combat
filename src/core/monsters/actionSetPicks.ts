@@ -170,10 +170,25 @@ function substituteVars<T extends Record<string, unknown>>(action: T, vars: Reco
   if (Object.keys(vars).length === 0) return action;
   const fix = (s: unknown) =>
     typeof s === "string" ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
+  /**
+   * ⚠ A SECOND DAMAGE LINE CARRIES TOKENS TOO. A chassis body's `1d6 {secondary}` would otherwise
+   * keep its placeholder while the main line beside it resolved — the typo-visible case above,
+   * produced on purpose by the substitution simply not looking.
+   */
+  const lines = (action as { extraDamage?: unknown }).extraDamage;
   return {
     ...action,
     name: fix((action as { name?: unknown }).name),
     damage: fix((action as { damage?: unknown }).damage),
+    ...(Array.isArray(lines)
+      ? {
+        extraDamage: (lines as { damage?: unknown; damageType?: unknown }[]).map(line => ({
+          ...line,
+          damage: fix(line.damage),
+          damageType: Array.isArray(line.damageType) ? line.damageType.map(fix) : fix(line.damageType),
+        })),
+      }
+      : {}),
     roll: fix((action as { roll?: unknown }).roll),
     save: fix((action as { save?: unknown }).save),
     text: fix((action as { text?: unknown }).text),

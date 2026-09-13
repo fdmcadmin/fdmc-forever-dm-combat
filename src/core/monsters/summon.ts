@@ -259,10 +259,14 @@ export function materializeSummon(
     for (const name of casterNames) out = out.replace(new RegExp(`@${name}\\b`, "gi"), casterVars[name]);
     return out.replace(/\+\s*\+/g, "+").replace(/\+\s*-/g, "-");
   };
-  const casterAction = <T extends { roll?: string; damage?: string; save?: string }>(a: T): T => ({
+  const casterAction = <T extends {
+    roll?: string; damage?: string; save?: string; extraDamage?: readonly { damage: string }[];
+  }>(a: T): T => ({
     ...a,
     ...(a.roll ? { roll: withCaster(a.roll) } : {}),
     ...(a.damage ? { damage: withCaster(a.damage) } : {}),
+    // A second damage line written against the caster — `1d6 + @CASTMOD` — resolves like the first.
+    ...(a.extraDamage ? { extraDamage: a.extraDamage.map(line => ({ ...line, damage: withCaster(line.damage) ?? line.damage })) } : {}),
     ...(a.save ? { save: withCaster(a.save) } : {}),
   });
   const seeded: MainMonsterTemplate = {

@@ -39,6 +39,7 @@ import {
   type DiceBridgeRollRequest,
 } from "../integrations/useOwlbearDiceBridge";
 import type { MonsterReaderAction } from "../monsters/MonsterJconScanner";
+import { damagePacket } from "../monsters/damageLines";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction, isMonsterLegendaryAction } from "../monsters/runtime/mainMonsterRuntime";
 import { CLASSIFICATION_LABEL } from "../monsters/runtime/mainMonsterRuntime";
@@ -495,7 +496,11 @@ function ActionCard({
             )}
             {/* The structured field is the source now; the text is only the fallback for content
                 authored before the one-grammar pass. See `splitTypedDamage`. */}
-            {action.damage && splitTypedDamage(action.damage, action.text, action.damageType).map((c, i) => {
+            {action.damage && [
+              ...splitTypedDamage(action.damage, action.text, action.damageType),
+              // A second damage line is the same hit, so its chip sits beside the first.
+              ...(action.extraDamage ?? []).flatMap(line => splitTypedDamage(line.damage, undefined, line.damageType)),
+            ].map((c, i) => {
               const v = damageTypeVisual(c.type);
               return (
                 <span
@@ -951,7 +956,8 @@ export function MonsterActorCard({
       attackFormula = appendBonusDie(attackFormula, pendingAdditive);
       setPendingAdditive(null);
     }
-    const damageFormula = normalizeFormula(action.damage);
+    // The whole hit: a second damage line is rolled with the first, so a crit doubles both.
+    const damageFormula = normalizeFormula(damagePacket(action));
     const requestId = makeRequestId(monster.instanceId, actionId, "attack");
     const roll: CommittedRoll = {
       actionName: action.name,

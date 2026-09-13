@@ -172,6 +172,7 @@ export function describeStatBlockAction(a: {
   roll?: string;
   damage?: string;
   damageType?: string | readonly string[];
+  extraDamage?: readonly { damage: string; damageType?: string | readonly string[] }[];
   save?: string;
   range?: string;
   text?: string;
@@ -216,14 +217,29 @@ export function describeStatBlockAction(a: {
   }
 
   if (a.damage) {
-    const types = Array.isArray(a.damageType) ? a.damageType : a.damageType ? [a.damageType] : [];
-    const typeWords = types.map(t => String(t)[0].toUpperCase() + String(t).slice(1)).join(" and ");
-    // `resolveMonsterFormula` substitutes into the string, so "2d8 + @MAIN" comes back as
-    // "2d8 +5". Space the operators the way a printed block does.
-    const tidy = a.damage.replace(/\s*([+-])\s*/g, " $1 ").replace(/\s{2,}/g, " ").trim();
-    const average = averageOf(tidy);
-    const dice = average === undefined ? `(${tidy})` : `${average} (${tidy})`;
-    parts.push(`${bonus ? "Hit" : "Failure"}: ${dice}${typeWords ? ` ${typeWords}` : ""} damage.`);
+    /**
+     * One printed damage line: "18 (2d12 + 5) Fire damage". Written once and used for every line,
+     * so a second line prints in exactly the grammar of the first.
+     */
+    const printLine = (damage: string, damageType: string | readonly string[] | undefined) => {
+      const types = Array.isArray(damageType) ? damageType : damageType ? [damageType] : [];
+      const typeWords = types.filter(t => String(t).trim())
+        .map(t => String(t)[0].toUpperCase() + String(t).slice(1)).join(" and ");
+      // `resolveMonsterFormula` substitutes into the string, so "2d8 + @MAIN" comes back as
+      // "2d8 +5". Space the operators the way a printed block does.
+      const tidy = damage.replace(/\s*([+-])\s*/g, " $1 ").replace(/\s{2,}/g, " ").trim();
+      const average = averageOf(tidy);
+      const dice = average === undefined ? `(${tidy})` : `${average} (${tidy})`;
+      return `${dice}${typeWords ? ` ${typeWords}` : ""} damage`;
+    };
+    /**
+     * ⚠ A SECOND DAMAGE TYPE PRINTS THE WAY THE SRD PRINTS IT — "plus". Christopher's Ember Lance
+     * had lost its sentence to the fragment "and 6 (1d6 Psychic)"; the fields now say it whole.
+     */
+    const extras = (a.extraDamage ?? [])
+      .filter(line => line.damage?.trim())
+      .map(line => printLine(line.damage, line.damageType));
+    parts.push(`${bonus ? "Hit" : "Failure"}: ${[printLine(a.damage, a.damageType), ...extras].join(" plus ")}.`);
   }
 
   const rider = (a.text ?? "").trim();

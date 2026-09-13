@@ -180,6 +180,12 @@ jobs:
       - name: check the recovery registry
         run: npm run check:recovery
 
+      # A second damage type on the same hit is ONE packet — priced, halved, crit-doubled and rolled
+      # with the first — and a typed line wherever the type matters. Asserted on the published
+      # Brandwing, each reader against the same creature with the line removed.
+      - name: check second damage lines reach every reader
+        run: npm run check:damagelines
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

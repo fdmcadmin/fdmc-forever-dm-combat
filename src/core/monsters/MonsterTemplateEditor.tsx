@@ -478,6 +478,30 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
   function updateRider(list: ListName, idx: number, riderIdx: number, patch: Partial<MonsterRider>) {
     updateListItem(list, idx, { riders: ridersOf(list, idx).map((r, i) => (i === riderIdx ? { ...r, ...patch } : r)) });
   }
+  /**
+   * A SECOND DAMAGE LINE on the same hit — dice and its own type.
+   *
+   * Christopher, 2026-09-13: *"if a action has 2 damage types i should be able to write 1 action
+   * choose a damage type and then write 2nd dice line and a damage type."* The editor only offered
+   * a rider, so Brandwing's psychic half went into a rider's dice box as `"1d6 Psychic"`.
+   */
+  type DamageLine = NonNullable<MonsterReaderAction["extraDamage"]>[number];
+  function damageLinesOfAction(list: ListName, idx: number): DamageLine[] {
+    return [...(draft[list][idx]?.extraDamage ?? [])];
+  }
+  function addDamageLine(list: ListName, idx: number) {
+    updateListItem(list, idx, { extraDamage: [...damageLinesOfAction(list, idx), { damage: "" }] });
+  }
+  function updateDamageLine(list: ListName, idx: number, lineIdx: number, patch: Partial<DamageLine>) {
+    updateListItem(list, idx, {
+      extraDamage: damageLinesOfAction(list, idx).map((line, i) => (i === lineIdx ? { ...line, ...patch } : line)),
+    });
+  }
+  function removeDamageLine(list: ListName, idx: number, lineIdx: number) {
+    const next = damageLinesOfAction(list, idx).filter((_, i) => i !== lineIdx);
+    updateListItem(list, idx, { extraDamage: next.length > 0 ? next : undefined });
+  }
+
   function removeRider(list: ListName, idx: number, riderIdx: number) {
     const next = ridersOf(list, idx).filter((_, i) => i !== riderIdx);
     updateListItem(list, idx, { riders: next.length > 0 ? next : undefined });
@@ -686,6 +710,36 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                   style={{ ...inputStyle, borderColor: a.damage && !a.damageType ? "#8a6a2a" : undefined }} />
               </div>
             </>
+          )}
+          {/* ── A SECOND DAMAGE LINE — same hit, its own dice, its own type ──────────────────
+              Christopher, 2026-09-13: *"if a action has 2 damage types i should be able to write
+              1 action choose a damage type and then write 2nd dice line and a damage type."*
+              Priced, halved on a save, doubled on a crit and rolled WITH the line above; printed
+              as "plus N (dice) Type damage". A rider is for damage with a cadence or a condition. */}
+          {!opts.reaction && (a.extraDamage ?? []).map((line, li) => (
+            <div key={`dmg-line-${li}`} style={{ display: "flex", gap: 6, alignItems: "flex-end", flexBasis: "100%", paddingLeft: 10, borderLeft: "2px solid #6a4a2a" }}>
+              <div style={{ flex: 1, minWidth: 96 }}>
+                <span style={labelStyle}>+ Dmg</span>
+                <input value={line.damage} placeholder="1d6" style={inputStyle}
+                  onChange={e => updateDamageLine(list, realIdx, li, { damage: e.target.value })} />
+              </div>
+              <div style={{ flex: 1, minWidth: 110 }}>
+                <span style={labelStyle}>Dmg type</span>
+                <input list="fdmc-damage-types" placeholder="Psychic" style={{ ...inputStyle, borderColor: line.damage && !line.damageType ? "#8a6a2a" : undefined }}
+                  value={Array.isArray(line.damageType) ? line.damageType.join(" and ") : (line.damageType ?? "")}
+                  title="The second line's own damage type. It lands on the same hit as the line above."
+                  onChange={e => {
+                    const parts = e.target.value.split(/\s*(?:\band\b|\+|\/|,)\s*/i).map(s => s.trim()).filter(Boolean);
+                    updateDamageLine(list, realIdx, li, { damageType: parts.length === 0 ? undefined : parts.length === 1 ? parts[0] : parts });
+                  }} />
+              </div>
+              <SmallBtn color="#ff6b6b" onClick={() => removeDamageLine(list, realIdx, li)}>✕</SmallBtn>
+            </div>
+          ))}
+          {!opts.reaction && a.damage?.trim() && (
+            <div style={{ flexBasis: "100%", paddingLeft: 10 }}>
+              <SmallBtn color="#d4a24a" onClick={() => addDamageLine(list, realIdx)}>+ Damage line</SmallBtn>
+            </div>
           )}
           <div style={{ flex: 1, minWidth: 96 }}>
             <span style={labelStyle}>Save</span>
@@ -963,8 +1017,19 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 </div>
                 <div style={{ width: 100 }}>
                   <span style={labelStyle}>Extra dmg</span>
-                  <input value={r.damage} placeholder="1d6 necrotic" style={inputStyle}
+                  <input value={r.damage} placeholder="1d6" style={inputStyle}
                     onChange={e => updateRider(list, realIdx, ri, { damage: e.target.value })} />
+                </div>
+                {/* ⚠ THE RIDER'S TYPE HAD NO BOX, so it went into the dice — "2d6 Psychic" — where
+                    the stat block and the resistances cannot read it as a type. */}
+                <div style={{ width: 100 }}>
+                  <span style={labelStyle}>Type</span>
+                  <input list="fdmc-damage-types" placeholder="Necrotic" style={inputStyle}
+                    value={Array.isArray(r.damageType) ? r.damageType.join(" and ") : (r.damageType ?? "")}
+                    onChange={e => {
+                      const parts = e.target.value.split(/\s*(?:\band\b|\+|\/|,)\s*/i).map(s => s.trim()).filter(Boolean);
+                      updateRider(list, realIdx, ri, { damageType: parts.length === 0 ? undefined : parts.length === 1 ? parts[0] : parts });
+                    }} />
                 </div>
                 <div style={{ width: 118 }}>
                   <span style={labelStyle}>Fires</span>

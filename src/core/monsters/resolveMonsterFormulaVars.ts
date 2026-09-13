@@ -146,7 +146,9 @@ export function resolveMonsterFormula(formula: string | undefined, template: Mai
 }
 
 /** Resolve every formula-bearing field on a creature's actions. Used before rendering or rolling. */
-export function resolveMonsterActionFormulas<T extends { roll?: string; damage?: string; save?: string }>(
+export function resolveMonsterActionFormulas<T extends {
+  roll?: string; damage?: string; save?: string; extraDamage?: readonly { damage: string }[];
+}>(
   action: T,
   template: MainMonsterTemplate,
 ): T {
@@ -154,6 +156,13 @@ export function resolveMonsterActionFormulas<T extends { roll?: string; damage?:
     ...action,
     ...(action.roll ? { roll: resolveMonsterFormula(action.roll, template) } : {}),
     ...(action.damage ? { damage: resolveMonsterFormula(action.damage, template) } : {}),
+    /**
+     * ⚠ EVERY DAMAGE LINE RESOLVES, NOT JUST THE FIRST. A second line written `1d6 + @CHA` would
+     * otherwise print and roll the raw token while the main line beside it printed a number.
+     */
+    ...(action.extraDamage
+      ? { extraDamage: action.extraDamage.map(line => ({ ...line, damage: resolveMonsterFormula(line.damage, template) })) }
+      : {}),
     ...(action.save ? { save: resolveMonsterFormula(action.save, template) } : {}),
   };
 }

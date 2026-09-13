@@ -21,6 +21,8 @@ type JconScanStatus =
   | "ready"
   | "error";
 
+import type { DamageLine } from "./damageLines";
+
 export type MonsterReaderAction = {
   name: string;
   kind: "action" | "attack" | "reaction" | "spell" | "trait";
@@ -35,6 +37,13 @@ export type MonsterReaderAction = {
    * and resistances read a string. Capitalised as the SRD prints it: "Slashing", "Fire".
    */
   damageType?: string | readonly string[];
+  /**
+   * More damage ON THE SAME HIT, each line with its own type — "2d12 + 5 fire plus 1d6 psychic".
+   *
+   * Part of the one damage packet, so it is priced, halved on a save, doubled on a crit and rolled
+   * together with `damage`. Not a rider: a rider has a cadence or a condition. See `damageLines.ts`.
+   */
+  extraDamage?: readonly DamageLine[];
   save?: string;
   /**
    * The RIDER, and nothing the fields already carry. Never "Hit: 11 (2d6 + 4) slashing" — that is

@@ -30,6 +30,7 @@ import { conditionsImposedBy } from "./controlPricing";
 import { isMultiattackAction, multiattackCountFromText } from "../monsters/multiattackText";
 import { parseSaveAbility } from "./partyDefenceCurve";
 import type { MonsterRider } from "../monsters/monsterRider";
+import { damagePacket, type DamageLine } from "../monsters/damageLines";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
 
@@ -224,6 +225,16 @@ export function parseSuccessDamage(text: string | undefined, failDamage: string 
  * the block was written before that field existed. "custom" without an amount falls back to the
  * text rather than silently pricing zero.
  */
+/**
+ * The action with every damage line folded into `damage` — one hit, one packet.
+ *
+ * Only for pricing. The lines themselves are kept, so anything that needs the TYPES still has them.
+ */
+function asOnePacket<T extends { damage?: string; extraDamage?: readonly DamageLine[] }>(a: T): T {
+  if (!a.extraDamage?.some(line => line.damage?.trim())) return a;
+  return { ...a, damage: damagePacket(a) };
+}
+
 function successDamageFor(a: { onSave?: string; successDamage?: string; damage?: string; text?: string }): string | undefined {
   if (a.onSave === "none") return "0";
   if (a.onSave === "half") {
@@ -479,9 +490,15 @@ function parseSection(
 export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature {
   const template: MainMonsterTemplate = {
     ...rawTemplate,
-    actions: (rawTemplate.actions ?? []).map(a => resolveMonsterActionFormulas(a, rawTemplate)),
-    reactions: (rawTemplate.reactions ?? []).map(a => resolveMonsterActionFormulas(a, rawTemplate)),
-    traits: (rawTemplate.traits ?? []).map(a => resolveMonsterActionFormulas(a, rawTemplate)),
+    /**
+     * ⚠ A SECOND DAMAGE LINE IS THE SAME PACKET, SO IT IS PRICED AS ONE. Folded into `damage`
+     * here, on the parse path only, so the hit/save arithmetic, the save-for-half and the
+     * automatic-damage flag all see the whole hit — without inventing a second pricer beside
+     * `expectedDamageForFeature`. See `damageLines.ts`.
+     */
+    actions: (rawTemplate.actions ?? []).map(a => asOnePacket(resolveMonsterActionFormulas(a, rawTemplate))),
+    reactions: (rawTemplate.reactions ?? []).map(a => asOnePacket(resolveMonsterActionFormulas(a, rawTemplate))),
+    traits: (rawTemplate.traits ?? []).map(a => asOnePacket(resolveMonsterActionFormulas(a, rawTemplate))),
   };
   const assumptions: FeatureAssumption[] = [];
   const name = template.name;

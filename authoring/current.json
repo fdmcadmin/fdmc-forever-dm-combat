@@ -1,7 +1,6 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-09-10T06:50:16.949Z",
-  "digest": "fnv1a-15fe3049-132381",
+  "exportedAt": "2026-09-13T06:22:08.446Z",
   "monsters": [
     {
       "templateId": "broken-chain:act3:elemental-mirror:v1",
@@ -381,6 +380,905 @@
         "defaultState": "hp-bar",
         "hiddenName": "Mirror",
         "revealedName": "Elemental Mirror"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:rootwake-warden:v1",
+      "name": "Rootwake Warden",
+      "encounterId": "act3-e5-the-scar-line",
+      "encounterLabel": "Act 3 E5 - The Scar Line",
+      "stats": {
+        "kind": "fey",
+        "ac": 16,
+        "maxHp": 120,
+        "speed": "50 ft.",
+        "defenses": [
+          {
+            "name": "Rootbound Guard",
+            "ehpMultiplier": 1.038413,
+            "provenance": "interpolated",
+            "note": "v3.44 ADDS THIS TRAIT: the first time each round the Warden takes damage while touching natural ground, reduce it by 4. Interpolated on the same line the Hollow Warden's DR 3 sits on — the workbook anchors fixed prevention at 8/round (+0.076838), so 4/round is half of it (+0.038413). ⚠ CEILING: the ground condition is not inside the multiplier, and this fight is fought on natural ground, so it is close to the real value here and would not be elsewhere."
+          },
+          {
+            "name": "Living Footing",
+            "ehpMultiplier": 1,
+            "note": "DECIDED 1.0. Terrain immunity is movement, not survivability — it changes where the Warden can be, never how much damage reaches it."
+          }
+        ],
+        "attacksPerTurn": 2,
+        "size": "Large",
+        "classification": "elite",
+        "archetype": "skirmisher",
+        "skills": [
+          {
+            "label": "Athletics",
+            "modifier": 7
+          },
+          {
+            "label": "Perception",
+            "modifier": 7
+          }
+        ],
+        "proficiencyBonus": 3
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)"
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)",
+          "saveProficient": true
+        },
+        {
+          "label": "CON",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "WIS",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "12 (+1)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Living Footing",
+          "kind": "trait",
+          "text": "Natural difficult terrain created by plants or undergrowth costs the Warden no extra movement."
+        },
+        {
+          "name": "Rootbound Guard",
+          "kind": "trait",
+          "text": "The first time each round the Warden takes damage, reduce that damage by 4."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Wake the Route",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "The Warden marks a 20-foot path of natural ground it can see within 30 feet. Until the start of its next turn, the path is normal terrain for the Warden and its allies and difficult terrain for its enemies."
+        },
+        {
+          "name": "Branch Lance",
+          "kind": "attack",
+          "roll": "1d20+@ATK",
+          "damage": "2d6 + @STR",
+          "damageType": "Piercing",
+          "range": "reach 10 ft.",
+          "routineSlots": 2
+        },
+        {
+          "name": "Sunthorn",
+          "kind": "attack",
+          "roll": "1d20+@ATK",
+          "damage": "2d6 + @WIS",
+          "damageType": "Radiant",
+          "range": "range 90 ft.",
+          "routineSlots": 2
+        },
+        {
+          "name": "Entangling Passage (Recharge 5–6)",
+          "kind": "action",
+          "save": "DEX DC 15",
+          "onSave": "half",
+          "damage": "2d8 + 5",
+          "damageType": "Bludgeoning",
+          "targets": 2,
+          "recharge": "5-6",
+          "text": "Roots of the forest lash out at two creatures within 15 feet of the Warden. Each target must make a DC 15 Dexterity saving throw. On a failed save, a target takes 14 (2d8 + 5) Bludgeoning damage and has the Restrained condition until the end of the Warden’s next turn. On a successful save, the target takes half as much damage only.",
+          "range": "15 FT"
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Rootbound Counsel",
+          "kind": "action",
+          "text": "When an ally standing on the Warden's marked path makes a Dexterity saving throw, the Warden gives that ally Advantage on the save."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A long-limbed Fey pathkeeper whose hooves strike the ground only after roots have chosen where they will land. It opens living routes by running them, and the Wood knots shut behind its passage."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Rootwake Warden",
+        "revealedName": "Rootwake Warden"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:stormscar-ravager:v1",
+      "name": "Stormscar Ravager",
+      "encounterId": "act3-e5-the-scar-line",
+      "encounterLabel": "Act 3 E5 - The Scar Line",
+      "stats": {
+        "kind": "fiend",
+        "ac": 16,
+        "maxHp": 110,
+        "speed": "60 ft.",
+        "defenses": [
+          {
+            "name": "Stormhide",
+            "ehpMultiplier": 1.038413,
+            "provenance": "interpolated",
+            "note": "v3.44 ADDS THIS TRAIT: the first time each round the Ravager takes Lightning, Thunder, or ranged weapon damage, reduce it by 4. Interpolated at half the workbook's 8/round fixed-prevention anchor (+0.038413), the same line the Rootwake Warden's Rootbound Guard uses. ⚠ CEILING, AND A GENEROUS ONE: it is TYPED and ranged-conditional. A melee party dealing no lightning or thunder triggers it never, and the multiplier cannot express that — the party damage mix would have to price it, the way a creature's typed resistances already are."
+          }
+        ],
+        "attacksPerTurn": 3,
+        "size": "Large",
+        "classification": "elite",
+        "archetype": "bruiser",
+        "skills": [
+          {
+            "label": "Athletics",
+            "modifier": 7
+          },
+          {
+            "label": "Acrobatics",
+            "modifier": 7
+          },
+          {
+            "label": "Perception",
+            "modifier": 4
+          }
+        ],
+        "proficiencyBonus": 3
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)"
+        },
+        {
+          "label": "DEX",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CON",
+          "value": "20 (+5)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "WIS",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "CHA",
+          "value": "14 (+2)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Long-Striding",
+          "kind": "trait",
+          "text": "The Ravager ignores the first 10 feet of difficult terrain it enters on each of its turns."
+        },
+        {
+          "name": "Stormhide",
+          "kind": "trait",
+          "text": "The first time each round the Ravager takes Lightning or Thunder damage, reduce that damage by 4."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Claw",
+          "kind": "attack",
+          "roll": "1d20+@ATK",
+          "damage": "2d8 + @STR",
+          "damageType": "Slashing",
+          "range": "reach 5 ft.",
+          "routineSlots": 1
+        },
+        {
+          "name": "Crushing Foreclaw",
+          "kind": "attack",
+          "roll": "1d20+@ATK",
+          "damage": "2d8 + @STR",
+          "damageType": "Bludgeoning",
+          "range": "reach 5 ft.",
+          "save": "STR DC 16",
+          "text": "Strength Saving Throw: DC 16, a Large or smaller target hit by this attack. Failure: The target has the Prone condition.",
+          "routineSlots": 1
+        },
+        {
+          "name": "Serrated Tail",
+          "kind": "attack",
+          "roll": "1d20+@ATK",
+          "damage": "2d8 + @DEX",
+          "damageType": "Slashing",
+          "range": "reach 10 ft.",
+          "routineSlots": 1
+        },
+        {
+          "name": "Stormscar Lance (Recharge 5–6)",
+          "kind": "action",
+          "damage": "8d8 + 2",
+          "damageType": "Lightning",
+          "save": "DEX DC 16",
+          "onSave": "half",
+          "recharge": "5-6",
+          "text": "Dexterity Saving Throw: DC 16, each creature in a 60-foot-long, 10-foot-wide Line. Failure: 38 (8d8 + 2) Lightning damage. Success: Half damage."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Intercepting Leap",
+          "kind": "action",
+          "damage": "2d8",
+          "damageType": "Lightning",
+          "save": "DEX DC 16",
+          "onSave": "half",
+          "text": "When a hostile creature the Ravager can see within 40 feet moves at least 20 feet during its turn toward one of the Ravager’s allies and ends that movement within 20 feet of that ally, the Ravager leaps up to 30 feet to an unoccupied space adjacent to the creature. Dexterity Saving Throw: DC 16, the moving creature. Failure: 9 (2d8) Lightning damage, and the creature is Pinned until the start of its next turn. While Pinned, its Speed is 0. Success: Half damage only. The Pinned condition ends early if the Ravager moves or has the Incapacitated condition.",
+          "range": "30 FT"
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A four-limbed Fiend built around speed rather than concealment. Lightning crawls through old cuts in its hide; when it lowers its body and runs, the charge ends in a straight flash across the Wood."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Stormscar Ravager",
+        "revealedName": "Stormscar Ravager"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:claimchain-exactor:v1",
+      "name": "Claimchain Exactor",
+      "encounterId": "act3-e5-the-scar-line",
+      "encounterLabel": "Act 3 E5 - The Scar Line",
+      "stats": {
+        "kind": "fiend",
+        "ac": 17,
+        "maxHp": 110,
+        "speed": "30 ft.",
+        "defenses": [
+          {
+            "name": "Chain Screen",
+            "ehpMultiplier": 1.047749,
+            "rule": "First attack each round at disadvantage",
+            "note": "v3.44 ADDS THIS TRAIT: while at least one claim chain is free, the first ranged attack each round has Disadvantage. That is the workbook's First-attack-each-round-at-disadvantage rule exactly (+0.047749). ⚠ IT SWITCHES OFF WHEN BOTH CHAINS GRAPPLE, which the multiplier cannot express — a Exactor holding two PCs is undefended by this and priced as though it were not."
+          },
+          {
+            "name": "Two Claim Chains",
+            "ehpMultiplier": 1,
+            "note": "DECIDED 1.0. The chains are the Exactor's OFFENCE and its grapple economy; the constraint that a grappling chain cannot attack is a limit on it, not a defence."
+          }
+        ],
+        "attacksPerTurn": 2,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "tactician",
+        "skills": [
+          {
+            "label": "Athletics",
+            "modifier": 8
+          },
+          {
+            "label": "Insight",
+            "modifier": 5
+          }
+        ],
+        "proficiencyBonus": 3
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "20 (+5)",
+          "saveProficient": true
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "CON",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "WIS",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "CHA",
+          "value": "16 (+3)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Two Claim Chains",
+          "kind": "trait",
+          "targets": 1,
+          "text": "The Exactor has two chains. Each chain can Grapple one creature at a time. A chain that is Grappling a creature cannot attack another target until that grapple ends."
+        },
+        {
+          "name": "Chain Screen",
+          "kind": "trait",
+          "text": "While at least one claim chain is free, the first ranged attack made against the Exactor each round has Disadvantage."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Balance the Chains",
+          "kind": "action",
+          "economyCost": "bonus",
+          "targets": 1,
+          "text": "The Exactor pulls each creature Grappled by a claim chain up to 10 feet toward a point it chooses between them. If only one creature is Grappled, the Exactor instead pulls that creature up to 10 feet toward itself."
+        },
+        {
+          "name": "Claim Chain",
+          "kind": "attack",
+          "roll": "1d20+8",
+          "damage": "2d6 + 5",
+          "damageType": "Slashing",
+          "range": "reach 10 ft.",
+          "text": "If the target is Large or smaller and the chain is free, the Exactor can give the target the Grappled condition (escape DC 16)."
+        },
+        {
+          "name": "Conjure Tether (Recharge 5–6)",
+          "kind": "action",
+          "damage": "2d8 + 6",
+          "damageType": "Fire",
+          "save": "DEX DC 16",
+          "onSave": "half",
+          "recharge": "5-6",
+          "targets": 1,
+          "text": "Dexterity Saving Throw: DC 16, one creature the Exactor can see within 60 feet. Failure: 15 (2d8 + 6) Fire damage, the target is pulled up to 20 feet toward the Exactor, and it has the Restrained condition until the end of the Exactor’s next turn. Success: Half damage only."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Collect Interest",
+          "kind": "action",
+          "damage": "2d6",
+          "damageType": "Fire",
+          "targets": 1,
+          "text": "When a creature Grappled by a claim chain uses a Bonus Action or Reaction, the creature takes 7 (2d6) Fire damage after the triggering action is resolved."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "An infernal surveyor wrapped in two living chains. It does not build walls; it decides where bodies belong, hooks them into that geometry, and drags the battlefield toward the line it has chosen.",
+        ""
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Claimchain Exactor",
+        "revealedName": "Claimchain Exactor"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:brandwing:v1",
+      "name": "Brandwing",
+      "encounterId": "act3-e7-the-last-court",
+      "encounterLabel": "Act 3 E7 - The Last Court",
+      "stats": {
+        "kind": "fiend",
+        "ac": 17,
+        "maxHp": 111,
+        "speed": "40 ft., fly 40 ft.",
+        "defenses": [
+          {
+            "name": "Magic Resistance",
+            "ehpMultiplier": 1.115824,
+            "rule": "Magic Resistance",
+            "note": "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects."
+          }
+        ],
+        "attacksPerTurn": 2,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "tactician",
+        "skills": [
+          {
+            "label": "Perception",
+            "modifier": 8
+          },
+          {
+            "label": "Investigation",
+            "modifier": 9
+          }
+        ],
+        "proficiencyBonus": 4
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "DEX",
+          "value": "20 (+5)",
+          "saveProficient": true
+        },
+        {
+          "label": "CON",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "INT",
+          "value": "20 (+5)",
+          "saveProficient": true
+        },
+        {
+          "label": "WIS",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "14 (+2)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Magic Resistance",
+          "kind": "trait",
+          "text": "Brandwing has Advantage on saving throws against spells and other magical effects."
+        },
+        {
+          "name": "The Opening / Write the Ending",
+          "kind": "trait",
+          "text": "Brandwing can mark only one creature at a time with either Calculated Angle or Closing Stroke. If Brandwing marks another creature, the previous mark ends. Which action Brandwing can use is determined by the target’s current Hit Points. Brandwing can use Calculated Angle only against a creature that has more than half its Hit Point maximum, and it can use Closing Stroke only against a creature that has half its Hit Point maximum or fewer."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Calculated Angle",
+          "kind": "action",
+          "economyCost": "bonus",
+          "targets": 1,
+          "damage": "",
+          "text": "Brandwing targets one creature it can see within 90 feet and marks it. Brandwing’s Ember Lance attacks against the marked target ignore Half Cover and Three-Quarters Cover, and Brandwing doesn’t have Disadvantage on those attack rolls.",
+          "range": "90 FT"
+        },
+        {
+          "name": "Closing Stroke",
+          "kind": "attack",
+          "roll": "",
+          "damage": "",
+          "damageType": "Fire",
+          "range": "90 ft.",
+          "targets": 1,
+          "riders": [
+            {
+              "name": "Closing Stroke",
+              "damage": "2d6",
+              "cadence": "once-per-turn",
+              "note": "marked below half maximum Hit Points",
+              "damageType": "Psychic"
+            }
+          ],
+          "text": "Brandwing targets one creature it can see within 90 feet and marks it. The first time Brandwing hits the marked target with Ember Lance, the target takes an extra 7 (2d6) Psychic damage, and the mark ends. After this extra damage is dealt, Brandwing can’t target that creature with Closing Stroke again until the encounter ends.",
+          "economyCost": "bonus"
+        },
+        {
+          "name": "Ember Lance",
+          "kind": "attack",
+          "economyCost": "action",
+          "roll": "1d20+@ATK",
+          "damage": "2d12 + @DEX",
+          "damageType": "Fire",
+          "routineSlots": 2,
+          "extraDamage": [
+            {
+              "damage": "1d6",
+              "damageType": "Psychic"
+            }
+          ],
+          "range": "range 120 ft., one target",
+          "targets": 1
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Cinder Skip",
+          "kind": "action",
+          "text": "When Brandwing is hit by an attack or targeted by a spell, the attack or spell resolves completely, then Brandwing teleports up to 15 feet to an unoccupied space it can see. The space it leaves and the space it enters briefly flare with infernal fire. Demon Knight of"
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A narrow Fiend with wing-like sheets of ember script. It writes on bark by touching it and leaves the letters burning after its hand is gone. "
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Brandwing",
+        "revealedName": "Brandwing"
+      },
+      "dmEdited": {
+        "at": "2026-09-13T06:04:36.926Z"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:gloam-harrow:v1",
+      "name": "Gloam Harrow",
+      "encounterId": "act3-e7-the-last-court",
+      "encounterLabel": "Act 3 E7 - The Last Court",
+      "stats": {
+        "kind": "fey",
+        "ac": 16,
+        "maxHp": 108,
+        "speed": "30 ft.",
+        "defenses": [
+          {
+            "name": "Fey Mind",
+            "ehpMultiplier": 1,
+            "note": "DECIDED 1.0, not unassessed. Advantage on saves against being charmed, and magic cannot put her to sleep. Condition defence, which the workbook publishes with a NULL contribution. No damage is reduced."
+          }
+        ],
+        "attacksPerTurn": 1,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "commander",
+        "skills": [
+          {
+            "label": "Insight",
+            "modifier": 7
+          },
+          {
+            "label": "Persuasion",
+            "modifier": 8
+          }
+        ],
+        "proficiencyBonus": 3
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "CON",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "INT",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "WIS",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "20 (+5)",
+          "saveProficient": true
+        }
+      ],
+      "traits": [
+        {
+          "name": "Fey Mind",
+          "kind": "trait",
+          "text": "Gloam Harrow has Advantage on saving throws against being Charmed, and is Immune to sleep effects."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Cruel Instruction",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack."
+        },
+        {
+          "name": "Winter Needle",
+          "kind": "attack",
+          "roll": "1d20+8",
+          "damage": "2d10 + 4",
+          "damageType": [
+            "Cold",
+            "Psychic"
+          ],
+          "range": "range 90 ft., one target",
+          "targets": 1
+        },
+        {
+          "name": "Winter’s Toll",
+          "kind": "action",
+          "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15-foot-radius area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Harrow’s allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to attack rolls and saving throws. The area ends early if Harrow is Incapacitated."
+        },
+        {
+          "name": "Winter’s Toll",
+          "kind": "spell",
+          "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15 FT cube area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Allies in the area gain a +3 bonus to attack rolls and saving throws while hostile creatures in the area have a −3 penalty to attack rolls and saving throws. Concentration",
+          "range": "60 FT, 15 FT cube."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Cold Counsel",
+          "kind": "action",
+          "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A courtly Fey in a mantle of dead-green leaves stitched through with pale winter light. She speaks of hardship as cultivation: the Wood has sheltered too much, spared too much, and should learn again what deserves to survive."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Gloam Harrow",
+        "revealedName": "Gloam Harrow"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:blackbough-reeve:v1",
+      "name": "Blackbough Reeve",
+      "encounterId": "act3-e7-the-last-court",
+      "encounterLabel": "Act 3 E7 - The Last Court",
+      "stats": {
+        "kind": "fey",
+        "ac": 16,
+        "maxHp": 118,
+        "speed": "35 ft.",
+        "defenses": [
+          {
+            "name": "Seasoned by Severity",
+            "ehpMultiplier": 1,
+            "note": "DECIDED 1.0, not unassessed. Advantage on STR/DEX saves and immunity to charmed and frightened. The workbook publishes Condition immunity with a NULL contribution, and a monster's own save quality never enters effective HP because the party's damage is a curve rather than a save. Nothing here reduces damage taken."
+          }
+        ],
+        "attacksPerTurn": 2,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "bruiser",
+        "skills": [
+          {
+            "label": "Athletics",
+            "modifier": 9
+          }
+        ],
+        "proficiencyBonus": 4
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "20 (+5)",
+          "saveProficient": true
+        },
+        {
+          "label": "DEX",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CON",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "INT",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "WIS",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "19 (+4)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Seasoned by Severity",
+          "kind": "trait",
+          "text": "The Reeve has Advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Deepen the Cut",
+          "kind": "action",
+          "economyCost": "bonus",
+          "targets": 1,
+          "damage": "2d6",
+          "damageType": "Slashing",
+          "text": "The Reeve chooses one creature affected by Spoiling Cut within 30 feet. The first time that creature damages a creature other than the Reeve before the start of the Reeve's next turn, it takes 7 (2d6) Slashing damage after the triggering damage is resolved."
+        },
+        {
+          "name": "Shearing Cut",
+          "kind": "attack",
+          "roll": "1d20+9",
+          "damage": "3d10 + 5",
+          "damageType": "Slashing",
+          "range": "reach 5 ft., one target",
+          "targets": 1,
+          "routineSlots": 2,
+          "economyCost": "action"
+        },
+        {
+          "name": "Spoiling Cut",
+          "kind": "attack",
+          "roll": "1d20+9",
+          "damage": "2d10 + 4",
+          "damageType": "Slashing",
+          "range": "reach 5 ft",
+          "save": "CON DC 17",
+          "text": "Constitution Saving Throw: DC 17, the target. Failure: Until the start of the Reeve's next turn, damage the target deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
+          "routineSlots": 2,
+          "economyCost": "action"
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Final Pruning",
+          "kind": "action",
+          "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally."
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A broad-shouldered Fey wrapped in split black bark and hooked thorn. Pale cuts run through the growth like old pruning scars. It carries itself like a keeper who has spent years deciding what the Wood is allowed to keep.",
+        "DM DESIGN READ. The Reeve does not lock movement or force targets into place. It either prunes through raw damage or makes ignoring it expensive. A martial can clear Spoiling Cut by committing an attack to the Reeve, then spend any remaining attacks elsewhere. No recharge ability and no special reaction are part of this block.",
+        "UNPRICED IN EHP. Spoiling Cut takes 5 off every damage instance the target aims at anyone except the Reeve. That is ally-side damage prevention, nearest to the workbook's Fixed prevention - 8/round (+0.141871), but it is conditional, single-target and cleared by attacking the Reeve. Left unpriced pending a calibration decision: v3.23 states the fight's 253 raw HP is the figure BEFORE trait, control, reaction, targeting and Winter's Toll conversion."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Blackbough Reeve",
+        "revealedName": "Blackbough Reeve"
+      }
+    },
+    {
+      "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
+      "name": "Demon Knight of Punishment",
+      "encounterId": "act3-e8-the-occupied-acre",
+      "encounterLabel": "Act 3 E8 - The Occupied Acre",
+      "stats": {
+        "kind": "fiend",
+        "ac": 16,
+        "maxHp": 130,
+        "speed": "30 ft.",
+        "defenses": [
+          {
+            "name": "Shattered Plate",
+            "ehpMultiplier": 1.028819,
+            "provenance": "interpolated",
+            "note": "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). The first time each round the Knight takes bludgeoning, piercing or slashing damage, reduce it by 3 — the SAME mechanic and the same interpolation as the Hollow Warden’s Barkhide. ⚠ NOT the calibrated \"Flat DR 3 per damaging hit [volatile]\" row (+0.377915): that one pays on EVERY hit, and this trait pays once a round. The classifier reaches for the per-hit row because the words match; the cadence is what separates them."
+          },
+          {
+            "name": "Oppressive Presence + Commanding Presence",
+            "ehpMultiplier": 1,
+            "note": "UNPRICED, and left at 1.0 deliberately. Forcing one instance of every multi-target Action onto the Knight is the workbook's Damage transfer / redirection, which it publishes with a NULL contribution - the one category it declines to price. It is also not this creature's own sustain: it moves damage from its allies ONTO the Knight, so a per-creature multiplier above 1.0 would be backwards. Needs a roster-level decision."
+          }
+        ],
+        "attacksPerTurn": 1,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "guardian",
+        "skills": [
+          {
+            "label": "Intimidation",
+            "modifier": 7
+          },
+          {
+            "label": "Perception",
+            "modifier": 6
+          }
+        ],
+        "proficiencyBonus": 4
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "18 (+4)"
+        },
+        {
+          "label": "DEX",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "CON",
+          "value": "19 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "INT",
+          "value": "14 (+2)"
+        },
+        {
+          "label": "WIS",
+          "value": "14 (+2)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "17 (+3)"
+        }
+      ],
+      "traits": [
+        {
+          "name": "Retaliatory Shock",
+          "kind": "trait",
+          "text": "When the Demon Knight of Punishment takes physical damage, each enemy within 10 feet of the Knight takes Piercing damage equal to the Knight's Constitution modifier + 2 (6). The triggering damage resolves normally."
+        },
+        {
+          "name": "Shattered Plate",
+          "kind": "trait",
+          "text": "The first time each round the Knight takes physical damage, reduce it by 3."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Reckless Sentence",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage."
+        },
+        {
+          "name": "Iron Grasp",
+          "kind": "attack",
+          "roll": "1d20+8",
+          "damage": "2d8 + 4",
+          "damageType": "Bludgeoning",
+          "range": "reach 5 ft., one Large or smaller creature",
+          "targets": 1,
+          "text": "and the target has the Grappled condition (escape DC 16). Until the grapple ends, the target also has the Restrained condition. The Knight can restrain only one creature this way at a time."
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Commanding Presence",
+          "kind": "action",
+          "text": "When a hostile creature the Knight can see within 30 feet takes an Action that can target the Demon Knight, that Action must target the Knight if the Knight is within the Action’s range and is a legal target. If the Action can affect multiple creatures, the Knight must be included among its targets"
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
+        ""
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Demon Knight of Punishment",
+        "revealedName": "Demon Knight of Punishment"
       }
     }
   ],
@@ -978,6 +1876,14 @@
     },
     {
       "id": "tbc-frostmarrow-spear",
+      "riders": [
+        {
+          "id": "frostmarrow-bite",
+          "label": "Frostmarrow",
+          "cadence": "perRound",
+          "condition": "On a hit: DC 13 Constitution save or its Speed drops by 10 ft until the end of its next turn."
+        }
+      ],
       "name": "Frostmarrow Spear",
       "type": "weapon",
       "category": "Melee Versatile",
@@ -994,6 +1900,21 @@
     },
     {
       "id": "tbc-rimecleaver-versatile-thrown-handaxe-equivalent-1-no-attunement",
+      "riders": [
+        {
+          "id": "rimecleaver-rimebite",
+          "label": "Rimebite",
+          "formula": "1d6",
+          "damageType": "Cold",
+          "cadence": "perRound"
+        },
+        {
+          "id": "rimecleaver-step",
+          "label": "Cleaving Step",
+          "cadence": "perRound",
+          "condition": "When a hit with this weapon drops a creature to 0 HP: move up to 10 ft without provoking."
+        }
+      ],
       "name": "Rimecleaver",
       "type": "weapon",
       "category": "Melee Two-Handed",
@@ -1010,6 +1931,14 @@
     },
     {
       "id": "tbc-splitfrost-blade",
+      "riders": [
+        {
+          "id": "splitfrost-split",
+          "label": "Splitfrost",
+          "cadence": "perRound",
+          "condition": "On a hit: that creature's first attack roll against you before the start of your next turn has disadvantage."
+        }
+      ],
       "name": "Splitfrost Blade",
       "type": "weapon",
       "category": "Finesse",
@@ -1026,6 +1955,15 @@
     },
     {
       "id": "tbc-coldsnap-bow",
+      "riders": [
+        {
+          "id": "coldsnap-bite",
+          "label": "Coldsnap",
+          "formula": "1d4",
+          "damageType": "Cold",
+          "cadence": "perRound"
+        }
+      ],
       "name": "Coldsnap Bow",
       "type": "weapon",
       "category": "Ranged",
@@ -1190,6 +2128,15 @@
     },
     {
       "id": "tbc-lake-ice-blade",
+      "riders": [
+        {
+          "id": "lake-ice-bite",
+          "label": "Lake-Ice",
+          "formula": "1d6",
+          "damageType": "Cold",
+          "cadence": "perRound"
+        }
+      ],
       "name": "Lake-Ice Flail",
       "type": "weapon",
       "category": "Melee One-Handed",
@@ -1207,6 +2154,21 @@
     },
     {
       "id": "tbc-shattered-vigil",
+      "riders": [
+        {
+          "id": "shattered-vigil-bite",
+          "label": "Shattered Vigil",
+          "formula": "1d8",
+          "damageType": "Cold",
+          "cadence": "perRound"
+        },
+        {
+          "id": "shattered-vigil-topple",
+          "label": "Vigil Broken",
+          "cadence": "shortRest",
+          "condition": "On a hit: DC 14 Strength save or knocked prone. Once per short or long rest."
+        }
+      ],
       "name": "Shattered Vigil",
       "type": "weapon",
       "category": "Melee Two-Handed",
@@ -1227,6 +2189,16 @@
     },
     {
       "id": "tbc-hollow-fang",
+      "riders": [
+        {
+          "id": "hollow-fang-bite",
+          "label": "Hollow Fang",
+          "formula": "1d6",
+          "damageType": "Cold",
+          "cadence": "perRound",
+          "condition": "If you are at or below half your HP maximum when this lands, you regain 1d4 HP. Not against a Construct or Undead."
+        }
+      ],
       "name": "Hollow Fang",
       "type": "weapon",
       "category": "Finesse",
@@ -1244,6 +2216,16 @@
     },
     {
       "id": "tbc-starvation-brand",
+      "riders": [
+        {
+          "id": "starvation-brand-bite",
+          "label": "Starvation",
+          "formula": "1d6",
+          "damageType": "Cold",
+          "cadence": "perRound",
+          "condition": "Until the start of your next turn, that creature regains only half as many HP from any healing, rounding down."
+        }
+      ],
       "name": "Starvation Brand",
       "type": "weapon",
       "category": "Ranged",
@@ -1261,6 +2243,16 @@
     },
     {
       "id": "tbc-voidtempered-blade-versatile-longsword",
+      "riders": [
+        {
+          "id": "voidtempered-bite",
+          "label": "Voidtempered",
+          "formula": "1d8",
+          "damageType": "Cold",
+          "cadence": "perRound",
+          "condition": "Only on a turn you also cast a spell."
+        }
+      ],
       "name": "Voidtempered Blade",
       "isSpellFocus": true,
       "type": "magic",
@@ -1390,7 +2382,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Movement + Stability"
+        "mechanicalTag": "Movement + Stability",
+        "tier": "T1"
       },
       "isLocked": true
     },
@@ -1415,7 +2408,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Defense + Utility"
+        "mechanicalTag": "Defense + Utility",
+        "tier": "T1"
       },
       "isLocked": true
     },
@@ -1436,7 +2430,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Movement + Utility"
+        "mechanicalTag": "Movement + Utility",
+        "tier": "T1"
       },
       "isLocked": true
     },
@@ -1458,7 +2453,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Defense + Stability"
+        "mechanicalTag": "Defense + Stability",
+        "tier": "T1"
       },
       "isLocked": true
     },
@@ -1479,7 +2475,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Cleanse + Utility"
+        "mechanicalTag": "Cleanse + Utility",
+        "tier": "T1"
       },
       "isLocked": true
     },
@@ -1500,7 +2497,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Offensive + Movement"
+        "mechanicalTag": "Offensive + Movement",
+        "tier": "T1"
       },
       "isLocked": true
     },
@@ -1521,7 +2519,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Movement + Stability"
+        "mechanicalTag": "Movement + Stability",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1547,7 +2546,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Cleanse + Utility"
+        "mechanicalTag": "Cleanse + Utility",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1569,7 +2569,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Movement + Utility"
+        "mechanicalTag": "Movement + Utility",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1590,7 +2591,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Offensive + Cleanse"
+        "mechanicalTag": "Offensive + Cleanse",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1613,7 +2615,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Defense + Movement"
+        "mechanicalTag": "Defense + Movement",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1635,7 +2638,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Defense + Cleanse"
+        "mechanicalTag": "Defense + Cleanse",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1657,7 +2661,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Movement + Tactical"
+        "mechanicalTag": "Movement + Tactical",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1678,7 +2683,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Offensive + Tactical"
+        "mechanicalTag": "Offensive + Tactical",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1699,7 +2705,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Utility + Continuity"
+        "mechanicalTag": "Utility + Continuity",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -1720,7 +2727,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Stability + Continuity"
+        "mechanicalTag": "Stability + Continuity",
+        "tier": "T2"
       },
       "isLocked": true
     },
@@ -3297,7 +4305,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Movement"
+        "mechanicalTag": "Movement",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3321,7 +4330,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Utility"
+        "mechanicalTag": "Utility",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3345,7 +4355,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Defense"
+        "mechanicalTag": "Defense",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3369,7 +4380,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Stability"
+        "mechanicalTag": "Stability",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3393,7 +4405,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Cleanse"
+        "mechanicalTag": "Cleanse",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3417,7 +4430,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Offensive"
+        "mechanicalTag": "Offensive",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3441,7 +4455,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Tactical"
+        "mechanicalTag": "Tactical",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3465,7 +4480,8 @@
       "convergence": {
         "role": "output",
         "enabled": true,
-        "mechanicalTag": "Continuity"
+        "mechanicalTag": "Continuity",
+        "tier": "T4"
       },
       "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
       "isLocked": true
@@ -3645,6 +4661,21 @@
         }
       ],
       "category": "Shield"
+    },
+    {
+      "id": "item-mtw83xt1",
+      "name": "Mind Sharpener",
+      "type": "gear",
+      "description": "",
+      "isUsable": false,
+      "mechanicsText": "The item has 4 charges. When you fail a Constitution saving throw to maintain Concentration, you can take a Reaction and expend 1 of the item's charges to succeed instead. The item regains 1d4 expended charges daily at dawn.",
+      "slot": "ring",
+      "charges": {
+        "max": 4,
+        "reset": "manual",
+        "note": "1d4 at dawn"
+      },
+      "activation": "reaction"
     }
   ],
   "encounters": [
@@ -4207,5 +5238,6 @@
       "owner": "campaign",
       "order": 10
     }
-  ]
+  ],
+  "note": "The 2026-09-13 publish with Brandwing's Ember Lance rewritten as one hit with a second typed damage line, and rider types moved out of the dice box. Folded after the unmodified publish."
 }

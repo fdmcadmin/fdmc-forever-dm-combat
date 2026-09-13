@@ -22,8 +22,9 @@
 
 import { damageExpressionAverage } from "./damageExpression";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
+import { damagePacket, type DamageLine } from "../monsters/damageLines";
 
-type ActionLike = { save?: string; damage?: string };
+type ActionLike = { save?: string; damage?: string; extraDamage?: readonly DamageLine[] };
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 export type SaveAbility = (typeof ABILITIES)[number];
@@ -62,7 +63,8 @@ export function incomingSaveExposure(
   for (const { template, quantity } of entries) {
     const bodies = Math.max(1, Number(quantity) || 1);
     for (const a of actionsOf(template)) {
-      const damage = damageExpressionAverage(a.damage) * bodies;
+      // The whole hit — a second damage line lands through the same save as the first.
+      const damage = damageExpressionAverage(damagePacket(a)) * bodies;
       if (!(damage > 0)) continue;
       total += damage;
       const ability = saveAbilityOf(a.save);
