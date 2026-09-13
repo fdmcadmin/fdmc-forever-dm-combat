@@ -212,6 +212,11 @@ jobs:
       - name: check the centre line's accuracy
         run: npm run check:centeraccuracy
 
+      # The v5 pricer's reader layer: 108 broad readers imported against the workbook's own expected
+      # counts, Act 3 clauses composed from them, and a lasting state with no duration is NEEDS_INPUT.
+      - name: check the v5 broad reader layer
+        run: npm run check:broadreaders
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

@@ -26,6 +26,8 @@ import { traceCreature } from "./actionTrace";
 import { creatureProfile, type RosterAssumption } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { auditCoverage, mechanicsOf, type CoverageReport } from "./coverageGate";
+import { composeReaders, type ReaderReport } from "./broadReaderGate";
+import { BROAD_READER_EXPECTED, READER_PARSE_ORDER_TEXT } from "./broadReaders.generated";
 import type { PartyEquipmentMode } from "./partyCurveV2";
 
 const box: React.CSSProperties = {
@@ -142,6 +144,18 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
         traits: template.traits, actions: template.actions, reactions: template.reactions,
       } as Parameters<typeof mechanicsOf>[0]));
     } catch { return null; }
+  }, [template, unbuiltTemplate]);
+
+  /**
+   * THE v5 READER COMPOSITION — how each clause is read, not what it is worth.
+   *
+   * Christopher chose *"Reader layer first"* for the v5 pricer: every authored clause shown as its broad
+   * readers, with a duration and endpoint for anything that lasts, and NEEDS_INPUT where the workbook's
+   * Runtime Contract says a composition is incomplete. It prices nothing. See `broadReaderGate.ts`.
+   */
+  const readerReport = useMemo<ReaderReport | null>(() => {
+    if (!template || unbuiltTemplate) return null;
+    try { return composeReaders(template); } catch { return null; }
   }, [template, unbuiltTemplate]);
 
   const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
@@ -264,6 +278,46 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
                     </div>
                   )}
                 </div>
+              )}
+
+              {readerReport && (
+                <details style={{
+                  marginTop: 6, padding: "5px 8px", borderRadius: 4, fontSize: 10, lineHeight: 1.5,
+                  background: readerReport.ready ? "#11161f" : "#211712",
+                  border: `1px solid ${readerReport.ready ? "#2b3a52" : "#6a3a26"}`,
+                }}>
+                  <summary title={`Parse order: ${READER_PARSE_ORDER_TEXT}`} style={{ cursor: "pointer", color: readerReport.ready ? "#8fb8ff" : "#ff8a5c" }}>
+                    <strong style={{ letterSpacing: 0.4 }}>
+                      {readerReport.ready ? "READER COMPOSITION: READY" : `NEEDS_INPUT — ${readerReport.needsInput.length}`}
+                    </strong>
+                    <span style={{ color: "#888" }}>
+                      {" — v5 broad readers: "}{readerReport.readersUsed} of {BROAD_READER_EXPECTED.readers} used across {readerReport.mechanics.length} mechanic{readerReport.mechanics.length === 1 ? "" : "s"}
+                    </span>
+                  </summary>
+                  {readerReport.mechanics.map((m, i) => (
+                    <div key={i} style={{ marginTop: 4, paddingLeft: 8, borderLeft: `2px solid ${m.needsInput.length ? "#6a3a26" : "#2b3a52"}` }}>
+                      <span style={{ color: "#7a7a90" }}>{m.channel} · <strong style={{ color: "#aab" }}>{m.name}</strong>: </span>
+                      {m.readers.map((r, j) => (
+                        <span key={r.id} title={`${r.family} — ${r.evidence}${r.variables.length ? ` · priced from ${r.variables.join(", ")}` : ""}`} style={{ color: "#9fb0d0" }}>
+                          {j > 0 ? " + " : ""}{r.id} {r.name}
+                        </span>
+                      ))}
+                      {m.finals.length > 0 && (
+                        <span style={{ color: "#7fcf9f" }} title={m.finals.map(f => f.evidence).join("; ")}>
+                          {" → "}{m.finals.map(f => `${f.id} ${f.pattern}`).join(", ")}
+                        </span>
+                      )}
+                      {m.example && (
+                        <span style={{ color: "#6f6f82" }}>
+                          {` · closest workbook example ${m.example.id} ${m.example.pattern} (${m.example.shared} of ${m.example.of} readers)`}
+                        </span>
+                      )}
+                      {m.needsInput.map((n, k) => (
+                        <div key={k} style={{ color: "#ff8a5c" }}>NEEDS_INPUT: {n}</div>
+                      ))}
+                    </div>
+                  ))}
+                </details>
               )}
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8, flexWrap: "wrap", fontSize: 11, color: "#99a" }}>
