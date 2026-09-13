@@ -12,8 +12,10 @@
  *    priced only after the encounter roster is assembled. They never become a flat multiplier on
  *    the source body."  ·  "A creature-level 0 or x1.000 is not a priced answer."
  *
- * ⚠ AUTHORED, NEVER READ FROM PROSE. "+3 bonus to attack rolls" in the text is the author's sentence;
- * this field is the fact the checker prices. See `encounter-band/rosterInteractions.ts` for the pass.
+ * ⚠ THE FIELD IS THE OVERRIDE; THE RULES TEXT IS READ FIRST WHEN IT IS EMPTY. "+3 bonus to attack
+ * rolls" is read by `encounter-band/mechanicText.ts`, so a creature prices without anyone ticking a
+ * box — Christopher: *"if i have to go in and check 10 different boxes to test a encounter then how
+ * does this help others when they build their own creatures."* See `rosterInteractions.ts` for the pass.
  */
 export type RosterInteraction =
   /**

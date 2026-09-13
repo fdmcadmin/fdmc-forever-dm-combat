@@ -115,8 +115,8 @@ export type ParsedFeature = {
   replacesRoutineSlot?: boolean;
   /**
    * This response MAKES ONE ATTACK with the named action of the same creature — a reaction or bonus
-   * action whose damage is another action's. Authored, never read out of "it makes one X attack".
-   * See `MonsterReaderAction.attackWith`.
+   * action whose damage is another action's. The authored field, or "makes one X attack" read against
+   * the creature's own action names. See `MonsterReaderAction.attackWith` and `mechanicText.ts`.
    */
   attackWith?: string;
   /** `attack_advantage_grant` on this creature's own attacks for the turn. See `MonsterReaderAction`. */

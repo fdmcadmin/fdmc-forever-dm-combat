@@ -32,6 +32,7 @@ import { parseSaveAbility } from "./partyDefenceCurve";
 import type { MonsterRider } from "../monsters/monsterRider";
 import { damagePacket, type DamageLine } from "../monsters/damageLines";
 import type { RosterInteraction } from "../monsters/rosterInteraction";
+import { readRosterInteraction, readAttackWith, readGrantsAdvantage, readMarkRiders } from "./mechanicText";
 
 export type ActivationType = NonNullable<ParsedFeature["activationType"]>;
 
@@ -346,6 +347,11 @@ function parseSection(
   assumptions: FeatureAssumption[],
   /** The creature's own 8 + X + proficiency, for a save that names an ability and no number. */
   derivedSaveDc: number | undefined,
+  /**
+   * The creature's whole action list, for reads that name another of its actions — "makes one
+   * Shearing Cut attack", "one ally inside Winter's Toll". See `mechanicText.ts`.
+   */
+  context: { actionNames: readonly string[]; zoneNames: readonly string[] } = { actionNames: [], zoneNames: [] },
 ): ParsedFeature[] {
   const out: ParsedFeature[] = [];
   for (const a of entries ?? []) {
@@ -443,14 +449,27 @@ function parseSection(
       replacesRoutineSlot: a.replacesRoutineSlot ?? replacesRoutineSlot(name),
       // Authored only. Unset keeps the bite-claw-claw convention — see `routineSlots`.
       routineSlots: a.routineSlots,
-      // Authored only. A rider is never inferred from prose — see `monsterRider.ts`.
-      riders: a.riders?.filter(r => r?.name?.trim() && r?.damage?.trim()),
-      // Authored pricing routes for an action with no damage of its own. Never read from prose.
-      attackWith: a.attackWith?.trim() || undefined,
-      grantsAdvantage: a.grantsAdvantage,
+      /**
+       * ⚠ FIELD FIRST, THEN THE RULES TEXT — the same rule as the save and target reads above.
+       *
+       * Christopher: *"if i have to go in and check 10 different boxes to test a encounter then how
+       * does this help others when they build their own creatures."* These four were fields only,
+       * so a creature priced only if its author had found the boxes. Each now falls back to reading
+       * the sentence that states it; an authored box still wins. See `mechanicText.ts`.
+       *
+       * A rider is read only for an action with NO damage of its own — a mark whose whole payload is
+       * the extra dice. On an attack with dice the same sentence is usually conditional.
+       */
+      riders: a.riders
+        ? a.riders.filter(r => r?.name?.trim() && r?.damage?.trim())
+        : (!a.damage?.trim() ? readMarkRiders(a.text, name)?.value : undefined),
+      attackWith: a.attackWith?.trim()
+        || (!a.damage?.trim() ? readAttackWith(a.text, context.actionNames, name)?.value : undefined),
+      grantsAdvantage: a.grantsAdvantage
+        ?? (activationType !== "trait" ? readGrantsAdvantage(a.text)?.value : undefined),
       triggerChance: a.triggerChance,
-      // Authored only; priced after the roster is assembled, never on this creature.
-      rosterInteraction: a.rosterInteraction,
+      // Priced after the roster is assembled, never on this creature.
+      rosterInteraction: a.rosterInteraction ?? readRosterInteraction(a.text, context.zoneNames)?.value,
       spellSlotLevel: a.spellSlotLevel,
       spellName: detectSpell(name, a.text),
       gated: a.gated,
@@ -534,12 +553,25 @@ export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature 
     reactions?: RawAction[]; legendaryActions?: RawAction[]; lairActions?: RawAction[];
   };
 
+  /**
+   * The creature's own action names, and which of them are zones — authored or read — so a sentence
+   * naming one ("makes one Shearing Cut attack", "one ally inside Winter's Toll") can be matched to it.
+   */
+  const everyEntry = [template.traits, template.actions, t.reactions, t.legendaryActions, t.lairActions]
+    .flatMap(list => (list ?? []) as RawAction[]).filter(Boolean);
+  const context = {
+    actionNames: everyEntry.map(a => a.name ?? "").filter(Boolean),
+    zoneNames: everyEntry
+      .filter(a => (a.rosterInteraction ?? readRosterInteraction(a.text)?.value)?.kind === "roll_modifier_zone")
+      .map(a => a.name as string),
+  };
+
   const features = [
-    ...parseSection(template.traits as RawAction[] | undefined, "traits", name, assumptions, derivedSaveDc),
-    ...parseSection(template.actions as RawAction[] | undefined, "actions", name, assumptions, derivedSaveDc),
-    ...parseSection(t.reactions, "reactions", name, assumptions, derivedSaveDc),
-    ...parseSection(t.legendaryActions, "legendary", name, assumptions, derivedSaveDc),
-    ...parseSection(t.lairActions, "lair", name, assumptions, derivedSaveDc),
+    ...parseSection(template.traits as RawAction[] | undefined, "traits", name, assumptions, derivedSaveDc, context),
+    ...parseSection(template.actions as RawAction[] | undefined, "actions", name, assumptions, derivedSaveDc, context),
+    ...parseSection(t.reactions, "reactions", name, assumptions, derivedSaveDc, context),
+    ...parseSection(t.legendaryActions, "legendary", name, assumptions, derivedSaveDc, context),
+    ...parseSection(t.lairActions, "lair", name, assumptions, derivedSaveDc, context),
   ];
 
   /**

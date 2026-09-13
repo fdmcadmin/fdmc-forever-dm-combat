@@ -56,7 +56,8 @@ const p = 1 - Math.min(0.95, Math.max(0.05, (21 + 9 - target.ac) / 20));
 const expected = 7 * (1 - Math.pow(p, lances.length));
 ok("worth 2d6 × P(at least one Ember Lance hits)", !!stroke && Math.abs(stroke.expectedDamage - expected) < 0.01,
   `${stroke?.expectedDamage.toFixed(2)} vs ${expected.toFixed(2)} over ${lances.length} lances`);
-ok("  (mutation) without its rider it is not scheduled", !rowOf(withAction(brandwing, "Closing Stroke", a => ({ ...a, riders: undefined })), "Closing Stroke"));
+// Box AND sentence: since 0.8.52.0 the rules text is read when the box is empty (`mechanicText.ts`).
+ok("  (mutation) without its rider or its sentence it is not scheduled", !rowOf(withAction(brandwing, "Closing Stroke", a => ({ ...a, riders: undefined, text: "" })), "Closing Stroke"));
 ok("its printed 2d6 no longer asks for a damage field",
   !traceCreature(parseCreature(brandwing), target, 4).assumptions.some(a => a.feature === "Closing Stroke" && /no damage field/.test(a.detail)));
 
@@ -67,7 +68,7 @@ const cut = roundTwo(reeve).scheduled.find(s => s.feature === "Shearing Cut");
 ok("Final Pruning spends the Reaction", pruning?.channel === "reaction", pruning?.expectation);
 ok("worth exactly one Shearing Cut", !!pruning && !!cut && Math.abs(pruning.expectedDamage - cut.expectedDamage) < 1e-9,
   `${pruning?.expectedDamage.toFixed(2)} vs ${cut?.expectedDamage.toFixed(2)}`);
-ok("  (mutation) without attackWith it is not scheduled", !rowOf(withAction(reeve, "Final Pruning", a => ({ ...a, attackWith: undefined })), "Final Pruning"));
+ok("  (mutation) without attackWith or its sentence it is not scheduled", !rowOf(withAction(reeve, "Final Pruning", a => ({ ...a, attackWith: undefined, text: "" })), "Final Pruning"));
 const halved = rowOf(withAction(reeve, "Final Pruning", a => ({ ...a, triggerChance: 0.5 })), "Final Pruning");
 ok("a 50% trigger halves it", !!halved && !!pruning && Math.abs(halved.expectedDamage - pruning.expectedDamage / 2) < 1e-9);
 const typo = traceCreature(parseCreature(withAction(reeve, "Final Pruning", a => ({ ...a, attackWith: "Shearing Kut" }))), target, 4);
@@ -83,7 +84,7 @@ const gain = grasp ? grasp.expectedDamage * (withAdvantage(gp) / gp - 1) : NaN;
 ok("Reckless Sentence spends the Bonus Action", sentence?.channel === "bonus_action", sentence?.expectation);
 ok("worth Iron Grasp × (p_adv / p − 1)", !!sentence && Math.abs(sentence.expectedDamage - gain) < 0.01,
   `${sentence?.expectedDamage.toFixed(2)} vs ${gain.toFixed(2)}`);
-ok("  (mutation) without the grant it is not scheduled", !rowOf(withAction(knight, "Reckless Sentence", a => ({ ...a, grantsAdvantage: undefined })), "Reckless Sentence"));
+ok("  (mutation) without the grant or its sentence it is not scheduled", !rowOf(withAction(knight, "Reckless Sentence", a => ({ ...a, grantsAdvantage: undefined, text: "" })), "Reckless Sentence"));
 
 console.log("\n4. the editor can write all three, and the parser carries them");
 const editor = codeOf("src/core/monsters/MonsterTemplateEditor.tsx");

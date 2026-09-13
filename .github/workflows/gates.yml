@@ -197,6 +197,11 @@ jobs:
       - name: check roster interactions
         run: npm run check:rosterinteractions
 
+      # A creature prices from its stat block: strip every ticked pricing box from the Act 3 creatures
+      # and the price must not move. The boxes are overrides, not homework.
+      - name: check mechanics read from the rules text
+        run: npm run check:mechanictext
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

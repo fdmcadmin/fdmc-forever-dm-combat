@@ -180,6 +180,9 @@ export type MonsterReaderAction = {
    * with no damage field of its own it priced at exactly 0 and was never scheduled. The damage is
    * already authored — on Shearing Cut — so the field names it rather than copying its dice, and a
    * later change to Shearing Cut reaches the reaction too. Workbook primitive: `attack_roll_event`.
+   *
+   * An OVERRIDE: when empty, "makes one Shearing Cut attack" is read from the text against this
+   * creature's own action names. See `encounter-band/mechanicText.ts`.
    */
   attackWith?: string;
   /**

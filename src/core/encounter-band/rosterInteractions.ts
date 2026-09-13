@@ -218,13 +218,30 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
         }
       }
 
-      // Keeping the zone up costs the source its Action: all of round 1, then once per `duration`.
+      /**
+       * What the source gives up of its own Action to do this.
+       *
+       *   a zone cast as an Action          all of round 1, then once per `duration` to keep it up
+       *   an extra attack given as an Action (no zone)   every round it is used — the Greenwood
+       *                                     Reaver's Cruel Command spends the Reaver's whole Action to
+       *                                     hand an ally one attack, so the ally's swing is only worth
+       *                                     what it beats the Reaver's own routine by
+       *
+       * A Bonus Action costs no Action — the Harrow's Cruel Instruction is that case.
+       */
       const sourceRounds = traceCreature(parsed, target, 4).rounds;
+      const ownAction = (i: number) => ((sourceRounds[i] ?? sourceRounds[sourceRounds.length - 1])?.scheduled ?? [])
+        .filter(s => s.channel === "action").reduce((sum, s) => sum + s.expectedDamage, 0);
       const actionGivenUp = ROUNDS.map(i => {
-        if (!zoneF || zoneF.activationType !== "action") return 0;
-        const own = (sourceRounds[i] ?? sourceRounds[sourceRounds.length - 1])?.scheduled ?? [];
-        const actionDamage = own.filter(s => s.channel === "action").reduce((sum, s) => sum + s.expectedDamage, 0);
-        return actionDamage * (i === 0 ? 1 : 1 / duration);
+        if (zoneF && zoneF.activationType === "action") return ownAction(i) * (i === 0 ? 1 : 1 / duration);
+        /**
+         * ⚠ A BLOCK THAT PRINTS "Bonus Action." COSTS NO ACTION, whatever channel its row landed in.
+         * The Greenwood Reaver's Cruel Command opens with exactly that sentence and is authored as a
+         * plain action, so the channel alone would charge the Reaver a whole routine for it.
+         */
+        const printedBonus = /^\s*bonus action\b/i.test(extraF?.text ?? "");
+        if (!zoneF && extraF && extraF.activationType === "action" && !printedBonus) return ownAction(i);
+        return 0;
       });
 
       const burden = ROUNDS.map(i => Math.max(0, allyGain[i] + (extraAttack?.[i] ?? 0) - actionGivenUp[i]));

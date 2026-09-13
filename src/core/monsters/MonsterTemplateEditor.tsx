@@ -45,6 +45,7 @@ import {
 } from "./creator/monsterCreatorModel";
 import type { MonsterRider } from "./monsterRider";
 import { TRAIT_RULES, traitRule, resolveTraitRule, EXPECTED_MONSTER_AC, pricingModelOf, PRICING_MODEL_LABEL, PRICING_MODEL_WHY } from "../encounter-band/compactImport";
+import { readRosterInteraction, readAttackWith, readGrantsAdvantage, readMarkRiders } from "../encounter-band/mechanicText";
 import { classifyTraits, classifyTrait } from "../encounter-band/traitClassifier";
 import { DAMAGE_TYPES } from "../constants/damageTypes";
 import { describeStatBlockAction } from "../../modules/dnd-5e/statBlockGrammar";
@@ -1083,7 +1084,38 @@ export function MonsterTemplateEditor({ template, chassisOptions = [], bondOptio
                 })} />
             </div>
           );
+          /**
+           * ⚠ WHAT THE CHECKER ALREADY READ FROM THE RULES TEXT — so the boxes below are overrides,
+           * not homework. Christopher: *"if i have to go in and check 10 different boxes to test a
+           * encounter then how does this help others when they build their own creatures."* The same
+           * readers `parseCreature` uses, with the phrase each one matched.
+           */
+          const everyRow = [...draft.actions, ...draft.reactions, ...draft.traits];
+          const textZones = everyRow.filter(x => readRosterInteraction(x.text)?.value.kind === "roll_modifier_zone").map(x => x.name);
+          const reads = [
+            !a.attackWith ? readAttackWith(a.text, everyRow.map(x => x.name), a.name) : undefined,
+            !a.grantsAdvantage && list !== "traits" ? readGrantsAdvantage(a.text) : undefined,
+            !a.rosterInteraction ? readRosterInteraction(a.text, textZones) : undefined,
+            !a.riders?.length ? readMarkRiders(a.text, a.name) : undefined,
+          ].filter(Boolean) as { value: unknown; evidence: string }[];
+          const describeRead = (r: { value: unknown }) => {
+            const v = r.value as string | { kind?: string } | { damage?: string; damageType?: string }[];
+            if (typeof v === "string") return v === "own-attacks" ? "Advantage on its own attacks" : `makes one ${v} attack`;
+            if (Array.isArray(v)) return `once-per-turn rider ${v[0]?.damage} ${v[0]?.damageType ?? ""}`.trim();
+            return ({ roll_modifier_zone: "a zone that modifies rolls", ally_extra_attack: "an ally's extra attack",
+              forced_target_order: "forces the party to target it", target_substitution: "moves a targeted ally" } as Record<string, string>)[v.kind ?? ""] ?? String(v.kind);
+          };
           return (<>
+            {reads.length > 0 && (
+              <div style={{ fontSize: 10, color: "#7fcf9f", marginTop: 4, paddingLeft: 10 }}>
+                <span style={{ color: "#667" }}>priced from the text: </span>
+                {reads.map((r, ri2) => (
+                  <span key={ri2} title={`Matched: "${r.evidence}". Set a box below only to override it.`}>
+                    {ri2 > 0 ? " · " : ""}{describeRead(r)}
+                  </span>
+                ))}
+              </div>
+            )}
             <div style={{ display: "flex", gap: 6, alignItems: "flex-end", marginTop: 4, paddingLeft: 10, borderLeft: "2px solid #2a5a4a" }}>
               <div style={{ flex: 2, minWidth: 130 }}>
                 <span style={labelStyle}>Makes one attack with</span>

@@ -79,9 +79,14 @@ const tollRow = f7.roster.find(g => g.id === "broken-chain:act3:gloam-harrow:v1:
 ok("the Harrow's zone is a roster row that ends with the Harrow",
   !!tollRow && tollRow.bodiless === true && tollRow.endsWithGroupId === "broken-chain:act3:gloam-harrow:v1" && Number(tollRow.dpr.round2) > 0,
   tollRow ? `${tollRow.name}: R1 ${Number(tollRow.dpr.round1).toFixed(1)}, R2+ ${Number(tollRow.dpr.round2).toFixed(1)}` : "missing");
+/**
+ * The mutation removes the interaction in BOTH places it can come from — the box and the sentence.
+ * Since 0.8.52.0 the rules text is read when the box is empty (`mechanicText.ts`), so stripping the
+ * box alone leaves the price exactly where it was; that is `check:mechanictext`'s strip test.
+ */
 const stripped = (t: MainMonsterTemplate) => ({ ...t,
-  actions: (t.actions ?? []).map(a => ({ ...a, rosterInteraction: undefined })),
-  reactions: (t.reactions ?? []).map(a => ({ ...a, rosterInteraction: undefined })) }) as MainMonsterTemplate;
+  actions: (t.actions ?? []).map(a => ({ ...a, rosterInteraction: undefined, text: a.rosterInteraction ? "" : a.text })),
+  reactions: (t.reactions ?? []).map(a => ({ ...a, rosterInteraction: undefined, text: a.rosterInteraction ? "" : a.text })) }) as MainMonsterTemplate;
 ok("  (mutation) without the authored interaction there is no row",
   !build(["Blackbough Reeve", "Gloam Harrow", "Brandwing"], stripped).roster.some(g => String(g.id).endsWith(":roster")));
 ok("the unresolved −3 defence side is named, not dropped", f7.assumptions.some(a => /defence events the checker does not resolve yet/.test(a.detail)));
