@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
 import { rosterInteractions, type InteractionEntry } from "../src/core/encounter-band/rosterInteractions";
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
-import { simulateEncounter, resolvePartyProfile } from "../src/core/encounter-band/checkerV2";
+import { simulateEncounter, resolvePartyProfile, prepareRoster, damageIntoGroup } from "../src/core/encounter-band/checkerV2";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
 import type { MainMonsterTemplate } from "../src/core/monsters/runtime/mainMonsterRuntime";
 
@@ -90,15 +90,36 @@ ok("Cold Counsel is named as a target event", f7.assumptions.some(a => /^Cold Co
 const acre = ["Demonic Reaver", "Breaker", "Demon Knight of Punishment"];
 const f8 = build(acre);
 const f8Plain = build(acre, stripped);
-ok("Commanding Presence puts the Knight first in the kill order", f8.roster[0]?.name === "Demon Knight of Punishment", f8.roster.map(g => g.name).join(" → "));
-ok("  (mutation) without it the authored order stands", f8Plain.roster[0]?.name === "Demonic Reaver", f8Plain.roster.map(g => g.name).join(" → "));
+const knightRow = f8.roster.find(g => g.name === "Demon Knight of Punishment") as { redirectsPartyActionsPerRound?: number } | undefined;
+ok("Commanding Presence, as a Reaction, keeps the authored kill order", f8.roster[0]?.name === "Demonic Reaver", f8.roster.map(g => g.name).join(" → "));
+ok("...and redirects one party Action a round onto the Knight", knightRow?.redirectsPartyActionsPerRound === 1);
+ok("  (mutation) without it nothing is redirected", !(f8Plain.roster.find(g => g.name === "Demon Knight of Punishment") as { redirectsPartyActionsPerRound?: number } | undefined)?.redirectsPartyActionsPerRound);
+// The same words written as a passive trait send EVERY Action at the Knight: it leads the kill order.
+const asTrait = (t: MainMonsterTemplate) => t.name !== "Demon Knight of Punishment" ? t : ({ ...t,
+  reactions: (t.reactions ?? []).filter(a => a.name !== "Commanding Presence"),
+  traits: [...(t.traits ?? []), ...(t.reactions ?? []).filter(a => a.name === "Commanding Presence")] }) as MainMonsterTemplate;
+const f8Trait = build(acre, asTrait);
+ok("a passive forced target leads the kill order instead", f8Trait.roster[0]?.name === "Demon Knight of Punishment", f8Trait.roster.map(g => g.name).join(" → "));
 const party = resolvePartyProfile({ level: 8, size: 4, equipmentMode: "brokenChain" });
 const damageOf = (roster: typeof f8.roster) => {
   const res = simulateEncounter({ party: { size: 4, sustain: party.sustain, dpr: party.dpr }, roster }) as unknown as { rounds: { cumulativeMonsterDamage: number }[] };
   return res.rounds[res.rounds.length - 1]?.cumulativeMonsterDamage ?? 0;
 };
-ok("with the Knight soaking first, its allies live longer and the fight deals more", damageOf(f8.roster) > damageOf(f8Plain.roster),
-  `${damageOf(f8.roster).toFixed(1)} vs ${damageOf(f8Plain.roster).toFixed(1)}`);
+const [plainDmg, reactionDmg, traitDmg] = [damageOf(f8Plain.roster), damageOf(f8.roster), damageOf(f8Trait.roster)];
+ok("once a round sits between nothing and every Action", plainDmg < reactionDmg && reactionDmg < traitDmg,
+  `none ${plainDmg.toFixed(1)} < reaction ${reactionDmg.toFixed(1)} < passive ${traitDmg.toFixed(1)}`);
+
+// The share arithmetic, on a roster small enough to check by hand: A (100) then K (100), K redirects
+// 1 Action of a 4-PC party. After 80 damage K has absorbed 20 and A 60; after 200 both are dead.
+{
+  const row = (id: string, redirect?: number) => ({ id, name: id, quantity: 1, baseHp: 100, flatHpPerBody: true, dpr: { round1: 1 }, ...(redirect ? { redirectsPartyActionsPerRound: redirect } : {}) });
+  const [a, k] = prepareRoster([row("A"), row("K", 1)], 4);
+  ok("after 80: the forced target has 20, the one ahead of it 60", near(damageIntoGroup(k, 80), 20) && near(damageIntoGroup(a, 80), 60),
+    `K ${damageIntoGroup(k, 80)}, A ${damageIntoGroup(a, 80)}`);
+  ok("after 200: both full, nothing lost", near(damageIntoGroup(k, 200), 100) && near(damageIntoGroup(a, 200), 100));
+  const [a0] = prepareRoster([row("A"), row("K")], 4);
+  ok("  (mutation) without the Reaction the one ahead takes all 80", near(damageIntoGroup(a0, 80), 80));
+}
 ok("the Knight carries no presence defence row any more",
   !(byName("Demon Knight of Punishment").stats.defenses ?? []).some(x => /Presence/.test(x.name)));
 

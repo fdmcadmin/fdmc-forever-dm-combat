@@ -731,6 +731,11 @@ export function rosterFromTemplates(
     const first = new Set(interactions.killOrderFirst);
     roster.sort((a, b) => Number(first.has(String(b.id))) - Number(first.has(String(a.id))));
   }
+  // A forced-target REACTION keeps its place and takes one party Action a round — see `damageIntoGroup`.
+  for (const redirect of interactions.redirects) {
+    const group = roster.find(g => String(g.id) === redirect.id) as (typeof roster)[number] & { redirectsPartyActionsPerRound?: number } | undefined;
+    if (group) group.redirectsPartyActionsPerRound = redirect.actionsPerRound;
+  }
   roster.push(...(interactions.rows as unknown as typeof roster));
 
   /**

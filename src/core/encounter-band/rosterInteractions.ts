@@ -88,8 +88,10 @@ export type ZoneBurden = {
 export type RosterInteractionResult = {
   /** Bodiless rows carrying the added burden, each ending with its source. */
   rows: RosterGroup[];
-  /** Group ids that must lead the kill order. */
+  /** Group ids that must lead the kill order — a PASSIVE forced target. */
   killOrderFirst: string[];
+  /** Groups a forced-target REACTION sends party Actions to, once a round. */
+  redirects: { id: string; actionsPerRound: number }[];
   assumptions: InteractionAssumption[];
   burdens: ZoneBurden[];
 };
@@ -129,7 +131,7 @@ function roundTotals(parsed: ParsedCreature, target: Target): number[] {
 }
 
 export function rosterInteractions(entries: readonly InteractionEntry[], target: Target): RosterInteractionResult {
-  const out: RosterInteractionResult = { rows: [], killOrderFirst: [], assumptions: [], burdens: [] };
+  const out: RosterInteractionResult = { rows: [], killOrderFirst: [], redirects: [], assumptions: [], burdens: [] };
   const live = entries.filter(e => Number(e.quantity) > 0);
   // An interaction needs somebody to interact WITH. A creature priced alone keeps its own numbers.
   if (live.length < 2) return out;
@@ -146,11 +148,27 @@ export function rosterInteractions(entries: readonly InteractionEntry[], target:
     const of = (kind: RosterInteraction["kind"]) => withInteraction.filter(f => f.rosterInteraction?.kind === kind);
 
     // ── forced target order ────────────────────────────────────────────────────────────────
+    /**
+     * ⚠ A REACTION IS ONCE A ROUND, AND THAT IS THE DIFFERENCE BETWEEN THE TWO BRANCHES.
+     *
+     * Christopher: *"it should be once per turn, not a constant passive, so the read is still a
+     * reaction."* A PASSIVE forced target (a trait) sends every creature-targeting Action at it, so it
+     * leads the kill order. A REACTION spends the creature's one Reaction to redirect ONE Action a
+     * round — one PC's share of the party's damage goes into it, and the rest follows the order.
+     */
     const forced = of("forced_target_order")[0];
     if (forced) {
-      out.killOrderFirst.push(entry.id);
-      note(entry.name, "ESTIMATED",
-        `${forced.name}: ${entry.name} is first in the kill order — the party's creature-targeting Actions must target it while it is legal, so its allies stay up longer. No EHP multiplier; area and point effects keep their own targeting.`);
+      const persistent = forced.activationType === "trait" || forced.activationType === "free";
+      if (persistent) {
+        out.killOrderFirst.push(entry.id);
+        note(entry.name, "ESTIMATED",
+          `${forced.name}: ${entry.name} is first in the kill order — every creature-targeting Action must target it while it is legal, so its allies stay up longer. No EHP multiplier; area and point effects keep their own targeting.`);
+      } else {
+        const size = Math.max(1, Math.round(Number(target.partySize ?? 4)));
+        out.redirects.push({ id: entry.id, actionsPerRound: 1 });
+        note(entry.name, "ESTIMATED",
+          `${forced.name} (once a round): one party Action each round must target ${entry.name} while it stands — 1 of ${size} PCs' damage goes into it before the kill order, so its allies are reached later. No EHP multiplier.`);
+      }
     }
 
     // ── a zone, and an extra attack from an ally ───────────────────────────────────────────

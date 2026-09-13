@@ -474,6 +474,16 @@ export type RosterGroup = {
    */
   endsWithGroupId?: string;
   outcomeEvents?: OutcomeEvent[];
+  /**
+   * HOW MANY OF THE PARTY'S ACTIONS EACH ROUND MUST TARGET THIS CREATURE while it stands.
+   *
+   * Christopher, 2026-09-13, on Commanding Presence: *"it should be once per turn, not a constant
+   * passive, so the read is still a reaction."* A Reaction forces ONE Action a round onto the Knight —
+   * not every Action, which is what moving it to the front of the kill order would claim. So that
+   * share of the party's round (actions ÷ party size) goes into this group BEFORE the kill order, and
+   * the creatures ahead of it in the order are reached that much later. See `damageIntoGroup`.
+   */
+  redirectsPartyActionsPerRound?: number;
 };
 
 /**
@@ -512,11 +522,17 @@ export type PreparedGroup = RosterGroup & {
   /** Cumulative EHP through the END of this group — the roster is KILL PRIORITY order. */
   cumulativeEnd: number;
   dprUptime: number;
+  /**
+   * A forced-target Reaction in this roster, as it reaches THIS group. `self` is the group the party
+   * must target; `delayed` is every group AHEAD of it in the kill order, reached later because part of
+   * each round went into the forced target first. Groups behind it are unaffected. See `damageIntoGroup`.
+   */
+  soak?: { role: "self" | "delayed"; share: number; soakEhp: number };
 };
 
 export function prepareRoster(roster: RosterGroup[], partySize: number): PreparedGroup[] {
   let cumulativeEnd = 0;
-  return roster
+  const prepared: PreparedGroup[] = roster
     .filter(group => Number(group.quantity ?? 0) > 0)
     .map((group, index) => {
       const quantity = Number(group.quantity);
@@ -526,6 +542,43 @@ export function prepareRoster(roster: RosterGroup[], partySize: number): Prepare
       return { ...group, order: index + 1, quantity, bodyEhp, groupEhp, cumulativeEnd,
         dprUptime: Number(group.dprUptime ?? 1) };
     });
+  /**
+   * ⚠ ONE FORCED TARGET IS MODELLED. The first body-bearing group that redirects party Actions takes
+   * that share of every round; a second is left to the kill order and would need its own pass.
+   */
+  const forcedIndex = prepared.findIndex(g => !g.bodiless && Number(g.redirectsPartyActionsPerRound ?? 0) > 0);
+  if (forcedIndex >= 0) {
+    const forced = prepared[forcedIndex];
+    const share = Math.min(1, Number(forced.redirectsPartyActionsPerRound) / Math.max(1, partySize));
+    prepared[forcedIndex] = { ...forced, soak: { role: "self", share, soakEhp: forced.groupEhp } };
+    for (let i = 0; i < forcedIndex; i++) {
+      if (prepared[i].bodiless) continue;
+      prepared[i] = { ...prepared[i], soak: { role: "delayed", share, soakEhp: forced.groupEhp } };
+    }
+  }
+  return prepared;
+}
+
+/**
+ * How much of the party's cumulative damage has landed on THIS group.
+ *
+ * With no forced target it is the kill order, exactly as it always was: nothing lands on a group
+ * until every group ahead of it is dead.
+ *
+ * ⚠ A FORCED-TARGET REACTION TAKES A FIXED SHARE OF EVERY ROUND FIRST. Because the share is fixed,
+ * what it has absorbed after cumulative damage C is simply min(share × C, its EHP) — the same total
+ * whichever rounds C arrived in — so every reader of this function stays a function of C alone:
+ *
+ *   forced group        its share, plus whatever the kill order reaches it with afterwards
+ *   groups AHEAD of it  reached later by exactly the amount the forced group absorbed
+ *   groups BEHIND it    unchanged: by the time the order reaches them, it has passed through all of it
+ */
+export function damageIntoGroup(group: PreparedGroup, cumulativePartyDamage: number): number {
+  const start = group.cumulativeEnd - group.groupEhp;
+  if (!group.soak) return clamp(cumulativePartyDamage - start, 0, group.groupEhp);
+  const absorbed = Math.min(group.soak.share * Math.max(0, cumulativePartyDamage), group.soak.soakEhp);
+  if (group.soak.role === "delayed") return clamp(cumulativePartyDamage - absorbed - start, 0, group.groupEhp);
+  return absorbed + clamp(cumulativePartyDamage - absorbed - start, 0, group.groupEhp - absorbed);
 }
 
 /**
@@ -537,7 +590,7 @@ export function prepareRoster(roster: RosterGroup[], partySize: number): Prepare
  */
 export function remainingGroupFraction(group: PreparedGroup, cumulativePartyDamage: number): number {
   if (group.groupEhp <= 0) return 0;
-  return clamp((group.cumulativeEnd - cumulativePartyDamage) / group.groupEhp, 0, 1);
+  return clamp((group.groupEhp - damageIntoGroup(group, cumulativePartyDamage)) / group.groupEhp, 0, 1);
 }
 
 /**
@@ -561,8 +614,8 @@ export function livingBodies(group: PreparedGroup, cumulativePartyDamage: number
   // An actor with no body is never killed and never soaks — see `RosterGroup.bodiless`.
   if (group.bodiless) return Math.max(0, Number(group.quantity ?? 0));
   if (group.bodyEhp <= 0) return 0;
-  const cumulativeStart = group.cumulativeEnd - group.groupEhp;
-  const intoThisGroup = clamp(cumulativePartyDamage - cumulativeStart, 0, group.groupEhp);
+  // Kill order, plus any share a forced-target Reaction takes first — see `damageIntoGroup`.
+  const intoThisGroup = damageIntoGroup(group, cumulativePartyDamage);
   // A body is dead only once its WHOLE effective pool is gone; a chipped body is still a body.
   const killed = Math.floor((intoThisGroup + EPSILON) / group.bodyEhp);
   return Math.max(0, group.quantity - killed);
