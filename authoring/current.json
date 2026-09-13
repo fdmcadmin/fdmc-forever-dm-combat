@@ -1,6 +1,7 @@
 {
   "schema": "fdmc.campaign-authoring.v1",
-  "exportedAt": "2026-09-13T06:22:08.446Z",
+  "exportedAt": "2026-09-13T20:32:51.694Z",
+  "digest": "fnv1a-78999f23-151592",
   "monsters": [
     {
       "templateId": "broken-chain:act3:elemental-mirror:v1",
@@ -790,6 +791,137 @@
       }
     },
     {
+      "templateId": "broken-chain:act3:gloam-harrow:v1",
+      "name": "Gloam Harrow",
+      "encounterId": "act3-e7-the-last-court",
+      "encounterLabel": "Act 3 E7 - The Last Court",
+      "stats": {
+        "kind": "fey",
+        "ac": 16,
+        "maxHp": 108,
+        "speed": "30 ft.",
+        "defenses": [
+          {
+            "name": "Fey Mind",
+            "ehpMultiplier": 1,
+            "note": "DECIDED 1.0, not unassessed. Advantage on saves against being charmed, and magic cannot put her to sleep. Condition defence, which the workbook publishes with a NULL contribution. No damage is reduced."
+          }
+        ],
+        "attacksPerTurn": 1,
+        "size": "Medium",
+        "classification": "elite",
+        "archetype": "commander",
+        "skills": [
+          {
+            "label": "Insight",
+            "modifier": 7
+          },
+          {
+            "label": "Persuasion",
+            "modifier": 8
+          }
+        ],
+        "proficiencyBonus": 3
+      },
+      "abilities": [
+        {
+          "label": "STR",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "DEX",
+          "value": "16 (+3)"
+        },
+        {
+          "label": "CON",
+          "value": "10 (+0)"
+        },
+        {
+          "label": "INT",
+          "value": "12 (+1)"
+        },
+        {
+          "label": "WIS",
+          "value": "18 (+4)",
+          "saveProficient": true
+        },
+        {
+          "label": "CHA",
+          "value": "20 (+5)",
+          "saveProficient": true
+        }
+      ],
+      "traits": [
+        {
+          "name": "Fey Mind",
+          "kind": "trait",
+          "text": "Gloam Harrow has Advantage on saving throws against being Charmed, and is Immune to sleep effects."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Cruel Instruction",
+          "kind": "action",
+          "economyCost": "bonus",
+          "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack.",
+          "rosterInteraction": {
+            "kind": "ally_extra_attack",
+            "requiresZone": "Winter’s Toll"
+          }
+        },
+        {
+          "name": "Winter Needle",
+          "kind": "attack",
+          "roll": "1d20+8",
+          "damage": "1d10 + 4",
+          "damageType": "Cold",
+          "range": "range 90 ft., one target",
+          "targets": 1,
+          "extraDamage": [
+            {
+              "damage": "1d10",
+              "damageType": "Psychic"
+            }
+          ]
+        },
+        {
+          "name": "Winter’s Toll",
+          "kind": "spell",
+          "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15 FT cube area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Allies in the area gain a +3 bonus to attack rolls and saving throws while hostile creatures in the area have a −3 penalty to attack rolls and saving throws. Concentration",
+          "range": "60 FT, 15 FT cube.",
+          "rosterInteraction": {
+            "kind": "roll_modifier_zone",
+            "allyAttack": 3,
+            "allySave": 3,
+            "hostileAttack": -3,
+            "hostileSave": -3,
+            "durationRounds": 2
+          },
+          "concentration": true
+        }
+      ],
+      "reactions": [
+        {
+          "name": "Cold Counsel",
+          "kind": "action",
+          "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses.",
+          "rosterInteraction": {
+            "kind": "target_substitution",
+            "requiresZone": "Winter’s Toll"
+          }
+        }
+      ],
+      "resources": [],
+      "notes": [
+        "A courtly Fey in a mantle of dead-green leaves stitched through with pale winter light. She speaks of hardship as cultivation: the Wood has sheltered too much, spared too much, and should learn again what deserves to survive."
+      ],
+      "visibility": {
+        "defaultState": "hp-bar",
+        "hiddenName": "Gloam Harrow",
+        "revealedName": "Gloam Harrow"
+      }
+    },
+    {
       "templateId": "broken-chain:act3:brandwing:v1",
       "name": "Brandwing",
       "encounterId": "act3-e7-the-last-court",
@@ -901,7 +1033,7 @@
           "routineSlots": 2,
           "extraDamage": [
             {
-              "damage": "1d6",
+              "damage": "1d12",
               "damageType": "Psychic"
             }
           ],
@@ -927,381 +1059,6 @@
       },
       "dmEdited": {
         "at": "2026-09-13T06:04:36.926Z"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:gloam-harrow:v1",
-      "name": "Gloam Harrow",
-      "encounterId": "act3-e7-the-last-court",
-      "encounterLabel": "Act 3 E7 - The Last Court",
-      "stats": {
-        "kind": "fey",
-        "ac": 16,
-        "maxHp": 108,
-        "speed": "30 ft.",
-        "defenses": [
-          {
-            "name": "Fey Mind",
-            "ehpMultiplier": 1,
-            "note": "DECIDED 1.0, not unassessed. Advantage on saves against being charmed, and magic cannot put her to sleep. Condition defence, which the workbook publishes with a NULL contribution. No damage is reduced."
-          }
-        ],
-        "attacksPerTurn": 1,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "commander",
-        "skills": [
-          {
-            "label": "Insight",
-            "modifier": 7
-          },
-          {
-            "label": "Persuasion",
-            "modifier": 8
-          }
-        ],
-        "proficiencyBonus": 3
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "DEX",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "CON",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "INT",
-          "value": "12 (+1)"
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "20 (+5)",
-          "saveProficient": true
-        }
-      ],
-      "traits": [
-        {
-          "name": "Fey Mind",
-          "kind": "trait",
-          "text": "Gloam Harrow has Advantage on saving throws against being Charmed, and is Immune to sleep effects."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Cruel Instruction",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack.",
-          "rosterInteraction": {
-            "kind": "ally_extra_attack",
-            "requiresZone": "Winter’s Toll"
-          }
-        },
-        {
-          "name": "Winter Needle",
-          "kind": "attack",
-          "roll": "1d20+8",
-          "damage": "2d10 + 4",
-          "damageType": [
-            "Cold",
-            "Psychic"
-          ],
-          "range": "range 90 ft., one target",
-          "targets": 1
-        },
-        {
-          "name": "Winter’s Toll",
-          "kind": "action",
-          "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15-foot-radius area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Harrow’s allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to attack rolls and saving throws. The area ends early if Harrow is Incapacitated.",
-          "rosterInteraction": {
-            "kind": "roll_modifier_zone",
-            "allyAttack": 3,
-            "allySave": 3,
-            "hostileAttack": -3,
-            "hostileSave": -3,
-            "durationRounds": 2
-          },
-          "concentration": true
-        },
-        {
-          "name": "Winter’s Toll",
-          "kind": "spell",
-          "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15 FT cube area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Allies in the area gain a +3 bonus to attack rolls and saving throws while hostile creatures in the area have a −3 penalty to attack rolls and saving throws. Concentration",
-          "range": "60 FT, 15 FT cube.",
-          "rosterInteraction": {
-            "kind": "roll_modifier_zone",
-            "allyAttack": 3,
-            "allySave": 3,
-            "hostileAttack": -3,
-            "hostileSave": -3,
-            "durationRounds": 2
-          },
-          "concentration": true
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Cold Counsel",
-          "kind": "action",
-          "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses.",
-          "rosterInteraction": {
-            "kind": "target_substitution",
-            "requiresZone": "Winter’s Toll"
-          }
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "A courtly Fey in a mantle of dead-green leaves stitched through with pale winter light. She speaks of hardship as cultivation: the Wood has sheltered too much, spared too much, and should learn again what deserves to survive."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Gloam Harrow",
-        "revealedName": "Gloam Harrow"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:blackbough-reeve:v1",
-      "name": "Blackbough Reeve",
-      "encounterId": "act3-e7-the-last-court",
-      "encounterLabel": "Act 3 E7 - The Last Court",
-      "stats": {
-        "kind": "fey",
-        "ac": 16,
-        "maxHp": 118,
-        "speed": "35 ft.",
-        "defenses": [
-          {
-            "name": "Seasoned by Severity",
-            "ehpMultiplier": 1,
-            "note": "DECIDED 1.0, not unassessed. Advantage on STR/DEX saves and immunity to charmed and frightened. The workbook publishes Condition immunity with a NULL contribution, and a monster's own save quality never enters effective HP because the party's damage is a curve rather than a save. Nothing here reduces damage taken."
-          }
-        ],
-        "attacksPerTurn": 2,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "bruiser",
-        "skills": [
-          {
-            "label": "Athletics",
-            "modifier": 9
-          }
-        ],
-        "proficiencyBonus": 4
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "20 (+5)",
-          "saveProficient": true
-        },
-        {
-          "label": "DEX",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CON",
-          "value": "10 (+0)"
-        },
-        {
-          "label": "INT",
-          "value": "16 (+3)"
-        },
-        {
-          "label": "WIS",
-          "value": "18 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "19 (+4)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Seasoned by Severity",
-          "kind": "trait",
-          "text": "The Reeve has Advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Deepen the Cut",
-          "kind": "action",
-          "economyCost": "bonus",
-          "targets": 1,
-          "damage": "2d6",
-          "damageType": "Slashing",
-          "text": "The Reeve chooses one creature affected by Spoiling Cut within 30 feet. The first time that creature damages a creature other than the Reeve before the start of the Reeve's next turn, it takes 7 (2d6) Slashing damage after the triggering damage is resolved."
-        },
-        {
-          "name": "Shearing Cut",
-          "kind": "attack",
-          "roll": "1d20+9",
-          "damage": "3d10 + 5",
-          "damageType": "Slashing",
-          "range": "reach 5 ft., one target",
-          "targets": 1,
-          "routineSlots": 2,
-          "economyCost": "action"
-        },
-        {
-          "name": "Spoiling Cut",
-          "kind": "attack",
-          "roll": "1d20+9",
-          "damage": "2d10 + 4",
-          "damageType": "Slashing",
-          "range": "reach 5 ft",
-          "save": "CON DC 17",
-          "text": "Constitution Saving Throw: DC 17, the target. Failure: Until the start of the Reeve's next turn, damage the target deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
-          "routineSlots": 2,
-          "economyCost": "action"
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Final Pruning",
-          "kind": "action",
-          "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally.",
-          "attackWith": "Shearing Cut"
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "A broad-shouldered Fey wrapped in split black bark and hooked thorn. Pale cuts run through the growth like old pruning scars. It carries itself like a keeper who has spent years deciding what the Wood is allowed to keep.",
-        "DM DESIGN READ. The Reeve does not lock movement or force targets into place. It either prunes through raw damage or makes ignoring it expensive. A martial can clear Spoiling Cut by committing an attack to the Reeve, then spend any remaining attacks elsewhere. No recharge ability and no special reaction are part of this block.",
-        "UNPRICED IN EHP. Spoiling Cut takes 5 off every damage instance the target aims at anyone except the Reeve. That is ally-side damage prevention, nearest to the workbook's Fixed prevention - 8/round (+0.141871), but it is conditional, single-target and cleared by attacking the Reeve. Left unpriced pending a calibration decision: v3.23 states the fight's 253 raw HP is the figure BEFORE trait, control, reaction, targeting and Winter's Toll conversion."
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Blackbough Reeve",
-        "revealedName": "Blackbough Reeve"
-      }
-    },
-    {
-      "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
-      "name": "Demon Knight of Punishment",
-      "encounterId": "act3-e8-the-occupied-acre",
-      "encounterLabel": "Act 3 E8 - The Occupied Acre",
-      "stats": {
-        "kind": "fiend",
-        "ac": 16,
-        "maxHp": 130,
-        "speed": "30 ft.",
-        "defenses": [
-          {
-            "name": "Shattered Plate",
-            "ehpMultiplier": 1.028819,
-            "provenance": "interpolated",
-            "note": "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). The first time each round the Knight takes bludgeoning, piercing or slashing damage, reduce it by 3 — the SAME mechanic and the same interpolation as the Hollow Warden’s Barkhide. ⚠ NOT the calibrated \"Flat DR 3 per damaging hit [volatile]\" row (+0.377915): that one pays on EVERY hit, and this trait pays once a round. The classifier reaches for the per-hit row because the words match; the cadence is what separates them."
-          }
-        ],
-        "attacksPerTurn": 1,
-        "size": "Medium",
-        "classification": "elite",
-        "archetype": "guardian",
-        "skills": [
-          {
-            "label": "Intimidation",
-            "modifier": 7
-          },
-          {
-            "label": "Perception",
-            "modifier": 6
-          }
-        ],
-        "proficiencyBonus": 4
-      },
-      "abilities": [
-        {
-          "label": "STR",
-          "value": "18 (+4)"
-        },
-        {
-          "label": "DEX",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "CON",
-          "value": "19 (+4)",
-          "saveProficient": true
-        },
-        {
-          "label": "INT",
-          "value": "14 (+2)"
-        },
-        {
-          "label": "WIS",
-          "value": "14 (+2)",
-          "saveProficient": true
-        },
-        {
-          "label": "CHA",
-          "value": "17 (+3)"
-        }
-      ],
-      "traits": [
-        {
-          "name": "Retaliatory Shock",
-          "kind": "trait",
-          "text": "When the Demon Knight of Punishment takes physical damage, each enemy within 10 feet of the Knight takes Piercing damage equal to the Knight's Constitution modifier + 2 (6). The triggering damage resolves normally."
-        },
-        {
-          "name": "Shattered Plate",
-          "kind": "trait",
-          "text": "The first time each round the Knight takes physical damage, reduce it by 3."
-        }
-      ],
-      "actions": [
-        {
-          "name": "Reckless Sentence",
-          "kind": "action",
-          "economyCost": "bonus",
-          "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage.",
-          "grantsAdvantage": "own-attacks"
-        },
-        {
-          "name": "Iron Grasp",
-          "kind": "attack",
-          "roll": "1d20+8",
-          "damage": "2d8 + 4",
-          "damageType": "Bludgeoning",
-          "range": "reach 5 ft., one Large or smaller creature",
-          "targets": 1,
-          "text": "and the target has the Grappled condition (escape DC 16). Until the grapple ends, the target also has the Restrained condition. The Knight can restrain only one creature this way at a time."
-        }
-      ],
-      "reactions": [
-        {
-          "name": "Commanding Presence",
-          "kind": "action",
-          "text": "When a hostile creature the Knight can see within 30 feet takes an Action that can target the Demon Knight, that Action must target the Knight if the Knight is within the Action’s range and is a legal target. If the Action can affect multiple creatures, the Knight must be included among its targets",
-          "rosterInteraction": {
-            "kind": "forced_target_order"
-          }
-        }
-      ],
-      "resources": [],
-      "notes": [
-        "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
-        ""
-      ],
-      "visibility": {
-        "defaultState": "hp-bar",
-        "hiddenName": "Demon Knight of Punishment",
-        "revealedName": "Demon Knight of Punishment"
       }
     }
   ],
@@ -5261,6 +5018,5 @@
       "owner": "campaign",
       "order": 10
     }
-  ],
-  "note": "The 2026-09-13 publish with Brandwing's Ember Lance rewritten as one hit with a second typed damage line, and rider types moved out of the dice box. Folded after the unmodified publish. Final Pruning makes one Shearing Cut (attackWith); Reckless Sentence grants Advantage on the Knight's own attacks; Closing Stroke is a mark with no roll or damage of its own. Roster interactions per the v4 Roster Interaction workbook: Winter’s Toll zone, Cruel Instruction ally attack, Cold Counsel target substitution, Commanding Presence forced target order; the retired ×1.000 presence defense row removed. Winter’s Toll requires concentration."
+  ]
 }
