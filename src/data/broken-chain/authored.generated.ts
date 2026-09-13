@@ -262,7 +262,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "routineSlots": 2,
         "extraDamage": [
           {
-            "damage": "1d6",
+            "damage": "1d12",
             "damageType": "Psychic"
           }
         ],
@@ -966,27 +966,16 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Winter Needle",
         "kind": "attack",
         "roll": "1d20+8",
-        "damage": "2d10 + 4",
-        "damageType": [
-          "Cold",
-          "Psychic"
-        ],
+        "damage": "1d10 + 4",
+        "damageType": "Cold",
         "range": "range 90 ft., one target",
-        "targets": 1
-      },
-      {
-        "name": "Winter’s Toll",
-        "kind": "action",
-        "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15-foot-radius area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Harrow’s allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to attack rolls and saving throws. The area ends early if Harrow is Incapacitated.",
-        "rosterInteraction": {
-          "kind": "roll_modifier_zone",
-          "allyAttack": 3,
-          "allySave": 3,
-          "hostileAttack": -3,
-          "hostileSave": -3,
-          "durationRounds": 2
-        },
-        "concentration": true
+        "targets": 1,
+        "extraDamage": [
+          {
+            "damage": "1d10",
+            "damageType": "Psychic"
+          }
+        ]
       },
       {
         "name": "Winter’s Toll",
@@ -6921,10 +6910,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-7e81729e-159253";
+export const AUTHORED_DIGEST = "fnv1a-78999f23-151592";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-13T17:49:52.527Z";
+export const AUTHORED_AT = "2026-09-13T20:33:09.740Z";
 
 /**
  * Merge authored content over a bundled list by id.
