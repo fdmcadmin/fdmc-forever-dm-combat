@@ -47,6 +47,60 @@ function durationOf(t: string): number {
   return 1;
 }
 
+/**
+ * The text with its ENDING clauses removed. Winter's Toll: "The area ends early if Harrow is Incapacitated"
+ * names how the zone stops (BR080), not a condition it imposes; the Stormscar Ravager's Pin "ends early if
+ * the Ravager … has the Incapacitated condition" takes no PC's turn. Read imposed conditions from what is left.
+ */
+export function withoutEndingClauses(text: string): string {
+  return text.replace(/\b(ends?) (early )?(if|when) [^.;]*|\buntil [^.;]*\b(dies|is incapacitated|is killed)\b[^.;]*/gi, "");
+}
+
+const WHO_TURN = "(its|her|his|their|the [a-z' -]+'s)";
+
+/**
+ * THE v5 DURATION READERS — BR061 to BR082 — read off a rules sentence, each with the phrase it matched.
+ *
+ * ⚠ ONE READER, TWO CALLERS. The reader composition (`broadReaderGate`) shows these, and the pricer that
+ * charges a PC's lost turns (`turnDenial`) prices from them — so the duration a DM sees on a clause is the
+ * duration the checker charges.
+ */
+export function readDurationReaders(text: string | undefined): TextRead<string>[] {
+  const t = norm(text).toLowerCase();
+  const out: TextRead<string>[] = [];
+  const take = (id: string, re: RegExp) => {
+    const m = t.match(re);
+    if (m && !out.some(r => r.value === id)) out.push({ value: id, evidence: m[0] });
+    return Boolean(m);
+  };
+  const has = (id: string) => out.some(r => r.value === id);
+
+  take("BR070", /\bconcentration\b/);
+  take("BR071", /\bconcentration,? up to\b[^.]*/);
+  take("BR061", /\binstantaneous\b/);
+  // "until" or "before" — Larkskein's Advantage is spent "before the end of its next turn".
+  if (!take("BR064", /\b(until|before) (the )?start of the target's next turn\b/)) {
+    take("BR062", new RegExp(`\\b(until|before) (the )?start of ${WHO_TURN} next turn\\b`));
+  }
+  if (!take("BR065", /\b(until|before) (the )?end of the target's next turn\b/)) {
+    take("BR063", new RegExp(`\\b(until|before) (the )?end of ${WHO_TURN} next turn\\b`));
+  }
+  if (!take("BR066", /\b(for |lasts? )(2|two) (turns|rounds)\b/)) {
+    take("BR067", /\b(for |lasts? )(3|4|5|6|7|8|9|three|four|five|six|seven|eight|nine) (turns|rounds)\b/);
+  }
+  take("BR068", /\b(1|one) minute\b/);
+  take("BR069", /\b(10 minutes|1 hour|8 hours|24 hours|\d+ days)\b/);
+  take("BR075", /\brepeats? the saving throw at the start\b|\bat the start of each of its turns\b[^.]*\bsaving throw\b/);
+  take("BR076", /\brepeats? the saving throw at the end\b|\bat the end of each of its turns\b[^.]*\bsaving throw\b/);
+  if (!has("BR075") && !has("BR076")) take("BR077", /\brepeats? the saving throw\b/);
+  take("BR078", /\bsecond (failure|failed)\b|\bfails (it )?again\b/);
+  take("BR079", /\bends (early )?if [^.]*\btakes? damage\b|\buses? an action to wake\b/);
+  take("BR080", /\bends (early )?if [^.]*\b(incapacitated|dies|is killed|leaves)\b|\buntil [^.]*\b(dies|is incapacitated)\b/);
+  take("BR081", /\bwhile (it is |they are |it remains |the [a-z' -]+ (is|remains) )?(within|inside)\b|\bwhile [^.]*\bcan see\b|\btether/);
+  take("BR082", /\bwhen the effect ends\b|\bat the end of the duration\b/);
+  return out;
+}
+
 /** The zone this text names, if it names one of the creature's zone actions — "inside Winter's Toll". */
 function zoneNamedIn(t: string, zoneNames: readonly string[]): string | undefined {
   const lower = t.toLowerCase();

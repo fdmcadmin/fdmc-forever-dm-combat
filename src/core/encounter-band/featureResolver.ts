@@ -40,8 +40,8 @@ export type ResolutionFlag = "NEEDS DM INPUT" | "ESTIMATED";
 export type FeatureAssumption = {
   feature: string;
   flag: ResolutionFlag;
-  /** What could not be read — timing, target count, action cost, or damage. */
-  field: "timing" | "targets" | "action_cost" | "damage" | "cast_level";
+  /** What could not be read — timing, target count, action cost, damage, or a PC's lost turn (`turnDenial.ts`). */
+  field: "timing" | "targets" | "action_cost" | "damage" | "cast_level" | "control";
   detail: string;
 };
 

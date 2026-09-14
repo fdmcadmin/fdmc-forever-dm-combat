@@ -31,7 +31,7 @@ import {
   GENERIC_CHECKER_LEVELS, isProjectedLevel, partySizeHpMultiplier,
   type PartyEquipmentMode,
 } from "./partyCurveV2";
-import { rosterFromTemplates } from "./rosterFromLibrary";
+import { rosterFromTemplates, pcTurnValueAt } from "./rosterFromLibrary";
 import { partyDefenceAt } from "./partyDefenceCurve";
 import { partyHealingFromActors } from "./partyHealingFromActors";
 import { partyBenchmark } from "./partyBenchmark";
@@ -290,6 +290,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       partyAttackShare: fightInputs.partyAttackShare,
       partySaveDcs: fightInputs.partySaveDcs,
       partyAccuracySource: fightInputs.partyAccuracySource,
+      // One PC's turn at this party's level and mode — what a stun costs, and what a creature weighs choosing one.
+      pcTurnValue: pcTurnValueAt(partyLevel, partySize, equipmentMode),
     }, monsterLibrary);
     return {
       // A passive forced target leads regardless of HP — the weakest-first sort must not undo it.

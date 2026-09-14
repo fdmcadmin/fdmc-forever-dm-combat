@@ -150,6 +150,27 @@ export const CONDITION_EFFECTS: Record<string, ConditionEffect> = {
     speedZero: true,
     detail: "Grappled: Speed 0. Actions are not removed.",
   },
+  /**
+   * ⚠ UNCONSCIOUS AND PETRIFIED TAKE THE WHOLE TURN TOO, and were missing — so no reader could see them.
+   * Both carry the Incapacitated condition by rule. Christopher, 2026-09-13, on how a monster's control is
+   * charged: *"it should be charged on PC loses of turn"* — these are two of the conditions that do it.
+   */
+  unconscious: {
+    outgoingAttacks: "none",
+    incomingAttacks: "advantage",
+    saves: "disadvantage",
+    actionsLost: true,
+    speedZero: true,
+    detail: "Unconscious: incapacitated and prone, speed 0, attacks against it at advantage and auto-crit within 5 ft, STR and DEX saves fail.",
+  },
+  petrified: {
+    outgoingAttacks: "none",
+    incomingAttacks: "advantage",
+    saves: "disadvantage",
+    actionsLost: true,
+    speedZero: true,
+    detail: "Petrified: incapacitated, speed 0, attacks against it at advantage, STR and DEX saves fail, resistance to all damage.",
+  },
 };
 
 /**

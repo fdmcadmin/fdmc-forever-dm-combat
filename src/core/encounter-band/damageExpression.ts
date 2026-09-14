@@ -139,6 +139,14 @@ export type PartyDefence = {
    * readable, and a typed response then prices at nothing and says so, as it always did.
    */
   damageMix?: PartyDamageMix;
+  /**
+   * ONE PC'S TURN, in the party's damage, per round — the party's round ÷ its size.
+   *
+   * Christopher, 2026-09-13: a monster's control *"should be charged on PC loses of turn"*, and it counts
+   * when the creature chooses its action. Both need what a turn is worth. Absent, the creature profile
+   * reads it off the certified party curve at the fight's level (`creatureProfile`).
+   */
+  pcTurnValue?: { round1: number; round2: number; round3: number; round4Plus: number };
 };
 
 /**

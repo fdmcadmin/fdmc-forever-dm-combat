@@ -37,7 +37,7 @@ import { priceDamageResponses, describeDamageResponses } from "./damageResponseP
 import type { PartyDamageMix } from "./partyDamageMix";
 import { traceCreature } from "./actionTrace";
 import type { PartyDefence } from "./damageExpression";
-import { combineSustainContributions } from "./checkerV2";
+import { combineSustainContributions, resolvePartyProfile } from "./checkerV2";
 import type { RosterGroup, SustainFactor } from "./checkerV2";
 
 export type RosterAssumption = {
@@ -425,7 +425,27 @@ export type CreatureProfile = {
   threeRoundDpr: number;
   attackBonus: number;
   saveDc: number;
+  /** The PC turns its schedule takes away, per round — charged on the party's clock. See `turnDenial.ts`. */
+  pcTurnDenials: NonNullable<RosterGroup["pcTurnDenials"]>;
 };
+
+/**
+ * ONE PC'S TURN, in the party's damage, round by round — the certified party curve at this level ÷ its size.
+ *
+ * What a lost turn costs (`turnDenial.ts`, charged in `checkerV2`), and what a creature weighs when it
+ * chooses a controlling attack (`actionTrace`). A panel with a chosen party passes its own.
+ */
+export function pcTurnValueAt(
+  level: number, size: number, equipmentMode?: Parameters<typeof resolvePartyProfile>[0]["equipmentMode"],
+): { round1: number; round2: number; round3: number; round4Plus: number } | undefined {
+  try {
+    const p = resolvePartyProfile({ level, size: Math.max(1, Math.round(size)), ...(equipmentMode ? { equipmentMode } : {}) });
+    const s = Math.max(1, p.size);
+    return { round1: p.dpr.round1 / s, round2: p.dpr.round2 / s, round3: p.dpr.round3 / s, round4Plus: p.dpr.round4Plus / s };
+  } catch {
+    return undefined;
+  }
+}
 
 export function creatureProfile(
   template: MainMonsterTemplate,
@@ -435,7 +455,8 @@ export function creatureProfile(
 ): CreatureProfile {
   const parsed = parseCreature(template);
 
-  const trace = traceCreature(parsed, target, 4);
+  const pcTurnValue = target.pcTurnValue ?? pcTurnValueAt(partyLevel, target.partySize ?? 4);
+  const trace = traceCreature(parsed, { ...target, ...(pcTurnValue ? { pcTurnValue } : {}) }, 4);
   for (const a of trace.assumptions) {
     out.push({ creature: parsed.name, flag: a.flag, field: a.field, detail: a.detail });
   }
@@ -446,6 +467,24 @@ export function creatureProfile(
     round3: r[2]?.totalExpectedDamage ?? 0,
     round4Plus: r[3]?.totalExpectedDamage ?? 0,
   };
+  /**
+   * THE PC TURNS IT TAKES — per round of its schedule, one entry per use that stuns, paralyzes or
+   * incapacitates. Christopher: *"it should be charged on PC loses of turn not party loss of turn."* The
+   * simulation charges them on the party's clock; they are never added to this creature's DPR.
+   */
+  const pcTurnDenials: NonNullable<RosterGroup["pcTurnDenials"]> = {};
+  const deniedNoted = new Set<string>();
+  (["round1", "round2", "round3", "round4Plus"] as const).forEach((key, i) => {
+    const uses = (r[i]?.scheduled ?? []).filter(s => (s.pcTurnsDenied?.pcs ?? 0) > 0);
+    if (uses.length) pcTurnDenials[key] = uses.map(s => ({ pcs: s.pcTurnsDenied!.pcs, turns: s.pcTurnsDenied!.turns }));
+    for (const s of uses) {
+      if (deniedNoted.has(s.feature)) continue;
+      deniedNoted.add(s.feature);
+      out.push({ creature: parsed.name, flag: "ESTIMATED", field: "control",
+        detail: `${s.feature}: ${s.pcTurnsDenied!.basis}. Charged as the caught PC's lost turns — that PC's share of the party's damage — not as ${parsed.name}'s damage.` });
+    }
+  });
+
   if (dpr.round1 <= 0 && dpr.round4Plus <= 0) {
     out.push({ creature: parsed.name, flag: "NEEDS DM INPUT", field: "damage",
       detail: "No readable damage in any round, so this creature contributes nothing to the fight's pressure." });
@@ -477,6 +516,7 @@ export function creatureProfile(
     threeRoundDpr: (dpr.round1 + 2 * dpr.round4Plus) / 3,
     attackBonus: parsed.features.reduce((best, f) => Math.max(best, f.attackBonus ?? 0), 0),
     saveDc: parsed.features.reduce((best, f) => Math.max(best, f.saveDc ?? 0), 0),
+    pcTurnDenials,
   };
 }
 
@@ -609,6 +649,7 @@ export function rosterFromTemplates(
       traitFactors,
       dpr,
       damageUptime: template.stats.damageUptime ?? 1,
+      ...(Object.keys(profile.pcTurnDenials).length ? { pcTurnDenials: profile.pcTurnDenials } : {}),
     };
   });
 

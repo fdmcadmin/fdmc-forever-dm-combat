@@ -29,6 +29,7 @@ import {
   resolveFeature, expectedDamageForFeature,
   type ParsedFeature, type FeatureAssumption,
 } from "./featureResolver";
+import { turnDenialFor, type TurnDenial } from "./turnDenial";
 
 export type ActionChannel =
   | "action" | "bonus_action" | "reaction" | "legendary_action" | "lair_action" | "free";
@@ -46,6 +47,8 @@ export type TracedFeature = {
   /** What it cost: a recharge use, a daily use, a slot. */
   resourceSpent: string | null;
   note?: string;
+  /** The PC turns this use takes away — `turnDenial.ts`. `pcs` already carries the use's availability. */
+  pcTurnsDenied?: { pcs: number; turns: number[]; basis: string };
 };
 
 export type TracedRound = {
@@ -82,6 +85,8 @@ type Budgeted = {
   castLevel: number | null;
   targets: number;
   delayed: number;
+  /** Its Stunned / Paralyzed / Incapacitated payload, when one can be priced. */
+  denial?: TurnDenial;
 };
 
 /** An author-stated probability, 0–1. Unset reads as certain — the rider convention. */
@@ -130,7 +135,11 @@ export function notABudgetedResponse(text: string | undefined): boolean {
 
 export function traceCreature(
   creature: ParsedCreature,
-  target: { ac: number; saveBonus: number; partySize?: number; saves?: Record<SaveAbility, number> },
+  target: {
+    ac: number; saveBonus: number; partySize?: number; saves?: Record<SaveAbility, number>;
+    /** One PC's turn in the party's damage — see `PartyDefence.pcTurnValue`. Absent: control does not weigh on choices. */
+    pcTurnValue?: { round1: number; round2: number; round3: number; round4Plus: number };
+  },
   rounds = 4,
 ): CreatureTrace {
   const assumptions: FeatureAssumption[] = [...creature.assumptions];
@@ -176,7 +185,20 @@ export function traceCreature(
       (sum, r) => sum + damageExpressionAverage(r.damage) * riderWeight(r, hitChance, 1), 0);
     const riderNote = perHitRiders.length === 0 ? ""
       : " + " + perHitBonus.toFixed(1) + " rider (" + perHitRiders.map(describeRider).join("; ") + ")";
+    /**
+     * ⚠ A PC'S LOST TURN IS PART OF WHAT THIS IS WORTH WHEN THE CREATURE CHOOSES — `turnDenial.ts`.
+     * A turn-removing condition that cannot be priced (no roll or save, no printed duration) is said so.
+     */
+    const control = turnDenialFor(feature, target);
+    const denial: TurnDenial | undefined = control && "perTarget" in control ? control : undefined;
+    if (control && !("perTarget" in control)) {
+      const detail = `"${feature.name}" imposes ${control.conditions.join(" / ")}, but no PC's lost turn is charged: ${control.reason}.`;
+      if (!assumptions.some(a => a.feature === feature.name && a.detail === detail)) {
+        assumptions.push({ feature: feature.name, flag: "NEEDS DM INPUT", field: "control", detail });
+      }
+    }
     budgeted.push({
+      ...(denial ? { denial } : {}),
       feature, channel,
       turnRiders: riders.filter(r => r.cadence === "once-per-turn"),
       hitChance,
@@ -231,9 +253,23 @@ export function traceCreature(
     b.expectation = `one ${made.feature.name}: ${made.expectation}${chance < 1 ? ` × ${(chance * 100).toFixed(0)}% trigger` : ""}`;
   }
 
+  /**
+   * ⚠ WHAT A CHOICE IS WORTH: ITS DAMAGE, PLUS THE PC TURNS IT TAKES.
+   *
+   * Christopher, 2026-09-13: *"Control counts."* A lost PC turn is worth one PC's share of the party's
+   * sustained round (round 2), so the Hollow Mourner's Claws — 4.8 damage and a 14.7% chance to paralyze a
+   * PC for a turn worth 26.7 — is chosen over its 5.8 Bite. Every comparison below uses this.
+   *
+   * ⚠ ONLY THE CHOICE. The scheduled `expectedDamage` stays damage: the lost turn is charged on the party's
+   * clock (`pcTurnsDenied` → `checkerV2`), never added to this creature's DPR. With no party to value a
+   * turn against, this is damage alone and every trace is what it was.
+   */
+  const pcTurn = Math.max(0, Number(target.pcTurnValue?.round2 ?? 0));
+  const choiceValue = (b: Budgeted) =>
+    b.perUse + (b.denial ? b.denial.perTarget * b.targets * b.denial.expectedTurns * pcTurn : 0);
   const routineAll = budgeted
-    .filter(b => b.channel === "action" && !b.fullAction && b.perUse > 0)
-    .sort((a, b) => b.perUse - a.perUse);
+    .filter(b => b.channel === "action" && !b.fullAction && choiceValue(b) > 0)
+    .sort((a, b) => choiceValue(b) - choiceValue(a));
   /**
    * A "(replaces one Claw)" feature is NOT a second attack. It competes for one Multiattack
    * slot against the attack it displaces, and only takes it when it is worth more.
@@ -244,7 +280,7 @@ export function traceCreature(
   const replacers = routineAll.filter(b => b.feature.replacesRoutineSlot);
   const actionAlternatives = budgeted
     .filter(b => b.channel === "action" && b.fullAction)
-    .sort((a, b) => b.perUse - a.perUse);
+    .sort((a, b) => choiceValue(b) - choiceValue(a));
   const otherChannels = budgeted.filter(b => b.channel !== "action");
 
   const traced: TracedRound[] = [];
@@ -329,7 +365,7 @@ export function traceCreature(
        * where the counts FIT the budget — 1+1+1 on the Drake Guard IS a sequence, one of each, and
        * that is the case the convention gets wrong in the other direction.
        */
-      const best = declared.reduce((a, b) => (b.perUse > a.perUse ? b : a), declared[0]);
+      const best = declared.reduce((a, b) => (choiceValue(b) > choiceValue(a) ? b : a), declared[0]);
       for (let i = 0; i < creature.attacksPerTurn; i++) slots.push(best);
     } else if (declared.length > 0) {
       for (const b of declared) {
@@ -349,12 +385,13 @@ export function traceCreature(
     const bestReplacer = replacers[0];
     if (bestReplacer && slots.length > 0) {
       let weakest = 0;
-      for (let i = 1; i < slots.length; i++) if (slots[i].perUse < slots[weakest].perUse) weakest = i;
-      if (bestReplacer.perUse > slots[weakest].perUse) slots[weakest] = bestReplacer;
+      for (let i = 1; i < slots.length; i++) if (choiceValue(slots[i]) < choiceValue(slots[weakest])) weakest = i;
+      if (choiceValue(bestReplacer) > choiceValue(slots[weakest])) slots[weakest] = bestReplacer;
     } else if (bestReplacer && slots.length === 0) {
       slots.push(bestReplacer);
     }
     const routineTotal = slots.reduce((s, r) => s + r.perUse, 0);
+    const routineChoice = slots.reduce((s, r) => s + choiceValue(r), 0);
 
     /**
      * ⚠ "USE POWERFUL LIMITED ABILITIES EARLY, MULTIATTACK OTHERWISE" — the contract's own
@@ -367,7 +404,7 @@ export function traceCreature(
      * is kept as the routine and reported, because the checker prices damage and cannot price
      * a rider. It says so rather than quietly choosing for the DM.
      */
-    if (alt && alt.perUse > 0 && alt.perUse <= routineTotal && routine.length > 0) {
+    if (alt && choiceValue(alt) > 0 && choiceValue(alt) <= routineChoice && routine.length > 0) {
       assumptions.push({
         feature: alt.feature.name, flag: "ESTIMATED", field: "action_cost",
         detail: `"${alt.feature.name}" prices at ${alt.perUse.toFixed(1)} against a routine worth ${routineTotal.toFixed(1)}, so the routine is scheduled. If it is worth using for a rider the checker cannot price — knockback, prone, a grapple — that value is not in this number.`,
@@ -375,9 +412,9 @@ export function traceCreature(
     }
 
     // The attacks this turn actually makes — what a setup Bonus Action is priced against below.
-    const altTakesTurn = Boolean(alt && alt.perUse > 0 && (alt.perUse > routineTotal || routine.length === 0));
+    const altTakesTurn = Boolean(alt && choiceValue(alt) > 0 && (choiceValue(alt) > routineChoice || routine.length === 0));
     const turnAttacks: Budgeted[] = altTakesTurn && alt ? [alt] : slots;
-    if (alt && alt.perUse > 0 && (alt.perUse > routineTotal || routine.length === 0)) {
+    if (alt && altTakesTurn) {
       const used = spent.get(alt) ?? 0;
       // Round 1 it is available outright; later rounds it is up on its recharge probability.
       const availability = used === 0 ? 1 : rechargeProbability(alt.recharge);
@@ -392,6 +429,7 @@ export function traceCreature(
           ? `level ${alt.feature.spellSlotLevel} slot`
           : alt.recharge ? `recharge ${alt.recharge}` : alt.usesLeft !== null ? "1 use" : null,
         note: "Full Action — replaces the routine Multiattack.",
+        ...(alt.denial ? { pcTurnsDenied: { pcs: alt.denial.perTarget * alt.targets * availability, turns: alt.denial.turns, basis: alt.denial.basis } } : {}),
       });
       if (alt.delayed > 0) {
         delayedByRound.set(round + 1, (delayedByRound.get(round + 1) ?? 0) + alt.delayed);
@@ -404,6 +442,7 @@ export function traceCreature(
           expectation: pick.expectation, expectedDamage: pick.perUse,
           resourceSpent: null,
           note: slots.length > 1 ? `Multiattack ${i + 1} of ${slots.length}` : undefined,
+          ...(pick.denial ? { pcTurnsDenied: { pcs: pick.denial.perTarget * pick.targets, turns: pick.denial.turns, basis: pick.denial.basis } } : {}),
         });
       });
       /**
@@ -511,11 +550,13 @@ export function traceCreature(
       })
       .map(b => {
         const setup = b.perUse > 0 ? undefined : setupValue(b);
-        return { b, value: setup ? setup.value : b.perUse, expectation: setup ? setup.expectation : b.expectation };
+        const value = setup ? setup.value : b.perUse;
+        // The slot goes to the best CHOICE — damage plus any PC turns it takes; the damage stays damage.
+        return { b, value, choice: value + (choiceValue(b) - b.perUse), expectation: setup ? setup.expectation : b.expectation };
       })
-      .filter(v => v.value > 0)
+      .filter(v => v.choice > 0)
       // Best first, so a capped channel's single slot goes to the strongest legal option.
-      .sort((x, y) => y.value - x.value);
+      .sort((x, y) => y.choice - x.choice);
     const eligible = valued.map(v => v.b);
 
     for (const { b, value: perUse, expectation } of valued) {
@@ -549,6 +590,7 @@ export function traceCreature(
         castLevel: b.castLevel, targets: b.targets,
         expectation: expectation + (availability < 1 ? ` × ${(availability * 100).toFixed(0)}% available` : ""),
         expectedDamage: perUse * availability,
+        ...(b.denial ? { pcTurnsDenied: { pcs: b.denial.perTarget * b.targets * availability, turns: b.denial.turns, basis: b.denial.basis } } : {}),
         resourceSpent: b.usesLeft !== null ? `1 of ${b.usesLeft} uses` : b.recharge ? `recharge ${b.recharge}` : null,
         note: capped
           ? `Spends this turn's ${b.channel === "reaction" ? "Reaction" : "Bonus Action"} — nothing else on that budget resolves until it refreshes.`

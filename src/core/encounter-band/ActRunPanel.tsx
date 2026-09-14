@@ -65,7 +65,7 @@ import {
 import { actRunExportText, actRunExportFilename, type ActRunExportRow } from "./actRunExport";
 import { downloadExport } from "../export/encounterLogExport";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
-import { rosterFromTemplates } from "./rosterFromLibrary";
+import { rosterFromTemplates, pcTurnValueAt } from "./rosterFromLibrary";
 import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs } from "./centerLineAccuracy";
 import { meanTargetAc } from "./incomingSaveExposure";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
@@ -241,6 +241,8 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
           partyAttackShare: centerLineAttackShare(step.partyLevel, runMode, partySize),
           partySaveDcs: centerLineSaveDcs(step.partyLevel, runMode, partySize),
           partyAccuracySource: "center",
+          // One PC's turn in the run's own party — what a stun costs, and what a creature weighs choosing one.
+          pcTurnValue: pcTurnValueAt(step.partyLevel, partySize, runMode),
         }, monsterLibrary);
         // Weakest bodies first — the same kill priority the difficulty panel simulates.
         // A passive forced target leads regardless of HP — the weakest-first sort must not undo it.

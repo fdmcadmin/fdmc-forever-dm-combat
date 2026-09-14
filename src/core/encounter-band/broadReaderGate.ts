@@ -33,7 +33,7 @@ import { parseCreature } from "./parseCreature";
 import type { ParsedFeature } from "./featureResolver";
 import { conditionsImposedBy } from "./controlPricing";
 import { auditCoverage, mechanicsOf } from "./coverageGate";
-import { readConcentration } from "./mechanicText";
+import { readConcentration, readDurationReaders, withoutEndingClauses } from "./mechanicText";
 import { repeatFailChance, saveEndsActiveTurns, type SaveEndsTiming } from "./durationPricing";
 import { isMultiattackAction } from "../monsters/multiattackText";
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -119,13 +119,8 @@ function norm(text: string | undefined): string {
   return String(text ?? "").replace(/[’‘`]/g, "'").replace(/[−–—]/g, "-").replace(/\s+/g, " ").toLowerCase();
 }
 
-/**
- * The text with its ENDING clauses removed. Winter's Toll: "The area ends early if Harrow is Incapacitated"
- * names how the zone stops (BR080), not a condition the zone imposes — read conditions from what is left.
- */
-function withoutEndings(t: string): string {
-  return t.replace(/\b(ends?) (early )?(if|when) [^.;]*|\buntil [^.;]*\b(dies|is incapacitated|is killed)\b[^.;]*/g, "");
-}
+/** The text with its ENDING clauses removed — one reader, shared with the turn-loss pricer (`mechanicText`). */
+const withoutEndings = withoutEndingClauses;
 
 const WHO = "(its|her|his|their|the [a-z' -]+'s)";
 const NUM = "(two|three|four|five|six|\\d+)";
@@ -196,26 +191,8 @@ function readTextCues(t: string, u: Uses, resolutionKnown: boolean) {
   if (has(/\b(can'?t|cannot) take (actions|an action|bonus actions)\b|\bone (fewer|less) attack\b/)) add("BR060", "action restriction");
 
   // 4 ── Duration & Final
-  if (has(/\bconcentration\b/)) add("BR070", "concentration");
-  if (has(/\bconcentration,? up to\b/)) add("BR071", "concentration, up to");
-  if (has(/\binstantaneous\b/)) add("BR061", "instantaneous");
-  // "until" or "before" — Larkskein's Advantage is spent "before the end of its next turn".
-  if (has(/\b(until|before) (the )?start of the target's next turn\b/)) add("BR064", "until the start of the target's next turn");
-  else if (has(new RegExp(`\\b(until|before) (the )?start of ${WHO} next turn\\b`))) add("BR062", "until the start of its next turn");
-  if (has(/\b(until|before) (the )?end of the target's next turn\b/)) add("BR065", "until the end of the target's next turn");
-  else if (has(new RegExp(`\\b(until|before) (the )?end of ${WHO} next turn\\b`))) add("BR063", "until the end of its next turn");
-  if (has(/\b(for |lasts? )(2|two) (turns|rounds)\b/)) add("BR066", "exactly two turns");
-  else if (has(/\b(for |lasts? )(3|4|5|6|7|8|9|three|four|five|six) (turns|rounds)\b/)) add("BR067", "a fixed number of rounds");
-  if (has(/\b(1|one) minute\b/)) add("BR068", "one minute");
-  if (has(/\b(10 minutes|1 hour|8 hours|24 hours|\d+ days)\b/)) add("BR069", "a long fixed duration");
-  if (has(/\brepeats? the saving throw at the start\b|\bat the start of each of its turns\b[^.]*\bsaving throw\b/)) add("BR075", "save ends at the start of its turn");
-  if (has(/\brepeats? the saving throw at the end\b|\bat the end of each of its turns\b[^.]*\bsaving throw\b/)) add("BR076", "save ends at the end of its turn");
-  if (has(/\brepeats? the saving throw\b/) && !u.evidence.has("BR075") && !u.evidence.has("BR076")) add("BR077", "a repeat save");
-  if (has(/\bsecond (failure|failed)\b|\bfails (it )?again\b/)) add("BR078", "staged failure");
-  if (has(/\bends (early )?if [^.]*\btakes? damage\b|\buses? an action to wake\b/)) add("BR079", "ends on damage");
-  if (has(/\bends (early )?if [^.]*\b(incapacitated|dies|is killed|leaves)\b|\buntil [^.]*\b(dies|is incapacitated)\b/)) add("BR080", "ends if the source is incapacitated, dies or leaves range");
-  if (has(/\bwhile (it is |they are |it remains |the [a-z' -]+ (is|remains) )?(within|inside)\b|\bwhile [^.]*\bcan see\b|\btether/)) add("BR081", "while within / while it can see");
-  if (has(/\bwhen the effect ends\b|\bat the end of the duration\b/)) add("BR082", "final resolution");
+  // The duration family has ONE reader, shared with the pricer that charges a PC's lost turns.
+  for (const r of readDurationReaders(t)) add(r.value, r.evidence);
 
   // 5 ── Action Economy
   if (has(/\bonce per turn\b|\b1\s*\/\s*turn\b|\bthe first time\b[^.]*\bon (its|a) turn\b/)) add("BR092", "once per turn");

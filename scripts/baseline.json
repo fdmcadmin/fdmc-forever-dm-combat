@@ -46,7 +46,7 @@
  "creature/broken-chain:act2-s1:hollow-mourner:v1/ehp": 30.01,
  "creature/broken-chain:act2-s1:hollow-mourner:v1/dpr1": 5.7,
  "creature/broken-chain:act2-s1:hollow-mourner:v1/dpr4": 5.7,
- "creature/broken-chain:act2-s1:hollow-mourner:v1/assumptions": 0,
+ "creature/broken-chain:act2-s1:hollow-mourner:v1/assumptions": 1,
  "creature/broken-chain:act2-s2:corrupted-hunter:v1/ehp": 71.92,
  "creature/broken-chain:act2-s2:corrupted-hunter:v1/dpr1": 7.65,
  "creature/broken-chain:act2-s2:corrupted-hunter:v1/dpr4": 7.65,

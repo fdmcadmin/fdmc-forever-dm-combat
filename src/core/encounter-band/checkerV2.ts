@@ -520,6 +520,16 @@ export type RosterGroup = {
     /** Per round: what is spent or gained whether or not it holds — the Action given up is negative. */
     fixed: Partial<RoundProfile>;
   };
+  /**
+   * THE PC TURNS THIS GROUP TAKES AWAY, per body, per round of its own schedule — Stunned, Paralyzed,
+   * Incapacitated, Unconscious, Petrified.
+   *
+   * Christopher, 2026-09-13: *"it should be charged on PC loses of turn not party loss of turn."* Each
+   * entry is one scheduled use: `pcs` the expected PCs it catches, `turns[k]` the chance each loses its
+   * (k+1)th following turn. The simulation takes each lost turn's share of the party's damage (1 ÷ party
+   * size) off the round that turn falls in. See `turnDenial.ts`.
+   */
+  pcTurnDenials?: Partial<Record<keyof RoundProfile, { pcs: number; turns: number[] }[]>>;
 };
 
 /**
@@ -840,6 +850,8 @@ export type SimulationRound = {
   status: "ONGOING" | "COMPLETE" | "FATAL" | "PARTY_DOWN";
   /** Each concentration row this round — v5 BR066 + BR073. Absent when the roster has none. */
   concentration?: { id: string; name: string; damageToHolder: number; hold: number; activeShare: number }[];
+  /** PC turns lost this round to Stunned / Paralyzed / Incapacitated — see `RosterGroup.pcTurnDenials`. Absent when none. */
+  pcTurnsLost?: number;
 };
 
 export type EncounterResult = {
@@ -1012,6 +1024,8 @@ export function simulateEncounter(opts: {
   let standing = partySize;
   let completionRound: number | null = null;
   let fatalRound: number | null = null;
+  /** PC turns queued to be lost, by round — see the charge inside the loop. */
+  const deniedPcTurns: number[] = [];
 
   for (let round = 1; round <= maxRounds; round += 1) {
     const pcsStart = standing;
@@ -1087,7 +1101,37 @@ export function simulateEncounter(opts: {
       const share = group.concentration && group.id ? activeShare.get(group.id) ?? 1 : 1;
       return factor * Math.max(0, 1 - share * (1 - f));
     }, 1);
-    const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential * partyFactor;
+    /**
+     * ⚠ A PC WHO LOSES ITS TURN DEALS NOTHING THAT TURN — ITS SHARE, NOT THE PARTY'S ROUND.
+     *
+     * Christopher, 2026-09-13: *"it should be charged on PC loses of turn not party loss of turn."* Each
+     * use a living body makes this round queues its caught PCs' lost turns. The first lands this round if
+     * the monster acts before the party (`hostileFirst`), otherwise next round, and each later turn one
+     * round after that. A round's lost turns take 1 ÷ party size of the party's damage each, and never
+     * more than the whole party. Bodies acting are counted at the start of the round, before the party's
+     * damage lands — the charge cannot depend on the damage it reduces.
+     */
+    const scheduleKey = (round <= 1 ? "round1" : round === 2 ? "round2" : round === 3 ? "round3" : "round4Plus") as keyof RoundProfile;
+    if (completionRound === null && pcsStart > 0) {
+      for (const group of prepared) {
+        const uses = group.pcTurnDenials?.[scheduleKey];
+        if (!uses?.length || !groupPresentIn(group, round)) continue;
+        if (group.endsWithGroupId) {
+          const parent = prepared.find(g => g.id === group.endsWithGroupId);
+          if (parent && livingBodies(parent, cumulativePartyDamage) <= 0) continue;
+        }
+        const acting = livingBodies(group, cumulativePartyDamage) * group.dprUptime;
+        for (const use of uses) {
+          use.turns.forEach((p, k) => {
+            const lost = acting * use.pcs * p;
+            deniedPcTurns[round + k] = (deniedPcTurns[round + k] ?? 0) + lost * hostileFirst;
+            deniedPcTurns[round + k + 1] = (deniedPcTurns[round + k + 1] ?? 0) + lost * (1 - hostileFirst);
+          });
+        }
+      }
+    }
+    const pcTurnsLost = Math.min(partySize, deniedPcTurns[round] ?? 0);
+    const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential * partyFactor * (1 - pcTurnsLost / partySize);
     const partyDamageBefore = cumulativePartyDamage;
     cumulativePartyDamage += partyDamage;
     /**
@@ -1163,6 +1207,7 @@ export function simulateEncounter(opts: {
       monsterDprStart, monsterDprEnd, monsterDamage, cumulativeMonsterDamage,
       downs, damagedButStanding, standing, completesNow, fatalNow, status,
       ...(concentrationReport.length ? { concentration: concentrationReport } : {}),
+      ...(pcTurnsLost > 0 ? { pcTurnsLost } : {}),
     });
     if (completionRound !== null) break;
     if (standing === 0) break;

@@ -222,6 +222,11 @@ jobs:
       - name: check the v5 duration readers are priced
         run: npm run check:durationreaders
 
+      # A monster that stuns, paralyzes or incapacitates is charged as the caught PC's lost turns (its share
+      # of the party's damage, never the party's round), and that value counts when the creature chooses.
+      - name: check a PC's lost turn is charged
+        run: npm run check:turndenial
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels
