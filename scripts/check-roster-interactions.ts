@@ -170,6 +170,61 @@ ok("once a round sits between nothing and every Action", plainDmg < reactionDmg 
 ok("the Knight carries no presence defence row any more",
   !(byName("Demon Knight of Punishment").stats.defenses ?? []).some(x => /Presence/.test(x.name)));
 
+// ── 2c. Cold Counsel — one melee swing a round, moved down the kill order ──────────────────────
+console.log("\n2c. a target substitution moves one melee swing, and nothing is destroyed");
+{
+  /**
+   * Christopher, 2026-09-15: *"cold counsel should use the 4 parties the balanced center was based line to
+   * determine the melee share."* The Reaction moves a targeted ally and the attack is re-checked: the swing
+   * lands on another legal target instead. So the same share of every round reaches the NEXT body first —
+   * the focus dies later, the next body sooner, and the total is untouched.
+   */
+  const harrow = byName("Gloam Harrow");
+  const entry = (t: MainMonsterTemplate, id: string): InteractionEntry => ({ id, name: t.name, template: t, quantity: 1 });
+  const target = (extra: Record<string, unknown> = {}) => ({ ac: 16, saveBonus: 3, partySize: 4, hitChance: 0.65, ...extra }) as never;
+
+  // An ally to protect: the pass prices nothing for a creature standing alone.
+  const ally = byName("Blackbough Reeve");
+  const court = () => [entry(harrow, "harrow"), entry(ally, "reeve")];
+  const priced = rosterInteractions(court(), target({ partyMeleeAttackShare: 0.4, partyAccuracySource: "center" }));
+  const row = priced.rows.find(r => String(r.id).endsWith(":substitution"));
+  ok("Cold Counsel becomes a row that moves a share of the party's round",
+    row !== undefined && near(Number((row as { substitutesPartyDamagePerRound?: number }).substitutesPartyDamagePerRound), 0.4 / 4),
+    JSON.stringify((row as { substitutesPartyDamagePerRound?: number } | undefined)?.substitutesPartyDamagePerRound));
+  ok("...it carries no damage and no body of its own", row !== undefined && row.bodiless === true && row.dpr.round1 === 0);
+  ok("...and the line says what was moved and where it went",
+    priced.assumptions.some(a => /Cold Counsel/.test(a.detail) && /moved off the creature the party is killing and onto the next body/.test(a.detail)),
+    priced.assumptions.map(a => a.detail).join(" | ").slice(0, 200));
+
+  /** ⚠ NEVER GUESSED. No melee figure means named, not priced at some default. */
+  const unread = rosterInteractions(court(), target({}));
+  ok("  (mutation) with no melee share read, it is NEEDS DM INPUT and no row is written",
+    unread.rows.every(r => !String(r.id).endsWith(":substitution"))
+    && unread.assumptions.some(a => /Cold Counsel/.test(a.detail) && a.flag === "NEEDS DM INPUT"));
+  const noMelee = rosterInteractions(court(), target({ partyMeleeAttackShare: 0 }));
+  ok("  (mutation) a party that lands nothing inside 5 ft is told so, and priced at nothing",
+    noMelee.rows.every(r => !String(r.id).endsWith(":substitution"))
+    && noMelee.assumptions.some(a => /lands nothing inside 5 ft/.test(a.detail)));
+
+  // The kill order: the share reaches the SECOND body first.
+  const body = (id: string, extra: Record<string, unknown> = {}) => ({ id, name: id, quantity: 1, baseHp: 100, acMultiplier: 1, traitFactors: [],
+    dpr: { round1: 10, round2: 10, round3: 10, round4Plus: 10 }, damageUptime: 1, arrivesRound: 1, flatHpPerBody: true, ...extra }) as never;
+  const mover = { id: "sub", name: "sub", quantity: 1, baseHp: 0, bodiless: true, acMultiplier: 1, traitFactors: [],
+    dpr: { round1: 0, round2: 0, round3: 0, round4Plus: 0 }, damageUptime: 1, arrivesRound: 1, substitutesPartyDamagePerRound: 0.2 } as never;
+  const [first, second] = prepareRoster([body("A"), body("B"), mover], 4);
+  ok("after 100 damage: 20 has gone to the body behind, so the focus has taken 80",
+    near(damageIntoGroup(second, 100), 20) && near(damageIntoGroup(first, 100), 80),
+    `A ${damageIntoGroup(first, 100)}, B ${damageIntoGroup(second, 100)}`);
+  ok("nothing is destroyed: after 200 both are gone", near(damageIntoGroup(first, 200), 100) && near(damageIntoGroup(second, 200), 100));
+  const [firstOnly] = prepareRoster([body("A"), body("B")], 4);
+  ok("  (mutation) without the Reaction all 100 lands on the focus", near(damageIntoGroup(firstOnly, 100), 100));
+  /** ⚠ A forced target already owns the soak lane; two claims on the same rounds would double-count. */
+  const [fa, fb] = prepareRoster([body("A"), body("B", { redirectsPartyActionsPerRound: 1 }), mover], 4);
+  ok("a forced target in the same roster keeps the lane — the substitution does not also take it",
+    near(damageIntoGroup(fb, 100), 25) && near(damageIntoGroup(fa, 100), 75),
+    `A ${damageIntoGroup(fa, 100)}, B ${damageIntoGroup(fb, 100)}`);
+}
+
 // ── 3. the editor writes it ─────────────────────────────────────────────────────────────────────
 console.log("\n3. the editor can author every kind");
 const editor = readFileSync(resolve(ROOT, "src/core/monsters/MonsterTemplateEditor.tsx"), "utf8");

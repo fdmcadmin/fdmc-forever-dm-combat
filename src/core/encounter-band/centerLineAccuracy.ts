@@ -47,6 +47,25 @@ export function centerLineAttackShare(level: number, mode: PartyEquipmentMode, p
 }
 
 /**
+ * ONE MELEE ATTACK, as a share of one centre actor's round — what a target-substitution Reaction moves.
+ *
+ * Christopher, 2026-09-15: *"cold counsel should use the 4 parties the balanced center was based line to
+ * determine the melee share."* Cold Counsel moves a targeted ally out of reach, so what it can touch is the
+ * part of the party's damage delivered INSIDE 5 ft: each actor's attack-delivered share when its own weapon
+ * is a melee weapon, and none of it when the weapon throws, shoots or is a focus (`CenterActor.melee`).
+ *
+ * ⚠ ONE SWING, NOT A TURN. The Reaction re-checks ONE attack, so an actor's melee share is divided by the
+ * swings its Attack action makes at this level (`CenterActor.attacks`) — at L11 a fighter's three attacks are
+ * not all moved by one Reaction. The mean is over every endpoint actor, a non-melee actor counting as 0.
+ *
+ * The caller divides by party size to turn "one actor's round" into a share of the PARTY's round.
+ */
+export function centerLineMeleeAttackShare(level: number, mode: PartyEquipmentMode, partySize: number): number | undefined {
+  const actors = centerLineActors(level, mode, partySize);
+  return actors ? mean(actors.map(a => (a.melee ? a.attackShare / Math.max(1, a.attacks) : 0))) : undefined;
+}
+
+/**
  * The centre party's save DCs, one per actor that HAS one — for a +N to the saves of the creatures they
  * target. A non-caster before its first save DC has none, and is left out rather than given a zero.
  */

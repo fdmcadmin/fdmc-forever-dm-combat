@@ -486,6 +486,15 @@ export type RosterGroup = {
    */
   redirectsPartyActionsPerRound?: number;
   /**
+   * A TARGET-SUBSTITUTION REACTION MOVES THIS SHARE OF EVERY ROUND DOWN THE KILL ORDER.
+   *
+   * Cold Counsel moves a targeted ally out of an attacker's reach; the attacker "can choose another legal
+   * target". So that share of the party's round lands on the NEXT body instead of the one it is killing —
+   * the focus dies later, the next body sooner, and nothing is destroyed. Stamped by the roster pass on a
+   * bodiless row; `prepareRoster` applies it. See `rosterInteractions.ts`.
+   */
+  substitutesPartyDamagePerRound?: number;
+  /**
    * WHAT SURVIVES OF THE PARTY'S OWN DAMAGE while this group is on the field — 1 is all of it.
    *
    * A zone that gives the PCs inside it −3 to hit takes that share off what the party deals, for as
@@ -605,6 +614,29 @@ export function prepareRoster(roster: RosterGroup[], partySize: number): Prepare
     for (let i = 0; i < forcedIndex; i++) {
       if (prepared[i].bodiless) continue;
       prepared[i] = { ...prepared[i], soak: { role: "delayed", share, soakEhp: forced.groupEhp } };
+    }
+  }
+  /**
+   * ⚠ A TARGET SUBSTITUTION IS THE FORCED TARGET'S MIRROR. The forced target pulls a share of every round
+   * FORWARD onto itself; a substitution pushes a share off the body the party is killing onto the NEXT one.
+   * Both are "a fixed share of every round reaches a group before the kill order does", which is exactly
+   * what `soak` means — so the same field carries it, on the group that receives the moved swing.
+   *
+   * ⚠ ONE IS MODELLED, and a forced target wins. If a roster has both, the forced target already owns the
+   * soak lane and a second claim on the same rounds would double-count them; the substitution is left to
+   * the kill order and the roster line still names it.
+   */
+  if (forcedIndex < 0) {
+    const substitution = prepared.find(g => Number(g.substitutesPartyDamagePerRound ?? 0) > 0);
+    const bodies = prepared.map((g, i) => ({ g, i })).filter(x => !x.g.bodiless && x.g.groupEhp > 0);
+    if (substitution && bodies.length >= 2) {
+      const share = Math.min(1, Number(substitution.substitutesPartyDamagePerRound));
+      const receiver = bodies[1];   // the "another legal target" — the next body after the one being killed
+      prepared[receiver.i] = { ...receiver.g, soak: { role: "self", share, soakEhp: receiver.g.groupEhp } };
+      for (const { g, i } of bodies) {
+        if (i >= receiver.i) break;
+        prepared[i] = { ...g, soak: { role: "delayed", share, soakEhp: receiver.g.groupEhp } };
+      }
     }
   }
   return prepared;

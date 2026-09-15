@@ -129,6 +129,13 @@ export type PartyDefence = {
   partyAttackShare?: number;
   /** The party's save DCs, one per actor — for a +N to the saves of the creatures it targets. */
   partySaveDcs?: number[];
+  /**
+   * ONE MELEE ATTACK, as a share of one character's round — what a target-substitution Reaction moves out
+   * of reach (Cold Counsel). The chosen party's own swings, else the balanced centre line's four parties
+   * (`centerLineMeleeAttackShare`). Absent means it could not be read, and the substitution is named
+   * rather than priced.
+   */
+  partyMeleeAttackShare?: number;
   /** Of the party's save damage, the share that keeps half on a success. Absent: all-or-nothing, as before. */
   partySaveHalfShare?: number;
   /** Where `hitChance` came from, so a roster line can say so: the chosen actors or the centre line. */

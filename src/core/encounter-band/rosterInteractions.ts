@@ -38,10 +38,35 @@
  * A PASSIVE forced target leads the kill order. A REACTION redirects ONE party Action a round — see
  * `RosterGroup.redirectsPartyActionsPerRound` and `checkerV2.damageIntoGroup`.
  *
- * ── COLD COUNSEL ────────────────────────────────────────────────────────────────────────────────
+ * ── COLD COUNSEL — TARGET SUBSTITUTION ──────────────────────────────────────────────────────────
  *
- * *"ROSTER EVENT REQUIRED … Never silently treat this as zero."* Named on the roster line; the checker
- * has no per-attack target-event layer.
+ * *"ROSTER EVENT REQUIRED … Never silently treat this as zero."* A Reaction moves a targeted ally and the
+ * attack is re-checked: *"If the ally is no longer a legal target, the attacker can choose another legal
+ * target or the attack misses."* Nothing is destroyed and no action is lost — v5 BR026 replaces the target
+ * and recomputes, TURNS_PRESERVED — so what it costs the party is WHERE its damage lands:
+ *
+ *   share = one melee attack ÷ the party's round  =  partyMeleeAttackShare ÷ party size
+ *
+ * and that share of every round is moved OFF the creature the party is killing and onto the next body in
+ * the kill order — the "another legal target" the text offers. The focus dies later, the next body sooner.
+ * The checker already moves a fixed share of every round this way for a forced-target Reaction, so this is
+ * the same machinery pointed the other way: `RosterGroup.substitutesPartyDamagePerRound` → `prepareRoster`.
+ *
+ * ⚠ ONLY A MELEE ATTACK IS MOVED. Moving an ally does not make a bow or a spell an illegal target, and a
+ * thrown weapon keeps its range band — see `CenterActor.melee`.
+ * ⚠ ONE SWING A ROUND: one Reaction, one attack — not the attacker's whole turn (`CenterActor.attacks`).
+ * ⚠ THE MEAN SWING, NOT THE BIGGEST. A GM would spend the Reaction on the heaviest attacker; this prices
+ * the average one, which is the same convention the zone's coverage-weighted means use.
+ * ⚠ NOT LIFE-GATED, exactly as the forced-target Reaction is not: the share is taken every round of the
+ * fight. A protector that dies early is over-priced by this, and the roster line says so.
+ * ⚠ THE TEXT'S FIRST BRANCH IS THE ONE MODELLED — "can choose another legal target", not "the attack
+ * misses". This pass only runs with two creatures on the roster, so another body always exists; whether it
+ * is in REACH is a positioning fact no roster states. The party keeps its damage and spends it elsewhere.
+ *
+ * ⚠ WHICH WAY IT MOVES A FIGHT DEPENDS ON THE KILL ORDER, and it can read EASIER. The Last Court at L7
+ * against the centre party: monster damage 304.5 → 297.4, because the swing that leaves the creature being
+ * killed lands on the next body — a heavier one in that order — and kills it sooner. That is the mechanic,
+ * not a discount: a Reaction that re-points the party's damage is worth what the re-pointing is worth.
  */
 
 import type { MainMonsterTemplate } from "../monsters/runtime/mainMonsterRuntime";
@@ -64,6 +89,8 @@ type Target = Parameters<typeof traceCreature>[1] & {
   partySaveDcs?: number[];
   /** Of the party's save damage, the share that keeps half on a success. Absent: all-or-nothing. */
   partySaveHalfShare?: number;
+  /** One melee attack as a share of one character's round. See `PartyDefence.partyMeleeAttackShare`. */
+  partyMeleeAttackShare?: number;
   partyAccuracySource?: "chosen" | "center";
 };
 type Zone = Extract<RosterInteraction, { kind: "roll_modifier_zone" }>;
@@ -482,11 +509,35 @@ export function rosterInteractions(
           : ""));
     }
 
-    // ── target substitution — a target event, named rather than priced ─────────────────────
+    // ── target substitution — one melee swing a round, moved down the kill order ───────────
     for (const sub of of("target_substitution")) {
       const required = (sub.rosterInteraction as { requiresZone?: string }).requiresZone;
+      const perActor = target.partyMeleeAttackShare;
+      const inside = required ? ` inside ${required}` : "";
+      if (typeof perActor !== "number" || !Number.isFinite(perActor) || perActor <= 0) {
+        note(entry.name, "NEEDS DM INPUT",
+          `${sub.name}: moves a targeted ally${inside} and re-checks the attack — priced from the share of the party's round one MELEE swing carries, which could not be read${perActor === 0 ? " (this party lands nothing inside 5 ft)" : ""}.`);
+        continue;
+      }
+      const share = Math.min(1, perActor / partySize);
+      out.rows.push({
+        id: `${entry.id}:substitution`,
+        name: `${entry.name} — ${sub.name} (moves a target)`,
+        quantity: 1,
+        baseHp: 0,
+        bodiless: true,
+        acMultiplier: 1,
+        traitFactors: [],
+        dpr: { round1: 0, round2: 0, round3: 0, round4Plus: 0 },
+        damageUptime: 1,
+        arrivesRound: 1,
+        initiativeMod: entry.initiativeMod,
+        substitutesPartyDamagePerRound: share,
+      });
       note(entry.name, "ESTIMATED",
-        `${sub.name}: moves a targeted ally${required ? ` inside ${required}` : ""} and re-checks the attack's target — a target event the checker does not resolve yet. The workbook publishes no numeric burden for it.`);
+        `${sub.name}: one melee swing a round — ${pct(share)} of the party's round — is moved off the creature the party is killing and onto the next body in the kill order`
+        + `${inside} (${target.partyAccuracySource === "center" ? "the balanced centre party's" : "this party's"} melee swing is ${pct(perActor)} of one character's round, over ${partySize} PCs). `
+        + `Nothing is lost: the attack finds another legal target, so the focus dies later and the next body sooner. Not modelled: the Reaction stopping when ${entry.name} falls${required ? `, or when ${required} ends` : ""}.`);
     }
   }
   return out;

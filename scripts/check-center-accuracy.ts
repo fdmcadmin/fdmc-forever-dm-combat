@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CENTER_LINE_ACTORS } from "../src/core/encounter-band/centerLineAccuracy.generated";
-import { centerLineActors, centerLineHitChance, centerLineAttackShare, centerLineSaveDcs } from "../src/core/encounter-band/centerLineAccuracy";
+import { centerLineActors, centerLineHitChance, centerLineAttackShare, centerLineSaveDcs, centerLineMeleeAttackShare } from "../src/core/encounter-band/centerLineAccuracy";
 import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 import { partyDefenceAt } from "../src/core/encounter-band/partyDefenceCurve";
@@ -54,6 +54,36 @@ ok("no population run above L16 — absent, not guessed", centerLineHitChance(17
 ok("an attack share and save DCs come with it", (centerLineAttackShare(8, "brokenChain", 4) ?? -1) > 0
   && (centerLineSaveDcs(8, "brokenChain", 4)?.length ?? 0) === bc8.filter(a => a.spellSaveDc !== null).length);
 ok("the generated table stores no hit chance", !/hitChance|hit_chance/.test(code("src/core/encounter-band/centerLineAccuracy.generated.ts")));
+
+console.log("\n2b. how much of it lands inside 5 ft — for a target-substitution Reaction");
+{
+  /**
+   * Christopher, 2026-09-15: *"cold counsel should use the 4 parties the balanced center was based line to
+   * determine the melee share."* Read from each actor's OWN weapon in the source build (`melee`), divided by
+   * the swings its Attack action makes (`attacks`) — one Reaction re-checks one attack.
+   */
+  const every = Object.values(CENTER_LINE_ACTORS).flatMap(r => r.endpoints.flatMap(e => e.members));
+  ok("every actor says whether it swings in reach, and how many swings it gets",
+    every.every(a => typeof a.melee === "boolean" && Number.isInteger(a.attacks) && a.attacks >= 1));
+  ok("the four parties are a mix — some melee, some not",
+    every.some(a => a.melee) && every.some(a => !a.melee),
+    `${every.filter(a => a.melee).length} of ${every.length} swing in reach`);
+  const byHand = bc8.reduce((s, a) => s + (a.melee ? a.attackShare / Math.max(1, a.attacks) : 0), 0) / bc8.length;
+  const read = centerLineMeleeAttackShare(8, "brokenChain", 4);
+  ok("one melee swing = the mean of each actor's own share ÷ its swings", read !== undefined && Math.abs(read - byHand) < 1e-12, `${((read ?? 0) * 100).toFixed(2)}% of one actor's round`);
+  ok("...it is less than the attack share, because a swing is not a turn and not every actor is melee",
+    (read ?? 1) < (centerLineAttackShare(8, "brokenChain", 4) ?? 0));
+  /** ⚠ MUTATION: counting whole turns instead of one swing reads high wherever anyone has Extra Attack. */
+  const wholeTurns = bc8.reduce((s, a) => s + (a.melee ? a.attackShare : 0), 0) / bc8.length;
+  ok("  (mutation) charging the whole turn instead of one swing is a different, larger number", wholeTurns > (read ?? 0));
+  ok("no population run above L16 — absent, not guessed", centerLineMeleeAttackShare(17, "brokenChain", 4) === undefined);
+  const panelCode = code("src/core/encounter-band/EncounterDifficultyPanel.tsx");
+  ok("the fight panel supplies it for the unchosen party, and the chosen party's own for a chosen one",
+    panelCode.includes("partyMeleeAttackShare: center ? centerLineMeleeAttackShare(partyLevel, equipmentMode, partySize) : undefined")
+    && panelCode.includes("partyMeleeAttackShare: fightInputs.partyMeleeAttackShare ?? currentParty?.delivery.meleeAttackShare"));
+  ok("the act run supplies it too",
+    code("src/core/encounter-band/ActRunPanel.tsx").includes("partyMeleeAttackShare: centerLineMeleeAttackShare(step.partyLevel, runMode, partySize)"));
+}
 
 console.log("\n3. the checker uses it when nobody is chosen");
 const panel = code("src/core/encounter-band/EncounterDifficultyPanel.tsx");

@@ -66,7 +66,7 @@ import { actRunExportText, actRunExportFilename, type ActRunExportRow } from "./
 import { downloadExport } from "../export/encounterLogExport";
 import type { EncounterDefinition } from "../monsters/encounterLibrary";
 import { rosterFromTemplates, pcTurnValueAt } from "./rosterFromLibrary";
-import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs } from "./centerLineAccuracy";
+import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs, centerLineMeleeAttackShare } from "./centerLineAccuracy";
 import { meanTargetAc } from "./incomingSaveExposure";
 import { partyDamageMixFromActors, EMPTY_DAMAGE_MIX } from "./partyDamageMix";
 import { simulateEncounter, resolvePartyProfile, bondArrangement } from "./checkerV2";
@@ -240,6 +240,8 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
           hitChance: centerLineHitChance(step.partyLevel, runMode, partySize, meanTargetAc(entries)),
           partyAttackShare: centerLineAttackShare(step.partyLevel, runMode, partySize),
           partySaveDcs: centerLineSaveDcs(step.partyLevel, runMode, partySize),
+          // One melee swing of the centre party — what a target-substitution Reaction moves. See Cold Counsel.
+          partyMeleeAttackShare: centerLineMeleeAttackShare(step.partyLevel, runMode, partySize),
           partyAccuracySource: "center",
           // One PC's turn in the run's own party — what a stun costs, and what a creature weighs choosing one.
           pcTurnValue: pcTurnValueAt(step.partyLevel, partySize, runMode),

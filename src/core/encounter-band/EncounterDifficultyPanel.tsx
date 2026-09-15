@@ -48,7 +48,7 @@ import { partyMitigationFromActors, rosterDamageMix } from "./partyMitigationFro
 import { partyFeatsFromActors } from "../../modules/dnd-5e/featsFromActors";
 import { slotCapabilityFromActors } from "../../modules/dnd-5e/slotCapability";
 import { incomingSaveExposure, meanTargetAc } from "./incomingSaveExposure";
-import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs } from "./centerLineAccuracy";
+import { centerLineHitChance, centerLineAttackShare, centerLineSaveDcs, centerLineMeleeAttackShare } from "./centerLineAccuracy";
 import { parseAttackBonus } from "./parseCreature";
 import { attackHitProbability } from "./checkerV2";
 import { attackProfile } from "../../modules/dnd-5e/featContextFromActor";
@@ -264,6 +264,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       hitChance: chosenHit ?? centerLineHitChance(partyLevel, equipmentMode, partySize, targetAC),
       partyAttackShare: center ? centerLineAttackShare(partyLevel, equipmentMode, partySize) : undefined,
       partySaveDcs: center ? centerLineSaveDcs(partyLevel, equipmentMode, partySize) : undefined,
+      partyMeleeAttackShare: center ? centerLineMeleeAttackShare(partyLevel, equipmentMode, partySize) : undefined,
       partyAccuracySource: (center ? "center" : "chosen") as "center" | "chosen",
     };
   }, [encounter, monsterLibrary, chosen, partyLevel, equipmentMode, partySize]);
@@ -349,6 +350,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       partyAttackShare: fightInputs.partyAttackShare ?? currentParty?.delivery.attackShare,
       // A chosen party that forces no save hands over [] — read and empty, not "not supplied".
       partySaveDcs: fightInputs.partySaveDcs ?? currentParty?.delivery.saveDcs,
+      // One melee swing — the centre line's, or this party's own scheduled swings. See Cold Counsel.
+      partyMeleeAttackShare: fightInputs.partyMeleeAttackShare ?? currentParty?.delivery.meleeAttackShare,
       ...(fightInputs.partyAccuracySource === "chosen" && currentParty ? { partySaveHalfShare: currentParty.delivery.saveHalfShare } : {}),
       partyAccuracySource: fightInputs.partyAccuracySource,
       /**

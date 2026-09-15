@@ -44,6 +44,7 @@
 import type { Actor } from "../types/actor";
 import { actorAsCreature, type ResourceSpendingAction } from "./actorAsCreature";
 import { resourceLedgerFromActor, RESOURCE_DAY, type ResourceLean } from "./resourceLedger";
+import { reachOfFeature } from "./reachability";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { damageExpressionAverage } from "./damageExpression";
@@ -133,6 +134,13 @@ export type CurrentPartyMetrics = {
     saveDcs: number[];
     /** Of the save damage, the share that still deals half on a success — so a +N save bonus is not all-or-nothing. */
     saveHalfShare: number;
+    /**
+     * ONE MELEE ATTACK as a share of one character's round — the chosen-party twin of
+     * `centerLineMeleeAttackShare`, and what a target-substitution Reaction (Cold Counsel) moves.
+     * Each character contributes its at-will attack damage delivered inside 5 ft divided by the number of
+     * such swings it makes in a round; a character who never swings in reach contributes 0.
+     */
+    meleeAttackShare?: number;
   };
   /** Per-actor at-will contribution, before any resource is spent. */
   atWill: { round1: number; round2: number; round3: number; round4Plus: number };
@@ -227,6 +235,8 @@ export function currentPartyMetrics(
   let saveDamage = 0;
   let saveHalfDamage = 0;
   const saveDcs: number[] = [];
+  /** Per character: one melee swing as a share of that character's own round — see delivery.meleeAttackShare. */
+  const meleeAttackShares: number[] = [];
 
   for (const actor of actors) {
     const { creature, spends, unreadable, assumptions } = actorAsCreature(actor);
@@ -236,6 +246,8 @@ export function currentPartyMetrics(
     // ── The at-will floor, scheduled by the checker's own tracer ──────────────
     let atWillRound: number[] = [];
     let actorDc = 0;
+    let actorMeleeDamage = 0;
+    let actorMeleeSwings = 0;
     try {
       const parsedAtWill = parseCreature(creature);
       const trace = traceCreature(parsedAtWill, target as never, roundsPerFight);
@@ -246,7 +258,16 @@ export function currentPartyMetrics(
           const f = parsedAtWill.features.find(x => x.name === s.feature);
           const dealt = clamp0(s.expectedDamage);
           if (!f || !(dealt > 0)) continue;
-          if (f.attackBonus !== undefined) attackDamage += dealt;
+          if (f.attackBonus !== undefined) {
+            attackDamage += dealt;
+            /**
+             * ⚠ INSIDE 5 FT, AND COUNTED PER SWING. A target-substitution Reaction (Cold Counsel) moves a
+             * targeted ally out of reach and re-checks ONE attack, so what it can touch is a single melee
+             * swing — not a turn, and nothing a ranged attack or a save does. `reachOfFeature` is the same
+             * reading the prone pricer uses: a printed reach of 5 ft or less is melee.
+             */
+            if (rd.round === 1 && reachOfFeature(f) <= 5) { actorMeleeDamage += dealt; actorMeleeSwings += 1; }
+          }
           else if (f.saveDc !== undefined) {
             saveDamage += dealt;
             if (/^s*halfs*$/i.test(String(f.successDamage ?? ""))) saveHalfDamage += dealt;
@@ -258,6 +279,10 @@ export function currentPartyMetrics(
       needsInput.push(`${actor.name} — at-will actions could not be scheduled`);
     }
     const atWillFor = (i: number) => atWillRound[Math.min(i, atWillRound.length - 1)] ?? 0;
+    // A character with no melee swing contributes 0 — it is part of the party's mix, not absent from it.
+    meleeAttackShares.push(actorMeleeSwings > 0 && atWillFor(0) > 0
+      ? (actorMeleeDamage / actorMeleeSwings) / atWillFor(0)
+      : 0);
     atWill.round1 += atWillFor(0);
     atWill.round2 += atWillFor(1);
     atWill.round3 += atWillFor(2);
@@ -441,6 +466,9 @@ export function currentPartyMetrics(
       ...(attackDamage + saveDamage > 0 ? { attackShare: attackDamage / (attackDamage + saveDamage) } : {}),
       saveDcs,
       saveHalfShare: saveDamage > 0 ? saveHalfDamage / saveDamage : 0,
+      ...(meleeAttackShares.length > 0
+        ? { meleeAttackShare: meleeAttackShares.reduce((sum, x) => sum + x, 0) / meleeAttackShares.length }
+        : {}),
     },
     atWill,
     schedule,

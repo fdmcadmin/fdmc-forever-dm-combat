@@ -87,6 +87,47 @@ for (const e of endpoints) for (const m of e.members) {
 }
 
 const classKey = s => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");
+
+/**
+ * ── IS THIS ACTOR'S ATTACK A MELEE ATTACK ────────────────────────────────────────────────────────
+ *
+ * Christopher, 2026-09-15: *"cold counsel should use the 4 parties the balanced center was based line
+ * to determine the melee share."* Cold Counsel moves a targeted ally and the attack is re-checked: only
+ * an attack that cannot reach the ally's new square is affected, so the checker needs to know how much
+ * of the centre party's damage arrives at reach.
+ *
+ * ⚠ READ FROM THE BUILD, NOT GUESSED FROM THE CLASS. The solo population carries each source member's
+ * actual weapon per level and mode — `equipment.weapon.range` is "melee", "melee/thrown" or a range band
+ * like "150/600", with `isFocus` for a spellcasting focus. A class name would be a guess ("Finesse or
+ * ranged weapon" is the packet text for three classes and says nothing about which one this actor took).
+ *
+ * ⚠ THE OTHER POPULATIONS ARE THE SAME CHARACTERS. Every endpoint member id resolves in the solo
+ * population, and the rebuild and both shuffles keep the source member's class in all 2048 profiles
+ * each (checked 2026-09-15), so the source build's weapon is this actor's weapon.
+ *
+ * ⚠ "melee/thrown" IS NOT COUNTED AS MELEE. A handaxe or javelin still has a throw range, so moving the
+ * target does not make it an illegal target — which is the only thing Cold Counsel does.
+ */
+function meleeFromWeapon(weapon) {
+  if (!weapon || weapon.isFocus === true) return false;
+  return String(weapon.range ?? "").trim().toLowerCase() === "melee";
+}
+
+const soloFile = fs.readdirSync(RUNTIME_DIR).find(f => /full_solo/.test(f) && f.endsWith(".json"));
+if (!soloFile) throw new Error("the full_solo population is required for weapon delivery");
+process.stdout.write(`reading ${soloFile} for weapon delivery… `);
+const soloActors = JSON.parse(fs.readFileSync(path.join(RUNTIME_DIR, soloFile), "utf8")).actors;
+console.log(`${Object.keys(soloActors).length} source builds`);
+/** member + level + mode → does this actor swing at reach? */
+function meleeOf(member, level, mode) {
+  const actor = soloActors[member];
+  if (!actor) throw new Error(`no source build for ${member} — cannot read its weapon`);
+  const lv = actor.levels?.[level] ?? Object.values(actor.levels).find(l => l.level === level);
+  if (!lv) throw new Error(`no L${level} in the source build for ${member}`);
+  const m = lv.modes?.[mode === "brokenChain" ? "BC" : "WOTC"];
+  if (!m) throw new Error(`no ${mode} mode in the source build for ${member} L${level}`);
+  return meleeFromWeapon(m.equipment?.weapon);
+}
 const actorLevel = new Map(); // `${population}::${member}::L${level}::${mode}` → { attackBonus, spellSaveDc, attackShare }
 /** class → level → { shares: number[], focus: number, weapon: number } — from every normalised actor. */
 const classPackets = new Map();
@@ -110,9 +151,10 @@ for (const population of populations) {
           if (!pa || !cls) continue;
           if (!classPackets.has(cls)) classPackets.set(cls, new Map());
           const perLevel = classPackets.get(cls);
-          if (!perLevel.has(lv.level)) perLevel.set(lv.level, { shares: [], focus: 0, weapon: 0 });
+          if (!perLevel.has(lv.level)) perLevel.set(lv.level, { shares: [], attacks: [], focus: 0, weapon: 0 });
           const slot = perLevel.get(lv.level);
           slot.shares.push(pa.attackDeliveryShare);
+          if (typeof pa.attacks === "number") slot.attacks.push(pa.attacks);
           if (/focus/i.test(pa.name ?? "")) slot.focus++; else slot.weapon++;
         }
       }
@@ -138,6 +180,7 @@ for (const population of populations) {
           if (!pa || typeof pa.attackBonus !== "number") throw new Error(`${population}: no primaryAction for ${member} L${lv.level} ${mode}`);
           actorLevel.set(`${population}::${member}::L${lv.level}::${mode}`, {
             attackBonus: pa.attackBonus, spellSaveDc: pa.spellSaveDc, attackShare: pa.attackDeliveryShare,
+            attacks: Math.max(1, Math.round(Number(pa.attacks ?? 1))),
           });
         }
       }
@@ -152,6 +195,8 @@ for (const population of populations) {
       for (const lv of Object.values(actor.levels)) {
         const packet = perLevel.get(lv.level) ?? [...perLevel.values()][0];
         const share = packet.shares.reduce((s, x) => s + x, 0) / packet.shares.length;
+        // The swing count is a class packet fact too — the solo population states no per-actor count.
+        const attacks = packet.attacks.length ? Math.max(1, Math.round(packet.attacks.reduce((s, x) => s + x, 0) / packet.attacks.length)) : 1;
         const byFocus = packet.focus > packet.weapon;
         for (const [mode, key] of [["wotcStandard", "WOTC"], ["brokenChain", "BC"]]) {
           const m = lv.modes?.[key];
@@ -160,6 +205,7 @@ for (const population of populations) {
             attackBonus: byFocus && typeof m.spellAttackBonus === "number" ? m.spellAttackBonus : m.mainAttackBonus,
             spellSaveDc: m.spellSaveDC,
             attackShare: share,
+            attacks,
           });
         }
       }
@@ -190,7 +236,7 @@ for (const e of endpoints) {
     members: e.members.map(m => {
       const a = actorLevel.get(`${m.population}::${m.member}::L${e.level}::${e.mode}`);
       if (!a) throw new Error(`no actor data for ${m.population}::${m.member} L${e.level} ${e.mode}`);
-      return { id: m.member, ...a, attackShare: Math.round(a.attackShare * 10000) / 10000 };
+      return { id: m.member, ...a, attackShare: Math.round(a.attackShare * 10000) / 10000, attacks: a.attacks, melee: meleeOf(m.member, e.level, e.mode) };
     }),
   });
 }
@@ -210,8 +256,11 @@ const out = `/**
  * Final \`attackBonus\` and \`spellSaveDc\` (equipment included) and \`attackShare\` — the share of the actor's
  * damage delivered by attack rolls. NO HIT CHANCE IS STORED: see \`centerLineAccuracy.ts\`.
  * \`spellSaveDc\` is null for an actor with no save DC at that level (a non-caster before its first).
+ * \`attacks\` is the swings one Attack action makes at this level — a target-substitution Reaction moves ONE.
+ * \`melee\` is this actor's own equipped weapon reaching only to melee (not thrown, not a focus) — what a
+ * target-substitution Reaction like Cold Counsel can make an illegal target of.
  */
-export type CenterActor = { id: string; attackBonus: number; spellSaveDc: number | null; attackShare: number };
+export type CenterActor = { id: string; attackBonus: number; spellSaveDc: number | null; attackShare: number; attacks: number; melee: boolean };
 export type CenterEndpoint = { endpoint: string; party: string; members: CenterActor[] };
 
 export const CENTER_LINE_ACTORS: Record<string, { endpoints: CenterEndpoint[] }> = {
