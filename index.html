@@ -10,9 +10,82 @@
     <meta name="fdmc:source-policy" content="private-source" />
     <meta name="fdmc:redistribution" content="not-authorized" />
     <title>Forever DM Combat</title>
+    <!-- Dark from the first paint, before the app stylesheet (which follows and wins) arrives. -->
+    <style>html, body { margin: 0; background: #0d0f14; }</style>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      THE FIRST THING ON SCREEN, BEFORE ANY OF THE APP HAS DOWNLOADED.
+
+      Christopher, 2026-09-15: "we have to have a way to choose that from the players side before they sit in
+      the seat because my current player who is having the issue is using desktop but it doesnt load because of
+      slower connection or older pc."
+
+      Everything inside #root is replaced the moment React mounts. Until then this is plain HTML with one tiny
+      inline script, so it shows while the app's script is still on the way, on any connection. The choice is
+      written where the app reads it (fdmc.displayMode.v1, see core/ui/displayMode.ts), so the app opens in it.
+    -->
+    <div id="root">
+      <div id="fdmc-boot" style="padding: 20px 16px; font: 13px system-ui, sans-serif; color: #888; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <p style="margin: 0; font-size: 14px; color: #aaa;">Forever DM Combat</p>
+        <p id="fdmc-boot-status" style="margin: 0; color: #7b68ee;">Loading…</p>
+        <div role="group" aria-label="Display mode" style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
+          <button type="button" data-fdmc-boot-choice="auto" style="font-size: 11px; padding: 4px 10px; border-radius: 3px; background: transparent; border: 1px solid #333; color: #777; cursor: pointer;">Auto</button>
+          <button type="button" data-fdmc-boot-choice="full" style="font-size: 11px; padding: 4px 10px; border-radius: 3px; background: transparent; border: 1px solid #333; color: #777; cursor: pointer;">Full</button>
+          <button type="button" data-fdmc-boot-choice="lite" style="font-size: 11px; padding: 4px 10px; border-radius: 3px; background: transparent; border: 1px solid #333; color: #777; cursor: pointer;">Lite</button>
+        </div>
+        <p style="margin: 0; font-size: 11px; color: #555; max-width: 320px; line-height: 1.4;">Lite: one window and lighter styling, for phones, tablets, slower PCs and slow connections.</p>
+        <p id="fdmc-boot-slow" hidden style="margin: 0; font-size: 11px; color: #d7b36a; max-width: 320px; line-height: 1.4;">Still loading — on a slow connection this can take a while. Choosing Lite now applies the moment FDMC opens.</p>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var KEY = "fdmc.displayMode.v1";
+        // The same stores, in the same order, as core/utils/safeStorage: a blocked store must not stop the choice.
+        function store() {
+          var candidates = [];
+          try { candidates.push(window.localStorage); } catch (e) {}
+          try { candidates.push(window.sessionStorage); } catch (e) {}
+          for (var i = 0; i < candidates.length; i++) {
+            try { candidates[i].setItem("__fdmc_storage_test__", "1"); candidates[i].removeItem("__fdmc_storage_test__"); return candidates[i]; } catch (e) {}
+          }
+          return null;
+        }
+        var s = store();
+        function read() {
+          var v = null;
+          try { v = s ? s.getItem(KEY) : null; } catch (e) {}
+          if (v !== "full" && v !== "lite") v = window.__fdmcBootDisplayChoice || "auto";
+          return v;
+        }
+        function paint() {
+          var choice = read();
+          if (choice === "full" || choice === "lite") document.documentElement.setAttribute("data-fdmc-display", choice);
+          else document.documentElement.removeAttribute("data-fdmc-display");   // Auto: the app decides from the device
+          var buttons = document.querySelectorAll("[data-fdmc-boot-choice]");
+          for (var i = 0; i < buttons.length; i++) {
+            var on = buttons[i].getAttribute("data-fdmc-boot-choice") === choice;
+            buttons[i].style.borderColor = on ? "#d7b36a" : "#333";
+            buttons[i].style.color = on ? "#d7b36a" : "#777";
+            buttons[i].setAttribute("aria-pressed", on ? "true" : "false");
+          }
+        }
+        var group = document.getElementById("fdmc-boot");
+        if (group) group.addEventListener("click", function (event) {
+          var target = event.target;
+          var choice = target && target.getAttribute ? target.getAttribute("data-fdmc-boot-choice") : null;
+          if (!choice) return;
+          window.__fdmcBootDisplayChoice = choice;
+          try { if (s) { if (choice === "auto") s.removeItem(KEY); else s.setItem(KEY, choice); } } catch (e) {}
+          paint();
+        });
+        paint();
+        setTimeout(function () {
+          var slow = document.getElementById("fdmc-boot-slow");
+          if (slow && document.getElementById("fdmc-boot")) slow.hidden = false;
+        }, 6000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

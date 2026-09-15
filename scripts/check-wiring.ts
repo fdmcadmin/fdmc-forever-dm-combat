@@ -199,6 +199,7 @@ const EXPORT_LIST = /^\s*export\s*\{([^}]*)\}\s*(?:from\s*["'][^"']+["'])?\s*;?/
 /** `import { a, b as c }` / `import Default,` — the NAMES a file pulls from one module. */
 const IMPORT_NAMES = /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:([A-Za-z_$][\w$]*)\s*,?\s*)?(?:\{([^}]*)\})?\s*(?:from\s*)?["']([^"']+)["']/g;
 const NAMESPACE_IMPORT = /(?:^|\n)\s*import\s+\*\s+as\s+[A-Za-z_$][\w$]*\s+from\s*["']([^"']+)["']/g;
+const DYNAMIC_IMPORT = /\bimport\(\s*["']([^"']+)["']\s*\)/g;
 
 function valueExportsOf(file: string): string[] {
   const text = readFileSync(file, "utf8");
@@ -223,6 +224,28 @@ function namesPulledBy(readers: string[]): { byTarget: Map<string, Set<string>>;
     for (const m of text.matchAll(NAMESPACE_IMPORT)) {
       const t = resolveSpec(f, m[1]);
       if (t) whole.add(t);
+    }
+    /**
+     * ⚠ A DYNAMIC IMPORT PULLS THE NAMES ITS READER USES. `import("./m")` resolves to the module's namespace,
+     * and what is read off it (`.then(m => m.X)`, a destructure after `await`, a `Promise.all`) has no one
+     * shape to parse. 0.8.63.0 moved the GM's panels and the library migrations behind `import()` so a player
+     * never downloads them, and reading that as "nothing imports these names" would push code back into the
+     * static graph to satisfy a gate.
+     *
+     * Treating it as a namespace import (reaches everything) was tried first and HID 17 ledgered orphans in
+     * modules some window already loads on demand. So: an export of the target counts as pulled when its name
+     * appears in the reader's code with comments stripped. Scoped to files that dynamically import that exact
+     * module, a name match is evidence, not the whole-codebase guess the note above rejects.
+     */
+    const uncommented = text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
+    for (const m of uncommented.matchAll(DYNAMIC_IMPORT)) {
+      const target = resolveSpec(f, m[1]);
+      if (!target || target === f) continue;
+      const set = byTarget.get(target) ?? new Set<string>();
+      for (const name of valueExportsOf(target)) {
+        if (new RegExp(`\\b${name.replace(/\$/g, "\\$")}\\b`).test(uncommented)) set.add(name);
+      }
+      byTarget.set(target, set);
     }
     for (const m of text.matchAll(IMPORT_NAMES)) {
       const target = resolveSpec(f, m[3]);
@@ -291,6 +314,11 @@ orphanExports.sort(); scriptOnlyExports.sort();
  * nothing a DM touches can reach. Removing one is progress; adding one is a deliberate edit.
  */
 const KNOWN_SCRIPT_ONLY_EXPORTS: readonly string[] = [
+  // Reached by probe-storage-fallback through import(); counted since 0.8.63.0 taught this gate to read dynamic imports.
+  "core/utils/safeStorage.ts → storageGet",
+  "core/utils/safeStorage.ts → storageMode",
+  "core/utils/safeStorage.ts → storageRemove",
+  "core/utils/safeStorage.ts → storageSet",
   "core/constants/damageTypes.ts → damageTypesOf",
   "core/encounter-band/controlPricing.ts → proneIncomingSwing",
   "core/encounter-band/controlPricing.ts → withRerollOnFail",
@@ -411,10 +439,6 @@ const KNOWN_ORPHAN_EXPORTS: readonly string[] = [
   "core/ui/pcActionTypes.ts → splitPcActionsByTab",
   "core/ui/pcActionTypes.ts → validatePcActionDraft",
   "core/ui/tabVisuals.ts → tabEmptyHint",
-  "core/utils/safeStorage.ts → storageGet",
-  "core/utils/safeStorage.ts → storageMode",
-  "core/utils/safeStorage.ts → storageRemove",
-  "core/utils/safeStorage.ts → storageSet",
   "data/broken-chain/authored.generated.ts → AUTHORED_AT",
   "data/broken-chain/monsterLibrary.ts → VOIDED_FOR_CHANGES",
   "modules/dnd-5e/featPricing.generated.ts → FEAT_EXPRESSION_DICTIONARY",

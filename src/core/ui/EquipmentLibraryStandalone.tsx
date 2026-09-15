@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from "react";
 import { parseActField, parseSessionField } from "../campaign/actTags";
-import { loadConvergenceInbox, removeFromConvergenceInbox } from "../state/convergenceInbox";
+import { loadConvergenceInbox, removeFromConvergenceInbox, isConvergenceRequest } from "../state/convergenceInbox";
 import { SELECTABLE_ITEM_TYPES, itemTypeAllows } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
 import { matchingForms } from "../constants/chassis";
@@ -108,22 +108,8 @@ export function isLootChoice(msg: unknown): msg is LootChoice {
 export function isConvergenceOffer(msg: unknown): msg is ConvergenceOffer {
   return Boolean(msg && typeof msg === "object" && (msg as { type?: unknown }).type === "fdmc:convergence-offer");
 }
-/**
- * A convergence request must carry its submitted items, not just its type.
- *
- * The approval panel maps over `submittedItemIds` directly, so a message that names the type
- * but lacks the array throws DURING RENDER — which shows as a blank screen with no way out,
- * because the control that closes it is inside the component that failed to render. Checking
- * the shape here means a malformed message is ignored where it arrives instead of taking the
- * window down when someone clicks Review.
- */
-export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
-  if (!msg || typeof msg !== "object") return false;
-  const m = msg as { type?: unknown; submittedItemIds?: unknown; seatId?: unknown };
-  return m.type === "fdmc:convergence-request"
-    && Array.isArray(m.submittedItemIds)
-    && typeof m.seatId === "string";
-}
+/** The shape check for a forge request moved to `convergenceInbox` — see the note there. */
+export { isConvergenceRequest };
 
 // itemToAction is imported from EquipmentBagEditor (canonical source with weapon auto-detect)
 

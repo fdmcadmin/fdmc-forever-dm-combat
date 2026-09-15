@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
-import { ActorEditor } from "./ActorEditor";
+// The editor loads when a level-up is opened, not with every player's window — see runtime-shell/lazyPanels.
+import { LazyActorEditor as ActorEditor, PanelLoading } from "../runtime-shell/lazyPanels";
 
 // ─── Broadcast types ──────────────────────────────────────────────────────────
 
@@ -84,12 +85,14 @@ export function LevelUpApprovalPanel({
           </button>
         </div>
         <div style={{ flex: 1, overflow: "hidden" }}>
-          <ActorEditor
-            actor={finalActor}
-            mode="edit-current"
-            onSave={(edited) => { setFinalActor(edited); setReviewing(false); }}
-            onCancel={() => setReviewing(false)}
-          />
+          <Suspense fallback={<PanelLoading />}>
+            <ActorEditor
+              actor={finalActor}
+              mode="edit-current"
+              onSave={(edited) => { setFinalActor(edited); setReviewing(false); }}
+              onCancel={() => setReviewing(false)}
+            />
+          </Suspense>
         </div>
       </div>
     );
@@ -244,13 +247,15 @@ export function LevelUpRequestPanel({ actor, seatId, onClose }: LevelUpRequestPa
         </p>
       </div>
       <div style={{ flex: 1, overflow: "hidden" }}>
-        <ActorEditor
-          actor={actor}
-          mode="edit-current"
-          proposeMode
-          onSave={(proposedActor) => void handlePropose(proposedActor)}
-          onCancel={onClose}
-        />
+        <Suspense fallback={<PanelLoading />}>
+          <ActorEditor
+            actor={actor}
+            mode="edit-current"
+            proposeMode
+            onSave={(proposedActor) => void handlePropose(proposedActor)}
+            onCancel={onClose}
+          />
+        </Suspense>
       </div>
     </div>
   );

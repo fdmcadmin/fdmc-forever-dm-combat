@@ -351,3 +351,6 @@ jobs:
 
       - name: check seat transport + display mode
         run: npm run check:seattransport
+
+      - name: check player bundle + loading screen
+        run: npm run check:playerbundle

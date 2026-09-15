@@ -1,7 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
-import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
-import { migrateFeatsIntoFeatures } from "./core/campaign/migrateFeatsIntoFeatures";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import appManifest from "../public/manifest.json";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { FDMC_STORAGE_KEYS } from "./core/constants/storageKeys";
@@ -56,9 +53,15 @@ import { playerSafeTier } from "./core/ui/ThreatHpBar";
 import { patchCombat, patchActorHp, patchActorInitiative, patchActorTracker, walletsFromRoomState, getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
 import { isActorStateRequest } from "./core/state/actorStateRequests";
 import { addToConvergenceInbox, loadConvergenceInbox } from "./core/state/convergenceInbox";
-import { isConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
-import { EncounterCleanupPanel } from "./core/campaign/EncounterCleanupPanel";
-import { FdmcRoomMaintenancePanel } from "./core/campaign/FdmcRoomMaintenancePanel";
+import { isConvergenceRequest } from "./core/state/convergenceInbox";
+import {
+  LazyActorEditor as ActorEditor,
+  LazyEncounterCleanupPanel as EncounterCleanupPanel,
+  LazyEncounterLibraryPanel as EncounterLibraryPanel,
+  LazyFdmcRoomMaintenancePanel as FdmcRoomMaintenancePanel,
+  LazySeatAssignmentPanel as SeatAssignmentPanel,
+  PanelLoading,
+} from "./core/runtime-shell/lazyPanels";
 import { useCombatLog } from "./core/combat-log/useCombatLog";
 import { useActionEconomyState } from "./core/state/useActionEconomyState";
 import { useActorConcentrationState } from "./core/state/useActorConcentrationState";
@@ -85,17 +88,15 @@ import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { obrSend } from "./core/utils/obrReady";
-import { loadEquipmentLibrary, itemToAction, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, itemToAction, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
 import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui/openLootOffer";
 import { FDMC_ACCENTS } from "./core/constants/theme";
-import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
-import { ActorEditor, type ActorEditorSaveMode } from "./core/ui/ActorEditor";
+import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
 import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
 import { resolveActor } from "./core/table-state/actorHydrationBoundary";
-import { SeatAssignmentPanel } from "./core/seats/SeatAssignmentPanel";
 import { useDmSeatSystem, usePlayerSeatSystem } from "./core/seats/useSeatSystem";
 import {
   seedLibraryFromBundled,
@@ -110,7 +111,6 @@ import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatType
 import { DisplayModeToggle, useDisplayMode } from "./core/ui/useDisplayMode";
 import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
-import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
 import { type MainEncounterMonsterInstance } from "./core/monsters/runtime/mainMonsterRuntime";
 import {
   saveMonsterRoster,
@@ -144,8 +144,7 @@ import { wipePartyLocalData, buildClearedActorLiveState } from "./core/seats/wip
 import { takeSnapshot, mirrorWallets } from "./core/state/autoBackup";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { bondMilestoneForEncounter } from "./modules/the-broken-chain/content/bondGates";
-import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
-import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
+import { useLazyMonsterLibrary } from "./core/monsters/useLazyMonsterLibrary";
 import type { ActorAction } from "./core/types/tabs";
 import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
 import { appendLogEntry, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
@@ -836,43 +835,30 @@ export default function App() {
   // were never opened in this browser. Idempotent — guarded by the seed-version key.
   // The repair runs BEFORE the seeders: it drops rows a previous build left behind, and seeding
   // on top of them would just re-resolve to the stale copies.
-  useMemo(() => {
-    /**
-     * ⚠ ORDER IS THE BUG. The rename migration used to run BEFORE the seed, so every boot went:
-     * clean the stale pool tags, then re-write them from the seeded library. And because the
-     * migration stamps itself as done, it never got a second chance — the stale pools came back
-     * once per load and could not be removed, because a pool is a STRING on an item rather than
-     * an object anyone can delete.
-     *
-     * Christopher: *"why am i still seeing loot tables that i cant get rid of."*
-     *
-     * Seed first, then migrate what the seed just wrote.
-     */
-    repairEquipmentLibraries();
-    seedCampaignEquipmentLibrary(BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS);
-    seedBaseWeapons();
-    migrateEncounterNames();
-    /**
-     * ⚠ A FIX TO THE SHIPPED LIBRARY DOES NOT REACH A CREATURE THE DM HAS SAVED.
-     *
-     * 0.7.60.7 removed a resistance row that was being counted twice. A stored copy outranks the
-     * shipped template by design, so every creature the DM had already edited kept the doubled row
-     * and kept being priced with it — the build reported the bug fixed while the table still ran it.
-     *
-     * Runs here with the other migrations, once, keyed by version. It removes ONE row and leaves
-     * every other edit alone; reverting the creature would have thrown away the DM's work, which is
-     * the failure this codebase has already paid for twice.
-     */
-    repairDuplicateResistance(BROKEN_CHAIN_MONSTER_LIBRARY);
-    /**
-     * ⚠ ONE TAB FOR FEATS AND CLASS FEATURES, AND IT IS FEATURES.
-     *
-     * Christopher: *"make sure features tab is what is shown on new dnd mod actors as well as
-     * existing actors."* New actors get it because the editor no longer offers a Feats step;
-     * existing ones get it here. The readers still accept both, so a character that has not
-     * migrated keeps working — the migration moves the DATA, it is not a precondition.
-     */
-    migrateFeatsIntoFeatures(loadActorLibrary, saveActorLibrary);
+  /**
+   * ⚠ ORDER IS THE BUG — AND SO WAS WHEN. The rename migration used to run BEFORE the seed, so every boot
+   * cleaned the stale pool tags and then re-wrote them from the seeded library (Christopher: *"why am i still
+   * seeing loot tables that i cant get rid of."*). Seed first, then migrate what the seed just wrote; that
+   * order now lives in `runLibraryMigrations`.
+   *
+   * These ran synchronously in the first render, which made their data — the equipment catalogue and the
+   * whole monster library — a static import of this window. A player downloaded all of it before the app
+   * could mount and claim a seat. They now load right after the first render; each step is idempotent and
+   * version-keyed, as before. Bumping the epoch re-renders the readers (a player's forge button reads the
+   * catalogue) once the seed is in.
+   */
+  const [, setLibraryEpoch] = useState(0);
+  useEffect(() => {
+    let active = true;
+    void import("./core/campaign/libraryMigrations")
+      .then(({ runLibraryMigrations }) => {
+        const report = runLibraryMigrations();
+        if (!active) return;
+        if (report.featsMoved > 0) setActorLibrary(loadActorLibrary());
+        setLibraryEpoch(epoch => epoch + 1);
+      })
+      .catch(error => console.warn("[FDMC] library migrations did not load", error));
+    return () => { active = false; };
   }, []);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
@@ -980,8 +966,11 @@ export default function App() {
    * edited is the Steed that arrives — the precedence rule lives in one place and this is not a
    * second one.
    */
-  const summonLibrary = useMemo(() => resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library, []);
+  // The library loads for the GM, or once any summon is on record — see useLazyMonsterLibrary.
+  const [needMonsterLibrary, setNeedMonsterLibrary] = useState(false);
+  const summonLibrary = useLazyMonsterLibrary(needMonsterLibrary);
   const {
+    summonRecords,
     activeSummons,
     summonBody,
     dismissSummon,
@@ -991,6 +980,16 @@ export default function App() {
     roomLiveState.combat.round,
     summonLibrary,
   );
+  useEffect(() => {
+    if (isDmMode || summonRecords.length > 0) setNeedMonsterLibrary(true);
+  }, [isDmMode, summonRecords.length]);
+  // The GM's own saved creatures get the shipped-library repair; a player's storage holds none.
+  useEffect(() => {
+    if (!isDmMode) return;
+    void import("./core/campaign/libraryMigrations")
+      .then(({ runGmMonsterRepairs }) => runGmMonsterRepairs())
+      .catch(error => console.warn("[FDMC] the monster library repair did not load", error));
+  }, [isDmMode]);
 
   /**
    * A summon-bearing action was used — record the body.
@@ -2726,8 +2725,10 @@ export default function App() {
   // Still identifying the viewer — show a minimal loading state, no flash
   if (isRoleLoading) {
     return (
-      <div style={{ padding: 16, textAlign: "center", color: "#555" }}>
-        <p style={{ fontSize: 12 }}>Loading…</p>
+      <div style={{ padding: 16, textAlign: "center", color: "#555", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <p style={{ fontSize: 12, margin: 0 }}>Loading…</p>
+        {/* Every screen before a seat carries the mode — a slow device must be able to pick Lite before it sits. */}
+        <DisplayModeToggle state={display} />
       </div>
     );
   }
@@ -2740,6 +2741,7 @@ export default function App() {
       <div style={{ padding: 24, textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
         <p style={{ margin: 0, fontSize: 14 }}>Forever DM Combat</p>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>{APP_VERSION}</p>
+        <DisplayModeToggle state={display} />
         {tableBinding ? (
           <>
             <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
@@ -3119,6 +3121,7 @@ export default function App() {
           isAllowed={isDmMode}
           onClose={closePanel}
         >
+          <Suspense fallback={<PanelLoading />}>
           {openPanel === "actorAssignments" && (
             <SeatAssignmentPanel
             obrPlayers={obrPlayers}
@@ -3182,6 +3185,7 @@ export default function App() {
               onPurgeSeatMetadata={purgeAllSeatMetadata}
             />
           )}
+        </Suspense>
         </ToolPanelLayer>
       </main>
     );
@@ -4565,6 +4569,8 @@ export default function App() {
         isAllowed={isDmMode}
         onClose={closePanel}
       >
+        {/* GM panels load on first open — see core/runtime-shell/lazyPanels. */}
+        <Suspense fallback={<PanelLoading />}>
         {openPanel === "actorAssignments" && (
           <SeatAssignmentPanel
             obrPlayers={obrPlayers}
@@ -4661,7 +4667,6 @@ export default function App() {
 
         {openPanel === "monsterPanel" && (
           <EncounterLibraryPanel
-            monsterLibrary={BROKEN_CHAIN_MONSTER_LIBRARY}
             activeRosterCount={monsterCandidates.length}
             onLoadEncounter={(instances) => {
               addMonsterInstances(instances);
@@ -4779,6 +4784,7 @@ export default function App() {
             onPurgeSeatMetadata={purgeAllSeatMetadata}
           />
         )}
+      </Suspense>
       </ToolPanelLayer>
 
       {/* ── Actor pop-out overlay — CSS popout within same React tree ── */}

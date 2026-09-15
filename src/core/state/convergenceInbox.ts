@@ -1,4 +1,26 @@
 import { safeStorage } from "../utils/safeStorage";
+import type { ConvergenceRequest } from "../ui/EquipmentLibraryStandalone";
+
+/**
+ * A convergence request must carry its submitted items, not just its type.
+ *
+ * The approval panel maps over `submittedItemIds` directly, so a message that names the type
+ * but lacks the array throws DURING RENDER — which shows as a blank screen with no way out,
+ * because the control that closes it is inside the component that failed to render. Checking
+ * the shape here means a malformed message is ignored where it arrives instead of taking the
+ * window down when someone clicks Review.
+ *
+ * Lives here, not beside the panel, because the main window checks every broadcast with it: importing
+ * it from `EquipmentLibraryStandalone` put that whole 137KB panel in every player's download.
+ */
+export function isConvergenceRequest(msg: unknown): msg is ConvergenceRequest {
+  if (!msg || typeof msg !== "object") return false;
+  const m = msg as { type?: unknown; submittedItemIds?: unknown; seatId?: unknown };
+  return m.type === "fdmc:convergence-request"
+    && Array.isArray(m.submittedItemIds)
+    && typeof m.seatId === "string";
+}
+
 /**
  * The convergence inbox — a durable home for forge requests.
  *

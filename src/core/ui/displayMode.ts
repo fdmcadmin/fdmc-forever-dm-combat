@@ -122,12 +122,17 @@ export function readDeviceSignals(startupMs?: number): DeviceSignals {
 }
 
 export function loadDisplayModeChoice(): DisplayModeChoice {
+  let raw: string | null | undefined;
   try {
-    const raw = safeStorage().getItem(DISPLAY_MODE_STORAGE_KEY);
-    return raw === "full" || raw === "lite" ? raw : "auto";
-  } catch {
-    return "auto";
-  }
+    raw = safeStorage().getItem(DISPLAY_MODE_STORAGE_KEY);
+  } catch { /* fall through to the loading screen's copy */ }
+  if (raw === "full" || raw === "lite") return raw;
+  /**
+   * The loading screen in index.html (shown before any of the app has downloaded) also keeps its choice on
+   * `window`, for a browser whose every store refused the write — a choice made there must still hold here.
+   */
+  const boot = typeof window !== "undefined" ? (window as { __fdmcBootDisplayChoice?: unknown }).__fdmcBootDisplayChoice : undefined;
+  return boot === "full" || boot === "lite" ? boot : "auto";
 }
 
 export function saveDisplayModeChoice(choice: DisplayModeChoice): void {
