@@ -147,6 +147,19 @@ console.log("\n2. the casting becomes a body");
     String(noSlot.summons[0]?.body.stats.ac) !== "12",
     `got ${String(noSlot.summons[0]?.body.stats.ac)}`);
 
+  /**
+   * ⚠ A SEAT HAS NO MONSTER LIBRARY AT ALL. Christopher, 2026-09-15: *"even on the full version the players
+   * should not need to download the monster library [...] players should only have to load the data that is
+   * attached to that seat."* The GM resolves the body once and writes it ON the record, and the record is
+   * what the summon channel broadcasts — so a player renders the Steed from the record with an EMPTY library.
+   */
+  const carried = resolveActiveSummons([{ ...steed, body: summons[0]!.body, bodyCount: 1 }], [paladin], 1, []);
+  eq("a record carrying its body resolves with an EMPTY library", carried.summons.length, 1);
+  eq("...and it is the body the GM resolved, slot and all", String(carried.summons[0]?.body.stats.ac), "12");
+  const noBody = resolveActiveSummons([steed], [paladin], 1, []);
+  ok("mutation: the same record WITHOUT the body resolves to nothing when there is no library",
+    noBody.summons.length === 0 && noBody.problems.length > 0, noBody.problems.join(" | "));
+
   // An inline body needs no library at all — that is the Cannon's whole point.
   const cannon = resolveActiveSummons([record({
     id: "c1", ownerId: artificer.id, actionId: "arcane-cannon",

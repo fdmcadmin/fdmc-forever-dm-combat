@@ -147,6 +147,8 @@ import { bondMilestoneForEncounter } from "./modules/the-broken-chain/content/bo
 import { useLazyMonsterLibrary } from "./core/monsters/useLazyMonsterLibrary";
 import type { ActorAction } from "./core/types/tabs";
 import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
+import { materializeSummon } from "./core/monsters/summon";
+import { summonerContextFromActor } from "./core/state/summonFromActor";
 import { appendLogEntry, makeLogId, makeActionCode, readEncounterLog } from "./core/events/encounterLog";
 import { generatePostCombatSummary, exportSummaryAsText, exportFilename, downloadExport } from "./core/export/encounterLogExport";
 
@@ -849,6 +851,13 @@ export default function App() {
    */
   const [, setLibraryEpoch] = useState(0);
   useEffect(() => {
+    /**
+     * ⚠ THE CAMPAIGN EQUIPMENT CATALOGUE IS THE GM'S LIBRARY, NOT A SEAT'S. Seeding it here downloaded
+     * ~330KB of authored items into every player's window for one reader — the convergence forge button —
+     * which now reads the character's OWN items instead (they carry their convergence tag). A seat loads
+     * the data attached to that seat: its actors, the GM's broadcasts, and the room's live state.
+     */
+    if (!isDmMode) return;
     let active = true;
     void import("./core/campaign/libraryMigrations")
       .then(({ runLibraryMigrations }) => {
@@ -859,7 +868,7 @@ export default function App() {
       })
       .catch(error => console.warn("[FDMC] library migrations did not load", error));
     return () => { active = false; };
-  }, []);
+  }, [isDmMode]);
 
   // bundledActors is derived from the DM's actor library (not the empty brokenChainActors export).
   // All runtime hooks that need actor IDs/HP defaults receive the real seeded actors this way.
@@ -980,9 +989,31 @@ export default function App() {
     roomLiveState.combat.round,
     summonLibrary,
   );
+  /**
+   * ⚠ THE LIBRARY IS THE GM'S. Christopher, 2026-09-15: *"even on the full version the players should not
+   * need to download the monster library and the equipment library and players should only have to load the
+   * data that is attached to that seat."* A summoned body reaches a player IN THE RECORD, resolved by the
+   * GM below — so a player never loads the 1.1MB library, with or without a summon on the field.
+   */
   useEffect(() => {
-    if (isDmMode || summonRecords.length > 0) setNeedMonsterLibrary(true);
-  }, [isDmMode, summonRecords.length]);
+    if (isDmMode) setNeedMonsterLibrary(true);
+  }, [isDmMode]);
+
+  /**
+   * The GM resolves every summon record that has no body yet and puts the body ON the record, which is
+   * broadcast to every seat. One materialization, in the one window that holds the library.
+   */
+  useEffect(() => {
+    if (!isDmMode || summonLibrary.length === 0) return;
+    for (const record of summonRecords) {
+      if (record.body) continue;
+      const owner = actors.find(a => a.id === record.ownerId) ?? dmActors.find(a => a.id === record.ownerId);
+      if (!owner) continue;
+      const made = materializeSummon(record.spec, summonerContextFromActor(owner, record.slotLevel), summonLibrary);
+      if (!made?.body) continue;
+      summonBody({ ...record, body: made.body, bodyCount: Math.max(1, made.count) });
+    }
+  }, [isDmMode, summonLibrary, summonRecords, actors, dmActors, summonBody]);
   // The GM's own saved creatures get the shipped-library repair; a player's storage holds none.
   useEffect(() => {
     if (!isDmMode) return;
@@ -3790,17 +3821,27 @@ export default function App() {
 
       {/* ── Player convergence panel (player-initiated) ── */}
       {isPlayerMode && showConvergePanel && actorToShow && (() => {
-        // Get convergence-eligible items from the actor's equipment bag
-        const equipBag: { id?: string; label?: string; itemId?: string; metadata?: { convergence?: { role?: string; mechanicalTag?: string } } }[] =
+        /**
+         * ⚠ FROM THE SEAT'S OWN SHEET, NOT THE CAMPAIGN CATALOGUE. Christopher, 2026-09-15: *"players
+         * should only have to load the data that is attached to that seat."* This resolved every bag entry
+         * against the seeded equipment library, which is why every player's window downloaded ~330KB of
+         * authored items. `itemToAction` already copies an item's convergence identity onto the action —
+         * *"Convergence identity travels WITH the item [...] they must be able to see they are holding
+         * one"* — so the character the GM pushed already says which of its items are inputs.
+         */
+        const equipBag: { id?: string; label?: string; description?: string; metadata?: { convergence?: { role?: string; mechanicalTag?: string; actLabel?: string; tier?: string } } }[] =
           (actorToShow as unknown as { tabs?: { equipment?: unknown[] } }).tabs?.equipment as typeof equipBag ?? [];
-        const allLibItems = loadEquipmentLibrary();
-        // An item is convergence-eligible if it's tagged in the library with role: "input"
         const eligibleItems = equipBag
-          .map(a => {
-            const rawId = (a.id ?? "").replace(/^equip-/, "");
-            return allLibItems.find(i => i.id === rawId || `equip-${i.id}` === a.id);
-          })
-          .filter((i): i is import("./core/ui/EquipmentBagEditor").EquipmentItem => Boolean(i?.convergence?.role === "input"));
+          .filter(a => a.metadata?.convergence?.role === "input")
+          .map(a => ({
+            // The DM's approval panel keys on the LIBRARY id; the bag action is that id with a prefix.
+            id: (a.id ?? "").replace(/^equip-/, ""),
+            name: a.label ?? "Unnamed item",
+            description: a.description,
+            tier: a.metadata?.convergence?.tier,
+            act: a.metadata?.convergence?.actLabel,
+            mechanicalTag: a.metadata?.convergence?.mechanicalTag,
+          }));
 
         const selected = convergenceSelected;
         const toggle = (id: string) =>
@@ -3899,13 +3940,11 @@ export default function App() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
                           <strong style={{ fontSize: 14, color: "#fff" }}>{item.name}</strong>
-                          {item.category && <span style={{ fontSize: 10, color: "#555", background: "#2a2a2a", padding: "1px 6px", borderRadius: 8 }}>{item.category}</span>}
                           {item.tier && <span style={{ fontSize: 10, color: "#4caf5088" }}>{item.tier}</span>}
-                          <span style={{ fontSize: 10, color: "#4caf50" }}>◈ {item.convergence?.mechanicalTag}</span>
+                          {item.mechanicalTag && <span style={{ fontSize: 10, color: "#4caf50" }}>◈ {item.mechanicalTag}</span>}
                         </div>
-                        {item.act && <p style={{ margin: "0 0 4px", fontSize: 10, color: "#444" }}>{item.act}{item.session ? ` · ${item.session}` : ""}</p>}
-                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>
-                        {item.mechanicsText && <p style={{ margin: 0, fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{item.mechanicsText}</p>}
+                        {item.act && <p style={{ margin: "0 0 4px", fontSize: 10, color: "#444" }}>{item.act}</p>}
+                        {item.description && <p style={{ margin: 0, fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item.description}</p>}
                       </div>
                     </div>
                   </button>
@@ -4004,14 +4043,10 @@ export default function App() {
 
       {/* ── Player convergence forge button — shown when player has ≥2 convergence items ── */}
       {isPlayerMode && actorToShow && !showConvergePanel && !convergenceSubmitting && (() => {
-        const equipBag: { id?: string }[] =
-          (actorToShow as unknown as { tabs?: { equipment?: { id?: string }[] } }).tabs?.equipment ?? [];
-        const libItems = loadEquipmentLibrary();
-        const eligibleCount = equipBag.filter(a => {
-          const rawId = (a.id ?? "").replace(/^equip-/, "");
-          const lib = libItems.find(i => i.id === rawId || `equip-${i.id}` === a.id);
-          return lib?.convergence?.role === "input";
-        }).length;
+        // The character's own items say so — see the panel above; a seat loads no campaign catalogue.
+        const equipBag: { metadata?: { convergence?: { role?: string } } }[] =
+          (actorToShow as unknown as { tabs?: { equipment?: { metadata?: { convergence?: { role?: string } } }[] } }).tabs?.equipment ?? [];
+        const eligibleCount = equipBag.filter(a => a.metadata?.convergence?.role === "input").length;
         if (eligibleCount < 2) return null;
         return (
           <div style={{ padding: "4px 12px", flexShrink: 0 }}>

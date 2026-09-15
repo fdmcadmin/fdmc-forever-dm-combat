@@ -122,8 +122,31 @@ console.log("\n3. App reaches the GM's modules only on demand");
   ]) ok(`no static import of ${path}`, !staticFrom(path));
   ok("the migrations load with import() after the first render", /import\("\.\/core\/campaign\/libraryMigrations"\)[\s\S]{0,80}runLibraryMigrations\(\)/.test(app));
   ok("the GM's monster repair loads only for the GM", /if \(!isDmMode\) return;\s*void import\("\.\/core\/campaign\/libraryMigrations"\)[\s\S]{0,80}runGmMonsterRepairs\(\)/.test(app));
-  ok("the summon library loads for the GM or once a summon is on record",
-    /if \(isDmMode \|\| summonRecords\.length > 0\) setNeedMonsterLibrary\(true\);/.test(app) && /useLazyMonsterLibrary\(needMonsterLibrary\)/.test(app));
+
+  /**
+   * ⚠ NEITHER LIBRARY IS A SEAT'S, IN EITHER MODE. Christopher, 2026-09-15: *"even on the full version the
+   * players should not need to download the monster library and the equipment library and players should
+   * only have to load the data that is attached to that seat."* Lazy was not enough: a player with a summon
+   * on the field still pulled 1.1MB, and the equipment catalogue was seeded in every window.
+   */
+  ok("the monster library loads for the GM alone — a summon does not pull it into a seat",
+    /if \(isDmMode\) setNeedMonsterLibrary\(true\);/.test(app)
+    && !/summonRecords\.length > 0\) setNeedMonsterLibrary/.test(app)
+    && /useLazyMonsterLibrary\(needMonsterLibrary\)/.test(app));
+  ok("...and the GM puts the resolved body ON the record, so a seat can render it with no library",
+    /if \(record\.body\) continue;/.test(app) && /summonBody\(\{ \.\.\.record, body: made\.body, bodyCount/.test(app)
+    && /const carried = record\.body \?/.test(codeOf("src/core/state/activeSummons.ts")));
+  ok("the equipment catalogue is seeded for the GM alone",
+    /if \(!isDmMode\) return;\s*let active = true;\s*void import\("\.\/core\/campaign\/libraryMigrations"\)/.test(app));
+  {
+    // The player's forge panel and its button. Read RAW: `codeOf` strips the JSX comments that mark them.
+    const raw = readFileSync(resolve(ROOT, "src/App.tsx"), "utf8");
+    const start = raw.indexOf("Player convergence panel (player-initiated)");
+    const end = raw.indexOf("Player level-up request panel", start);
+    const playerBlocks = raw.slice(start, end > start ? end : start + 12000);
+    ok("a seat's convergence panel reads its own sheet, never the catalogue",
+      start > 0 && !/loadEquipmentLibrary\(/.test(playerBlocks) && /a\.metadata\?\.convergence\?\.role === "input"/.test(playerBlocks));
+  }
   ok("the lazy panels render under Suspense", (app.match(/<Suspense fallback=\{<PanelLoading \/>\}>/g) ?? []).length >= 2);
   const level = codeOf("src/core/ui/LevelUpRequestPanel.tsx");
   ok("a player's level-up window loads the editor on demand too", !/from "\.\/ActorEditor"/.test(level) && /LazyActorEditor as ActorEditor/.test(level));

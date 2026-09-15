@@ -49,6 +49,23 @@ export type ActiveSummon = {
   summonedOnRound: number;
   /** The slot spent, when the body scales with it. */
   slotLevel?: number;
+  /**
+   * THE RESOLVED BODY, WRITTEN BY THE CLIENT THAT HAS THE LIBRARY — the GM.
+   *
+   * Christopher, 2026-09-15: *"even on the full version the players should not need to download the monster
+   * library and the equipment library and players should only have to load the data that is attached to that
+   * seat"*, and *"the DM should be broadcasting any changes [...] so they just have to be able to receive
+   * those packets for those characters attached to their seats and be able to read the room meta data"*.
+   *
+   * MASTER's rule — *"The RECORD travels, never the body"* — was about ROOM METADATA, which is 16KB for every
+   * extension on the table combined and must never hold a stat block. This is the summon CHANNEL, and a
+   * player with no monster library cannot materialize a body from a record: without this the Steed and the
+   * Cannon simply never appeared on a player's tracker. The GM resolves it once and it travels with the
+   * record; the record is still what persists and what expires.
+   */
+  body?: MainMonsterTemplate;
+  /** How many bodies that one call brought — resolved with `body`. */
+  bodyCount?: number;
 };
 
 /** A body on the field, resolved and ready for the turn order. */
@@ -114,7 +131,12 @@ export function resolveActiveSummons(
     const spec = record.slotLevel !== undefined && record.spec.slotLevel === undefined
       ? { ...record.spec, slotLevel: record.slotLevel }
       : record.spec;
-    const made = materializeSummon(spec, summonerContextFromActor(owner, record.slotLevel), library);
+    /**
+     * ⚠ THE BODY THE RECORD CARRIES WINS, and a client without the library has only that. The GM writes it
+     * (see `ActiveSummon.body`); materializing again here would need the library this exists to avoid.
+     */
+    const carried = record.body ? { body: record.body, count: Math.max(1, Number(record.bodyCount ?? 1)), problems: [] as string[] } : undefined;
+    const made = carried ?? materializeSummon(spec, summonerContextFromActor(owner, record.slotLevel), library);
     if (!made?.body) {
       problems.push(...(made?.problems ?? [`"${record.spec.name ?? "summon"}" could not be built.`]));
       continue;

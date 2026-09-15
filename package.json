@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.64.0",
+  "version": "0.8.65.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
