@@ -73,7 +73,8 @@ export function turnDenialFor(feature: ParsedFeature, target: Target): TurnDenia
   const readers = readDurationReaders(text);
   const has = (id: string) => readers.some(r => r.value === id);
   const fixed: number[] = [];
-  if (has("BR064")) fixed.push(0);
+  // BR061 "for the rest of the turn" closes with the turn it lands in: no following turn is lost.
+  if (has("BR064") || has("BR061")) fixed.push(0);
   if (has("BR062") || has("BR063") || has("BR065")) fixed.push(1);
   if (has("BR066")) fixed.push(2);
   if (has("BR067")) {

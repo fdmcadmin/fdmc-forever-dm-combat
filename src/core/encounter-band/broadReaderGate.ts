@@ -193,6 +193,16 @@ function readTextCues(t: string, u: Uses, resolutionKnown: boolean) {
   // 4 ── Duration & Final
   // The duration family has ONE reader, shared with the pricer that charges a PC's lost turns.
   for (const r of readDurationReaders(t)) add(r.value, r.evidence);
+  /**
+   * ⚠ A CAP ON HOW MANY EXIST AT ONCE IS BR074, AND IT WAS LEFT UNREAD (r41).
+   *
+   * Shardbound's Raise Prism: *"It can have no more than two stakes at once; creating a third
+   * destroys the oldest."* 0.8.55.0 reported *"no reader composition represents"* it. v5 has one:
+   * BR074 tracks *"each allowed simultaneous power/effect up to the source capacity"*, and the
+   * replacement is FE25 Object / Mark Consumed, whose typical case the workbook prints as
+   * *"Stake/mark/tether"*. The endpoint is set in `finalize`.
+   */
+  if (has(/\bno more than (two|three|four|five|six|\d+) [a-z' -]+ at (once|a time)\b/)) add("BR074", "a cap on how many exist at once");
 
   // 5 ── Action Economy
   if (has(/\bonce per turn\b|\b1\s*\/\s*turn\b|\bthe first time\b[^.]*\bon (its|a) turn\b/)) add("BR092", "once per turn");
@@ -315,9 +325,8 @@ function finalize(channel: string, name: string, u: Uses, passive: boolean, text
   const needsInput: string[] = [];
   if (lasting.length > 0 && !duration && !selfEnding && !passive) {
     const states = lasting.map(id => `${id} ${READER.get(id)!.name}`).join(", ");
-    needsInput.push(/\bfor the rest of (the|this|the current|its) turn\b/.test(text)
-      ? `${states} lasts "the rest of the turn", and no v5 duration reader is shorter than BR062/BR063 — Runtime Contract r35`
-      : `a lasting state (${states}) with no duration reader — Runtime Contract r35`);
+    // "The rest of the turn" is BR061 now (`readDurationReaders`), so it never reaches this line.
+    needsInput.push(`a lasting state (${states}) with no duration reader — Runtime Contract r35`);
   }
 
   const finals: EndpointUse[] = [];
@@ -333,11 +342,16 @@ function finalize(channel: string, name: string, u: Uses, passive: boolean, text
     if (has("BR053")) end("FE08", "the grapple is escaped or released");
     if (u.lasting.has("BR056")) end("FE35", "the fear or charm ends");
     if (has("BR025") || has("BR026")) end("FE36", "the forced target ends");
+    if (has("BR080") && /\bmark(s|ed)?\b/.test(text)) end("FE36", "the mark ends and normal targeting returns");
     if (has("BR032") || has("BR033") || has("BR035")) end("FE31", "the recurring damage stops");
     if (has("BR075") || has("BR076") || has("BR077")) end("FE17", "a successful save clears it");
     if (has("BR099")) end("FE12", "the summon despawns");
     if (has("BR100")) end("FE13", "the transformation reverts");
     if (finals.length === 0) end("FE01", "clean expiration");
+  }
+  // A capacity cap's endpoint does not wait on a duration: the oldest is consumed the moment another is made.
+  if (has("BR074") && /\b(destroys|removes|ends|dispels) the oldest\b|\bthe oldest [a-z' -]+ (is destroyed|ends|disappears|vanishes)\b/.test(text)) {
+    end("FE25", "the oldest is consumed when another is made");
   }
   // The nearest worked example from the workbook — a pointer to how v5 means a shape like this to be read.
   let example: MechanicComposition["example"];

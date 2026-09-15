@@ -104,6 +104,39 @@ ok("readers are listed in the workbook's parse order", (() => {
   return ranks.every((r, i) => i === 0 || r >= ranks[i - 1]);
 })());
 
+console.log("\n3b. the five 0.8.55.0 left NEEDS_INPUT compose from v5's own readers");
+/**
+ * Christopher, 2026-09-15: *"why is there 5 needs input items when the v5 workbook should have covered
+ * well over 200+ action/bonus/reaction/spells."* None were workbook gaps. Each has a reader v5 prints, and
+ * each is pinned here to THAT reader — so a later change that clears the count by some other path fails.
+ */
+const mech = (creature: string, action: string) => composeReaders(by(creature)).mechanics.find(m => m.name === action);
+const pin = (creature: string, action: string, reader: string, endpoint: string) => {
+  const m = mech(creature, action);
+  ok(`${creature} · ${action} composes through ${reader} → ${endpoint}`,
+    !!m && m.needsInput.length === 0 && m.readers.some(r => r.id === reader) && m.finals.some(f => f.id === endpoint),
+    m ? `${m.readers.map(r => r.id).join("+")} → ${m.finals.map(f => f.id).join(",")}${m.needsInput.length ? " | " + m.needsInput.join("; ") : ""}` : "missing");
+};
+pin("Hollow Warden", "Threshold Spear", "BR061", "FE01");
+pin("Veilbound Drake Guard", "Perimeter Strike", "BR061", "FE01");
+pin("Velvet Host", "Discourtesy", "BR065", "FE01");
+pin("Brandwing", "Calculated Angle", "BR080", "FE36");
+pin("Shardbound", "Raise Prism", "BR074", "FE25");
+
+// The mutations — each fix must stay narrow.
+const speedNoWindow = glare("On a hit, the target's Speed becomes 0.");
+ok("  (mutation) Speed 0 with NO printed window is still NEEDS_INPUT", speedNoWindow.needsInput.some(n => /no duration reader/.test(n)),
+  speedNoWindow.needsInput.join("; ") || speedNoWindow.readers.map(r => r.id).join("+"));
+const discourtesyAlone = glare("The target's speed is reduced by 10 ft.");
+ok("  (mutation) Discourtesy's first sentence alone, with no turn window, is still NEEDS_INPUT",
+  discourtesyAlone.needsInput.some(n => /no duration reader/.test(n)), discourtesyAlone.needsInput.join("; "));
+const timedMark = glare("Brandwing marks it until the end of its next turn. Attacks against the marked target have Advantage.");
+ok("  (mutation) a mark that PRINTS a timer keeps its timer, not BR080",
+  timedMark.readers.some(r => r.id === "BR063") && !timedMark.readers.some(r => r.id === "BR080"), timedMark.readers.map(r => r.id).join("+"));
+const oneStake = glare("Brandwing creates one crystal stake in an unoccupied space it can see within 30 feet.");
+ok("  (mutation) with no cap sentence there is no BR074 and no FE25",
+  !oneStake.readers.some(r => r.id === "BR074") && !oneStake.finals.some(f => f.id === "FE25"), oneStake.readers.map(r => r.id).join("+"));
+
 console.log("\n4. the estimator shows it");
 const panel = readFileSync(resolve(ROOT, "src/core/encounter-band/CreatureEstimatorPanel.tsx"), "utf8");
 ok("the panel composes readers for the chosen creature", /composeReaders\(template[,)]/.test(panel));

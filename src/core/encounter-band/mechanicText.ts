@@ -78,10 +78,39 @@ export function readDurationReaders(text: string | undefined): TextRead<string>[
   take("BR070", /\bconcentration\b/);
   take("BR071", /\bconcentration,? up to\b[^.]*/);
   take("BR061", /\binstantaneous\b/);
+  /**
+   * ⚠ "FOR THE REST OF THE TURN" IS BR061, AND IT WAS REPORTED AS A WORKBOOK GAP.
+   *
+   * 0.8.55.0 left Threshold Spear and Perimeter Strike NEEDS_INPUT with *"no v5 duration reader is
+   * shorter than BR062/BR063"*. That skipped the shortest one v5 has. BR061 Instantaneous prices
+   * *"P_ACTIVE_R = 0 after the resolving event; only immediate and explicit final effects contribute"*,
+   * and a Speed of 0 that closes with the turn the hit lands in is exactly that: its whole value is
+   * the movement it stops now, and nothing of it reaches any later turn. BR049's own alias says the
+   * same from the other side — `speed_zero`: *"Set Speed to 0 for the printed window."* The window
+   * is printed; it is this turn.
+   *
+   * Christopher, 2026-09-15: *"the v5 workbook should have covered well over 200+
+   * action/bonus/reaction/spells."* It did. The reader list was not read to the end.
+   */
+  if (!has("BR061")) take("BR061", /\bfor the rest of (the|this|the current|that|its) (current )?turn\b/);
   // "until" or "before" — Larkskein's Advantage is spent "before the end of its next turn".
   if (!take("BR064", /\b(until|before) (the )?start of the target's next turn\b/)) {
     take("BR062", new RegExp(`\\b(until|before) (the )?start of ${WHO_TURN} next turn\\b`));
   }
+  /**
+   * ⚠ A STATE SCOPED TO THE TARGET'S OWN TURN IS BR065.
+   *
+   * The Velvet Host's Discourtesy: *"The target's speed is reduced by 10 ft. The first time it
+   * willingly moves on its turn, it cannot take reactions until that movement ends."* The second
+   * sentence is the window for both effects — everything the clause does happens "on its turn", and
+   * the reaction lock ends inside that turn when the movement does. BR065 Until End of Target Next
+   * Turn is the reader that bounds it.
+   *
+   * Narrow on purpose: it needs "the first time … on its turn", the shape that names a window. A bare
+   * "The target can't take Reactions." still has no duration and stays NEEDS_INPUT — the gate's
+   * mutation holds that line.
+   */
+  if (!has("BR065")) take("BR065", /\bthe first time (it|the target|that creature) [^.]*\bon its (next )?turn\b/);
   if (!take("BR065", /\b(until|before) (the )?end of the target's next turn\b/)) {
     take("BR063", new RegExp(`\\b(until|before) (the )?end of ${WHO_TURN} next turn\\b`));
   }
@@ -98,6 +127,22 @@ export function readDurationReaders(text: string | undefined): TextRead<string>[
   take("BR080", /\bends (early )?if [^.]*\b(incapacitated|dies|is killed|leaves)\b|\buntil [^.]*\b(dies|is incapacitated)\b/);
   take("BR081", /\bwhile (it is |they are |it remains |the [a-z' -]+ (is|remains) )?(within|inside)\b|\bwhile [^.]*\bcan see\b|\btether/);
   take("BR082", /\bwhen the effect ends\b|\bat the end of the duration\b/);
+  /**
+   * ⚠ A MARK WITH NO PRINTED TIMER IS HELD BY ITS SOURCE — BR080, ENDING IN FE36.
+   *
+   * Brandwing's Calculated Angle *"targets one creature it can see within 90 feet and marks it"* and
+   * names no duration. v5 does not leave that open: a designation is a source-held state, BR080 Ends
+   * on Source Death / Incapacitation / Range Break bounds it, and FE36 Forced-Target / Mark State Ends
+   * is the endpoint (*"Target-order/mark rule ends and normal targeting returns"*). Combat pricing
+   * then caps it at the encounter horizon like every other long state.
+   *
+   * Only when nothing else gave a duration — a mark that DOES print a timer keeps that timer.
+   */
+  const timed = out.some(r => r.value !== "BR080");
+  if (!timed && !has("BR080")) {
+    const mark = t.match(/\bmarks (it|the target|that creature|a creature)\b|\bthe marked (target|creature)\b/);
+    if (mark) out.push({ value: "BR080", evidence: `${mark[0]} — no printed timer, so the mark lasts while its source holds it` });
+  }
   return out;
 }
 
