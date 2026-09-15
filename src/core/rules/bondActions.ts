@@ -287,6 +287,13 @@ function toAction(template: BondTemplate, resolved: ResolvedBond, row: Generated
     description: row.text,
     actionKind: "bond",
     economyCost: BOND_COST,
+    /**
+     * ⚠ AN OFF-TURN OPTION IS LISTED WITH THE REACTIONS, AND STILL COSTS THE BOND.
+     * `pinReaction` puts the row in the card's reactions strip beside the Opportunity Attack; the cost
+     * stays `["bond"]`, so using it lights the BOND and leaves the Reaction free for Spirit Shield or an
+     * Opportunity Attack. See `BondTemplate.offTurnOptions`.
+     */
+    ...(template.offTurnOptions?.includes(row.label) ? { pinReaction: true } : {}),
     category: template.name,
     tags: [stageTag, ...(row.held ? ["Held"] : [])],
     metadata: {

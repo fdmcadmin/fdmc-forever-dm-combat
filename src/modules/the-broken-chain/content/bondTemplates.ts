@@ -35,6 +35,8 @@ export const BROKEN_CHAIN_BOND_TEMPLATES: BondTemplate[] = [
   resourceLean: "sustain",
   mode: "DEFENSIVE",
   timing: "REACTIVE — OFF-TURN",
+  // Intercept fires when a creature hits an ally — another creature's turn. Every name its lineage takes.
+  offTurnOptions: ["Intercept", "Guardian's Stand", "Wall of the Watch", "Unbroken Watch"],
   quote: "\"You stand where the blow is going to land. Someone moves toward your friend and your body is already there — not on your turn. On theirs.\"",
   reads: "COMBAT READS",
   onYourTurn: "ON YOUR TURN",

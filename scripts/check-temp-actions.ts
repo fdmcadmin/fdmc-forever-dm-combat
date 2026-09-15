@@ -90,8 +90,17 @@ console.log("\n4. a reaction spell can be focused");
   const card = codeOf("src/core/ui/ActorCard.tsx");
   ok("firing a pinned shortcut resolves back to the full source action",
     /reaction\.sourceTabId && reaction\.sourceActionId/.test(card));
+  /**
+   * ⚠ STILL A REACTION COST — WITH ONE NAMED EXCEPTION, AND IT IS NOT A SPELL.
+   * 0.8.59.0 lets a `pinReaction` row that costs the BOND pin too: Guardian's Intercept fires off-turn and
+   * its text says "This does not use your reaction". A spell never costs the bond, so an Action-cost spell
+   * ticked as a focused reaction still pins nothing — the intent this assertion was written for.
+   */
   ok("...and the pin gate still requires a reaction cost",
-    /\(action\.pinned \|\| action\.pinReaction\) && action\.economyCost\?\.includes\("reaction"\)/.test(card));
+    /if \(!\(action\.pinned \|\| action\.pinReaction\)\) return false;/.test(card)
+    && /return costs\.includes\("reaction"\) \|\| Boolean\(action\.pinReaction && costs\.includes\("bond"\)\);/.test(card));
+  ok("...whose only exception is a pinReaction row on the BOND slot — never main or bonus",
+    !/costs\.includes\("(main|bonus)"\)/.test(card.slice(card.indexOf("function isPinnedReactionAction"), card.indexOf("function actionToPinnedReaction"))));
 }
 
 console.log(failures ? `\nFAILED (${failures})` : "\nALL PASS");

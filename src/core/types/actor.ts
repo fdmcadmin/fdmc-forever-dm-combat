@@ -94,6 +94,19 @@ export type PinnedReaction = {
   logMessage?: string;
   sourceTabId?: TabId;
   sourceActionId?: string;
+  /**
+   * THE SLOT THIS OFF-TURN RESPONSE SPENDS. Absent means the Reaction.
+   *
+   * Christopher, 2026-09-15: *"the intercept cost bond action but should be listed as reaction option
+   * which is suppose to consume that bond action."* Guardian's Intercept fires on another creature's turn,
+   * so it belongs beside the Opportunity Attack — and its own text says *"This does not use your
+   * reaction."* The workbook agrees (Action Timing r15: bond activations are free/automatic by default;
+   * r24: a response authored as not a Reaction does not consume the normal Reaction).
+   *
+   * The strip used to spend `["reaction"]` for EVERY entry, so pinning Intercept would have burned the
+   * one Reaction its text refuses to touch. It now spends this.
+   */
+  cost?: "reaction" | "bond";
 };
 
 /**

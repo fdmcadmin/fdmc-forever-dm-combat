@@ -357,24 +357,20 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    *   resistance  an EHP multiplier, weighed against what THIS fight throws. A resistance to
    *               something nothing in the fight deals is worth nothing, which is the whole
    *               reason it is weighed rather than assumed.
-   *   reaction    HP per round, and CONTENDED with the bond's — `Action Timing` row 22 puts every
-   *               normal Reaction in one budget, so a character brings the best of them and never
-   *               both. The bond figure goes in so the two compete instead of stacking.
+   *   reaction    HP per round — the best NORMAL reaction per character (Action Timing r22). A bond is
+   *               NOT in that budget (r15, r24; Intercept "does not use your reaction"), so bond
+   *               mitigation and a class reaction both count — added together below.
    */
   const classMitigation = useMemo(() => {
     if (!resolved) return null;
     const templates = (encounter?.entries ?? [])
       .map(e => monsterLibrary.find(m => m.templateId === e.templateId))
       .filter((t): t is MainMonsterTemplate => Boolean(t));
-    const bondPerActor: Record<string, number> = {};
-    for (const s of bondMitigation?.sources ?? []) {
-      bondPerActor[s.actor] = Math.max(bondPerActor[s.actor] ?? 0, s.amount);
-    }
     return partyMitigationFromActors(chosen as never[], {
       mix: templates.length > 0 ? rosterDamageMix(templates as never) : undefined,
       damagePerHit: hostileExposure?.incomingDamagePerHit ?? 0,
-    }, bondPerActor);
-  }, [chosen, resolved, encounter, monsterLibrary, hostileExposure, bondMitigation]);
+    });
+  }, [chosen, resolved, encounter, monsterLibrary, hostileExposure]);
 
   /**
    * ⚠ ONE ARRANGEMENT, DECIDED ONCE. The baseline and the clock have to agree about where bonds
@@ -1052,10 +1048,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                                 classMitigation.reactions.length > 0
                                   ? "\nReactions, one per character:\n"
                                     + classMitigation.reactions.map(r => `  ${r.actor} · ${r.action} ${r.amount.toFixed(1)}/round (${r.basis})`).join("\n")
-                                  : "",
-                                classMitigation.displacedByBond.length > 0
-                                  ? "\nDisplaced — the bond's reaction is worth more, and one Reaction cannot be spent twice:\n"
-                                    + classMitigation.displacedByBond.map(d => `  ${d.actor} · ${d.action} ${d.amount.toFixed(1)} < bond ${d.bondAmount.toFixed(1)}`).join("\n")
                                   : "",
                                 classMitigation.withoutStatedResponses.length > 0
                                   ? `\nNo damage responses at all — nothing from their class or lineage, and nothing entered: ${classMitigation.withoutStatedResponses.join(", ")}. A choice-dependent one (a Dragonborn's ancestry, a Tiefling's legacy, a Totem) is entered on the Profile tab, because the sheet does not state which one it is.`

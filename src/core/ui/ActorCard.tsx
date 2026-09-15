@@ -643,11 +643,24 @@ function makeReadiedKey(source: TabId | "pinned", actionId: string) {
   return `${source}:${actionId}`;
 }
 
+/**
+ * ⚠ AN OFF-TURN BOND RESPONSE IS PINNED TOO — ON THE BOND SLOT.
+ *
+ * A reaction row pins when it is flagged AND costs the Reaction. A bond row that fires on another
+ * creature's turn — Guardian's Intercept — is flagged `pinReaction` by the bond generator and costs
+ * `["bond"]`. It belongs in the reactions strip beside the Opportunity Attack, and it must spend the
+ * BOND, never the Reaction: its text says *"This does not use your reaction."*
+ *
+ * Only `pinReaction` admits a bond cost. A plain `pinned` bond row stays in its tab.
+ */
 function isPinnedReactionAction(action: ActorAction) {
-  return Boolean((action.pinned || action.pinReaction) && action.economyCost?.includes("reaction"));
+  const costs = action.economyCost ?? [];
+  if (!(action.pinned || action.pinReaction)) return false;
+  return costs.includes("reaction") || Boolean(action.pinReaction && costs.includes("bond"));
 }
 
 function actionToPinnedReaction(tabId: TabId, action: ActorAction): PinnedReaction {
+  const costs = action.economyCost ?? [];
   return {
     id: action.id,
     label: action.label,
@@ -655,6 +668,7 @@ function actionToPinnedReaction(tabId: TabId, action: ActorAction): PinnedReacti
     logMessage: action.logMessage,
     sourceTabId: tabId,
     sourceActionId: action.id,
+    ...(!costs.includes("reaction") && costs.includes("bond") ? { cost: "bond" as const } : {}),
   };
 }
 
@@ -4343,7 +4357,8 @@ export function ActorCard({
   }
 
   function handleUseReaction(reaction: PinnedReaction) {
-    const costs: ActionCost[] = ["reaction"];
+    // The slot the response actually spends — Intercept spends the Bond, not the Reaction.
+    const costs: ActionCost[] = [reaction.cost ?? "reaction"];
     const readiedKey = makeReadiedKey("pinned", reaction.id);
 
     if (hasUsedCostSlot(costs)) {

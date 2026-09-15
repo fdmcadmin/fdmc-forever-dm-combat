@@ -124,11 +124,6 @@ export type PartyMitigation = {
    */
   reactionPerRound: number;
   reactions: ReactionMitigation[];
-  /**
-   * Characters whose reaction lost the contest to their bond's — named, so a figure that did not
-   * appear is a decision the DM can see rather than a number that went missing.
-   */
-  displacedByBond: Array<{ actor: string; action: string; amount: number; bondAmount: number }>;
 /**
    * Characters with no damage responses at all — none from their class or lineage, and none
    * entered. A zero that says whose it is.
@@ -151,7 +146,7 @@ export type PartyMitigation = {
 
 const EMPTY: PartyMitigation = {
   multiplier: 1, resisted: [], reactionPerRound: 0, reactions: [],
-  displacedByBond: [], withoutStatedResponses: [], unweighted: [], mixCoverage: 0,
+  withoutStatedResponses: [], unweighted: [], mixCoverage: 0,
 };
 
 function actionsOf(actor: Actor): Array<{ tab: string; action: Record<string, unknown> }> {
@@ -216,13 +211,10 @@ function reactionReductions(actor: Actor, incomingDamagePerHit: number): Reactio
  *
  * @param incoming what the hostile side throws — the mix for resistances, and the per-hit figure a
  *   halving reaction needs. Both come from the roster the checker already built.
- * @param bondPerActor what each character's BOND already contributes per round, so the Reaction
- *   budget is contended rather than counted twice.
  */
 export function partyMitigationFromActors(
   actors: readonly Actor[],
   incoming: { mix?: PartyDamageMix; damagePerHit?: number } = {},
-  bondPerActor: Readonly<Record<string, number>> = {},
 ): PartyMitigation {
   if (actors.length === 0) return EMPTY;
 
@@ -230,7 +222,6 @@ export function partyMitigationFromActors(
   const unweighted: DamageResponse[] = [];
   const withoutStatedResponses: string[] = [];
   const reactions: ReactionMitigation[] = [];
-  const displacedByBond: PartyMitigation["displacedByBond"] = [];
 
   /**
    * ⚠ EVERY CHARACTER'S RESPONSES ARE PRICED TOGETHER, NOT ONE AT A TIME.
@@ -301,28 +292,34 @@ export function partyMitigationFromActors(
   const priced = priceDamageResponses(scaled, incoming.mix);
 
   /**
-   * ⚠ THE REACTION BUDGET IS ONE PER CHARACTER AND THE BOND IS ALREADY IN IT.
+   * ⚠ THE REACTION BUDGET IS ONE PER CHARACTER, AND A BOND IS NOT IN IT.
    *
-   * `Action Timing` row 22 puts defensive reactions, spell reactions and bond reactions in the
-   * same pool. So each character contributes the BEST single reaction available to them, and when
-   * the bond's is better the class one is displaced — named, not dropped, so the panel can show
-   * why a Rogue's Uncanny Dodge is not in the total.
+   * This used to say `Action Timing` row 22 *"puts defensive reactions, spell reactions and bond
+   * reactions in the same pool"*, and displaced a class reaction whenever the character's bond was worth
+   * more. **Row 22 does not say that.** Read from the v3.3 workbook, it lists who competes:
+   *
+   *   r22  "All normal Reactions compete for the same actor budget: defensive, offensive, opportunity
+   *         attacks, spell reactions, item reactions, and creature reactions."
+   *
+   * Bonds are not on it, and two rows say where they go instead:
+   *
+   *   r15  free/automatic "is the default channel for Broken Chain Bond activations unless a Bond
+   *         explicitly says otherwise."
+   *   r24  "A response explicitly authored as not being a Reaction uses its own frequency/resource and
+   *         does not consume the normal Reaction."
+   *
+   * Christopher, 2026-09-15, on Guardian's Intercept: *"cost bond action but should be listed as reaction
+   * option which is suppose to consume that bond action."* Its text: *"This does not use your reaction."*
+   * No bond in the ladder spends a Reaction. So a Barbarian who Intercepts for 7.5 still has Spirit Shield
+   * for 7.0 — the old contest dropped the Spirit Shield to nothing.
+   *
+   * What still competes, per r22: every NORMAL reaction on the character. The best one counts, once.
    */
   let reactionPerRound = 0;
   for (const actor of actors) {
     const best = reactionReductions(actor, incoming.damagePerHit ?? 0)[0];
     if (!best) continue;
-    const bond = bondPerActor[actor.name] ?? 0;
-    if (bond >= best.amount) {
-      displacedByBond.push({ actor: actor.name, action: best.action, amount: best.amount, bondAmount: bond });
-      continue;
-    }
-    /**
-     * The bond figure is already counted by the caller, so only the DIFFERENCE is added — spending
-     * the Reaction on the class feature instead of the bond gains what the swap is worth, never
-     * the whole feature on top of a bond already in the total.
-     */
-    reactionPerRound += best.amount - bond;
+    reactionPerRound += best.amount;
     reactions.push(best);
   }
 
@@ -331,7 +328,6 @@ export function partyMitigationFromActors(
     resisted,
     reactionPerRound,
     reactions,
-    displacedByBond,
     withoutStatedResponses,
     unweighted: [...unweighted, ...priced.unweighted],
     mixCoverage: incoming.mix?.coverage ?? 0,

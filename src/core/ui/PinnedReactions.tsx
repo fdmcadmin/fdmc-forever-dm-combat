@@ -81,6 +81,13 @@ export function PinnedReactions({
         {reactions.map((reaction) => {
           const readiedKey = getReadiedKey(reaction.id);
           /**
+           * ⚠ THE SLOT IS THE ENTRY'S OWN, NOT ALWAYS THE REACTION. Guardian's Intercept is pinned here
+           * because it fires off-turn, and it spends the BOND — "This does not use your reaction." Every
+           * test below used to read `actionState.reaction` and `"reaction"`, so it would have shown as
+           * the Reaction, swapped out a readied Opportunity Attack, and spent the one slot it refuses.
+           */
+          const slot = reaction.cost ?? "reaction";
+          /**
            * A weapon picked under this OA holds the reaction slot under ITS OWN key. That is the
            * intended end state, not a conflict — the OA is a declaration, the weapon is the
            * swing. Treat it as this reaction being readied, with the weapon's key and label, so
@@ -92,11 +99,11 @@ export function PinnedReactions({
           const activeKey = oaWeapon?.readiedKey ?? readiedKey;
           const activeLabel = oaWeapon ? `${reaction.label} — ${oaWeapon.label}` : reaction.label;
 
-          const readied = actionState.reaction === activeKey;
-          const resolved = resolvedReadiedKeys.includes(activeKey) || usedCostSlots.includes("reaction");
+          const readied = actionState[slot] === activeKey;
+          const resolved = resolvedReadiedKeys.includes(activeKey) || usedCostSlots.includes(slot);
           const committed = committedRoll?.readiedKey === activeKey;
           const commitBlocked = Boolean(committedRoll && committedRoll.readiedKey !== activeKey);
-          const willSwap = Boolean(actionState.reaction && !readied);
+          const willSwap = Boolean(actionState[slot] && !readied);
           // A weapon swing rolls to hit, whatever the reaction's own prose says.
           const outcomeMode = oaWeapon ? "attack-roll" as const : inferPinnedOutcomeMode(reaction);
 
@@ -126,7 +133,7 @@ export function PinnedReactions({
                 <span className="action-label-row">
                   <span className="action-label">{reaction.label}</span>
                   <span className="action-cost-tags">
-                    <span className="action-cost-tag">{actionCostLabels.reaction}</span>
+                    <span className="action-cost-tag">{actionCostLabels[slot]}</span>
                   </span>
                 </span>
                 {reaction.description && <span className="action-description">{reaction.description}</span>}
@@ -135,7 +142,7 @@ export function PinnedReactions({
                 {resolved && <span className="action-description resolved-text">Used — reset before using again.</span>}
                 {willSwap && !readied && !resolved && (
                   <span className="action-description warning-text">
-                    {actorName} already has a Reaction readied. Clicking {reaction.label} will swap the readied Reaction.
+                    {actorName} already has a {actionCostLabels[slot]} readied. Clicking {reaction.label} will swap it.
                   </span>
                 )}
               </button>
@@ -176,7 +183,7 @@ export function PinnedReactions({
                     onCommitRoll({
                       readiedKey: activeKey,
                       actionLabel: activeLabel,
-                      costs: ["reaction"],
+                      costs: [slot],
                       outcomeMode,
                     })
                   }

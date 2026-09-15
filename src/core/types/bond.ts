@@ -189,6 +189,19 @@ export type BondTemplate = {
    * bond's actions attach to.
    */
   actor?: "character" | "companion";
+  /**
+   * THE OPTIONS THAT FIRE ON ANOTHER CREATURE'S TURN — every name that lineage takes, stage by stage.
+   *
+   * Christopher, 2026-09-15: *"the intercept cost bond action but should be listed as reaction option
+   * which is suppose to consume that bond action."* A row named here is generated with `pinReaction`,
+   * so the card lists it among the reactions — and it still costs the BOND, because the text says
+   * *"This does not use your reaction"* and Action Timing r24 keeps such a response off the Reaction.
+   *
+   * ⚠ AUTHORED, NEVER READ FROM THE PROSE, and it lists EVERY name. A path renames as it climbs
+   * (Intercept → Guardian's Stand → Wall of the Watch → Unbroken Watch), and the held form keeps its
+   * Realized name, so one name would stop matching at the next stage.
+   */
+  offTurnOptions?: readonly string[];
   reads?: string;
   onYourTurn?: string;
   stages: BondStage[];

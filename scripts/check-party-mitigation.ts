@@ -21,7 +21,12 @@
  * ⚠ THE EXIT CHECK IS THE LAST THING IN THIS FILE.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { partyMitigationFromActors, rosterDamageMix } from "../src/core/encounter-band/partyMitigationFromActors";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 import { classDamageResponsesFor, damageResponsesForActor } from "../src/modules/dnd-5e/classDamageResponses";
 
 let failures = 0;
@@ -230,19 +235,29 @@ console.log("\nOne Reaction per character (Action Timing rows 13 and 22)");
     partyMitigationFromActors([dodge], {}).reactionPerRound === 0);
 
   /**
-   * ⚠ THE BOND AND THE CLASS FEATURE COMPETE FOR THE SAME REACTION. A bond worth more displaces
-   * the class one entirely; a bond worth less is topped up by the DIFFERENCE, never by the whole
-   * feature on top of a bond already in the total.
+   * ⚠ A BOND IS NOT IN THE REACTION BUDGET — so it never displaces a class reaction.
+   *
+   * This block used to assert the opposite: a bond worth more "displaces the class one entirely", citing
+   * Action Timing row 22. Row 22, read from the v3.3 workbook, lists who competes — "defensive, offensive,
+   * opportunity attacks, spell reactions, item reactions, and creature reactions" — and bonds are not on
+   * it. r15 makes free/automatic "the default channel for Broken Chain Bond activations", r24 keeps a
+   * response "authored as not being a Reaction" off the normal Reaction, and Guardian's Intercept prints
+   * "This does not use your reaction." Christopher, 2026-09-15: it "is suppose to consume that bond action."
    */
   const shielded = pc("A", { tabs: { main: [reaction("Spirit Shield", "1d6")] } });   // 3.5
-  const displaced = partyMitigationFromActors([shielded], { damagePerHit: 20 }, { A: 9 });
-  ok("a better bond reaction displaces the class one entirely",
-    displaced.reactionPerRound === 0 && displaced.displacedByBond.length === 1,
-    displaced.displacedByBond[0] && `${displaced.displacedByBond[0].action} ${displaced.displacedByBond[0].amount} < bond ${displaced.displacedByBond[0].bondAmount}`);
+  const full = partyMitigationFromActors([shielded], { damagePerHit: 20 });
+  ok("a class reaction counts in FULL — no bond figure can shrink it",
+    Math.abs(full.reactionPerRound - 3.5) < 1e-9, `${full.reactionPerRound}/round`);
+  ok("...and the function no longer takes a bond figure to contend with",
+    partyMitigationFromActors.length <= 2, `arity ${partyMitigationFromActors.length}`);
+  ok("the result carries no 'displaced by bond' list",
+    !("displacedByBond" in (full as unknown as Record<string, unknown>)));
 
-  const topUp = partyMitigationFromActors([shielded], { damagePerHit: 20 }, { A: 1 });
-  ok("a weaker bond is topped up by the DIFFERENCE, not by the whole feature",
-    Math.abs(topUp.reactionPerRound - 2.5) < 1e-9, `${topUp.reactionPerRound}/round (3.5 - 1)`);
+  const panelSrc = readFileSync(resolve(ROOT, "src/core/encounter-band/EncounterDifficultyPanel.tsx"), "utf8");
+  ok("the panel adds bond mitigation AND the class reaction together",
+    /mitigationPerRound:\s*bondArrange\.mitigation\s*\+\s*\(classMitigation\?\.reactionPerRound/.test(panelSrc));
+  ok("...and passes no bond figure into the class pricer",
+    !/bondPerActor/.test(panelSrc));
 
   /** ⚠ MUTATION: an action that is not a Reaction must not be counted as one. */
   const notAReaction = pc("A", {
