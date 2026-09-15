@@ -281,7 +281,14 @@ console.log("\n8. the wiring for Lite");
     ok(`${entry} stamps the stored mode before it mounts`, /applyStoredDisplayMode\(\);\s*if \(OBR\.isAvailable\)/.test(codeOf(`src/${entry}.tsx`)));
   }
   const css = read("src/styles.css");
-  ok("Lite removes backdrop blur", /:root\[data-fdmc-display="lite"\] \*[\s\S]{0,200}backdrop-filter: none !important;/.test(css));
+  ok("Lite removes backdrop blur", /:root\[data-fdmc-display="lite"\] \*[\s\S]{0,600}\n  backdrop-filter: none !important;/.test(css));
+  /**
+   * ⚠ AND IT SURVIVES THE BUILD. 0.8.62.0 wrote the property as a -webkit-/unprefixed pair and the CSS
+   * minifier kept only the prefixed one, so Chrome went on blurring in Lite and this gate — reading the
+   * source — passed. Only a deploy tab caught it. The source may not carry the pair.
+   */
+  ok("...written unprefixed only, so the minifier cannot drop the property Chrome reads",
+    !/data-fdmc-display="lite"[\s\S]{0,900}-webkit-backdrop-filter/.test(css));
   ok("...but keeps box shadows, several of which are state", !/data-fdmc-display="lite"[^}]*box-shadow/.test(css));
 }
 

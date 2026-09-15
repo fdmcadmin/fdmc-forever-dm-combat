@@ -7062,8 +7062,10 @@ body,
 :root[data-fdmc-display="lite"] *,
 :root[data-fdmc-display="lite"] *::before,
 :root[data-fdmc-display="lite"] *::after {
+  /* ⚠ ONE declaration, unprefixed. Written as a -webkit-/unprefixed pair, the build's CSS minifier kept
+     ONLY the prefixed one (0.8.62.0 shipped that way: Chrome still blurred in Lite). Given the plain
+     property it emits both itself, the way every other backdrop-filter in this file comes out. */
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
   transition: none !important;
   animation: none !important;
   scroll-behavior: auto !important;
