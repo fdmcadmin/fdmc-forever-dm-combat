@@ -37,6 +37,7 @@ import { resolveMonsterLibrary } from "./core/monsters/dmMonsterLibrary";
 import { useActiveSummonsState } from "./core/state/useActiveSummonsState";
 import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 import "./styles.css";
+import { applyStoredDisplayMode } from "./core/ui/displayMode";
 
 const COMBAT_WINDOW_POPOVER_ID = "fdm-combat";
 
@@ -449,6 +450,9 @@ function mountCombatWindow() {
     </React.StrictMode>
   );
 }
+
+// Full or Lite, as this device chose it in the main window — see displayMode.ts.
+applyStoredDisplayMode();
 
 if (OBR.isAvailable) {
   OBR.onReady(mountCombatWindow);

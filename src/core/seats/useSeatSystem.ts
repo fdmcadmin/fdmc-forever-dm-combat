@@ -29,6 +29,37 @@ import { registerSeatColors } from "./seatColors";
 import { cacheActors, loadCachedActors } from "./playerActorCache";
 import type { ActorOverrideMap } from "../table-state/actorHydrationBoundary";
 import { safeStorage } from "../utils/safeStorage";
+import {
+  createActorDataAssembler,
+  createSeatSendLanes,
+  isActorDataChunkBroadcast,
+  sendActorData,
+  type SeatSendReport,
+} from "./seatTransport";
+
+/**
+ * The GM's seat sends, awaited and reported. Module-level so every hook instance in a window shares one
+ * lane per seat — two pushes for the same seat never race each other to the player.
+ */
+const seatLanes = createSeatSendLanes(
+  (payload) => sendActorData(
+    (message) => OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, message, { destination: "REMOTE" }),
+    payload,
+  ),
+  (report: SeatSendReport) => {
+    if (!report.ok) {
+      console.warn(`[FDMC seats] ${report.seatId}: character data did not send — ${report.sent}/${report.messages} messages, ${report.bytes} bytes: ${report.error}`);
+    }
+  },
+);
+
+async function isGmWindow(): Promise<boolean> {
+  try {
+    return (await OBR.player.getRole()) === "GM";
+  } catch {
+    return false;
+  }
+}
 
 // ─── Seat storage (DM localStorage) ──────────────────────────────────────────
 
@@ -144,9 +175,20 @@ export function useDmSeatSystem({
     return OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
       const msg = event.data;
 
-      if (isSeatClaimBroadcast(msg) || isActorDataRequestBroadcast(msg)) {
+      if (isSeatClaimBroadcast(msg) || isActorDataRequestBroadcast(msg)) void (async () => {
         const { seatId, viewerSeatKey } = msg;
-        const seat = seatsRef.current[seatId];
+        /**
+         * ⚠ ONLY THE GM ANSWERS. This hook runs in every client's window, players included, and a player's
+         * library is not the party — an answer from one would hand the claiming seat an empty or stale
+         * roster and mark it ready. The GM is the single writer; a seat only ever asks.
+         */
+        if (!(await isGmWindow())) return;
+        /**
+         * ⚠ THE ROOM'S COPY OF THE SEAT COUNTS TOO. Seat definitions are kept in this browser's storage AND
+         * in room metadata; a GM window whose storage lacks them (another browser, a cleared cache) used to
+         * return here without a word and the player waited forever. The room's copy is the same seat.
+         */
+        const seat = seatsRef.current[seatId] ?? liveStateRef.current.seats?.[seatId];
         if (!seat) return;
 
         // Record the seat binding
@@ -175,8 +217,9 @@ export function useDmSeatSystem({
           actors,
           recentEventWindow: liveStateRef.current.recentEvents.slots,
         };
-        void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, payload, { destination: "REMOTE" });
-      }
+        // Chunked when it is past Owlbear's broadcast cap — see seatTransport.
+        seatLanes(payload);
+      })();
     });
   }, [onRoomStateChange]);
 
@@ -216,7 +259,8 @@ export function useDmSeatSystem({
   };
 
   const pushActorsToSeat = useCallback((seatId: string, fresh?: PushFreshData): void => {
-    const seat = seatsRef.current[seatId];
+    const localSeat = seatsRef.current[seatId];
+    const seat = localSeat ?? liveStateRef.current.seats?.[seatId];
     if (!seat || !OBR.isAvailable) return;
     const lib = fresh?.freshLibrary ?? libraryRef.current;
     const overrides = fresh?.freshOverrides ?? overridesRef.current;
@@ -227,11 +271,14 @@ export function useDmSeatSystem({
       actors,
       recentEventWindow: liveStateRef.current.recentEvents.slots,
     };
-    void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, payload, { destination: "REMOTE" });
+    // A seat known only from the room is pushed by the GM alone — see the claim handler above.
+    if (localSeat) seatLanes(payload);
+    else void isGmWindow().then(gm => { if (gm) seatLanes(payload); });
   }, []);
 
   const pushActorsToAllSeats = useCallback((fresh?: PushFreshData): void => {
-    for (const seatId of Object.keys(seatsRef.current)) {
+    const seatIds = new Set([...Object.keys(seatsRef.current), ...Object.keys(liveStateRef.current.seats ?? {})]);
+    for (const seatId of seatIds) {
       pushActorsToSeat(seatId, fresh);
     }
   }, [pushActorsToSeat]);
@@ -306,11 +353,31 @@ export function useDmSeatSystem({
 
 // ─── Player seat system hook ──────────────────────────────────────────────────
 
+/**
+ * Where a seat's character data is while the player waits for it. `problem` is set once the wait has gone
+ * on long enough that it is not just a slow table — the screen says what is wrong instead of spinning.
+ */
+export type SeatSyncState = {
+  /** Requests sent for this claim, the first one included. */
+  attempts: number;
+  /** Pieces of a chunked transfer in so far. */
+  receiving?: { received: number; count: number };
+  problem?: string;
+};
+
+/** Ask again when nothing has arrived for this long… */
+export const SEAT_RETRY_MS = 5_000;
+/** …and after this many unanswered requests, say so. */
+export const SEAT_PROBLEM_AFTER_ATTEMPTS = 3;
+/** Past the first few, keep asking — but slowly, a GM window may open at any moment. */
+export const SEAT_SLOW_RETRY_MS = 15_000;
+
 export type UsePlayerSeatSystemResult = {
   viewerSeatKey: string | null;
   claimedSeatId: string | null;
   seatActors: Actor[];
   seatStatus: "loading" | "no-seat" | "claiming" | "ready" | "viewer";
+  seatSync: SeatSyncState;
   /** True when player explicitly chose to browse seats — shows picker even if seatActors cached */
   isBrowsing: boolean;
   requestActorData: () => void;
@@ -329,6 +396,11 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
   // Set true when player explicitly chooses to browse seats — prevents auto-reclaim
   const browsingRef = useRef(false);
   const [isBrowsing, setIsBrowsing] = useState(false);
+  const [seatSync, setSeatSync] = useState<SeatSyncState>({ attempts: 0 });
+  const assemblerRef = useRef(createActorDataAssembler());
+  /** Last time anything for our seat arrived — a chunk counts, so a slow transfer is not re-requested. */
+  const lastProgressRef = useRef(0);
+  const attemptsRef = useRef(0);
 
   // Derive viewer seat key on mount — also restore viewer choice if they previously chose it
   useEffect(() => {
@@ -379,6 +451,9 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     claimedRef.current = matchingSeatId;
     setClaimedSeatId(matchingSeatId);
     setSeatStatus("claiming");
+    attemptsRef.current = 1;
+    lastProgressRef.current = Date.now();
+    setSeatSync({ attempts: 1 });
 
     // Broadcast seat-claim to trigger DM actor data response
     if (OBR.isAvailable) {
@@ -402,6 +477,24 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
         cacheActors(msg.actors);
         setSeatActors(msg.actors);
         setSeatStatus("ready");
+        setSeatSync({ attempts: 0 });
+      }
+
+      // A seat past Owlbear's broadcast cap arrives in pieces — see seatTransport.
+      if (isActorDataChunkBroadcast(msg) && msg.seatId === claimedRef.current) {
+        lastProgressRef.current = Date.now();
+        const result = assemblerRef.current.accept(msg);
+        if (result.payload) {
+          cacheActors(result.payload.actors);
+          setSeatActors(result.payload.actors);
+          setSeatStatus("ready");
+          setSeatSync({ attempts: 0 });
+        } else if (result.error) {
+          lastProgressRef.current = 0;   // ask again on the next tick rather than waiting out the retry
+          setSeatSync(current => ({ ...current, receiving: undefined, problem: `Your characters arrived damaged (${result.error}). Asking the GM again…` }));
+        } else {
+          setSeatSync(current => ({ ...current, receiving: { received: result.received, count: result.count } }));
+        }
       }
 
       if (isSeatAssignBroadcast(msg) && msg.viewerSeatKey === viewerSeatKey) {
@@ -431,6 +524,9 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
     claimedRef.current = seatId;
     setClaimedSeatId(seatId);
     setSeatStatus("claiming");
+    attemptsRef.current = 1;
+    lastProgressRef.current = Date.now();
+    setSeatSync({ attempts: 1 });
 
     // Broadcast seat-claim — DM receives, writes binding, sends actor data
     if (OBR.isAvailable) {
@@ -469,9 +565,43 @@ export function usePlayerSeatSystem(roomLiveState: FdmcRoomLiveState): UsePlayer
       FDMC_SEAT_BROADCAST_CHANNEL,
       { type: "fdmc:actor-data-request", seatId, viewerSeatKey },
       { destination: "REMOTE" }
-    );
+    ).catch(() => undefined);
+    attemptsRef.current += 1;
+    lastProgressRef.current = Date.now();
+    setSeatSync(current => ({ attempts: attemptsRef.current, problem: current.problem }));
     setSeatStatus("claiming");
   }, [viewerSeatKey]);
 
-  return { viewerSeatKey, claimedSeatId, seatActors, seatStatus, isBrowsing, requestActorData, manualClaim, claimViewerSeat, releaseSeat };
+  /**
+   * ⚠ ASK AGAIN — NEVER JUST WAIT. The claim is one message and so is the GM's answer; either can be lost
+   * (no GM window open yet, a window that reloaded mid-send, a phone that slept). While the seat is
+   * claiming and nothing for it has arrived in SEAT_RETRY_MS, request the data again; after
+   * SEAT_PROBLEM_AFTER_ATTEMPTS unanswered requests, say what is wrong, and keep asking slowly.
+   */
+  useEffect(() => {
+    if (seatStatus !== "claiming" || !viewerSeatKey || !OBR.isAvailable) return;
+    const timer = window.setInterval(() => {
+      const seatId = claimedRef.current;
+      if (!seatId || seatId === "viewer") return;
+      const waitMs = attemptsRef.current >= SEAT_PROBLEM_AFTER_ATTEMPTS ? SEAT_SLOW_RETRY_MS : SEAT_RETRY_MS;
+      if (Date.now() - lastProgressRef.current < waitMs) return;
+      void OBR.broadcast.sendMessage(
+        FDMC_SEAT_BROADCAST_CHANNEL,
+        { type: "fdmc:actor-data-request", seatId, viewerSeatKey },
+        { destination: "REMOTE" }
+      ).catch(() => undefined);
+      const unanswered = attemptsRef.current;
+      attemptsRef.current += 1;
+      lastProgressRef.current = Date.now();
+      setSeatSync({
+        attempts: attemptsRef.current,
+        ...(unanswered >= SEAT_PROBLEM_AFTER_ATTEMPTS
+          ? { problem: `No GM window has answered ${unanswered} requests. The GM needs Forever DM Combat open (its main window or the DM panel). Still asking every ${SEAT_SLOW_RETRY_MS / 1000} seconds.` }
+          : {}),
+      });
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [seatStatus, viewerSeatKey]);
+
+  return { viewerSeatKey, claimedSeatId, seatActors, seatStatus, seatSync, isBrowsing, requestActorData, manualClaim, claimViewerSeat, releaseSeat };
 }

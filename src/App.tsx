@@ -107,6 +107,7 @@ import {
   upsertActorInLibrary,
 } from "./core/seats/dmActorLibrary";
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
+import { DisplayModeToggle, useDisplayMode } from "./core/ui/useDisplayMode";
 import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
 import { EncounterLibraryPanel } from "./core/monsters/EncounterLibraryPanel";
@@ -409,6 +410,9 @@ function PlayerMonsterRoster({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  // Full or Lite — a phone, a tablet or a low-power device gets the one-window view. See displayMode.ts.
+  const display = useDisplayMode();
+
   // Connected Owlbear players — so a seat can adopt a player's own OBR color and the
   // map identity and the app identity agree. Empty (and harmless) outside OBR.
   const [obrPlayers, setObrPlayers] = useState<Array<{ id: string; name: string; color: string; role?: string }>>([]);
@@ -924,6 +928,7 @@ export default function App() {
     claimedSeatId,
     seatActors,
     seatStatus,
+    seatSync,
     isBrowsing,
     requestActorData,
     manualClaim,
@@ -2842,9 +2847,10 @@ export default function App() {
 
     return (
       <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
           <p style={{ margin: 0, fontSize: 14, color: "#aaa" }}>Forever DM Combat</p>
           <p style={{ margin: 0, fontSize: 11, color: "#555" }}>{APP_VERSION}</p>
+          <DisplayModeToggle state={display} />
         </div>
 
         {seatStatus === "loading" ? (
@@ -2852,12 +2858,33 @@ export default function App() {
             <p style={{ color: "#555", margin: 0, fontSize: 12 }}>Connecting…</p>
           </div>
         ) : seatStatus === "claiming" ? (
-          <div style={{ textAlign: "center" }}>
-            <p style={{ color: "#7b68ee", margin: 0 }}>Connecting to your seat…</p>
-            <button type="button" onClick={requestActorData}
-              style={{ marginTop: 8, fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
-              Retry
-            </button>
+          /**
+           * ⚠ THIS SCREEN USED TO BE A DEAD END. It said "Connecting to your seat…" and nothing else, forever,
+           * whether the data was on its way, lost, or never sent. It now shows the transfer as it arrives,
+           * re-asks on its own (useSeatSystem), and after a few unanswered requests says what is wrong.
+           */
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }} data-fdmc-seat-sync={seatSync.problem ? "problem" : seatSync.receiving ? "receiving" : "waiting"}>
+            <p style={{ color: "#7b68ee", margin: 0 }}>
+              {seatSync.receiving
+                ? `Receiving your characters… ${seatSync.receiving.received} of ${seatSync.receiving.count}`
+                : "Connecting to your seat…"}
+            </p>
+            {seatSync.attempts > 1 && !seatSync.problem && (
+              <p style={{ color: "#555", margin: 0, fontSize: 11 }}>Asked the GM {seatSync.attempts} times — still waiting.</p>
+            )}
+            {seatSync.problem && (
+              <p style={{ color: "#d7b36a", margin: 0, fontSize: 12, maxWidth: 340, lineHeight: 1.4 }}>{seatSync.problem}</p>
+            )}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <button type="button" onClick={requestActorData}
+                style={{ fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#888", cursor: "pointer" }}>
+                Retry now
+              </button>
+              <button type="button" onClick={releaseSeat}
+                style={{ fontSize: 11, padding: "3px 10px", background: "transparent", border: "1px solid #7b68ee44", borderRadius: 3, color: "#7b68ee", cursor: "pointer" }}>
+                ← Choose different seat
+              </button>
+            </div>
           </div>
         ) : availableSeats.length === 0 ? (
           <>
@@ -3292,6 +3319,8 @@ export default function App() {
                 Guide because it is the same kind of thing: pure reference, changes nothing. */}
             <button type="button" style={DM_BTN.use} title="Natural 1 failure tables — both the first and second tables, for melee, ranged and spell attacks alike"
               onClick={() => setShowCritFailTables(true)}>⚀ Nat 1</button>
+
+            <DisplayModeToggle state={display} compact />
 
             <span style={{ flex: 1, minWidth: 8 }} />
 
@@ -4001,7 +4030,11 @@ export default function App() {
           <span style={{ color: seatStatus === "claiming" ? "#888" : mySeatColor, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 8 }}>
             <span>
               {seatStatus === "claiming" ? "⟳" : "●"} {roomLiveState.seats[claimedSeatId]?.label ?? claimedSeatId}
-              {seatStatus === "claiming" && <span style={{ fontSize: 9, color: "#555", marginLeft: 4 }}>syncing…</span>}
+              {seatStatus === "claiming" && (
+                <span style={{ fontSize: 9, color: seatSync.problem ? "#d7b36a" : "#555", marginLeft: 4 }} title={seatSync.problem}>
+                  {seatSync.problem ? "GM not answering — showing your last copy" : seatSync.receiving ? `syncing ${seatSync.receiving.received}/${seatSync.receiving.count}…` : "syncing…"}
+                </span>
+              )}
             </span>
             {isMyTurn && (
               <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 8px", borderRadius: 10, background: mySeatColor, color: "#0d0d14", textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -4042,6 +4075,7 @@ export default function App() {
               style={{ fontSize: 10, padding: "1px 6px", background: "transparent", border: "1px solid #333", borderRadius: 3, color: "#666", cursor: "pointer" }}>
               Refresh
             </button>
+            <DisplayModeToggle state={display} compact />
             {/* Level-up request — player submits request to DM */}
             {actorToShow && (
               <button type="button" onClick={() => void openLevelUpWindow()}
@@ -4122,7 +4156,13 @@ export default function App() {
           }
 
           setFocusedActorId(null);
-          if (!OBR.isAvailable) { setFocusedActorId(actorId); setOpenActorPopoverId(actorId); return; }
+          /**
+           * LITE OPENS THE CARD IN THIS WINDOW. A popover is a second iframe that downloads and boots the
+           * whole app again and does its own Owlbear handshake — on a phone, a tablet or a weak PC that is
+           * the slowest thing FDMC does. The in-window card is the same ActorCard on the same state.
+           * Players only: the GM's cards-beside-the-map workflow is not a device question.
+           */
+          if (!OBR.isAvailable || (isPlayerMode && display.mode === "lite")) { setFocusedActorId(actorId); setOpenActorPopoverId(actorId); return; }
           try {
             const popoverUrl = new URL(window.location.href);
             popoverUrl.pathname = popoverUrl.pathname.replace(/\/[^/]*$/, "/actor-popout.html");
@@ -4379,8 +4419,10 @@ export default function App() {
         />
       )}
 
-      {/* ── Inline actor card — hidden by default, only shown when OBR popover fails ── */}
-      {focusedActorId && (
+      {/* ── Inline actor card — hidden by default, only shown when OBR popover fails ──
+             ⚠ The full-screen focused card below covers this one completely, so in Lite it is not mounted:
+             two live ActorCards for one character is double the work on the devices Lite is for. */}
+      {focusedActorId && !(isPlayerMode && display.mode === "lite") && (
       <ActorCard
         actor={actorToShow}
         // The party purse renders inside the card, on a line under the character's wallet.
@@ -4768,6 +4810,19 @@ export default function App() {
             <div style={{ flex: 1, overflow: "auto" }}>
               <ActorCard
                 actor={focusedActor}
+                // The party purse — this card is the only one mounted in Lite, so it must carry it too.
+                partyCoins={getPartyCoins(roomLiveState)}
+                onEditPartyCoins={isDmMode ? ((c) => void commitRoomState(patchPartyCoins(roomLiveStateRef.current, c))) : undefined}
+                onPartyTransfer={(copper) => {
+                  if (isDmMode) {
+                    const moved = transferPartyToActor(roomLiveStateRef.current, focusedActorId, copper);
+                    if (moved) void commitRoomState(moved);
+                    return;
+                  }
+                  void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+                    type: "fdmc:request-party-transfer", actorId: focusedActorId, copper,
+                  });
+                }}
                 seatColor={seatColorById[focusedActor.id]}
                 seatNames={playerSeatNames}
                 onMergeIntoCommittedRoll={(patch) => mergeIntoCommittedRoll(focusedActor.id, patch)}

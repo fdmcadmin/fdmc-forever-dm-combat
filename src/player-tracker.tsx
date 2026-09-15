@@ -28,6 +28,7 @@ import { FDMC_ROOM_LIVE_STATE_KEY } from "./core/table-state/sharedTableState";
 import { subscribeFdmcRoomStateKey } from "./core/table-state/roomStateBridge";
 import { normalizeFdmcRoomLiveState, createEmptyRoomLiveState, type FdmcRoomLiveState } from "./core/table-state/fdmcRoomLiveState";
 import "./styles.css";
+import { applyStoredDisplayMode } from "./core/ui/displayMode";
 
 const TRACKER_POPOVER_ID = "fdm-player-tracker";
 
@@ -227,6 +228,9 @@ function mountPlayerTracker() {
     </React.StrictMode>
   );
 }
+
+// Full or Lite, as this device chose it in the main window — see displayMode.ts.
+applyStoredDisplayMode();
 
 if (OBR.isAvailable) {
   OBR.onReady(mountPlayerTracker);

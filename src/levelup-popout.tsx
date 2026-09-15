@@ -16,6 +16,7 @@ import { loadCachedActors } from "./core/seats/playerActorCache";
 import { buildActorLibraryFromBundled } from "./core/table-state/actorHydrationBoundary";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import "./styles.css";
+import { applyStoredDisplayMode } from "./core/ui/displayMode";
 
 const params = new URLSearchParams(window.location.search);
 const ACTOR_ID = params.get("fdmLevelUp") ?? "";
@@ -68,6 +69,9 @@ function mount() {
     </React.StrictMode>
   );
 }
+
+// Full or Lite, as this device chose it in the main window — see displayMode.ts.
+applyStoredDisplayMode();
 
 if (OBR.isAvailable) {
   OBR.onReady(mount);

@@ -95,6 +95,7 @@ import { buildActorSeatColorMap, withAlpha } from "./core/seats/seatColors";
 import { TokenAssignmentPanel } from "./core/tokens/TokenAssignmentPanel";
 import { loadMonsterRoster } from "./core/monsters/runtime/monsterRosterStorage";
 import "./styles.css";
+import { applyStoredDisplayMode } from "./core/ui/displayMode";
 import { CONTENT_ATTRIBUTIONS } from "./modules/contentAttributions";
 
 // ─── Panel type ───────────────────────────────────────────────────────────────
@@ -1455,6 +1456,9 @@ function mountDmPanel() {
     </React.StrictMode>
   );
 }
+
+// Full or Lite, as this device chose it in the main window — see displayMode.ts.
+applyStoredDisplayMode();
 
 if (OBR.isAvailable) {
   OBR.onReady(mountDmPanel);

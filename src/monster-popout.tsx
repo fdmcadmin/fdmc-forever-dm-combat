@@ -16,6 +16,7 @@ import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { useMonsterPopout } from "./core/monster-state/useMonsterPopout";
 import { useOwlbearDiceBridge } from "./core/integrations/useOwlbearDiceBridge";
 import "./styles.css";
+import { applyStoredDisplayMode } from "./core/ui/displayMode";
 import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 
 const params = new URLSearchParams(window.location.search);
@@ -74,6 +75,9 @@ function mountMonsterPopout() {
     </React.StrictMode>
   );
 }
+
+// Full or Lite, as this device chose it in the main window — see displayMode.ts.
+applyStoredDisplayMode();
 
 if (OBR.isAvailable) {
   OBR.onReady(mountMonsterPopout);

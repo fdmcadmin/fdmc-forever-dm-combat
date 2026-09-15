@@ -16,6 +16,7 @@ import { ActorCard, FDMC_ACTOR_TURN_RESET_CHANNEL } from "./core/ui/ActorCard";
 import { SavePromptBanner } from "./core/ui/SavePromptBanner";
 import { broadcastSavePrompt } from "./core/state/savePrompt";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "./core/seats/seatTypes";
+import { createActorDataAssembler, isActorDataChunkBroadcast } from "./core/seats/seatTransport";
 import { FDMC_CHANNELS } from "./core/constants/channels";
 import { useActorLiveState } from "./core/state/useActorLiveState";
 import { getPartyCoins, patchPartyCoins, transferPartyToActor } from "./core/table-state/fdmcRoomLiveState";
@@ -37,6 +38,7 @@ import type { StatusTrackerId } from "./core/types/status";
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import "./styles.css";
+import { applyStoredDisplayMode } from "./core/ui/displayMode";
 
 // ─── Read actorId from URL ────────────────────────────────────────────────────
 
@@ -122,8 +124,11 @@ function ActorPopout() {
 
   useEffect(() => {
     if (!OBR.isAvailable) return;
+    // A seat past Owlbear's 64KB broadcast cap arrives in pieces — see seatTransport.
+    const assembler = createActorDataAssembler();
     const unsub = OBR.broadcast.onMessage(FDMC_SEAT_BROADCAST_CHANNEL, (event) => {
-      const msg = event.data as { type?: string; actors?: Array<{ id?: string }> } | undefined;
+      const assembled = isActorDataChunkBroadcast(event.data) ? assembler.accept(event.data).payload : undefined;
+      const msg = (assembled ?? event.data) as { type?: string; actors?: Array<{ id?: string }> } | undefined;
       // The push carries a seat's whole roster; refresh when THIS character is in it. The seat
       // system has already written the cache by the time this fires, so re-resolving reads the
       // new copy. A push for someone else is ignored — no needless re-render mid-turn.
@@ -499,6 +504,9 @@ function mountActorPopout() {
     </React.StrictMode>
   );
 }
+
+// Full or Lite, as this device chose it in the main window — see displayMode.ts.
+applyStoredDisplayMode();
 
 if (OBR.isAvailable) {
   OBR.onReady(mountActorPopout);

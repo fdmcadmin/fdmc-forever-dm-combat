@@ -348,3 +348,6 @@ jobs:
 
       - name: check SRD species traits
         run: npm run check:species
+
+      - name: check seat transport + display mode
+        run: npm run check:seattransport

@@ -7048,3 +7048,30 @@ body,
   font-size: 10px;
   padding: 2px 9px;
 }
+
+/* ═══ LITE DISPLAY MODE — phones, tablets and low-power devices (see core/ui/displayMode.ts) ═══
+ *
+ * Stamped on the root as data-fdmc-display="lite". What it removes is what costs a weak GPU on every
+ * frame and changes nothing a player reads: backdrop blur (the page behind a panel is re-rendered and
+ * blurred on each paint), transitions and animation. Box shadows stay — several of them ARE the state
+ * (a readied glow, a selected ring), and a lighter screen that hides a readied action is not lighter.
+ *
+ * `touch-action: manipulation` lets a tap fire at once instead of waiting to see whether it is a
+ * double-tap zoom, which is most of why a card button feels unresponsive on a phone.
+ */
+:root[data-fdmc-display="lite"] *,
+:root[data-fdmc-display="lite"] *::before,
+:root[data-fdmc-display="lite"] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+:root[data-fdmc-display="lite"] button,
+:root[data-fdmc-display="lite"] [role="button"],
+:root[data-fdmc-display="lite"] input,
+:root[data-fdmc-display="lite"] select,
+:root[data-fdmc-display="lite"] label {
+  touch-action: manipulation;
+}
