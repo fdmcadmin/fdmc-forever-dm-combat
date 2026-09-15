@@ -62,6 +62,8 @@ type Target = Parameters<typeof traceCreature>[1] & {
   partyAttackShare?: number;
   /** The party's save DCs, one per actor. See `PartyDefence.partySaveDcs`. */
   partySaveDcs?: number[];
+  /** Of the party's save damage, the share that keeps half on a success. Absent: all-or-nothing. */
+  partySaveHalfShare?: number;
   partyAccuracySource?: "chosen" | "center";
 };
 type Zone = Extract<RosterInteraction, { kind: "roll_modifier_zone" }>;
@@ -308,8 +310,10 @@ export function rosterInteractions(
        *             × the save share of its damage × (1 − fail′/fail), each actor's own DC against the
        *             allies' own saves (the mean of their six), +N on the allies' side
        *
-       * ⚠ SAVE EFFECTS ARE TAKEN AS ALL-OR-NOTHING. A save-for-half spell loses less than this when an
-       * ally saves; the actors' packets do not say which of their effects halve.
+       * ⚠ A SAVE-FOR-HALF EFFECT LOSES LESS. With h the share of save damage that keeps half on a success,
+       * a save deals D·[(1−h)·fail + h·(1+fail)/2], so the loss is 1 − E(fail′)/E(fail). A chosen party's
+       * sheets say which of their saves halve (`successDamage: half`), read by `currentPartyMetrics`;
+       * the centre line does not, and stays all-or-nothing (h = 0) — the figure it has always produced.
        */
       const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
       const attackShare = typeof target.partyAttackShare === "number" && Number.isFinite(target.partyAttackShare)
@@ -338,7 +342,9 @@ export function rosterInteractions(
         const allySave = otherBodies.reduce((s, a) => s + Number(a.entry.quantity) * saveOf(a.entry.template), 0) / otherBodyCount;
         const failAt = (bonus: number) => dcs.reduce((s, dc) => s + clamp01((dc - bonus - 1) / 20), 0) / dcs.length;
         const fail = failAt(allySave);
-        saveLoss = fail > 0 ? (inside / rosterBodies) * (1 - attackShare) * (1 - failAt(allySave + allySaveBonus) / fail) : 0;
+        const half = clamp01(Number(target.partySaveHalfShare ?? 0));
+        const dealt = (f: number) => (1 - half) * f + half * (1 + f) / 2;
+        saveLoss = fail > 0 ? (inside / rosterBodies) * (1 - attackShare) * (1 - dealt(failAt(allySave + allySaveBonus)) / dealt(fail)) : 0;
       }
       const partyDamageFactor = attackLoss === undefined && saveLoss === undefined
         ? undefined
@@ -465,7 +471,7 @@ export function rosterInteractions(
           ? `${hostileAttack} to the party's attacks needs the party's hit chance`
           : "",
         zone && allySaveBonus !== 0 && saveLoss === undefined
-          ? `${allySaveBonus > 0 ? "+" : ""}${allySaveBonus} to allies' saves needs the party's save DCs (a chosen party does not supply them yet)`
+          ? `${allySaveBonus > 0 ? "+" : ""}${allySaveBonus} to allies' saves ${target.partySaveDcs === undefined ? "needs the party's save DCs" : target.partySaveDcs.length === 0 ? "has nothing to resist — no character in this party deals save damage" : "needs the party's attack share, which could not be read"}`
           : "",
       ].filter(Boolean);
       note(entry.name, "ESTIMATED",

@@ -355,5 +355,67 @@ console.log("\nA party arriving spent hits for less — but keeps its weapons");
     && currentPartyMetrics([base], target, { arrivingSpent: 9 })!.round1Dpr === empty.round1Dpr);
 }
 
+/* ── 9. How the party DELIVERS — attack rolls against saves, and the DCs it forces ──────────── */
+console.log("\nThe chosen party's delivery: attack share, save DCs, and what halves");
+{
+  /**
+   * Christopher, 2026-09-15, of "a zone's +N to its allies' saves is unpriced against a chosen party":
+   * "none of this should still be open." MASTER recorded "the sheets supply no save DCs". They do; this
+   * resolver was resolving the DC to price the save and discarding it.
+   */
+  const weaponOnly = JSON.parse(JSON.stringify(base));
+  weaponOnly.tabs.equipment = [];
+  const w = currentPartyMetrics([weaponOnly], target)!;
+  ok("a character who only swings delivers everything by attack roll, and forces no DC",
+    w.delivery.attackShare === 1 && w.delivery.saveDcs.length === 0,
+    `share ${w.delivery.attackShare} · DCs [${w.delivery.saveDcs.join(",")}]`);
+
+  const strong = JSON.parse(JSON.stringify(base));
+  strong.tabs.equipment[0].metadata.damage = "30d6";   // a save spend worth scheduling
+  const s = currentPartyMetrics([strong], target)!;
+  ok("a scheduled save spend moves the share off attack rolls",
+    typeof s.delivery.attackShare === "number" && s.delivery.attackShare < 1 && s.delivery.attackShare > 0,
+    `share ${s.delivery.attackShare?.toFixed(3)}`);
+  ok("...and records the DC the sheet resolves (CON DC 13)", s.delivery.saveDcs.includes(13), `[${s.delivery.saveDcs.join(",")}]`);
+  ok("...with nothing halving, the half share is 0", s.delivery.saveHalfShare === 0);
+
+  const half = JSON.parse(JSON.stringify(strong));
+  half.tabs.equipment[0].metadata.successDamage = "half";
+  const h = currentPartyMetrics([half], target)!;
+  ok("an authored save-for-half is read into the half share", h.delivery.saveHalfShare > 0.99, `${h.delivery.saveHalfShare}`);
+
+  const two = currentPartyMetrics([weaponOnly, strong], target)!;
+  ok("one DC per character that deals save damage — the swinger adds none",
+    two.delivery.saveDcs.length === 1, `[${two.delivery.saveDcs.join(",")}]`);
+}
+
+/* ── 10. It reaches the zone — a +N to allies' saves prices against the chosen party ────────── */
+console.log("\nA zone's +N to its allies' saves, against the CHOSEN party");
+{
+  const { rosterInteractions } = await import("../src/core/encounter-band/rosterInteractions");
+  const { BROKEN_CHAIN_MONSTER_LIBRARY: LIB } = await import("../src/data/broken-chain/monsterLibrary");
+  const byName = (n: string) => (LIB as unknown as Array<{ name: string }>).find(t => t.name === n)!;
+  const court = ["Blackbough Reeve", "Gloam Harrow", "Brandwing"];
+  const entries = court.map((n, i) => ({ id: `g${i}`, name: n, template: byName(n) as never, quantity: 1 }));
+  const zoneTarget = (extra: Record<string, unknown>) => ({ ac: 16, saveBonus: 3, partySize: 4, hitChance: 0.65, ...extra });
+  const tollRow = (extra: Record<string, unknown>) =>
+    rosterInteractions(entries as never, zoneTarget(extra) as never).rows.find(r => /Toll/.test(String(r.name))) as { partyDamageFactor?: number } | undefined;
+
+  const withoutDcs = tollRow({ partyAttackShare: 0.6 });
+  const withDcs = tollRow({ partyAttackShare: 0.6, partySaveDcs: [15, 15] });
+  ok("with the chosen party's DCs the +3 to allies' saves takes a share off the party's damage",
+    (withDcs?.partyDamageFactor ?? 1) < (withoutDcs?.partyDamageFactor ?? 1) - 1e-6,
+    `${withoutDcs?.partyDamageFactor?.toFixed(4)} → ${withDcs?.partyDamageFactor?.toFixed(4)}`);
+  const halving = tollRow({ partyAttackShare: 0.6, partySaveDcs: [15, 15], partySaveHalfShare: 1 });
+  ok("...and a party whose saves halve loses LESS to it than an all-or-nothing party",
+    (halving?.partyDamageFactor ?? 0) > (withDcs?.partyDamageFactor ?? 1) + 1e-6,
+    `half ${halving?.partyDamageFactor?.toFixed(4)} > none ${withDcs?.partyDamageFactor?.toFixed(4)}`);
+
+  const panel = (await import("node:fs")).readFileSync("src/core/encounter-band/EncounterDifficultyPanel.tsx", "utf8");
+  ok("the panel hands a chosen party's own DCs and share to the roster",
+    panel.includes("partySaveDcs: fightInputs.partySaveDcs ?? currentParty?.delivery.saveDcs,")
+    && /partyAttackShare: fightInputs\.partyAttackShare \?\? currentParty\?\.delivery\.attackShare/.test(panel));
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

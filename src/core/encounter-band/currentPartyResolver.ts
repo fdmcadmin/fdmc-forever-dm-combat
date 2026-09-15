@@ -117,6 +117,23 @@ export type CurrentPartyMetrics = {
   round3Dpr: number;
   round4PlusDpr: number;
   fiveRoundSustain: number;
+  /**
+   * HOW THE PARTY DELIVERS ITS DAMAGE — attack rolls against saves — read off the uses this resolver
+   * actually scheduled. The chosen-party twin of `centerLineAttackShare` / `centerLineSaveDcs`.
+   *
+   * Christopher, 2026-09-15, of *"A zone's +N to its allies' saves is unpriced against a chosen party"*:
+   * *"none of this should still be open."* It was unpriced because a chosen party supplied no save DCs,
+   * and MASTER said *"the sheets supply no save DCs"*. They do — every save action resolves one through
+   * `8+@SPELL` / `8+@ATK`, and this loop was already resolving it to price the save. It just never kept it.
+   */
+  delivery: {
+    /** Attack-roll share of the party's damage per fight, 0–1. Undefined when nothing damaging was read. */
+    attackShare?: number;
+    /** One save DC per character that deals save damage — the highest they use. Absent characters have none. */
+    saveDcs: number[];
+    /** Of the save damage, the share that still deals half on a success — so a +N save bonus is not all-or-nothing. */
+    saveHalfShare: number;
+  };
   /** Per-actor at-will contribution, before any resource is spent. */
   atWill: { round1: number; round2: number; round3: number; round4Plus: number };
   schedule: ScheduledUse[];
@@ -206,6 +223,10 @@ export function currentPartyMetrics(
   const perRound = new Array(roundsPerFight).fill(0) as number[];
   let sustain = 0;
   let damagePerDay = 0;
+  let attackDamage = 0;
+  let saveDamage = 0;
+  let saveHalfDamage = 0;
+  const saveDcs: number[] = [];
 
   for (const actor of actors) {
     const { creature, spends, unreadable, assumptions } = actorAsCreature(actor);
@@ -214,9 +235,25 @@ export function currentPartyMetrics(
 
     // ── The at-will floor, scheduled by the checker's own tracer ──────────────
     let atWillRound: number[] = [];
+    let actorDc = 0;
     try {
-      const trace = traceCreature(parseCreature(creature), target as never, roundsPerFight);
+      const parsedAtWill = parseCreature(creature);
+      const trace = traceCreature(parsedAtWill, target as never, roundsPerFight);
       atWillRound = trace.rounds.map(r => clamp0(r.totalExpectedDamage ?? 0));
+      // How the at-will routine delivers: each scheduled feature is an attack roll or a save.
+      for (const rd of trace.rounds) {
+        for (const s of rd.scheduled) {
+          const f = parsedAtWill.features.find(x => x.name === s.feature);
+          const dealt = clamp0(s.expectedDamage);
+          if (!f || !(dealt > 0)) continue;
+          if (f.attackBonus !== undefined) attackDamage += dealt;
+          else if (f.saveDc !== undefined) {
+            saveDamage += dealt;
+            if (/^s*halfs*$/i.test(String(f.successDamage ?? ""))) saveHalfDamage += dealt;
+            actorDc = Math.max(actorDc, f.saveDc);
+          }
+        }
+      }
     } catch {
       needsInput.push(`${actor.name} — at-will actions could not be scheduled`);
     }
@@ -270,7 +307,7 @@ export function currentPartyMetrics(
       || (spend.poolLabel !== undefined
         && r.resource.trim().toLowerCase() === spend.poolLabel.trim().toLowerCase()));
 
-    const priced: Array<{ spend: ResourceSpendingAction; value: number; uses: number }> = [];
+    const priced: Array<{ spend: ResourceSpendingAction; value: number; uses: number; dc?: number }> = [];
     for (const spend of spends) {
       const row = rowFor(spend);
       if (!row) {
@@ -303,6 +340,7 @@ export function currentPartyMetrics(
       const displaced = spend.costsTheAction ? atWillFor(0) : 0;
 
       let value = 0;
+      let spendDc: number | undefined;
       if (spend.trigger === "rider") {
         /** ⚠ NOT DISCOUNTED AGAIN — the hit already landed; that is why it was spent. */
         value = average;
@@ -322,6 +360,7 @@ export function currentPartyMetrics(
           needsInput.push(`${actor.name} — ${spend.label}: save DC resolves to no number`);
           continue;
         }
+        spendDc = dc;
         const saved = saveChance(target.saveBonus, dc);
         /**
          * ⚠ WHAT A SUCCESSFUL SAVE STILL TAKES, READ AND NEVER ASSUMED.
@@ -339,7 +378,7 @@ export function currentPartyMetrics(
         needsInput.push(`${actor.name} — ${spend.label}: neither an attack roll nor a save DC, and not a rider`);
         continue;
       }
-      if (value > 0) priced.push({ spend, value, uses });
+      if (value > 0) priced.push({ spend, value, uses, ...(spendDc !== undefined ? { dc: spendDc } : {}) });
     }
 
     /**
@@ -360,6 +399,14 @@ export function currentPartyMetrics(
       while (left > 0 && round < roundsPerFight) {
         const share = Math.min(1, left);
         perRound[round] += entry.value * share;
+        // A rider lands because a hit did; a save spend is a save. The scheduled share is what counts.
+        if (entry.dc !== undefined) {
+          saveDamage += entry.value * share;
+          if (/^s*halfs*$/i.test(entry.spend.successDamage ?? "")) saveHalfDamage += entry.value * share;
+          actorDc = Math.max(actorDc, entry.dc);
+        } else {
+          attackDamage += entry.value * share;
+        }
         schedule.push({
           actor: actor.name, action: entry.spend.label, trigger: entry.spend.trigger,
           valuePerUse: entry.value, usesPerFight: share, round: round + 1,
@@ -374,6 +421,7 @@ export function currentPartyMetrics(
      * ⚠ SUSTAIN IS THIS ACTOR'S OWN, AND HIT DICE ARE NOT IN IT. Per-PC HP, plus what the ledger
      * reserved for sustain — never a shared pool, and never the short rest's dice.
      */
+    if (actorDc > 0) saveDcs.push(actorDc);
     sustain += clamp0(Number(actor.stats?.hp?.max ?? 0));
     for (const row of ledger.rows) {
       if (row.sustain <= 0) continue;
@@ -389,6 +437,11 @@ export function currentPartyMetrics(
   return {
     round1Dpr: r(0), round2Dpr: r(1), round3Dpr: r(2), round4PlusDpr: r(3),
     fiveRoundSustain: sustain,
+    delivery: {
+      ...(attackDamage + saveDamage > 0 ? { attackShare: attackDamage / (attackDamage + saveDamage) } : {}),
+      saveDcs,
+      saveHalfShare: saveDamage > 0 ? saveHalfDamage / saveDamage : 0,
+    },
     atWill,
     schedule,
     audit: {

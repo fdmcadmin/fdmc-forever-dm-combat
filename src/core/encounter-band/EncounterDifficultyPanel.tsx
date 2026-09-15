@@ -340,8 +340,16 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     const built = rosterFromTemplates(entries, partyLevel, {
       ac: targetAc, saveBonus: targetSave, partySize, saves, damageMix: partyDamageMix,
       hitChance: fightInputs.hitChance,
-      partyAttackShare: fightInputs.partyAttackShare,
-      partySaveDcs: fightInputs.partySaveDcs,
+      /**
+       * ⚠ A CHOSEN PARTY'S DELIVERY IS READ OFF ITS OWN SHEETS. `fightInputs` supplies the centre line's
+       * attack share and save DCs when nobody is chosen; with a chosen party they come from the uses
+       * `currentPartyMetrics` scheduled. Before this a chosen party supplied neither, and a zone's +N to its
+       * allies' saves priced for the balanced centre and never for the table's own characters.
+       */
+      partyAttackShare: fightInputs.partyAttackShare ?? currentParty?.delivery.attackShare,
+      // A chosen party that forces no save hands over [] — read and empty, not "not supplied".
+      partySaveDcs: fightInputs.partySaveDcs ?? currentParty?.delivery.saveDcs,
+      ...(fightInputs.partyAccuracySource === "chosen" && currentParty ? { partySaveHalfShare: currentParty.delivery.saveHalfShare } : {}),
       partyAccuracySource: fightInputs.partyAccuracySource,
       /**
        * ⚠ ONE PC'S TURN — THE CHOSEN PARTY'S OWN, WHEN IT HAS BEEN READ.
@@ -360,7 +368,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         Number(Boolean(b.killOrderFirst)) - Number(Boolean(a.killOrderFirst)) || a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs, readPcTurnValue]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs, readPcTurnValue, currentParty]);
 
   /**
    * WHAT THE HOSTILE SIDE IS DOING, so the accuracy bonds stop reading as unpriceable.

@@ -129,6 +129,8 @@ export type PartyDefence = {
   partyAttackShare?: number;
   /** The party's save DCs, one per actor — for a +N to the saves of the creatures it targets. */
   partySaveDcs?: number[];
+  /** Of the party's save damage, the share that keeps half on a success. Absent: all-or-nothing, as before. */
+  partySaveHalfShare?: number;
   /** Where `hitChance` came from, so a roster line can say so: the chosen actors or the centre line. */
   partyAccuracySource?: "chosen" | "center";
   /**
