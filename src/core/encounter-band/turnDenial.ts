@@ -23,8 +23,11 @@
  * instead — which is also what keeps the SRD import's rules-glossary sentences ("You have the
  * Incapacitated condition") from charging anyone.
  *
- * ⚠ A CONCENTRATION HOLD IS NOT APPLIED TO CONTROL YET — a concentrated condition is charged for the
- * turns it prints, as though the caster keeps it. Flagged in `basis`.
+ * ⚠ A CONCENTRATION HOLD IS APPLIED TO CONTROL — IN THE SIMULATION, WHERE THE DAMAGE IS KNOWN.
+ * `concentration` marks a state held by BR070/BR071. `checkerV2` then multiplies every turn it still owes by
+ * the holder's BR073 hold each round, and drops them when the holder dies — v5's own words: *"P_ACTIVE_R
+ * multiplies the sequence of required concentration saves and source survival."* 0.8.57.0 charged a
+ * concentrated condition for every turn it printed, as though the caster could never be broken.
  */
 import type { ParsedFeature } from "./featureResolver";
 import { CONDITION_EFFECTS, conditionsImposedBy } from "./controlPricing";
@@ -40,6 +43,8 @@ export type TurnDenial = {
   turns: number[];
   expectedTurns: number;
   basis: string;
+  /** Held by concentration (BR070/BR071): the simulation applies the holder's hold round by round. */
+  concentration: boolean;
 };
 /** It imposes a turn-removing condition, but cannot be charged — and says why. */
 export type TurnDenialUnpriced = { conditions: string[]; reason: string };
@@ -101,9 +106,10 @@ export function turnDenialFor(feature: ParsedFeature, target: Target): TurnDenia
   }
   const expectedTurns = turns.reduce((s, p) => s + p, 0);
   const odds = [hit !== undefined ? `${pct(hit)} hit` : "", fail !== undefined ? `${pct(fail)} fail` : ""].filter(Boolean).join(" × ");
+  const concentration = has("BR070") || has("BR071");
   return {
-    conditions, perTarget, turns, expectedTurns,
+    conditions, perTarget, turns, expectedTurns, concentration,
     basis: `${conditions.join(" / ")}: ${odds} → ${durationNote} → ${expectedTurns.toFixed(2)} of a PC's turns per target caught`
-      + (has("BR070") ? " (concentration hold not applied)" : ""),
+      + (concentration ? " (held by concentration — each later turn stands only while the holder keeps it, BR073)" : ""),
   };
 }

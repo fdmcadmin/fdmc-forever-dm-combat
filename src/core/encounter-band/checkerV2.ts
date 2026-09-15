@@ -528,8 +528,13 @@ export type RosterGroup = {
    * entry is one scheduled use: `pcs` the expected PCs it catches, `turns[k]` the chance each loses its
    * (k+1)th following turn. The simulation takes each lost turn's share of the party's damage (1 ÷ party
    * size) off the round that turn falls in. See `turnDenial.ts`.
+   *
+   * `concentration` marks a use held by concentration: its later turns stand only while THIS group keeps
+   * the hold (its `conSave` against the party's damage into it), and end when it dies (v5 BR073).
    */
-  pcTurnDenials?: Partial<Record<keyof RoundProfile, { pcs: number; turns: number[] }[]>>;
+  pcTurnDenials?: Partial<Record<keyof RoundProfile, { pcs: number; turns: number[]; concentration?: boolean }[]>>;
+  /** This group's Constitution save — what a concentration hold on its own control is tested against. */
+  conSave?: number;
 };
 
 /**
@@ -1026,6 +1031,8 @@ export function simulateEncounter(opts: {
   let fatalRound: number | null = null;
   /** PC turns queued to be lost, by round — see the charge inside the loop. */
   const deniedPcTurns: number[] = [];
+  /** Lost turns held by a creature's CONCENTRATION — each still owed turn stands only while its holder keeps it. */
+  const concentrationDenied: Array<{ holderId: string; queued: number; at: number; lost: number }> = [];
 
   for (let round = 1; round <= maxRounds; round += 1) {
     const pcsStart = standing;
@@ -1112,6 +1119,35 @@ export function simulateEncounter(opts: {
      * damage lands — the charge cannot depend on the damage it reduces.
      */
     const scheduleKey = (round <= 1 ? "round1" : round === 2 ? "round2" : round === 3 ? "round3" : "round4Plus") as keyof RoundProfile;
+    /**
+     * ⚠ A CONCENTRATED CONDITION LOSES ITS LATER TURNS WHEN THE HOLD BREAKS — v5 BR073.
+     *
+     * *"P_ACTIVE_R multiplies the sequence of required concentration saves and source survival."* 0.8.57.0
+     * charged a concentrated Hold or Stun for every turn it printed, as if the caster could never be broken
+     * (*"A concentration hold is not applied to control"*). Each round, every turn it still owes is multiplied
+     * by THIS round's hold — the holder's CON save against the party's damage into it last round, one save
+     * per damage instance, the same `concentrationHold` a concentration zone uses — and a dead holder owes
+     * nothing. A turn queued this round is not tested yet: nothing has been dealt to the caster since the cast.
+     */
+    if (concentrationDenied.length) {
+      const previous = rounds[rounds.length - 1];
+      const holdOf = new Map<string, number>();
+      for (const owed of concentrationDenied) {
+        if (owed.at < round || owed.queued >= round || owed.lost <= 0) continue;
+        let hold = holdOf.get(owed.holderId);
+        if (hold === undefined) {
+          const holder = prepared.find(g => g.id === owed.holderId);
+          if (!holder || livingBodies(holder, cumulativePartyDamage) <= 0) hold = 0;
+          else if (previous && previous.partyDamage > 0) {
+            const damageToHolder = Math.max(0, damageIntoGroup(holder, previous.cumulativePartyDamage)
+              - damageIntoGroup(holder, previous.cumulativePartyDamage - previous.partyDamage));
+            hold = concentrationHold(Number(holder.conSave ?? 0), damageToHolder, previous.partyDamage / partySize).hold;
+          } else hold = 1;
+          holdOf.set(owed.holderId, hold);
+        }
+        owed.lost *= hold;
+      }
+    }
     if (completionRound === null && pcsStart > 0) {
       for (const group of prepared) {
         const uses = group.pcTurnDenials?.[scheduleKey];
@@ -1124,13 +1160,19 @@ export function simulateEncounter(opts: {
         for (const use of uses) {
           use.turns.forEach((p, k) => {
             const lost = acting * use.pcs * p;
+            if (use.concentration && group.id) {
+              concentrationDenied.push({ holderId: group.id, queued: round, at: round + k, lost: lost * hostileFirst });
+              concentrationDenied.push({ holderId: group.id, queued: round, at: round + k + 1, lost: lost * (1 - hostileFirst) });
+              return;
+            }
             deniedPcTurns[round + k] = (deniedPcTurns[round + k] ?? 0) + lost * hostileFirst;
             deniedPcTurns[round + k + 1] = (deniedPcTurns[round + k + 1] ?? 0) + lost * (1 - hostileFirst);
           });
         }
       }
     }
-    const pcTurnsLost = Math.min(partySize, deniedPcTurns[round] ?? 0);
+    const concentrationLost = concentrationDenied.reduce((s, owed) => s + (owed.at === round ? owed.lost : 0), 0);
+    const pcTurnsLost = Math.min(partySize, (deniedPcTurns[round] ?? 0) + concentrationLost);
     const partyDamage = completionRound || pcsStart === 0 ? 0 : partyPotential * partyFactor * (1 - pcTurnsLost / partySize);
     const partyDamageBefore = cumulativePartyDamage;
     cumulativePartyDamage += partyDamage;

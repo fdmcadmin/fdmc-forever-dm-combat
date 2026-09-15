@@ -269,6 +269,59 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   }, [encounter, monsterLibrary, chosen, partyLevel, equipmentMode, partySize]);
 
 
+  /**
+   * ⚠ THE THING THE PARTY IS SWINGING AT IS THE ROSTER, AND THIS WAS AIMING IT AT THE PARTY.
+   *
+   * `targetAc` is `acOverride ?? actorDefence?.ac ?? defence.ac` — the PARTY's armour class, which
+   * is exactly right where it is used, as the target for the monsters' attacks. The at-will base
+   * borrowed it and handed it to `traceCreature` with a PC in the creature seat, so every
+   * character's weapon was rolling against their own party's AC. `targetFromRoster` reads the
+   * bodies actually in this fight, which is the only direction that means anything here.
+   */
+  const partyTarget = useMemo(() => {
+    const entries = (encounter?.entries ?? [])
+      .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
+      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number }>;
+    return targetFromRoster(entries as never, partySize);
+  }, [encounter, monsterLibrary, partySize]);
+
+  /**
+   * ⚠ THE CURRENT PARTY'S OWN R1/R2/R3/R4+ AND SUSTAIN — step three, and the end of the caveat.
+   *
+   * `Resource Conversion` row 8: *"Schedule the legal actions, then write party R1/R2/R3/R4+ and
+   * Sustain to Runtime Inputs."* `actorAsCreature` supplies the at-will base with every resource
+   * excluded (row 5), `resourceLedgerFromActor` counts what may legally be spent and reserves each
+   * use once (row 44), and `currentPartyMetrics` prices those uses and PLACES THEM IN ROUNDS —
+   * best first, one per round, because a character takes one Action a turn. Row 45: the daily
+   * average is an audit result and never the round profile, so it is returned separately.
+   *
+   * Christopher, 2026-09-07: *"if we know everything on the actor we should know everything that
+   * actor can do."* This is that. Until it existed the offence side of the comparison was the
+   * certified line for this party's SIZE, which made the delta a row compared with itself.
+   */
+  const currentParty = useMemo(() => {
+    if (!resolved || !partyTarget) return null;
+    try {
+      return currentPartyMetrics(chosen as never[], partyTarget, {
+        /* The party does not arrive fresh, and the read side has to know that too. */
+        arrivingSpent,
+        // The same role resolution the ledger uses — bond first, then the class's own lean.
+        leanFor: (a: unknown) => bondTemplateForActor(a as never, BROKEN_CHAIN_BOND_TEMPLATES)?.resourceLean
+          ?? classResourceLean(a as never),
+      });
+    } catch { return null; }
+  }, [chosen, resolved, partyTarget, arrivingSpent]);
+
+  // Memoised: it is a dependency of the roster, and a fresh object every render would rebuild the roster every render.
+  const readPcTurnValue = useMemo(() => (currentParty && currentParty.round1Dpr > 0
+    ? {
+      round1: currentParty.round1Dpr / Math.max(1, partySize),
+      round2: currentParty.round2Dpr / Math.max(1, partySize),
+      round3: currentParty.round3Dpr / Math.max(1, partySize),
+      round4Plus: currentParty.round4PlusDpr / Math.max(1, partySize),
+    }
+    : undefined), [currentParty, partySize]);
+
   const roster = useMemo(() => {
     if (!encounter) return { roster: [], assumptions: [] };
     const entries = encounter.entries
@@ -290,8 +343,16 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       partyAttackShare: fightInputs.partyAttackShare,
       partySaveDcs: fightInputs.partySaveDcs,
       partyAccuracySource: fightInputs.partyAccuracySource,
-      // One PC's turn at this party's level and mode — what a stun costs, and what a creature weighs choosing one.
-      pcTurnValue: pcTurnValueAt(partyLevel, partySize, equipmentMode),
+      /**
+       * ⚠ ONE PC'S TURN — THE CHOSEN PARTY'S OWN, WHEN IT HAS BEEN READ.
+       *
+       * 0.8.57.0 valued a lost turn from the certified curve even with four real characters on screen:
+       * *"A chosen party's own actors are not read for it yet."* The simulation already charged a lost
+       * turn against the read party's round (it runs on that party), but the creature WEIGHED its
+       * controlling attack against the curve's — so the choice and the charge used two different parties.
+       * The read party's per-PC round now feeds both. With no read offence, the curve stands, as before.
+       */
+      pcTurnValue: readPcTurnValue ?? pcTurnValueAt(partyLevel, partySize, equipmentMode),
     }, monsterLibrary);
     return {
       // A passive forced target leads regardless of HP — the weakest-first sort must not undo it.
@@ -299,7 +360,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         Number(Boolean(b.killOrderFirst)) - Number(Boolean(a.killOrderFirst)) || a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs]);
+  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs, readPcTurnValue]);
 
   /**
    * WHAT THE HOSTILE SIDE IS DOING, so the accuracy bonds stop reading as unpriceable.
@@ -428,48 +489,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     [chosen, resolved],
   );
 
-  /**
-   * ⚠ THE THING THE PARTY IS SWINGING AT IS THE ROSTER, AND THIS WAS AIMING IT AT THE PARTY.
-   *
-   * `targetAc` is `acOverride ?? actorDefence?.ac ?? defence.ac` — the PARTY's armour class, which
-   * is exactly right where it is used, as the target for the monsters' attacks. The at-will base
-   * borrowed it and handed it to `traceCreature` with a PC in the creature seat, so every
-   * character's weapon was rolling against their own party's AC. `targetFromRoster` reads the
-   * bodies actually in this fight, which is the only direction that means anything here.
-   */
-  const partyTarget = useMemo(() => {
-    const entries = (encounter?.entries ?? [])
-      .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
-      .filter(e => Boolean(e.template)) as Array<{ template: MainMonsterTemplate; quantity: number }>;
-    return targetFromRoster(entries as never, partySize);
-  }, [encounter, monsterLibrary, partySize]);
-
-  /**
-   * ⚠ THE CURRENT PARTY'S OWN R1/R2/R3/R4+ AND SUSTAIN — step three, and the end of the caveat.
-   *
-   * `Resource Conversion` row 8: *"Schedule the legal actions, then write party R1/R2/R3/R4+ and
-   * Sustain to Runtime Inputs."* `actorAsCreature` supplies the at-will base with every resource
-   * excluded (row 5), `resourceLedgerFromActor` counts what may legally be spent and reserves each
-   * use once (row 44), and `currentPartyMetrics` prices those uses and PLACES THEM IN ROUNDS —
-   * best first, one per round, because a character takes one Action a turn. Row 45: the daily
-   * average is an audit result and never the round profile, so it is returned separately.
-   *
-   * Christopher, 2026-09-07: *"if we know everything on the actor we should know everything that
-   * actor can do."* This is that. Until it existed the offence side of the comparison was the
-   * certified line for this party's SIZE, which made the delta a row compared with itself.
-   */
-  const currentParty = useMemo(() => {
-    if (!resolved || !partyTarget) return null;
-    try {
-      return currentPartyMetrics(chosen as never[], partyTarget, {
-        /* The party does not arrive fresh, and the read side has to know that too. */
-        arrivingSpent,
-        // The same role resolution the ledger uses — bond first, then the class's own lean.
-        leanFor: (a: unknown) => bondTemplateForActor(a as never, BROKEN_CHAIN_BOND_TEMPLATES)?.resourceLean
-          ?? classResourceLean(a as never),
-      });
-    } catch { return null; }
-  }, [chosen, resolved, partyTarget, arrivingSpent]);
 
   /**
    * THE PARTY ARRIVES HAVING ALREADY SPENT SOMETHING. A gate is not fought fresh — it is fought

@@ -30,6 +30,7 @@ import { materializeTemplateBody } from "../monsters/actionSetPicks";
 import { lairRosterGroups } from "./lairRoster";
 import { summonRosterGroups } from "./summonRoster";
 import { rosterInteractions } from "./rosterInteractions";
+import { creatureSaves } from "../monsters/creator/monsterCreatorModel";
 import { EXPECTED_MONSTER_AC, AC_CONTRIBUTION, resolveTraitRule } from "./compactImport";
 import { parseCreature } from "./parseCreature";
 import { neutralDamageMix } from "../../modules/dnd-5e/neutralDamageProfile";
@@ -476,7 +477,10 @@ export function creatureProfile(
   const deniedNoted = new Set<string>();
   (["round1", "round2", "round3", "round4Plus"] as const).forEach((key, i) => {
     const uses = (r[i]?.scheduled ?? []).filter(s => (s.pcTurnsDenied?.pcs ?? 0) > 0);
-    if (uses.length) pcTurnDenials[key] = uses.map(s => ({ pcs: s.pcTurnsDenied!.pcs, turns: s.pcTurnsDenied!.turns }));
+    if (uses.length) pcTurnDenials[key] = uses.map(s => ({
+      pcs: s.pcTurnsDenied!.pcs, turns: s.pcTurnsDenied!.turns,
+      ...(s.pcTurnsDenied!.concentration ? { concentration: true } : {}),
+    }));
     for (const s of uses) {
       if (deniedNoted.has(s.feature)) continue;
       deniedNoted.add(s.feature);
@@ -650,6 +654,13 @@ export function rosterFromTemplates(
       dpr,
       damageUptime: template.stats.damageUptime ?? 1,
       ...(Object.keys(profile.pcTurnDenials).length ? { pcTurnDenials: profile.pcTurnDenials } : {}),
+      /**
+       * ⚠ THE HOLDER'S CON SAVE, when any of its control is held by concentration. The simulation tests
+       * the hold against it round by round (BR073) — the same figure a concentration ZONE row carries.
+       */
+      ...(Object.values(profile.pcTurnDenials).some(uses => uses?.some(u => u.concentration))
+        ? { conSave: creatureSaves((template.abilities ?? []) as never, template.stats as never).con }
+        : {}),
     };
   });
 

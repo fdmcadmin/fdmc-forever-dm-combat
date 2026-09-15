@@ -21,6 +21,7 @@
  */
 
 import type { ParsedCreature } from "./parseCreature";
+import { aoeTargetsForParty } from "./parseCreature";
 import type { SaveAbility } from "./partyDefenceCurve";
 import { riderWeight, describeRider, type MonsterRider } from "../monsters/monsterRider";
 import { damageExpressionAverage } from "./damageExpression";
@@ -48,7 +49,7 @@ export type TracedFeature = {
   resourceSpent: string | null;
   note?: string;
   /** The PC turns this use takes away — `turnDenial.ts`. `pcs` already carries the use's availability. */
-  pcTurnsDenied?: { pcs: number; turns: number[]; basis: string };
+  pcTurnsDenied?: { pcs: number; turns: number[]; basis: string; concentration?: boolean };
 };
 
 export type TracedRound = {
@@ -221,7 +222,16 @@ export function traceCreature(
       expectation: basis + riderNote,
       method: resolved.method,
       castLevel: resolved.castLevel,
-      targets: feature.targets ?? 1,
+      /**
+       * ⚠ AN AREA CATCHES THE SAME PCs FOR ITS CONTROL AS FOR ITS DAMAGE.
+       *
+       * `expectedDamageForFeature` counts an area with no printed count as `aoeTargetsForParty` — the
+       * workbook's validated two-of-four. This line used `feature.targets ?? 1`, so the same breath that
+       * burned two PCs stunned ONE of them: 0.8.57.0 named it (*"An area counts its printed targets, else
+       * one — the area-target share used for damage is not exported to the trace"*). `targets` here only
+       * feeds the turn-loss charge and the display; damage already carries its own count.
+       */
+      targets: feature.targets ?? (feature.isArea ? aoeTargetsForParty(target.partySize ?? 4) : 1),
       delayed: resolved.delayedAverage,
     });
   }
@@ -429,7 +439,7 @@ export function traceCreature(
           ? `level ${alt.feature.spellSlotLevel} slot`
           : alt.recharge ? `recharge ${alt.recharge}` : alt.usesLeft !== null ? "1 use" : null,
         note: "Full Action — replaces the routine Multiattack.",
-        ...(alt.denial ? { pcTurnsDenied: { pcs: alt.denial.perTarget * alt.targets * availability, turns: alt.denial.turns, basis: alt.denial.basis } } : {}),
+        ...(alt.denial ? { pcTurnsDenied: { pcs: alt.denial.perTarget * alt.targets * availability, turns: alt.denial.turns, basis: alt.denial.basis, concentration: alt.denial.concentration } } : {}),
       });
       if (alt.delayed > 0) {
         delayedByRound.set(round + 1, (delayedByRound.get(round + 1) ?? 0) + alt.delayed);
@@ -442,7 +452,7 @@ export function traceCreature(
           expectation: pick.expectation, expectedDamage: pick.perUse,
           resourceSpent: null,
           note: slots.length > 1 ? `Multiattack ${i + 1} of ${slots.length}` : undefined,
-          ...(pick.denial ? { pcTurnsDenied: { pcs: pick.denial.perTarget * pick.targets, turns: pick.denial.turns, basis: pick.denial.basis } } : {}),
+          ...(pick.denial ? { pcTurnsDenied: { pcs: pick.denial.perTarget * pick.targets, turns: pick.denial.turns, basis: pick.denial.basis, concentration: pick.denial.concentration } } : {}),
         });
       });
       /**
@@ -590,7 +600,7 @@ export function traceCreature(
         castLevel: b.castLevel, targets: b.targets,
         expectation: expectation + (availability < 1 ? ` × ${(availability * 100).toFixed(0)}% available` : ""),
         expectedDamage: perUse * availability,
-        ...(b.denial ? { pcTurnsDenied: { pcs: b.denial.perTarget * b.targets * availability, turns: b.denial.turns, basis: b.denial.basis } } : {}),
+        ...(b.denial ? { pcTurnsDenied: { pcs: b.denial.perTarget * b.targets * availability, turns: b.denial.turns, basis: b.denial.basis, concentration: b.denial.concentration } } : {}),
         resourceSpent: b.usesLeft !== null ? `1 of ${b.usesLeft} uses` : b.recharge ? `recharge ${b.recharge}` : null,
         note: capped
           ? `Spends this turn's ${b.channel === "reaction" ? "Reaction" : "Bonus Action"} — nothing else on that budget resolves until it refreshes.`

@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { turnDenialFor, type TurnDenial } from "../src/core/encounter-band/turnDenial";
-import { parseCreature } from "../src/core/encounter-band/parseCreature";
+import { parseCreature, type ParsedCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 import { simulateEncounter, type RosterGroup } from "../src/core/encounter-band/checkerV2";
 import { rosterFromTemplates, pcTurnValueAt } from "../src/core/encounter-band/rosterFromLibrary";
@@ -132,8 +132,92 @@ const built = (t: MainMonsterTemplate) => rosterFromTemplates([{ template: t, qu
 // ── 5. wired ────────────────────────────────────────────────────────────────────────────────────
 console.log("\n5. the panels value a PC's turn from the party they simulate");
 const read = (p: string) => readFileSync(resolve(ROOT, p), "utf8");
-ok("the fight panel passes its party's turn value", /pcTurnValue: pcTurnValueAt\(/.test(read("src/core/encounter-band/EncounterDifficultyPanel.tsx")));
-ok("the act run passes its run's", /pcTurnValue: pcTurnValueAt\(/.test(read("src/core/encounter-band/ActRunPanel.tsx")));
+/**
+ * ⚠ THE CHOSEN PARTY'S OWN TURN, WHEN IT HAS BEEN READ. 0.8.57.0: *"A chosen party's own actors are not
+ * read for it yet."* The simulation already charged a lost turn against the read party's round, but the
+ * creature WEIGHED its choice against the curve's — two parties for one decision. The read party's per-PC
+ * round now wins, and the curve stands only when there is no read offence.
+ */
+{
+  const panel = read("src/core/encounter-band/EncounterDifficultyPanel.tsx");
+  ok("the fight panel values a turn from the READ party first, the curve only as fallback",
+    /pcTurnValue: readPcTurnValue \?\? pcTurnValueAt\(/.test(panel));
+  ok("...where the read turn is the read party's round ÷ its size, memoised",
+    /const readPcTurnValue = useMemo\(\(\) => \(currentParty && currentParty\.round1Dpr > 0/.test(panel)
+      && /round2: currentParty\.round2Dpr \/ Math\.max\(1, partySize\)/.test(panel));
+  ok("...and the read party is computed BEFORE the roster that needs it",
+    panel.indexOf("const currentParty = useMemo") > 0 && panel.indexOf("const currentParty = useMemo") < panel.indexOf("const roster = useMemo"));
+}
+ok("the act run passes its run's (it simulates on the curve, so the curve is its party)", /pcTurnValue: pcTurnValueAt\(/.test(read("src/core/encounter-band/ActRunPanel.tsx")));
+
+// ── 6. an area catches as many PCs for control as for damage ────────────────────────────────────
+console.log("\n6. an area control effect counts the same PCs its damage does");
+{
+  /**
+   * 0.8.57.0: *"An area counts its printed targets, else one — the area-target share used for damage is
+   * not exported to the trace."* The same breath that burned two PCs stunned one.
+   */
+  const cone = (isArea: boolean): ParsedCreature => ({
+    name: "Coner", ac: 14, maxHp: 80, attacksPerTurn: 1, assumptions: [],
+    features: [{
+      name: "Stun Cone", activationType: "action", damage: "4d6", saveDc: 15, saveAbility: "con", isArea,
+      recharge: "5-6", text: "Each creature in a 15-foot cone makes a Constitution saving throw. On a failure it takes 14 (4d6) damage and is Stunned until the end of its next turn.",
+    }],
+  } as unknown as ParsedCreature);
+  const use = (isArea: boolean, size: number) => traceCreature(cone(isArea), { ...target7, partySize: size, ...(turn7 ? { pcTurnValue: turn7 } : {}) }, 1)
+    .rounds[0].scheduled.find(s => s.feature === "Stun Cone");
+  const four = use(true, 4), six = use(true, 6), single = use(false, 4);
+  ok("an area with no printed count catches half the party for its STUN, as it does for its damage",
+    !!four?.pcTurnsDenied && !!single?.pcTurnsDenied && near(four.pcTurnsDenied.pcs / single.pcTurnsDenied.pcs, 2),
+    `${four?.pcTurnsDenied?.pcs.toFixed(3)} vs ${single?.pcTurnsDenied?.pcs.toFixed(3)} (targets ${four?.targets})`);
+  ok("...and scales with the party — three of six", !!six?.pcTurnsDenied && six.targets === 3, `targets ${six?.targets}`);
+}
+
+// ── 7. a concentrated condition loses its later turns when the hold breaks ──────────────────────
+console.log("\n7. concentrated control: each later turn stands only while the holder keeps it (BR073)");
+{
+  /**
+   * 0.8.57.0 charged a concentrated Hold for every turn it printed. v5 BR073: *"P_ACTIVE_R multiplies the
+   * sequence of required concentration saves and source survival."*
+   */
+  const held = (concentration: boolean, conSave = 0) => ({
+    round1: [{ pcs: 1, turns: [1, 1, 1, 1, 1], ...(concentration ? { concentration: true } : {}) }],
+  });
+  const caster = (id: string, hp: number, concentration: boolean, conSave = 0): RosterGroup =>
+    ({ id, name: id, quantity: 1, baseHp: hp, flatHpPerBody: true, dpr: all(5), pcTurnDenials: held(concentration) as never, conSave });
+  const totalLost = (rs: Round[]) => rs.slice(0, 5).reduce((s, r) => s + (r.pcTurnsLost ?? 0), 0);
+
+  // The party kills a decoy FIRST, so nothing is dealt to the caster: the hold is 1 and nothing changes.
+  const plainDecoy = run([body("Decoy", 100000), caster("Caster", 100000, false)]);
+  const concDecoy = run([body("Decoy", 100000), caster("Caster", 100000, true)]);
+  ok("while the party hits something else, a concentrated hold costs exactly what it printed",
+    near(totalLost(plainDecoy), totalLost(concDecoy)), `${totalLost(plainDecoy).toFixed(3)} vs ${totalLost(concDecoy).toFixed(3)}`);
+
+  // The party hits the caster: its later turns thin out with every save it has to make.
+  const plainHit = run([caster("Caster", 100000, false)]);
+  const concHit = run([caster("Caster", 100000, true, 0)]);
+  ok("when the party damages the caster, the concentrated Hold takes FEWER turns",
+    totalLost(concHit) < totalLost(plainHit) - 1e-6, `${totalLost(concHit).toFixed(3)} < ${totalLost(plainHit).toFixed(3)}`);
+  const strong = run([caster("Caster", 100000, true, 12)]);
+  ok("...and a caster with a strong CON save keeps more of them than a weak one",
+    totalLost(strong) > totalLost(concHit) + 1e-6, `CON +12 ${totalLost(strong).toFixed(3)} > CON +0 ${totalLost(concHit).toFixed(3)}`);
+
+  // A dead holder owes nothing after it falls.
+  const dies = run([caster("Caster", 30, true, 30), body("T", 100000)]);
+  ok("a holder killed in round 1 owes no turns from round 2 on beyond the one already landing",
+    (dies[2]?.pcTurnsLost ?? 0) === 0 && (dies[3]?.pcTurnsLost ?? 0) === 0,
+    dies.slice(0, 4).map(r => (r.pcTurnsLost ?? 0).toFixed(2)).join(", "));
+
+  const heldDenial = turnDenialFor(feat({ saveDc: 14, saveAbility: "wis", conditions: ["paralyzed"],
+    text: "The target must succeed on a DC 14 Wisdom saving throw or be Paralyzed for 1 minute (concentration)." }), T);
+  ok("the denial is flagged as concentration and its basis names the hold",
+    priced(heldDenial) && heldDenial.concentration === true && /held by concentration/.test(heldDenial.basis),
+    priced(heldDenial) ? heldDenial.basis : JSON.stringify(heldDenial));
+  const timedDenial = turnDenialFor(feat({ saveDc: 14, saveAbility: "wis", conditions: ["paralyzed"],
+    text: "The target must succeed on a DC 14 Wisdom saving throw or be Paralyzed until the end of its next turn." }), T);
+  ok("  (mutation) the same condition on a printed timer is NOT flagged as concentration",
+    priced(timedDenial) && timedDenial.concentration === false, priced(timedDenial) ? timedDenial.basis : JSON.stringify(timedDenial));
+}
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
