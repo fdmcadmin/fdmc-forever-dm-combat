@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.67.1",
+  "version": "0.8.68.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -103,7 +103,8 @@
     "check:classmit": "npx tsx scripts/check-party-mitigation.ts",
     "check:species": "npx tsx scripts/check-species.ts",
     "check:seattransport": "npx tsx scripts/check-seat-transport.ts",
-    "check:playerbundle": "npx tsx scripts/check-player-bundle.ts"
+    "check:playerbundle": "npx tsx scripts/check-player-bundle.ts",
+    "check:monsterrows": "npx tsx scripts/check-monster-row-economy.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

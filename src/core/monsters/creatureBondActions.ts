@@ -48,7 +48,13 @@ function toCreatureRow(bondName: string, stageTag: string, action: ActorAction):
     name: `◈ ${action.label}`,
     kind: action.pinReaction ? "reaction" : "action",
     text: `${bondName} · ${stageTag} — ${text}`,
-  };
+    /**
+     * ⚠ IT SPENDS THE BOND. Without this the card read a bond row as a non-attack action and spent the
+     * creature's whole turn on it (Christopher: *"bond actions are consuming the entire monster action"*).
+     * An off-turn option keeps `kind: "reaction"` so it is FOUND with the reactions, and still costs the bond.
+     */
+    economyCost: "bond",
+  } as MonsterReaderAction;
 }
 
 /**

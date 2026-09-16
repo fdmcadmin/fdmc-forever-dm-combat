@@ -642,6 +642,16 @@ export function isMonsterLegendaryAction(a: MonsterReaderAction): boolean {
  * (4th-level Sleet Storm) and Raise the Frozen (3rd-level Animate Dead) both read as
  * `kind: "action"`. The slot is what marks them.
  */
+/**
+ * A BOND ROW — spends the creature's one bond activation a round, not its action or its reaction.
+ *
+ * Written by `creatureBondActions` for a body that carries a bond. It is its own economy for the same
+ * reason bonus and legendary are: spending it must never cost a swing, and it is not a swing.
+ */
+export function isMonsterBondAction(a: MonsterReaderAction): boolean {
+  return (a as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() === "bond";
+}
+
 export function isMonsterSpellAction(a: MonsterReaderAction): boolean {
   return a.spellSlotLevel !== undefined || a.kind === "spell";
 }
@@ -708,8 +718,9 @@ export function deriveMonsterActionCounter(
   // Bonus and legendary actions are not part of the attack budget at all — they run on their
   // own economy (and legendary ones on someone else's turn), so spending either must not cost
   // a swing. Traits and reactions were already out via isStandardMonsterAction.
+  // A bond row is its own economy too — one activation a round — so it is never a swing.
   const eligible = actions.filter(a =>
-    isStandardMonsterAction(a) && !isMonsterBonusAction(a) && !isMonsterLegendaryAction(a));
+    isStandardMonsterAction(a) && !isMonsterBonusAction(a) && !isMonsterLegendaryAction(a) && !isMonsterBondAction(a));
   // Spells and recharge abilities each ARE the creature's action, so they end the turn's
   // attacks rather than costing one swing out of two. See isMonsterFullAction.
   const spendable = eligible.filter(a => !isMonsterFullAction(a)).map(a => a.name).filter(Boolean);

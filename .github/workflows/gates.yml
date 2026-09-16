@@ -354,3 +354,6 @@ jobs:
 
       - name: check player bundle + loading screen
         run: npm run check:playerbundle
+
+      - name: check monster card row economy + accents
+        run: npm run check:monsterrows

@@ -47,7 +47,11 @@ function needsConcentration(action: MonsterReaderAction): boolean {
   return action.concentration ?? Boolean(readConcentration(action.text));
 }
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
-import { deriveMonsterActionCounter, isMonsterBonusAction, isMonsterSpellAction, isMonsterLegendaryAction } from "../monsters/runtime/mainMonsterRuntime";
+import { deriveMonsterActionCounter } from "../monsters/runtime/mainMonsterRuntime";
+import {
+  FRESH_ECONOMY, cardRows, classifyMonsterRows, economyOf, rowAccent, setHues, spendOnUse, spendsActionBudget,
+  type InstanceEconomy, type RowAccent, type RowEconomy,
+} from "../monsters/monsterRowEconomy";
 import { CLASSIFICATION_LABEL } from "../monsters/runtime/mainMonsterRuntime";
 import { CriticalFailureReference } from "./CriticalFailureReference";
 import { MONSTER_COLOR, withAlpha } from "../seats/seatColors";
@@ -64,7 +68,13 @@ const SECTION_ACCENT = {
   bonus:     tabAccent("bonus"),
   spells:    tabAccent("spells"),
   reactions: "#7b68ee",
-  legendary: tabAccent("bond"),
+  /**
+   * A creature's BOND wears the bond tab's accent, as a character's does. Legendary used to borrow it
+   * as "the only this-creature-is-special colour"; once a mirror carries a bond the two sat side by side
+   * in the same magenta and could not be told apart, so legendary has its own.
+   */
+  bond:      tabAccent("bond"),
+  legendary: "#4ade80",
   resources: tabAccent("resources"),
   /**
    * ⚠ TRAITS ARE THE ONE ACCENT THAT LEAVES THE PC PALETTE, and the doc says why (§11):
@@ -122,17 +132,13 @@ type MonsterActorCardProps = {
 
 // ─── Internal types ───────────────────────────────────────────────────────────
 
-// Per-instance economy state — resets on turn advance
-type InstanceEconomy = {
-  actionUsed: boolean;
-  bonusUsed: boolean;
-  reactionUsed: boolean;
-  stepsUsed: number;       // attack steps used inside the current multiattack
-};
+// The economy, the sections and the row accents live in `monsters/monsterRowEconomy` — pure, and gated.
 
 type CommittedRoll = {
   actionName: string;
   actionId: string;
+  /** What this roll spends when it resolves — read by Commit and Clear, so neither guesses. */
+  economy?: RowEconomy;
   attackFormula?: string;
   damageFormula?: string;
   requestId: string;
@@ -188,44 +194,6 @@ function doubleDice(formula: string): string {
     const n = c ? Number.parseInt(c, 10) : 1;
     return `${Number.isFinite(n) ? n * 2 : 2}d${d}`;
   });
-}
-
-/**
- * Classify actions into the four card sections.
- * Priority (from MONSTER-CARD-SECTIONS-MODEL.md):
- *   1. kind === "reaction"  → reactions
- *   2. kind === "trait"     → traits
- *   3. economyCost === "bonus" → bonusActions
- *   4. everything else      → mainActions (true action-cost)
- */
-// Both predicates live in mainMonsterRuntime so the card and the action-budget counter can
-// never disagree about what counts as a bonus action or a spell.
-const isBonusAction = isMonsterBonusAction;
-const isSpellAction = isMonsterSpellAction;
-
-function classifyActions(all: MonsterReaderAction[]) {
-  const mainActions:  MonsterReaderAction[] = [];
-  const bonusActions: MonsterReaderAction[] = [];
-  const spells:       MonsterReaderAction[] = [];
-  const reactions:    MonsterReaderAction[] = [];
-  const legendary:    MonsterReaderAction[] = [];
-  const traits:       MonsterReaderAction[] = [];
-
-  for (const a of all) {
-    // Reaction/trait win first — a slot-costed REACTION (Frost Ward) is still a reaction.
-    if (a.kind === "reaction") { reactions.push(a);    continue; }
-    if (a.kind === "trait")    { traits.push(a);       continue; }
-    // A LEGENDARY action is its own economy, not a main action that happens to be tagged.
-    // Without this bucket a creator-authored dragon's Detect / Tail Swipe / Pounce fell
-    // through to mainActions and read as ordinary attacks on the card.
-    if (isMonsterLegendaryAction(a)) { legendary.push(a); continue; }
-    // Bonus beats spell: a bonus-action cantrip belongs under Bonus Actions, where its
-    // economy actually lives. Its slot pill still shows on the row.
-    if (isBonusAction(a))      { bonusActions.push(a); continue; }
-    if (isSpellAction(a))      { spells.push(a);       continue; }
-    mainActions.push(a);
-  }
-  return { mainActions, bonusActions, spells, reactions, legendary, traits };
 }
 
 // ─── Stat box ─────────────────────────────────────────────────────────────────
@@ -398,6 +366,8 @@ type ActionCardProps = {
   onStepUsed: () => void;
   onStepReset: () => void;
   onRecharge?: (action: MonsterReaderAction) => void;
+  /** Which economy or attack set this row belongs to: a stripe in its colour and a label naming it. */
+  accent?: RowAccent;
 };
 
 function parseRechargeRange(recharge: string): [number, number] {
@@ -450,7 +420,7 @@ function ActionCard({
   action, isUsed, isReaction = false, isDischarged = false, slotRemaining = null, committedRoll,
   attackCounter, stepsUsed,
   onUse, onRollResult, onCommit, onClearRoll,
-  onStepUsed, onStepReset, onRecharge,
+  onStepUsed, onStepReset, onRecharge, accent,
 }: ActionCardProps) {
   const actionId = slugify(action.name);
   // Per-action expand for the rules text (see the description block below).
@@ -482,6 +452,8 @@ function ActionCard({
       padding: "7px 10px", borderRadius: 4,
       background: bgColor,
       border: `1px solid ${borderColor}`,
+      // The row's economy or attack set, in its own colour — see `RowAccent`.
+      ...(accent ? { borderLeft: `3px solid ${accent.color}` } : {}),
       opacity: isUsed ? 0.5 : 1,
     }}>
       {/* Action header */}
@@ -489,6 +461,13 @@ function ActionCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: action.text ? 2 : 0 }}>
             <strong style={{ fontSize: 12, color: isDischarged ? "#e07b39" : isMultiattackInProgress ? "#e07b39" : isReaction ? "#888" : "#ddd" }}>{action.name}</strong>
+            {accent && (
+              <span data-row-accent={accent.label}
+                style={{ fontSize: 9, padding: "0 6px", borderRadius: 8, fontWeight: 600, whiteSpace: "nowrap",
+                  color: accent.color, background: `${accent.color}14`, border: `1px solid ${accent.color}55` }}>
+                {accent.label}
+              </span>
+            )}
             {needsConcentration(action) && (
               <span title="Concentration — casting another concentration spell ends this one."
                 style={{ fontSize: 9, padding: "1px 5px", borderRadius: 8, background: "#1c1630", border: "1px solid #9b8ac466", color: "#b89cff" }}>
@@ -784,9 +763,7 @@ export function MonsterActorCard({
   const [currentHp, setCurrentHp] = useState(monster.currentHp);
   const [displayMaxHp, setDisplayMaxHp] = useState(monster.maxHp);
   const [hpInput, setHpInput] = useState("5");
-  const [economy, setEconomy] = useState<InstanceEconomy>({
-    actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0,
-  });
+  const [economy, setEconomy] = useState<InstanceEconomy>(FRESH_ECONOMY);
   const [committedRoll, setCommittedRoll] = useState<CommittedRoll | null>(null);
   // adv/normal/disadv applies to every d20 the card sends — action attacks AND ability checks
   const [rollMode, setRollMode] = useState<RollMode>("normal");
@@ -837,7 +814,7 @@ export function MonsterActorCard({
     return OBR.broadcast.onMessage("fdmc:monster-turn-reset", (event) => {
       const msg = event.data as { type?: string; instanceId?: string } | undefined;
       if (msg?.instanceId === monster.instanceId) {
-        setEconomy({ actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 });
+        setEconomy(FRESH_ECONOMY);
         setCommittedRoll(null);
         // Legendary points come back at the start of the creature's own turn.
         setLegendaryUsed(0);
@@ -931,17 +908,27 @@ export function MonsterActorCard({
     return Math.max(0, pool.max - (slotsUsedByLevel[level] ?? 0));
   };
 
+  // ⚠ The list a row is authored in is its economy — everything in `reactions` is a reaction. See `cardRows`.
   const allActions = useMemo(
-    () => [...(monster.actions ?? []), ...(monster.reactions ?? []), ...(monster.traits ?? [])],
+    () => cardRows(monster),
     [monster.actions, monster.reactions, monster.traits],
   );
 
-  const { mainActions, bonusActions, spells, reactions, legendary, traits } = useMemo(
-    () => classifyActions(allActions),
+  const { mainActions, bonusActions, spells, reactions, legendary, traits, bond } = useMemo(
+    () => classifyMonsterRows(allActions),
     [allActions],
   );
 
   const hasBonusActions = bonusActions.length > 0;
+  const hasBond = bond.length > 0;
+
+  // Each row's economy or attack set, as a stripe and a label — see `monsterRowEconomy.rowAccent`.
+  const setHueById = useMemo(() => setHues(allActions), [allActions]);
+  const rowAccentFor = (a: MonsterReaderAction): RowAccent => rowAccent(a, {
+    palette: SECTION_ACCENT,
+    routine: actionCounter ? { names: actionCounter.actionNames ?? [], perTurn: actionCounter.total } : undefined,
+    setHueById,
+  });
 
   // Log panel removed (P8) — addLog kept as no-op since the encounter log handles all tracking
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -988,9 +975,11 @@ export function MonsterActorCard({
      */
     const damageFormula = normalizeFormula(damagePacket(action));
     const requestId = makeRequestId(monster.instanceId, actionId, "attack");
+    const spends = economyOf(action);
     const roll: CommittedRoll = {
       actionName: action.name,
       actionId,
+      economy: spends,
       attackFormula: attackFormula || undefined,
       damageFormula: damageFormula || undefined,
       requestId,
@@ -1019,19 +1008,9 @@ export function MonsterActorCard({
      * (`handleCommit`'s own guard is `stepsUsed < total`, so it correctly does nothing after this.)
      * Reactions and bonus actions are unchanged: neither draws on the action budget.
      */
-    const isBonus = (action as MonsterReaderAction & { economyCost?: string }).economyCost?.toLowerCase() === "bonus";
+    // Each economy spends ITSELF — see `economyOf`. Only "action" takes the whole turn's action.
     setEconomy(e => {
-      let next: InstanceEconomy;
-      if (action.kind === "reaction") {
-        next = { ...e, reactionUsed: true };
-      } else if (isBonus) {
-        next = { ...e, bonusUsed: true };
-      } else if (action.kind === "attack") {
-        // Spent on resolve — see handleCommit / handleClearRoll.
-        next = e;
-      } else {
-        next = { ...e, stepsUsed: actionsMax, actionUsed: true };
-      }
+      const next: InstanceEconomy = spendOnUse(e, spends, actionsMax);
       broadcastMonsterEconomy(monster.instanceId, next);
       return next;
     });
@@ -1127,7 +1106,9 @@ export function MonsterActorCard({
      * spend above was covering for it. Remove that one without fixing this one and a Fist never
      * marks its action used at all.
      */
-    if (economy.stepsUsed < actionsMax) {
+    // ⚠ ONLY WHAT DRAWS ON THE ACTION BUDGET SPENDS A STEP. A reaction, bonus, bond or legendary option
+    // resolving here used to cost a swing as well — see `economyOf`.
+    if (economy.stepsUsed < actionsMax && spendsActionBudget(committedRoll.economy)) {
       const spendsEverything = (actionCounter?.fullActionNames ?? []).includes(committedRoll.actionName);
       setEconomy(e => {
         const steps = spendsEverything ? actionsMax : Math.min(e.stepsUsed + 1, actionsMax);
@@ -1150,7 +1131,7 @@ export function MonsterActorCard({
      * on it meant a missed Fist cost nothing.
      */
     if (committedRoll?.actionId && committedRoll.actionId !== "multiattack"
-        && economy.stepsUsed < actionsMax) {
+        && economy.stepsUsed < actionsMax && spendsActionBudget(committedRoll.economy)) {
       setEconomy(e => {
         const steps = Math.min(e.stepsUsed + 1, actionsMax);
         const next = { ...e, stepsUsed: steps, actionUsed: steps >= actionsMax };
@@ -1440,6 +1421,10 @@ export function MonsterActorCard({
               <EconomyDot label="Bonus" used={economy.bonusUsed} onClick={() => { const next = { ...economy, bonusUsed: !economy.bonusUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
             )}
             <EconomyDot label="Reaction" used={economy.reactionUsed} onClick={() => { const next = { ...economy, reactionUsed: !economy.reactionUsed }; setEconomy(next); broadcastMonsterEconomy(monster.instanceId, next); }} />
+            {/* The bond's one activation a round — only a creature that carries a bond has one. */}
+            {hasBond && (
+              <EconomyDot label="Bond" used={economy.bondUsed} onClick={() => setEconomy(e => ({ ...e, bondUsed: !e.bondUsed }))} />
+            )}
             {/* Concentration — lit while the creature holds a spell; click to drop it (failed save,
                 Incapacitated, or the DM ends it). Same look as the PC card's Conc dot. */}
             {concentratingOn && (
@@ -1531,8 +1516,8 @@ export function MonsterActorCard({
             + Additive
           </button>
           <button type="button" className="fdmc-ghost-btn"
-            title="Clear the action budget, bonus and reaction. Spell slots and recharges persist."
-            onClick={() => { const reset = { actionUsed: false, bonusUsed: false, reactionUsed: false, stepsUsed: 0 }; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}>
+            title="Clear the action budget, bonus, reaction and bond. Spell slots and recharges persist."
+            onClick={() => { const reset = FRESH_ECONOMY; setEconomy(reset); broadcastMonsterEconomy(monster.instanceId, reset); setCommittedRoll(null); /* discharged + spell slots persist across turns */ addLog(`${publicName} turn reset.`); }}>
             Reset Turn
           </button>
           {/* ⚀ THE NAT 1 TABLES, ON THE MONSTER CARD — where a monster's Nat 1 actually happens.
@@ -1733,7 +1718,7 @@ export function MonsterActorCard({
               const cost = a.legendaryCost ?? 1;
               const unaffordable = legendaryPerRound > 0 && cost > legendaryLeft;
               return (
-                <ActionCard key={a.name} action={a}
+                <ActionCard key={a.name} action={a} accent={rowAccentFor(a)}
                   isUsed={unaffordable || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                   slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
                   isDischarged={dischargedActionIds.has(slugify(a.name))}
@@ -1756,7 +1741,7 @@ export function MonsterActorCard({
             <ActionTileGrid>{mainActions.map(a => (
               // Main actions share the turn's action budget: usable until the budget is spent,
               // or until this specific action is out of slots. Not gated per-action.
-              <ActionCard key={a.name} action={a}
+              <ActionCard key={a.name} action={a} accent={rowAccentFor(a)}
                 isUsed={economy.stepsUsed >= actionsMax
                   || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
@@ -1784,7 +1769,7 @@ export function MonsterActorCard({
             <SectionLabel text="Spells" count={spells.length} accent={SECTION_ACCENT.spells}
               collapsible open={spellsOpen} onToggle={() => setSpellsOpen(o => !o)} />
             {spellsOpen && <ActionTileGrid>{spells.map(a => (
-              <ActionCard key={a.name} action={a}
+              <ActionCard key={a.name} action={a} accent={rowAccentFor(a)}
                 isUsed={economy.stepsUsed >= actionsMax
                   || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
@@ -1805,7 +1790,7 @@ export function MonsterActorCard({
             <SectionLabel text="Bonus Actions" count={bonusActions.length} accent={SECTION_ACCENT.bonus}
               collapsible open={bonusOpen} onToggle={() => setBonusOpen(o => !o)} />
             {bonusOpen && <ActionTileGrid>{bonusActions.map(a => (
-              <ActionCard key={a.name} action={a}
+              <ActionCard key={a.name} action={a} accent={rowAccentFor(a)}
                 isUsed={economy.bonusUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
                 isDischarged={dischargedActionIds.has(slugify(a.name))}
@@ -1825,7 +1810,7 @@ export function MonsterActorCard({
             <SectionLabel text="Reactions" count={reactions.length} accent={SECTION_ACCENT.reactions}
               collapsible open={reactionsOpen} onToggle={() => setReactionsOpen(o => !o)} />
             {reactionsOpen && <ActionTileGrid>{reactions.map(a => (
-              <ActionCard key={a.name} action={a} isReaction
+              <ActionCard key={a.name} action={a} accent={rowAccentFor(a)} isReaction
                 isUsed={economy.reactionUsed || (a.spellSlotLevel !== undefined && slotRemaining(a.spellSlotLevel) === 0)}
                 slotRemaining={a.spellSlotLevel !== undefined ? slotRemaining(a.spellSlotLevel) : null}
                 isDischarged={dischargedActionIds.has(slugify(a.name))}
@@ -1836,6 +1821,27 @@ export function MonsterActorCard({
                 onStepUsed={() => undefined} onStepReset={() => undefined}
               />
             ))}</ActionTileGrid>}
+          </>
+        )}
+
+        {/* 6b. Bond — the creature's bond rows, in their own section with the bond's own colour, the way a
+                character's card keeps its Bond tab. Every row here spends the ONE bond activation a round
+                and never the action or the reaction; an off-turn option says so on its label. */}
+        {hasBond && (
+          <>
+            <SectionLabel text="Bond" count={bond.length} accent={SECTION_ACCENT.bond} />
+            <ActionTileGrid>{bond.map(a => (
+              <ActionCard key={a.name} action={a} accent={rowAccentFor(a)}
+                isUsed={economy.bondUsed}
+                slotRemaining={null}
+                isDischarged={false}
+                committedRoll={committedRoll?.actionId === slugify(a.name) ? committedRoll : null}
+                attackCounter={undefined} stepsUsed={0}
+                onUse={handleUseAction} onRollResult={handleRollResult}
+                onCommit={handleCommit} onClearRoll={handleClearRoll}
+                onStepUsed={() => undefined} onStepReset={() => undefined}
+              />
+            ))}</ActionTileGrid>
           </>
         )}
 
