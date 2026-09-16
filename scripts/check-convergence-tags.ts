@@ -18,12 +18,11 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BROKEN_CHAIN_EQUIPMENT_LIBRARY as LIB } from "../src/data/broken-chain/equipmentLibrary";
+import { BROKEN_CHAIN_EQUIPMENT_LIBRARY as LIB, RETIRED_EQUIPMENT_IDS } from "../src/data/broken-chain/equipmentLibrary";
 import { mergeAuthored } from "../src/data/broken-chain/authored.generated";
 import { itemToAction, type EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
-import { LOOT_V9_ITEMS } from "../src/data/broken-chain/lootV9";
+import { LOOT_V11_ITEMS } from "../src/data/broken-chain/lootV11";
 import { matchingForms } from "../src/core/constants/chassis";
-import { BASE_WEAPONS } from "../src/core/constants/baseWeapons";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let failures = 0;
@@ -44,7 +43,8 @@ console.log("1. the library labels all of them");
 {
   const inputs = conv.filter(i => convOf(i).role === "input");
   const outputs = conv.filter(i => convOf(i).role === "output");
-  ok("33 inputs", inputs.length === 33, String(inputs.length));
+  /** 32: the Hollow Pack Ward Token was an Act 2 Ward Cache item, retired with the rest of that cache on 2026-09-16. */
+  ok("32 inputs", inputs.length === 32, String(inputs.length));
   ok("40 outputs", outputs.length === 40, String(outputs.length));
 
   const unlabelledIn = inputs.filter(i => !/^A[1-4]$/.test(convOf(i).actLabel ?? ""));
@@ -64,7 +64,7 @@ console.log("1. the library labels all of them");
   ok("six Tier 1", tier("T1") === 6, String(tier("T1")));
   ok("ten Tier 2 — the document calls this catalog complete", tier("T2") === 10, String(tier("T2")));
   ok("eight Tier 4 Singulars", tier("T4") === 8, String(tier("T4")));
-  /** ⚠ TIER 3 ARRIVED WITH v6 — sixteen outputs the app had never built. See data/broken-chain/lootV9.ts. */
+  /** ⚠ TIER 3 ARRIVED WITH v6 — sixteen outputs the app had never built. See data/broken-chain/lootV11.ts. */
   ok("sixteen Tier 3", tier("T3") === 16, String(tier("T3")));
 
   const acts = (a: string) => conv.filter(i => convOf(i).actLabel === a).length;
@@ -133,7 +133,7 @@ console.log("\n1b. the revision, as the document states it");
   const gifts = LIB.filter(i => /^Gift of /.test(i.name));
   ok("eight Feywild Gifts, all attuned", gifts.length === 8 && gifts.every(g => (g as { attunementRequired?: boolean }).attunementRequired),
     String(gifts.length));
-  /** v9's names, each on the id its weapon form has always had. */
+  /** v9's names (v11 kept them), each on the id its weapon form has always had. */
   const GIFT_IDS: Record<string, string> = {
     "Gift of Oakheart": "item-mt4owsbd",
     "Gift of Winter's Mercy": "tbc-gift-of-the-last-measure",
@@ -145,11 +145,19 @@ console.log("\n1b. the revision, as the document states it");
     "Gift of Duskthorn": "tbc-gift-of-the-turning-season",
   };
   const misplaced = Object.entries(GIFT_IDS).filter(([name, id]) => gifts.find(g => g.name === name)?.id !== id);
-  ok("...carrying v9's names, on the ids they already had — a renamed Gift stays attached", misplaced.length === 0,
+  ok("...carrying their names, on the ids they already had — a renamed Gift stays attached", misplaced.length === 0,
     misplaced.map(([n]) => n).join(", ") || gifts.map(g => `${g.name}=${g.id}`).join(" · "));
-  ok("...each with its signature effect as a rider the player toggles",
-    gifts.every(g => ((g as { riders?: Array<{ condition?: string }> }).riders ?? []).some(r => Boolean(r.condition))),
-    gifts.filter(g => !((g as { riders?: Array<{ condition?: string }> }).riders ?? []).some(r => r.condition)).map(g => g.name).join(", "));
+  /**
+   * The six weapon Gifts' signatures are once-per-turn riders the player toggles. v11 turned the two focus Gifts'
+   * signatures into FOCUS properties — the Magic-action extra, Duskthorn's Thorn / Spell — so they carry none.
+   */
+  const riderless = (g: unknown) => !((g as { riders?: Array<{ condition?: string }> }).riders ?? []).some(r => Boolean(r.condition));
+  const focusGifts = ["Gift of First Light", "Gift of Duskthorn"];
+  ok("...the six weapon Gifts each with its signature effect as a rider the player toggles",
+    gifts.filter(g => !focusGifts.includes(g.name)).every(g => !riderless(g)),
+    gifts.filter(g => !focusGifts.includes(g.name) && riderless(g)).map(g => g.name).join(", "));
+  ok("...and the two focus Gifts with none — their signature is the focus",
+    gifts.filter(g => focusGifts.includes(g.name)).every(riderless));
 }
 
 console.log("\n1c. a published revision reaches the table over a stale app snapshot");
@@ -173,7 +181,7 @@ console.log("\n1c. a published revision reaches the table over a stale app snaps
     String((LIB.find(i => i.name === "Rootfast Loop") as { mechanicsText?: string })?.mechanicsText ?? "").slice(0, 90));
 }
 
-console.log("\n1d. the v9 sweep — every item, Act 1 to the last Act 4 drop");
+console.log("\n1d. the v11 sweep — every item, Act 1 to the last Act 4 drop");
 {
   /**
    * Christopher, 2026-09-16: *"one more update to the loot section, do a full sweep up to the act 4 items,
@@ -184,9 +192,9 @@ console.log("\n1d. the v9 sweep — every item, Act 1 to the last Act 4 drop");
   const byId = new Map(LIB.map(i => [i.id, i as Row]));
   const byName = (n: string) => LIB.find(i => i.name === n) as Row | undefined;
 
-  ok("the sweep carries every card — 122 in the document, Rimeguard as its three armour rows", LOOT_V9_ITEMS.length === 124,
-    String(LOOT_V9_ITEMS.length));
-  const lost = LOOT_V9_ITEMS.filter(r => {
+  ok("the sweep carries every card — 122 in the document, Rimeguard as its three armour rows", LOOT_V11_ITEMS.length === 124,
+    String(LOOT_V11_ITEMS.length));
+  const lost = LOOT_V11_ITEMS.filter(r => {
     const shipped = byId.get(r.id);
     return !shipped || shipped.name !== r.name || shipped.mechanicsText !== r.mechanicsText || shipped.description !== r.description;
   });
@@ -210,32 +218,49 @@ console.log("\n1d. the v9 sweep — every item, Act 1 to the last Act 4 drop");
     dawn.every(i => i?.charges?.reset === "manual" && /dawn/i.test(i.charges.note ?? "")), dawn.map(i => JSON.stringify(i?.charges)).join(" "));
 
   /**
-   * ⚠ A TEXT SWEEP DOES NOT RELITIGATE A TABLE RULE. The +1 focus cards print "+1 to spell attack rolls and
-   * spell save DC"; Christopher's rule is that *"a +1 adds to all 3 of the spell boxes"* (0.7.10.36). v9 changed
-   * no focus line, so every focus keeps attack, damage and DC exactly as the app had them.
+   * ⚠ ONE RULE FOR EVERY FOCUS. Christopher, 2026-09-16: *"a spell focus at +2 would add +2 to the attack, +2 to
+   * the damage, +2 to the spell dc."* A focus whose three boxes disagree is a focus half-applied.
    */
-  const plusOne = ["Rootknot Staff", "Staring-Knot Wand", "Icebound Reliquary", "Voidtempered Blade"].map(byName);
-  ok("the four +1 focuses still add +1 to all three spell boxes",
-    plusOne.every(f => f?.isSpellFocus && f.spellFocusAttack === "+1" && f.spellFocusDamage === "+1" && f.spellFocusSaveDc === "+1"),
-    plusOne.map(f => `${f?.name}=${[f?.spellFocusAttack, f?.spellFocusDamage, f?.spellFocusSaveDc].join("/")}`).join(" "));
-  ok("...and the two focus Gifts +2 to spell attack and save DC",
-    ["Gift of First Light", "Gift of Duskthorn"].every(n => byName(n)?.isSpellFocus && byName(n)?.spellFocusAttack === "+2" && byName(n)?.spellFocusSaveDc === "+2"));
+  const focusRows = LIB.filter(i => (i as Row).isSpellFocus) as Row[];
+  const lopsided = focusRows.filter(f => !(f.spellFocusAttack === f.spellFocusDamage && f.spellFocusDamage === f.spellFocusSaveDc));
+  ok("every focus adds the same bonus to spell attack, damage and DC", focusRows.length >= 6 && lopsided.length === 0,
+    lopsided.map(f => `${f.name}=${[f.spellFocusAttack, f.spellFocusDamage, f.spellFocusSaveDc].join("/")}`).join(" ") || `${focusRows.length} focuses`);
+  ok("...+1 on the four boss focuses, +2 on the two focus Gifts",
+    ["Rootknot Staff", "Staring-Knot Wand", "Icebound Reliquary", "Voidtempered Blade"].every(n => byName(n)?.spellFocusAttack === "+1")
+    && ["Gift of First Light", "Gift of Duskthorn"].every(n => byName(n)?.spellFocusAttack === "+2"));
 
-  /** Two Gifts changed FORM, not just name. */
+  /** v11: every WEAPON Gift deals an extra 1d6 of its own type on each hit. */
+  const gifts = LIB.filter(i => /^Gift of /.test(i.name)) as Row[];
+  const weaponGifts = gifts.filter(g => g.name !== "Gift of Duskthorn");
+  ok("the seven weapon Gifts add 1d6 on every hit", weaponGifts.length === 7 && weaponGifts.every(g => g.chassisBonusDice === "1d6"),
+    weaponGifts.filter(g => g.chassisBonusDice !== "1d6").map(g => g.name).join(", "));
+
   const firstLight = byName("Gift of First Light");
   ok("Gift of First Light is a Quarterstaff", firstLight?.chassis?.formId === "base-quarterstaff"
     && matchingForms(firstLight.chassis).some(f => f.id === "base-quarterstaff"), JSON.stringify(firstLight?.chassis));
+  ok("...that adds 1d6 + PB to Magic-action damage and healing", firstLight?.spellFocusMagicActionDamage === "1d6+@PROF");
+
+  /** v11: Duskthorn is a CHARM bound to a weapon the character carries — the Last Word bind model, not a chassis. */
   const duskthorn = byName("Gift of Duskthorn");
-  ok("Gift of Duskthorn fits ANY weapon — a charm, no longer one-handed only",
-    matchingForms(duskthorn?.chassis).length === BASE_WEAPONS.length, `${matchingForms(duskthorn?.chassis).length} of ${BASE_WEAPONS.length}`);
+  ok("Gift of Duskthorn is a charm, not a chassis — the old one-handed filter is cleared over the author export",
+    Boolean(duskthorn) && duskthorn!.chassis === undefined && duskthorn!.type === "magic" && duskthorn!.attachesToWeapon === true,
+    JSON.stringify({ chassis: duskthorn?.chassis, type: duskthorn?.type }));
+  ok("...giving its weapon +2, and Thorn (1d6 + PB a hit) or Spell (1d6 + PB on Magic-action rolls)",
+    duskthorn?.boundWeaponBonus === 2 && duskthorn.boundWeaponHitDamage === "1d6+@PROF"
+    && duskthorn.spellFocusMagicActionDamage === "1d6+@PROF" && duskthorn.weaponOrSpellChoice === true);
   /**
    * ⚠ BOTH FOCUS GIFTS COULD NEVER BE SHAPED, AND NOTHING SAID SO. Their chassis asked for a "one-handed" or
    * "two-handed" TAG; the base weapon table has no such tag — handedness is its CATEGORY — so each filter
    * matched no weapon at all, from the author export onward. A Gift that offers no form cannot be attached.
    */
-  const gifts = LIB.filter(i => /^Gift of /.test(i.name));
-  const formless = gifts.filter(g => matchingForms((g as Row).chassis).length === 0);
-  ok("every Gift can take at least one weapon form", formless.length === 0, formless.map(g => g.name).join(", "));
+  const formless = weaponGifts.filter(g => matchingForms(g.chassis).length === 0);
+  ok("every weapon Gift can take at least one weapon form", formless.length === 0, formless.map(g => g.name).join(", "));
+
+  /** Christopher: *"there is no act 1 field ward, or a act 2 ward cache."* */
+  const wardRows = LIB.filter(i => /WARD FIELD|Ward Cache/i.test(String(i.sourceEncounter ?? "")));
+  ok("no Act 1 Ward Field or Act 2 Ward Cache item is published", wardRows.length === 0, wardRows.map(i => i.name).join(", "));
+  ok("...and nothing on the retired list is", !LIB.some(i => RETIRED_EQUIPMENT_IDS.includes(i.id)),
+    LIB.filter(i => RETIRED_EQUIPMENT_IDS.includes(i.id)).map(i => i.name).join(", "));
   ok("MUTATION: the chassis the focus Gifts had matches no weapon, so the check above can fail",
     matchingForms({ requireTags: ["two-handed"] }).length === 0 && matchingForms({ requireTags: ["one-handed"] }).length === 0);
   ok("Gift of Winterwatch tracks Hold the Line — once per Short or Long Rest",

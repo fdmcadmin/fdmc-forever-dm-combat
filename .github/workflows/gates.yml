@@ -357,3 +357,6 @@ jobs:
 
       - name: check monster card row economy + accents
         run: npm run check:monsterrows
+
+      - name: check focus Gifts, weapon charms + retired items
+        run: npm run check:giftfocus

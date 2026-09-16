@@ -174,6 +174,11 @@ export function ItemMechanicsFields({ draft, set, inputStyle, include = ALL_FIEL
             <label style={{ fontSize: 12 }}>Spell Damage Bonus <input type="text" value={draft.spellFocusDamage ?? ""} onChange={e => set("spellFocusDamage", e.target.value || undefined)} placeholder="+1, +1d4..." style={inputStyle} /></label>
             <label style={{ fontSize: 12 }}>Spell Save DC <input type="text" value={draft.spellFocusSaveDc ?? ""} onChange={e => set("spellFocusSaveDc", e.target.value || undefined)} placeholder="+1" style={inputStyle} /></label>
           </div>
+          {/* Loot doc v11 First Light: "whenever you take the Magic action, add 1d6 plus your Proficiency Bonus to
+              each damage or healing roll". Only an action-cast spell takes it; the flat bonus above takes every spell. */}
+          <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>Magic action — extra on each damage or healing roll
+            <input type="text" value={draft.spellFocusMagicActionDamage ?? ""} onChange={e => set("spellFocusMagicActionDamage", e.target.value.trim() || undefined)} placeholder="1d6+@PROF" style={inputStyle} />
+          </label>
           {/* WRITE THE ITEM'S OWN EXTRA ONLY. @SPELL comes from being a focus, so a +1 wand is
               "+1" and not "@SPELL+1". */}
           <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>

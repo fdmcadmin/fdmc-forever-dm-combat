@@ -194,6 +194,14 @@ export function ChassisFields({ draft, set, libraryItems = [] }: Props) {
             </label>
           </div>
 
+          {/* Loot doc v11: every weapon Gift "deals an extra 1d6 damage of its normal type" on a hit. Dice, so a
+              critical hit doubles them; the magic bonus and PB above and below stay fixed. */}
+          <label style={{ fontSize: 12 }}>Extra dice on every hit <span style={{ color: "#555", fontSize: 10 }}>(the weapon's own damage type — e.g. 1d6)</span>
+            <input type="text" value={draft.chassisBonusDice ?? ""} placeholder="1d6"
+              onChange={e => set("chassisBonusDice", e.target.value.trim() || undefined)}
+              style={{ width: "100%", padding: "3px 6px", fontSize: 12, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+          </label>
+
           <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
             <input type="checkbox" checked={Boolean(draft.grantsProficiency)}
               onChange={e => set("grantsProficiency", e.target.checked || undefined)} />
@@ -213,6 +221,49 @@ export function ChassisFields({ draft, set, libraryItems = [] }: Props) {
           </div>
         </div>
       )}
+
+        {/**
+          * WEAPON CHARM — an item that works through the weapon it is fastened to (Gift of Duskthorn).
+          *
+          * Not a chassis: a chassis picks a FORM from the base table, a charm rides a weapon the character
+          * already carries — the "Last Word binds a weapon" model. WHICH weapon is the character's choice and
+          * is made on their bag ("Binds to an equipped weapon"); what the charm GIVES that weapon is authored
+          * here, so a DM can build one without code.
+          */}
+        {!on && (
+          <div style={box}>
+            <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="checkbox" checked={Boolean(draft.attachesToWeapon)}
+                onChange={e => set("attachesToWeapon", e.target.checked || undefined)} />
+              Weapon charm — works only while bound to an equipped weapon
+            </label>
+            {draft.attachesToWeapon && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <label style={{ fontSize: 12 }}>Weapon bonus <span style={{ color: "#555", fontSize: 10 }}>(attack &amp; damage; the higher of this and the weapon's own)</span>
+                    <input type="number" value={draft.boundWeaponBonus ?? 0}
+                      onChange={e => set("boundWeaponBonus", Number.parseInt(e.target.value, 10) || undefined)}
+                      style={{ width: "100%", padding: "3px 6px", fontSize: 12, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+                  </label>
+                  <label style={{ fontSize: 12 }}>Extra on each weapon hit <span style={{ color: "#555", fontSize: 10 }}>(e.g. 1d6+@PROF)</span>
+                    <input type="text" value={draft.boundWeaponHitDamage ?? ""} placeholder="1d6+@PROF"
+                      onChange={e => set("boundWeaponHitDamage", e.target.value.trim() || undefined)}
+                      style={{ width: "100%", padding: "3px 6px", fontSize: 12, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd" }} />
+                  </label>
+                </div>
+                <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="checkbox" checked={Boolean(draft.weaponOrSpellChoice)}
+                    onChange={e => set("weaponOrSpellChoice", e.target.checked || undefined)} />
+                  The wielder chooses each turn: weapon hits OR Magic-action spells
+                </label>
+                <div style={{ fontSize: 10, color: "#666" }}>
+                  The Magic-action extra is the focus's — set it under Spellcasting focus. With the choice ticked,
+                  the card offers a switch and only the chosen half applies.
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/**
           * RIDERS — the conditional extras, deliberately player-toggled.

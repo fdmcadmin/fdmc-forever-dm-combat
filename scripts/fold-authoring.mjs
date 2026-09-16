@@ -423,68 +423,8 @@ export const AUTHORED_DIGEST = ${JSON.stringify(digest)};
 /** When the fold script last wrote this file. */
 export const AUTHORED_AT = ${JSON.stringify(foldedAt)};
 
-/**
- * Merge authored content over a bundled list by id.
- *
- * Authored entries WIN for their own id — that is the point of authoring — and anything the
- * author has not touched is left exactly as the hand-written source has it. Order is stable:
- * bundled entries keep their position, genuinely new ones are appended.
- */
-export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) => string): T[] {
-  if (authored.length === 0) return bundled;
-  const overrides = new Map(authored.map(a => [idOf(a), a]));
-  const merged = bundled.map(b => {
-    const over = overrides.get(idOf(b));
-    if (!over) return b;
-    /**
-     * ⚠ FIELD-WISE, NOT WHOLESALE — OR THE SEED CAN NEVER GAIN A FIELD AGAIN.
-     *
-     * This replaced the bundled entry outright. That is fine while the two describe the same
-     * shape, and it silently freezes the library the moment the shape grows: the equipment export
-     * carries ALL 137 items, so every seeded item is also an "authored" one, and an authored copy
-     * taken before a field existed permanently shadowed it.
-     *
-     * The case that surfaced it: an activation field — what using an item costs — was added and written
-     * onto 21 library items, and not one of them reached the app. Every single row was overridden
-     * by its own snapshot from a browser that predated the field.
-     *
-     * A field the authored copy does not MENTION is not a decision to remove it; it is a field
-     * that did not exist when the export was taken. So an authored copy overrides the fields it
-     * actually states, and the seed supplies the rest.
-     *
-     * ⚠ THE COST, STATED: clearing a field back to empty no longer travels through the fold —
-     * the seed's value returns. That is the rarer case and a visible one, and it is a far smaller
-     * price than a library that can never be improved again.
-     */
-    /**
-     * ⚠ AND THE SAME RULE HAS TO REACH ONE LEVEL DOWN, WHICH IT DID NOT.
-     *
-     * Christopher published at 2026-09-12T17:30Z and all 24 convergence TIER labels vanished —
-     * the identical shape as the nine weapon riders at 0.8.40.5, arriving through a door that was
-     * supposed to be shut. The field-wise merge above was already correct; it was only one level
-     * deep. \`convergence\` is a nested OBJECT, so an authored copy stating
-     * \`{role, enabled, mechanicalTag}\` replaced the seed's \`{role, enabled, mechanicalTag, tier}\`
-     * WHOLE, and the tier went with it.
-     *
-     * The reasoning two paragraphs up applies unchanged inside a nested object: a key the authored
-     * copy does not MENTION is not a decision to remove it. So plain objects merge key-wise and
-     * everything else — arrays, dates, primitives — still replaces outright, because an authored
-     * array IS a complete statement of that list.
-     */
-    const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-      typeof v === "object" && v !== null && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
-
-    const stated: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(over as Record<string, unknown>)) {
-      if (v === undefined) continue;
-      const seeded = (b as Record<string, unknown>)[k];
-      stated[k] = isPlainObject(v) && isPlainObject(seeded) ? { ...seeded, ...v } : v;
-    }
-    return { ...(b as Record<string, unknown>), ...stated } as T;
-  });
-  const bundledIds = new Set(bundled.map(idOf));
-  return [...merged, ...authored.filter(a => !bundledIds.has(idOf(a)))];
-}
+/** The merge is hand-written and lives beside this file — the fold rewrites this one. */
+export { mergeAuthored } from "./mergeAuthored";
 `;
 
 writeFileSync(OUT, header + body);

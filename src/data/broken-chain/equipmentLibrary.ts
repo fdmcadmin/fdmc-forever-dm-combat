@@ -25,10 +25,26 @@
 // RETIRED_EQUIPMENT_IDS is removed from the campaign library on re-seed.
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
 import { AUTHORED_AT, AUTHORED_EQUIPMENT, mergeAuthored } from "./authored.generated";
-import { LOOT_V9_ITEMS } from "./lootV9";
+import { withoutClears } from "./mergeAuthored";
+import { LOOT_V11_ITEMS } from "./lootV11";
 
-/** Items the loot doc no longer contains. Removed from the campaign library on re-seed. */
+/**
+ * Items the loot doc no longer contains. Removed from the campaign library on re-seed, AND filtered out of
+ * the published library below — see `BROKEN_CHAIN_EQUIPMENT_LIBRARY`.
+ */
 export const RETIRED_EQUIPMENT_IDS: string[] = [
+  /**
+   * THE ACT 1 WARD FIELD REWARD POOL. Christopher, 2026-09-16: *"there is no act 1 field ward, or a act 2 ward
+   * cache the only one of those that should have lived is the one that is in the v11 loot document"* — which is
+   * the Ward's northern village cache the Lesser Wendigo loot is recovered from, already in the library.
+   */
+  "bc-sentrys-knot", // Sentry's Knot
+  "bc-sighters-wrap", // Sighter's Wrap
+  "bc-fieldwork-flask", // Fieldwork Flask
+  "bc-hardedge-cord", // Hardedge Cord
+  "bc-reading-stone", // Reading Stone
+  "bc-pack-sign-token", // Pack-Sign Token
+  "bc-unspent-mark", // Unspent Mark
 "tbc-warden-s-mark", // Warden's Mark
   "tbc-rimestone-pauldron", // Rimestone Pauldron
   "tbc-ward-iron-bracer", // Ward Iron Bracer
@@ -1927,7 +1943,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
  * THE PUBLISHED LIBRARY IS THREE LAYERS, YOUNGEST LAST.
  *
  *   1  `BUNDLED_EQUIPMENT_LIBRARY`  the loot document as it stood at the last full transcription
- *   2  `LOOT_V9_ITEMS`              the v9 sweep: every item the loot document carries, Act 1 to the last Act 4 drop
+ *   2  `LOOT_V11_ITEMS`             loot doc v11: every item it carries, Act 1 to the last Act 4 drop, v11's Gifts
  *   3  `AUTHORED_EQUIPMENT`         what the DM authored in the app and exported
  *
  * Each is folded over the one before it FIELD-WISE, so a layer states only what it knows. The export is
@@ -1939,7 +1955,21 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
  * which lives on the actor's copy.
  */
 const REVISED_EQUIPMENT_LIBRARY: EquipmentItem[] =
-  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, LOOT_V9_ITEMS as EquipmentItem[], i => i.id);
+  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, LOOT_V11_ITEMS as EquipmentItem[], i => i.id);
 
+const RETIRED = new Set(RETIRED_EQUIPMENT_IDS);
+
+/**
+ * ⚠ A RETIRED ITEM IS FILTERED HERE, OR IT IS NOT RETIRED.
+ *
+ * The Act 2 Ward Cache items — Rimestone Pauldron, Ward Iron Bracer, Coldwell Vial, Bonded Cord, Voidtouched Lens,
+ * the Hollow Pack Ward Token — have been on the retired list for weeks and were still in the DM's library. The
+ * author export carries them, the merge APPENDS an authored item the base does not have, and the re-seed
+ * deleted the retired ids BEFORE writing this list back in. Retiring an id and then shipping it undid itself on
+ * every seed. Nothing retired leaves this module now, so no consumer can bring one back.
+ */
 export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] =
-  mergeAuthored(REVISED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id, { authoredAt: AUTHORED_AT });
+  mergeAuthored(REVISED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id, { authoredAt: AUTHORED_AT })
+    .filter(item => !RETIRED.has(item.id))
+    // A revision's `null` clears a field through both merges; nothing published carries one.
+    .map(withoutClears);

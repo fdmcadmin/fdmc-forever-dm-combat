@@ -26,6 +26,10 @@ import type { ActorNote, ActorNoteVisibility } from "../state/useActorNotesState
 import { slotsOf } from "../types/actionEconomy";
 import type { EconomySlot } from "../types/actionEconomy";
 import { isFreeEconomy } from "../types/tabs";
+import {
+  boundCharms, charmEffectId, charmWeaponFormulas, focusDamageFor, focusIsLive, focusMagicActionDamage,
+  type BoundCharm, type CharmMode,
+} from "../rules/giftFocus";
 import type { ActorAction, TabId } from "../types/tabs";
 import { spellAttackRollCount } from "../types/spellSlots";
 import type { ActorStatusTrackerState, StatusTrackerId } from "../types/status";
@@ -228,6 +232,19 @@ type ArmedEffect = {
   saveDcBonus?: number;
   /** For weapon buffs / fighting styles (id "buff:*") — which weapon attacks it rides. */
   appliesTo?: "ranged" | "melee" | "weapon" | "two-handed" | "spell" | "any";
+  /**
+   * ONE weapon, not a kind of weapon. A charm (id "buff:charm:*") is fastened to a specific weapon, and its
+   * +2 and its Thorn dice ride that weapon's attack row and no other — a second sword in the other hand
+   * gets nothing. Set, it wins over `appliesTo`.
+   */
+  appliesToActionId?: string;
+  /**
+   * A focus (id "focus:*"): extra damage/healing on a spell cast with the MAGIC ACTION — loot doc v11's First
+   * Light and Duskthorn's Spell mode, "1d6+@PROF". Rides only an action-cast spell; see `focusDamageFor`.
+   */
+  magicActionFormula?: string;
+  /** A charm that offers a choice (id "buff:charm:*"): what it is doing this turn. Lasts until changed. */
+  charmMode?: CharmMode;
   /**
    * CONJURED WEAPON (id "conjured:*") — this chip is not a rider, it IS an attack.
    *
@@ -543,8 +560,10 @@ function isWeaponAttackAction(action: ActorAction): boolean {
 
 // Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
 // Styles/buffs ride WEAPON attacks only, gated by their target.
-function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null) {
+function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null, appliesToActionId?: string) {
   if (!action) return false;
+  // A charm names its weapon. Nothing about the kind of attack matters then — only whether this is that one.
+  if (appliesToActionId) return action.id === appliesToActionId;
   if (appliesTo === "any") return true;
   if (appliesTo === "spell") return action.actionKind === "spell";
   // Every weapon-targeted style requires an actual weapon attack. Excluding only spells left
@@ -3060,19 +3079,83 @@ export function ActorCard({
     const innate = [...(actor.tabs.features ?? []), ...(actor.tabs.feats ?? [])].filter(isFocus);
     const focuses = [
       ...innate,
-      ...(actor.tabs.equipment ?? []).filter(a => a.metadata?.equipped !== false).filter(isFocus),
+      /**
+       * ⚠ A CHARM IS A FOCUS ONLY THROUGH ITS WEAPON. Gift of Duskthorn carries the focus fields, but loot doc
+       * v11 says *"You can use the attached weapon as a Spellcasting Focus"* — unbound, or on a stowed weapon,
+       * there is nothing to cast through. `focusIsLive` asks the binding.
+       */
+      ...(actor.tabs.equipment ?? []).filter(a => a.metadata?.equipped !== false).filter(isFocus)
+        .filter(a => focusIsLive(a, actor.tabs)),
     ];
     return focuses.map((a) => {
       const dc = Number.parseInt((a.metadata?.spellFocusSaveDc ?? "").replace(/[^\d+-]/g, ""), 10);
+      const id = a.id.replace(/^equip-/, "");
       return {
-        id: a.id.replace(/^equip-/, ""),
+        id,
         label: a.label,
         attack: focusAttackContribution(a.metadata?.spellFocusAttack, true),
         damage: a.metadata?.spellFocusDamage?.trim() || undefined,
         saveDc: Number.isFinite(dc) && dc !== 0 ? dc : undefined,
+        // First Light always; Duskthorn only while its wielder has chosen Spell.
+        magicActionDamage: focusMagicActionDamage(a, charmModeFor(id)),
       };
     });
   }
+
+  // ── Weapon charms (Gift of Duskthorn) ─────────────────────────────────────
+  /**
+   * A charm bound to an equipped weapon arms itself: its weapon bonus (the higher of its own and the
+   * weapon's) and, in Thorn, its per-hit dice ride THAT weapon's attack row. The wielder's Thorn / Spell
+   * choice is kept on the same armed effect, so it lasts until they change it.
+   */
+  const charms: BoundCharm[] = useMemo(
+    () => boundCharms(actor.tabs),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(actor.tabs.equipment ?? []), JSON.stringify(actor.tabs.main ?? [])],
+  );
+
+  function charmModeFor(charmItemId: string): CharmMode {
+    return armedEffects.find(e => e.id === charmEffectId(charmItemId))?.charmMode ?? "weapon";
+  }
+
+  function armCharm(charm: BoundCharm, mode: CharmMode) {
+    const f = charmWeaponFormulas(charm, mode);
+    const parts = [
+      f.attack ? `atk ${formatBonusForChip(f.attack)}` : "",
+      f.damage ? `dmg ${formatBonusForChip(f.damage)}` : "",
+    ].filter(Boolean);
+    upsertArmedEffect({
+      id: charmEffectId(charm.charmItemId),
+      label: `${charm.charmLabel} → ${charm.weaponLabel}${parts.length ? ` · ${parts.join(" · ")}` : ""}`,
+      details: `${charm.charmLabel} is fastened to ${charm.weaponLabel}. It adds ${parts.join(" and ") || "nothing extra"} to that weapon only${charm.choosesMode ? ` — ${mode === "weapon" ? "weapon hits" : "Magic-action spells"} this turn` : ""}.`,
+      source: charm.charmLabel,
+      formula: f.damage,
+      attackFormula: f.attack,
+      appliesTo: "weapon",
+      appliesToActionId: charm.weaponAttackActionId,
+      charmMode: mode,
+    });
+  }
+
+  useEffect(() => {
+    for (const charm of charms) {
+      const armed = armedEffects.find(e => e.id === charmEffectId(charm.charmItemId));
+      const mode = armed?.charmMode ?? "weapon";
+      const f = charmWeaponFormulas(charm, mode);
+      if (armed
+        && (armed.formula ?? "") === (f.damage ?? "")
+        && (armed.attackFormula ?? "") === (f.attack ?? "")
+        && armed.appliesToActionId === charm.weaponAttackActionId) continue;
+      armCharm(charm, mode);
+    }
+    // A charm taken off its weapon, or a weapon stowed, stops giving anything.
+    for (const effect of armedEffects) {
+      if (effect.id.startsWith("buff:charm:") && !charms.some(c => charmEffectId(c.charmItemId) === effect.id)) {
+        clearArmedEffect(effect.id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(charms), JSON.stringify(armedEffects)]);
 
   function isSpellFocusArmed(focusId: string) {
     return armedEffects.some(e => e.id === `focus:${focusId}`);
@@ -3132,20 +3215,22 @@ export function ActorCard({
     || Boolean(classLevels(actor)[0]?.castingAbility)
     || Boolean(castingAbilityForClass(actor.className ?? ""));
 
-  function armSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
+  function armSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number; magicActionDamage?: string }) {
     const parts = [
       focus.attack ? `atk ${formatBonusForChip(focus.attack)}` : "",
       focus.damage ? `dmg ${formatBonusForChip(focus.damage)}` : "",
       focus.saveDc ? `DC ${focus.saveDc > 0 ? "+" : ""}${focus.saveDc}` : "",
+      focus.magicActionDamage ? `Magic action ${formatBonusForChip(focus.magicActionDamage)}` : "",
     ].filter(Boolean);
     upsertArmedEffect({
       id: `focus:${focus.id}`,
       label: parts.join(" · ") || focus.label,
-      details: `${focus.label} — spellcasting focus. Adds to spell attack, damage and save DC while armed.`,
+      details: `${focus.label} — spellcasting focus. Adds to spell attack, damage and healing, and save DC while armed.${focus.magicActionDamage ? ` A spell cast with the Magic action also adds ${focus.magicActionDamage} to each damage or healing roll.` : ""}`,
       source: focus.label,
       formula: focus.damage,
       attackFormula: focus.attack,
       saveDcBonus: focus.saveDc,
+      magicActionFormula: focus.magicActionDamage,
     });
   }
 
@@ -3167,6 +3252,7 @@ export function ActorCard({
       if (armed
         && (armed.attackFormula ?? "") === (focus.attack ?? "")
         && (armed.formula ?? "") === (focus.damage ?? "")
+        && (armed.magicActionFormula ?? "") === (focus.magicActionDamage ?? "")
         && (armed.saveDcBonus ?? undefined) === focus.saveDc) continue;
       armSpellFocus(focus);
     }
@@ -3175,7 +3261,7 @@ export function ActorCard({
     // so the loop could run against a stale set and re-arm something just switched off.
   }, [actorCasts, JSON.stringify(actor.tabs.equipment ?? []), JSON.stringify(armedEffects), disarmedFocusIds]);
 
-  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number }) {
+  function toggleSpellFocus(focus: { id: string; label: string; attack?: string; damage?: string; saveDc?: number; magicActionDamage?: string }) {
     const effectId = `focus:${focus.id}`;
     if (isSpellFocusArmed(focus.id)) {
       setFocusDisarmed(focus.id, true);
@@ -3231,7 +3317,7 @@ export function ActorCard({
                 style={{ cursor: "pointer", opacity: armed ? 1 : 0.65 }}
                 title={`${f.label}${f.attack ? ` · ${formatBonusForChip(f.attack)} to spell attack` : ""}${f.damage ? ` · ${formatBonusForChip(f.damage)} to spell damage` : ""}${f.saveDc ? ` · ${f.saveDc > 0 ? "+" : ""}${f.saveDc} to spell save DC` : ""} (applies to spell rolls only)`}
               >
-                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${formatBonusForChip(f.attack)}` : ""}{f.damage ? ` dmg ${formatBonusForChip(f.damage)}` : ""}{f.saveDc ? ` DC ${f.saveDc > 0 ? "+" : ""}${f.saveDc}` : ""}
+                {armed ? "✓ " : ""}{f.label}{f.attack ? ` atk ${formatBonusForChip(f.attack)}` : ""}{f.damage ? ` dmg ${formatBonusForChip(f.damage)}` : ""}{f.saveDc ? ` DC ${f.saveDc > 0 ? "+" : ""}${f.saveDc}` : ""}{f.magicActionDamage ? ` · Magic action ${formatBonusForChip(f.magicActionDamage)}` : ""}
               </button>
             );
           })}
@@ -3302,7 +3388,7 @@ export function ActorCard({
      * light weapon carrying a Rimecleaver has exactly one toggle to show, and this guard would
      * have returned null and eaten it — the identical bug the TWF clause above already fixed once.
      */
-    if (buffs.length === 0 && !showTwf && turnRiders.length === 0) return null;
+    if (buffs.length === 0 && !showTwf && turnRiders.length === 0 && charms.length === 0) return null;
     return (
       <section className="armed-effects-panel" aria-label="Fighting styles and weapon buffs">
         <div className="armed-effects-header">
@@ -3348,6 +3434,41 @@ export function ActorCard({
                   {rider.label?.trim() || action.label}
                   <span style={{ opacity: 0.75 }}>{what}</span>
                 </button>
+              );
+            })}
+          </div>
+        )}
+        {/**
+          * WEAPON CHARMS — Gift of Duskthorn on the weapon it is fastened to.
+          *
+          * The bonus is not a toggle; it is on while the charm is on the weapon. What IS the wielder's
+          * call is the charm's mode: *"at the start of each of your turns, choose… Thorn… Spell…"*. Two
+          * buttons, one lit, and the choice stays until they press the other.
+          */}
+        {charms.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "4px 12px 0" }}>
+            {charms.map(charm => {
+              const mode = charmModeFor(charm.charmItemId);
+              const f = charmWeaponFormulas(charm, mode);
+              return (
+                <div key={charm.charmItemId} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 10, color: "#9d8cff" }}
+                    title={`${charm.charmLabel} is fastened to ${charm.weaponLabel}. Its bonuses ride that weapon's attacks only.`}>
+                    🌿 {charm.charmLabel} → {charm.weaponLabel}
+                    {f.attack ? ` · atk ${formatBonusForChip(f.attack)}` : ""}
+                    {f.damage ? ` · dmg ${formatBonusForChip(f.damage)}` : ""}
+                  </span>
+                  {charm.choosesMode && (["weapon", "spell"] as const).map(option => (
+                    <button key={option} type="button"
+                      onClick={() => armCharm(charm, option)}
+                      className={`armed-effect-chip ${mode === option ? "rage-armed" : ""}`}
+                      title={option === "weapon"
+                        ? `Each hit with ${charm.weaponLabel} deals ${charm.hitDamage ?? "its extra damage"} more.`
+                        : `Each damage or healing roll of a spell cast with the Magic action adds ${charm.magicActionDamage ?? "the extra"}.`}>
+                      {mode === option ? "✓ " : ""}{option === "weapon" ? "Weapon hits" : "Magic action"}
+                    </button>
+                  ))}
+                </div>
               );
             })}
           </div>
@@ -4456,7 +4577,21 @@ export function ActorCard({
     const rollFormula = rawRollFormula
       ? normalizeFirstRollFormula(resolveFormulaVars(rawRollFormula, actor, _derivedForTrigger, status))
       : rawRollFormula;
-    const normalizedFormula = rollFormula && hasRollableFormula(rollFormula) ? combineRollFormulas([rollFormula]) : "";
+    /**
+     * ⚠ A SPELL THAT NEVER COMMITS A ROLL NEVER MET ITS FOCUS. Cure Wounds and every other spell that just
+     * rolls its dice comes through here, and this path added nothing — so a +2 focus gave a healing spell
+     * nothing at all. Christopher, 2026-09-16: *"any time a weapon or focus effects a attack or spell it
+     * should add that +1/+2/+3, to any action that uses it"*, and loot doc v11 names *"spell damage and
+     * healing rolls"*. Only a spell's own damage or healing line takes it, never an attack line.
+     */
+    const focusParts = triggeredAction.actionKind === "spell" && triggeredAction.metadata?.damage
+      ? armedEffects
+          .filter(e => e.id.startsWith("focus:"))
+          .map(e => focusDamageFor({ damage: e.formula, magicActionDamage: e.magicActionFormula }, triggeredAction))
+          .filter(Boolean)
+          .map(f => resolveFormulaVars(f, actor, _derivedForTrigger, status))
+      : [];
+    const normalizedFormula = rollFormula && hasRollableFormula(rollFormula) ? combineRollFormulas([rollFormula, ...focusParts]) : "";
 
     if (normalizedFormula) {
       const request: DiceBridgeRollRequest = {
@@ -4679,7 +4814,7 @@ export function ActorCard({
     const weaponAttackFormula = resolvedCandidate.attackFormula?.trim();
     if (entry.action.actionKind !== "spell" && weaponAttackFormula) {
       const styleAttackBonuses = armedEffects
-        .filter(e => e.id.startsWith("buff:") && e.attackFormula?.trim() && buffMatchesAttack(e.appliesTo, entry.action))
+        .filter(e => e.id.startsWith("buff:") && e.attackFormula?.trim() && buffMatchesAttack(e.appliesTo, entry.action, e.appliesToActionId))
         .map(e => resolveFormulaVars((e.attackFormula as string).trim(), actor, _derivedForRoll, status));
       if (styleAttackBonuses.length > 0) {
         resolvedCandidate.attackFormula = combineRollFormulas([weaponAttackFormula, ...styleAttackBonuses]);
@@ -5019,12 +5154,21 @@ export function ActorCard({
     const derivedForAdditives = deriveActorStats(actor, undefined, status);
 
     return getVisibleArmedEffects()
-      .map((effect) => ({
-        // Resolve @VARIABLE tokens up front (e.g. a focus "1d4+@CHA" or a buff "@CHA") so
-        // the rollability check + sent formula use real numbers, not raw @vars.
-        effect,
-        resolvedFormula: effect.formula?.trim() ? resolveFormulaVars(effect.formula, actor, derivedForAdditives, status) : "",
-      }))
+      .map((effect) => {
+        /**
+         * A focus adds its flat bonus to every spell, and its Magic-action extra (First Light, Duskthorn in
+         * Spell) only when THIS spell takes the Magic action — `focusDamageFor` decides both.
+         */
+        const raw = effect.id.startsWith("focus:")
+          ? focusDamageFor({ damage: effect.formula, magicActionDamage: effect.magicActionFormula }, entry?.action)
+          : effect.formula;
+        return {
+          // Resolve @VARIABLE tokens up front (e.g. a focus "1d4+@CHA" or a buff "@CHA") so
+          // the rollability check + sent formula use real numbers, not raw @vars.
+          effect,
+          resolvedFormula: raw?.trim() ? resolveFormulaVars(raw, actor, derivedForAdditives, status) : "",
+        };
+      })
       .filter(({ effect, resolvedFormula }) => {
         if (!resolvedFormula.trim() || !hasRollableFormula(resolvedFormula)) {
           return false;
@@ -5040,7 +5184,7 @@ export function ActorCard({
         }
 
         // Weapon buffs / fighting styles ride matching WEAPON attacks only (gated by target).
-        if (effect.id.startsWith("buff:") && !buffMatchesAttack(effect.appliesTo, entry?.action)) {
+        if (effect.id.startsWith("buff:") && !buffMatchesAttack(effect.appliesTo, entry?.action, effect.appliesToActionId)) {
           return false;
         }
 

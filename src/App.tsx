@@ -72,7 +72,7 @@ import { useActorNotesState } from "./core/state/useActorNotesState";
 import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
 import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
-import { offHandBlocker } from "./core/constants/chassis";
+import { offHandBlocker, regripAttackRow } from "./core/constants/chassis";
 import { checkEquip } from "./core/equipment/equipRules";
 import { ACTIVE_EQUIP_RULES } from "./modules/equipRuleRoster";
 import { safeStorage } from "./core/utils/safeStorage";
@@ -1700,7 +1700,17 @@ export default function App() {
       }
     }
 
+    /**
+     * ⚠ AND THE SWING TAKES THE NEW GRIP. Writing `grip` onto the equipment row alone left the attack row rolling
+     * the dice it was attached with — a two-handed Quarterstaff (Gift of First Light) kept its one-handed d6.
+     * `regripAttackRow` recomposes that row's dice from the equipment row's form and bonuses.
+     */
+    const attackRowId = `atk-${actionId.replace(/^equip-/, "")}`;
+    const regripped = <T extends { id: string; metadata?: { attack?: string; damage?: string; crit?: string } }>(rows: T[]) =>
+      rows.map(a => (a.id === attackRowId ? regripAttackRow(a, target.metadata ?? {}, grip) : a));
     const updated = { ...actor, tabs: { ...actor.tabs,
+      main: regripped(actor.tabs.main),
+      bonus: regripped(actor.tabs.bonus),
       equipment: equipment.map(a => a.id === actionId
         ? { ...a, metadata: { ...a.metadata, grip } }
         : a) } };

@@ -491,6 +491,22 @@ export type ActorActionMetadata = {
   grip?: "1h" | "2h";
   chassisBonus?: number;
   pbToDamage?: boolean;
+  /** Chassis extra damage dice on every hit — see `EquipmentItem.chassisBonusDice`. */
+  chassisBonusDice?: string;
+  /**
+   * A WEAPON CHARM'S BINDING, carried on the character's copy — see `EquipmentItem.bindsToItemId`.
+   *
+   * ⚠ THE BIND WAS SAVED BY THE EDITOR AND DROPPED HERE. `itemToAction` never copied it, so choosing a weapon
+   * in the bag editor wrote a value the character's sheet could not hold, and nothing on the card could act
+   * on it. The four fields after it are what the charm gives the weapon it is bound to.
+   */
+  bindsToItemId?: string;
+  attachesToWeapon?: boolean;
+  boundWeaponBonus?: number;
+  boundWeaponHitDamage?: string;
+  weaponOrSpellChoice?: boolean;
+  /** Focus extra on damage/healing of a spell cast with the Magic action — `EquipmentItem.spellFocusMagicActionDamage`. */
+  spellFocusMagicActionDamage?: string;
   /** Player-toggled conditional extras carried from the item — see ItemRider. The app tracks
    *  the cadence and rolls the dice; the table rules on whether the trigger happened. */
   riders?: Array<{ id: string; label: string; formula?: string; damageType?: string; cadence: string; condition?: string }>;

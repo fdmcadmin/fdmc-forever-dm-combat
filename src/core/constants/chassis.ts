@@ -100,12 +100,15 @@ export function findForm(formId: string | undefined): BaseWeaponSeed | undefined
  *
  * @param bonus       magic bonus, added to attack AND damage
  * @param pbToDamage  the item adds Proficiency Bonus to its damage roll (the Feywild Gifts do)
+ * @param extraDice   dice added to every hit, of the weapon's own type — loot doc v11 gives each Gift "1d6".
+ *                    Dice double on a critical hit; the magic bonus and PB are fixed and do not.
  */
 export function composeChassisAttack(
   form: BaseWeaponSeed,
   grip: WeaponGrip,
   bonus = 0,
   pbToDamage = false,
+  extraDice = "",
 ): { attack: string; damage: string; crit: string } {
   const plus = bonus ? `+${bonus}` : "";
   const pb = pbToDamage ? "+@PROF" : "";
@@ -118,11 +121,36 @@ export function composeChassisAttack(
     ? `${(Number.parseInt(twoHandDie, 10) || 1) * 2}d${twoHandDie.split("d")[1]}`
     : form.crit.split("+")[0];
 
+  const extra = /^\d*d\d+$/i.test(extraDice.trim()) ? extraDice.trim() : "";
+  const extraCrit = extra ? `${(Number.parseInt(extra, 10) || 1) * 2}d${extra.split(/d/i)[1]}` : "";
+
   return {
     attack: `${form.attack}${plus}`,
-    damage: `${damageDice}+@${ability}${plus}${pb}`,
-    crit: `${critDice}+@${ability}${plus}${pb}`,
+    damage: `${damageDice}${extra ? `+${extra}` : ""}+@${ability}${plus}${pb}`,
+    crit: `${critDice}${extraCrit ? `+${extraCrit}` : ""}+@${ability}${plus}${pb}`,
   };
+}
+
+/**
+ * A CHASSIS WEAPON'S ATTACK ROW, RE-ROLLED FOR A NEW GRIP.
+ *
+ * ⚠ THE GRIP SWITCH NEVER REACHED THE ROLL. Taking a versatile Gift in two hands wrote `grip` onto the
+ * equipment row and nothing else; the attack row's dice are built once, when the item is attached, and nothing
+ * rebuilt them — so a Quarterstaff held in both hands still rolled its one-handed d6. That is Gift of First
+ * Light, which loot doc v11 makes a two-handed focus. The equipment row carries everything the dice come
+ * from (form, bonus, PB, extra dice), so the attack row is recomposed from it rather than guessed at.
+ *
+ * Returns the row unchanged when it is not a chassis with a chosen form.
+ */
+export function regripAttackRow<R extends { metadata?: { attack?: string; damage?: string; crit?: string } }>(
+  row: R,
+  equipment: { chassis?: { formId?: string }; chassisBonus?: number; pbToDamage?: boolean; chassisBonusDice?: string },
+  grip: WeaponGrip,
+): R {
+  const form = findForm(equipment.chassis?.formId);
+  if (!form) return row;
+  const dice = composeChassisAttack(form, grip, equipment.chassisBonus ?? 0, equipment.pbToDamage, equipment.chassisBonusDice);
+  return { ...row, metadata: { ...(row.metadata ?? {}), ...dice } };
 }
 
 /**

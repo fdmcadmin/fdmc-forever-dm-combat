@@ -206,6 +206,15 @@ export type EquipmentItem = {
    *  through it; the bonus fields above are only the item's OWN extra on top. */
   isSpellFocus?: boolean;
   /**
+   * EXTRA DAMAGE OR HEALING ON A SPELL CAST WITH THE MAGIC ACTION through this focus — "1d6+@PROF".
+   *
+   * Loot doc v11: Gift of First Light *"whenever you take the Magic action, add 1d6 plus your Proficiency
+   * Bonus to each damage or healing roll you make as part of that action."* It is not the focus's flat
+   * damage bonus (that rides every spell, whatever it costs); a bonus-action or reaction spell does not
+   * get this. See `core/rules/giftFocus.ts`.
+   */
+  spellFocusMagicActionDamage?: string;
+  /**
    * LAST WORD — this Gift BINDS to one equipped weapon and makes that weapon its focus.
    *
    * *"It binds to one equipped weapon and makes that weapon the Gift's spellcasting focus… Do not
@@ -221,6 +230,27 @@ export type EquipmentItem = {
    * layered on top — see `resolveBoundFocus`.
    */
   bindsToItemId?: string;
+  /**
+   * A WEAPON CHARM — its properties work only through the weapon it is bound to (`bindsToItemId`).
+   *
+   * Loot doc v11, Gift of Duskthorn: *"you can attach the charm to a weapon… You can use the attached
+   * weapon as a Spellcasting Focus."* Unbound, or bound to a weapon that is not equipped, it is a trinket:
+   * no focus, no weapon bonus. The four fields below say what it gives the weapon.
+   */
+  attachesToWeapon?: boolean;
+  /**
+   * The bound weapon's magic bonus to attack AND damage. *"If the weapon already grants such a bonus, use
+   * the higher bonus"* — so a +1 weapon gains +1 more, a +2 weapon gains nothing, a mundane one gains +2.
+   */
+  boundWeaponBonus?: number;
+  /** Extra damage on EACH hit with the bound weapon, of its own type — Duskthorn's Thorn, "1d6+@PROF". */
+  boundWeaponHitDamage?: string;
+  /**
+   * The weapon hits OR the Magic action, chosen by the wielder. Duskthorn: *"at the start of each of your
+   * turns, choose… Thorn… Spell…"* With this set, `boundWeaponHitDamage` and `spellFocusMagicActionDamage`
+   * are alternatives and the card offers the switch; without it, both apply.
+   */
+  weaponOrSpellChoice?: boolean;
   /**
    * WHAT THE CAMPAIGN ITEM LOOKED LIKE WHEN THE DM UNLOCKED IT.
    *
@@ -249,6 +279,14 @@ export type EquipmentItem = {
   pbToDamage?: boolean;
   /** Chassis items: magic bonus added to attack AND damage (+2 on the Feywild Gifts). */
   chassisBonus?: number;
+  /**
+   * Chassis items: extra damage DICE on every hit, of the weapon's own type — "1d6".
+   *
+   * Loot doc v11 gives every weapon Gift *"On a hit, add your Proficiency Bonus to the damage roll, and the
+   * weapon deals an extra 1d6 damage of its normal type."* Dice, so a critical hit doubles them; the +2 and
+   * the Proficiency Bonus are fixed and do not double. Composed into the form's damage and crit lines.
+   */
+  chassisBonusDice?: string;
   /**
    * Conditional extras the player toggles. An ARRAY because an item can carry more than one —
    * the focus Gifts have their spell bonus AND an effect, and nothing says a future item won't
@@ -332,7 +370,7 @@ export type EquipmentItem = {
    * SNAPSHOT of what one browser held. Without a date the snapshot always won — it states the same fields —
    * so a revised item could never reach the app again. An item that carries this date beats an export taken
    * BEFORE it; an export taken after is the DM's own later work and wins as it always did. See
-   * `mergeAuthored` and `data/broken-chain/lootV9.ts`.
+   * `mergeAuthored` and `data/broken-chain/lootV11.ts`.
    */
   revisedAt?: string;
   /** Convergence metadata from the canonical library */
@@ -386,7 +424,10 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // v9 — FULL SWEEP, Act 1 to the last Act 4 drop, from loot doc v9 (Forest Gifts). Every card's text;
 // Rimeguard Medium AC 16→15 + DEX; A3 inputs and T2 outputs recharge on a Long Rest, not at dawn;
 // the Gifts renamed again (ids kept), First Light a Quarterstaff and Duskthorn a charm for any weapon.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-4-v9-full-sweep";
+// v11 — THE GIFTS AGAIN. Every weapon Gift +1d6 per hit; First Light a +2/+2/+2 focus with 1d6 + PB on Magic-action
+// damage and healing; Duskthorn a charm bound to a carried weapon (no chassis). The Act 1 Ward Field pool is
+// retired, and retired ids no longer come back from the author export.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-4-v11-focus-gifts";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;
@@ -463,10 +504,16 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds:
   const version = `${CAMPAIGN_EQUIPMENT_SEED_VERSION}+${seedFingerprint(items, retiredIds)}`;
   if (safeStorage().getItem(CAMPAIGN_EQUIPMENT_SEED_KEY) === version) return;
   const byId = new Map(loadEquipmentLibrary("campaign").map(i => [i.id, i]));
+  const retired = new Set(retiredIds);
   // Merging alone can only ever add. Items the campaign module dropped have to be named
   // explicitly or they stay in the library forever.
-  for (const id of retiredIds) byId.delete(id);
-  for (const item of items) byId.set(item.id, item);
+  /**
+   * ⚠ AND A RETIRED ID IS NEVER WRITTEN BACK. This deleted the retired ids and then wrote every seed item in,
+   * so a retired item still in the list it was handed came straight back — which is how the Act 2 Ward Cache
+   * items survived their retirement.
+   */
+  for (const id of retired) byId.delete(id);
+  for (const item of items) if (!retired.has(item.id)) byId.set(item.id, item);
   saveEquipmentLibrary(Array.from(byId.values()), "campaign");
 
   /**
@@ -498,6 +545,8 @@ export function seedCampaignEquipmentLibrary(items: EquipmentItem[], retiredIds:
    * visible and one re-unlock away from fixed, whereas silently destroyed work is neither.
    */
   const keep = dm.filter(i => {
+    // A retired campaign id is not custom gear, whichever store holds it — Christopher retired these by name.
+    if (retired.has(i.id)) return false;
     if (!seededIds.has(i.id)) return true;              // genuinely custom gear
     if (!i.unlockSnapshot) return true;                 // pre-fingerprint, assume it is work
     return i.unlockSnapshot !== fingerprintEquipmentItem(i);
@@ -818,7 +867,7 @@ export function resolveChassisItem(item: EquipmentItem): EquipmentItem {
   // The bonus is AUTHORED, never inferred. Reading it out of the name ("+2") or the gold field
   // is the kind of guess that mis-tagged the armour slots — the builder asks for it.
   const grip: WeaponGrip = item.grip ?? "1h";
-  const dice = composeChassisAttack(form, grip, item.chassisBonus ?? 0, item.pbToDamage);
+  const dice = composeChassisAttack(form, grip, item.chassisBonus ?? 0, item.pbToDamage, item.chassisBonusDice);
 
   return {
     ...item,
@@ -1054,6 +1103,15 @@ export function itemToAction(item: EquipmentItem, equipped: boolean): ActorActio
       grip: item.grip,
       chassisBonus: item.chassisBonus,
       pbToDamage: item.pbToDamage,
+      chassisBonusDice: item.chassisBonusDice,
+      // A charm's binding and what it gives the bound weapon. Dropped here, the bind the editor saved
+      // never reached the sheet — see `ActionMetadata.bindsToItemId`.
+      bindsToItemId: item.bindsToItemId,
+      attachesToWeapon: item.attachesToWeapon,
+      boundWeaponBonus: item.boundWeaponBonus,
+      boundWeaponHitDamage: item.boundWeaponHitDamage,
+      weaponOrSpellChoice: item.weaponOrSpellChoice,
+      spellFocusMagicActionDamage: item.spellFocusMagicActionDamage,
       riders: item.riders,
       effect: item.effect ? {
         type: item.effect.type as string,
@@ -1812,6 +1870,14 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       chassis: m.chassis as EquipmentItem["chassis"],
       chassisBonus: m.chassisBonus,
       pbToDamage: m.pbToDamage,
+      chassisBonusDice: m.chassisBonusDice,
+      /** ⚠ THE BINDING COMES HOME TOO — a charm opened in the editor must still be on its weapon when saved. */
+      bindsToItemId: m.bindsToItemId,
+      attachesToWeapon: m.attachesToWeapon,
+      boundWeaponBonus: m.boundWeaponBonus,
+      boundWeaponHitDamage: m.boundWeaponHitDamage,
+      weaponOrSpellChoice: m.weaponOrSpellChoice,
+      spellFocusMagicActionDamage: m.spellFocusMagicActionDamage,
       grip: m.grip as EquipmentItem["grip"],
       category: action.category,
       tags: action.tags,
