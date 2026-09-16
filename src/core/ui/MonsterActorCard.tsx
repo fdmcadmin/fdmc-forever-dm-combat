@@ -77,7 +77,7 @@ const SECTION_ACCENT = {
    */
   traits:    "#9a7b4f",
 } as const;
-import { rollFormulaLocally } from "../dice/localRoller";
+import { diceOnlyFormula, rollFormulaLocally } from "../dice/localRoller";
 import { SKILL_BY_NAME } from "../../modules/dnd-5e/srdSkills";
 
 /** How long a roll waits on a dice app before the math takes over. Long enough that a
@@ -977,7 +977,15 @@ export function MonsterActorCard({
       attackFormula = appendBonusDie(attackFormula, pendingAdditive);
       setPendingAdditive(null);
     }
-    // The whole hit: a second damage line is rolled with the first, so a crit doubles both.
+    /**
+     * The whole hit: a second damage line is rolled with the first, so a crit doubles both.
+     *
+     * ⚠ THE TYPES STAY ON THE CARD, NOT IN THE FORMULA. A stat block prints "3d6 fire + 3d6 lightning",
+     * and that string used to go to Dice+ as the formula — which parses dice and stops at the first word,
+     * so only the fire was ever thrown (Christopher: *"the charged fireball only rolled 3d6 fire and not
+     * the 3d6 lightning"*). `damageFormula` keeps the printed line for the card and the log;
+     * `diceOnlyFormula` is what any roller is handed. See `localRoller.diceOnlyFormula`.
+     */
     const damageFormula = normalizeFormula(damagePacket(action));
     const requestId = makeRequestId(monster.instanceId, actionId, "attack");
     const roll: CommittedRoll = {
@@ -989,7 +997,7 @@ export function MonsterActorCard({
       critThreshold: (action as MonsterReaderAction & { critThreshold?: number }).critThreshold ?? 20,
       result: "",
       saveRider: action.save && action.roll ? action.save : undefined,
-      pendingFormula: attackFormula || undefined,
+      pendingFormula: diceOnlyFormula(attackFormula) || undefined,
       phase: attackFormula ? "pending" : "held",
     };
     setCommittedRoll(roll);
@@ -1053,7 +1061,7 @@ export function MonsterActorCard({
         actorName: publicName,
         actionId,
         actionName: action.name,
-        formula: attackFormula,
+        formula: diceOnlyFormula(attackFormula),
         outcomeMode: "attack-roll",
         critThreshold: roll.critThreshold,
         sentAt: new Date().toISOString(),
@@ -1083,7 +1091,9 @@ export function MonsterActorCard({
         setPendingDamageDie(null);
       }
       const dmgId = makeRequestId(monster.instanceId, committedRoll.actionId, "damage");
-      setCommittedRoll(r => r && { ...r, phase: "damage-pending", requestId: dmgId, pendingFormula: dmgFormula });
+      // Dice only from here: the typed line stays on `damageFormula` for the card and the log.
+      const rollableDamage = diceOnlyFormula(dmgFormula);
+      setCommittedRoll(r => r && { ...r, phase: "damage-pending", requestId: dmgId, pendingFormula: rollableDamage });
       if (onSendDicePlusRequest) {
         await onSendDicePlusRequest({
           protocol: "forever-dm-combat.roll.request.v1",
@@ -1093,7 +1103,7 @@ export function MonsterActorCard({
           actorName: publicName,
           actionId: committedRoll.actionId,
           actionName: `${committedRoll.actionName} damage`,
-          formula: dmgFormula,
+          formula: rollableDamage,
           outcomeMode: "triggered",
           sentAt: new Date().toISOString(),
         });

@@ -82,6 +82,50 @@ export function rollFormulaLocally(formula: string, rng: () => number = Math.ran
   };
 }
 
+/**
+ * THE DICE A DICE APP CAN ACTUALLY ROLL — a typed damage line reduced to its terms.
+ *
+ * Christopher, 2026-09-16: *"the charged fireball only rolled 3d6 fire and not the 3d6 lightning."*
+ * A creature's damage is written the way the stat block prints it — `"3d6 fire + 3d6 lightning"`, one
+ * hit in two typed packets — and the card sent that STRING to Dice+ as the formula. The math here has
+ * always been tolerant of words (it ignores anything that is not a term, which is why the fallback rolled
+ * both), but an external roller parses what it is given and stops at the first thing that is not dice.
+ * So the second packet was never thrown, and nothing said so: a 3d6 result looks like a roll that worked.
+ *
+ * The types are not lost — they are on the chips and in the log, where they are read. This is the ROLL:
+ * "3d6 fire + 3d6 lightning" → "3d6 + 3d6", "2d8 cold plus 1d6 psychic" → "2d8 + 1d6".
+ *
+ * ⚠ THE SAME GRAMMAR AS THE ROLLER, deliberately: it reads the string with `TERM`, so anything this
+ * emits is exactly what `rollFormulaLocally` would have counted, and the two can never disagree about
+ * what a formula contains. An empty result means there was nothing rollable in it.
+ */
+export function diceOnlyFormula(formula: string): string {
+  if (!formula || !formula.trim()) return "";
+  const cleaned = formula.replace(/[[\]]/g, "").replace(/@[A-Za-z]+/g, "");
+  const parts: string[] = [];
+  let match: RegExpExecArray | null;
+  TERM.lastIndex = 0;
+  while ((match = TERM.exec(cleaned)) !== null) {
+    const [, diceSign, rawCount, rawSides, flatSign, rawFlat] = match;
+    const negative = (rawSides !== undefined ? diceSign : flatSign) === "-";
+    let body: string;
+    if (rawSides !== undefined) {
+      const sides = Number.parseInt(rawSides, 10);
+      const count = rawCount === "" ? 1 : Number.parseInt(rawCount, 10);
+      if (!Number.isFinite(sides) || sides < 1 || !Number.isFinite(count) || count < 1) continue;
+      body = `${count}d${sides}`;
+    } else if (rawFlat !== undefined) {
+      const value = Number.parseInt(rawFlat, 10);
+      if (!Number.isFinite(value)) continue;
+      body = String(value);
+    } else {
+      continue;
+    }
+    parts.push(parts.length === 0 && !negative ? body : `${negative ? "- " : "+ "}${body}`);
+  }
+  return parts.join(" ");
+}
+
 /** Nat 20 / nat 1 detection for a local roll, matching the bridge's semantics. */
 export function localRollCrit(result: LocalRollResult | null, critThreshold = 20): {
   isCrit: boolean;
