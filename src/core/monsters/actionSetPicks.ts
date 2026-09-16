@@ -17,6 +17,7 @@
  */
 
 import type { MainMonsterTemplate, MonsterActionSet, MonsterArchetype, MonsterBond } from "./runtime/mainMonsterRuntime";
+import { withCreatureBondActions } from "./creatureBondActions";
 import type { MonsterReaderAction } from "./MonsterJconScanner";
 import { redistributeAbilityEntries } from "./creator/monsterCreatorModel";
 import { resolveMonsterActionFormulas } from "./resolveMonsterFormulaVars";
@@ -315,7 +316,11 @@ export function materializeTemplateBody(
     damageResponses: responses,
     ...(body.archetype ? { archetype: body.archetype } : {}),
   };
-  return {
+  /**
+   * ⚠ AND THE BOND BECOMES ROWS. It rode along here as data and nothing ever resolved it, so a finished
+   * mirror printed its Inherent Bond trait over a card with no bond on it — see `creatureBondActions`.
+   */
+  return withCreatureBondActions({
     ...built,
     stats,
     actions: finish(built.actions),
@@ -323,7 +328,7 @@ export function materializeTemplateBody(
     reactions: finish(built.reactions),
     ...(body.bond ? { bond: body.bond } : {}),
     ...(body.archetype ? { abilities: redistributeAbilityEntries(built.abilities, body.archetype) } : {}),
-  };
+  });
 }
 
 /**

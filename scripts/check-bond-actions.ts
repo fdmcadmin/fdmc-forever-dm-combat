@@ -108,6 +108,55 @@ console.log("\n=== off-turn bond options: listed as reactions, spend the bond ==
   }
 }
 
+/**
+ * A CREATURE'S BOND REACHES ITS CARD.
+ *
+ * Christopher, 2026-09-15: *"the bonds actions did not get generated on my mirrors."* An Elemental Mirror is
+ * built with one inherent Bond and its Metamorphosis path, the assignment rode onto every body as data, and
+ * nothing ever resolved it — the card printed the Inherent Bond trait over a card with no bond on it.
+ */
+console.log("\n=== a creature's bond becomes rows on the body ===");
+{
+  const { materializeTemplateBody } = await import("../src/core/monsters/actionSetPicks");
+  const { BROKEN_CHAIN_MONSTER_LIBRARY } = await import("../src/data/broken-chain/monsterLibrary");
+  type Row = { name: string; kind?: string; text?: string; riders?: Array<{ name: string; damage: string; cadence: string }> };
+  type Body = { actions?: Row[]; reactions?: Row[] };
+  const mirror = (BROKEN_CHAIN_MONSTER_LIBRARY as Array<{ name: string }>).find(t => /Elemental Mirror/i.test(t.name));
+  if (!mirror) problems.push("no Elemental Mirror template in the library to build a body from");
+
+  const build = (bond?: { templateId: string; stage: number; chosenPathIndex?: 0 | 1 }) =>
+    materializeTemplateBody(mirror as never, { id: "gate-body", name: "Gate Mirror", ...(bond ? { bond: bond as never } : {}) }) as Body;
+
+  const generated = (body: Body) => [...(body.actions ?? []), ...(body.reactions ?? [])].filter(a => a.name.startsWith("◈ "));
+  const withBond = build({ templateId: "guardian", stage: 2, chosenPathIndex: 0 });
+  const rowsOn = generated(withBond);
+  if (rowsOn.length === 0) problems.push("a mirror built with a bond generated no bond rows");
+  const guardianTpl = BROKEN_CHAIN_BOND_TEMPLATES.find(t => t.id === "guardian")!;
+  for (const r of rowsOn) {
+    if (!String(r.text ?? "").startsWith(guardianTpl.name)) problems.push(`bond row "${r.name}" does not say which bond it came from`);
+    if ((r as { damage?: string }).damage || (r as { roll?: string }).roll) {
+      problems.push(`bond row "${r.name}" carries its own attack — a bond row is text plus a rider, never a new attack`);
+    }
+  }
+  // Guardian's Intercept is the off-turn option: it belongs with the reactions, here as on a character.
+  const offTurn = (guardianTpl.offTurnOptions ?? []).map(n => `◈ ${n}`);
+  const asReactions = (withBond.reactions ?? []).filter(a => a.name.startsWith("◈ ")).map(a => a.name);
+  for (const name of asReactions) if (!offTurn.includes(name)) problems.push(`${name} is on the reactions but is not one of the bond's off-turn options`);
+
+  // The die rides the creature's attack once per round — the trait's own "one activation per round".
+  const rider = (withBond.actions ?? []).flatMap(a => a.riders ?? []).filter(r => /bond/i.test(r.name));
+  if (rider.length !== 1) problems.push(`expected exactly one bond rider on the body, saw ${rider.length}`);
+  if (rider[0] && rider[0].cadence !== "once-per-turn") problems.push("the bond rider is not once per turn");
+  if (rider[0] && /@/.test(rider[0].damage)) problems.push(`the bond rider's dice are unresolved: ${rider[0].damage}`);
+
+  // ⚠ MUTATION: no bond, no rows — and a rebuild must not stack them.
+  if (generated(build()).length !== 0) problems.push("a mirror with NO bond generated bond rows");
+  if (generated(build({ templateId: "guardian", stage: 2, chosenPathIndex: 0 })).length !== rowsOn.length) {
+    problems.push("rebuilding the same body changed its bond row count — the generation is not idempotent");
+  }
+  console.log(`  rows on a bonded mirror: ${rowsOn.map(r => r.name).join(", ")} | rider ${rider[0]?.damage ?? "none"}`);
+}
+
 console.log(`\nrows: ${rows} | rows with no dice (non-note): ${missingDice}`);
 if (problems.length) {
   console.log("\nPROBLEMS:");

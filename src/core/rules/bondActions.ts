@@ -51,10 +51,11 @@ import type { ActorAction } from "../types/tabs";
 import {
   BOND_METAMORPHOSIS_STAGE,
   type BondStageContext,
+  type BondStageIndex,
   type BondAssignment,
   type BondTemplate,
 } from "../types/bond";
-import { bondPerformer, resolveBond, type ResolvedBond } from "./bondProgress";
+import { bondPerformer, resolveBond, resolveBondAtStage, type ResolvedBond } from "./bondProgress";
 
 /** The separator v13 prints between an option name and its rule. */
 const EM_DASH = "—";
@@ -418,6 +419,26 @@ ${resolved.stageName} — ${template.name}: +${rider.damage}${note}, from ${reso
   ) as Actor["tabs"];
 
   return touched ? { ...actor, tabs } : actor;
+}
+
+/**
+ * A CREATURE'S BOND ROWS — the same ladder, at a stage that is STATED rather than derived.
+ *
+ * Christopher, 2026-09-15: *"the bonds actions did not get generated on my mirrors."* An Elemental
+ * Mirror is built with *"one legal inherent Bond and its Metamorphosis path"*, and the assignment rode
+ * along on the body as data: the card printed the Inherent Bond trait — "it resolves with its printed
+ * timing and one activation per round" — with nothing under it to resolve.
+ *
+ * A character's stage comes from level and gates; a creature is BUILT at a stage and never advances, so
+ * it resolves at the stage it carries and nothing here asks about levels or milestones. Everything else
+ * is the character path unchanged: the same rows, the same text, the same dice.
+ */
+export function creatureBondActions(
+  template: BondTemplate,
+  bond: { stage: BondStageIndex; chosenPathIndex?: 0 | 1 },
+): ActorAction[] {
+  const resolved = resolveBondAtStage(template, bond.chosenPathIndex, bond.stage);
+  return rowsForResolvedBond(template, resolved).map(row => toAction(template, resolved, row));
 }
 
 export function generatedBondActions(
