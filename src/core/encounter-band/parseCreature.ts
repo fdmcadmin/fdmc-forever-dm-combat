@@ -639,7 +639,7 @@ export function parseCreature(rawTemplate: MainMonsterTemplate): ParsedCreature 
  * which is authored data, and never touched the cached profile.
  */
 export function replacesRoutineSlot(name: string | undefined): boolean {
-  return /(?:replaces|instead of|in place of)/i.test(name ?? "");
+  return /\b(?:replaces|instead of|in place of)\b/i.test(name ?? "");
 }
 
 /**

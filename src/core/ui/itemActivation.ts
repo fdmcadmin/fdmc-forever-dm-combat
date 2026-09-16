@@ -121,6 +121,28 @@ export function readActivation(text: string | undefined): {
     const m = t.match(re);
     if (m && m.index !== undefined) hits.push({ at: m.index, activation });
   }
+  /**
+   * ⚠ A REACTION SOMEONE ELSE SPENDS IS NOT THIS ITEM'S COST.
+   *
+   * v6's Redwake Shuttle is a rider — the bearer spends nothing but the charge — and its text ends
+   * "one willing ally you can see within 30 feet may immediately use its Reaction to move up to 10 feet".
+   * Read literally that is a Reaction, so the item read as costing the BEARER one, which would take a
+   * Reaction off a player who never spent it. A Reaction is the bearer's when the text says YOUR reaction;
+   * "its" or "their" alongside an ally or another creature in the same sentence belongs to them.
+   */
+  const sentenceOf = (at: number) => {
+    const start = t.lastIndexOf(".", at) + 1;
+    const end = t.indexOf(".", at);
+    return t.slice(start, end === -1 ? t.length : end);
+  };
+  const someoneElses = (h: { at: number; activation: ItemActivation }) => {
+    if (h.activation !== "reaction") return false;
+    const sentence = sentenceOf(h.at);
+    if (/\byour reaction\b/.test(sentence)) return false;
+    return /\b(?:ally|allies|willing creature|another creature|that creature|the attacker|a hostile)\b/.test(sentence);
+  };
+  for (let i = hits.length - 1; i >= 0; i--) if (someoneElses(hits[i])) hits.splice(i, 1);
+
   hits.sort((a, b) => a.at - b.at);
   const named: ItemActivation[] = [];
   for (const h of hits) if (!named.includes(h.activation)) named.push(h.activation);

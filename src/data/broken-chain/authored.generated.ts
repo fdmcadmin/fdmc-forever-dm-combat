@@ -6922,8 +6922,23 @@ export const AUTHORED_AT = "2026-09-13T20:33:09.740Z";
  * author has not touched is left exactly as the hand-written source has it. Order is stable:
  * bundled entries keep their position, genuinely new ones are appended.
  */
-export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) => string): T[] {
+export function mergeAuthored<T>(
+  bundled: T[],
+  authored: T[],
+  idOf: (item: T) => string,
+  /**
+   * ⚠ WHEN THE SNAPSHOT IS OLDER THAN THE PUBLISHED REVISION, THE REVISION WINS.
+   *
+   * Christopher published a revised loot document (v6) whose text had to reach the table. Every one of
+   * those items is also in the author export, which states the same fields, so the field-wise merge below
+   * handed the table the OLD text and the revision could not arrive. Passing the export's date lets a
+   * bundled item that states a later `revisedAt` win for the fields IT states — and the moment the DM
+   * edits that item in the app again, their export is the newer one and wins as before.
+   */
+  opts: { authoredAt?: string } = {},
+): T[] {
   if (authored.length === 0) return bundled;
+  const authoredAt = Date.parse(String(opts.authoredAt ?? ""));
   const overrides = new Map(authored.map(a => [idOf(a), a]));
   const merged = bundled.map(b => {
     const over = overrides.get(idOf(b));
@@ -6966,13 +6981,19 @@ export function mergeAuthored<T>(bundled: T[], authored: T[], idOf: (item: T) =>
     const isPlainObject = (v: unknown): v is Record<string, unknown> =>
       typeof v === "object" && v !== null && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
 
+    const revisedAt = Date.parse(String((b as Record<string, unknown>).revisedAt ?? ""));
+    /** The published revision is newer than this snapshot: the roles swap, field-wise, both ways. */
+    const seedWins = Number.isFinite(revisedAt) && Number.isFinite(authoredAt) && revisedAt > authoredAt;
+    const winner = (seedWins ? b : over) as Record<string, unknown>;
+    const loser = (seedWins ? over : b) as Record<string, unknown>;
+
     const stated: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(over as Record<string, unknown>)) {
+    for (const [k, v] of Object.entries(winner)) {
       if (v === undefined) continue;
-      const seeded = (b as Record<string, unknown>)[k];
-      stated[k] = isPlainObject(v) && isPlainObject(seeded) ? { ...seeded, ...v } : v;
+      const other = loser[k];
+      stated[k] = isPlainObject(v) && isPlainObject(other) ? { ...other, ...v } : v;
     }
-    return { ...(b as Record<string, unknown>), ...stated } as T;
+    return { ...loser, ...stated } as T;
   });
   const bundledIds = new Set(bundled.map(idOf));
   return [...merged, ...authored.filter(a => !bundledIds.has(idOf(a)))];

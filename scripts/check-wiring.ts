@@ -439,7 +439,6 @@ const KNOWN_ORPHAN_EXPORTS: readonly string[] = [
   "core/ui/pcActionTypes.ts → splitPcActionsByTab",
   "core/ui/pcActionTypes.ts → validatePcActionDraft",
   "core/ui/tabVisuals.ts → tabEmptyHint",
-  "data/broken-chain/authored.generated.ts → AUTHORED_AT",
   "data/broken-chain/monsterLibrary.ts → VOIDED_FOR_CHANGES",
   "modules/dnd-5e/featPricing.generated.ts → FEAT_EXPRESSION_DICTIONARY",
   "modules/dnd-5e/srdAuditChassis.generated.ts → SRD_AUDIT_BY_NAME",

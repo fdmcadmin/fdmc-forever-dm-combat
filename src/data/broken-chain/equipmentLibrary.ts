@@ -24,7 +24,8 @@
 // IDS SURVIVE RENAMES, because an item attached to a character is referenced by id.
 // RETIRED_EQUIPMENT_IDS is removed from the campaign library on re-seed.
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
-import { AUTHORED_EQUIPMENT, mergeAuthored } from "./authored.generated";
+import { AUTHORED_AT, AUTHORED_EQUIPMENT, mergeAuthored } from "./authored.generated";
+import { LOOT_V6_ITEMS } from "./lootV6";
 
 /** Items the loot doc no longer contains. Removed from the campaign library on re-seed. */
 export const RETIRED_EQUIPMENT_IDS: string[] = [
@@ -1923,10 +1924,22 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
 ];
 
 /**
- * The campaign equipment library the app actually reads — bundled items with in-app authoring
- * folded over them by id. This is the path an unpicked Gift chassis takes into the build:
- * authored in the app, exported, folded here, shipped to every DM. The DM's only local choice
- * stays the form they pick when handing it over, which lives on the actor's copy.
+ * THE PUBLISHED LIBRARY IS THREE LAYERS, YOUNGEST LAST.
+ *
+ *   1  `BUNDLED_EQUIPMENT_LIBRARY`  the loot document as it stood at the last full transcription
+ *   2  `LOOT_V6_ITEMS`              what the v6 revision changed: A1–A3 inputs, T1–T3 outputs, the Gifts
+ *   3  `AUTHORED_EQUIPMENT`         what the DM authored in the app and exported
+ *
+ * Each is folded over the one before it FIELD-WISE, so a layer states only what it knows. The export is
+ * last because a DM's own edit is the final word — except where it is simply OLDER than the revision it
+ * would overwrite, which is what `revisedAt` and `AUTHORED_AT` settle. See `mergeAuthored`.
+ *
+ * This is the path an unpicked Gift chassis takes into the build: authored in the app, exported, folded
+ * here, shipped to every DM. The DM's only local choice stays the form they pick when handing it over,
+ * which lives on the actor's copy.
  */
+const REVISED_EQUIPMENT_LIBRARY: EquipmentItem[] =
+  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, LOOT_V6_ITEMS as EquipmentItem[], i => i.id);
+
 export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] =
-  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id);
+  mergeAuthored(REVISED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id, { authoredAt: AUTHORED_AT });
