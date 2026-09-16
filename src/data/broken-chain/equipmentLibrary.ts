@@ -25,7 +25,7 @@
 // RETIRED_EQUIPMENT_IDS is removed from the campaign library on re-seed.
 import type { EquipmentItem } from "../../core/ui/EquipmentBagEditor";
 import { AUTHORED_AT, AUTHORED_EQUIPMENT, mergeAuthored } from "./authored.generated";
-import { LOOT_V6_ITEMS } from "./lootV6";
+import { LOOT_V9_ITEMS } from "./lootV9";
 
 /** Items the loot doc no longer contains. Removed from the campaign library on re-seed. */
 export const RETIRED_EQUIPMENT_IDS: string[] = [
@@ -1927,7 +1927,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
  * THE PUBLISHED LIBRARY IS THREE LAYERS, YOUNGEST LAST.
  *
  *   1  `BUNDLED_EQUIPMENT_LIBRARY`  the loot document as it stood at the last full transcription
- *   2  `LOOT_V6_ITEMS`              what the v6 revision changed: A1–A3 inputs, T1–T3 outputs, the Gifts
+ *   2  `LOOT_V9_ITEMS`              the v9 sweep: every item the loot document carries, Act 1 to the last Act 4 drop
  *   3  `AUTHORED_EQUIPMENT`         what the DM authored in the app and exported
  *
  * Each is folded over the one before it FIELD-WISE, so a layer states only what it knows. The export is
@@ -1939,7 +1939,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
  * which lives on the actor's copy.
  */
 const REVISED_EQUIPMENT_LIBRARY: EquipmentItem[] =
-  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, LOOT_V6_ITEMS as EquipmentItem[], i => i.id);
+  mergeAuthored(BUNDLED_EQUIPMENT_LIBRARY, LOOT_V9_ITEMS as EquipmentItem[], i => i.id);
 
 export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] =
   mergeAuthored(REVISED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id, { authoredAt: AUTHORED_AT });

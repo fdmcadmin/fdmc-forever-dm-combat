@@ -332,7 +332,7 @@ export type EquipmentItem = {
    * SNAPSHOT of what one browser held. Without a date the snapshot always won — it states the same fields —
    * so a revised item could never reach the app again. An item that carries this date beats an export taken
    * BEFORE it; an export taken after is the DM's own later work and wins as it always did. See
-   * `mergeAuthored` and `data/broken-chain/lootV6.ts`.
+   * `mergeAuthored` and `data/broken-chain/lootV9.ts`.
    */
   revisedAt?: string;
   /** Convergence metadata from the canonical library */
@@ -383,7 +383,10 @@ const CAMPAIGN_EQUIPMENT_SEED_KEY = "fdmc.dm.equipmentLibrary.campaign.seeded.v1
 // that catalogue at ten. Tactical and Continuity join the tag vocabulary. Tier 3 weapons and
 // Tier 3 convergence are deliberately NOT seeded — the doc leaves that tier unbuilt and
 // Christopher is authoring part of it himself.
-const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-4-v6-t3-and-gifts";
+// v9 — FULL SWEEP, Act 1 to the last Act 4 drop, from loot doc v9 (Forest Gifts). Every card's text;
+// Rimeguard Medium AC 16→15 + DEX; A3 inputs and T2 outputs recharge on a Long Rest, not at dawn;
+// the Gifts renamed again (ids kept), First Light a Quarterstaff and Duskthorn a charm for any weapon.
+const CAMPAIGN_EQUIPMENT_SEED_VERSION = "tbc-acts1-4-v9-full-sweep";
 
 export function loadEquipmentLibrary(owner?: "campaign" | "dm"): EquipmentItem[] {
   const key = owner === "campaign" ? CAMPAIGN_EQUIPMENT_KEY : owner === "dm" ? DM_EQUIPMENT_KEY : null;

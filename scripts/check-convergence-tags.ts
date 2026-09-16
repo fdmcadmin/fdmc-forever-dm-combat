@@ -21,6 +21,9 @@ import { fileURLToPath } from "node:url";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY as LIB } from "../src/data/broken-chain/equipmentLibrary";
 import { mergeAuthored } from "../src/data/broken-chain/authored.generated";
 import { itemToAction, type EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
+import { LOOT_V9_ITEMS } from "../src/data/broken-chain/lootV9";
+import { matchingForms } from "../src/core/constants/chassis";
+import { BASE_WEAPONS } from "../src/core/constants/baseWeapons";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let failures = 0;
@@ -61,7 +64,7 @@ console.log("1. the library labels all of them");
   ok("six Tier 1", tier("T1") === 6, String(tier("T1")));
   ok("ten Tier 2 — the document calls this catalog complete", tier("T2") === 10, String(tier("T2")));
   ok("eight Tier 4 Singulars", tier("T4") === 8, String(tier("T4")));
-  /** ⚠ TIER 3 ARRIVED WITH v6 — sixteen outputs the app had never built. See data/broken-chain/lootV6.ts. */
+  /** ⚠ TIER 3 ARRIVED WITH v6 — sixteen outputs the app had never built. See data/broken-chain/lootV9.ts. */
   ok("sixteen Tier 3", tier("T3") === 16, String(tier("T3")));
 
   const acts = (a: string) => conv.filter(i => convOf(i).actLabel === a).length;
@@ -69,7 +72,7 @@ console.log("1. the library labels all of them");
     `A1=${acts("A1")} A2=${acts("A2")} A3=${acts("A3")} A4=${acts("A4")}`);
 }
 
-console.log("\n1b. the v6 revision, as the document states it");
+console.log("\n1b. the revision, as the document states it");
 {
   /**
    * Christopher, 2026-09-15: *"do a update on the items for the convergence input output for act 1- act 3
@@ -123,18 +126,27 @@ console.log("\n1b. the v6 revision, as the document states it");
     !(YES.Offensive ?? []).includes("Defense") && !(YES.Offensive ?? []).includes("Continuity"));
 
   /**
-   * ⚠ A RENAMED GIFT KEEPS ITS ID. v6 renamed six of the eight; an item attached to a character is
-   * referenced by id, so a rename that changed one would take the Gift off the character holding it.
+   * ⚠ A RENAMED GIFT KEEPS ITS ID. v6 renamed six of the eight and v9 renamed all eight again; an item
+   * attached to a character is referenced by id, so a rename that changed one would take the Gift off the
+   * character holding it.
    */
-  const gifts = LIB.filter(i => /^Gift of the/.test(i.name));
+  const gifts = LIB.filter(i => /^Gift of /.test(i.name));
   ok("eight Feywild Gifts, all attuned", gifts.length === 8 && gifts.every(g => (g as { attunementRequired?: boolean }).attunementRequired),
     String(gifts.length));
-  ok("...carrying v6's names", ["Realmkeeper", "Last Measure", "Hunter's Bounty", "Necessary Cull", "Open Way", "Last Gate", "First Word", "Last Word"]
-    .every(n => gifts.some(g => g.name === `Gift of the ${n}`)), gifts.map(g => g.name).join(", "));
-  ok("...on the ids they already had — a renamed Gift stays attached",
-    gifts.find(g => g.name === "Gift of the Hunter's Bounty")?.id === "tbc-gift-of-the-long-watch"
-    && gifts.find(g => g.name === "Gift of the First Word")?.id === "tbc-gift-of-the-deep-root",
-    gifts.map(g => `${g.name}=${g.id}`).join(" · "));
+  /** v9's names, each on the id its weapon form has always had. */
+  const GIFT_IDS: Record<string, string> = {
+    "Gift of Oakheart": "item-mt4owsbd",
+    "Gift of Winter's Mercy": "tbc-gift-of-the-last-measure",
+    "Gift of Hartseeker": "tbc-gift-of-the-long-watch",
+    "Gift of Rimefang": "tbc-gift-of-the-open-hand",
+    "Gift of Thornrunner": "tbc-gift-of-the-quiet-step",
+    "Gift of Winterwatch": "tbc-gift-of-the-standing-line",
+    "Gift of First Light": "tbc-gift-of-the-deep-root",
+    "Gift of Duskthorn": "tbc-gift-of-the-turning-season",
+  };
+  const misplaced = Object.entries(GIFT_IDS).filter(([name, id]) => gifts.find(g => g.name === name)?.id !== id);
+  ok("...carrying v9's names, on the ids they already had — a renamed Gift stays attached", misplaced.length === 0,
+    misplaced.map(([n]) => n).join(", ") || gifts.map(g => `${g.name}=${g.id}`).join(" · "));
   ok("...each with its signature effect as a rider the player toggles",
     gifts.every(g => ((g as { riders?: Array<{ condition?: string }> }).riders ?? []).some(r => Boolean(r.condition))),
     gifts.filter(g => !((g as { riders?: Array<{ condition?: string }> }).riders ?? []).some(r => r.condition)).map(g => g.name).join(", "));
@@ -156,9 +168,94 @@ console.log("\n1c. a published revision reaches the table over a stale app snaps
     mergeAuthored(seed, snapshot, i => i.id, { authoredAt: "2026-09-20T00:00:00.000Z" })[0].name === "old snapshot");
   ok("...and with no date at all nothing changes for anyone else",
     mergeAuthored(seed, snapshot, i => i.id)[0].name === "old snapshot");
-  ok("the shipped library reads the revision: Rootfast Loop is v6's Stability rescue, not the old Concentration one",
-    /Prone, Grappled or Restrained/.test(String((LIB.find(i => i.name === "Rootfast Loop") as { mechanicsText?: string })?.mechanicsText ?? "")),
+  ok("the shipped library reads the revision: Rootfast Loop is the Stability rescue, not the old Concentration one",
+    String((LIB.find(i => i.name === "Rootfast Loop") as { mechanicsText?: string })?.mechanicsText ?? "").includes("Prone, Grappled, or Restrained"),
     String((LIB.find(i => i.name === "Rootfast Loop") as { mechanicsText?: string })?.mechanicsText ?? "").slice(0, 90));
+}
+
+console.log("\n1d. the v9 sweep — every item, Act 1 to the last Act 4 drop");
+{
+  /**
+   * Christopher, 2026-09-16: *"one more update to the loot section, do a full sweep up to the act 4 items,
+   * this includes convergence output items."* The document is the source of truth; the build cannot read the
+   * .docx, so the transcription is the fixture and the question is whether ALL of it reached the table.
+   */
+  type Row = EquipmentItem & { revisedAt?: string };
+  const byId = new Map(LIB.map(i => [i.id, i as Row]));
+  const byName = (n: string) => LIB.find(i => i.name === n) as Row | undefined;
+
+  ok("the sweep carries every card — 122 in the document, Rimeguard as its three armour rows", LOOT_V9_ITEMS.length === 124,
+    String(LOOT_V9_ITEMS.length));
+  const lost = LOOT_V9_ITEMS.filter(r => {
+    const shipped = byId.get(r.id);
+    return !shipped || shipped.name !== r.name || shipped.mechanicsText !== r.mechanicsText || shipped.description !== r.description;
+  });
+  ok("...and every row's name, flavour and rules reach the shipped library over the older author export", lost.length === 0,
+    lost.map(r => r.name).join(", "));
+
+  // Structured facts the document prints, which a text refresh alone would not have moved.
+  ok("Rimeguard is AC 17 heavy, 15 + DEX (max 2) medium, 13 + DEX light",
+    byName("Rimeguard (Heavy)")?.ac === "17" && byName("Rimeguard (Medium)")?.ac === "15 + DEX (max 2)" && byName("Rimeguard (Light)")?.ac === "13 + DEX",
+    ["Heavy", "Medium", "Light"].map(v => byName(`Rimeguard (${v})`)?.ac).join(" / "));
+
+  /** "T2 and A3 properties recharge on a Long Rest." v6 said so too; that layer never wrote the pool. */
+  const a3 = conv.filter(i => convOf(i).actLabel === "A3") as Row[];
+  const t2 = conv.filter(i => convOf(i).tier === "T2") as Row[];
+  const notLong = [...a3, ...t2].filter(i => i.charges?.reset !== "longRest" || Boolean(i.charges?.note));
+  ok("all eight A3 inputs and ten Tier 2 outputs recharge on a Long Rest, with no dawn note left behind",
+    a3.length === 8 && t2.length === 10 && notLong.length === 0, notLong.map(i => `${i.name} ${JSON.stringify(i.charges)}`).join(", "));
+  /** ⚠ MUTATION GUARD: the sweep must not flatten the items whose own card still says dawn. */
+  const dawn = ["Wendigo Ember Heart", "Frozen Lake Core", "North Wind Flask"].map(byName);
+  ok("...while the items that print \"dawn\" still wait for the dawn",
+    dawn.every(i => i?.charges?.reset === "manual" && /dawn/i.test(i.charges.note ?? "")), dawn.map(i => JSON.stringify(i?.charges)).join(" "));
+
+  /**
+   * ⚠ A TEXT SWEEP DOES NOT RELITIGATE A TABLE RULE. The +1 focus cards print "+1 to spell attack rolls and
+   * spell save DC"; Christopher's rule is that *"a +1 adds to all 3 of the spell boxes"* (0.7.10.36). v9 changed
+   * no focus line, so every focus keeps attack, damage and DC exactly as the app had them.
+   */
+  const plusOne = ["Rootknot Staff", "Staring-Knot Wand", "Icebound Reliquary", "Voidtempered Blade"].map(byName);
+  ok("the four +1 focuses still add +1 to all three spell boxes",
+    plusOne.every(f => f?.isSpellFocus && f.spellFocusAttack === "+1" && f.spellFocusDamage === "+1" && f.spellFocusSaveDc === "+1"),
+    plusOne.map(f => `${f?.name}=${[f?.spellFocusAttack, f?.spellFocusDamage, f?.spellFocusSaveDc].join("/")}`).join(" "));
+  ok("...and the two focus Gifts +2 to spell attack and save DC",
+    ["Gift of First Light", "Gift of Duskthorn"].every(n => byName(n)?.isSpellFocus && byName(n)?.spellFocusAttack === "+2" && byName(n)?.spellFocusSaveDc === "+2"));
+
+  /** Two Gifts changed FORM, not just name. */
+  const firstLight = byName("Gift of First Light");
+  ok("Gift of First Light is a Quarterstaff", firstLight?.chassis?.formId === "base-quarterstaff"
+    && matchingForms(firstLight.chassis).some(f => f.id === "base-quarterstaff"), JSON.stringify(firstLight?.chassis));
+  const duskthorn = byName("Gift of Duskthorn");
+  ok("Gift of Duskthorn fits ANY weapon — a charm, no longer one-handed only",
+    matchingForms(duskthorn?.chassis).length === BASE_WEAPONS.length, `${matchingForms(duskthorn?.chassis).length} of ${BASE_WEAPONS.length}`);
+  /**
+   * ⚠ BOTH FOCUS GIFTS COULD NEVER BE SHAPED, AND NOTHING SAID SO. Their chassis asked for a "one-handed" or
+   * "two-handed" TAG; the base weapon table has no such tag — handedness is its CATEGORY — so each filter
+   * matched no weapon at all, from the author export onward. A Gift that offers no form cannot be attached.
+   */
+  const gifts = LIB.filter(i => /^Gift of /.test(i.name));
+  const formless = gifts.filter(g => matchingForms((g as Row).chassis).length === 0);
+  ok("every Gift can take at least one weapon form", formless.length === 0, formless.map(g => g.name).join(", "));
+  ok("MUTATION: the chassis the focus Gifts had matches no weapon, so the check above can fail",
+    matchingForms({ requireTags: ["two-handed"] }).length === 0 && matchingForms({ requireTags: ["one-handed"] }).length === 0);
+  ok("Gift of Winterwatch tracks Hold the Line — once per Short or Long Rest",
+    byName("Gift of Winterwatch")?.charges?.reset === "shortRest");
+
+  /** "Unless a property specifies an action, it requires none." These two print none. */
+  ok("Blinkstep and True Ground, tempered, take no action",
+    byName("Blinkstep — Tempered")?.activation === "free" && byName("True Ground — Tempered")?.activation === "free");
+
+  /** The rider keeps its id — a claimed chip stays claimed — and wears the property's printed name. */
+  const vigil = byName("Shattered Vigil")?.riders ?? [];
+  ok("rider names follow the card: Shattered Vigil's Winter's Weight and Break the Vigil, on their old ids",
+    vigil.find(r => r.id === "shattered-vigil-bite")?.label === "Winter's Weight" && vigil.find(r => r.id === "shattered-vigil-topple")?.label === "Break the Vigil",
+    vigil.map(r => `${r.id}=${r.label}`).join(" "));
+
+  /** Everything dropped in Act 1 says Act 1 — it said Act 2 since the first commit. */
+  const act1 = LIB.filter(i => /^A1 |^ALDRIC|^HALE/.test(String(i.sourceEncounter ?? "")));
+  const misfiled = act1.filter(i => i.act !== "Act 1");
+  ok("every Act 1 drop and Aldric's stock is filed under Act 1", act1.length >= 23 && misfiled.length === 0,
+    misfiled.map(i => i.name).join(", ") || `${act1.length} items`);
 }
 
 console.log("\n2. the label reaches the attached action");
