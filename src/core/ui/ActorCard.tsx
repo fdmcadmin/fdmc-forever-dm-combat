@@ -30,6 +30,7 @@ import {
   boundCharms, charmEffectId, charmWeaponFormulas, focusDamageFor, focusIsLive, focusMagicActionDamage,
   type BoundCharm, type CharmMode,
 } from "../rules/giftFocus";
+import { riderEffectId, riderSide, riderWeaponActionId, type RiderSide } from "../rules/weaponRiders";
 import type { ActorAction, TabId } from "../types/tabs";
 import { spellAttackRollCount } from "../types/spellSlots";
 import type { ActorStatusTrackerState, StatusTrackerId } from "../types/status";
@@ -245,6 +246,14 @@ type ArmedEffect = {
   magicActionFormula?: string;
   /** A charm that offers a choice (id "buff:charm:*"): what it is doing this turn. Lasts until changed. */
   charmMode?: CharmMode;
+  /**
+   * AN ARMED WEAPON RIDER (id "rider:*") — Rimecut, Lake's Bite, a Gift's signature. `riderKey` is the chip it
+   * spends when its hit's damage goes out; `riderSide` says whether its dice join that roll (damage), roll on
+   * their own (healing — `sideFormula`), or there are none. See `core/rules/weaponRiders.ts`.
+   */
+  riderKey?: string;
+  riderSide?: RiderSide;
+  sideFormula?: string;
   /**
    * CONJURED WEAPON (id "conjured:*") — this chip is not a rider, it IS an attack.
    *
@@ -2403,7 +2412,13 @@ export function ActorCard({
     const all = Object.values(actor.tabs).flat().filter(Boolean) as ActorAction[];
     const authored = all
       .filter(a => Boolean(a.metadata?.turnRider))
-      .map(a => ({ action: a, rider: a.metadata!.turnRider! }));
+      .map(a => ({
+        action: a,
+        rider: a.metadata!.turnRider!,
+        // An authored rider on an attack rides that attack; on anything else, any weapon attack.
+        weaponActionId: riderWeaponActionId(a.id, isWeaponAttackAction(a)),
+        side: riderSide(a.metadata!.turnRider!.damage),
+      }));
     /**
      * ⚠ ONE ITEM REACHES THE SHEET AS TWO ACTIONS, AND THAT DOUBLED EVERY CHIP.
      *
@@ -2433,9 +2448,82 @@ export function ActorCard({
             damage: [r.formula, r.damageType].filter(Boolean).join(" "),
             label: r.label || a.label,
           },
+          // The rider belongs to the ITEM, so it rides that item's swing and nothing else.
+          weaponActionId: riderWeaponActionId(a.id, isWeaponAttackAction(a)),
+          side: riderSide(r.formula, r.damageType),
         })));
     return [...authored, ...fromEquipment];
   }, [actor.tabs]);
+
+  type TurnRiderChip = (typeof turnRiders)[number];
+
+  /**
+   * A DAMAGE RIDER IS A TOGGLE, LIKE GREAT WEAPON FIGHTING OR HUNTER'S MARK.
+   *
+   * Christopher, 2026-09-18: *"right now they are click and it turns shows used but it may or may not add to the
+   * rolls."* It never added: `claimTurnRider` marked the chip spent and wrote "added to this hit" to the log,
+   * and nothing added anything. Now pressing it ARMS an effect that `getDamageAdditives` rides on the next damage
+   * roll of its weapon; that roll is what spends it (`consumeArmedRiders`). Pressed again first, it disarms and
+   * stays available. An extra-attack rider (Hew) is not dice on a roll and keeps its one-press claim.
+   */
+  function toggleTurnRider(chip: TurnRiderChip) {
+    const { action, rider } = chip;
+    const label = rider.label?.trim() || action.label;
+    if (rider.kind === "extraAttack") { claimTurnRider(action.id, label, rider); return; }
+    if (ridersUsed.has(action.id)) return;
+    const effectId = riderEffectId(action.id);
+    if (armedEffects.some(e => e.id === effectId)) { clearArmedEffect(effectId); return; }
+    const dice = rider.damage?.trim();
+    upsertArmedEffect({
+      id: effectId,
+      label,
+      details: `${label} — ${dice || "no dice"}${chip.side === "healing" ? " (rolled on its own)" : ""}. Rides the next hit${chip.weaponActionId ? " with its weapon" : ""}, then is spent for the turn.`,
+      source: label,
+      ...(chip.side === "damage" ? { formula: dice } : {}),
+      ...(chip.side === "healing" ? { sideFormula: dice } : {}),
+      appliesTo: "weapon",
+      appliesToActionId: chip.weaponActionId,
+      riderKey: action.id,
+      riderSide: chip.side,
+    });
+  }
+
+  /**
+   * THE HIT THAT CARRIES AN ARMED RIDER SPENDS IT. Damage dice have already joined the roll through
+   * `getDamageAdditives`; a healing rider rolls its own dice here, beside the hit; a rider with no dice is simply
+   * applied. Each is marked used for the turn and logged, so the table sees what rode the hit.
+   */
+  async function consumeArmedRiders() {
+    const entry = committedRoll ? getActionForReadiedKey(committedRoll.readiedKey) : null;
+    const riding = armedEffects.filter(e => e.id.startsWith("rider:") && buffMatchesAttack(e.appliesTo, entry?.action, e.appliesToActionId));
+    if (riding.length === 0) return;
+    setRidersUsed(prev => { const next = new Set(prev); riding.forEach(e => e.riderKey && next.add(e.riderKey)); return next; });
+    for (const effect of riding) {
+      clearArmedEffect(effect.id);
+      if (effect.riderSide === "healing" && effect.sideFormula?.trim()) {
+        const formula = normalizeRollFormula(resolveFormulaVars(effect.sideFormula, actor, deriveActorStats(actor, undefined, status), status));
+        const sent = formula ? await onSendDicePlusRequest({
+          protocol: "forever-dm-combat.roll.request.v1",
+          requestId: createDiceRequestId("fdm-rider", effect.id),
+          source: "Forever DM Combat",
+          actorId: actor.id,
+          actorName: actor.name,
+          actionId: effect.id,
+          actionName: `${effect.label} (${effect.sideFormula})`,
+          formula: labeledDiceFormula(formula, effect.label),
+          outcomeMode: "triggered",
+          sentAt: new Date().toISOString(),
+        }) : false;
+        onLog({ actorName: actor.name, actionName: effect.label, tabId: "main",
+          message: `${actor.name}'s ${effect.label} rides the hit — ${sent ? `rolled ${formula}` : `roll ${formula} manually`} (${effect.sideFormula}).` });
+        continue;
+      }
+      onLog({ actorName: actor.name, actionName: effect.label, tabId: "main",
+        message: effect.riderSide === "damage"
+          ? `${actor.name}'s ${effect.label} rode the hit (${effect.formula}). Spent for the turn.`
+          : `${actor.name} applies ${effect.label} to the hit. Spent for the turn.` });
+    }
+  }
 
   function claimTurnRider(actionId: string, label: string, rider: { kind: "extraAttack" | "damage"; damage?: string; label?: string }) {
     if (ridersUsed.has(actionId)) return;
@@ -3409,30 +3497,33 @@ export function ActorCard({
             */}
         {turnRiders.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 12px 0" }}>
-            {turnRiders.map(({ action, rider }) => {
+            {turnRiders.map(chip => {
+              const { action, rider } = chip;
               const spent = ridersUsed.has(action.id);
-              const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage ?? "rider");
+              /**
+               * ⚠ A TOGGLE, DRAWN AS ONE — the same chip as Great Weapon Fighting and Hunter's Mark: lit while
+               * armed, pressed again to put it away, spent (and dimmed) once the hit it rode has rolled.
+               */
+              const armed = rider.kind === "damage" && armedEffects.some(e => e.id === riderEffectId(action.id));
+              const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage || "no dice");
+              const name = rider.label?.trim() || action.label;
               return (
                 <button key={action.id} type="button" disabled={spent}
-                  onClick={() => claimTurnRider(action.id, rider.label?.trim() || action.label, rider)}
+                  onClick={() => toggleTurnRider(chip)}
+                  className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}
+                  style={spent ? { opacity: 0.45, cursor: "default" } : undefined}
                   title={spent
-                    ? `${action.label} — already used this turn. Comes back when your turn starts.`
-                    : `${action.label} — ${rider.kind === "extraAttack"
-                        ? "claim one extra attack, made with the weapon already in hand"
-                        : `claim ${rider.damage ?? "the rider"} on this hit`}. Once per turn.`}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "1px 8px", borderRadius: 10, fontSize: 10,
-                    cursor: spent ? "default" : "pointer",
-                    background: spent ? "transparent" : "rgba(224,123,57,0.16)",
-                    border: `1px solid ${spent ? "#2a2a3e" : "rgba(224,123,57,0.5)"}`,
-                    color: spent ? "#555" : "#e07b39",
-                  }}>
-                  <strong style={{ fontWeight: 700 }}>{spent ? "○" : "◆"}</strong>
+                    ? `${name} — used this turn. Comes back when your turn starts.`
+                    : rider.kind === "extraAttack"
+                      ? `${name} — claim one extra attack, made with the weapon already in hand. Once per turn.`
+                      : armed
+                        ? `${name} — armed: ${chip.side === "healing" ? `rolls ${rider.damage} on its own` : chip.side === "damage" ? `adds ${rider.damage} to` : "applies to"} the next hit${chip.weaponActionId ? " with its weapon" : ""}. Press to put it away.`
+                        : `${name} — press to arm for the next hit. Once per turn; the hit's damage roll spends it.`}>
+                  {spent ? "○ " : armed ? "✓ " : ""}
                   {/* A blank rider label inherits the item name — the Gifts leave it blank on
                       purpose, because the effect is named by the weapon it rides. */}
-                  {rider.label?.trim() || action.label}
-                  <span style={{ opacity: 0.75 }}>{what}</span>
+                  {name}
+                  <span style={{ opacity: 0.75 }}> {what}</span>
                 </button>
               );
             })}
@@ -5188,6 +5279,11 @@ export function ActorCard({
           return false;
         }
 
+        // An armed weapon rider rides ITS weapon's hit only — Rimecut on Rimecleaver, not on the dagger.
+        if (effect.id.startsWith("rider:") && !buffMatchesAttack(effect.appliesTo, entry?.action, effect.appliesToActionId)) {
+          return false;
+        }
+
         return true;
       })
       .map(({ effect, resolvedFormula }) => {
@@ -5319,6 +5415,8 @@ export function ActorCard({
     const resultLabel = damageChoice === "crit" ? `CRIT! ${formatCritThresholdLabel(committedRoll.critThreshold)} Damage` : label;
 
     await sendDamageRollToDicePlus(label, formula, damageChoice);
+    // The riders that rode this hit are spent for the turn — read BEFORE the additives are cleared below.
+    await consumeArmedRiders();
     consumeResolvedDamageAdditives(damageChoice);
 
     completeCommittedRoll(

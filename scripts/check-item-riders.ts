@@ -24,6 +24,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { itemToAttackAction, itemToAction, type EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
+import { riderSide, riderWeaponActionId } from "../src/core/rules/weaponRiders";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let failures = 0;
@@ -159,6 +160,42 @@ console.log("\n6. editing the sheet's copy does not strip the item");
   const body = equip.slice(at, end);
   ok("actionToItem carries riders home", /riders: m\.riders/.test(body));
   ok("...and the chassis state with them", /chassis: m\.chassis/.test(body) && /pbToDamage: m\.pbToDamage/.test(body));
+}
+
+console.log("\n7. a rider is a toggle that RIDES THE ROLL, like GWF and Hunter's Mark");
+{
+  /**
+   * Christopher, 2026-09-18: *"also ensure any weapon riders are toggleables like GWF and HM, right now they are
+   * click and it turns shows used but it may or may not add to the rolls."* It never added. The chip called
+   * `claimTurnRider`, which marked it spent and logged "1d6 Cold added to this hit" — and no roll changed,
+   * because the chip was a claim and never an armed effect `getDamageAdditives` could see.
+   */
+  ok("damage dice join the roll", riderSide("1d6", "Cold") === "damage" && riderSide("2d6") === "damage");
+  ok("temporary HP rolls on its own, never onto the target's damage", riderSide("1d6", "Healing") === "healing");
+  ok("a rider with no dice is applied, not rolled", riderSide(undefined) === "none" && riderSide("", "Cold") === "none");
+  ok("a rider on either row of an item rides that item's swing",
+    riderWeaponActionId("equip-rimecleaver", false) === "atk-rimecleaver" && riderWeaponActionId("atk-rimecleaver", false) === "atk-rimecleaver");
+  ok("...an authored rider on an attack rides that attack; elsewhere, any weapon",
+    riderWeaponActionId("hew", true) === "hew" && riderWeaponActionId("distant-strike", false) === undefined);
+
+  const card = codeOf("src/core/ui/ActorCard.tsx");
+  ok("the chip toggles an armed effect instead of claiming", card.includes("onClick={() => toggleTurnRider(chip)}")
+    && !card.includes("onClick={() => claimTurnRider("));
+  ok("...drawn as the same toggle chip as the fighting styles", card.includes('className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}'));
+  ok("...only an extra-attack rider keeps the one-press claim", card.includes('if (rider.kind === "extraAttack") { claimTurnRider(action.id, label, rider); return; }'));
+  ok("...pressing an armed rider puts it away unspent", card.includes("if (armedEffects.some(e => e.id === effectId)) { clearArmedEffect(effectId); return; }"));
+  ok("...armed with its dice, on its own weapon", card.includes('...(chip.side === "damage" ? { formula: dice } : {}),')
+    && card.includes("appliesToActionId: chip.weaponActionId,"));
+  /** ⚠ THE WHOLE COMPLAINT: the dice reach the damage roll. */
+  ok("getDamageAdditives adds an armed rider to its weapon's damage roll",
+    card.includes('if (effect.id.startsWith("rider:") && !buffMatchesAttack(effect.appliesTo, entry?.action, effect.appliesToActionId)) {'));
+  ok("...and the hit's damage roll is what spends it, before the additives clear",
+    /await consumeArmedRiders\(\);\s*consumeResolvedDamageAdditives\(damageChoice\);/.test(card)
+    && card.includes("riding.forEach(e => e.riderKey && next.add(e.riderKey))"));
+  ok("...a healing rider rolls its own dice beside the hit", card.includes('if (effect.riderSide === "healing" && effect.sideFormula?.trim()) {'));
+  /** A rider is one hit's worth. Persistence would ride every swing, which is what "once per turn" forbids. */
+  const persistent = card.slice(card.indexOf("function isPersistentDamageAdditive"), card.indexOf("function normalizeFirstRollFormula"));
+  ok("an armed rider is NOT persistent — it clears after the roll it rode", persistent.length > 0 && !persistent.includes("rider:"));
 }
 
 console.log(failures ? `\nFAILED (${failures})` : "\nALL PASS");
