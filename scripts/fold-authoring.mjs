@@ -390,7 +390,48 @@ const mergeById = (label, incoming, idOf, previous) => {
   return kept;
 };
 const foldedMonsters = mergeById("creatures", monsters, m => m.templateId, previousArray("AUTHORED_MONSTERS"));
-const foldedEquipment = mergeById("equipment", equipment, i => i.id, previousArray("AUTHORED_EQUIPMENT"));
+/**
+ * ⚠ A FIELD A PUBLISHED REVISION REMOVED STAYS REMOVED — UNLESS THIS PUBLISH STATES IT.
+ *
+ * Christopher, 2026-09-21: *"wont i be rewriting the item you changed since the author publish has been sending
+ * old items with it."* Measured on his publish: his payload was current — it did NOT send the old items — but
+ * `foldOver` above keeps any field the payload does not mention, and loot doc v11 REMOVED Gift of Duskthorn's
+ * weapon chassis (`chassis: null` in the revision). His browser's Duskthorn correctly had none, so the payload
+ * said nothing about it, so the old one-handed chassis was carried forward from the previous fold — and his
+ * newer publish date then let it beat the revision. Every later publish would have brought it back again.
+ *
+ * So the revision's clears are read here (the revision files are one JSON object per line) and applied to the
+ * folded item. A payload that STATES the field keeps it: that is the DM choosing it again, and theirs to choose.
+ */
+const revisionClears = (() => {
+  const clears = new Map();
+  const dir = resolve("src/data/broken-chain");
+  for (const name of ["lootV11.ts"]) {
+    const file = resolve(dir, name);
+    if (!existsSync(file)) continue;
+    for (const line of readFileSync(file, "utf8").split("\n")) {
+      const t = line.trim();
+      if (!t.startsWith('{"id":')) continue;
+      let row;
+      try { row = JSON.parse(t.replace(/,$/, "")); } catch { continue; }
+      const cleared = Object.keys(row).filter(k => row[k] === null);
+      if (cleared.length) clears.set(row.id, cleared);
+    }
+  }
+  return clears;
+})();
+const applyRevisionClears = (items) => items.map(item => {
+  const cleared = revisionClears.get(item.id);
+  if (!cleared) return item;
+  const stated = equipment.find(e => e.id === item.id) ?? {};
+  const out = { ...item };
+  const dropped = cleared.filter(k => k in out && (stated[k] === undefined || stated[k] === null));
+  for (const k of dropped) delete out[k];
+  if (dropped.length) console.log(`  ${item.name ?? item.id}: kept cleared by the loot revision — ${dropped.join(", ")}`);
+  return out;
+});
+const foldedEquipment = applyRevisionClears(
+  mergeById("equipment", equipment, i => i.id, previousArray("AUTHORED_EQUIPMENT")));
 
 const header = readFileSync(OUT, "utf8").split("import type { MainMonsterTemplate }")[0];
 const body = `import type { MainMonsterTemplate } from "../../core/monsters/runtime/mainMonsterRuntime";

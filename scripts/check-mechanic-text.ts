@@ -14,7 +14,7 @@
  * never fail because a DM wrote a new sentence the reader recognises. The reads below are required to
  * be PRESENT; the negatives are required to stay absent.
  */
-import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
+import { readFileSync } from "node:fs";
 import { readRosterInteraction, readAttackWith, readGrantsAdvantage, readMarkRiders } from "../src/core/encounter-band/mechanicText";
 import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
@@ -28,6 +28,13 @@ const ok = (label: string, cond: boolean, detail = "") => {
   if (!cond) failures++;
 };
 type Row = { name: string; text?: string; damage?: string; [k: string]: unknown };
+/**
+ * ⚠ PINNED CREATURES, NOT THE LIVE LIBRARY. This checks the READERS against sentences whose right answer is known.
+ * Read from the live library, it held Christopher's own authoring to those sentences: his 2026-09-21 publish
+ * rewrote Gloam Harrow, the Reeve and the Demon Knight, and this went red on his content, not on the code. The
+ * copies are the creatures as of 2026-09-21, before that publish — see scripts/fixtures/.
+ */
+const L = JSON.parse(readFileSync(new URL("./fixtures/act3-reader-creatures.json", import.meta.url), "utf8")) as MainMonsterTemplate[];
 const by = (n: string) => L.find(t => t.name === n) as MainMonsterTemplate;
 const rowOf = (creature: string, action: string): Row => {
   const t = by(creature) as unknown as Record<string, Row[] | undefined>;

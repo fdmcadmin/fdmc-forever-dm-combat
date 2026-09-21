@@ -101,16 +101,19 @@ jobs:
       # ⚠ NOT a gate here, deliberately. Folding authored content is EXPECTED to move published
       # numbers — that is what authoring is. The baseline is re-recorded so the diff lands in the
       # same commit as the content that caused it, which is where it is readable.
-      - name: re-record the baseline and the saves
+      # ⚠ AND THE ACT 3 SEGMENT FIGURES. They were pasted into the validator by hand, so a publish that rewrote an
+      # Act 3 creature turned main red on the author's own content (2026-09-21). Recorded like the baseline now.
+      - name: re-record the baseline, the saves and the Act 3 segments
         run: |
           npm run baseline:accept
           npx tsx scripts/check-monster-saves.ts --record
+          UPDATE_REFERENCE=1 npx tsx scripts/validate-act3-segments.ts
 
       - name: commit the folded result
         run: |
           git config user.name "fdmc-author-bot"
           git config user.email "noreply@anthropic.com"
-          git add src/data/broken-chain/authored.generated.ts scripts/baseline.json scripts/monster-saves.json
+          git add src/data/broken-chain/authored.generated.ts scripts/baseline.json scripts/monster-saves.json scripts/act3-segments-reference.json
           if git diff --cached --quiet; then
             echo "nothing to commit — the fold produced no change"
             exit 0

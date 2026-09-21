@@ -1,0 +1,764 @@
+[
+ {
+  "templateId": "broken-chain:act3:blackbough-reeve:v1",
+  "name": "Blackbough Reeve",
+  "encounterId": "act3-e7-the-last-court",
+  "encounterLabel": "Act 3 E7 - The Last Court",
+  "stats": {
+   "kind": "fey",
+   "ac": 16,
+   "maxHp": 118,
+   "speed": "35 ft.",
+   "defenses": [
+    {
+     "name": "Seasoned by Severity",
+     "ehpMultiplier": 1,
+     "note": "DECIDED 1.0, not unassessed. Advantage on STR/DEX saves and immunity to charmed and frightened. The workbook publishes Condition immunity with a NULL contribution, and a monster's own save quality never enters effective HP because the party's damage is a curve rather than a save. Nothing here reduces damage taken."
+    }
+   ],
+   "attacksPerTurn": 2,
+   "size": "Medium",
+   "classification": "elite",
+   "archetype": "bruiser",
+   "skills": [
+    {
+     "label": "Athletics",
+     "modifier": 9
+    }
+   ],
+   "proficiencyBonus": 4
+  },
+  "abilities": [
+   {
+    "label": "STR",
+    "value": "20 (+5)",
+    "saveProficient": true
+   },
+   {
+    "label": "DEX",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "CON",
+    "value": "10 (+0)"
+   },
+   {
+    "label": "INT",
+    "value": "16 (+3)"
+   },
+   {
+    "label": "WIS",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "CHA",
+    "value": "19 (+4)"
+   }
+  ],
+  "traits": [
+   {
+    "name": "Seasoned by Severity",
+    "kind": "trait",
+    "text": "The Reeve has Advantage on Strength and Dexterity saving throws and is immune to the Charmed and Frightened conditions."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Deepen the Cut",
+    "kind": "action",
+    "economyCost": "bonus",
+    "targets": 1,
+    "damage": "2d6",
+    "damageType": "Slashing",
+    "text": "The Reeve chooses one creature affected by Spoiling Cut within 30 feet. The first time that creature damages a creature other than the Reeve before the start of the Reeve's next turn, it takes 7 (2d6) Slashing damage after the triggering damage is resolved."
+   },
+   {
+    "name": "Shearing Cut",
+    "kind": "attack",
+    "roll": "1d20+9",
+    "damage": "3d10 + 5",
+    "damageType": "Slashing",
+    "range": "reach 5 ft., one target",
+    "targets": 1,
+    "routineSlots": 2,
+    "economyCost": "action"
+   },
+   {
+    "name": "Spoiling Cut",
+    "kind": "attack",
+    "roll": "1d20+9",
+    "damage": "2d10 + 4",
+    "damageType": "Slashing",
+    "range": "reach 5 ft",
+    "save": "CON DC 17",
+    "text": "Constitution Saving Throw: DC 17, the target. Failure: Until the start of the Reeve's next turn, damage the target deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
+    "routineSlots": 2,
+    "economyCost": "action"
+   }
+  ],
+  "reactions": [
+   {
+    "name": "Final Pruning",
+    "kind": "action",
+    "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally.",
+    "attackWith": "Shearing Cut"
+   }
+  ],
+  "resources": [],
+  "notes": [
+   "A broad-shouldered Fey wrapped in split black bark and hooked thorn. Pale cuts run through the growth like old pruning scars. It carries itself like a keeper who has spent years deciding what the Wood is allowed to keep.",
+   "DM DESIGN READ. The Reeve does not lock movement or force targets into place. It either prunes through raw damage or makes ignoring it expensive. A martial can clear Spoiling Cut by committing an attack to the Reeve, then spend any remaining attacks elsewhere. No recharge ability and no special reaction are part of this block.",
+   "UNPRICED IN EHP. Spoiling Cut takes 5 off every damage instance the target aims at anyone except the Reeve. That is ally-side damage prevention, nearest to the workbook's Fixed prevention - 8/round (+0.141871), but it is conditional, single-target and cleared by attacking the Reeve. Left unpriced pending a calibration decision: v3.23 states the fight's 253 raw HP is the figure BEFORE trait, control, reaction, targeting and Winter's Toll conversion."
+  ],
+  "visibility": {
+   "defaultState": "hp-bar",
+   "hiddenName": "Blackbough Reeve",
+   "revealedName": "Blackbough Reeve"
+  }
+ },
+ {
+  "templateId": "broken-chain:act3:gloam-harrow:v1",
+  "name": "Gloam Harrow",
+  "encounterId": "act3-e7-the-last-court",
+  "encounterLabel": "Act 3 E7 - The Last Court",
+  "stats": {
+   "kind": "fey",
+   "ac": 16,
+   "maxHp": 108,
+   "speed": "30 ft.",
+   "defenses": [
+    {
+     "name": "Fey Mind",
+     "ehpMultiplier": 1,
+     "note": "DECIDED 1.0, not unassessed. Advantage on saves against being charmed, and magic cannot put her to sleep. Condition defence, which the workbook publishes with a NULL contribution. No damage is reduced."
+    }
+   ],
+   "attacksPerTurn": 1,
+   "size": "Medium",
+   "classification": "elite",
+   "archetype": "commander",
+   "skills": [
+    {
+     "label": "Insight",
+     "modifier": 7
+    },
+    {
+     "label": "Persuasion",
+     "modifier": 8
+    }
+   ],
+   "proficiencyBonus": 3
+  },
+  "abilities": [
+   {
+    "label": "STR",
+    "value": "10 (+0)"
+   },
+   {
+    "label": "DEX",
+    "value": "16 (+3)"
+   },
+   {
+    "label": "CON",
+    "value": "10 (+0)"
+   },
+   {
+    "label": "INT",
+    "value": "12 (+1)"
+   },
+   {
+    "label": "WIS",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "CHA",
+    "value": "20 (+5)",
+    "saveProficient": true
+   }
+  ],
+  "traits": [
+   {
+    "name": "Fey Mind",
+    "kind": "trait",
+    "text": "Gloam Harrow has Advantage on saving throws against being Charmed, and is Immune to sleep effects."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Cruel Instruction",
+    "kind": "action",
+    "economyCost": "bonus",
+    "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack.",
+    "rosterInteraction": {
+     "kind": "ally_extra_attack",
+     "requiresZone": "Winter’s Toll"
+    }
+   },
+   {
+    "name": "Winter Needle",
+    "kind": "attack",
+    "roll": "1d20+8",
+    "damage": "1d10 + 4",
+    "damageType": "Cold",
+    "range": "range 90 ft., one target",
+    "targets": 1,
+    "extraDamage": [
+     {
+      "damage": "1d10",
+      "damageType": "Psychic"
+     }
+    ]
+   },
+   {
+    "name": "Winter’s Toll",
+    "kind": "spell",
+    "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15 FT cube area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Allies in the area gain a +3 bonus to attack rolls and saving throws while hostile creatures in the area have a −3 penalty to attack rolls and saving throws. Concentration",
+    "range": "60 FT, 15 FT cube.",
+    "rosterInteraction": {
+     "kind": "roll_modifier_zone",
+     "allyAttack": 3,
+     "allySave": 3,
+     "hostileAttack": -3,
+     "hostileSave": -3,
+     "durationRounds": 2
+    },
+    "concentration": true
+   }
+  ],
+  "reactions": [
+   {
+    "name": "Cold Counsel",
+    "kind": "action",
+    "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses.",
+    "rosterInteraction": {
+     "kind": "target_substitution",
+     "requiresZone": "Winter’s Toll"
+    }
+   }
+  ],
+  "resources": [],
+  "notes": [
+   "A courtly Fey in a mantle of dead-green leaves stitched through with pale winter light. She speaks of hardship as cultivation: the Wood has sheltered too much, spared too much, and should learn again what deserves to survive."
+  ],
+  "visibility": {
+   "defaultState": "hp-bar",
+   "hiddenName": "Gloam Harrow",
+   "revealedName": "Gloam Harrow"
+  }
+ },
+ {
+  "templateId": "broken-chain:act3:brandwing:v1",
+  "name": "Brandwing",
+  "encounterId": "act3-e7-the-last-court",
+  "encounterLabel": "Act 3 E7 - The Last Court",
+  "stats": {
+   "kind": "fiend",
+   "ac": 17,
+   "maxHp": 111,
+   "speed": "40 ft., fly 40 ft.",
+   "defenses": [
+    {
+     "name": "Magic Resistance",
+     "ehpMultiplier": 1.115824,
+     "rule": "Magic Resistance",
+     "note": "Workbook: Magic Resistance (+0.115824), exact. Advantage on saving throws against spells and other magical effects."
+    }
+   ],
+   "attacksPerTurn": 2,
+   "size": "Medium",
+   "classification": "elite",
+   "archetype": "tactician",
+   "skills": [
+    {
+     "label": "Perception",
+     "modifier": 8
+    },
+    {
+     "label": "Investigation",
+     "modifier": 9
+    }
+   ],
+   "proficiencyBonus": 4
+  },
+  "abilities": [
+   {
+    "label": "STR",
+    "value": "10 (+0)"
+   },
+   {
+    "label": "DEX",
+    "value": "20 (+5)",
+    "saveProficient": true
+   },
+   {
+    "label": "CON",
+    "value": "10 (+0)"
+   },
+   {
+    "label": "INT",
+    "value": "20 (+5)",
+    "saveProficient": true
+   },
+   {
+    "label": "WIS",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "CHA",
+    "value": "14 (+2)"
+   }
+  ],
+  "traits": [
+   {
+    "name": "Magic Resistance",
+    "kind": "trait",
+    "text": "Brandwing has Advantage on saving throws against spells and other magical effects."
+   },
+   {
+    "name": "The Opening / Write the Ending",
+    "kind": "trait",
+    "text": "Brandwing can mark only one creature at a time with either Calculated Angle or Closing Stroke. If Brandwing marks another creature, the previous mark ends. Which action Brandwing can use is determined by the target’s current Hit Points. Brandwing can use Calculated Angle only against a creature that has more than half its Hit Point maximum, and it can use Closing Stroke only against a creature that has half its Hit Point maximum or fewer."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Calculated Angle",
+    "kind": "action",
+    "economyCost": "bonus",
+    "targets": 1,
+    "damage": "",
+    "text": "Brandwing targets one creature it can see within 90 feet and marks it. Brandwing’s Ember Lance attacks against the marked target ignore Half Cover and Three-Quarters Cover, and Brandwing doesn’t have Disadvantage on those attack rolls.",
+    "range": "90 FT"
+   },
+   {
+    "name": "Closing Stroke",
+    "kind": "action",
+    "range": "90 ft.",
+    "targets": 1,
+    "riders": [
+     {
+      "name": "Closing Stroke",
+      "damage": "2d6",
+      "cadence": "once-per-turn",
+      "note": "marked below half maximum Hit Points",
+      "damageType": "Psychic"
+     }
+    ],
+    "text": "Brandwing targets one creature it can see within 90 feet and marks it. The first time Brandwing hits the marked target with Ember Lance, the target takes an extra 7 (2d6) Psychic damage, and the mark ends. After this extra damage is dealt, Brandwing can’t target that creature with Closing Stroke again until the encounter ends.",
+    "economyCost": "bonus"
+   },
+   {
+    "name": "Ember Lance",
+    "kind": "attack",
+    "economyCost": "action",
+    "roll": "1d20+@ATK",
+    "damage": "2d12 + @DEX",
+    "damageType": "Fire",
+    "routineSlots": 2,
+    "extraDamage": [
+     {
+      "damage": "1d12",
+      "damageType": "Psychic"
+     }
+    ],
+    "range": "range 120 ft., one target",
+    "targets": 1
+   }
+  ],
+  "reactions": [
+   {
+    "name": "Cinder Skip",
+    "kind": "action",
+    "text": "When Brandwing is hit by an attack or targeted by a spell, the attack or spell resolves completely, then Brandwing teleports up to 15 feet to an unoccupied space it can see. The space it leaves and the space it enters briefly flare with infernal fire. Demon Knight of"
+   }
+  ],
+  "resources": [],
+  "notes": [
+   "A narrow Fiend with wing-like sheets of ember script. It writes on bark by touching it and leaves the letters burning after its hand is gone. "
+  ],
+  "visibility": {
+   "defaultState": "hp-bar",
+   "hiddenName": "Brandwing",
+   "revealedName": "Brandwing"
+  },
+  "dmEdited": {
+   "at": "2026-09-13T06:04:36.926Z"
+  }
+ },
+ {
+  "templateId": "broken-chain:act3:demon-knight-of-punishment:v1",
+  "name": "Demon Knight of Punishment",
+  "encounterId": "act3-e8-the-occupied-acre",
+  "encounterLabel": "Act 3 E8 - The Occupied Acre",
+  "stats": {
+   "kind": "fiend",
+   "ac": 16,
+   "maxHp": 130,
+   "speed": "30 ft.",
+   "defenses": [
+    {
+     "name": "Shattered Plate",
+     "ehpMultiplier": 1.028819,
+     "provenance": "interpolated",
+     "note": "Workbook: Fixed prevention, interpolated to 3/round below the 8/round anchor (+0.028819). The first time each round the Knight takes bludgeoning, piercing or slashing damage, reduce it by 3 — the SAME mechanic and the same interpolation as the Hollow Warden’s Barkhide. ⚠ NOT the calibrated \"Flat DR 3 per damaging hit [volatile]\" row (+0.377915): that one pays on EVERY hit, and this trait pays once a round. The classifier reaches for the per-hit row because the words match; the cadence is what separates them."
+    }
+   ],
+   "attacksPerTurn": 1,
+   "size": "Medium",
+   "classification": "elite",
+   "archetype": "guardian",
+   "skills": [
+    {
+     "label": "Intimidation",
+     "modifier": 7
+    },
+    {
+     "label": "Perception",
+     "modifier": 6
+    }
+   ],
+   "proficiencyBonus": 4
+  },
+  "abilities": [
+   {
+    "label": "STR",
+    "value": "18 (+4)"
+   },
+   {
+    "label": "DEX",
+    "value": "14 (+2)"
+   },
+   {
+    "label": "CON",
+    "value": "19 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "INT",
+    "value": "14 (+2)"
+   },
+   {
+    "label": "WIS",
+    "value": "14 (+2)",
+    "saveProficient": true
+   },
+   {
+    "label": "CHA",
+    "value": "17 (+3)"
+   }
+  ],
+  "traits": [
+   {
+    "name": "Retaliatory Shock",
+    "kind": "trait",
+    "text": "When the Demon Knight of Punishment takes physical damage, each enemy within 10 feet of the Knight takes Piercing damage equal to the Knight's Constitution modifier + 2 (6). The triggering damage resolves normally."
+   },
+   {
+    "name": "Shattered Plate",
+    "kind": "trait",
+    "text": "The first time each round the Knight takes physical damage, reduce it by 3."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Reckless Sentence",
+    "kind": "action",
+    "economyCost": "bonus",
+    "text": "Until the start of the Knight's next turn, the Knight has Advantage on attack rolls, and attack rolls against it have Advantage.",
+    "grantsAdvantage": "own-attacks"
+   },
+   {
+    "name": "Iron Grasp",
+    "kind": "attack",
+    "roll": "1d20+8",
+    "damage": "2d8 + 4",
+    "damageType": "Bludgeoning",
+    "range": "reach 5 ft., one Large or smaller creature",
+    "targets": 1,
+    "text": "and the target has the Grappled condition (escape DC 16). Until the grapple ends, the target also has the Restrained condition. The Knight can restrain only one creature this way at a time."
+   }
+  ],
+  "reactions": [
+   {
+    "name": "Commanding Presence",
+    "kind": "action",
+    "text": "When a hostile creature the Knight can see within 30 feet takes an Action that can target the Demon Knight, that Action must target the Knight if the Knight is within the Action’s range and is a legal target. If the Action can affect multiple creatures, the Knight must be included among its targets",
+    "rosterInteraction": {
+     "kind": "forced_target_order"
+    }
+   }
+  ],
+  "resources": [],
+  "notes": [
+   "A broad knight-shape locked inside shattered infernal plate. The transformation has split the armor open at the joints and driven barbs through the seams, leaving it easier to strike than the intact knight it once resembled. It does not evade attention. It makes attention expensive.",
+   ""
+  ],
+  "visibility": {
+   "defaultState": "hp-bar",
+   "hiddenName": "Demon Knight of Punishment",
+   "revealedName": "Demon Knight of Punishment"
+  }
+ },
+ {
+  "templateId": "broken-chain:act3:demonic-reaver:v1",
+  "name": "Demonic Reaver",
+  "encounterId": "act3-e8-the-occupied-acre",
+  "encounterLabel": "Act 3 E8 - The Occupied Acre",
+  "stats": {
+   "kind": "fiend",
+   "ac": 18,
+   "maxHp": 113,
+   "speed": "40 ft.",
+   "defenses": [
+    {
+     "name": "Shifting Outline",
+     "ehpMultiplier": 1.227798,
+     "provenance": "derived",
+     "note": "v3.44 RENAMES THIS TRAIT from Blur; the pricing is unchanged and the row follows the name because check:traits matches a defence to the trait it prices BY NAME. DERIVED from two published sources, not estimated. Attack rolls against the Reaver have disadvantage, permanently and against every attack. v9 Pricing Resolver row 21 publishes the math: base p=clamp((21+AB-AC)/20,.05,.95), disadvantage=p^2. The AC increase equivalent to turning p into p-squared is dAC=20p(1-p), which is remarkably flat across every plausible hit chance - 5.00 at p=0.50, 4.95 at p=0.55, 4.80 at p=0.60 - so permanent disadvantage IS +5 AC. Priced through the app-s own AC_CONTRIBUTION bands and their published combining rule: +3 (0.140100) + +2 (0.087698) = 0.227798. Cross-check: the calibrated All attacks at disadvantage - 1 round row is +0.129416, so permanent reads 1.76x a single round, which is the right order for a three-to-four round fight."
+    }
+   ],
+   "attacksPerTurn": 2,
+   "size": "Medium",
+   "classification": "elite",
+   "archetype": "skirmisher",
+   "skills": [
+    {
+     "label": "Acrobatics",
+     "modifier": 8
+    },
+    {
+     "label": "Stealth",
+     "modifier": 12
+    },
+    {
+     "label": "Perception",
+     "modifier": 12
+    }
+   ],
+   "proficiencyBonus": 4
+  },
+  "abilities": [
+   {
+    "label": "STR",
+    "value": "10 (+0)"
+   },
+   {
+    "label": "DEX",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "CON",
+    "value": "12 (+1)"
+   },
+   {
+    "label": "INT",
+    "value": "16 (+3)"
+   },
+   {
+    "label": "WIS",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "CHA",
+    "value": "14 (+2)"
+   }
+  ],
+  "traits": [
+   {
+    "name": "Shifting Outline",
+    "kind": "trait",
+    "text": "The Reaver’s outline shifts and shimmers out of place. Attack rolls against it have Disadvantage. An attacker that does not rely on sight, or that can see through illusions, ignores this effect."
+   },
+   {
+    "name": "Scent the Expense",
+    "kind": "trait",
+    "text": "Whenever a hostile creature the Reaver can see within 60 feet expends a limited-use resource, that creature becomes the Reaver’s quarry, replacing any previous quarry. Spell slots, class features with limited uses, consumables, and magic-item charges qualify; recurring once-per-turn riders that do not expend a use do not. At the start of the Reaver’s turn, its current quarry is locked until the end of that turn. While moving toward its quarry, the Reaver’s movement is doubled. Once per turn when the Reaver hits its quarry with an attack, the hit deals an extra 11 (3d6 + 1) Fire damage"
+   }
+  ],
+  "actions": [
+   {
+    "name": "Close on the Expense",
+    "kind": "action",
+    "economyCost": "bonus",
+    "text": "The Reaver moves up to half its Speed toward its locked quarry. This movement provokes Opportunity Attacks normally. If the Reaver ends within 5 feet of the quarry, it has Advantage on the next Rending Talon attack it makes against that creature before the end of the turn."
+   },
+   {
+    "name": "Rending Talon",
+    "kind": "attack",
+    "roll": "1d20+8",
+    "damage": "2d10 + 3",
+    "damageType": "Slashing",
+    "range": "reach 5 ft.",
+    "riders": [
+     {
+      "name": "Searing Edge",
+      "damage": "2d6",
+      "damageType": "Fire",
+      "cadence": "per-hit"
+     },
+     {
+      "name": "Quarry Strike",
+      "damage": "3d6 + 1",
+      "damageType": "Fire",
+      "cadence": "once-per-turn",
+      "note": "Only against the creature the Reaver marked with Choose the Quarry. Counted as met: the mark is a Bonus Action the Reaver spends on the target it is attacking, so it is the Reaver's own choice rather than a condition the party controls."
+     }
+    ]
+   }
+  ],
+  "reactions": [
+   {
+    "name": "Choose the Quarry",
+    "kind": "action",
+    "text": "When a sight-dependent attack misses the Reaver because of Shifting Outline, the attacker becomes the Reaver's quarry, replacing any previous quarry. The Reaver has Advantage on the next Rending Talon attack it makes against that creature before the end of its next turn."
+   }
+  ],
+  "resources": [],
+  "notes": [
+   "A hunter that tracks expenditure rather than position. It reads the moment a resource leaves a caster's hands and goes straight for it.",
+   "DM DESIGN READ. The Reaver hunts actual expenditure, not passive Gift riders. The most recent qualifying spender before its turn becomes the quarry; once the turn begins that quarry locks. Blur makes attack-roll focus inefficient, while doubled pursuit movement and the 4d4 quarry rider make spending a real resource visible and dangerous.",
+   "THE QUARRY RIDER IS NOT IN THE DPR. Scent the Expense adds 10 (4d4) fire once per turn on a hit against the quarry - about a third again on top of the routine - but it fires only when the party spends a limited-use resource, which is party state the trace does not model. The DPR below is the floor, not the ceiling."
+  ],
+  "visibility": {
+   "defaultState": "hp-bar",
+   "hiddenName": "Demonic Reaver",
+   "revealedName": "Demonic Reaver"
+  }
+ },
+ {
+  "templateId": "broken-chain:act3:breaker:v1",
+  "name": "Breaker",
+  "encounterId": "act3-e8-the-occupied-acre",
+  "encounterLabel": "Act 3 E8 - The Occupied Acre",
+  "stats": {
+   "kind": "fiend",
+   "ac": 15,
+   "maxHp": 122,
+   "speed": "40 ft.",
+   "defenses": [
+    {
+     "name": "Four-Limbed Brace",
+     "ehpMultiplier": 1.038413,
+     "provenance": "interpolated",
+     "note": "v3.44 ADDS THIS REACTION: when an attack hits the Breaker while it is Grappling, reduce that damage by 4 — and it must then release one grappled creature. Interpolated at half the workbook's 8/round fixed-prevention anchor (+0.038413). ⚠ AND IT COSTS THE THING THE BREAKER IS FOR: every use hands back a captive, so a party that keeps hitting it takes the grapples off one at a time. The multiplier prices the damage prevented and NOT that cost, so it is a ceiling on the defence and understates the tempo the party wins back."
+    },
+    {
+     "name": "No notable defensive traits",
+     "ehpMultiplier": 1,
+     "note": "v3.44: Two-Handed Hold, Pile the Captives and the grapples are CONTROL - they move bodies and deny position, they do not reduce damage taken. Cast Aside is retired. Four-Point Brace is anti-prone. v3.23: AC 15 is intentional, the party should be able to hit it while still working through its HP. A plain HP bar is the correct read for the body."
+    }
+   ],
+   "attacksPerTurn": 4,
+   "size": "Large",
+   "classification": "elite",
+   "archetype": "bruiser",
+   "skills": [
+    {
+     "label": "Athletics",
+     "modifier": 9
+    },
+    {
+     "label": "Perception",
+     "modifier": 7
+    }
+   ],
+   "proficiencyBonus": 4
+  },
+  "abilities": [
+   {
+    "label": "STR",
+    "value": "21 (+5)",
+    "saveProficient": true
+   },
+   {
+    "label": "DEX",
+    "value": "14 (+2)"
+   },
+   {
+    "label": "CON",
+    "value": "18 (+4)",
+    "saveProficient": true
+   },
+   {
+    "label": "INT",
+    "value": "12 (+1)"
+   },
+   {
+    "label": "WIS",
+    "value": "16 (+3)",
+    "saveProficient": true
+   },
+   {
+    "label": "CHA",
+    "value": "17 (+3)"
+   }
+  ],
+  "traits": [
+   {
+    "name": "Two-Handed Hold",
+    "kind": "trait",
+    "targets": 2,
+    "text": "The Breaker can grapple up to two creatures at the same time, one with each grasping limb. A grasping limb holding a creature cannot be used to attack another target until that grapple ends."
+   },
+   {
+    "name": "Four-Point Brace",
+    "kind": "trait",
+    "text": "The Breaker has Advantage on saving throws against effects that would give it the Prone condition or move it against its will."
+   }
+  ],
+  "actions": [
+   {
+    "name": "Pile the Captives",
+    "kind": "action",
+    "economyCost": "bonus",
+    "text": "The Breaker moves each creature Grappled by it to another unoccupied space within its reach. If two creatures moved this way end adjacent to each other, each has Disadvantage on the next ability check it makes to escape the Breaker's Grapple before the start of the Breaker's next turn."
+   },
+   {
+    "name": "Grasping Limb",
+    "kind": "attack",
+    "routineSlots": 2,
+    "roll": "1d20+9",
+    "damage": "2d6 + 4",
+    "damageType": "Bludgeoning",
+    "range": "reach 10 ft., one Medium or smaller creature",
+    "text": "and the target has the Grappled condition (escape DC 17). A limb already holding a creature can't attack another target."
+   },
+   {
+    "name": "Heavy Blow",
+    "kind": "attack",
+    "routineSlots": 2,
+    "roll": "1d20+9",
+    "damage": "2d8 + 5",
+    "damageType": "Bludgeoning",
+    "range": "reach 5 ft",
+    "targets": 1,
+    "text": "Cast Aside (1/Turn). After the Breaker hits with Grasping Limb, it can move one creature Grappled by it to another unoccupied space within 10 feet. This forced movement doesn't provoke Opportunity Attacks. If the creature is placed beyond the reach of the limb holding it, that grapple ends."
+   }
+  ],
+  "reactions": [
+   {
+    "name": "Four-Limbed Brace",
+    "kind": "action",
+    "targets": 1,
+    "text": "When an attack hits the Breaker while it is Grappling a creature, reduce the triggering damage by 4. The Breaker must then release one creature it is Grappling."
+   }
+  ],
+  "resources": [],
+  "notes": [
+   "A massive four-limbed Fiend built to ruin formation rather than hold ground. Two long grasping limbs reach ahead of its shoulders while the shorter arms hammer whatever remains close. It is broad, obvious, and easy to hit; the problem is how much body must be cut through before it stops rearranging the fight.",
+   "DM DESIGN READ. The Breaker enters the party's shape rather than defending a point. Its four-attack routine lets it seize up to two bodies while Heavy Blows keep the turn relevant; Cast Aside is the formation-breaking payoff.",
+   "THE ROUTINE IS A FIXED 2+2 SPLIT, not four of the best attack. Grasping Limb averages 8.5 and Heavy Blow 9.5, so the authored routine is 2x8.5 + 2x9.5 = 36 before to-hit, while a free choice of four would read 38. Check the DPR column against 36, not 38."
+  ],
+  "visibility": {
+   "defaultState": "hp-bar",
+   "hiddenName": "Breaker",
+   "revealedName": "Breaker"
+  }
+ }
+]

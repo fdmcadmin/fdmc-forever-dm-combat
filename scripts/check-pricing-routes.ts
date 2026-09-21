@@ -16,7 +16,12 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
+/**
+ * ⚠ PINNED CREATURES, NOT THE LIVE LIBRARY — the routes are checked against creatures whose right price is known.
+ * Read live, this held Christopher's authoring to them: his 2026-09-21 rewrite of the Blackbough Reeve made
+ * "worth exactly one Shearing Cut" fail on his content. See scripts/fixtures/act3-reader-creatures.json.
+ */
+const L = JSON.parse(readFileSync(new URL("./fixtures/act3-reader-creatures.json", import.meta.url), "utf8")) as MainMonsterTemplate[];
 import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 import { withAdvantage } from "../src/core/encounter-band/controlPricing";

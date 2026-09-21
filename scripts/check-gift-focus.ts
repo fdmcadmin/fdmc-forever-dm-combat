@@ -30,7 +30,7 @@ import {
 } from "../src/data/broken-chain/equipmentLibrary";
 import { AUTHORED_EQUIPMENT } from "../src/data/broken-chain/authored.generated";
 import {
-  itemToAction, itemToAttackAction, resolveChassisItem, seedCampaignEquipmentLibrary, loadEquipmentLibrary,
+  itemToAction, itemToAttackAction, resolveChassisItem, seedCampaignEquipmentLibrary, loadEquipmentLibrary, repairItemType,
   saveEquipmentLibrary, type EquipmentItem,
 } from "../src/core/ui/EquipmentBagEditor";
 import { composeChassisAttack, findForm, regripAttackRow } from "../src/core/constants/chassis";
@@ -246,6 +246,29 @@ console.log("\n7. a retired item stays retired");
   const all = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
   ok("a seed handed a retired item does not write it back", !all.some(i => i.id === "tbc-hollow-pack-ward-token"),
     all.filter(i => i.id === "tbc-hollow-pack-ward-token").map(i => i.name).join(", "));
+}
+
+console.log("\n8. publishing does not undo the revision");
+{
+  /**
+   * Christopher, 2026-09-21: *"wont i be rewriting the item you changed since the author publish has been sending old
+   * items with it."* Replaying his publish found two ways it could, and neither was his payload being old:
+   *   · Duskthorn's removed chassis came back from the PREVIOUS fold, because the fold keeps what a payload omits
+   *   · Rimeguard's shared adaptive text ("17 for Heavy armor, 15 … Medium armor, or 13 … Light armor") made the
+   *     browser type all three rows heavy, and the publish carried that
+   */
+  const adaptive = repairItemType({ id: "r", name: "Rimeguard (Medium)", type: "armor", description: "",
+    mechanicsText: "Your base Armor Class is 17 for Heavy armor, 15 plus your Dexterity modifier for Medium armor, or 13 plus your Dexterity modifier for Light armor.",
+    isUsable: false, ac: "15 + DEX (max 2)" } as EquipmentItem);
+  ok("text naming more than one armour weight states none — Rimeguard is not read as heavy", adaptive.armorType === undefined, String(adaptive.armorType));
+  ok("...text naming one still does", repairItemType({ id: "c", name: "Chain Mail", type: "armor", description: "Heavy armor. AC 16.", isUsable: false, ac: "16" } as EquipmentItem).armorType === "heavy");
+  ok("each Rimeguard row states its own weight",
+    ["heavy", "medium", "light"].every(w => LIB.find(i => i.id === `tbc-rimeguard-${w}`)?.armorType === w));
+  const fold = codeOf("scripts/fold-authoring.mjs");
+  ok("the fold keeps a revision's cleared field cleared unless the payload states it",
+    fold.includes("const foldedEquipment = applyRevisionClears(")
+    && fold.includes("(stated[k] === undefined || stated[k] === null)"));
+  ok("...reading the current revision file", fold.includes('for (const name of ["lootV11.ts"])'));
 }
 
 console.log(failures ? `\nFAILED (${failures})` : "\nALL PASS");

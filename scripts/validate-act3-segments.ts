@@ -33,6 +33,7 @@
  * ⚠ THE EXIT CHECK IS THE LAST THING IN THIS FILE. See MASTER on `check:summons`.
  */
 
+import { readFileSync, writeFileSync } from "node:fs";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "../src/data/broken-chain/monsterLibrary";
 import { AUTHORED_ENCOUNTERS } from "../src/data/broken-chain/authored.generated";
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
@@ -99,27 +100,21 @@ const SEGMENTS = ACT3_SEGMENTS.map(seg => ({ label: `Level ${seg.level}`, level:
  * When a change is intended, re-run with UPDATE_REFERENCE=1 and commit the result WITH the change
  * that caused it, exactly as `check:baseline` is accepted.
  */
-const REFERENCE: Record<string, { completion: string; monsterDamage: number }> = {
-  // 0.8.55.1 re-recorded the drift 0.8.50.1–0.8.52.1 shipped without recording; MASTER bisects it commit by commit.
-  // The Last Court: 169 → 184 from the 2026-09-13T20:34Z publish (Ember Lance's Psychic line 1d6 → 1d12);
-  // 184 → 177 in 0.8.56.0, when Winter's Toll became concentration the party can break by hitting the Harrow.
-  "act3-e1-the-first-court": { completion: "R2", monsterDamage: 48 },
-  "act3-e2-the-cut-below": { completion: "R2", monsterDamage: 111 },
-  "act3-e3-gate-i-crone-and-mare": { completion: "R3", monsterDamage: 167 },
-  "act3-e4-the-hollow-feast": { completion: "R3", monsterDamage: 68 },
-  /**
-   * ⚠ THE FIGHT TO LOOK AT. 246 damage over four rounds is 50% of a level-7 pool (267 over five,
-   * 54%, before the 9/13 publish), where every other fight in the act costs 9-40%. It is what walks
-   * the party into Gate II over-spent against the 25-30% Christopher states, and it is the one figure
-   * here that is recorded rather than accepted.
-   */
-  "act3-e5-the-scar-line": { completion: "R4", monsterDamage: 246 },
-  "campaign-mt3nm2j9": { completion: "FAIL R4", monsterDamage: 307 },
-  "act3-e7-the-last-court": { completion: "R3", monsterDamage: 177 },
-  "act3-e8-the-occupied-acre": { completion: "R4", monsterDamage: 179 },
-  "act3-e9-gate-iii-veil-torn-dragon": { completion: "R4", monsterDamage: 245 },
-  "act3-e10-the-center": { completion: "R4", monsterDamage: 376 },
-};
+/**
+ * ⚠ THE REFERENCE IS A FILE THE PUBLISH RE-RECORDS, NOT A MAP PASTED INTO THIS SOURCE.
+ *
+ * It lived here, so recording a change meant a person pasting figures into code — and an author publish that
+ * rewrites an Act 3 creature cannot paste. Christopher's 2026-09-21 publish rewrote the Last Court and the
+ * Occupied Acre, and this failed main on his content (177 → 168, 179 → 216). The fight moving IS the content
+ * changing; `fold-authoring.yml` re-records this file with the fold, exactly as it does `scripts/baseline.json`.
+ *
+ * History kept from the inline map: 0.8.55.1 re-recorded the drift 0.8.50.1–0.8.52.1 shipped without recording;
+ * the Last Court went 169 → 184 (Ember Lance 1d6 → 1d12, 2026-09-13) → 177 (0.8.56.0, breakable Winter's Toll).
+ * ⚠ The Scar Line is the fight to look at: ~50% of a level-7 pool where every other fight costs 9-40%.
+ */
+const REFERENCE_FILE = new URL("./act3-segments-reference.json", import.meta.url);
+const REFERENCE: Record<string, { completion: string; monsterDamage: number }> =
+  JSON.parse(readFileSync(REFERENCE_FILE, "utf8"));
 
 const TOLERANCE = 5;
 
@@ -234,10 +229,10 @@ else {
 }
 
 if (UPDATING) {
-  console.log("\nUPDATED REFERENCE — paste over REFERENCE in this file\n" + "─".repeat(112));
-  for (const [id, m] of Object.entries(measured)) {
-    console.log(`  ${JSON.stringify(id)}: { completion: ${JSON.stringify(m.completion)}, monsterDamage: ${m.monsterDamage} },`);
-  }
+  // Recorded, not pasted: the publish workflow runs this after a fold and commits the file with the content.
+  writeFileSync(REFERENCE_FILE, JSON.stringify(measured, null, 2) + "\n");
+  console.log(`\nRECORDED ${Object.keys(measured).length} fights to scripts/act3-segments-reference.json — commit it with the change that moved them.`);
+  process.exit(0);
 }
 
 console.log(`\n${drift.length === 0 ? "PASS" : `FAIL — ${drift.length} fight(s) drifted`}`);

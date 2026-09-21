@@ -12,7 +12,12 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BROKEN_CHAIN_MONSTER_LIBRARY as L } from "../src/data/broken-chain/monsterLibrary";
+/**
+ * ⚠ PINNED CREATURES, NOT THE LIVE LIBRARY — the interactions are checked on creatures whose right answer is known.
+ * Read live, this held Christopher's authoring to them: his 2026-09-21 rewrite of the Demon Knight's Commanding
+ * Presence failed "keeps the authored kill order" on his content. See scripts/fixtures/act3-reader-creatures.json.
+ */
+const L = JSON.parse(readFileSync(new URL("./fixtures/act3-reader-creatures.json", import.meta.url), "utf8")) as MainMonsterTemplate[];
 import { rosterInteractions, rankedCoverage, ZONE_COVERAGE, type InteractionEntry } from "../src/core/encounter-band/rosterInteractions";
 import { rosterFromTemplates } from "../src/core/encounter-band/rosterFromLibrary";
 import { simulateEncounter, resolvePartyProfile, prepareRoster, damageIntoGroup } from "../src/core/encounter-band/checkerV2";

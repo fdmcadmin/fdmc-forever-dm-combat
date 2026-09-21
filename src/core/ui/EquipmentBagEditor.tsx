@@ -821,8 +821,14 @@ function bakeStatEffects(item: EquipmentItem): Array<{ type: string; stat?: stri
 export function repairItemType(item: EquipmentItem): EquipmentItem {
   const ac = item.ac?.trim();
   const stated = `${item.description ?? ""} ${item.mechanicsText ?? ""}`;
-  const weight = /\b(heavy|medium|light)\s+armor\b/i.exec(stated)?.[1]?.toLowerCase() as
-    ArmorTypeId | undefined;
+  /**
+   * ⚠ ONE WEIGHT NAMED, OR NONE READ. Rimeguard is ADAPTIVE armour and says so: "17 for Heavy armor, 15 plus
+   * your Dexterity modifier … for Medium armor, or 13 … for Light armor". Taking the FIRST weight made all
+   * three of its rows heavy — the Medium and Light ones included — and a DM's publish then carried that
+   * everywhere. A text naming more than one weight is not stating this item's weight.
+   */
+  const named = [...new Set([...stated.matchAll(/\b(heavy|medium|light)\s+armor\b/gi)].map(m => m[1].toLowerCase()))];
+  const weight = (named.length === 1 ? named[0] : undefined) as ArmorTypeId | undefined;
 
   let type = item.type;
   // Only ever promotes OUT of the catch-all. An item already typed armor/shield/weapon is left
