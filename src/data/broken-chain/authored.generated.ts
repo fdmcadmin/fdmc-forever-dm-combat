@@ -38,7 +38,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E7 - The Last Court",
     "stats": {
       "kind": "fey",
-      "ac": 16,
+      "ac": 17,
       "maxHp": 118,
       "speed": "35 ft.",
       "defenses": [
@@ -104,18 +104,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "targets": 1,
         "damage": "2d6",
         "damageType": "Slashing",
-        "text": "The Reeve chooses one creature affected by Spoiling Cut within 30 feet. The first time that creature damages a creature other than the Reeve before the start of the Reeve's next turn, it takes 7 (2d6) Slashing damage after the triggering damage is resolved."
-      },
-      {
-        "name": "Shearing Cut",
-        "kind": "attack",
-        "roll": "1d20+9",
-        "damage": "3d10 + 5",
-        "damageType": "Slashing",
-        "range": "reach 5 ft., one target",
-        "targets": 1,
-        "routineSlots": 2,
-        "economyCost": "action"
+        "text": "The Reeve chooses one creature affected by Spoiling Cut within 30 feet. The first time that creature damages a creature other than the Reeve before the start of the Reeve's next turn, it takes 7 (2d6) slashing damage after the triggering damage is resolved."
       },
       {
         "name": "Spoiling Cut",
@@ -125,7 +114,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "damageType": "Slashing",
         "range": "reach 5 ft",
         "save": "CON DC 17",
-        "text": "Constitution Saving Throw: DC 17, the target. Failure: Until the start of the Reeve's next turn, damage the target deals to creatures other than the Reeve is reduced by 5 for each damage instance. This effect ends early immediately after the affected creature makes an attack against the Reeve, whether that attack hits or misses.",
+        "text": "The target must succeed on a DC 17 Constitution saving throw or deal 5 less damage each time it deals damage to a creature other than the Reeve until the start of the Reeve's next turn. This effect ends immediately after the target makes an attack against the Reeve, whether the attack hits or misses",
         "routineSlots": 2,
         "economyCost": "action"
       }
@@ -134,8 +123,8 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Final Pruning",
         "kind": "action",
-        "text": "When an ally the Reeve can see within 30 feet is attacked below half of its total maximum Hit Points or is reduced to 0 Hit Points, the Reeve moves up to half its Speed toward the creature that dealt the damage. If the Reeve ends within reach, it makes one Shearing Cut attack against that creature. This movement provokes Opportunity Attacks normally.",
-        "attackWith": "Shearing Cut"
+        "text": "When an ally that the Reeve can see within 30 feet is attacked below half of its total maximum hit points or is reduced to 0 hit points, the Reeve moves up to half its speed toward the creature that dealt the damage. This movement provokes opportunity attacks normally.",
+        "attackWith": "Spoiling Cut"
       }
     ],
     "resources": [],
@@ -148,6 +137,9 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       "defaultState": "hp-bar",
       "hiddenName": "Blackbough Reeve",
       "revealedName": "Blackbough Reeve"
+    },
+    "dmEdited": {
+      "at": "2026-09-21T19:02:55.135Z"
     }
   },
   {
@@ -297,7 +289,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E8 - The Occupied Acre",
     "stats": {
       "kind": "fiend",
-      "ac": 15,
+      "ac": 16,
       "maxHp": 122,
       "speed": "40 ft.",
       "defenses": [
@@ -545,7 +537,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "encounterLabel": "Act 3 E8 - The Occupied Acre",
     "stats": {
       "kind": "fiend",
-      "ac": 16,
+      "ac": 17,
       "maxHp": 130,
       "speed": "30 ft.",
       "defenses": [
@@ -604,12 +596,20 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Retaliatory Shock",
         "kind": "trait",
-        "text": "When the Demon Knight of Punishment takes physical damage, each enemy within 10 feet of the Knight takes Piercing damage equal to the Knight's Constitution modifier + 2 (6). The triggering damage resolves normally."
+        "text": "When the Demon Knight of Punishment takes physical damage, each enemy within 10 feet of the Knight takes piercing damage equal to the Knight's Constitution modifier + 2 (6). The triggering damage resolves normally."
       },
       {
         "name": "Shattered Plate",
         "kind": "trait",
-        "text": "The first time each round the Knight takes physical damage, reduce it by 3."
+        "text": "The first time each round the Knight takes bludgeoning, piercing, or slashing damage, reduce it by 3."
+      },
+      {
+        "name": "Demanding Presence",
+        "kind": "trait",
+        "text": "When a hostile creature the Demon Knight can see within 30 feet takes an action that targets multiple creatures, it must include the Knight among those targets if the Knight is within range and is a legal target.",
+        "rosterInteraction": {
+          "kind": "forced_target_order"
+        }
       }
     ],
     "actions": [
@@ -635,7 +635,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Commanding Presence",
         "kind": "action",
-        "text": "When a hostile creature the Knight can see within 30 feet takes an Action that can target the Demon Knight, that Action must target the Knight if the Knight is within the Action’s range and is a legal target. If the Action can affect multiple creatures, the Knight must be included among its targets",
+        "text": "When a hostile creature the Knight can see within 30 feet of it takes an action that targets a single creature other than the Knight, the Knight becomes the target instead if it is within range and is a legal target.",
         "rosterInteraction": {
           "kind": "forced_target_order"
         }
@@ -660,7 +660,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "fiend",
       "ac": 18,
-      "maxHp": 113,
+      "maxHp": 103,
       "speed": "40 ft.",
       "defenses": [
         {
@@ -891,7 +891,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "fey",
       "ac": 16,
-      "maxHp": 108,
+      "maxHp": 118,
       "speed": "30 ft.",
       "defenses": [
         {
@@ -956,7 +956,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
         "name": "Cruel Instruction",
         "kind": "action",
         "economyCost": "bonus",
-        "text": "The Harrow instructs one ally inside Winter's Toll to make one normal attack.",
+        "text": "The Harrow chooses one ally inside Winter's Toll. That ally makes one normal attack.",
         "rosterInteraction": {
           "kind": "ally_extra_attack",
           "requiresZone": "Winter’s Toll"
@@ -980,7 +980,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Winter’s Toll",
         "kind": "spell",
-        "text": "Gloam Harrow chooses a point she can see within 60 feet. The harrow creates  a 15 FT cube area centered on that point is steeped in biting Fey glamour that lasts 2 turns. Allies in the area gain a +3 bonus to attack rolls and saving throws while hostile creatures in the area have a −3 penalty to attack rolls and saving throws. Concentration",
+        "text": "Gloam Harrow fills a 15-foot cube centered on a point she can see within 60 feet of her with biting Fey glamour. The effect lasts until the end of the next round and requires concentration. Allies in the area gain a +3 bonus to attack rolls and saving throws. Hostile creatures in the area take a −3 penalty to those rolls.",
         "range": "60 FT, 15 FT cube.",
         "rosterInteraction": {
           "kind": "roll_modifier_zone",
@@ -997,7 +997,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
       {
         "name": "Cold Counsel",
         "kind": "action",
-        "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its Speed. This movement does not provoke Opportunity Attacks. If the ally is no longer a legal target, the attacker can choose another legal target or the attack misses.",
+        "text": "When an ally inside Winter's Toll is targeted by an attack, Gloam Harrow moves that ally up to half its speed. This movement does not provoke opportunity attacks. If the ally is no longer a legal target, the attacker must choose another legal target.",
         "rosterInteraction": {
           "kind": "target_substitution",
           "requiresZone": "Winter’s Toll"
@@ -1876,7 +1876,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "dragon",
       "ac": 15,
-      "maxHp": 60,
+      "maxHp": 70,
       "speed": "30 ft., fly 60 ft.",
       "defenses": [
         {
@@ -2158,7 +2158,7 @@ export const AUTHORED_MONSTERS: MainMonsterTemplate[] = [
     "stats": {
       "kind": "aberration",
       "ac": 15,
-      "maxHp": 115,
+      "maxHp": 105,
       "speed": "30 ft.",
       "attacksPerTurn": 2,
       "defenses": [
@@ -2966,8 +2966,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "activation": "action",
     "name": "Farwatch Glass",
     "type": "magic",
-    "description": "A thumb-sized oval of smoke-dark glass with a silver thread trapped inside it. The thread drifts when the glass is idle and snaps toward whatever the glass is remembering when awakened. Tags: A1 · Utility",
-    "mechanicsText": "Once per long rest, as a Magic action, choose one creature or object you can see within 60 feet. For the next 10 minutes, while that target is within 300 feet of you and on the same plane of existence, the silver thread points in its direction. The glass gives no information about distance or obstacles.",
+    "description": "A silver thread floats inside this thumb-sized oval of smoky glass. Tags: A1 · Utility",
+    "mechanicsText": "The glass has the following properties. Once you use either property, you can't use either again until you finish a Long Rest. Farwatch. As a Magic Action, choose a creature or object you can see within 60 feet. For 10 minutes, the silver thread points toward that target while it is within 300 feet of you and on the same plane of existence. The thread doesn't reveal the target's distance or any obstacles between you. Stored Glimmer. When you cast a 1st-level spell you know or have prepared, you can cast it at its lowest level without expending a spell slot.",
     "isUsable": false,
     "value": "55gp",
     "act": "Act 1",
@@ -2982,18 +2982,20 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Utility",
       "actLabel": "A1"
     },
-    "isLocked": false
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-slipstone",
     "activation": "bonus",
     "name": "Slipstone",
     "type": "magic",
-    "description": "A flat piece of violet-grey stone whose two faces never seem perfectly aligned. Turn it in the hand and one edge appears to arrive a fraction of a heartbeat before the rest. Tags: A1 · Movement",
-    "mechanicsText": "Once per short or long rest, you can use a Bonus Action to move up to 10 feet without provoking opportunity attacks. This movement ignores difficult terrain, but you cannot pass through creatures, objects, or spaces you could not normally enter.",
+    "description": "The faces of this violet-grey stone are slightly offset. As it turns, one edge seems to move ahead of the other. Tags: A1 · Movement",
+    "mechanicsText": "As a Bonus Action, you can move up to 10 feet without provoking Opportunity Attacks or spending extra movement for Difficult Terrain. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "value": "60gp",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "ALDRIC'S FINAL STOCK",
     "charges": {
       "max": 1,
@@ -3005,18 +3007,20 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement",
       "actLabel": "A1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-rootheart-seed",
     "activation": "reaction",
     "name": "Rootheart Seed",
     "type": "magic",
-    "description": "A black seed the size of a thumbnail, veined with dull green-gold. It is almost weightless until the ground shifts beneath its bearer, when it becomes suddenly and impossibly heavy. Tags: A1 · Stability",
-    "mechanicsText": "Once per long rest, when an effect would knock you prone or move you against your will, you can use your Reaction to either remain standing or reduce the forced movement by up to 10 feet.",
+    "description": "Dull green-gold veins cross this black seed. It grows heavy when the ground shifts beneath its bearer. Tags: A1 · Stability",
+    "mechanicsText": "When an effect would knock you Prone or move you against your will, you can take a Reaction to remain standing or reduce the forced movement by up to 10 feet. If the effect does both, choose which benefit to receive. This property doesn't prevent teleportation. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "value": "50gp",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "ALDRIC'S FINAL STOCK",
     "charges": {
       "max": 1,
@@ -3028,47 +3032,53 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Stability",
       "actLabel": "A1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-thornback-hatchet",
     "name": "Thornback Hatchet",
     "type": "weapon",
     "category": "Melee One-Handed",
-    "description": "Frontier-forged, the head wrapped in hardwood from the deep canopy. The grip has been re-wrapped twice by different hands. Someone carried this a long way before you.",
-    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical.",
+    "description": "This hatchet has a hardwood grip worn smooth beneath several layers of old wrapping.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d6+@STR+1",
     "crit": "2d6+@STR+1",
     "mastery": "Vex",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-frontier-greataxe",
     "name": "Frontier Greataxe",
     "type": "weapon",
     "category": "Melee Two-Handed",
-    "description": "The head is heavier than standard, re-tempered in the field by someone who knew what they were doing. The haft is straight-grained hardwood from deep in the canopy. It has been sharpened recently.",
-    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical.",
+    "description": "This broad-headed axe has a straight-grained hardwood haft. Field repairs mark the socket, but the edge is freshly sharpened.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d12+@STR+1",
     "crit": "2d12+@STR+1",
     "mastery": "Cleave",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-briarfang-rapier",
     "name": "Briarfang Rapier",
     "type": "weapon",
     "category": "Finesse",
-    "description": "Slender, balanced for the space between trees. The blade is narrow enough to thread between branches without catching. Whoever made this knew the forest.",
-    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical.",
+    "description": "This slender rapier has a narrow guard shaped to slip between close branches.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
@@ -3076,31 +3086,35 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "mastery": "Vex",
     "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": false
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-canopy-bow",
     "name": "Canopy Bow",
     "type": "weapon",
     "category": "Ranged",
-    "description": "Strung with gut and finished with bark lacquer. The draw is light but the release is clean — made for shooting through branches, not across open ground.",
-    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical.",
+    "description": "Bark lacquer darkens this shortbow. Its light limbs are strung with braided gut.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d6+@DEX+1",
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-rootknot-staff",
     "name": "Rootknot Staff",
     "isSpellFocus": true,
     "type": "magic",
-    "description": "A walking staff that doubles as a weapon and a focus. The knot at the top is tied in a pattern no living tradition teaches.",
-    "mechanicsText": "Can be used as a spellcasting focus. +1 to spell attack rolls and spell save DC. Can also be wielded as a +1 quarterstaff.",
+    "description": "A knot worked into an unfamiliar pattern crowns this wooden staff.",
+    "mechanicsText": "You can use this staff as a Spellcasting Focus. While using it as a focus, you gain a +1 bonus to your spell attack rolls and spell save DC. You also have a +1 bonus to attack and damage rolls made with the staff as a magic Quarterstaff.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d6+@STR+1",
@@ -3109,54 +3123,62 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "spellFocusAttack": "+1",
     "spellFocusDamage": "+1",
     "spellFocusSaveDc": "+1",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-ironbark-plate",
     "name": "Ironbark Plate",
     "type": "armor",
-    "description": "Plates of compressed bark layered over iron backing. It shouldn't work but the bark is harder than iron and the whole assembly is lighter than it looks.",
-    "mechanicsText": "AC 14. You have advantage on saving throws against being frightened.",
+    "description": "Overlapping plates of compressed bark are riveted to an iron backing.",
+    "mechanicsText": "While wearing this armor, your base Armor Class is 14, and you have Advantage on saving throws to avoid or end the Frightened condition.",
     "isUsable": false,
     "ac": "14",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-huntsman-s-brigandine",
     "name": "Huntsman's Brigandine",
     "type": "armor",
-    "description": "Assembled from plates of cured hide over a canvas backing. The hide is from something large that frontier hunters stopped naming. It fits like it remembers a different body.",
-    "mechanicsText": "AC 14 + DEX modifier (max 2). You have advantage on Wisdom (Perception) checks.",
+    "description": "Cured hide plates cover a canvas jacket, their edges polished by long use.",
+    "mechanicsText": "While wearing this armor, your base Armor Class is 14 plus your Dexterity modifier (maximum 2). You also have Advantage on Wisdom (Perception) checks.",
     "isUsable": false,
     "ac": "14 + DEX (max 2)",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-tracker-s-wrap",
     "name": "Tracker's Wrap",
     "type": "armor",
-    "description": "Stitched tight enough to move in and loose enough to breathe. Someone added strips of dark fabric at the shoulders and forearms — not decoration, camouflage. Made for someone who needed to not be seen.",
-    "mechanicsText": "AC 11 + DEX modifier. You have advantage on Dexterity (Stealth) checks while wearing this armor.",
+    "description": "Dark cloth strips break up the outline of this close-fitting leather armor.",
+    "mechanicsText": "While wearing this armor, your base Armor Class is 11 plus your Dexterity modifier. You also have Advantage on Dexterity (Stealth) checks.",
     "isUsable": false,
     "ac": "11 + DEX",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-pathfinder-s-token",
     "name": "Pathfinder's Token",
     "type": "magic",
-    "description": "A carved disc of dense wood worn at the belt. It pulls faintly in the direction of open ground, the way a compass finds north. Tags: A1 · Movement",
-    "mechanicsText": "While worn, you ignore difficult terrain caused by natural growth — mud, roots, undergrowth, and shallow water.",
+    "description": "This dense wooden disc hangs from a belt cord. It pulls gently toward open ground. Tags: A1 · Movement",
+    "mechanicsText": "While wearing this token, moving through natural terrain such as mud, roots, undergrowth, and shallow water costs you no extra movement.",
     "isUsable": false,
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
     "convergence": {
       "role": "input",
@@ -3164,17 +3186,19 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement",
       "actLabel": "A1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-canopy-eye",
     "activation": "bonus",
     "name": "Canopy Eye",
     "type": "magic",
-    "description": "A lens of polished amber in a bone frame. Held to the eye it reads the forest honestly — distances feel true, hidden things feel closer to the surface. Tags: A1 · Utility",
-    "mechanicsText": "Once per short or long rest, you can use a Bonus Action to make a Wisdom (Perception) check to locate a concealed creature or object.",
+    "description": "A polished amber lens rests in a small bone frame. Tags: A1 · Utility",
+    "mechanicsText": "As a Bonus Action, you can make a Wisdom (Perception) check to locate a concealed creature or object you could detect with your senses. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Creekside Den",
     "charges": {
       "max": 1,
@@ -3186,79 +3210,89 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Utility",
       "actLabel": "A1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-stillstep-blade",
     "name": "Stillstep Mace",
     "type": "weapon",
     "category": "Melee One-Handed",
-    "description": "Taken from a creature that was never quite where it appeared. The head reads as something other than steel.",
-    "mechanicsText": "+1 to attack and damage rolls. This weapon's damage counts as magical for the purpose of overcoming resistance and immunity to nonmagical damage. Once per short or long rest, immediately after you hit a creature with this weapon, you can move up to 10 feet without provoking opportunity attacks.",
+    "description": "The head of this mace appears slightly displaced from its haft when seen from the corner of the eye.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Stillstep. Immediately after you hit a creature with this weapon, you can move up to 10 feet without provoking Opportunity Attacks. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d6+@STR+1",
     "crit": "2d6+@STR+1",
     "mastery": "Sap",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
     "charges": {
       "max": 1,
       "reset": "shortRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-splitwood-maul",
     "name": "Splitwood Maul",
     "type": "weapon",
     "category": "Melee Two-Handed",
-    "description": "Carved from a tree split at the root by something that wasn't lightning. Frontier folk leave split trees alone.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per long rest, when you hit a Large or smaller creature with this weapon, you can push it up to 10 feet directly away from you.",
+    "description": "This maul was carved from a tree split at the roots. A black seam runs through its head.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Splintering Blow. When you hit a Large or smaller creature with this weapon, you can push it up to 10 feet directly away from you. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "2d6+@STR+1",
     "crit": "4d6+@STR+1",
     "mastery": "Topple",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
     "charges": {
       "max": 1,
       "reset": "longRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-phantom-cord-dagger",
     "name": "Phantom Cord Dagger",
     "type": "weapon",
     "category": "Finesse",
-    "description": "Wrapped in sinew from something that didn't stay in one place. The cord pulls faintly toward whatever the blade last cut.",
-    "mechanicsText": "+1 to attack and damage rolls. When you hit a creature, you know its exact location until the start of your next turn, and it can't be hidden from you during that time.",
+    "description": "Sinew winds around this dagger's grip. After a cut, the cord draws taut toward the wounded creature.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. When you hit a creature with it, you know the creature's exact location until the start of your next turn. It can't be hidden from you during that time.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d4+@DEX+1",
     "crit": "2d4+@DEX+1",
     "mastery": "Nick",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-hollow-elk-bow",
     "name": "Hollow Elk Bow",
     "type": "weapon",
     "category": "Ranged",
-    "description": "Strung from the antlers of something the hunters stopped naming. The string hums a note just below hearing.",
-    "mechanicsText": "+1 to attack and damage rolls. Attacks made with this bow ignore half cover.",
+    "description": "Pale antler reinforces the limbs of this bow. Its string hums softly when drawn.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Attacks made with it ignore Half Cover.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d6+@DEX+1",
     "crit": "2d6+@DEX+1",
     "mastery": "Vex",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-the-staring-knot",
@@ -3273,36 +3307,40 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "spellFocusDamage": "+1",
     "spellFocusSaveDc": "+1",
     "type": "magic",
-    "description": "A short length of pale wood, the grain spiralling to a knot at the tip. Sight along it and the tip never sits quite where your hand says it should. The knot has a centre, and the centre has a way of being aimed back at you.",
-    "mechanicsText": "Can be used as a spellcasting focus. The wand has 1 charge. When a creature succeeds on a saving throw against a spell you cast, you can expend the charge to force that creature to reroll the save; it must use the new result. The wand regains its charge when you finish a long rest.",
+    "description": "The grain of this pale wooden wand spirals into a dark knot at the tip. The knot resembles a watchful eye.",
+    "mechanicsText": "You can use this wand as a Spellcasting Focus. The wand has 1 charge and regains its expended charge when you finish a Long Rest. When a creature succeeds on a saving throw against a spell you cast, you can expend the charge to make it reroll the saving throw. It must use the new result.",
     "isUsable": false,
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
     "charges": {
       "max": 1,
       "reset": "longRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-splitgrain-vest",
     "name": "Splitgrain Vest",
     "type": "armor",
-    "description": "Stitched from hide that died confused about where it was. The leather shows two grain directions at once.",
-    "mechanicsText": "AC 11 + DEX modifier. You have advantage on saving throws against being frightened.",
+    "description": "The leather of this vest bears two overlapping grain patterns.",
+    "mechanicsText": "While wearing this armor, your base Armor Class is 11 plus your Dexterity modifier, and you have Advantage on saving throws to avoid or end the Frightened condition.",
     "isUsable": false,
     "ac": "11 + DEX",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-ashwood-brigandine",
     "activation": "reaction",
     "name": "Ashwood Brigandine",
     "type": "armor",
-    "description": "Plated with bark from the corruption's edge, where the wood hardened wrong — denser than any living tree.",
-    "mechanicsText": "AC 14 + DEX modifier (max 2). Once per long rest, when you are hit by an attack, you can use your reaction to reduce that attack's damage by 1d6.",
+    "description": "Dense, dark bark plates cover this brigandine. Each was cut near the edge of the corruption.",
+    "mechanicsText": "While wearing this armor, your base Armor Class is 14 plus your Dexterity modifier (maximum 2). Ashwood Guard. When an attack hits you, you can take a Reaction to reduce its damage to you by 1d6. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": true,
     "damage": "1d6",
     "ac": "14 + DEX (max 2)",
@@ -3312,31 +3350,35 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "longRest"
     },
-    "isLocked": false,
-    "unlockSnapshot": "{\"ac\":\"14 + DEX (max 2)\",\"act\":\"Act 2\",\"charges\":{},\"damage\":\"1d6\",\"description\":\"Plated with bark from the corruption's edge, where the wood hardened wrong — denser than any living tree.\",\"id\":\"tbc-ashwood-brigandine\",\"isUsable\":true,\"mechanicsText\":\"AC 14 + DEX modifier (max 2). Once per long rest, when you are hit by an attack, you can use your reaction to reduce that attack's damage by 1d6.\",\"name\":\"Ashwood Brigandine\",\"sourceEncounter\":\"MIRAGE STALKER\",\"type\":\"armor\"}"
+    "isLocked": true,
+    "unlockSnapshot": "{\"ac\":\"14 + DEX (max 2)\",\"act\":\"Act 2\",\"charges\":{},\"damage\":\"1d6\",\"description\":\"Plated with bark from the corruption's edge, where the wood hardened wrong — denser than any living tree.\",\"id\":\"tbc-ashwood-brigandine\",\"isUsable\":true,\"mechanicsText\":\"AC 14 + DEX modifier (max 2). Once per long rest, when you are hit by an attack, you can use your reaction to reduce that attack's damage by 1d6.\",\"name\":\"Ashwood Brigandine\",\"sourceEncounter\":\"MIRAGE STALKER\",\"type\":\"armor\"}",
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-hollowstep-plate",
     "name": "Hollowstep Plate",
     "type": "armor",
-    "description": "Hammered from fort-armory iron, re-tempered in the field. It walks quieter than iron should — as if the ground isn't sure you're standing on it.",
-    "mechanicsText": "AC 16. You don't have disadvantage on Dexterity (Stealth) checks while wearing this armor.",
+    "description": "This plate armor bears the marks of the fort armory and later field repairs. Its joints make little sound.",
+    "mechanicsText": "While wearing this armor, your base Armor Class is 16. The armor doesn't impose Disadvantage on your Dexterity (Stealth) checks.",
     "isUsable": false,
     "ac": "16",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-displaced-ward-brooch",
     "activation": "reaction",
     "name": "Displaced Ward Brooch",
     "type": "magic",
-    "description": "A Ward field brooch recovered from the ruin. The enamel is cracked and the pin is bent — whatever happened here did not spare the equipment. Tags: A1 · Defense",
-    "mechanicsText": "When you take force damage, you can use your Reaction to reduce that damage by 1d6. Once used, this property cannot be used again until you finish a long rest.",
+    "description": "Cracked enamel and a bent pin mark this recovered Ward field brooch. Tags: A1 · Defense",
+    "mechanicsText": "When you take Force damage, you can take a Reaction to reduce that damage by 1d6, to a minimum of 0. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": true,
     "damage": "1d6",
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
     "charges": {
       "max": 1,
@@ -3348,16 +3390,18 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense",
       "actLabel": "A1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-pack-sense-totem",
     "name": "Pack-Sense Totem",
     "type": "magic",
-    "description": "A small carved figure that feels heavier than it should. It hums faintly when held by someone in a group — quieter when alone. Tags: A1 · Stability",
-    "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone.",
+    "description": "This small wooden figure hums when carried among companions and falls quiet in solitude. Tags: A1 · Stability",
+    "mechanicsText": "While wearing this totem, you have Advantage on saving throws to avoid being knocked Prone.",
     "isUsable": false,
-    "act": "Act 2",
+    "act": "Act 1",
     "sourceEncounter": "A1 The Ruined Keep",
     "convergence": {
       "role": "input",
@@ -3365,26 +3409,31 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Stability",
       "actLabel": "A1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-ward-signet",
     "name": "Ward Signet",
     "type": "gear",
-    "description": "The signet forms in front of the party as Hale brings two Ward objects together. He leaves the completed tool with them as proof that the reaction can be repeated. Tags: Demo output · No player recipe",
-    "mechanicsText": "While wearing this signet, you cannot be surprised. This item is already complete and is never counted as one of the party’s raw Convergence components.",
+    "description": "Hale forms this signet from two Ward objects in front of the party, then leaves it with them as proof of Convergence. Tags: Demo output · No player recipe",
+    "mechanicsText": "While wearing this signet, you can't be surprised.",
     "isUsable": false,
     "act": "Act 1",
     "sourceEncounter": "HALE'S COTTAGE",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "dmNote": "Hale creates this completed item as a demonstration. It has no player recipe and can't be used as a raw component. Track it separately from the T1–T3 recipe and completed-tag totals.",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-frostedge",
     "name": "Frostedge",
     "type": "weapon",
     "category": "Melee Versatile",
-    "description": "A blade recovered from the Ward field cache at the cemetery edge. The edge holds a cold that the forge didn't give it.",
-    "mechanicsText": "+1 to attack and damage rolls. Versatile: 1d8 one-handed, 1d10 two-handed. Once per short or long rest, when you hit a creature, deal an additional 1d6 cold damage. This weapon's damage counts as magical.",
+    "description": "Recovered from the Ward cache at the cemetery edge, this blade remains cold even beside a fire.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic Longsword. It deals 1d8 Slashing damage when wielded in one hand, or 1d10 when wielded in two hands. Frostbite. When you hit a creature with this weapon, you can deal an extra 1d6 Cold damage to it. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d8+@STR+1",
@@ -3396,15 +3445,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "shortRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-coldshot",
     "name": "Coldshot",
     "type": "weapon",
     "category": "Ranged",
-    "description": "A ranged weapon recovered from the Ward cache. The grip is wrong — too light, too balanced for something this size.",
-    "mechanicsText": "While attuned, you gain proficiency with this weapon. +1 to attack and damage rolls. Once per short or long rest, when you hit a creature, deal an additional 2d6 cold damage. This weapon's damage counts as magical.",
+    "description": "This Ward crossbow has a pale grip and carefully balanced limbs. Frost collects in its bolt channel.",
+    "mechanicsText": "While attuned to this magic Heavy Crossbow, you are proficient with it and have a +1 bonus to attack and damage rolls made with it. Coldshot. When you hit a creature with this weapon, you can deal an extra 2d6 Cold damage to it. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d10+@DEX+1",
@@ -3417,43 +3468,53 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "shortRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-rimeguard-heavy",
     "name": "Rimeguard (Heavy)",
     "type": "armor",
-    "description": "The armor adjusts to whoever puts it on — the fit is always correct, the weight always right. No tanner made this.",
-    "mechanicsText": "Heavy proficiency: AC 17. This is +1 magical armor; the bonus is already included in that value. This is +1 magical armor; the bonus is already included in every value below. The wearer reduces cold damage taken by 3 per hit.",
+    "description": "The straps and plates of this armor shift as it is donned, settling into a close fit.",
+    "mechanicsText": "This magic armor adapts to the highest category of armor you are proficient with. Your base Armor Class is 17 for Heavy armor, 15 plus your Dexterity modifier (maximum 2) for Medium armor, or 13 plus your Dexterity modifier for Light armor. These values include the armor's +1 bonus. While wearing the armor, you reduce the Cold damage you take from each hit by 3.",
     "isUsable": false,
     "ac": "17",
     "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "armorType": "heavy"
   },
   {
     "id": "tbc-rimeguard-medium",
     "name": "Rimeguard (Medium)",
     "type": "armor",
-    "description": "The armor adjusts to whoever puts it on — the fit is always correct, the weight always right. No tanner made this.",
-    "mechanicsText": "Medium proficiency: AC 16 + DEX (max 2). This is +1 magical armor; the bonus is already included in that value. This is +1 magical armor; the bonus is already included in every value below. The wearer reduces cold damage taken by 3 per hit.",
+    "description": "The straps and plates of this armor shift as it is donned, settling into a close fit.",
+    "mechanicsText": "This magic armor adapts to the highest category of armor you are proficient with. Your base Armor Class is 17 for Heavy armor, 15 plus your Dexterity modifier (maximum 2) for Medium armor, or 13 plus your Dexterity modifier for Light armor. These values include the armor's +1 bonus. While wearing the armor, you reduce the Cold damage you take from each hit by 3.",
     "isUsable": false,
-    "ac": "16 + DEX (max 2)",
+    "ac": "15 + DEX (max 2)",
     "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "armorType": "heavy"
   },
   {
     "id": "tbc-rimeguard-light",
     "name": "Rimeguard (Light)",
     "type": "armor",
-    "description": "The armor adjusts to whoever puts it on — the fit is always correct, the weight always right. No tanner made this.",
-    "mechanicsText": "Light proficiency: AC 13 + DEX. This is +1 magical armor; the bonus is already included in that value. This is +1 magical armor; the bonus is already included in every value below. The wearer reduces cold damage taken by 3 per hit.",
+    "description": "The straps and plates of this armor shift as it is donned, settling into a close fit.",
+    "mechanicsText": "This magic armor adapts to the highest category of armor you are proficient with. Your base Armor Class is 17 for Heavy armor, 15 plus your Dexterity modifier (maximum 2) for Medium armor, or 13 plus your Dexterity modifier for Light armor. These values include the armor's +1 bonus. While wearing the armor, you reduce the Cold damage you take from each hit by 3.",
     "isUsable": false,
     "ac": "13 + DEX",
     "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "armorType": "heavy"
   },
   {
     "id": "tbc-marrow",
@@ -3474,8 +3535,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "id": "tbc-frost-brace",
     "name": "Frost Brace",
     "type": "magic",
-    "description": "A bracer of pale iron that does not warm in the hand. Ward field issue — standard cold protection for operatives running north of the treeline. Tags: A2 · Defense",
-    "mechanicsText": "While worn, reduce cold damage you take by 2.",
+    "description": "This pale iron bracer bears the issue marks of Ward operatives stationed north of the treeline. Tags: A2 · Defense",
+    "mechanicsText": "While wearing this brace, you reduce each instance of Cold damage you take by 2, to a minimum of 0. Apply this reduction before Resistance to Cold damage.",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
@@ -3485,14 +3546,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-drift-globe",
     "name": "Drift Globe",
     "type": "magic",
-    "description": "A frosted glass orb kept on the innkeeper’s shelf. Brennan left it for whoever had to go back into the dark. It hovers at shoulder height and holds a light that does not gutter in wind or cold. Tags: A2 · Cleanse",
-    "mechanicsText": "As a Magic action, command the globe to shed bright light in a 20-foot radius and dim light 20 feet farther, or to go dark. It follows its bearer at walking pace. Once per long rest, as a Bonus Action, the globe can flare for 1 minute; while a creature is inside its bright light, you know the occupied space of any Invisible or magically hidden creature there, though the creature remains Invisible or hidden.",
+    "description": "Brennan left this frosted orb on the innkeeper's shelf. Its steady light doesn't gutter in wind or cold. Tags: A2 · Cleanse",
+    "mechanicsText": "As a Magic Action, you can cause the globe to shed Bright Light in a 20-foot radius and Dim Light for an additional 20 feet, or extinguish its light. The globe hovers within 5 feet of you and follows you, but it can't pass through solid barriers. Revealing Flare. As a Bonus Action, you can cause the globe to flare for 1 minute. During that time, you know the spaces occupied by hidden or Invisible creatures in its Bright Light, unless they are behind Total Cover. The flare reveals their locations without making them visible. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "value": "95gp",
     "act": "Act 2",
@@ -3507,14 +3570,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Cleanse",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-frostward-periapt",
     "name": "Frostward Periapt",
     "type": "magic",
-    "description": "A pendant of pale bone on a leather thong. The surface stays dry even when frost forms on everything around it. Tags: A2 · Defense",
-    "mechanicsText": "While worn, you have advantage on saving throws against disease and against gaining the Poisoned condition, and you ignore the effects of nonmagical extreme cold.",
+    "description": "Frost never clings to this bone pendant or its leather cord. Tags: A2 · Defense",
+    "mechanicsText": "While wearing this periapt, you have Advantage on saving throws against disease and against effects that would give you the Poisoned condition. You also ignore nonmagical extreme cold.",
     "isUsable": false,
     "value": "90gp",
     "act": "Act 2",
@@ -3525,15 +3590,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-north-wind-flask",
     "activation": "action",
     "name": "North Wind Flask",
     "type": "gear",
-    "description": "A stoppered blue-glass flask that rattles with trapped wind. Frost forms around the cork whenever the pressure inside rises.",
-    "mechanicsText": "The flask has 2 charges. As a Magic action, expend 1 charge to create a 15-foot cube of gale wind originating from you until the end of your next turn. A creature that enters the cube for the first time on a turn or starts its turn there must succeed on a DC 13 Strength saving throw or be pushed 10 feet directly away from you. Ranged weapon attacks that pass through the gale have disadvantage. The flask regains all expended charges at dawn.",
+    "description": "Trapped wind rattles inside this blue-glass flask. Frost gathers around the cork.",
+    "mechanicsText": "The flask has 2 charges and regains all expended charges at dawn. As a Magic Action, you can expend 1 charge to create a 15-foot Cube of wind originating from you. The wind lasts until the end of your next turn. A creature that enters the Cube for the first time on a turn or starts its turn there must succeed on a DC 13 Strength saving throw or be pushed 10 feet directly away from you. Ranged weapon attacks that pass through the wind have Disadvantage.",
     "isUsable": false,
     "value": "115gp",
     "act": "Act 2",
@@ -3543,15 +3610,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "reset": "manual",
       "note": "Recharges at dawn"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-frostmarrow-spear",
     "name": "Frostmarrow Spear",
     "type": "weapon",
     "category": "Melee Versatile",
-    "description": "Pulled from the frozen lakebed during the clearing of the north road. The head is ice that never melts. Hunters called it cold that remembers.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the target must succeed on a DC 13 Constitution saving throw or its speed is reduced by 10 feet until the end of its next turn. This weapon's damage counts as magical.",
+    "description": "The head of this spear is made from ice recovered from the frozen lakebed. It never melts.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Once per round, when you hit a creature with it, you can force the creature to make a DC 13 Constitution saving throw. On a failed save, its Speed is reduced by 10 feet until the end of its next turn.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d6+@STR+1",
@@ -3567,15 +3636,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "cadence": "perRound",
         "condition": "On a hit: DC 13 Constitution save or its Speed drops by 10 ft until the end of its next turn."
       }
-    ]
+    ],
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-rimecleaver-versatile-thrown-handaxe-equivalent-1-no-attunement",
     "name": "Rimecleaver",
     "type": "weapon",
     "category": "Melee Two-Handed",
-    "description": "Too much weapon for one hand and built that way on purpose. The blade is dark iron that doesn't warm in the hand no matter how long it's held, and it takes the same bite out of frozen ground as it does out of anything else.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the target takes an additional 1d6 cold damage. Once per round, when an attack with this weapon reduces a creature to 0 hit points, you can immediately move up to 10 feet without provoking opportunity attacks. This weapon's damage counts as magical.",
+    "description": "Dark iron forms this broad greatsword. The blade stays cold through hours of use.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Rimecut. Once per round, when you hit a creature with this weapon, it takes an extra 1d6 Cold damage. Cleaving Step. Once per round, when an attack with this weapon reduces a creature to 0 Hit Points, you can immediately move up to 10 feet without provoking Opportunity Attacks.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "2d6+@STR+1",
@@ -3587,7 +3658,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "riders": [
       {
         "id": "rimecleaver-rimebite",
-        "label": "Rimebite",
+        "label": "Rimecut",
         "formula": "1d6",
         "damageType": "Cold",
         "cadence": "perRound"
@@ -3598,15 +3669,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "cadence": "perRound",
         "condition": "When a hit with this weapon drops a creature to 0 HP: move up to 10 ft without provoking."
       }
-    ]
+    ],
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-splitfrost-blade",
     "name": "Splitfrost Blade",
     "type": "weapon",
     "category": "Finesse",
-    "description": "A blade that makes no sound when drawn. The edge is correct — unnervingly correct, as if it was made for a single specific purpose that nobody named.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the first attack roll that creature makes against you before the start of your next turn has disadvantage. This weapon's damage counts as magical.",
+    "description": "A thin line of frost follows the edge of this silent-drawing rapier.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Once per round, when you hit a creature with it, the first attack roll that creature makes against you before the start of your next turn has Disadvantage.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
@@ -3622,15 +3695,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "cadence": "perRound",
         "condition": "On a hit: that creature's first attack roll against you before the start of your next turn has disadvantage."
       }
-    ]
+    ],
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-coldsnap-bow",
     "name": "Coldsnap Bow",
     "type": "weapon",
     "category": "Ranged",
-    "description": "Strung with gut from something that ran north and didn't come back. The draw is heavier than it should be at this temperature. It pulls as if it wants to be drawn.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, the target takes an additional 1d4 cold damage. This weapon's damage counts as magical.",
+    "description": "The heavy limbs of this bow are strung with pale gut stiffened by frost.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Once per round, when you hit a creature with it, the target takes an extra 1d4 Cold damage.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
@@ -3647,15 +3722,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "damageType": "Cold",
         "cadence": "perRound"
       }
-    ]
+    ],
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-icebound-reliquary",
     "name": "Icebound Reliquary",
     "isSpellFocus": true,
     "type": "magic",
-    "description": "A rough stone of clouded ice set in a Ward field mount. The original inscription has been polished away and something else cut in its place. It does not melt, and it does not warm.",
-    "mechanicsText": "Can be used as a spellcasting focus. +1 to spell attack rolls and spell save DC. Once per long rest, when you cast a healing spell, one target of that spell regains an additional 1d8 hit points.",
+    "description": "A clouded piece of ice rests in a Ward field mount. A new inscription cuts across the worn remains of an older one.",
+    "mechanicsText": "You can use this gem as a Spellcasting Focus. While using it as a focus, you gain a +1 bonus to your spell attack rolls and spell save DC. Mending Ice. When you cast a spell that restores Hit Points, you can have one target of the spell regain an extra 1d8 Hit Points. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": true,
     "damage": "1d8",
     "effect": {
@@ -3672,38 +3749,44 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "longRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-permafrost-hide",
     "name": "Permafrost Hide",
     "type": "armor",
-    "description": "Cured in conditions no tanner would choose. It doesn't warm you — it just stops the cold from taking more.",
-    "mechanicsText": "AC 13 + DEX modifier. This is +1 magical armor; the bonus is already included. You have resistance to cold damage.",
+    "description": "These cured hides remain cool and dry against the skin.",
+    "mechanicsText": "While wearing this magic armor, your base Armor Class is 13 plus your Dexterity modifier, including the armor's +1 bonus. You also have Resistance to Cold damage.",
     "isUsable": false,
     "ac": "13 + DEX",
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-hollowbone-halfplate",
     "name": "Hollowbone Halfplate",
     "type": "armor",
-    "description": "Iron, bone, and cord assembled by someone who knew exactly what they were doing. The bone inlays came from something that didn't die quickly.",
-    "mechanicsText": "AC 16 + DEX modifier (max 2). This is +1 magical armor; the bonus is already included. When a creature within 5 feet hits you with a melee attack, it takes 2 cold damage.",
+    "description": "Hollow bone inlays run between the iron plates of this armor.",
+    "mechanicsText": "While wearing this magic armor, your base Armor Class is 16 plus your Dexterity modifier (maximum 2), including the armor's +1 bonus. When a creature within 5 feet of you hits you with a melee attack, it takes 2 Cold damage.",
     "isUsable": false,
     "ac": "16 + DEX (max 2)",
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-bonemarch-plate",
     "name": "Bonemarch Plate",
     "type": "armor",
-    "description": "Pulled from the Ward northern cache. Whoever wore it last didn't need it anymore. The iron has a grain to it that standard smelting doesn't produce — as if it was forged somewhere colder than any forge.",
-    "mechanicsText": "AC 17. This is +1 magical armor; the bonus is already included. When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. Once per long rest.",
+    "description": "Recovered from the Ward northern cache, this plate armor has a fine, frost-like grain in its iron.",
+    "mechanicsText": "While wearing this magic armor, your base Armor Class is 17, including the armor's +1 bonus. Deathless March. When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "ac": "17",
     "act": "Act 2",
@@ -3712,15 +3795,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "longRest"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-hollow-lantern",
     "activation": "bonus",
     "name": "Hollow Lantern",
     "type": "magic",
-    "description": "A Ward field lantern recovered from the village cache. Its pale flame does not flicker in wind, and for a moment it shows what prefers not to be found. Tags: A2 · Cleanse",
-    "mechanicsText": "As a Bonus Action, expend its charge. Until the end of your next turn, you know the space occupied by any Invisible or magically hidden creature within 15 feet of you. This does not make the creature visible. The lantern regains its charge when you finish a long rest.",
+    "description": "A pale, windless flame burns inside this Ward field lantern. Tags: A2 · Cleanse",
+    "mechanicsText": "The lantern has 1 charge and regains its expended charge when you finish a Long Rest. As a Bonus Action, you can expend the charge to see Invisible creatures within 15 feet of you until the end of your next turn.",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
@@ -3734,14 +3819,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Cleanse",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-drifter-s-knot-charm",
     "name": "Drifter's Knot Charm",
     "type": "magic",
-    "description": "A knot of frozen cord worn at the belt. It tugs gently toward solid footing, the way a compass finds north. Tags: A2 · Stability",
-    "mechanicsText": "While worn, you have advantage on saving throws against being knocked prone or moved against your will.",
+    "description": "This frozen cord is tied in a close knot. It tugs toward solid footing when worn at the belt. Tags: A2 · Stability",
+    "mechanicsText": "While wearing this charm, you have Advantage on saving throws to avoid being knocked Prone or moved against your will.",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "A2 Northgate Night Defense",
@@ -3751,15 +3838,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Stability",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-sentinel-chalk",
     "activation": "action",
     "name": "Sentinel Chalk",
     "type": "magic",
-    "description": "A stick of blue-white chalk recovered from the frozen line. A mark drawn with it holds its edge even under snow and rime. Tags: A2 · Utility",
-    "mechanicsText": "As a Magic action, expend 1 charge to draw a line up to 10 feet long on a solid surface and choose any creatures you can see. Until your next long rest, the first unchosen Tiny or larger creature to cross that line causes it to flash and sound a clear chime audible out to 60 feet, then the mark ends. The chalk regains all expended charges when you finish a long rest.",
+    "description": "Marks made with this blue-white chalk remain sharp beneath snow and rime. Tags: A2 · Utility",
+    "mechanicsText": "The chalk has 3 charges and regains all expended charges when you finish a Long Rest. It has the following properties. Sentinel Line. As a Magic Action, you can expend 1 charge to draw a line up to 10 feet long on a solid surface within your reach. When you draw the line, you can designate any creatures you can see as exempt from it. The first other creature of Tiny size or larger to cross the line while touching that surface triggers a flash of light and a chime audible within 60 feet. The line then disappears. You can have up to three lines at a time. Each lasts until triggered, until you erase it as a Magic Action, or until you finish a Long Rest. Stored Working. When you or a willing creature touching the chalk casts a 1st- or 2nd-level spell it knows or has prepared, you can expend all 3 charges to cast the spell at its lowest level without expending a spell slot. All active lines disappear.",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "A2 The River Crossing",
@@ -3773,15 +3862,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Utility",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-gloamstep-shard",
     "activation": "bonus",
     "name": "Gloamstep Shard",
     "type": "magic",
-    "description": "A sliver of dark glass rimed white on one edge and perfectly black on the other. In dim light the shard seems a few inches closer than the hand holding it. Tags: A2 · Movement",
-    "mechanicsText": "As a Bonus Action while you are in dim light or darkness, teleport up to 10 feet to an unoccupied space you can see that is also in dim light or darkness. Once used, this property cannot be used again until you finish a long rest.",
+    "description": "One edge of this dark glass shard is rimed white. In dim light, it appears just beyond the hand holding it. Tags: A2 · Movement",
+    "mechanicsText": "While you are in Dim Light or Darkness, you can take a Bonus Action to teleport up to 10 feet to an unoccupied space you can see that is also in Dim Light or Darkness. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "A2 The Hill Clearing",
@@ -3795,15 +3886,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-lake-ice-blade",
     "name": "Lake-Ice Flail",
     "type": "weapon",
     "category": "Melee One-Handed",
-    "description": "The head was cut from ice on the lake's deepest shelf — ice older than the winter, older than whatever went wrong here. It has never once needed re-forming.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. When you reduce a creature to 0 hit points with this weapon, each other creature of your choice within 10 feet of the defeated creature takes 1d6 cold damage. This weapon's damage counts as magical.",
+    "description": "The head of this flail was cut from ice on the lake's deepest shelf. Its surface never thaws.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Lake's Bite. Once per round, when you hit a creature with this weapon, it takes an extra 1d6 Cold damage. Shattering Ice. When you reduce a creature to 0 Hit Points with this weapon, each other creature of your choice within 10 feet of it takes 1d6 Cold damage.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "1d8+@STR+1",
@@ -3816,20 +3909,21 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "riders": [
       {
         "id": "lake-ice-bite",
-        "label": "Lake-Ice",
+        "label": "Lake's Bite",
         "formula": "1d6",
         "damageType": "Cold",
         "cadence": "perRound"
       }
-    ]
+    ],
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-shattered-vigil",
     "name": "Shattered Vigil",
     "type": "weapon",
     "category": "Melee Two-Handed",
-    "description": "A Ward field instrument recovered from the base at the lake's edge. Whatever it was designed to do, it has been doing something else for long enough that the original purpose is gone. The carvings shift when you aren't looking directly at them.",
-    "mechanicsText": "+1 to attack and damage rolls. Heavy, Two-Handed. Once per round, when you hit a creature with this weapon, it takes an additional 1d8 cold damage. Once per short or long rest, when you hit a creature with this weapon, it must succeed on a DC 14 Strength saving throw or be knocked prone. This weapon's damage counts as magical.",
+    "description": "Faint carvings shift across this heavy Ward hammer when viewed indirectly.",
+    "mechanicsText": "This magic hammer deals 2d6 Bludgeoning damage and has the Heavy and Two-Handed properties. You have a +1 bonus to attack and damage rolls made with it. Winter's Weight. Once per round, when you hit a creature with this weapon, it takes an extra 1d8 Cold damage. Break the Vigil. When you hit a creature with this weapon, you can force it to make a DC 14 Strength saving throw. On a failed save, it has the Prone condition. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "attack": "1d20+@PROF+@STR+1",
     "damage": "2d6+@STR+1",
@@ -3845,26 +3939,27 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "riders": [
       {
         "id": "shattered-vigil-bite",
-        "label": "Shattered Vigil",
+        "label": "Winter's Weight",
         "formula": "1d8",
         "damageType": "Cold",
         "cadence": "perRound"
       },
       {
         "id": "shattered-vigil-topple",
-        "label": "Vigil Broken",
+        "label": "Break the Vigil",
         "cadence": "shortRest",
         "condition": "On a hit: DC 14 Strength save or knocked prone. Once per short or long rest."
       }
-    ]
+    ],
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-hollow-fang",
     "name": "Hollow Fang",
     "type": "weapon",
     "category": "Finesse",
-    "description": "Pulled from the lakebed after the fight. The blade is wrong — too thin, too light, the metal composition something no northern forge produces. It vibrates at a frequency just below hearing when drawn.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. If you are at or below half your hit point maximum when this additional damage is dealt, you regain 1d4 hit points. This healing doesn't function if the target is a Construct or Undead. This weapon's damage counts as magical.",
+    "description": "This thin rapier was recovered from the lakebed. Its blade gives a low, steady hum when drawn.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Hollow Hunger. Once per round, when you hit a creature with this weapon, it takes an extra 1d6 Cold damage. If you have half your Hit Point maximum or fewer Hit Points when this extra damage is dealt, you regain 1d4 Hit Points, unless the target is a Construct or Undead.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
@@ -3877,21 +3972,22 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "riders": [
       {
         "id": "hollow-fang-bite",
-        "label": "Hollow Fang",
+        "label": "Hollow Hunger",
         "formula": "1d6",
         "damageType": "Cold",
         "cadence": "perRound",
-        "condition": "If you are at or below half your HP maximum when this lands, you regain 1d4 HP. Not against a Construct or Undead."
+        "condition": "Once per round on a hit. If you have half your Hit Point maximum or fewer Hit Points when this lands, you regain 1d4 Hit Points — unless the target is a Construct or Undead."
       }
-    ]
+    ],
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-starvation-brand",
     "name": "Starvation Brand",
     "type": "weapon",
     "category": "Ranged",
-    "description": "Recovered from the Ward's northern cache — standard issue, but the limbs have been re-worked by hands unknown. Arrows fired from it leave a trail that lingers a half-second too long, like the weapon is reluctant to let go of what it touched.",
-    "mechanicsText": "+1 to attack and damage rolls. Once per round, when you hit a creature with this weapon, it takes an additional 1d6 cold damage. Until the start of your next turn, that creature regains only half as many hit points from any healing, rounding down. This weapon's damage counts as magical.",
+    "description": "Unfamiliar repairs mark the limbs of this Ward bow. Its arrows leave a brief pale trail.",
+    "mechanicsText": "You have a +1 bonus to attack and damage rolls made with this magic weapon. Once per round, when you hit a creature with it, the target takes an extra 1d6 Cold damage. Until the start of your next turn, that creature regains only half as many Hit Points from healing, rounded down.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d8+@DEX+1",
@@ -3910,15 +4006,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "cadence": "perRound",
         "condition": "Until the start of your next turn, that creature regains only half as many HP from any healing, rounding down."
       }
-    ]
+    ],
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-voidtempered-blade-versatile-longsword",
     "name": "Voidtempered Blade",
     "isSpellFocus": true,
     "type": "magic",
-    "description": "The blade came out of the lake the same moment the Wendigo fell. Nobody threw it in. The metal is wrong — it conducts something that isn't heat, and when a spell passes through it the air around the edge smells of ozone and something older.",
-    "mechanicsText": "Can be wielded as a +1 shortsword AND used as a spellcasting focus simultaneously. While attuned, you gain proficiency with this weapon. +1 to attack rolls, damage rolls, spell attack rolls, and spell save DC. Once per round, when you hit a creature with this weapon on the same turn you cast a spell, the target takes an additional 1d8 cold damage. This weapon's damage counts as magical.",
+    "description": "This shortsword surfaced when the Wendigo fell. A spell cast through it leaves the scent of ozone along the blade.",
+    "mechanicsText": "While attuned to this magic Shortsword, you are proficient with it and have a +1 bonus to attack and damage rolls made with it. You can also use it as a Spellcasting Focus while wielding it, gaining a +1 bonus to your spell attack rolls and spell save DC. Voidfrost. Once per round, when you hit a creature with this weapon on a turn during which you have cast a spell, the target takes an extra 1d8 Cold damage.",
     "isUsable": false,
     "attack": "1d20+@PROF+@DEX+1",
     "damage": "1d6+@DEX+1",
@@ -3934,45 +4031,50 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "riders": [
       {
         "id": "voidtempered-bite",
-        "label": "Voidtempered",
+        "label": "Voidfrost",
         "formula": "1d8",
         "damageType": "Cold",
         "cadence": "perRound",
         "condition": "Only on a turn you also cast a spell."
       }
-    ]
+    ],
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-wight-iron-plate",
     "name": "Wight Iron Plate",
     "type": "armor",
-    "description": "Salvaged from the Ward base at the lake's edge, left by someone who never came back for it. The iron is near-black and, against all sense, faintly warm.",
-    "mechanicsText": "AC 18. This is +1 magical armor; the bonus is already included. You have advantage on saving throws against being paralyzed or restrained, and any effect that would reduce your Strength score reduces it by 1 less (minimum 0).",
+    "description": "This near-black plate armor was abandoned at the Ward lake base. Its iron is faintly warm.",
+    "mechanicsText": "While wearing this magic armor, your base Armor Class is 18, including the armor's +1 bonus. You have Advantage on saving throws to avoid or end the Paralyzed or Restrained condition. If an effect would reduce your Strength score, reduce that loss by 1, to a minimum of 0.",
     "isUsable": false,
     "ac": "18",
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-frosted-sentinel-wrap",
     "name": "Frosted Sentinel Wrap",
     "type": "armor",
-    "description": "Salvaged from the Ward lake base. The previous owner left notes in the lining — field observations in a hand that got progressively harder to read. The last entry is a single word. The word is north.",
-    "mechanicsText": "AC 16 + DEX modifier (max 2). This is +1 magical armor; the bonus is already included. You have resistance to cold damage. When you are hit by a melee attack, the attacker takes 1d4 cold damage.",
+    "description": "Field notes cover the lining of this armor. The handwriting grows less steady toward the final entry: \"north.\"",
+    "mechanicsText": "While wearing this magic armor, your base Armor Class is 16 plus your Dexterity modifier (maximum 2), including the armor's +1 bonus. You have Resistance to Cold damage. When a melee attack hits you, the attacker takes 1d4 Cold damage.",
     "isUsable": true,
     "damage": "1d4",
     "ac": "16 + DEX (max 2)",
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-veilstitched-leathers",
     "name": "Veilstitched Leathers",
     "type": "armor",
-    "description": "Stitched from material that isn't quite leather — too uniform, too consistent, no grain variation anywhere. Whatever animal produced it either didn't exist or doesn't anymore. It fits like it was made for whoever is wearing it.",
-    "mechanicsText": "AC 13 + DEX modifier. This is +1 magical armor; the bonus is already included. You have advantage on Dexterity saving throws. When you take damage that would reduce you below half your hit point maximum for the first time each encounter, you gain 2d6 temporary hit points.",
+    "description": "The surface of these fitted leathers is smooth and entirely without grain.",
+    "mechanicsText": "While wearing this magic armor, your base Armor Class is 13 plus your Dexterity modifier, including the armor's +1 bonus. You also have Advantage on Dexterity saving throws. Warding Veil. The first time in each encounter that you take damage that would reduce you below half your Hit Point maximum, you gain 2d6 Temporary Hit Points.",
     "isUsable": true,
     "damage": "2d6",
     "charges": {
@@ -3982,7 +4084,9 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "ac": "13 + DEX",
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-wendigo-heart-ember",
@@ -3991,8 +4095,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "type": "magic",
     "damage": "3d6",
     "saveDc": "CON DC 13",
-    "description": "Whatever organ this once was no longer resembles one — a black, porous remnant, brittle as burned stone. It is somehow still warm, and when gripped it answers with a pulse of devouring cold. Tags: A2 · Offensive",
-    "mechanicsText": "Devouring Cold (1/day; recharges at dawn). As a Magic action, target one creature you can see within 30 feet. It must make a DC 13 Constitution saving throw, taking 3d6 cold damage on a failed save or half as much on a successful save.",
+    "description": "This porous black remnant crumbles like burned stone at the edges. It is warm to the touch, but a firm grip draws a pulse of cold from within. Tags: A2 · Offensive",
+    "mechanicsText": "As a Magic Action, choose one creature you can see within 30 feet. The target must make a DC 13 Constitution saving throw, taking 3d6 Cold damage on a failed save or half as much damage on a successful one. Once you use this property, you can't use it again until the next dawn.",
     "isUsable": false,
     "act": "Act 2",
     "sourceEncounter": "A2 The Frozen Lake",
@@ -4007,14 +4111,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Offensive",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-frozen-lake-core",
     "name": "Frozen Lake Core",
     "type": "magic",
-    "description": "A column of ice drawn from the lake’s center by no tool the party carries. It sat waiting at the shore after the fight, as if set there to be found. Tags: A2 · Stability",
-    "mechanicsText": "Frozen Resolve (1/day; recharges at dawn). When you fail a saving throw, roll 1d4 and add it to the saving throw, potentially turning the failure into a success.",
+    "description": "This clear column of ice was found waiting on the shore after the battle at the lake. Tags: A2 · Stability",
+    "mechanicsText": "When you fail a saving throw, you can roll 1d4 and add it to the total, possibly turning the failure into a success. Once you use this property, you can't use it again until the next dawn.",
     "isUsable": true,
     "damage": "1d4",
     "effect": {
@@ -4035,14 +4141,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Stability",
       "actLabel": "A2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-anchor-thread",
     "name": "Anchor Thread",
     "type": "magic",
-    "description": "A braided metallic thread that tightens when the bearer loses footing. Tags: Recipe: Movement + Stability · Completed: Stability",
-    "mechanicsText": "Once per long rest, when an effect would move you against your will or knock you prone, you can ignore the forced movement or remain standing.",
+    "description": "This braided metal thread tightens when its bearer loses their footing. Tags: Recipe: Movement + Stability · Completed: Stability",
+    "mechanicsText": "When an effect would knock you Prone or move you against your will, you can remain standing or ignore that forced movement. If the effect does both, choose which benefit to receive. This property doesn't prevent teleportation or falling. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "1",
     "act": "Act 2",
@@ -4056,7 +4164,9 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement + Stability",
       "tier": "T1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-clarity-hood",
@@ -4067,8 +4177,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "condition": "a failed save vs Charmed, Frightened, or an illusion"
     },
     "type": "magic",
-    "description": "A light hood whose inner weave sharpens at the edge of false images and invasive emotion. Tags: Recipe: Defense + Utility · Completed: Utility",
-    "mechanicsText": "Once per long rest, when you fail a saving throw against being Charmed or Frightened, or against an illusion spell or effect, reroll the save and use the new result.",
+    "description": "Pale threads line this light hood, catching the edges of reflected images. Tags: Recipe: Defense + Utility · Completed: Defense",
+    "mechanicsText": "When you fail a saving throw against the Charmed or Frightened condition, or against an illusion spell or effect, you can reroll the saving throw. You must use the new result. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "1",
     "act": "Act 2",
@@ -4082,15 +4192,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense + Utility",
       "tier": "T1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-step-stabilizer",
     "activation": "bonus",
     "name": "Step Stabilizer",
     "type": "magic",
-    "description": "A small paired set of heel plates that seem to find the next safe piece of ground first. Tags: Recipe: Movement + Utility · Completed: Movement",
-    "mechanicsText": "Natural difficult terrain costs you no extra movement. Once per short or long rest, you can take the Disengage action as a Bonus Action.",
+    "description": "These small heel plates settle firmly against uneven ground. Tags: Recipe: Movement + Utility · Completed: Movement",
+    "mechanicsText": "Moving through natural Difficult Terrain costs you no extra movement. Sure Step. You can take the Disengage action as a Bonus Action. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "tier": "1",
     "act": "Act 2",
@@ -4104,15 +4216,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement + Utility",
       "tier": "T1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-reinforced-wrap",
     "activation": "reaction",
     "name": "Reinforced Wrap",
     "type": "magic",
-    "description": "A strip of grey Ward cloth that stiffens for a heartbeat when a blow lands. Tags: Recipe: Defense + Stability · Completed: Defense",
-    "mechanicsText": "Once per long rest, when an attack hits you, you can use your Reaction to reduce the damage by 1d10.",
+    "description": "This strip of grey Ward cloth stiffens when struck. Tags: Recipe: Defense + Stability · Completed: Defense",
+    "mechanicsText": "When an attack hits you, after its damage is determined, you can take a Reaction to reduce that damage by 1d10, to a minimum of 0. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": true,
     "damage": "1d10",
     "tier": "1",
@@ -4127,15 +4241,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense + Stability",
       "tier": "T1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-lensing-glass",
     "activation": "bonus",
     "name": "Lensing Glass",
     "type": "magic",
-    "description": "A clear lens that catches edges the eye normally loses. Tags: Recipe: Cleanse + Utility · Completed: Cleanse",
-    "mechanicsText": "As a Bonus Action, expend 1 charge. Until the end of your next turn, you can see Invisible creatures and see through magical visual obscurement within 30 feet. The glass regains all expended charges when you finish a long rest.",
+    "description": "Fine silver lines frame the edge of this clear lens. Tags: Recipe: Cleanse + Utility · Completed: Cleanse",
+    "mechanicsText": "The glass has 2 charges and regains all expended charges when you finish a Long Rest. As a Bonus Action, you can expend 1 charge to see Invisible creatures and see through magical darkness and other magical visual obscurement within 30 feet of you until the end of your next turn. This sight doesn't extend through solid objects or nonmagical obscurement.",
     "isUsable": false,
     "tier": "1",
     "act": "Act 2",
@@ -4149,15 +4265,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Cleanse + Utility",
       "tier": "T1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-splitgrain-grip",
     "name": "Splitgrain Grip",
     "type": "magic",
     "damage": "1d6",
-    "description": "A narrow weapon wrap split along two opposing grains. When the bearer commits to a strike, one grain drives forward while the other seems to pull the hand toward the next opening. Tags: Recipe: Offensive + Movement · Completed: Offensive",
-    "mechanicsText": "Once per long rest, when you hit a creature with a weapon attack, you can deal an additional 1d6 damage of one damage type dealt by the attack. Immediately after the attack, you can move up to 10 feet without provoking opportunity attacks from that creature.",
+    "description": "Two opposing grains run along this narrow wooden weapon wrap. Tags: Recipe: Offensive + Movement · Completed: Offensive",
+    "mechanicsText": "When you hit a creature with a weapon attack, you can deal an extra 1d6 damage of one type dealt by the attack. Immediately after the attack resolves, you can move up to 10 feet without provoking Opportunity Attacks from that creature. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "1",
     "act": "Act 2",
@@ -4171,21 +4289,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Offensive + Movement",
       "tier": "T1"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-drift-anchor",
     "name": "Drift Anchor",
     "type": "magic",
-    "description": "A compact Ward anchor that grows heavy only when the world tries to move its bearer. Tags: Recipe: Movement + Stability · Completed: Stability",
-    "mechanicsText": "You have advantage on saving throws against being moved against your will or knocked prone. Once per day at dawn recharge, when either effect would happen, you can ignore it entirely.",
+    "description": "This compact Ward anchor grows heavy when pulled away from its bearer. Tags: Recipe: Movement + Stability · Completed: Stability",
+    "mechanicsText": "You have Advantage on saving throws to avoid being moved against your will or knocked Prone. Hold Fast. When a hostile effect would move you against your will or knock you Prone, you can ignore all forced movement and any Prone condition caused by that effect. This property doesn't prevent teleportation or falling. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 2",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4193,7 +4313,9 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement + Stability",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-hollowlight",
@@ -4204,15 +4326,15 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "condition": "a failed save vs Blinded, Charmed, Frightened or Restrained"
     },
     "type": "magic",
-    "description": "A pale light source that does not brighten darkness so much as make it stop lying. Tags: Recipe: Cleanse + Utility · Completed: Utility",
-    "mechanicsText": "You can see through magical darkness within 30 feet. Once per day, when you fail a saving throw against being Blinded, Charmed, Frightened, or Restrained, you can reroll the save and use the new result.",
+    "description": "A pale flame burns inside a small, dark casing without illuminating the space around it. Tags: Recipe: Cleanse + Utility · Completed: Utility",
+    "mechanicsText": "You can see through magical darkness within 30 feet of you. The item also has the following properties. Once you use either, you can't use either again until you finish a Long Rest. Clear Mind. When you fail a saving throw against the Blinded, Charmed, Frightened, or Restrained condition, you can reroll it. You must use the new result. Stored Light. When you cast a 1st- or 2nd-level spell you know or have prepared, you can cast it at its lowest level without expending a spell slot.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 2",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4220,22 +4342,24 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Cleanse + Utility",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-quickstep",
     "activation": "bonus",
     "name": "Quickstep",
     "type": "magic",
-    "description": "A matched pair of light Ward plates that seem to shorten the distance between one step and the next. Tags: Recipe: Movement + Utility · Completed: Movement",
-    "mechanicsText": "Your speed increases by 5 feet and difficult terrain costs you no extra movement. Once per day, you can take the Dash action as a Bonus Action; your movement does not provoke opportunity attacks until the end of that turn.",
+    "description": "These light Ward plates fasten to the feet and click softly with each stride. Tags: Recipe: Movement + Utility · Completed: Movement",
+    "mechanicsText": "Your Speed increases by 5 feet, and moving through Difficult Terrain costs you no extra movement. Quickstep. You can take the Dash action as a Bonus Action. When you do, your movement doesn't provoke Opportunity Attacks for the rest of that turn. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 2",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4243,21 +4367,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement + Utility",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-edgeworn",
     "name": "Edgeworn",
     "type": "magic",
-    "description": "A thin grip plate whose sharpened inner grain seems to carry a committed blow through protections that should have turned it aside. Tags: Recipe: Offensive + Cleanse · Completed: Offensive",
-    "mechanicsText": "Once per day, when you hit with a weapon attack, choose one damage type dealt by the hit. For that hit, resistance to the chosen type is ignored, and immunity to the chosen type is treated as resistance.",
+    "description": "Sharpened wood grain lines the inner face of this thin grip plate. Tags: Recipe: Offensive + Cleanse · Completed: Cleanse",
+    "mechanicsText": "When you hit a creature with a weapon attack, you can choose one damage type dealt by the attack. For that hit, the attack ignores the target's Resistance to the chosen damage type and treats its Immunity to that type as Resistance instead. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 2",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4265,23 +4391,25 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Offensive + Cleanse",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-driftveil",
     "activation": "reaction",
     "name": "Driftveil",
     "type": "magic",
-    "description": "A short mantle that pulls sideways at the instant a blow finds its wearer. Tags: Recipe: Defense + Movement · Completed: Defense",
-    "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to move up to 10 feet without provoking opportunity attacks and reduce the triggering attack’s damage by 1d8.",
+    "description": "The hem of this short mantle draws sideways when a blow approaches. Tags: Recipe: Defense + Movement · Completed: Defense",
+    "mechanicsText": "When an attack hits you, after its damage is determined, you can take a Reaction to reduce that damage by 1d8, to a minimum of 0. After the attack resolves, you can move up to 10 feet without provoking Opportunity Attacks. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": true,
     "damage": "1d8",
     "tier": "2",
     "act": "Act 2",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4289,22 +4417,24 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense + Movement",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-clearward-mantle",
     "activation": "bonus",
     "name": "Clearward Mantle",
     "type": "magic",
-    "description": "A narrow shoulder wrap that warms when hostile magic or poison settles into the body. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
-    "mechanicsText": "You have advantage on saving throws against gaining the Poisoned condition. Once per day, as a Bonus Action, end one of the following conditions on yourself: Blinded, Charmed, Frightened, or Poisoned.",
+    "description": "This narrow shoulder wrap grows warm in the presence of poison or hostile magic. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
+    "mechanicsText": "You have Advantage on saving throws against effects that would give you the Poisoned condition. Clearward. As a Bonus Action, you can end one instance of the Blinded, Charmed, Frightened, or Poisoned condition on yourself. The source of the condition remains and can impose it again. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 2",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4312,22 +4442,24 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense + Cleanse",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-turnstep-relay",
     "activation": "reaction",
     "name": "Turnstep Relay",
     "type": "magic",
-    "description": "A narrow pair of hinged plates whose inner marks click toward the next threat a heartbeat before it moves. Tags: Recipe: Movement + Tactical · Completed: Tactical",
-    "mechanicsText": "Once per day, when a hostile creature you can see within 30 feet starts its turn, you can use your Reaction to move up to half your Speed without provoking opportunity attacks. This movement occurs before that creature takes any action or movement.",
+    "description": "Marks on these hinged plates turn toward nearby movement. Tags: Recipe: Movement + Tactical · Completed: Movement",
+    "mechanicsText": "When a hostile creature you can see within 30 feet starts its turn, you can take a Reaction to move up to half your current Speed without provoking Opportunity Attacks. You move before the creature moves or takes an action. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 3",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4335,21 +4467,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Movement + Tactical",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-opening-thorn",
     "name": "Opening Thorn",
     "type": "magic",
-    "description": "A hooked thorn that opens into a bright seam when a strike creates the exact moment another combatant can exploit. Tags: Recipe: Offensive + Tactical · Completed: Tactical",
-    "mechanicsText": "Once per day, when you deal damage to a creature, you can expose an opening until the start of your next turn. The next attack roll made by another creature against that target has advantage. If that attack hits, the attacker can immediately move up to 10 feet without provoking opportunity attacks from the target.",
+    "description": "A bright seam runs along the curve of this hooked thorn. Tags: Recipe: Offensive + Tactical · Completed: Tactical",
+    "mechanicsText": "When you damage a creature, you can mark it until the start of your next turn. The next ally other than you to attack the marked creature or force it to make a saving throw can use the mark before the roll is made. That ally gains Advantage on one attack roll against the creature, or subtracts 1d4 from one saving throw the creature makes against the ally's spell or feature. The mark then ends. If that attack hits or that saving throw fails, the ally can move up to 10 feet without provoking Opportunity Attacks from the marked creature. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 3",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4357,21 +4491,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Offensive + Tactical",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-heldroot-knot",
     "name": "Heldroot Knot",
     "type": "magic",
-    "description": "A loop of braided root and fine silver thread that closes around spent magic before an interruption can carry it away. Tags: Recipe: Utility + Continuity · Completed: Continuity",
-    "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The creature's Reaction otherwise resolves normally.",
+    "description": "Fine silver thread is woven through a closed loop of braided root. Tags: Recipe: Utility + Continuity · Completed: Continuity",
+    "mechanicsText": "When a hostile creature's Reaction prevents an action you took from affecting any target, you can regain one spell slot, item charge, or use or point of a class resource spent on that action. This property can't restore a Convergence item's own use. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 3",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4379,21 +4515,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Utility + Continuity",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-rootfast-loop",
     "name": "Rootfast Loop",
     "type": "magic",
-    "description": "A seamless ring of living root that refuses to open under strain, even when every fiber in it should have separated. Tags: Recipe: Stability + Continuity · Completed: Continuity",
-    "mechanicsText": "Once per day, when you fail a Constitution saving throw to maintain Concentration, you can succeed instead.",
+    "description": "This seamless loop of living root remains firm under strain. Tags: Recipe: Stability + Continuity · Completed: Stability",
+    "mechanicsText": "When you fail a saving throw or ability check to avoid or end the Prone, Grappled, or Restrained condition, or to resist being moved against your will, you can succeed instead. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "tier": "2",
     "act": "Act 3",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "output",
@@ -4401,7 +4539,9 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Stability + Continuity",
       "tier": "T2"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "base-club",
@@ -5137,15 +5277,15 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "activation": "reaction",
     "name": "Branchcall Marker",
     "type": "magic",
-    "description": "A leaf-thin disc of living wood etched with branching paths. Its edges flex toward nearby motion, and two of the carved routes brighten together when the battlefield opens. Tags: A3 · Tactical",
-    "mechanicsText": "Once per day, when a creature you can see within 30 feet ends its turn, you can use your Reaction. You and one willing creature you can see within 30 feet can each move up to 10 feet without provoking opportunity attacks.",
+    "description": "Branching paths cover a thin disc of living wood. Two routes brighten when the disc is turned. Tags: A3 · Tactical",
+    "mechanicsText": "When a creature you can see within 30 feet ends its turn, you can take a Reaction to let yourself and one willing ally you can see within 30 feet each move up to 10 feet without provoking Opportunity Attacks. Your ally doesn't need to take a Reaction. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 The Center",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5153,21 +5293,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Tactical",
       "actLabel": "A3"
     },
-    "isLocked": false
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-held-echo-knot",
     "name": "Held-Echo Knot",
     "type": "magic",
-    "description": "A knot of silver bark-fiber that remembers tension after it is released. When an action is cut short, the knot tightens around the spent effort as though refusing to let the commitment disappear with it. Tags: A3 · Continuity",
-    "mechanicsText": "Once per day, when a creature's Reaction causes an action you take to fail or prevents it from resolving, choose one spell slot, charge, or limited-use class resource you expended as part of that action. That resource is not expended. The Reaction otherwise resolves normally.",
+    "description": "This knot of silver bark-fiber remains taut after it is released. Tags: A3 · Continuity",
+    "mechanicsText": "When a hostile creature's Reaction prevents a limited-use, non-spell class feature you used from affecting any target, you can regain one use or resource point spent on that feature. The knot can't restore spellcasting resources. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 The Center",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5175,22 +5317,24 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Continuity",
       "actLabel": "A3"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-veilwash-leaf",
     "activation": "action",
     "name": "Veilwash Leaf",
     "type": "magic",
-    "description": "A translucent leaf whose veins carry warm yellow in one direction and icy blue in the other. Pressed to living skin, hostile residue beads away from it like rain refusing to cling. Tags: A3 · Cleanse",
-    "mechanicsText": "Once per day, as a Magic action, touch a creature and end one of the following conditions on it: Blinded, Deafened, Paralyzed, or Poisoned.",
+    "description": "Warm yellow and icy blue light flow in opposite directions through this translucent leaf. Tags: A3 · Cleanse",
+    "mechanicsText": "As a Magic Action, you can touch a willing creature and end one instance of the Blinded, Deafened, Paralyzed, or Poisoned condition on it. The source of the condition remains and can impose it again. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 The Center",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5198,22 +5342,24 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Cleanse",
       "actLabel": "A3"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-thornwake-splinter",
     "name": "Thornwake Splinter",
     "type": "magic",
     "damage": "2d8",
-    "description": "A dark thorn tipped with a point of amber-red light. Once awakened by a strike, its glow catches in the wound and keeps the damage from quietly knitting itself closed. Tags: A3 · Offensive",
-    "mechanicsText": "Once per day, when you deal damage to a creature, you can cause the splinter to flare. The creature takes an additional 2d8 damage of one type dealt by the triggering effect, and it cannot regain hit points until the start of your next turn.",
+    "description": "A point of amber-red light glows at the tip of this dark thorn. Tags: A3 · Offensive",
+    "mechanicsText": "When you damage a creature with a weapon or spell attack, you can deal an extra 2d8 damage to that creature. Choose one of the damage types dealt by the attack for this extra damage. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 The Center",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5221,21 +5367,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Offensive",
       "actLabel": "A3"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-crosspath-token",
     "name": "Crosspath Token",
     "type": "magic",
-    "description": "A forked token of blackwood split by a pale living vein. When danger is about to move first, the vein leans toward the opening as though the forest has already seen the crossing. Tags: A3 · Tactical",
-    "mechanicsText": "Once per day, after Initiative is rolled but before the first turn begins, choose one hostile creature you can see that has a higher Initiative than you. During the first round, you take your turn immediately before that creature. You do not also act at your original Initiative that round. Starting with round 2, you return to your original Initiative.",
+    "description": "A pale vein divides this forked blackwood token. Tags: A3 · Tactical",
+    "mechanicsText": "Immediately after Initiative is rolled, before the first turn begins, you can use one of the following properties. Once you use either property, you can't use either again until you finish a Long Rest. Cross the Path. Choose a hostile creature you can see that is ahead of you in the Initiative order. Your turn moves to immediately after that creature's turn. No other creature's position changes. First Working. Choose yourself or one willing ally you can see within 30 feet. The chosen creature's next 1st- or 2nd-level spell cast before the end of the first round is cast at its lowest level without expending a spell slot. It must know or have prepared the spell.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5243,21 +5391,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Tactical",
       "actLabel": "A3"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-rootbound-thread",
     "name": "Rootbound Thread",
     "type": "magic",
-    "description": "A green-gold root fiber braided around a darker inner strand. It tightens without cutting when concentration begins to slip, holding the bearer to the thing they chose to keep. Tags: A3 · Continuity",
-    "mechanicsText": "Once per day, when you fail a Constitution saving throw to maintain Concentration, you can succeed instead.",
+    "description": "Green-gold root fiber is braided around a dark inner strand. Tags: A3 · Continuity",
+    "mechanicsText": "When you fail a Constitution saving throw to maintain Concentration, you can succeed instead. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5265,22 +5415,24 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Continuity",
       "actLabel": "A3"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-bloodbriar-seed",
     "name": "Bloodbriar Seed",
     "type": "magic",
     "damage": "2d8",
-    "description": "A red-black seed with two hooked veins that never point the same direction. One flare follows the bearer's strike; the second waits for another hand to answer it. Tags: A3 · Offensive",
-    "mechanicsText": "Once per day, when you damage a creature, you can awaken the seed until the start of your next turn. The first time another creature damages that target before then, the target takes an additional 2d8 damage of one damage type dealt by that triggering effect.",
+    "description": "Two hooked veins cross this red-black seed. They glow in turn when nearby blows land. Tags: A3 · Offensive",
+    "mechanicsText": "After you damage a hostile creature, you can mark it until the end of the current round. The next time an ally other than you hits the marked creature with a weapon or spell attack before then, the attack deals an extra 2d8 damage of one type it deals. The mark then ends. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5288,7 +5440,9 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Offensive",
       "actLabel": "A3"
     },
-    "isLocked": false
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-mirrorbark-scale",
@@ -5300,15 +5454,15 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "condition": "when an attack hits you (Reaction) — the attacker rerolls"
     },
     "type": "magic",
-    "description": "A thumb-sized plate of polished bark whose grain catches reflections a fraction too early. At the instant of impact, the false reflection seems to pull the real blow after it. Tags: A3 · Defense",
-    "mechanicsText": "Once per day, when an attack hits you, you can use your Reaction to force the attacker to reroll the attack roll and use the new roll.",
+    "description": "Reflections appear slightly early in the polished grain of this small bark scale. Tags: A3 · Defense",
+    "mechanicsText": "When a hostile creature hits you with an attack, before damage is rolled, you can take a Reaction to force it to reroll the attack. The attacker must use the new result. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 3",
     "sourceEncounter": "A3 Gate I: Twilight Pond",
     "charges": {
       "max": 1,
-      "reset": "manual",
-      "note": "Recharges at dawn"
+      "reset": "longRest",
+      "note": ""
     },
     "convergence": {
       "role": "input",
@@ -5316,13 +5470,15 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "mechanicalTag": "Defense",
       "actLabel": "A3"
     },
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "item-mt4owsbd",
-    "name": "Gift of the Realmkeeper  ",
+    "name": "Gift of Oakheart",
     "type": "weapon",
-    "description": "Warm living wood settles into a reliable one-handed form. Amber-yellow magic gathers first at the grip and hand protection, then runs outward through the grain as if the weapon was grown to keep something standing",
+    "description": "Amber light shines through the grain of this living wooden weapon. A leaf-shaped mark rests beneath the wielder's thumb.",
     "isUsable": true,
     "sourceEncounter": "A3 Gate II: Open Clearing",
     "chassis": {
@@ -5335,31 +5491,35 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "act": "Act 3",
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Sheltering Bough. Once on each of your turns, when you hit a creature with this weapon, you can grant 1d6 Temporary Hit Points to yourself or one willing creature you can see within 5 feet of you.",
     "attunementRequired": true,
     "riders": [
       {
-        "id": "rider-mt4p4w5d",
-        "label": "",
+        "id": "rider-gift-of-the-realmkeeper",
+        "label": "Sheltering Bough",
         "cadence": "perTurn",
         "formula": "1d6",
-        "damageType": "Healing"
+        "damageType": "Healing",
+        "condition": "Once on each of your turns, when you hit: 1d6 Temporary HP to you or one willing creature you can see within 5 feet"
       }
     ],
     "sourceEncounters": [
       "A3 Gate III: Veilscar Hollow"
-    ]
+    ],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-last-measure",
-    "name": "Gift of the Last Measure",
+    "name": "Gift of Winter's Mercy",
     "chassis": {
       "categories": [
         "Melee Two-Handed"
       ],
       "ability": "STR"
     },
-    "description": "Heartwood the colour of a late bonfire, heavy in the hands and heavier at the end of the swing. The grain runs the wrong way down the haft, as though the tree grew around the blow it was meant to strike.",
+    "description": "A fine blue edge gleams along this heavy weapon of winter-pale wood. The grip grows cold when its wielder is wounded.",
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5371,20 +5531,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Winter's Wrath. Once on each of your turns, when you hit a creature with this weapon while you have half your Hit Point maximum or fewer Hit Points, the attack deals an extra 2d6 damage of the weapon's type.",
     "riders": [
       {
         "id": "rider-gift-of-the-last-measure",
-        "label": "",
+        "label": "Winter's Wrath",
         "cadence": "perTurn",
-        "formula": "1d8",
-        "damageType": "Force"
+        "formula": "2d6",
+        "condition": "Once on each of your turns: the hit lands while you have half your Hit Point maximum or fewer Hit Points"
       }
-    ]
+    ],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-long-watch",
-    "name": "Gift of the Long Watch",
+    "name": "Gift of Hartseeker",
     "chassis": {
       "categories": [
         "Ranged Two-Handed",
@@ -5392,7 +5555,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       ],
       "ability": "DEX"
     },
-    "description": "Pale limbwood strung with something finer than gut. It draws quietly, and the sound it makes on release arrives a moment after the shot does.",
+    "description": "Golden veins trace the limbs and grip of this wooden hunting weapon. When drawn or raised, they form the outline of a running hart.",
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5404,20 +5567,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Hunter's Aim. If the first ranged attack you make with this weapon on your turn hits a creature, it deals an extra 1d8 damage of the weapon's type.",
     "riders": [
       {
-        "id": "rider-gift-of-the-long-watch",
-        "label": "",
+        "id": "rider-gift-of-the-hunter-s-bounty",
+        "label": "Hunter's Aim",
         "cadence": "perTurn",
-        "formula": "1d6",
-        "damageType": "Radiant"
+        "formula": "1d8",
+        "condition": "The FIRST ranged attack you make with this weapon on your turn hits"
       }
-    ]
+    ],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-open-hand",
-    "name": "Gift of the Open Hand",
+    "name": "Gift of Rimefang",
     "chassis": {
       "categories": [
         "Melee One-Handed"
@@ -5427,7 +5593,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "thrown"
       ]
     },
-    "description": "Balanced for leaving the hand. Amber sap beads along the throwing edge and never quite falls, and the weapon is always warmer coming back than it was going out.",
+    "description": "This throwing weapon is carved from frost-pale wood. A thin blue trail follows it through the air and back to its wielder.",
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5439,20 +5605,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Returning. Immediately after you make a ranged attack by throwing this weapon, it flies back to an empty hand. If neither hand is free, it falls in your space. Relentless Hunt. Once on each of your turns, when you hit a creature with a ranged attack by throwing this weapon, the attack deals an extra 2d6 damage of the weapon's type if you have already hit that creature with a different attack this turn.",
     "riders": [
       {
-        "id": "rider-gift-of-the-open-hand",
-        "label": "",
+        "id": "rider-gift-of-the-necessary-cull",
+        "label": "Relentless Hunt",
         "cadence": "perTurn",
-        "formula": "1d6",
-        "damageType": "Force"
+        "formula": "2d6",
+        "condition": "Once on each of your turns: a thrown hit on a creature you already hit with a different attack this turn"
       }
-    ]
+    ],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-quiet-step",
-    "name": "Gift of the Quiet Step",
+    "name": "Gift of Thornrunner",
     "chassis": {
       "categories": [
         "Melee One-Handed"
@@ -5463,7 +5632,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "light"
       ]
     },
-    "description": "Thin, dark, and nearly weightless. Held still it is difficult to look directly at; moving, it is difficult to look away from.",
+    "description": "Golden light traces an unbroken path through the wood of this slender weapon, from its grip to its striking end.",
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5475,20 +5644,22 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Parting Strike. Once on each of your turns, when you hit a creature with a melee attack using this weapon, you can prevent it from making Opportunity Attacks until the start of your next turn.",
     "riders": [
       {
-        "id": "rider-gift-of-the-quiet-step",
-        "label": "",
+        "id": "rider-gift-of-the-open-way",
+        "label": "Parting Strike",
         "cadence": "perTurn",
-        "formula": "1d6",
-        "damageType": "Psychic"
+        "condition": "Once on each of your turns, after a melee hit: the target can't make Opportunity Attacks until the start of your next turn"
       }
-    ]
+    ],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-standing-line",
-    "name": "Gift of the Standing Line",
+    "name": "Gift of Winterwatch",
     "chassis": {
       "categories": [
         "Melee Two-Handed"
@@ -5498,7 +5669,7 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
         "reach"
       ]
     },
-    "description": "A long shaft of grey-green wood that has clearly been used as a fence post and clearly objected. It settles into a guard position on its own if the wielder stops thinking about it.",
+    "description": "Bands of blue light encircle the grips of this long wooden weapon. Its shadow resembles a bare tree across a winter road.",
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5510,30 +5681,35 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Winter's Grasp. Once on each of your turns, when you hit a creature with this weapon, you can reduce its Speed by 10 feet, to a minimum of 0, until the start of your next turn. Hold the Line. When you hit a creature with an Opportunity Attack using this weapon, you can reduce its Speed to 0 for the rest of that turn. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "riders": [
       {
-        "id": "rider-gift-of-the-standing-line",
-        "label": "",
+        "id": "rider-gift-of-the-last-gate",
+        "label": "Winter's Grasp",
         "cadence": "perTurn",
-        "formula": "1d8",
-        "damageType": "Cold"
+        "condition": "Once on each of your turns, after a hit: the target's Speed drops by 10 feet (minimum 0) until the start of your next turn"
       }
-    ]
+    ],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-deep-root",
-    "name": "Gift of the Deep Root",
+    "name": "Gift of First Light",
     "chassis": {
-      "requireTags": [
-        "two-handed"
-      ]
+      "requireTags": [],
+      "categories": []
     },
-    "description": "A two-handed stave still carrying a knot of the tree it was taken from. Spells cast through it arrive a half-beat late and noticeably louder.",
+    "description": "Warm amber light fills the branching crown of this living wooden staff. Tiny buds open along its grain as a spell is cast.",
     "isSpellFocus": true,
-    "spellFocusAttack": "+1",
-    "spellFocusDamage": "+1",
-    "spellFocusSaveDc": "+1",
+    "spellFocusAttack": "+2",
+    "spellFocusDamage": "+2",
+    "spellFocusSaveDc": "+2",
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5545,31 +5721,22 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
-    "riders": [
-      {
-        "id": "rider-gift-of-the-deep-root",
-        "label": "",
-        "cadence": "perTurn",
-        "formula": "1d8",
-        "damageType": "Necrotic"
-      }
-    ]
+    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Spellcasting Focus. You can use this staff as a Spellcasting Focus for your spells. While holding it in both hands, you gain a +2 bonus to spell attack rolls, spell damage and healing rolls, and spell save DCs for spells you cast through it. You can release one hand to provide the spell's components without losing any of the staff's benefits, returning that hand to the staff when the casting is complete. First Light. While holding this staff in both hands, whenever you take the Magic action, add 1d6 plus your Proficiency Bonus to each damage or healing roll you make as part of that action.",
+    "riders": [],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "chassisBonusDice": "1d6",
+    "spellFocusMagicActionDamage": "1d6+@PROF",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-gift-of-the-turning-season",
-    "name": "Gift of the Turning Season",
-    "chassis": {
-      "requireTags": [
-        "one-handed"
-      ]
-    },
-    "description": "A short focus meant to be held in the off hand while the other is busy. The wood changes colour with the season it is carried through, and remembers every one it has seen.",
+    "name": "Gift of Duskthorn",
+    "description": "This small thorn of winter-pale wood hangs from a loop of silver root. When fastened to a weapon, blue light spreads from the charm along its surface.",
     "isSpellFocus": true,
-    "spellFocusAttack": "+1",
-    "spellFocusDamage": "+1",
-    "spellFocusSaveDc": "+1",
-    "type": "weapon",
+    "spellFocusAttack": "+2",
+    "spellFocusDamage": "+2",
+    "spellFocusSaveDc": "+2",
+    "type": "magic",
     "isUsable": true,
     "act": "Act 3",
     "sourceEncounter": "A3 Gate II: Open Clearing",
@@ -5577,19 +5744,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "A3 Gate III: Veilscar Hollow"
     ],
     "grantsProficiency": true,
-    "pbToDamage": true,
-    "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "When you make a weapon attack with this Gift, you are considered proficient with it. Use the normal base damage die or dice of the chosen weapon form. The Gift grants a +2 bonus to its weapon attack and normal weapon damage rolls, and you add your Proficiency Bonus to its normal weapon damage roll",
-    "riders": [
-      {
-        "id": "rider-gift-of-the-turning-season",
-        "label": "",
-        "cadence": "perTurn",
-        "formula": "1d6",
-        "damageType": "Lightning"
-      }
-    ]
+    "mechanicsText": "Weapon Charm. As a Magic Action, you can attach the charm to a weapon or remove it. A weapon can have only one weapon charm attached at a time. The attached weapon is magical. You must be attuned to the charm to use its properties; any attunement required for the weapon's own properties is separate. Feywild Armament. While the charm is attached, you are proficient with the weapon and gain a +2 bonus to attack and damage rolls made with it. If the weapon already grants such a bonus, use the higher bonus. Thorn and Spell. When you attune to the charm, and at the start of each of your turns, choose one of the following benefits. It lasts until you choose again. Thorn: each hit with the attached weapon deals extra damage equal to 1d6 plus your Proficiency Bonus, of the weapon's normal damage type. Spell: while wielding the attached weapon, add 1d6 plus your Proficiency Bonus to each damage or healing roll you make as part of a Magic action. Spellcasting Focus. You can use the attached weapon as a Spellcasting Focus for your spells. While wielding it, you gain a +2 bonus to spell attack rolls, spell damage and healing rolls, and spell save DCs for spells you cast through it. Cantrip Weaving. Once on each of your turns, when you take an Attack action that allows at least two attacks, you can cast a cantrip you know in place of one attack. The cantrip must have a casting time of an action and be cast through the attached weapon. Only one cantrip can be cast as part of that action.",
+    "riders": [],
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "spellFocusMagicActionDamage": "1d6+@PROF",
+    "attachesToWeapon": true,
+    "boundWeaponBonus": 2,
+    "boundWeaponHitDamage": "1d6+@PROF",
+    "weaponOrSpellChoice": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "tbc-rimestone-pauldron",
@@ -5869,8 +6033,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "name": "Potion of Healing",
     "type": "consumable",
     "activation": "action",
-    "description": "A standard healing potion set aside with the tavern’s practical emergency stock. Tags: A2 · Tavern stock",
-    "mechanicsText": "Use the normal D&D Potion of Healing rules.",
+    "description": "A stoppered vial of red liquid, kept among the tavern's emergency supplies.",
+    "mechanicsText": "A creature that drinks this potion regains 2d4 + 2 Hit Points. Use your campaign's normal rules for drinking or administering a potion.",
     "isUsable": true,
     "value": "50gp",
     "act": "Act 2",
@@ -5880,15 +6044,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "reset": "manual"
     },
     "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 2.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-smoke-flask",
     "name": "Smoke Flask",
     "type": "consumable",
     "activation": "action",
-    "description": "A squat dark-glass flask whose stopper is wrapped in grey cloth. The liquid inside never settles; when the glass breaks, it becomes a wall of smoke before it reaches the ground. Tags: A2 · Tavern stock",
-    "mechanicsText": "As a Magic action, throw the flask at a point you can see within 30 feet. It shatters and creates dense smoke in a 10-foot-radius sphere centered on that point. The area is Heavily Obscured until the end of your next turn. A strong wind disperses the smoke early.",
+    "description": "Grey cloth wraps the stopper of this squat dark flask. The liquid inside swirls continuously.",
+    "mechanicsText": "As a Magic Action, you can throw this flask at a point you can see within 30 feet. The flask shatters, filling a 10-foot-radius Sphere centered on that point with smoke. The area is Heavily Obscured until the end of your next turn. A strong wind disperses the smoke early. The flask is consumed on use.",
     "isUsable": true,
     "value": "100gp",
     "act": "Act 2",
@@ -5898,15 +6064,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "reset": "manual"
     },
     "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-wardbreaker-oil",
     "name": "Wardbreaker Oil",
     "type": "consumable",
     "activation": "bonus",
-    "description": "A thin metallic oil kept in a narrow Ward-sealed vial. It crawls toward an edge or point as it is applied and holds there until impact. Tags: A2 · Tavern stock",
-    "mechanicsText": "As a Bonus Action, apply the oil to one weapon or one piece of ammunition. The coating remains potent until its effect is delivered or washed away. The first time a creature takes damage from the coated weapon or ammunition, it takes an additional 2d6 Force damage; if it is Large or smaller, it is pushed 5 feet directly away from the attacker. The oil is then expended.",
+    "description": "This metallic oil is sealed in a narrow Ward vial. When poured, it gathers along the nearest edge or point.",
+    "mechanicsText": "As a Bonus Action, you can coat one weapon or one piece of ammunition with this oil. The coating lasts until it is used or washed away. The first creature damaged by the coated weapon or ammunition takes an extra 2d6 Force damage. If the creature is Large or smaller, it is also pushed 5 feet directly away from the attacker. The coating then loses its magic.",
     "isUsable": true,
     "value": "150gp",
     "act": "Act 2",
@@ -5916,15 +6084,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "reset": "manual"
     },
     "dmNote": "Final purchasing window before Act 3, which has no merchant. Merchant stock: 1.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-blinkstep",
     "name": "Blinkstep",
     "type": "magic",
     "activation": "bonus",
-    "description": "A matched pair of narrow, blackened ankle clasps whose metal has been pitted smooth by years of elemental exposure. Hairline fractures cross each face without ever quite meeting, and when the bearer shifts weight, one clasp seems to arrive a fraction of a heartbeat before the foot beneath it. Tags: A4 · Movement · Ruined / elemental saturation",
-    "mechanicsText": "Bonus Action · 1/Short Rest: teleport up to 20 feet to an unoccupied space you can see.",
+    "description": "Fine fractures cross these blackened ankle clasps. As the wearer shifts their weight, the clasps leave brief afterimages. Tags: A4 · Movement · Ruined / elemental saturation",
+    "mechanicsText": "As a Bonus Action, you can teleport up to 20 feet to an unoccupied space you can see. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -5939,15 +6109,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 1 — first required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-deferred-wound",
     "name": "Deferred Wound",
     "type": "magic",
     "activation": "reaction",
-    "description": "A segmented forearm guard of dull layered metal, old enough that its dents have been worn smooth rather than repaired. Dark seams run between the plates like healed fractures. When a blow lands, those seams briefly hold the shape of the impact instead of letting it pass cleanly into the bearer. Tags: A4 · Defense · Ruined / elemental saturation",
-    "mechanicsText": "Reaction · 1/Long Rest: when you take damage, roll 2d8. Reduce the triggering damage by up to the roll and record the amount actually reduced as deferred damage. Healing before the end of the current round removes deferred damage first. At round end, lose HP equal to any deferred damage that remains. The original hit still counts as a hit/damage event; deferred resolution does not retrigger hit/damage riders.",
+    "description": "Dark seams divide the worn metal plates of this forearm guard. On impact, the seams hold a faint outline of the blow. Tags: A4 · Defense · Ruined / elemental saturation",
+    "mechanicsText": "When you take damage, you can take a Reaction to roll 2d8 and reduce the damage by up to the number rolled. Record the amount prevented as deferred damage. Until the end of the current round, healing you receive reduces this deferred damage before restoring Hit Points. At the end of the round, you lose Hit Points equal to any deferred damage remaining. The original attack or effect still counts as having hit and dealt damage. Losing the deferred Hit Points doesn't trigger effects that occur when you are hit or take damage. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -5962,15 +6134,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 2 — second required Level 9 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-rupture",
     "name": "Rupture",
     "type": "magic",
     "activation": "free",
-    "description": "A narrow black-iron wrist ring split by ember-bright cracks that never cool completely. The metal looks less forged than pressure-broken and forced back together. At the instant an attack lands, the cracks flare toward the point of impact as though the ring is trying to widen the wound already made. Tags: A4 · Offensive · Ruined / elemental saturation",
-    "mechanicsText": "Rider · 1/Long Rest: when you hit, deal an additional 2d10 damage of one damage type dealt by that attack.",
+    "description": "Ember-bright cracks split this narrow iron wrist ring. They flare when a blow lands. Tags: A4 · Offensive · Ruined / elemental saturation",
+    "mechanicsText": "When you hit with an attack, you can deal an extra 2d10 damage of one type dealt by that attack. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -5985,15 +6159,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 3 — Phoenix. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-applied-insight",
     "name": "Applied Insight",
     "type": "magic",
     "activation": "reaction",
-    "description": "A palm-sized many-faceted lens held in a scorched brass frame. Several faces are clouded with mineral haze while one always seems unnaturally clear when turned toward a problem. Its frame bears tiny adjustment marks from hands that kept refining it long after its original maker was gone. Tags: A4 · Utility · Ruined / elemental saturation",
-    "mechanicsText": "Reaction · 1/Long Rest: after you or an ally within 30 feet fails an ability check, add 1d10 to the result, potentially turning it into a success.",
+    "description": "A scorched brass frame holds this many-faceted lens. One facet remains clear despite the mineral haze on the others. Tags: A4 · Utility · Ruined / elemental saturation",
+    "mechanicsText": "When you or an ally within 30 feet fails an ability check, you can take a Reaction to add 1d10 to the result, possibly turning the failure into a success. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -6008,15 +6184,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 4 — first required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-true-ground",
     "name": "True Ground",
     "type": "magic",
     "activation": "bonus",
-    "description": "A heavy black-stone ankle band locked inside an old metal brace. Its underside has been worn perfectly flat despite the uneven ground it has crossed. Loose grit and tiny fragments of stone subtly orient toward it whenever the bearer plants their weight. Tags: A4 · Stability · Ruined / elemental saturation",
-    "mechanicsText": "Bonus Action · 1/Short Rest: anchor your current space until the end of the current round. If a hostile effect moves you against your will, after that movement resolves teleport back to the anchor or the nearest space you can occupy.",
+    "description": "An old metal brace surrounds this heavy black-stone ankle band. Loose grit gathers around its worn, flat base. Tags: A4 · Stability · Ruined / elemental saturation",
+    "mechanicsText": "As a Bonus Action, you can anchor your current space until the end of the current round. If a hostile effect moves you against your will during that time, you teleport back to the anchor immediately after that movement resolves. If the anchor is occupied or otherwise unavailable, you appear in the nearest space you can occupy. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -6031,15 +6209,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 5 — second required Level 10 fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-condition-vessel",
     "name": "Condition Vessel",
     "type": "magic",
     "activation": "action",
-    "description": "A hollow crystal vessel no larger than a thumb joint, suspended inside a tarnished silver cage. Faint stains of different colors drift through the crystal and never mix. Near hostile magic or poison, one stain crawls toward the surface as if the vessel is already making room for something else. Tags: A4 · Cleanse · Ruined / elemental saturation",
-    "mechanicsText": "Magic Action · 1/Long Rest: end Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained on one willing creature within 30 feet. You gain that condition until the end of the current round. You cannot use this property for a condition you are immune to.",
+    "description": "A tarnished silver cage holds a small hollow crystal. Colored stains drift inside without mixing. Tags: A4 · Cleanse · Ruined / elemental saturation",
+    "mechanicsText": "As a Magic Action, choose one willing creature within 30 feet. End one of the following conditions on it: Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained. You gain the chosen condition until the end of the current round. You can't choose a condition to which you are immune. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -6054,15 +6234,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 6 — Elemental level fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-threat-positioning",
     "name": "Threat Positioning",
     "type": "magic",
     "activation": "free",
-    "description": "A thin compass-disc of dark alloy with no cardinal marks and three broken pointers trapped beneath its glass. The pointers ignore north. When danger is near, they settle instead on moving threats, then twitch a heartbeat after those threats change their intent. Tags: A4 · Tactical · Ruined / elemental saturation",
-    "mechanicsText": "1/Long Rest, immediately after Initiative is rolled and before the first turn: choose one visible hostile creature and move your Initiative to immediately after it. The hostile creature does not move.",
+    "description": "Three broken pointers lie beneath the glass of this dark compass. They turn toward nearby threats instead of north. Tags: A4 · Tactical · Ruined / elemental saturation",
+    "mechanicsText": "Immediately after Initiative is rolled, before the first turn begins, you can choose one hostile creature you can see. Your turn moves to immediately after that creature's turn. The hostile creature's position in the Initiative order doesn't change. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -6077,15 +6259,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 7 — Construct / Ward outpost entrance. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-a4-preserved-reaction",
     "name": "Preserved Reaction",
     "type": "magic",
     "activation": "reaction",
-    "description": "A braided wrist loop made from old silver wire and blackened root-fiber. One strand always hangs slightly slack no matter how tightly the loop is fastened. When the bearer commits to a sudden response, that slack strand snaps taut as if taking the strain of the reaction for them. Tags: A4 · Continuity · Ruined / elemental saturation",
-    "mechanicsText": "1/Long Rest: when you use your normal Reaction for a standard non-spell Reaction, expend this item's charge instead of expending your Reaction. All other costs remain. Eligible uses are Opportunity Attacks, non-spell class/subclass/feat/item Reactions, or release of a Readied non-spell action or movement. Reaction spells, Readied spells, and Bond reactions are excluded.",
+    "description": "A slack strand hangs from this braid of silver wire and black root-fiber. It snaps taut when the wearer makes a sudden movement. Tags: A4 · Continuity · Ruined / elemental saturation",
+    "mechanicsText": "When you would take a non-spell Reaction, you can use this property in place of expending your Reaction. You must have your normal Reaction available, and you pay all other costs. You can use this property for an Opportunity Attack; a non-spell Reaction granted by a class, subclass, feat, or item; or the release of a Readied non-spell action or movement. You can't use it for a Reaction spell, a Readied spell, or a Bond reaction. Once you use this property, you can't use it again until you finish a Long Rest.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 RUINED A4 REWARD TABLE",
@@ -6100,14 +6284,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "actLabel": "A4"
     },
     "dmNote": "Drops at: Act 4 sequence 8 — required outpost/cavern fight. Standalone Convergence input with one normal Component Tag. May be used in a legal ordinary recipe OR tempered with a Catalyst into its same-tag Tier 4 Singular. Two A4 inputs do not form an ordinary Convergence output.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-catalyst",
     "name": "Catalyst",
     "type": "magic",
-    "description": "A dense concentration of Convergence energy capable of infusing greater power into certain exceptional items. When accepted by a compatible item, the Catalyst strengthens and completes what is already present rather than forming something new. Tags: Catalyst · Tempering / stabilization · Not a Component Tag",
-    "mechanicsText": "A Catalyst can temper one still-raw Ruined A4. The Catalyst is consumed, and that same A4 becomes its same-tag Tier 4 Singular. A Catalyst cannot be used as a normal component, cannot create a new tag, cannot temper A1–A3, and cannot use a completed T3 as the input. A creature can bind only one Tier 4 Singular.",
+    "description": "Concentrated Convergence energy gathers in this dense shard. Light spreads through a compatible item when the two are joined. Tags: Catalyst · Tempering / stabilization · Not a Component Tag",
+    "mechanicsText": "You can use a Catalyst to temper one raw Ruined A4 item. The Catalyst is consumed, and that item becomes the Tier 4 Singular with the same tag. A creature can bind only one Tier 4 Singular. A Catalyst isn't a normal Convergence component. It can't create a different tag, temper an A1–A3 component, or use a completed T3 item as its input.",
     "isUsable": false,
     "act": "Act 4",
     "sourceEncounter": "ACT 4 CATALYST REWARD TABLE",
@@ -6116,15 +6302,17 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "reset": "manual"
     },
     "dmNote": "Special Convergence Item — NO normal Component Tag, so it carries no `mechanicalTag` and can never be a recipe half. Consumed on use. Catalyst quantity scales by party size; the Act 4 tables are the source of truth for when each enters inventory.",
-    "isLocked": true
+    "isLocked": true,
+    "attunementRequired": false,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-blinkstep",
     "name": "Blinkstep — Tempered",
     "type": "magic",
-    "activation": "bonus",
-    "description": "The Catalyst fills every old fracture in the ankle clasps with clean, luminous lines without erasing the pitted age of the metal. The two pieces remain unmistakably the same worn pair, but their edges now separate into brief translucent afterimages whenever the bearer moves, each afterimage appearing one perfect step ahead before folding back into the clasps. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — 1/Encounter: teleport up to 30 feet to an unoccupied space you can see. Passive — your Speed increases by 10 feet.",
+    "activation": "free",
+    "description": "Light fills the old fractures in these blackened clasps. Translucent afterimages follow each step. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Your Speed increases by 10 feet. Blinkstep. Once per encounter, you can teleport up to 30 feet to an unoccupied space you can see.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6141,15 +6329,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Movement rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-applied-insight",
     "name": "Applied Insight — Tempered",
     "type": "magic",
     "activation": "reaction",
-    "description": "The Catalyst runs through the clouded facets as bright internal veins, clearing them without replacing the old lens. The scorched brass frame unfolds into two thin nested rings that turn around the original setting on their own. What was once the single clear face now becomes whichever facet the item needs, visibly aligning itself with the task at hand. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — Reaction · 1/Short Rest: after you or an ally within 30 feet fails an ability check, add 1d12 to the result, potentially succeeding. Passive — after each Long Rest, choose one skill or tool; you gain proficiency with it until your next Long Rest.",
+    "description": "Two narrow brass rings turn around the original scorched lens. Light clears each facet as it rotates into view. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Applied Insight. When you or an ally within 30 feet fails an ability check, you can take a Reaction to add 1d12 to the result, possibly turning the failure into a success. Once you use this property, you can't use it again until you finish a Short or Long Rest. Borrowed Practice. When you finish a Long Rest, choose one skill or tool. You gain proficiency in that skill or with that tool until you finish your next Long Rest.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6166,15 +6355,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Utility rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-deferred-wound",
     "name": "Deferred Wound — Tempered",
     "type": "magic",
     "activation": "reaction",
-    "description": "The Catalyst settles into the guard's dark seams like molten light and binds the old segmented plates without smoothing away their dents. Hair-thin luminous bridges now span the gaps between sections. When damage is deferred, the light gathers visibly inside those bridges; when the wound is fully cleared, the stored glow collapses inward and leaves a brief protective sheen over the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — Reaction · 1/Short Rest: Deferred Wound uses 2d10 instead of 2d8. Passive — if all deferred damage is cleared before it resolves at round end, you gain Temporary Hit Points equal to your Proficiency Bonus.",
+    "description": "Luminous threads bridge the dark seams of this worn guard. The threads brighten as the guard absorbs a blow. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Deferred Wound. When you take damage, you can take a Reaction to roll 2d10 and reduce the damage by up to the number rolled. Record the amount prevented as deferred damage. Until the end of the current round, healing you receive reduces this deferred damage before restoring Hit Points. At the end of the round, you lose Hit Points equal to any deferred damage remaining. The original attack or effect still counts as having hit and dealt damage. Losing the deferred Hit Points doesn't trigger effects that occur when you are hit or take damage. Once you use this property, you can't use it again until you finish a Short or Long Rest. Unbroken Guard. If all deferred damage is cleared before it resolves at the end of the round, you gain Temporary Hit Points equal to your Proficiency Bonus.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6191,15 +6381,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Defense rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-true-ground",
     "name": "True Ground — Tempered",
     "type": "magic",
-    "activation": "bonus",
-    "description": "The Catalyst traces the old ankle band with concentric lines of pale light, turning the worn cracks into a deliberate geometric pattern. The black stone and metal remain unchanged in shape, but a faint ring of the same pattern now appears on the ground whenever the bearer anchors themselves. If they are displaced, that luminous imprint holds their place until they return to it. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — 1/Encounter: the anchor lasts until the start of your next turn and also answers hostile teleportation, returning you to the anchor or nearest space you can occupy after the hostile displacement resolves. Passive — once per round, reduce forced movement applied to you by 10 feet.",
+    "activation": "free",
+    "description": "Concentric lines of light cross this black-stone band. A matching pattern appears on the ground beneath its wearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "True Ground. Once per encounter, you can anchor your current space until the start of your next turn. After a hostile effect moves or teleports you against your will, you return to the anchor, or to the nearest space you can occupy if the anchor is unavailable. Firm Footing. Once per round, you can reduce forced movement applied to you by 10 feet.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6216,15 +6407,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Stability rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-condition-vessel",
     "name": "Condition Vessel — Tempered",
     "type": "magic",
     "activation": "action",
-    "description": "The Catalyst threads through the tarnished cage and turns each bar into a bright channel feeding the original crystal vessel. The crystal itself becomes perfectly clear between uses, while its old colored stains survive as thin veins around the edge. When a condition is drawn out, its color flashes inside the vessel and is consumed by the Catalyst light instead of passing into the bearer. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — Magic Action · 1/Short Rest: end one listed Condition on a willing creature within 30 feet; the extracted condition ends without transferring to you. Passive — you have advantage on saving throws against Charmed, Frightened, and Poisoned.",
+    "description": "Light runs through the bars of this silver cage and into the clear crystal within. Traces of color remain along the crystal's edge. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "You have Advantage on saving throws against the Charmed, Frightened, and Poisoned conditions. Condition Vessel. As a Magic Action, you can end one of the following conditions on a willing creature within 30 feet: Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained. The condition ends without transferring to you. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6241,15 +6433,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Cleanse rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-rupture",
     "name": "Rupture — Tempered",
     "type": "magic",
     "activation": "free",
-    "description": "The Catalyst does not close the wrist ring's old splits; it makes them precise. Brilliant white-gold light burns inside each ember crack, and several razor-thin segments now hover a hair's breadth from the original iron while remaining bound to it. On a committed hit, the floating pieces snap into alignment and drive the ring's stored force through the same wound before drifting apart again. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — Rider · 1/Short Rest: when you hit, deal an additional 2d12 damage of one damage type dealt by the attack, and the target cannot regain Hit Points until the start of your next turn. Passive — once on each of your turns, one damage die showing 1 may count as 2.",
+    "description": "Thin iron segments hover beside this cracked ring, held in place by white-gold light. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Rupture. When you hit with an attack, you can deal an extra 2d12 damage of one type dealt by the attack. The target can't regain Hit Points until the start of your next turn. Once you use this property, you can't use it again until you finish a Short or Long Rest. Keen Fracture. Once on each of your turns, you can treat one damage die showing a 1 as a 2.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6266,15 +6459,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Offensive rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-threat-positioning",
     "name": "Threat Positioning — Tempered",
     "type": "magic",
     "activation": "free",
-    "description": "The Catalyst rebuilds nothing that was missing from the old compass-disc; instead it surrounds the original broken pointers with a thin luminous orbit. The dark disc remains scratched and incomplete beneath the glass, while the new ring moves freely above it. When initiative is set, one line of light locks onto the chosen threat and the orbit visibly turns until the bearer's place and the threat's place exchange. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — 1/Short Rest, immediately after Initiative is rolled and before the first turn: exchange your Initiative with one visible hostile creature. Initiative is never moved mid-round, and this cannot create double or skipped turns. Passive — when a hostile creature immediately before you in Initiative finishes its turn, gain +2 to your next saving throw before the end of your next turn.",
+    "description": "A luminous ring turns above the broken pointers of this scratched compass-disc. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Threat Positioning. Immediately after Initiative is rolled, before the first turn begins, you can exchange your position in the Initiative order with one hostile creature you can see. This property can't move Initiative during a round or cause a creature to gain or lose a turn. Once you use this property, you can't use it again until you finish a Short or Long Rest. Watchful Step. When a hostile creature immediately before you in the Initiative order finishes its turn, you gain a +2 bonus to your next saving throw made before the end of your next turn.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6291,15 +6485,16 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Tactical rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "bc-t4-preserved-reaction",
     "name": "Preserved Reaction — Tempered",
     "type": "magic",
     "activation": "reaction",
-    "description": "The Catalyst weaves a bright filament through the original silver-and-root braid, following every old bend instead of replacing it. The once-slack strand now carries a second luminous echo beside it. When the item preserves a Reaction, the physical braid tightens around the bearer while the echo flashes toward the triggering threat, making the item look momentarily connected to both the response that was kept and the interruption it denied. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
-    "mechanicsText": "Active — 1/Short Rest: use the A4 Preserved Reaction substitution. If a hostile creature caused the trigger, its next attempted Reaction before the start of its next turn is suppressed; then the suppression ends. Passive — Held Intent: when you Ready a non-spell action or movement and its trigger does not occur before the start of your next turn, it remains Readied until the end of that turn. Only one Readied intent can be preserved this way.",
+    "description": "A bright filament follows the old twists of this silver-and-root braid, forming a second loop beside its once-slack strand. Tags: T4 Singular · same mechanical tag as its Ruined A4 · Catalyst-tempered",
+    "mechanicsText": "Preserved Reaction. When you would take a non-spell Reaction, you can use this property in place of expending your Reaction. You must have your normal Reaction available, and you pay all other costs. You can use this property for an Opportunity Attack; a non-spell Reaction granted by a class, subclass, feat, or item; or the release of a Readied non-spell action or movement. You can't use it for a Reaction spell, a Readied spell, or a Bond reaction. If a hostile creature caused the trigger for your response, its next attempted Reaction before the start of its next turn is prevented. This interference ends after preventing one Reaction. Once you use this property, you can't use it again until you finish a Short or Long Rest. Held Intent. When you Ready a non-spell action or movement and its trigger hasn't occurred by the start of your next turn, it remains Readied until the end of that turn. You can preserve only one Readied action or movement in this way.",
     "isUsable": false,
     "tier": "4",
     "act": "Act 4",
@@ -6316,7 +6511,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "tier": "T4"
     },
     "dmNote": "The same A4 item after Catalyst tempering, NOT a new A+B fusion — so its tag stays Continuity rather than becoming a pair. Requires attunement, and a creature can bind only ONE Tier 4 Singular.",
-    "isLocked": true
+    "isLocked": true,
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   },
   {
     "id": "item-mtw83xt1",
@@ -6332,6 +6528,366 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "note": "1d4 at dawn"
     },
     "activation": "reaction"
+  },
+  {
+    "id": "bc-t3-briarfall-spur",
+    "name": "Briarfall Spur",
+    "description": "A hooked black thorn curves from this pale iron heel spur. Tags: Recipe: Movement + Offensive · Completed: Offensive",
+    "mechanicsText": "When you hit a creature with an attack after moving at least 15 feet toward it during your turn, you can deal an extra 2d6 damage of one type dealt by the attack. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Movement + Offensive",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "free",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-waybranch-pennant",
+    "name": "Waybranch Pennant",
+    "description": "Two bright veins cross a strip of living bark suspended from a forked silver pin. Tags: Recipe: Movement + Tactical · Completed: Tactical",
+    "mechanicsText": "After moving at least 15 feet on your turn, you can take a Bonus Action to choose one ally and one hostile creature, both of which you can see within 30 feet. Before the end of the current round, the ally can gain Advantage on one attack roll against that hostile creature, or subtract 1d4 from one saving throw the creature makes against the ally's spell or feature. The ally chooses before the roll, and the benefit then ends. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Movement + Tactical",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "bonus",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-veilscript-folio",
+    "name": "Veilscript Folio",
+    "description": "New script gathers on the translucent leaves of this folio whenever it is opened. Tags: Recipe: Utility + Cleanse · Completed: Utility",
+    "mechanicsText": "As a Magic Action, you can use one of the following properties. The chosen benefit lasts until you finish a Short or Long Rest or give the folio to another bearer. Once you use either property, you can't use either again until you finish a Short or Long Rest. Rewrite. Replace one 1st- or 2nd-level spell you know or have prepared through a class with a different spell of the same level from that class's spell list. You must qualify to learn or prepare the new spell. If the class uses a spellbook, the new spell must be in your spellbook. The original spell returns when this property ends. Field Manual. You gain proficiency in one skill or with one tool of your choice.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Utility + Cleanse",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "action",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-dawnwash-clasp",
+    "name": "Dawnwash Clasp",
+    "description": "A pale leaf folds over this shield-shaped clasp. Silver veins run through both. Tags: Recipe: Defense + Cleanse · Completed: Cleanse",
+    "mechanicsText": "When you or an ally you can see within 30 feet fails a saving throw against the Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, or Restrained condition, you can take a Reaction to add 1d8 to the saving throw, possibly turning the failure into a success. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Defense + Cleanse",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "reaction",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-rimeglass-fang",
+    "name": "Rimeglass Fang",
+    "description": "Fine fractures gleam inside a clear fang set in a dark iron grip. Tags: Recipe: Cleanse + Offensive · Completed: Offensive",
+    "mechanicsText": "When you hit a creature with an attack, or a creature fails a saving throw against a damaging spell you cast, you can deal an extra 1d8 Force damage to that creature. The extra damage is 2d8 if the creature has Resistance or Immunity to a damage type of the attack or spell, even if Immunity prevents the original damage. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Cleanse + Offensive",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "free",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-moongate-lantern",
+    "name": "Moongate Lantern",
+    "description": "Moon-pale ribs open around a hollow flame inside this small lantern. Tags: Recipe: Cleanse + Tactical · Completed: Tactical",
+    "mechanicsText": "As a Magic Action, you can use one of the following properties. Once you use either property, you can't use either again until you finish a Short or Long Rest. Open Path. Choose a point within 60 feet. Until the end of the current round, you and your allies ignore magical visual obscurement within 15 feet of that point, and your movement within that area doesn't provoke Opportunity Attacks. Prepared Working. Choose one willing ally you can see within 30 feet. The next 1st- or 2nd-level spell the ally casts before the end of the current round is cast at its lowest level without expending a spell slot. The ally must know or have prepared the spell.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Cleanse + Tactical",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "action",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-redwake-shuttle",
+    "name": "Redwake Shuttle",
+    "description": "A silver weaving shuttle carries a red thorn and a single bright thread. Tags: Recipe: Offensive + Tactical · Completed: Tactical",
+    "mechanicsText": "After you resolve an attack that hits a hostile creature, or a hostile creature's failed saving throw against a damaging spell you cast, you can prevent that creature from taking Reactions until the start of your next turn. One willing ally you can see within 30 feet can immediately take a Reaction to move up to 10 feet without provoking Opportunity Attacks. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Offensive + Tactical",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "free",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-unfinished-thorn",
+    "name": "Unfinished Thorn",
+    "description": "A broken thorn floats inside an open iron ring. Its missing tip appears briefly after a missed strike. Tags: Recipe: Offensive + Continuity · Completed: Offensive",
+    "mechanicsText": "When you miss a creature with a weapon or spell attack, you can reroll the attack roll. You must use the new result. Once you use this property, you can't use it again until you finish a Short or Long Rest.",
+    "attunementRequired": false,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Offensive + Continuity",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "free",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-greywake-sandals",
+    "name": "Greywake Sandals",
+    "description": "Grey Ward cloth binds these narrow sandals. Their footprints linger for a moment after the wearer moves. Tags: Recipe: Movement + Defense · Completed: Movement",
+    "mechanicsText": "Once per round, immediately after a hostile creature's attack against you resolves, you can move up to 5 feet without provoking Opportunity Attacks.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Movement + Defense",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "activation": "free",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-mercyglass-reliquary",
+    "name": "Mercyglass Reliquary",
+    "description": "A fold of unburned Ward cloth rests inside this softly glowing glass reliquary. Tags: Recipe: Utility + Defense · Completed: Utility",
+    "mechanicsText": "Steady Hands. As a Magic Action, you can touch a dying creature and stabilize it without a check or supplies. The reliquary also has the following properties. Once you use either of them, you can't use either again until you finish a Short or Long Rest. Protected Working. When you cast a 1st- or 2nd-level spell you know or have prepared, you can cast it at its lowest level without expending a spell slot if it targets only you or willing allies and restores Hit Points, grants Temporary Hit Points, increases Armor Class, or grants Resistance to damage. The spell must not deal damage. Field Aid. As a Magic Action, you can restore 2d6 Hit Points to a willing creature you touch.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Utility + Defense",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "shortRest"
+    },
+    "activation": "action",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-stillwell-spindle",
+    "name": "Stillwell Spindle",
+    "description": "Silver wire winds tightly around a smooth stone spindle. Tags: Recipe: Utility + Stability · Completed: Utility",
+    "mechanicsText": "Practiced Hands. When you finish a Long Rest, choose one tool. You are proficient with that tool until you finish your next Long Rest. Quiet Reserve. When you finish a Short Rest, you can regain one expended 1st- or 2nd-level spell slot. If your spellcasting feature provides only higher-level slots, you can instead store one casting of a 1st- or 2nd-level spell you know or have prepared. You can cast that spell once at its lowest level without expending a spell slot. The stored casting is lost when you finish a Long Rest or your attunement ends. Once you use this property, you can't use it again until you finish a Long Rest.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Utility + Stability",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "charges": {
+      "max": 1,
+      "reset": "longRest"
+    },
+    "activation": "free",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-stonebark-brigand",
+    "name": "Stonebark Brigand",
+    "description": "This small plate of petrified bark fastens over armor or clothing. Its grain shifts toward a repeated blow. Tags: Recipe: Defense + Stability · Completed: Defense",
+    "mechanicsText": "When a hostile creature hits you with an attack, you gain a +2 bonus to Armor Class against further attacks made by that creature until the start of your next turn or until you leave your space, whichever comes first. Further hits from the same creature don't increase this bonus.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Defense + Stability",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "activation": "passive",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-hearthroot-brooch",
+    "name": "Hearthroot Brooch",
+    "description": "A living root curls around a small, undying coal in this brooch. Tags: Recipe: Defense + Continuity · Completed: Continuity",
+    "mechanicsText": "When you Ready a spell and its trigger hasn't occurred by the start of your next turn, you can hold the spell until the end of that turn without expending another spell slot. You must maintain Concentration on the spell and take a Reaction to release it when its trigger occurs. Taking the Ready action again replaces the spell you are holding.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Defense + Continuity",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "activation": "passive",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-rimebreak-soles",
+    "name": "Rimebreak Soles",
+    "description": "Pale stone studs break through these frost-dark soles. Clinging ice flakes away as they move. Tags: Recipe: Stability + Cleanse · Completed: Stability",
+    "mechanicsText": "When a hostile effect reduces your Speed without setting it to 0, reduce the penalty by 10 feet, to a minimum penalty of 0. Standing up from Prone costs you only 5 feet of movement.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Stability + Cleanse",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "activation": "passive",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-everheld-filament",
+    "name": "Everheld Filament",
+    "description": "A green-gold filament loops through a seamless clasp. It stretches without fraying. Tags: Recipe: Stability + Continuity · Completed: Continuity",
+    "mechanicsText": "When you fail a Constitution saving throw to maintain Concentration by 2 or less, you succeed instead.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Stability + Continuity",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "activation": "passive",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
+  },
+  {
+    "id": "bc-t3-echochain-chime",
+    "name": "Echochain Chime",
+    "description": "Two small links hang from this chime. They ring a heartbeat apart. Tags: Recipe: Tactical + Continuity · Completed: Continuity",
+    "mechanicsText": "Once per round, after a hostile creature within 30 feet of you resolves a Reaction that targets you or an ally within 30 feet, or interrupts your action or that of an ally within 30 feet, the affected creature gains a d4. The creature can add the die to its next attack roll or saving throw before the end of the current round. It can choose to do so after rolling, but before the outcome is known. A creature can have only one die from the chime at a time.",
+    "attunementRequired": true,
+    "convergence": {
+      "role": "output",
+      "enabled": true,
+      "mechanicalTag": "Tactical + Continuity",
+      "tier": "T3"
+    },
+    "tier": "3",
+    "type": "magic",
+    "isUsable": false,
+    "act": "Act 3",
+    "isLocked": true,
+    "activation": "passive",
+    "revisedAt": "2026-09-16T12:41:00.000Z"
   }
 ];
 
@@ -6910,10 +7466,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-78999f23-151592";
+export const AUTHORED_DIGEST = "fnv1a-508fad75-194664";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-13T20:33:09.740Z";
+export const AUTHORED_AT = "2026-09-21T19:34:21.850Z";
 
 /** The merge is hand-written and lives beside this file — the fold rewrites this one. */
 export { mergeAuthored } from "./mergeAuthored";
