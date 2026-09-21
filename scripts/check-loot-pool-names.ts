@@ -115,9 +115,14 @@ for (const name of pools.keys()) {
     problems.push(`a browser on an older seed version never receives ${missing.length} item(s): ${missing.slice(0, 6).join(", ")}`);
   }
 
-  // Named, so a regression says WHICH: the newest revision's Gifts have to arrive on a stale browser.
-  for (const n of ["Gift of First Light", "Gift of Duskthorn"]) {
-    if (!seeded.some(i => i.name === n)) problems.push(`"${n}" did not reach the seeded library`);
+  /**
+   * Named by ID, so a regression says WHICH — and never by display name. This runs on every author publish, and a
+   * DM renaming a Gift in-app is authoring, not a fault: the v11 version of this check looked the Gifts up by name,
+   * which would have failed the publish of any rename (Christopher, 2026-09-21: *"everything you changed blocks me
+   * from making changes"*).
+   */
+  for (const id of ["tbc-gift-of-the-deep-root", "tbc-gift-of-the-turning-season"]) {
+    if (!seeded.some(i => i.id === id)) problems.push(`"${id}" did not reach the seeded library`);
   }
   /**
    * ⚠ THE SEVEN WARD FIELD REWARDS ARE RETIRED — the opposite of what this block used to assert.
@@ -126,9 +131,9 @@ for (const name of pools.keys()) {
    * Christopher, 2026-09-16: *"there is no act 1 field ward, or a act 2 ward cache."* The stale-seed guard above
    * still proves new items arrive; these must not.
    */
-  for (const n of ["Sentry’s Knot", "Sighter’s Wrap", "Fieldwork Flask", "Hardedge Cord",
-    "Reading Stone", "Pack-Sign Token", "Unspent Mark"]) {
-    if (seeded.some(i => i.name === n)) problems.push(`retired Ward Field Reward "${n}" is still in the seeded library`);
+  for (const id of ["bc-sentrys-knot", "bc-sighters-wrap", "bc-fieldwork-flask", "bc-hardedge-cord",
+    "bc-reading-stone", "bc-pack-sign-token", "bc-unspent-mark"]) {
+    if (seeded.some(i => i.id === id)) problems.push(`retired Ward Field Reward "${id}" is still in the seeded library`);
   }
 
   // ...and it must not re-seed on every boot once current, or an unlock shadow is dropped each time.

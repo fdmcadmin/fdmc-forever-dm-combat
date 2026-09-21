@@ -333,6 +333,8 @@ const KNOWN_SCRIPT_ONLY_EXPORTS: readonly string[] = [
   "core/rules/healingResolution.ts → expectedHealingAtLevel",
   "core/rules/healingResolution.ts → healingMultiplierFromText",
   "core/ui/itemActivation.ts → sweepItemActivation",
+  // Deliberately checks-only (0.8.72.0): the loot document as published, so document checks never read the DM's library.
+  "data/broken-chain/equipmentLibrary.ts → CAMPAIGN_DOCUMENT_EQUIPMENT",
   "modules/dnd-5e/srdAuditChassis.generated.ts → SRD_AUDIT_CR_ROWS",
   "modules/dnd-5e/srdLibrary.ts → SRD_ABSENT",
   "modules/dnd-5e/srdLibrary.ts → SRD_CORRECTED",

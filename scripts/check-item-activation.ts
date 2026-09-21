@@ -12,75 +12,109 @@
  * row charged nothing. Every reaction item in the library therefore cost a full Action, and every
  * bonus-action item cost nothing at all.
  *
- * This sweep reports, in three buckets:
+ * This sweep REPORTS, in three buckets:
  *
  *   MISMATCH   the item's own text says one thing and the authored field says another (or the
- *              field has never been set) — the ones to fix
- *   UNSTATED   neither the text nor the field says what it costs — a real gap, but one only the
- *              author can close, because the item does not say
+ *              field has never been set)
+ *   UNSTATED   neither the text nor the field says what it costs
  *   AGREED     counted, not listed
  *
  * ⚠ IT DOES NOT WRITE THE FIELD. The item's rules text is prose, and tagging from prose is the
  * rule this codebase keeps having to un-break. The reading is offered in the editor; the author
  * confirms it.
  *
- * It FAILS on nothing today — the whole library predates the field, so every usable item would be
- * a finding and a red gate nobody can turn green is a gate that gets ignored. What it does fail on
- * is a MISMATCH: an item that has been given an activation which contradicts its own text.
+ * ⚠ AND IT NO LONGER FAILS ON THE LIBRARY — ONLY ON ITS OWN READER.
+ *
+ * It used to fail when an item's authored activation contradicted what the reader made of its
+ * text. The reader is a heuristic over prose, and on 2026-09-21 it read v11's Turnstep Relay — "you
+ * can take a Reaction … before the creature moves or takes an action" — as costing an Action, and
+ * that stopped Christopher's publish: *"again i am unable to push because things like this."* A
+ * guess about prose must never block the author's own content. The library findings are printed for
+ * the author; what FAILS is the reader getting a known sentence wrong — section 1 — which is a bug
+ * in this code, not in anyone's authoring.
+ *
+ * It also reads the library AS IT SHIPS. It used to re-merge the author export over the finished
+ * library with no date, which undid every published revision (the report showed pre-v9 names) and
+ * brought back items retired for good.
  */
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY } from "../src/data/broken-chain/equipmentLibrary";
-import { AUTHORED_EQUIPMENT, mergeAuthored } from "../src/data/broken-chain/authored.generated";
-import { sweepItemActivation, isUsableItem, ITEM_ACTIVATION_LABEL } from "../src/core/ui/itemActivation";
+import { sweepItemActivation, isUsableItem, readActivation, ITEM_ACTIVATION_LABEL, type ItemActivation } from "../src/core/ui/itemActivation";
 import type { EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
 
-const problems: string[] = [];
+let failures = 0;
+const ok = (label: string, cond: boolean, detail = "") => {
+  console.log(`  ${cond ? "PASS" : "FAIL"}  ${label}${detail ? " — " + detail : ""}`);
+  if (!cond) failures++;
+};
 
-// The library as it actually SHIPS — authored items merged over the hand-written seed by id.
-const library = mergeAuthored(
-  BROKEN_CHAIN_EQUIPMENT_LIBRARY as EquipmentItem[],
-  AUTHORED_EQUIPMENT as EquipmentItem[],
-  i => i.id,
-);
-
-const usable = library.filter(isUsableItem);
-const findings = sweepItemActivation(library as never);
-const mismatch = findings.filter(f => f.kind === "mismatch");
-const unstated = findings.filter(f => f.kind === "unstated");
-
-console.log(`${library.length} items · ${usable.length} usable · ${usable.length - findings.length} already agree\n`);
-
-if (mismatch.length) {
-  console.log(`── ${mismatch.length} that do NOT use the action they describe ──`);
-  for (const f of mismatch) {
-    const says = f.reads ? ITEM_ACTIVATION_LABEL[f.reads] : "—";
-    const has = f.authored ? ITEM_ACTIVATION_LABEL[f.authored] : "(never set)";
-    const charge = f.charges ? ` +${f.charges} charge${f.charges === 1 ? "" : "s"}` : "";
-    console.log(`  ${f.name.padEnd(30)} text says ${says.padEnd(13)} field says ${has}${charge}`);
-    console.log(`      "${f.evidence.replace(/\s+/g, " ").slice(0, 110)}"`);
+console.log("1. the reader gets the known sentences right — THIS is what fails the check\n");
+{
+  const reads = (text: string) => readActivation(text).activation;
+  const cases: Array<[string, string, ItemActivation | undefined]> = [
+    ["Turnstep Relay — the bearer's Reaction, triggered by a hostile, beside the hostile's own action",
+      "When a hostile creature you can see within 30 feet starts its turn, you can take a Reaction to move up to half your current Speed without provoking Opportunity Attacks. You move before the creature moves or takes an action.",
+      "reaction"],
+    ["Redwake Shuttle — an ALLY's Reaction is not the bearer's cost",
+      "After you resolve an attack that hits a hostile creature, you can prevent that creature from taking Reactions until the start of your next turn. One willing ally you can see within 30 feet can immediately take a Reaction to move up to 10 feet.",
+      undefined],
+    ["Gift of First Light — 'whenever you take the Magic action' is a trigger, not a cost",
+      "First Light. While holding this staff in both hands, whenever you take the Magic action, add 1d6 plus your Proficiency Bonus to each damage or healing roll you make as part of that action.",
+      undefined],
+    ["Ashwood Brigandine — a plain Reaction",
+      "When an attack hits you, you can take a Reaction to reduce its damage to you by 1d6.",
+      "reaction"],
+    ["Gloamstep Shard — a Bonus Action",
+      "While you are in Dim Light or Darkness, you can take a Bonus Action to teleport up to 10 feet.",
+      "bonus"],
+    ["Wendigo Ember Heart — a Magic Action",
+      "As a Magic Action, choose one creature you can see within 30 feet.",
+      "action"],
+    ["a creature's action alone is nobody's cost", "You move before the creature moves or takes an action.", undefined],
+  ];
+  for (const [label, text, expected] of cases) {
+    const got = reads(text);
+    ok(label, got === expected, `read ${got ?? "nothing"}, expected ${expected ?? "nothing"}`);
   }
-  console.log();
+  ok("MUTATION GUARD: a hostile named in the sentence does not hide a Reaction the bearer takes",
+    readActivation("When a hostile creature hits you, you can take a Reaction to halve the damage.").activation === "reaction");
 }
 
-if (unstated.length) {
-  console.log(`── ${unstated.length} usable items that say nothing about what they cost ──`);
-  console.log(`   Only the author can close these: the item does not state a cost, so nothing may infer one.`);
-  for (const f of unstated) {
-    console.log(`  ${f.name}${f.charges ? `  (${f.charges} charge${f.charges === 1 ? "" : "s"})` : ""}`);
+console.log("\n2. the library as it ships — for the author, never a failure\n");
+{
+  const library = BROKEN_CHAIN_EQUIPMENT_LIBRARY as EquipmentItem[];
+  const usable = library.filter(isUsableItem);
+  const findings = sweepItemActivation(library as never);
+  const mismatch = findings.filter(f => f.kind === "mismatch");
+  const unstated = findings.filter(f => f.kind === "unstated");
+
+  console.log(`${library.length} items · ${usable.length} usable · ${usable.length - findings.length} already agree\n`);
+
+  const contradictions = mismatch.filter(f => f.authored !== undefined);
+  if (contradictions.length) {
+    console.log(`── ${contradictions.length} authored with a cost the reader does not see in the text — check these in the editor ──`);
+    for (const f of contradictions) {
+      console.log(`  ${f.name.padEnd(30)} authored ${ITEM_ACTIVATION_LABEL[f.authored!].padEnd(13)} text reads ${f.reads ? ITEM_ACTIVATION_LABEL[f.reads] : "—"}`);
+      console.log(`      "${f.evidence.replace(/\s+/g, " ").slice(0, 110)}"`);
+    }
+    console.log();
   }
-  console.log();
+
+  const unset = mismatch.filter(f => f.authored === undefined);
+  if (unset.length) {
+    console.log(`── ${unset.length} whose text names a cost the field has never been given (for information) ──`);
+    for (const f of unset) console.log(`  ${f.name.padEnd(30)} text reads ${f.reads ? ITEM_ACTIVATION_LABEL[f.reads] : "—"}`);
+    console.log();
+  }
+
+  if (unstated.length) {
+    console.log(`── ${unstated.length} usable items that say nothing about what they cost (for information) ──`);
+    console.log(`   Nothing to fix unless you want the card to charge an action: the text states no cost.`);
+    for (const f of unstated) {
+      console.log(`  ${f.name}${f.charges ? `  (${f.charges} charge${f.charges === 1 ? "" : "s"})` : ""}`);
+    }
+    console.log();
+  }
 }
 
-/**
- * ⚠ THE ONE HARD FAILURE: a field that CONTRADICTS the item's own text. An unset field is work
- * still to do; a set one that disagrees is a wrong answer already shipped, and it will cost a
- * player their turn at the table.
- */
-const contradictions = mismatch.filter(f => f.authored !== undefined);
-if (contradictions.length) {
-  for (const f of contradictions) {
-    problems.push(`${f.name} is authored as ${ITEM_ACTIVATION_LABEL[f.authored!]} but its own text says ${ITEM_ACTIVATION_LABEL[f.reads!]}`);
-  }
-}
-
-if (problems.length) { console.error(`FAILED:\n  ${problems.join("\n  ")}`); process.exit(1); }
-console.log(`PASS — no item is authored with an activation that contradicts its own rules text.`);
+if (failures) { console.error(`\nFAILED (${failures}) — the activation READER is wrong, not the library.`); process.exit(1); }
+console.log("\nPASS — the reader reads every known sentence right. The library lists above are for the author and never fail a publish.");

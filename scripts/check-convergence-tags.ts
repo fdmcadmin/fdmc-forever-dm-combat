@@ -18,7 +18,16 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BROKEN_CHAIN_EQUIPMENT_LIBRARY as LIB, RETIRED_EQUIPMENT_IDS } from "../src/data/broken-chain/equipmentLibrary";
+/**
+ * ⚠ THE DOCUMENT, NOT THE DM'S LIBRARY. Every count and value asserted here is the loot document's, so it is read
+ * from `CAMPAIGN_DOCUMENT_EQUIPMENT` — the layers as the revision publishes them. The live library carries the DM's
+ * own edits the moment they publish, and a gate that held those to the document blocked their publishing
+ * (Christopher, 2026-09-21: *"everything you changed blocks me from making changes"*). `PUBLISHED` is read only
+ * for what the CODE guarantees whatever the DM authors: nothing retired ships.
+ */
+import {
+  CAMPAIGN_DOCUMENT_EQUIPMENT as LIB, BROKEN_CHAIN_EQUIPMENT_LIBRARY as PUBLISHED, RETIRED_EQUIPMENT_IDS,
+} from "../src/data/broken-chain/equipmentLibrary";
 import { mergeAuthored } from "../src/data/broken-chain/authored.generated";
 import { itemToAction, type EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
 import { LOOT_V11_ITEMS } from "../src/data/broken-chain/lootV11";
@@ -256,11 +265,14 @@ console.log("\n1d. the v11 sweep — every item, Act 1 to the last Act 4 drop");
   const formless = weaponGifts.filter(g => matchingForms(g.chassis).length === 0);
   ok("every weapon Gift can take at least one weapon form", formless.length === 0, formless.map(g => g.name).join(", "));
 
-  /** Christopher: *"there is no act 1 field ward, or a act 2 ward cache."* */
-  const wardRows = LIB.filter(i => /WARD FIELD|Ward Cache/i.test(String(i.sourceEncounter ?? "")));
-  ok("no Act 1 Ward Field or Act 2 Ward Cache item is published", wardRows.length === 0, wardRows.map(i => i.name).join(", "));
-  ok("...and nothing on the retired list is", !LIB.some(i => RETIRED_EQUIPMENT_IDS.includes(i.id)),
-    LIB.filter(i => RETIRED_EQUIPMENT_IDS.includes(i.id)).map(i => i.name).join(", "));
+  /**
+   * Christopher: *"there is no act 1 field ward, or a act 2 ward cache."* By ID, and against what actually ships:
+   * the retirement is a guarantee of the CODE, true whatever the DM publishes — never a rule about their content.
+   */
+  const wardIds = ["bc-sentrys-knot", "bc-unspent-mark", "tbc-rimestone-pauldron", "tbc-hollow-pack-ward-token"];
+  ok("the Act 1 Ward Field and Act 2 Ward Cache items are on the retired list", wardIds.every(id => RETIRED_EQUIPMENT_IDS.includes(id)));
+  ok("...and nothing on the retired list is published", !PUBLISHED.some(i => RETIRED_EQUIPMENT_IDS.includes(i.id)),
+    PUBLISHED.filter(i => RETIRED_EQUIPMENT_IDS.includes(i.id)).map(i => i.name).join(", "));
   ok("MUTATION: the chassis the focus Gifts had matches no weapon, so the check above can fail",
     matchingForms({ requireTags: ["two-handed"] }).length === 0 && matchingForms({ requireTags: ["one-handed"] }).length === 0);
   ok("Gift of Winterwatch tracks Hold the Line — once per Short or Long Rest",

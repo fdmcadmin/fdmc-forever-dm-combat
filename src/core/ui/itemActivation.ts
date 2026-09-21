@@ -116,10 +116,10 @@ export function readActivation(text: string | undefined): {
 } {
   const t = (text ?? "").toLowerCase();
   if (!t.trim()) return { activation: undefined, named: [], ambiguous: false };
-  const hits: Array<{ at: number; activation: ItemActivation }> = [];
+  const hits: Array<{ at: number; activation: ItemActivation; text: string }> = [];
   for (const [activation, re] of ACTIVATION_PATTERNS) {
     const m = t.match(re);
-    if (m && m.index !== undefined) hits.push({ at: m.index, activation });
+    if (m && m.index !== undefined) hits.push({ at: m.index, activation, text: m[0] });
   }
   /**
    * ⚠ A REACTION SOMEONE ELSE SPENDS IS NOT THIS ITEM'S COST.
@@ -135,11 +135,33 @@ export function readActivation(text: string | undefined): {
     const end = t.indexOf(".", at);
     return t.slice(start, end === -1 ? t.length : end);
   };
-  const someoneElses = (h: { at: number; activation: ItemActivation }) => {
-    if (h.activation !== "reaction") return false;
+  /**
+   * ⚠ AND "YOU CAN TAKE A REACTION" IS YOURS, WHOEVER ELSE THE SENTENCE NAMES.
+   *
+   * The rule above was written for Redwake Shuttle and read too wide. v11's Turnstep Relay: "When a hostile
+   * creature you can see within 30 feet starts its turn, you can take a Reaction to move up to half your
+   * current Speed […] You move before the creature moves or takes an action." The TRIGGER names a hostile, so
+   * the bearer's own Reaction was thrown out — and then the hostile's "takes an action" was read as the item's
+   * cost. Christopher's publish failed on it: "Turnstep Relay is authored as Reaction but its own text says
+   * Action." Three readings, each checked against the words:
+   *
+   *   reaction   YOURS when "you" is the one taking it ("you can take a Reaction") or it says "your Reaction"
+   *   action     a creature's when a creature "takes an action" — third person is never the bearer
+   *   action     a TRIGGER, not a cost, in "whenever you take the Magic action" (Gift of First Light)
+   */
+  const before = (at: number, span = 48) => t.slice(Math.max(0, at - span), at);
+  const someoneElses = (h: { at: number; activation: ItemActivation; text: string }) => {
     const sentence = sentenceOf(h.at);
-    if (/\byour reaction\b/.test(sentence)) return false;
-    return /\b(?:ally|allies|willing creature|another creature|that creature|the attacker|a hostile)\b/.test(sentence);
+    if (h.activation === "reaction") {
+      if (/\byour reaction\b/.test(sentence)) return false;
+      if (/\byou\s+(?:can\s+|may\s+|must\s+)?$/.test(before(h.at, 12))) return false;
+      return /\b(?:ally|allies|willing creature|another creature|that creature|the attacker|a hostile)\b/.test(sentence);
+    }
+    if (h.activation === "action") {
+      if (/^takes\b/.test(h.text) && /\b(?:creature|target|attacker|enemy|foe|ally|hostile)\b[^.]*$/.test(before(h.at))) return true;
+      if (/\b(?:whenever|when|each time)\s+you\s+take\s+(?:the|a)\s+$/.test(before(h.at, 28))) return true;
+    }
+    return false;
   };
   for (let i = hits.length - 1; i >= 0; i--) if (someoneElses(hits[i])) hits.splice(i, 1);
 
@@ -162,9 +184,11 @@ export function readActivation(text: string | undefined): {
  * nothing to spend.
  */
 export function isUsableItem(item: {
-  isUsable?: boolean; attack?: string; charges?: unknown; damage?: string; saveDc?: string; effect?: unknown;
+  isUsable?: boolean; attack?: string; charges?: unknown; damage?: string; saveDc?: string; effect?: unknown; chassis?: unknown;
 }): boolean {
-  if (item.attack) return false;
+  // ⚠ A CHASSIS IS A WEAPON TOO. A Feywild Gift has no `attack` until its form is chosen on a character, so it
+  // read as a usable item and every Gift sat on the "says nothing about what it costs" list.
+  if (item.attack || item.chassis) return false;
   return Boolean(item.isUsable || item.charges || item.effect || item.damage || item.saveDc);
 }
 
@@ -192,7 +216,7 @@ export type ActivationFinding = {
 export function sweepItemActivation(items: readonly {
   id: string; name: string; description?: string; mechanicsText?: string;
   activation?: ItemActivation; isUsable?: boolean; charges?: { max: number };
-  damage?: string; saveDc?: string; effect?: unknown;
+  damage?: string; saveDc?: string; effect?: unknown; chassis?: unknown;
 }[]): ActivationFinding[] {
   const out: ActivationFinding[] = [];
   for (const item of items) {

@@ -1973,3 +1973,22 @@ export const BROKEN_CHAIN_EQUIPMENT_LIBRARY: EquipmentItem[] =
     .filter(item => !RETIRED.has(item.id))
     // A revision's `null` clears a field through both merges; nothing published carries one.
     .map(withoutClears);
+
+/**
+ * THE LIBRARY AS THE LOOT DOCUMENT PUBLISHES IT — before the DM's own later edits. FOR CHECKS, NOT THE APP.
+ *
+ * ⚠ A CHECK THAT READS THE LIVE LIBRARY HOLDS THE DM'S AUTHORING TO THE DOCUMENT. Christopher, 2026-09-21: *"when i
+ * publish something everything you changed blocks me from making changes because the system says these havent
+ * been fixed."* The v9/v11 checks asserted document values — Rimeguard's AC, a Gift's name, a pool's recharge —
+ * against `BROKEN_CHAIN_EQUIPMENT_LIBRARY`, which is the DM's library the moment they publish: their export is
+ * newer than the revision and wins, as it is meant to. Every legitimate edit would have failed a gate.
+ *
+ * So the document checks read THIS: the same layers, with the export treated as OLDER than the revision — what the
+ * revision alone puts on the table — and only the items the campaign document itself defines, never one the DM
+ * added. It answers "was v11 transcribed and merged correctly?" and says nothing about what the DM may change.
+ */
+const DOCUMENT_IDS = new Set([...BUNDLED_EQUIPMENT_LIBRARY, ...LOOT_V11_ITEMS].map(item => item.id));
+export const CAMPAIGN_DOCUMENT_EQUIPMENT: EquipmentItem[] =
+  mergeAuthored(REVISED_EQUIPMENT_LIBRARY, AUTHORED_EQUIPMENT, i => i.id, { authoredAt: "1970-01-01T00:00:00.000Z" })
+    .filter(item => DOCUMENT_IDS.has(item.id) && !RETIRED.has(item.id))
+    .map(withoutClears);

@@ -19,7 +19,15 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mergeAuthored, withoutClears } from "../src/data/broken-chain/mergeAuthored";
-import { BROKEN_CHAIN_EQUIPMENT_LIBRARY as LIB, RETIRED_EQUIPMENT_IDS } from "../src/data/broken-chain/equipmentLibrary";
+/**
+ * ⚠ ITEMS ARE READ FROM THE DOCUMENT VIEW, NOT THE DM'S LIBRARY. The fixtures below are v11's Gifts as v11 prints
+ * them; the DM may rename or rebalance any of them in-app, and that must never fail a check (Christopher,
+ * 2026-09-21: *"everything you changed blocks me from making changes"*). `PUBLISHED` — the live library — is read
+ * only for what the code guarantees whatever the DM authors: no null ships, no retired item ships.
+ */
+import {
+  CAMPAIGN_DOCUMENT_EQUIPMENT as LIB, BROKEN_CHAIN_EQUIPMENT_LIBRARY as PUBLISHED, RETIRED_EQUIPMENT_IDS,
+} from "../src/data/broken-chain/equipmentLibrary";
 import { AUTHORED_EQUIPMENT } from "../src/data/broken-chain/authored.generated";
 import {
   itemToAction, itemToAttackAction, resolveChassisItem, seedCampaignEquipmentLibrary, loadEquipmentLibrary,
@@ -60,7 +68,26 @@ console.log("1. a layer can remove a field, through both merges");
   /** ⚠ MUTATION: the first build stripped the null inside the first merge — and the old chassis came back. */
   const early = mergeAuthored(mergeAuthored(base, revision, r => r.id).map(withoutClears), exported, r => r.id, at).map(withoutClears);
   ok("MUTATION: stripping the null before the last merge lets the old chassis win", Boolean(early[0]?.chassis));
-  ok("nothing published carries a null", !LIB.some(i => Object.values(i).some(v => v === null)));
+  ok("nothing published carries a null", !PUBLISHED.some(i => Object.values(i).some(v => v === null)));
+
+  /**
+   * ⚠ THE DM'S LATER EDIT WINS AT THE TABLE, AND NO CHECK HOLDS IT TO THE DOCUMENT.
+   *
+   * Christopher, 2026-09-21: *"you have been … writting them to a seed that i can never change and when i publish
+   * something everything you changed blocks me from making changes."* Both halves are the same rule: an export
+   * NEWER than the revision is the DM's word (the live library), and the document checks read the revision as
+   * published (the export treated as older), so an edit the DM makes can never turn a document check red.
+   */
+  const doc: Row[] = [{ id: "rimeguard", name: "Rimeguard (Medium)", chassis: "15 + DEX", revisedAt: "2026-09-16T12:41:00.000Z" }];
+  const theirEdit: Row[] = [{ id: "rimeguard", name: "Rimeguard (Medium)", chassis: "16 + DEX" }];
+  ok("an export published AFTER the revision wins at the table",
+    mergeAuthored(doc, theirEdit, r => r.id, { authoredAt: "2026-09-21T19:12:53.028Z" })[0].chassis === "16 + DEX");
+  ok("...while the document view still reads the revision, so the DM's edit fails no document check",
+    mergeAuthored(doc, theirEdit, r => r.id, { authoredAt: "1970-01-01T00:00:00.000Z" })[0].chassis === "15 + DEX");
+  const lib = codeOf("src/data/broken-chain/equipmentLibrary.ts");
+  ok("CAMPAIGN_DOCUMENT_EQUIPMENT is built that way", lib.includes('{ authoredAt: "1970-01-01T00:00:00.000Z" }'));
+  ok("...and the document gates read it, not the live library",
+    ["scripts/check-convergence-tags.ts", "scripts/check-gift-focus.ts"].every(f => codeOf(f).includes("CAMPAIGN_DOCUMENT_EQUIPMENT as LIB")));
 
   const generated = codeOf("src/data/broken-chain/authored.generated.ts");
   const template = codeOf("scripts/fold-authoring.mjs");
@@ -145,7 +172,11 @@ console.log("\n4. the rules the card applies");
   ok("Duskthorn bound to an equipped Frostedge is a live charm on Frostedge's attack",
     Boolean(charm) && charm.weaponAttackActionId === "atk-tbc-frostedge" && charm.choosesMode, JSON.stringify(charm));
   ok("...adding +1, because Frostedge is already +1 — the HIGHER bonus, not both", charm?.bonusDelta === 1, String(charm?.bonusDelta));
-  ok("...+2 on a mundane longsword", boundCharms(sheet({ weapon: item("Longsword") }))[0]?.bonusDelta === 2);
+  // A mundane longsword straight from the base weapon table — the library's copy comes from the author export.
+  const longsword = findForm("base-longsword")!;
+  const mundane = { id: longsword.id, name: longsword.name, type: "weapon", description: "", isUsable: true,
+    attack: longsword.attack, damage: longsword.damage, category: longsword.category } as EquipmentItem;
+  ok("...+2 on a mundane longsword", boundCharms(sheet({ weapon: mundane }))[0]?.bonusDelta === 2);
   ok("...nothing on a stowed weapon", boundCharms(sheet({ weaponEquipped: false })).length === 0);
   ok("...nothing when bound to a weapon the character does not carry", boundCharms(sheet({ bound: "tbc-coldshot" })).length === 0);
 
@@ -197,15 +228,21 @@ console.log("\n6. a DM can author all of it");
 
 console.log("\n7. a retired item stays retired");
 {
-  const cache = AUTHORED_EQUIPMENT.find(i => i.id === "tbc-hollow-pack-ward-token");
-  ok("the author export still carries the Hollow Pack Ward Token — the case this guards", Boolean(cache));
-  ok("...and the published library does not", !LIB.some(i => i.id === "tbc-hollow-pack-ward-token"));
+  /**
+   * The author export carried the Hollow Pack Ward Token when this was written, and the fold keeps any item a new
+   * payload does not mention — so it may carry it for good, or a later publish may drop it. The check must not
+   * depend on which: a stand-in with the retired id is the same case.
+   */
+  const cache = (AUTHORED_EQUIPMENT.find(i => i.id === "tbc-hollow-pack-ward-token")
+    ?? { id: "tbc-hollow-pack-ward-token", name: "Hollow Pack Ward Token", type: "magic", description: "", isUsable: true }) as EquipmentItem;
+  ok("the published library does not carry a retired item the export still holds",
+    !PUBLISHED.some(i => i.id === "tbc-hollow-pack-ward-token"));
   ok("the Act 1 Ward Field pool is retired", ["bc-sentrys-knot", "bc-unspent-mark"].every(id => RETIRED_EQUIPMENT_IDS.includes(id)));
 
   // A browser that already holds cache items in both stores, seeded with a list that still names one.
-  saveEquipmentLibrary([cache!, ...LIB.slice(0, 3)], "campaign");
-  saveEquipmentLibrary([{ ...cache!, name: "Hollow Pack Ward Token (unlocked)" }], "dm");
-  seedCampaignEquipmentLibrary([...LIB, cache!], RETIRED_EQUIPMENT_IDS);
+  saveEquipmentLibrary([cache, ...PUBLISHED.slice(0, 3)], "campaign");
+  saveEquipmentLibrary([{ ...cache, name: "Hollow Pack Ward Token (unlocked)" }], "dm");
+  seedCampaignEquipmentLibrary([...PUBLISHED, cache], RETIRED_EQUIPMENT_IDS);
   const all = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
   ok("a seed handed a retired item does not write it back", !all.some(i => i.id === "tbc-hollow-pack-ward-token"),
     all.filter(i => i.id === "tbc-hollow-pack-ward-token").map(i => i.name).join(", "));
