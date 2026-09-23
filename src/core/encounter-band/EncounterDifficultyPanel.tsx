@@ -609,6 +609,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       : { round1: profile.dpr.round1 + partyFeats.dpr, round2: profile.dpr.round2 + partyFeats.dpr,
         round3: profile.dpr.round3 + partyFeats.dpr, round4Plus: profile.dpr.round4Plus + partyFeats.dpr };
     return partyBenchmark({
+      // The certified line AT THIS ARRIVAL STATE — the same depletion the party is being run with.
+      midpoint: { round1: profile.dpr.round1, round2: profile.dpr.round2, round3: profile.dpr.round3,
+        round4Plus: profile.dpr.round4Plus, sustain: profile.sustain },
       level: partyLevel,
       mode: bondBaselineMode,
       // Like for like: the current side is this size's profile, so the line must be too.

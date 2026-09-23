@@ -139,5 +139,29 @@ console.log("\nThe rated party and the simulated party are the same party");
     rebuilt ? `found ${JSON.stringify(rebuilt[0])}` : "");
 }
 
+console.log("");
+console.log("The line is drawn at the party's own arrival state");
+{
+  /**
+   * Christopher, 2026-09-23, on a 4P L8 party set to arrive 40% spent, reading "R1 -87.7 (-61%)":
+   * the current side carried the depletion and the published midpoint did not, so the delta reported
+   * the ARRIVAL as if it were the party's strength.
+   */
+  const fresh = midpointFor(8, "brokenChain", 4)!;
+  const spent = 0.4;
+  const depleted = { round1: 121, round2: 105, round3: 101, round4Plus: 87, sustain: fresh.sustain * (1 - spent) };
+  const matched: any = partyBenchmark({ level: 8, mode: "brokenChain", partySize: 4, current: depleted, midpoint: depleted })!;
+  ok("a party compared with the line at its own arrival state reads level",
+    matched.rows.every((r: any) => Math.abs(r.delta) < 1e-9), matched.rows.map((r: any) => r.delta.toFixed(1)).join(", "));
+  const unmatched: any = partyBenchmark({ level: 8, mode: "brokenChain", partySize: 4, current: depleted })!;
+  const r1 = unmatched.rows.find((r: any) => r.key === "round1");
+  ok("  (mutation) against the FULL-strength line the same party reads far under",
+    r1.delta < -15, `R1 ${r1.delta.toFixed(1)} (${(r1.percent * 100).toFixed(0)}%)`);
+  const sustainRow = unmatched.rows.find((r: any) => r.key === "sustain");
+  ok("  ...and that sustain deficit is exactly the share it arrived without",
+    Math.abs(sustainRow.delta + fresh.sustain * spent) < 1e-9, sustainRow.delta.toFixed(1));
+  ok("an unmatched call still reads the published line", Math.abs(fresh.round1 - (depleted.round1 - r1.delta)) < 1e-9);
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

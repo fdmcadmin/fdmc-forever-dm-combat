@@ -218,5 +218,27 @@ console.log("\n── §7 Diagnostic trace reconciles with the engine it describ
     d.rounds.map(x => x.bodies.map(b => b.aliveAtEnd).join("/")));
 }
 
+console.log("\n── §9 MER reads the fight's own damage, not its opening round");
+{
+  /**
+   * Christopher, 2026-09-23: Act 3 fights headlined FALLS FIRST above a round table showing the party
+   * surviving. MER was sustain / the roster's ROUND-ONE damage held flat for the whole fight, while PCER
+   * walks the party's own ladder and the simulation beside it kills bodies.
+   */
+  const party = { size: 4, sustain: 400, dpr: { round1: 30, round2: 30, round3: 30, round4Plus: 30 } };
+  const decaying: any = simulateEncounter({ party, roster: [body("a", 25, 25), body("b", 25, 25), body("c", 25, 25), body("d", 25, 25)] });
+  const flat = party.sustain / decaying.startingEncounterDpr;
+  check("a fight that never empties the pool reads at the fight's own rate", decaying.merBasis, "rate");
+  check("...which is longer than the opening-round reading", decaying.mer > flat, true);
+  check("...so the margin agrees with the round table beside it", decaying.safetyMargin > 0, true);
+  report("decaying roster MER vs the old flat reading", `${decaying.mer.toFixed(2)} vs ${flat.toFixed(2)}`);
+  // Nothing dies, so the roster's damage never decays and the fight's own rate IS its opening round.
+  const constant: any = simulateEncounter({ party: { ...party, dpr: { round1: 1, round2: 1, round3: 1, round4Plus: 1 } }, roster: [body("solo", 100, 1000)] });
+  check("with nothing dying, MER is the opening-round reading exactly", constant.mer, 4);
+  check("...read off the round the pool empties", constant.merBasis, "fall");
+  check("...and that round is the simulation's own fatal round", constant.fatalRound, Math.ceil(constant.mer));
+  check("...with a negative margin, because the party does fall first", constant.safetyMargin < 0, true);
+}
+
 console.log(`\n${failures.length === 0 ? "ALL PASS" : "FAILURES"} — ${passed} passed, ${failures.length} failed`);
 if (failures.length) { failures.forEach(f => console.log(`  - ${f}`)); process.exit(1); }

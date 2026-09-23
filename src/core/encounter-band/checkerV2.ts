@@ -907,6 +907,8 @@ export type EncounterResult = {
   pcer: number | null;
   mer: number | null;
   safetyMargin: number | null;
+  /** How MER was read: the round the pool empties, or the fight's own mean round when it never does. */
+  merBasis: "fall" | "rate" | null;
   balanceAdjustment: {
     targetSafetyMargin: number;
     targetPcer: number | null;
@@ -1291,7 +1293,41 @@ export function simulateEncounter(opts: {
     ? null : rounds.find(row => row.round === completionRound) ?? null;
   const startingEncounterDpr = encounterDprAt(prepared, 0, 1);
   const pcer = partyRoundEquivalent(party.dpr, encounterEhp);
-  const mer = startingEncounterDpr > 0 ? partySustain / startingEncounterDpr : null;
+  /**
+   * MER — ROUNDS UNTIL THE PARTY RUNS OUT, AT THE RATE THIS FIGHT ACTUALLY DEALS.
+   *
+   * Christopher, 2026-09-23, on Act 3 fights headlined FALLS FIRST above a round table showing the
+   * party surviving: *"none of these things should be correct."* He was right, and the fault was one
+   * division. This was sustain / the roster DPR of ROUND ONE — the whole roster, alive, for every round
+   * of the fight — while PCER walks the party down its own R1..R4+ ladder and the simulation beside it
+   * kills bodies. The Scar Line read "2.63 rounds to fall" against a fight that deals 112, 62, 28, 16, 9:
+   * 227 of a 296 pool, so the party never falls at all.
+   *
+   * PCER and MER now measure the same way — each side at its own decaying rate:
+   *   the party FALLS      the fractional round its pool empties, read off the rounds themselves
+   *   it does not fall     sustain / the fight own mean round, so the margin stays a number a DM can
+   *                        compare and the HP-change suggestion still has something to solve for
+   *
+   * ⚠ PCER/MER ARE THE CHECKER OWN, not workbook rows (MASTER: the checker "adds PCER/MER, safety
+   * margin, special-outcome risks and allocation" to the v6 fields), so this definition is ours to
+   * correct. The roster opening DPR is still reported as `startingEncounterDpr`.
+   */
+  const monsterDamageDealt = rounds.reduce((sum, row) => sum + row.monsterDamage, 0);
+  let merBasis: "fall" | "rate" | null = null;
+  const mer = (() => {
+    let cum = 0;
+    for (const row of rounds) {
+      if (row.monsterDamage > 0 && cum + row.monsterDamage + EPSILON >= partySustain) {
+        merBasis = "fall";
+        return row.round - 1 + (partySustain - cum) / row.monsterDamage;
+      }
+      cum += row.monsterDamage;
+    }
+    const meanRound = rounds.length > 0 ? monsterDamageDealt / rounds.length : 0;
+    if (!(meanRound > 0)) return null;
+    merBasis = "rate";
+    return partySustain / meanRound;
+  })();
   const safetyMargin = pcer === null || mer === null ? null : mer - pcer;
   const targetSafetyMargin = Number(settings.targetSafetyMargin ?? 1);
   const targetPcer = mer === null ? null : Math.max(0, mer - targetSafetyMargin);
@@ -1320,7 +1356,7 @@ export function simulateEncounter(opts: {
     downsAtCompletion: completionState?.downs ?? null,
     damagedButStandingAtCompletion: completionState?.damagedButStanding ?? null,
     standingAtCompletion: completionState?.standing ?? null,
-    pcer, mer, safetyMargin,
+    pcer, mer, safetyMargin, merBasis,
     balanceAdjustment: {
       targetSafetyMargin, targetPcer, targetEncounterEhp, scaledHpChange, baseFourPcHpChange,
       percentChange: scaledHpChange === null || encounterEhp === 0 ? null : scaledHpChange / encounterEhp,

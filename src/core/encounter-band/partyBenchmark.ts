@@ -145,9 +145,20 @@ export function partyBenchmark(opts: {
   /** The party being measured — the midpoint is drawn for THIS size when the curve certifies it. */
   partySize?: number;
   current: RoundsAndSustain;
+  /**
+   * THE LINE AT THE SAME ARRIVAL STATE AS THE PARTY STANDING ON IT.
+   *
+   * Christopher, 2026-09-23, reading "-87.7 (-61%)" on a party set to arrive 40% spent: the current side
+   * is depleted and the published midpoint is not, so the delta reported the ARRIVAL as if it were the
+   * party's strength. At 40% the certified L8 4P line is 121/105/101/87, not 144/124/119/102 — a 23-point
+   * head start the party was charged for. The panel passes the depleted certified profile here; without
+   * it the published full-strength line is used, which is right for a fresh comparison.
+   */
+  midpoint?: RoundsAndSustain;
 }): PartyBenchmark | null {
-  const mid = midpointFor(opts.level, opts.mode, opts.partySize);
-  if (!mid) return null;
+  const published = midpointFor(opts.level, opts.mode, opts.partySize);
+  if (!published) return null;
+  const mid = opts.midpoint ? { ...published, ...opts.midpoint } : published;
   const { current } = opts;
   const rows: BenchmarkRow[] = [
     row("round1", LABELS.round1, mid.round1, current.round1),
