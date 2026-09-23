@@ -23,6 +23,9 @@
  */
 
 import { actorAsCreature } from "../src/core/encounter-band/actorAsCreature";
+// The checker's own tracer, so a character's reactions are asserted through the economy that owns them.
+import { parseCreature } from "../src/core/encounter-band/parseCreature";
+import { traceCreature } from "../src/core/encounter-band/actionTrace";
 import { resourceLedgerFromActor, RESOURCE_DAY } from "../src/core/encounter-band/resourceLedger";
 import { currentPartyMetrics, targetFromRoster } from "../src/core/encounter-band/currentPartyResolver";
 
@@ -415,6 +418,93 @@ console.log("\nA zone's +N to its allies' saves, against the CHOSEN party");
   ok("the panel hands a chosen party's own DCs and share to the roster",
     panel.includes("partySaveDcs: fightInputs.partySaveDcs ?? currentParty?.delivery.saveDcs,")
     && /partyAttackShare: fightInputs\.partyAttackShare \?\? currentParty\?\.delivery\.attackShare/.test(panel));
+}
+
+/**
+ * A CHARACTER'S REACTION IS READ, AND IT IS READ AS A REACTION.
+ *
+ * Christopher, 2026-09-23: *"reactions because of my 5 party memeber everyone of them except iskarn has a
+ * reaction that interacts with the creatures and iskarn only doesnt have a reaction because he doesnt have
+ * a shield at this point."* `actorAsCreature` returned `reactions: []` for every character, so four of five
+ * were read without the thing they do on every round that is not their own.
+ *
+ * ⚠ AND IT MUST NOT LAND IN THE TURN ROUTINE. A reaction row used to fall into `actions`, where the tracer
+ * swings it every turn beside the character's real attacks — a whole extra action a round, on their own
+ * turn, which is not when a reaction happens.
+ */
+{
+  console.log("\nA reaction is read as a reaction");
+
+  const sword = {
+    id: "sw", label: "Longsword", actionKind: "attack", economyCost: ["main"],
+    metadata: { attack: "1d20+@STR+@PROF", damage: "1d8+@STR", damageType: "Slashing" },
+  };
+  const riposte = {
+    id: "rip", label: "Riposte", actionKind: "feature", economyCost: ["reaction"],
+    metadata: {
+      attack: "1d20+@STR+@PROF", damage: "1d8+@STR", damageType: "Slashing",
+      details: "When a creature misses you with a melee attack, you can use your reaction to make one attack against it.",
+    },
+  };
+  /** No dice, no save: a defensive reaction. Sustain owns it — see `partyMitigationFromActors`. */
+  const shield = {
+    id: "sh", label: "Shield", actionKind: "feature", economyCost: ["reaction"],
+    metadata: { details: "+5 AC until the start of your next turn." },
+  };
+
+  const sheet = (rows: unknown[]) => ({
+    id: "react", kind: "player", name: "Reactor", level: 7, attacksPerAction: 2,
+    stats: { ac: 18, hp: { current: 60, max: 60 }, speed: "30 ft." },
+    abilityScores: {
+      str: { score: 18 }, dex: { score: 16 }, con: { score: 14 },
+      int: { score: 10 }, wis: { score: 12 }, cha: { score: 10 },
+    },
+    tabs: { main: rows },
+  }) as never;
+
+  const read = actorAsCreature(sheet([sword, riposte]));
+  const actionNames = (read.creature.actions as Array<{ name?: string }>).map(a => a.name);
+  const reactionNames = ((read.creature as { reactions?: Array<{ name?: string }> }).reactions ?? []).map(a => a.name);
+
+  ok("the reaction is NOT in the turn routine", !actionNames.includes("Riposte"), actionNames.join(", "));
+  ok("...it is in the creature's reactions", reactionNames.includes("Riposte"), reactionNames.join(", ") || "(none)");
+  ok("...carrying its own roll and damage",
+    ((read.creature as { reactions?: Array<{ roll?: string; damage?: string }> }).reactions ?? [])
+      .some(r => Boolean(r.roll) && Boolean(r.damage)));
+  ok("...and the read says it was read that way",
+    read.assumptions.some(a => /read as a REACTION/.test(a)));
+
+  /** ⚠ THE NUMBER: a reaction adds to the round, and the turn routine itself is unchanged. */
+  const plain = actorAsCreature(sheet([sword]));
+  const dprOf = (c: ReturnType<typeof actorAsCreature>) => {
+    const t = traceCreature(parseCreature(c.creature) as never, { ac: 15, hp: 100 } as never, 4) as unknown as
+      { rounds: Array<{ totalExpectedDamage?: number }> };
+    return t.rounds.reduce((n, r) => n + (r.totalExpectedDamage ?? 0), 0) / t.rounds.length;
+  };
+  const withReaction = dprOf(read);
+  const without = dprOf(plain);
+  ok("a character with a reaction reads higher than one without", withReaction > without + 1e-6,
+    `${without.toFixed(2)} -> ${withReaction.toFixed(2)}`);
+
+  /**
+   * ⚠ MUTATION: THREE REACTIONS ARE STILL ONE REACTION. The Reaction budget is one a turn and the
+   * tracer owns that rule — this proves an actor's reactions actually reach it, rather than being
+   * summed by a second path that never learned the economy.
+   */
+  const three = actorAsCreature(sheet([
+    sword, riposte,
+    { ...riposte, id: "rip2", label: "Riposte II" },
+    { ...riposte, id: "rip3", label: "Riposte III" },
+  ]));
+  ok("three reactions do not out-damage one", Math.abs(dprOf(three) - withReaction) < 1e-6,
+    `one ${withReaction.toFixed(2)} vs three ${dprOf(three).toFixed(2)}`);
+
+  /** A defensive reaction has no dice here; sustain owns it, and it must not become a damage row. */
+  const defensive = actorAsCreature(sheet([sword, shield]));
+  ok("a reaction with no dice raises no damage row",
+    ((defensive.creature as { reactions?: unknown[] }).reactions ?? []).length === 0);
+  ok("...and is not reported as unreadable either",
+    defensive.unreadable.every(u => !/Shield/.test(u)), defensive.unreadable.join(" | "));
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);

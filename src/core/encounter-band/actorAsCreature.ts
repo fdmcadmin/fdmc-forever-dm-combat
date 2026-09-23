@@ -203,6 +203,20 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
   const atWill: MainMonsterTemplate["actions"] = [];
   /** At-will damage that has no roll of its own — it rides an attack this character already makes. */
   const freeRiders: MonsterRider[] = [];
+  /**
+   * ⚠ THE READ PARTY HAD NO REACTIONS AT ALL — `reactions: []`, hard-coded, on every character.
+   *
+   * Christopher, 2026-09-23: *"reactions because of my 5 party memeber everyone of them except iskarn
+   * has a reaction that interacts with the creatures and iskarn only doesnt have a reaction because he
+   * doesnt have a shield at this point."* Four of five characters were read without the thing they do on
+   * every round that is not their own.
+   *
+   * A reaction is NOT part of the turn routine, so it cannot go in `actions` — that would hand the
+   * character an extra attack on their own turn, every turn. It goes where a monster's reactions go, and
+   * `actionTrace` already owns the economy: one Reaction a turn, shared with the Bonus Action, with the
+   * printed "this does not use your reaction" disclaimers honoured.
+   */
+  const reactions: MainMonsterTemplate["reactions"] = [];
   /** This actor's own pool labels — what `resolveNamedResourceCost` matches a cost against. */
   const poolRefs = ((actor.tabs?.resources ?? []) as unknown as Array<{ id?: string; label?: string }>)
     .filter(x => x?.label).map(x => ({ id: x.id, label: String(x.label) }));
@@ -316,6 +330,32 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
           ? (action.economyCost as string[]).includes("main")
           : true,
       });
+      continue;
+    }
+
+    /**
+     * ⚠ SPENDS THE REACTION -> IT IS A REACTION, not a second attack on this character's own turn.
+     *
+     * A row that costs the Reaction and no resource used to fall straight into `atWill`, where the
+     * routine swings it every turn alongside the character's actual attacks. Riposte, Hellish Rebuke,
+     * an opportunity attack rider — each was worth a full extra action a round.
+     */
+    const costs = (action.economyCost as string[] | undefined) ?? [];
+    if (costs.includes("reaction")) {
+      const reactionRoll = attackRollFor(m.attack ? String(m.attack) : undefined, actor, isSpell);
+      if (!reactionRoll && !m.saveDc && !damage) continue;
+      reactions.push({
+        name: label,
+        ...(reactionRoll ? { roll: reactionRoll } : {}),
+        ...(damage ? { damage } : {}),
+        ...(m.damageType ? { damageType: String(m.damageType) } : {}),
+        ...(m.saveDc ? { save: resolved(String(m.saveDc), actor) ?? String(m.saveDc) } : {}),
+        ...(m.successDamage ? { successDamage: String(m.successDamage) } : {}),
+        ...(m.range ? { range: String(m.range) } : {}),
+        // The printed text, so the trace can read a "this does not use your reaction" disclaimer.
+        ...(healText.trim() ? { text: healText.trim() } : {}),
+      } as never);
+      assumptions.push(`${label} (${tab}): read as a REACTION, not as part of this character's turn. It resolves once a round on somebody else's turn, on the same Reaction budget as everything else they hold.`);
       continue;
     }
 
@@ -481,7 +521,7 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
     })),
     actions: atWill,
     traits: [],
-    reactions: [],
+    reactions,
   } as never;
 
   return { creature, spends, unreadable, assumptions };

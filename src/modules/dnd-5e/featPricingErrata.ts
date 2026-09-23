@@ -10,6 +10,12 @@
  * `featPricing.generated.ts` is generated from `broken_chain_encounter_checker_v12_feat_pricing.xlsx`
  * tab 17 and says "do not hand-edit" for the reason RULE 1A gives: a hand-maintained copy of 117
  * feats drifts from the workbook on the first edit, and a drifted copy is worse than none. This file
+ * ⚠ AND THAT WORKBOOK IS RETIRED. Christopher, 2026-09-23: *"the workbook has been retired since it now
+ * uses V3 Feat pricing and recovery but that is now being used for the CVS so it will get corrected
+ * there."* So the generated table is a SNAPSHOT of a source nobody is editing any more, and there is no
+ * regeneration coming that would overwrite a correction by accident. When the V3 CSV lands, the rows it
+ * fixes lose their erratum here and nothing else changes.
+ *
  * does not edit it. It is a short, named list of rows the PRINTED FEAT contradicts, applied over the
  * generated one at read time, so a regenerated workbook still wins everywhere an erratum is silent —
  * and the moment the workbook row is fixed, its erratum can be deleted and nothing else changes.
