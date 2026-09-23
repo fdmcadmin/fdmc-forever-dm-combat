@@ -1,3 +1,4 @@
+import type { ActionCost } from "../types/actionEconomy";
 import type { RerollMethod } from "../state/rerollMethod";
 
 export type PcActionTab = "action" | "bonus" | "reaction" | "bond" | "spell" | "feature" | "resource" | "outOfCombat";
@@ -105,7 +106,10 @@ export type PcActionDraft = {
    *  is an ATTACK rider and not a damage one. An ability may set both. */
   weaponBuffAttack?: string;
   /** Once-per-turn rider: arms a chip the player claims, refreshed at the start of their turn. */
-  turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string };
+  /** ⚠ SAME SHAPE AS `ActorAction.metadata.turnRider` — the editor reads that object straight into the
+   *  draft (`turnRider: action.metadata?.turnRider`), so a field the draft narrows is a field the round
+   *  trip drops. `cost` is what an extra attack spends: Hew's Bonus Action, or nothing. */
+  turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string; cost?: ActionCost[] };
   /** This feature can reroll a d20 — surfaced in the reroll picker (Lucky, Bend Luck). */
   isRerollSource?: boolean;
   /** Throw it again, or use the other side of the die (21 - roll). Chosen, never inferred. */

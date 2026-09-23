@@ -18,6 +18,7 @@ const ACTION_TAB_HEADING: Partial<Record<TabId, string>> = {
 };
 import { actionFromEditorDraft, archiveActionFromTab, replaceActionInTab } from "./pcActionAdapters";
 import type { PcActionDraft, PcRollMode, PcActionCost, PcCastingClass } from "./pcActionTypes";
+import type { ActionCost } from "../types/actionEconomy";
 
 // ─── Outcome mode UI label ────────────────────────────────────────────────────
 
@@ -576,14 +577,37 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
             <select
               value={draft.turnRider?.kind ?? ""}
               onChange={e => set("turnRider", e.target.value
-                ? { kind: e.target.value as "extraAttack" | "damage", damage: draft.turnRider?.damage, label: draft.turnRider?.label }
+                ? {
+                  kind: e.target.value as "extraAttack" | "damage",
+                  damage: draft.turnRider?.damage,
+                  label: draft.turnRider?.label,
+                  // A cost belongs to an extra attack; switching to a damage rider drops it rather than
+                  // leaving a Bonus Action attached to something that never spends one.
+                  ...(e.target.value === "extraAttack" ? { cost: draft.turnRider?.cost } : {}),
+                }
                 : undefined)}
               style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
               <option value="">— none —</option>
-              <option value="extraAttack">Extra attack — one more attack, with the weapon in hand</option>
+              <option value="extraAttack">Extra attack — one more attack, with a weapon the player picks</option>
               <option value="damage">Damage rider — added to one hit</option>
             </select>
           </label>
+          {/* ⚠ AN EXTRA ATTACK IS NOT ALWAYS FREE. Hew is "one attack with the same weapon as a Bonus
+              Action" (2024 PHB p.204); Distant Strike costs nothing. The card spends exactly what is
+              chosen here, so an authored rider cannot quietly hand out a free Bonus Action. */}
+          {draft.turnRider?.kind === "extraAttack" && (
+            <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
+              The extra attack costs
+              <select value={(draft.turnRider.cost ?? [])[0] ?? ""}
+                onChange={e => set("turnRider", { ...draft.turnRider!, cost: e.target.value ? [e.target.value as ActionCost] : undefined })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+                <option value="">nothing — a free extra attack (Distant Strike)</option>
+                <option value="bonus">Bonus Action (Hew)</option>
+                <option value="main">Action</option>
+                <option value="reaction">Reaction</option>
+              </select>
+            </label>
+          )}
           {draft.turnRider?.kind === "damage" && (
             <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
               Rider damage

@@ -182,7 +182,34 @@ console.log("\n7. a rider is a toggle that RIDES THE ROLL, like GWF and Hunter's
   ok("the chip toggles an armed effect instead of claiming", card.includes("onClick={() => toggleTurnRider(chip)}")
     && !card.includes("onClick={() => claimTurnRider("));
   ok("...drawn as the same toggle chip as the fighting styles", card.includes('className={`armed-effect-chip ${armed ? "rage-armed" : ""}`}'));
-  ok("...only an extra-attack rider keeps the one-press claim", card.includes('if (rider.kind === "extraAttack") { claimTurnRider(action.id, label, rider); return; }'));
+  /**
+   * ⚠ AN EXTRA ATTACK ASKS WHICH WEAPON — it does not assume the one it was authored on.
+   *
+   * Christopher, 2026-09-23: *"the hew in the app is listed as a set X weapon when it should be the
+   * same way that different spell types are where you get to pick the spell type(or like OA is listed
+   * where you choose which weapon to roll it with)"*. Hew is "one attack with the same weapon" — the
+   * weapon that just crit or just dropped something, which the sheet cannot know in advance.
+   */
+  ok("...an extra-attack rider opens the weapon pick rather than logging a claim",
+    card.includes("if (oaWeaponAttacks.length === 1) { useRiderExtraAttack(chip, oaWeaponAttacks[0].id); return; }")
+    && card.includes("setRiderPickingWeapon(current => (current === action.id ? null : action.id));"));
+  ok("...offering the SAME weapon list the Opportunity Attack offers",
+    card.includes("{oaWeaponAttacks.map(w => (")
+    && card.includes("onClick={() => useRiderExtraAttack(chip, w.id)}"));
+  ok("...and the pick swings that weapon through the ordinary use path",
+    card.includes('handleUseAction({ action: weapon, tabId: "main", costs });'));
+  /** ⚠ Hew costs a Bonus Action; Distant Strike costs nothing. The rider says which. */
+  ok("...spending exactly what the rider says the extra attack costs",
+    card.includes('const costs = rider.kind === "extraAttack" ? rider.cost ?? [] : [];'));
+  ok("...and a character with one weapon is not asked a question with one answer",
+    card.includes("if (oaWeaponAttacks.length === 1)"));
+
+  const editor = codeOf("src/core/ui/ActorEditorActionTab.tsx");
+  ok("the editor can author that cost", editor.includes('<option value="bonus">Bonus Action (Hew)</option>')
+    && editor.includes('<option value="">nothing — a free extra attack (Distant Strike)</option>'));
+  ok("...and the draft round-trips it, since the draft IS the metadata object",
+    editor.includes("turnRider: action.metadata?.turnRider,")
+    && codeOf("src/core/ui/pcActionTypes.ts").includes("cost?: ActionCost[] };"));
   ok("...pressing an armed rider puts it away unspent", card.includes("if (armedEffects.some(e => e.id === effectId)) { clearArmedEffect(effectId); return; }"));
   ok("...armed with its dice, on its own weapon", card.includes('...(chip.side === "damage" ? { formula: dice } : {}),')
     && card.includes("appliesToActionId: chip.weaponActionId,"));

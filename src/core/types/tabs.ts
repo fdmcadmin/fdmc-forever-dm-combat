@@ -472,7 +472,15 @@ export type ActorActionMetadata = {
    * and `damage` arms a damage rider (the Tier 3 weapons). Both are claimed by clicking, both
    * are spent once, and both come back at the start of the character's turn.
    */
-  turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string };
+  /**
+   * ⚠ `cost` IS WHAT THE EXTRA ATTACK SPENDS, and an extra attack is not always free.
+   *
+   * Christopher, 2026-09-23, quoting the 2024 PHB p.204: *"Hew. Immediately after you score a
+   * Critical Hit with a Melee weapon or reduce a creature to 0 HP with one, you can make one attack
+   * with the same weapon as a Bonus Action"* — *"Hew: 1 Bonus Action"*. An empty or absent cost is a
+   * free extra attack (Distant Strike); `["bonus"]` makes the claim spend the Bonus Action.
+   */
+  turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string; cost?: ActionCost[] };
   /**
    * Highest slot level this spell may be cast at. Absent = up to 9th.
    *

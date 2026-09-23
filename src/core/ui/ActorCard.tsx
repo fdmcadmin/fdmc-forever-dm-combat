@@ -2326,6 +2326,19 @@ export function ActorCard({
   const turnSignature = isActiveTurn ? `r${combatRound ?? 0}` : "off";
   const [riderTurn, setRiderTurn] = useState<string>(turnSignature);
   const [ridersUsed, setRidersUsed] = useState<Set<string>>(() => new Set());
+  /**
+   * ⚠ AN EXTRA ATTACK IS MADE WITH A WEAPON THE PLAYER PICKS, NOT ONE THE SHEET PICKED.
+   *
+   * Christopher, 2026-09-23: *"the hew in the app is listed as a set X weapon when it should be the same
+   * way that different spell types are where you get to pick the spell type(or like OA is listed where you
+   * choose which weapon to roll it with)"*.
+   *
+   * Hew is *"one attack with the same weapon"* — the weapon that just crit or just dropped something, which
+   * the sheet cannot know. Authoring it on the greataxe row froze it to the greataxe. This holds the chip
+   * that has been claimed and is waiting to be told which weapon it swings; the pick then goes through
+   * `handleUseAction`, the same path the Opportunity Attack uses, so the swing is the real one.
+   */
+  const [riderPickingWeapon, setRiderPickingWeapon] = useState<string | null>(null);
   useEffect(() => {
     // Only a transition INTO this character's turn clears the board.
     if (isActiveTurn && turnSignature !== riderTurn) {
@@ -2412,7 +2425,14 @@ export function ActorCard({
   function toggleTurnRider(chip: TurnRiderChip) {
     const { action, rider } = chip;
     const label = rider.label?.trim() || action.label;
-    if (rider.kind === "extraAttack") { claimTurnRider(action.id, label, rider); return; }
+    if (rider.kind === "extraAttack") {
+      if (ridersUsed.has(action.id)) return;
+      // One weapon is not a choice, so it is not offered as one.
+      if (oaWeaponAttacks.length === 1) { useRiderExtraAttack(chip, oaWeaponAttacks[0].id); return; }
+      if (oaWeaponAttacks.length === 0) { claimTurnRider(action.id, label, rider); return; }
+      setRiderPickingWeapon(current => (current === action.id ? null : action.id));
+      return;
+    }
     if (ridersUsed.has(action.id)) return;
     const effectId = riderEffectId(action.id);
     if (armedEffects.some(e => e.id === effectId)) { clearArmedEffect(effectId); return; }
@@ -2466,6 +2486,33 @@ export function ActorCard({
           ? `${actor.name}'s ${effect.label} rode the hit (${effect.formula}). Spent for the turn.`
           : `${actor.name} applies ${effect.label} to the hit. Spent for the turn.` });
     }
+  }
+
+  /**
+   * SWING THE WEAPON THE PLAYER NAMED, through the ordinary use path.
+   *
+   * ⚠ NOT A COPY AND NOT NEW DICE — the same rule the Opportunity Attack follows. The weapon's own
+   * `metadata.attack` / `damage` go through `handleUseAction`, so the extra attack scales with the
+   * character, keeps its mastery, and picks up anything armed on it. `rider.cost` is what it spends:
+   * Hew costs the Bonus Action, Distant Strike costs nothing.
+   */
+  function useRiderExtraAttack(chip: TurnRiderChip, weaponActionId: string) {
+    const { action, rider } = chip;
+    if (ridersUsed.has(action.id)) return;
+    const weapon = (actor.tabs.main ?? []).find(a => a.id === weaponActionId);
+    if (!weapon) return;
+    const label = rider.label?.trim() || action.label;
+    // An equipment rider is only ever damage, so only an authored extraAttack can name a cost.
+    const costs = rider.kind === "extraAttack" ? rider.cost ?? [] : [];
+    setRidersUsed(prev => new Set(prev).add(action.id));
+    setRiderPickingWeapon(null);
+    handleUseAction({ action: weapon, tabId: "main", costs });
+    onLog({
+      actorName: actor.name,
+      actionName: label,
+      tabId: "main",
+      message: `${actor.name} uses ${label} — one extra attack with ${weapon.label}${costs.length ? ` (costs ${costs.join(", ")})` : ""}.`,
+    });
   }
 
   function claimTurnRider(actionId: string, label: string, rider: { kind: "extraAttack" | "damage"; damage?: string; label?: string }) {
@@ -3458,7 +3505,7 @@ export function ActorCard({
                   title={spent
                     ? `${name} — used this turn. Comes back when your turn starts.`
                     : rider.kind === "extraAttack"
-                      ? `${name} — claim one extra attack, made with the weapon already in hand. Once per turn.`
+                      ? `${name} — one extra attack. Pick the weapon it is made with. Once per turn.`
                       : armed
                         ? `${name} — armed: ${chip.side === "healing" ? `rolls ${rider.damage} on its own` : chip.side === "damage" ? `adds ${rider.damage} to` : "applies to"} the next hit${chip.weaponActionId ? " with its weapon" : ""}. Press to put it away.`
                         : `${name} — press to arm for the next hit. Once per turn; the hit's damage roll spends it.`}>
@@ -3472,6 +3519,35 @@ export function ActorCard({
             })}
           </div>
         )}
+        {/**
+          * WHICH WEAPON THE EXTRA ATTACK IS MADE WITH — the Opportunity Attack's own gesture.
+          *
+          * Christopher, 2026-09-23: Hew *"should be the same way that different spell types are where you
+          * get to pick the spell type(or like OA is listed where you choose which weapon to roll it with)"*.
+          * Same list the OA offers, and picking one swings it through `handleUseAction` — the real attack,
+          * not a copy of its dice.
+          */}
+        {riderPickingWeapon && (() => {
+          const chip = turnRiders.find(c => c.action.id === riderPickingWeapon);
+          if (!chip) return null;
+          const name = chip.rider.label?.trim() || chip.action.label;
+          return (
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, padding: "4px 12px 0" }}>
+              <span style={{ fontSize: 10, color: "#8a8a9e" }}>{name} — with which weapon?</span>
+              {oaWeaponAttacks.map(w => (
+                <button key={w.id} type="button" className="armed-effect-chip"
+                  onClick={() => useRiderExtraAttack(chip, w.id)}
+                  title={`Make ${name}'s extra attack with ${w.label}.`}>
+                  {w.label}
+                </button>
+              ))}
+              <button type="button" className="armed-effect-chip" style={{ opacity: 0.6 }}
+                onClick={() => setRiderPickingWeapon(null)} title="Leave it unclaimed.">
+                cancel
+              </button>
+            </div>
+          );
+        })()}
         {/**
           * WEAPON CHARMS — Gift of Duskthorn on the weapon it is fastened to.
           *
