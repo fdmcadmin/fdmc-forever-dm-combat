@@ -99,5 +99,28 @@ ok("a Trigger % box writes triggerChance", /updateListItem\(list, realIdx, \{ tr
 const parser = codeOf("src/core/encounter-band/parseCreature.ts");
 ok("parseSection passes all three through", /attackWith: a\.attackWith/.test(parser) && /grantsAdvantage: a\.grantsAdvantage/.test(parser) && /triggerChance: a\.triggerChance/.test(parser));
 
+console.log("");
+console.log("5. dice that belong to another row of the same creature are not a missing damage field");
+{
+  /**
+   * The Elemental Mirror's "Role Attack" points at the Claw and the Bolt. Christopher's Gate II read four
+   * mirror bodies as "could not price" over that sentence while their attacks were priced the whole time.
+   */
+  const ROLE = "Use the chosen archetype's Attack line. Claws and Bolts deal 2d6 + the listed damage modifier for that archetype.";
+  const claw = { name: "Claw", kind: "attack", roll: "1d20+7", damage: "3d6 + 4", damageType: "Slashing" };
+  const withRows = (rows: Row[]) => ({ ...creature("Brandwing"), traits: [], reactions: [], actions: rows }) as unknown as MainMonsterTemplate;
+  const flagsOf = (t: MainMonsterTemplate) => traceCreature(parseCreature(t), target, 4).assumptions
+    .filter(a => a.detail.includes("Dice appear in the printed text"))
+    .map(a => a.feature);
+  const pointer = withRows([claw, { name: "Role Attack", kind: "action", text: ROLE }]);
+  ok("a clause that rolls nothing and names a priced row is not flagged", flagsOf(pointer).length === 0, flagsOf(pointer).join(", "));
+  const pointerTrace = traceCreature(parseCreature(pointer), target, 4);
+  ok("...and it is not scheduled as damage either", !pointerTrace.rounds[0].scheduled.some(s => s.feature === "Role Attack" && s.expectedDamage > 0));
+  const renamed = withRows([{ ...claw, name: "Rake" }, { name: "Role Attack", kind: "action", text: ROLE }]);
+  ok("  (mutation) the same sentence naming nothing priced still asks for the dice", flagsOf(renamed).includes("Role Attack"));
+  const ownRoll = withRows([claw, { name: "Role Attack", kind: "attack", roll: "1d20+7", text: ROLE }]);
+  ok("  (mutation) a clause with its own attack roll still asks", flagsOf(ownRoll).includes("Role Attack"));
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

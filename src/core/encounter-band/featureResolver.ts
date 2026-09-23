@@ -201,6 +201,11 @@ export function resolveFeature(
     srdVersion?: SrdVersion;
     /** Defence names this creature already carries — see the self-defence branch below. */
     recordedDefences?: readonly string[];
+    /**
+     * Features on the SAME creature that carry their own damage field. A sentence whose dice belong to one
+     * of them is a POINTER, not a missing damage field — see the UNREADABLE branch.
+     */
+    pricedSiblings?: readonly string[];
   } = {},
 ): ResolvedFeature {
   const notes: string[] = [];
@@ -261,7 +266,33 @@ export function resolveFeature(
    */
   const routed = Boolean(feature.attackWith || feature.grantsAdvantage
     || (feature.riders ?? []).some(r => r.damage?.trim()));
-  if (!routed && /\d+d\d+/.test(feature.text ?? "")) {
+  /**
+   * ⚠ NOR ARE DICE THAT BELONG TO ANOTHER ROW OF THE SAME CREATURE.
+   *
+   * The Elemental Mirror's "Role Attack" — *"Use the chosen archetype's Attack line. Claws and Bolts deal
+   * 2d6 + the listed damage modifier for that archetype"* — is a POINTER at the Claw and the Bolt, which
+   * carry their own damage fields and are priced on their own rows. Christopher's Gate II reported four
+   * mirror bodies as "could not price" over that one sentence while their attacks were priced the whole
+   * time, and a DM who answered it would have billed the Mirror's attack twice.
+   *
+   * It qualifies only when the clause rolls NOTHING itself — no attack bonus, no save DC — and names a
+   * sibling that IS priced. An attack of its own, with dice only in its prose, still needs its field.
+   */
+  const pointsAt = feature.attackBonus === undefined && feature.saveDc === undefined
+    ? (options.pricedSiblings ?? []).filter(sibling => {
+      const s = sibling.trim().toLowerCase();
+      if (!s || s === name.trim().toLowerCase()) return false;
+      const text = String(feature.text ?? "").toLowerCase();
+      if (s.includes(" ")) return text.includes(s);
+      // "Claws and Bolts deal 2d6" names the Claw and the Bolt — a plural still points at the row.
+      const words = text.split(/[^a-z0-9’']+/);
+      return words.includes(s) || words.includes(s + "s");
+    })
+    : [];
+  if (pointsAt.length > 0) {
+    notes.push(`The dice in this sentence belong to ${pointsAt.join(" and ")}, priced on ${pointsAt.length === 1 ? "its own row" : "their own rows"}.`);
+  }
+  if (!routed && pointsAt.length === 0 && /\d+d\d+/.test(feature.text ?? "")) {
     assumptions.push({
       feature: name, flag: "NEEDS DM INPUT", field: "damage",
       detail: "Dice appear in the printed text but no damage field was entered, so this scores 0. Enter the damage expression.",

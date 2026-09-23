@@ -145,6 +145,11 @@ export function traceCreature(
 ): CreatureTrace {
   const assumptions: FeatureAssumption[] = [...creature.assumptions];
   const budgeted: Budgeted[] = [];
+  /** Rows that carry their own damage, so a sentence pointing at them is not a missing damage field. */
+  const pricedSiblings = creature.features
+    .filter(f => String(f.damage ?? "").trim())
+    .map(f => f.name)
+    .filter(Boolean);
 
   for (const feature of creature.features) {
     if (feature.activationType === "trait") continue;      // traits are not scheduled actions
@@ -158,7 +163,7 @@ export function traceCreature(
     if (feature.gated) continue;
     // The creature's own recorded defences travel with it, so a self-buff that HAS been priced
     // reports as priced instead of repeating the request to price it.
-    const resolved = resolveFeature(feature, { recordedDefences: creature.recordedDefences });
+    const resolved = resolveFeature(feature, { recordedDefences: creature.recordedDefences, pricedSiblings });
     assumptions.push(...resolved.assumptions);
     const { expected, basis, assumptions: dmgAssumptions } =
       expectedDamageForFeature(resolved, feature, target);
