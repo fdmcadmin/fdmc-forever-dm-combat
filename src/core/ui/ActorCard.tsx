@@ -1,4 +1,5 @@
 import { savingThrowModifier } from "../rules/dnd5e";
+import { isRangedAttackAction, isTwoHandedAttack, isWeaponAttackAction, styleRidesAction as buffMatchesAttack } from "../rules/weaponStyles";
 import { usableHealing } from "../rules/healingResolution";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appendBonusDie, applyAdvantage, scaleUpcastRider, type RollMode } from "../dice/diceFormula";
@@ -523,67 +524,9 @@ function labeledDiceFormula(formula: string, label: string) {
   return `${cleanFormula} # ${safeLabel}`;
 }
 
-function isRangedAttackAction(action?: ActorAction | null) {
-  if (!action) {
-    return false;
-  }
 
-  const range = action.metadata?.range ?? "";
-  // A "normal/long" range like "150/600 ft" or "20/60" means a ranged/thrown weapon.
-  if (/\d+\s*\/\s*\d+/.test(range)) {
-    return true;
-  }
 
-  const searchableText = `${action.label} ${action.description ?? ""} ${action.metadata?.details ?? ""} ${range} ${(action.tags ?? []).join(" ")}`;
-  return /\b(?:ranged|range|bow|longbow|shortbow|crossbow|sling|dart|javelin|blowgun|revolver|firearm|pistol|rifle|shot|thrown)\b/i.test(searchableText);
-}
 
-// Whether the attacked weapon is a TWO-HANDED / Heavy melee weapon — the gate for Great
-// Weapon Fighting / Great Weapon Master, which apply only when swinging one. Mirrors
-// isRangedAttackAction: reads the action's name/description/details/tags. A weapon flagged
-// "versatile" is treated as two-handed here (the wielder is assumed to grip it two-handed
-// to qualify the style). Ranged weapons never count, even the two-handed ones (a longbow is
-// a ranged style's business, not GWF's).
-function isTwoHandedAttack(action?: ActorAction | null) {
-  if (!action || isRangedAttackAction(action)) return false;
-  const text = `${action.label} ${action.description ?? ""} ${action.metadata?.details ?? ""} ${action.category ?? ""} ${(action.tags ?? []).join(" ")}`;
-  // Structural flags the loot already uses ("Melee Two-Handed", "Versatile") + unambiguous
-  // heavy two-handed weapon names. Versatile weapons match via their flag/category, since a
-  // player only toggles the style on while actually gripping such a weapon two-handed.
-  return /\b(?:two[-\s]?handed|2h|versatile|heavy|pole\s?arm|greatsword|greataxe|greatclub|maul|glaive|halberd|pike|lance)\b/i.test(text);
-}
-
-/**
- * Is this action a WEAPON attack — the only thing a fighting style may ride?
- *
- * Positive test, not "everything that isn't a spell". Archery is +2 to ranged WEAPON attacks;
- * it does not touch a ranged spell attack, a bond strike, or an artificer's cannon just
- * because those happen to be ranged. Same for Great Weapon Master and Two-Weapon Fighting.
- *
- * `equipment` counts because a magic weapon is authored on the equipment tab (Stillstep
- * Blade, Rimecleaver) and is still a weapon in hand.
- */
-function isWeaponAttackAction(action: ActorAction): boolean {
-  return action.actionKind === "attack" || action.actionKind === "equipment";
-}
-
-// Whether a weapon buff / fighting style (Archery, TWF, GWF) rides the attacked action.
-// Styles/buffs ride WEAPON attacks only, gated by their target.
-function buffMatchesAttack(appliesTo: ArmedEffect["appliesTo"], action?: ActorAction | null, appliesToActionId?: string) {
-  if (!action) return false;
-  // A charm names its weapon. Nothing about the kind of attack matters then — only whether this is that one.
-  if (appliesToActionId) return action.id === appliesToActionId;
-  if (appliesTo === "any") return true;
-  if (appliesTo === "spell") return action.actionKind === "spell";
-  // Every weapon-targeted style requires an actual weapon attack. Excluding only spells left
-  // bond strikes, cannons and feature attacks collecting Archery/GWM because they were
-  // "ranged" or "two-handed" — the target says which weapon attacks, never whether it is one.
-  if (!isWeaponAttackAction(action)) return false;
-  if (appliesTo === "ranged") return isRangedAttackAction(action);
-  if (appliesTo === "melee") return !isRangedAttackAction(action);
-  if (appliesTo === "two-handed") return isTwoHandedAttack(action);
-  return true; // "weapon" / undefined → any weapon attack
-}
 
 const orderedTabs: TabId[] = [
   "main",

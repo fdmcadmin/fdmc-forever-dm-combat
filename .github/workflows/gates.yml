@@ -227,6 +227,11 @@ jobs:
       - name: check a PC's lost turn is charged
         run: npm run check:turndenial
 
+      # A fighting style the card arms permanently reaches the READ party too: its +2 to hit rides every
+      # attack it targets, while its damage lands as often as the workbook's own trigger line says it does.
+      - name: check a fighting style rides what it says it rides
+        run: npm run check:styles
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

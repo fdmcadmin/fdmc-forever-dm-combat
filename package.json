@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.75.0",
+  "version": "0.8.75.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -80,6 +80,7 @@
     "check:broadreaders": "npx tsx scripts/check-broad-readers.ts",
     "check:durationreaders": "npx tsx scripts/check-duration-readers.ts",
     "check:turndenial": "npx tsx scripts/check-turn-denial.ts",
+    "check:styles": "npx tsx scripts/check-fighting-styles.ts",
     "audit:sheets": "npx tsx scripts/audit-actor-sheets.ts",
     "fix:checks": "npx tsx scripts/fix-frozen-checks.ts",
     "check:wiring": "npx tsx scripts/check-wiring.ts",

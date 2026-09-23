@@ -209,10 +209,20 @@ console.log("\n5. the card applies them");
   /** ⚠ The path that rolls Cure Wounds. A focus never reached it. */
   ok("a spell that rolls without committing gets its focus too", card.includes("combineRollFormulas([rollFormula, ...focusParts])")
     && card.includes('triggeredAction.actionKind === "spell" && triggeredAction.metadata?.damage'));
+  /**
+   * ⚠ THE RULE MOVED, SO THE ASSERTION FOLLOWED IT. "Which attacks does this buff ride" now lives in
+   * `core/rules/weaponStyles`, because the encounter checker has to answer the same question about a
+   * standing fighting style and a second copy of it is exactly the drift this gate guards. The card
+   * imports it back, so the two call sites below are still the card's own.
+   */
+  const styles = codeOf("src/core/rules/weaponStyles.ts");
   ok("a buff that names one weapon rides only that weapon",
-    card.includes("if (appliesToActionId) return action.id === appliesToActionId;")
+    styles.includes("if (appliesToActionId) return action.id === appliesToActionId;")
     && card.includes("buffMatchesAttack(e.appliesTo, entry.action, e.appliesToActionId)")
     && card.includes("buffMatchesAttack(effect.appliesTo, entry?.action, effect.appliesToActionId)"));
+  ok("...and the card reads that one rule rather than keeping its own",
+    card.includes('styleRidesAction as buffMatchesAttack') && card.includes('from "../rules/weaponStyles"')
+    && !card.includes("function buffMatchesAttack"));
   ok("a bound charm arms itself on its weapon's attack row", card.includes("appliesToActionId: charm.weaponAttackActionId"));
   ok("...and the wielder switches Thorn / Spell on the card", card.includes("onClick={() => armCharm(charm, option)}"));
 }

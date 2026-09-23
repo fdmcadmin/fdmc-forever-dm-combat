@@ -32,7 +32,9 @@ import { proficiencyBonus } from "../rules/dnd5e";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey } from "../state/itemCharges";
 import { readsAsHealing } from "../../modules/dnd-5e/slotCapability";
+import { featPricing } from "../../modules/dnd-5e/featPricing.generated";
 import { damageExpressionAverage } from "./damageExpression";
+import { standingStylesOf, styleRidesAction } from "../rules/weaponStyles";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 type AbilityId = (typeof ABILITIES)[number];
@@ -171,6 +173,28 @@ function actionsOf(actor: Actor): Array<{ tab: string; action: Record<string, un
   return out;
 }
 
+/**
+ * HOW OFTEN A STYLE'S DAMAGE LANDS — read off the workbook's own trigger line, never assumed.
+ *
+ * Christopher, 2026-09-23: *"things like great weapon fighting effect 1 attack per turn so they cant
+ * read as always on since that would effect one hit"*. He is right that a style is not automatically a
+ * bonus on every hit, and the workbook already says which is which per style, in `trigger`:
+ *
+ *   Archery                "Every eligible ranged-weapon attack"
+ *   Dueling                "Each hit with an eligible one-handed melee weapon"
+ *   Great Weapon Fighting  "Every damage roll with an eligible two-handed/versatile melee weapon"
+ *   Great Weapon Master    "Heavy Weapon Master ONCE PER TURN; Hew only on critical hit or ..."
+ *
+ * So the cadence comes from the same table that prices the feat, rather than from a rule written
+ * here — and a style the workbook does not know is read the conservative way, once a turn.
+ */
+function styleCadence(label: string): "per-hit" | "once-per-turn" {
+  const trigger = String(featPricing(label)?.trigger ?? "");
+  if (/once per turn/i.test(trigger)) return "once-per-turn";
+  if (/(?:every|each)/i.test(trigger)) return "per-hit";
+  return "once-per-turn";
+}
+
 export function actorAsCreature(actor: Actor): ActorAsCreature {
   const md = (a: Record<string, unknown>) => (a.metadata ?? {}) as Record<string, string | number | undefined>;
   const spends: ResourceSpendingAction[] = [];
@@ -182,6 +206,20 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
   /** This actor's own pool labels — what `resolveNamedResourceCost` matches a cost against. */
   const poolRefs = ((actor.tabs?.resources ?? []) as unknown as Array<{ id?: string; label?: string }>)
     .filter(x => x?.label).map(x => ({ id: x.id, label: String(x.label) }));
+
+  /**
+   * ⚠ THE FIGHTING STYLES THIS CHARACTER ALWAYS HAS. Christopher, 2026-09-23: Archery *"is a added +2 and
+   * effects all ranged attacks"*. The card arms a passive style permanently; nothing armed them here, so
+   * every read party swung without Archery, Dueling or Great Weapon Fighting. `weaponStyles` owns which
+   * attacks each one rides — the same rule the card uses, not a second copy of it.
+   */
+  const standingStyles = standingStylesOf(actor);
+  /**
+   * Which ROWS each damage style turned out to ride. A style nothing rides earns nothing, and its
+   * once-a-turn rider has to sit on the best of the attacks it actually rides — Dueling does not ride
+   * a greatsword just because the greatsword hits hardest.
+   */
+  const styleRows = new Map<string, MainMonsterTemplate["actions"]>();
 
   for (const { tab, action } of actionsOf(actor)) {
     const m = md(action);
@@ -318,16 +356,72 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
       }
       continue;
     }
-    atWill.push({
+    // A standing style rides only the attacks its target names — Archery a ranged WEAPON attack, never a
+    // ranged spell, a bond strike or a cannon. `styleRidesAction` is that test, shared with the card.
+    const rides = roll ? standingStyles.filter(st => styleRidesAction(st.target, action as never)) : [];
+    // Accuracy is per attack by definition — "its a added +2 and effects all ranged attacks".
+    const styleAttack = rides.reduce((n, st) => n + st.attack, 0);
+    // Damage is not. Each style lands as often as the workbook says it lands, and no more often.
+    const damageStyles = rides.filter(st => st.damage > 0);
+    const perHit = damageStyles.filter(st => styleCadence(st.label) === "per-hit");
+    const onceATurn = damageStyles.filter(st => styleCadence(st.label) === "once-per-turn");
+    const perHitDamage = perHit.reduce((n, st) => n + st.damage, 0);
+    if (rides.length > 0) {
+      const parts = [
+        styleAttack ? `+${styleAttack} to hit on every attack it rides` : "",
+        perHitDamage ? `+${perHitDamage} damage on each hit (${perHit.map(st => st.label).join(", ")})` : "",
+        onceATurn.length ? `${onceATurn.map(st => `+${st.damage} damage once a turn (${st.label})`).join(", ")}` : "",
+      ].filter(Boolean).join("; ");
+      assumptions.push(`${label} (${tab}): ${rides.map(st => st.label).join(", ")} applied — ${parts}. The style is always armed, so it is read as standing; how often its damage lands is the workbook's own trigger line for that style, not an assumption made here.`);
+    }
+    /**
+     * ⚠ ACCURACY RIDES EVERY ATTACK; STYLE DAMAGE RIDES WHAT ITS TRIGGER SAYS.
+     *
+     * Christopher, 2026-09-23: *"great weapon fighting effect 1 attack per turn so they cant read as always
+     * on since that would effect one hit"*. A style's TO-HIT lands on every attack it rides — that is what
+     * accuracy is, and the trace rolls each attack separately. Its DAMAGE lands on each hit or once a turn,
+     * per `styleCadence`; a once-a-turn one becomes a rider below, priced at P(one of the turn's attacks
+     * connects) instead of being paid out on every swing.
+     */
+    const styledRoll = roll && styleAttack ? `${roll}+${styleAttack}` : roll;
+    const styledDamage = damage && perHitDamage ? `${damage} + ${perHitDamage}` : damage;
+    const entry = {
       name: label,
-      kind: roll ? "attack" : "action",
-      ...(roll ? { roll } : {}),
-      ...(damage ? { damage } : {}),
+      kind: styledRoll ? "attack" : "action",
+      ...(styledRoll ? { roll: styledRoll } : {}),
+      ...(styledDamage ? { damage: styledDamage } : {}),
       ...(m.damageType ? { damageType: String(m.damageType) } : {}),
       ...(m.saveDc ? { save: resolved(String(m.saveDc), actor) ?? String(m.saveDc) } : {}),
       ...(m.successDamage ? { successDamage: String(m.successDamage) } : {}),
       ...(m.range ? { range: String(m.range) } : {}),
-    } as never);
+    } as never;
+    atWill.push(entry);
+    for (const st of onceATurn) {
+      const rows = styleRows.get(st.label) ?? [];
+      rows.push(entry);
+      styleRows.set(st.label, rows);
+    }
+  }
+
+  /**
+   * A STYLE'S DAMAGE IS ONE ATTACK A TURN, so it is a once-per-turn rider rather than a bonus on every
+   * hit — Great Weapon Fighting is the case that says so. It rides the best attack, like every other
+   * once-per-turn rider, and the trace prices it at P(at least one of this turn's attacks connects).
+   */
+  for (const st of standingStyles) {
+    const rows = st.damage > 0 ? styleRows.get(st.label) ?? [] : [];
+    if (rows.length === 0) continue;
+    const best = rows.reduce((b, a) =>
+      damageExpressionAverage((a as { damage?: string }).damage) > damageExpressionAverage((b as { damage?: string }).damage) ? a : b);
+    (best as { riders?: MonsterRider[] }).riders = [
+      ...((best as { riders?: MonsterRider[] }).riders ?? []),
+      {
+        name: st.label,
+        damage: String(st.damage),
+        cadence: "once-per-turn",
+        note: "fighting style damage — one attack a turn",
+      },
+    ];
   }
 
   /**
