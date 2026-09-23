@@ -6,7 +6,7 @@
  * ⚠ THE EXIT CHECK IS THE LAST THING IN THIS FILE. See MASTER on `check:summons`.
  */
 
-import { FEAT_PRICING, featPricing } from "../src/modules/dnd-5e/featPricing.generated";
+import { FEAT_PRICING, featPricing } from "../src/modules/dnd-5e/featPricing";
 import { priceFeat, priceFeats, evaluateExpression } from "../src/modules/dnd-5e/featEvaluator";
 import { partyFeatsFromActors } from "../src/modules/dnd-5e/featsFromActors";
 
@@ -207,7 +207,13 @@ console.log("\nEquipment and the fight reach the feat context");
     tabs: {
       features: [{ label: "Shield Master" }, { label: "Great Weapon Master" }],
       equipment: [{ label: "Marrow Shield", metadata: { slot: "shield", equipped: true } }],
-      actions: [{ label: "Greataxe", metadata: { attack: "+9", damage: "1d12 + 5" } }],
+      /**
+       * ⚠ THE WEAPON STATES ITS TYPE, because Great Weapon Master's benefit is gated on the Heavy
+       * property and `BASE_WEAPONS` tags a greataxe `["martial", "heavy"]`. Christopher, 2026-09-23:
+       * *"the SRD weapons should have the item type listed."* Reading "heavy" out of the word
+       * "Greataxe" instead would be an inference about authored data, and is not made.
+       */
+      actions: [{ label: "Greataxe", tags: ["martial", "heavy"], metadata: { attack: "+9", damage: "1d12 + 5" } }],
     },
   };
 
@@ -224,6 +230,21 @@ console.log("\nEquipment and the fight reach the feat context");
   ok("Great Weapon Master prices from the character's own weapon",
     !priced.needsInput.some(n => n.feat === "Great Weapon Master") && priced.dpr > 0,
     `dpr ${priced.dpr.toFixed(2)} · still missing: ${priced.needsInput.map(n => n.missing.join(",")).join(" | ") || "nothing"}`);
+
+  /**
+   * ⚠ MUTATION: THE SAME CHARACTER LEADING WITH A WEAPON THAT IS NOT HEAVY.
+   *
+   * Zero here is an ANSWER, not a gap — the feat's own benefit says "a weapon that has the Heavy
+   * property", and a rapier does not. Before the erratum there was no gate at all and this priced
+   * exactly like the greataxe.
+   */
+  const rapier = partyFeatsFromActors([{
+    ...shieldBearer,
+    tabs: { ...shieldBearer.tabs, actions: [{ label: "Rapier", tags: ["martial", "finesse"], metadata: { attack: "+9", damage: "1d8 + 5" } }] },
+  }], { baseEhp: 400, targetAC: 17, saveExposure: { dex: 0.35 } });
+  ok("a weapon that is not Heavy earns Great Weapon Master nothing — and does not ask for an input",
+    rapier.dpr === 0 && !rapier.needsInput.some(n => n.feat === "Great Weapon Master"),
+    `dpr ${rapier.dpr.toFixed(2)}`);
 
   /** A sheet with no readable weapon must NOT be priced off a zero. */
   const unarmed = partyFeatsFromActors(

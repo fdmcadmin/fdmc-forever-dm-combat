@@ -203,10 +203,19 @@ console.log("\n7. a rider is a toggle that RIDES THE ROLL, like GWF and Hunter's
     card.includes('const costs = rider.kind === "extraAttack" ? rider.cost ?? [] : [];'));
   ok("...and a character with one weapon is not asked a question with one answer",
     card.includes("if (oaWeaponAttacks.length === 1)"));
+  /**
+   * ⚠ A BONUS ACTION AND AN EXTRA ATTACK ON THE ATTACK ACTION ARE DIFFERENT THINGS, and the chip has
+   * to say which. Christopher, 2026-09-23: *"hew must also consume a bonus action not a +1 main attack,
+   * while the class action of the horizon walker ... would be read as a +1 to main attack, as well as
+   * the nick property"*. Hew spends the Bonus Action; Distant Strike and Nick spend nothing.
+   */
+  ok("...and the chip states which economy the extra attack uses",
+    card.includes('"+1 attack · on the Attack action"')
+    && card.includes("`+1 attack · ${riderCost.map(c => actionCostLabels[c] ?? c).join(\" + \")}`"));
 
   const editor = codeOf("src/core/ui/ActorEditorActionTab.tsx");
   ok("the editor can author that cost", editor.includes('<option value="bonus">Bonus Action (Hew)</option>')
-    && editor.includes('<option value="">nothing — a free extra attack (Distant Strike)</option>'));
+    && editor.includes('<option value="">nothing — an extra attack on the Attack action (Distant Strike, Nick)</option>'));
   ok("...and the draft round-trips it, since the draft IS the metadata object",
     editor.includes("turnRider: action.metadata?.turnRider,")
     && codeOf("src/core/ui/pcActionTypes.ts").includes("cost?: ActionCost[] };"));

@@ -28,7 +28,7 @@
  */
 
 import { priceFeats, type PartyFeatTotals } from "./featEvaluator";
-import { featPricing } from "./featPricing.generated";
+import { featPricing } from "./featPricing";
 import { featContextFromActor, type ActorLikeForFeats } from "./featContextFromActor";
 
 type Entry = { label?: string; description?: string };

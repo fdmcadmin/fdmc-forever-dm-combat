@@ -36,6 +36,8 @@ import { attackHitProbability } from "../../core/encounter-band/checkerV2";
 
 type ActionLike = {
   label?: string;
+  /** Where a weapon's TYPE is stated — `BASE_WEAPONS` tags "heavy", "martial", "reach". See `isHeavyWeapon`. */
+  tags?: string[];
   metadata?: {
     attack?: string;
     damage?: string;
@@ -43,6 +45,9 @@ type ActionLike = {
     equipped?: boolean;
     attackUses?: number;
     spell?: unknown;
+    details?: string;
+    /** The toggle, for a hand-built weapon row that carries no SRD tags. */
+    heavyWeapon?: boolean;
   };
 };
 
@@ -69,6 +74,29 @@ const isWorn = (a: ActionLike): boolean => a.metadata?.equipped !== false;
  */
 export function shieldEquipped(actor: ActorLikeForFeats): boolean {
   return allActions(actor).some(a => isWorn(a) && a.metadata?.slot === "shield");
+}
+
+/**
+ * IS THIS ATTACK MADE WITH A HEAVY WEAPON — the gate Great Weapon Master was missing entirely.
+ *
+ * Christopher, 2026-09-23, quoting the 2024 PHB: Heavy Weapon Mastery applies *"when you hit a creature
+ * with a weapon that has the Heavy property"*. The workbook row had no such gate, so a character leading
+ * with a rapier priced exactly like one leading with a greataxe.
+ *
+ * ⚠ THE TYPE IS A STATED FIELD, NOT SOMETHING READ OUT OF THE NAME. Christopher, same day: *"the SRD
+ * weapons should have the item type listed but we simply have it as a toggleable to simplify it for the
+ * GWM and even things such as Archery and hunter's mark since the app doesnt have a targeting function
+ * and i dont want to build one."* They do list it — `BASE_WEAPONS` tags the greataxe, greatsword, maul,
+ * glaive, halberd, pike and heavy crossbow `"heavy"` — so this reads the TAG. A first pass read the
+ * label and the description too, which is the prose inference this codebase does not make about authored
+ * data: it would have called a "Heavy Cloak" a heavy weapon and missed any weapon not named like one.
+ *
+ * `metadata.heavyWeapon` is the toggle for a hand-built row that carries no tags. A weapon that says
+ * neither is not Heavy here, and the feat prices at zero rather than guessing either way.
+ */
+export function isHeavyWeapon(a: ActionLike): boolean {
+  if (a.metadata?.heavyWeapon === true) return true;
+  return (a.tags ?? []).some(t => String(t).trim().toLowerCase() === "heavy");
 }
 
 /** "+9", "9", "+9 to hit" → 9. Anything unreadable is not a number and must not become one. */
@@ -139,6 +167,8 @@ export type AttackProfile = {
   perHitDamage: number;
   hitChance: number;
   onceHit: number;
+  /** 1 when the weapon this profile came from prints the Heavy property. Great Weapon Master's gate. */
+  heavyWeaponEquipped: number;
 };
 
 /**
@@ -193,6 +223,11 @@ export function attackProfile(actor: ActorLikeForFeats, targetAC: number): Attac
        * under-prices the feat by a quarter.
        */
       onceHit: 1 - Math.pow(1 - hitChance, attacks),
+      /**
+       * ⚠ THE WEAPON THIS PROFILE IS, NOT ANY WEAPON IN THE BAG. A character who leads with a rapier is
+       * swinging the rapier; a greataxe left in the pack does not earn Great Weapon Master its damage.
+       */
+      heavyWeaponEquipped: isHeavyWeapon(a) ? 1 : 0,
     };
     if (!best || profile.hitChance * profile.perHitDamage * profile.attacks
       > best.hitChance * best.perHitDamage * best.attacks) best = profile;

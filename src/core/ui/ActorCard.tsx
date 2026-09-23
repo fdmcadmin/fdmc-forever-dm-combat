@@ -3495,7 +3495,17 @@ export function ActorCard({
                * armed, pressed again to put it away, spent (and dimmed) once the hit it rode has rolled.
                */
               const armed = rider.kind === "damage" && armedEffects.some(e => e.id === riderEffectId(action.id));
-              const what = rider.kind === "extraAttack" ? "+1 attack" : (rider.damage || "no dice");
+              /**
+               * ⚠ THE CHIP SAYS WHAT THE EXTRA ATTACK SPENDS. Christopher, 2026-09-23: *"hew must also
+               * consume a bonus action not a +1 main attack"* — and the two really are different things.
+               * Hew is a Bonus Action; the Horizon Walker's Distant Strike and the Nick mastery are an
+               * extra attack WITHIN the Attack action and spend nothing. A chip that reads "+1 attack"
+               * for both cannot be told apart at the table.
+               */
+              const riderCost = rider.kind === "extraAttack" ? (rider.cost ?? []) : [];
+              const what = rider.kind === "extraAttack"
+                ? (riderCost.length ? `+1 attack · ${riderCost.map(c => actionCostLabels[c] ?? c).join(" + ")}` : "+1 attack · on the Attack action")
+                : (rider.damage || "no dice");
               const name = rider.label?.trim() || action.label;
               return (
                 <button key={action.id} type="button" disabled={spent}
@@ -3505,7 +3515,7 @@ export function ActorCard({
                   title={spent
                     ? `${name} — used this turn. Comes back when your turn starts.`
                     : rider.kind === "extraAttack"
-                      ? `${name} — one extra attack. Pick the weapon it is made with. Once per turn.`
+                      ? `${name} — one extra attack, ${riderCost.length ? `spending your ${riderCost.map(c => actionCostLabels[c] ?? c).join(" + ")}` : "made as part of your Attack action"}. Pick the weapon it is made with. Once per turn.`
                       : armed
                         ? `${name} — armed: ${chip.side === "healing" ? `rolls ${rider.damage} on its own` : chip.side === "damage" ? `adds ${rider.damage} to` : "applies to"} the next hit${chip.weaponActionId ? " with its weapon" : ""}. Press to put it away.`
                         : `${name} — press to arm for the next hit. Once per turn; the hit's damage roll spends it.`}>

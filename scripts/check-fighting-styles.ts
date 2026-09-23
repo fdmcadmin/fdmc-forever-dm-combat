@@ -23,7 +23,7 @@
  * worth exactly zero, or "always on" has crept back in through the other door.
  */
 import { actorAsCreature } from "../src/core/encounter-band/actorAsCreature";
-import { featPricing } from "../src/modules/dnd-5e/featPricing.generated";
+import { featPricing } from "../src/modules/dnd-5e/featPricing";
 import { priceFeat } from "../src/modules/dnd-5e/featEvaluator";
 
 let failures = 0;

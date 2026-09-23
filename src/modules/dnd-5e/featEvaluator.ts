@@ -28,7 +28,7 @@
  * never sums them.
  */
 
-import { featPricing, type FeatPricing, type FeatChannel } from "./featPricing.generated";
+import { featPricing, type FeatPricing, type FeatChannel } from "./featPricing";
 
 /** Everything an expression may read. Anything absent makes its channel NEEDS_INPUT. */
 export type FeatContext = Record<string, number | boolean | undefined>;

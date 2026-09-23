@@ -232,6 +232,11 @@ jobs:
       - name: check a fighting style rides what it says it rides
         run: npm run check:styles
 
+      # Where the printed feat contradicts the workbook row, the correction lives in the D&D mod's errata
+      # layer, cites the book, and every reader goes through the one seam that applies it.
+      - name: check a feat erratum cites the printed feat
+        run: npm run check:featerrata
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

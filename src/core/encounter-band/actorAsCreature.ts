@@ -32,7 +32,7 @@ import { proficiencyBonus } from "../rules/dnd5e";
 import { resolveNamedResourceCost } from "../state/consumeActionResources";
 import { itemChargesFor, itemChargeKey } from "../state/itemCharges";
 import { readsAsHealing } from "../../modules/dnd-5e/slotCapability";
-import { featPricing } from "../../modules/dnd-5e/featPricing.generated";
+import { featPricing } from "../../modules/dnd-5e/featPricing";
 import { damageExpressionAverage } from "./damageExpression";
 import { standingStylesOf, styleRidesAction } from "../rules/weaponStyles";
 

@@ -592,16 +592,21 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
               <option value="damage">Damage rider — added to one hit</option>
             </select>
           </label>
-          {/* ⚠ AN EXTRA ATTACK IS NOT ALWAYS FREE. Hew is "one attack with the same weapon as a Bonus
-              Action" (2024 PHB p.204); Distant Strike costs nothing. The card spends exactly what is
-              chosen here, so an authored rider cannot quietly hand out a free Bonus Action. */}
+          {/* ⚠ AN EXTRA ATTACK IS NOT ALWAYS FREE, AND THE TWO CASES ARE NOT THE SAME THING.
+              Christopher, 2026-09-23: *"hew must also consume a bonus action not a +1 main attack, while
+              the class action of the horizon walker: ... If you attack at least two different creatures
+              with the action, you can make one additional attack with it against a third creature would
+              be read as a +1 to main attack, as well as the nick property"*.
+              So: Hew = Bonus Action (2024 PHB p.204). Distant Strike and the Nick mastery = one more
+              attack WITHIN the Attack action, spending nothing. The card spends exactly what is chosen
+              here, so an authored rider cannot quietly hand out a free Bonus Action. */}
           {draft.turnRider?.kind === "extraAttack" && (
             <label style={{ fontSize: 12, display: "block", marginTop: 6 }}>
               The extra attack costs
               <select value={(draft.turnRider.cost ?? [])[0] ?? ""}
                 onChange={e => set("turnRider", { ...draft.turnRider!, cost: e.target.value ? [e.target.value as ActionCost] : undefined })}
                 style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
-                <option value="">nothing — a free extra attack (Distant Strike)</option>
+                <option value="">nothing — an extra attack on the Attack action (Distant Strike, Nick)</option>
                 <option value="bonus">Bonus Action (Hew)</option>
                 <option value="main">Action</option>
                 <option value="reaction">Reaction</option>
