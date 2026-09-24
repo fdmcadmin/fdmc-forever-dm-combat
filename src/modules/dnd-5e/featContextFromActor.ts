@@ -37,8 +37,13 @@ import { rerollGain } from "../../core/encounter-band/rerollPricing";
 
 type ActionLike = {
   label?: string;
+  /** What the row spends — read for whether a Bonus Action or Reaction is still free. */
+  economyCost?: string[];
+  actionKind?: string;
   /** Where a weapon's TYPE is stated — `BASE_WEAPONS` tags "heavy", "martial", "reach". See `isHeavyWeapon`. */
   tags?: string[];
+  /** "Melee One-Handed", "Melee Two-Handed", "Melee Versatile", "Ranged Two-Handed" — a stated field. */
+  category?: string;
   metadata?: {
     attack?: string;
     damage?: string;
@@ -47,6 +52,7 @@ type ActionLike = {
     attackUses?: number;
     spell?: unknown;
     details?: string;
+    damageType?: string;
     /** The toggle, for a hand-built weapon row that carries no SRD tags. */
     heavyWeapon?: boolean;
   };
@@ -55,6 +61,9 @@ type ActionLike = {
 export type ActorLikeForFeats = {
   name?: string;
   level?: number;
+  /** Stated on the sheet; `CON_mod`, `CHA_mod` and `maxHp` are read from here, never re-derived. */
+  abilityScores?: Record<string, { score?: number } | undefined>;
+  stats?: { hp?: { max?: number } };
   attacksPerAction?: number;
   actions?: ActionLike[];
   tabs?: Record<string, ActionLike[] | undefined>;
@@ -191,6 +200,8 @@ export function attackProfile(actor: ActorLikeForFeats, targetAC: number): Attac
   if (candidates.length === 0) return undefined;
 
   let best: AttackProfile | undefined;
+  // Which row each profile came from — the facts below are that ROW's, not the bag's.
+  const profileSource = new Map<AttackProfile, ActionLike>();
   for (const a of candidates) {
     const attackBonus = parseAttackBonus(resolvedFormulaText(a.metadata?.attack, actor));
     if (attackBonus === undefined) continue;
@@ -244,23 +255,132 @@ export function attackProfile(actor: ActorLikeForFeats, targetAC: number): Attac
         method: "reroll", attackBonus, targetAc: targetAC, perHitDamage,
       })?.value ?? 0,
     };
+    profileSource.set(profile, a);
     if (!best || profile.hitChance * profile.perHitDamage * profile.attacks
       > best.hitChance * best.perHitDamage * best.attacks) best = profile;
   }
+  if (best) bestSource = profileSource.get(best);
   return best;
 }
+
+/** The row the last `attackProfile` chose, so `featContextFromActor` can read its stated fields. */
+let bestSource: ActionLike | undefined;
 
 /**
  * What this character contributes to a feat context. Keys are OMITTED, never defaulted — an absent
  * key is what makes the evaluator report NEEDS_INPUT instead of pricing a guess.
  */
+/**
+ * THE FACTS A SHEET ALREADY STATES — the other half of why 42 feats reported NEEDS_INPUT.
+ *
+ * `attackProfile` supplied the numbers a fight needs (bonus, damage, hit chance). What it never
+ * supplied is what the SHEET says about the weapon in hand and the economy around it: which hand it
+ * takes, what it is made of, what it deals, and whether this character's Bonus Action and Reaction are
+ * still free. Every one of those is a stated field, so none of it is inferred from prose.
+ *
+ * ⚠ A KEY IS OMITTED, NEVER DEFAULTED. That is this file's standing rule and it is what makes a feat
+ * report NEEDS_INPUT instead of pricing off a zero. A weapon whose category the sheet does not state
+ * contributes no one/two-handed key at all rather than a 0 that reads as "not two-handed".
+ */
+function statedFacts(actor: ActorLikeForFeats, a: ActionLike, p: AttackProfile): Record<string, number> {
+  const out: Record<string, number> = {};
+  const tags = (a.tags ?? []).map(t => String(t).trim().toLowerCase());
+  const category = String(a.category ?? "").toLowerCase();
+  const damageType = String(a.metadata?.damageType ?? "").toLowerCase();
+
+  /** The workbook's other name for the same count. */
+  out.attackCount = p.attacks;
+  /** Two attack rolls are two chances, so disadvantage is the square — the same shape `onceHit` uses. */
+  out.normalHit = p.hitChance;
+  out.disadvantagedHit = p.hitChance * p.hitChance;
+
+  /**
+   * THE WEAPON'S OWN DIE, without the modifier riding on it — `(weaponDie+abilityMod)` is how Crossbow
+   * Expert and Dual Wielder are written, so handing them `perHitDamage` would count the modifier twice.
+   */
+  const dice = String(a.metadata?.damage ?? "").match(/\d*\s*d\s*\d+/gi)?.join("+");
+  const weaponDie = dice ? damageExpressionAverage(dice) : 0;
+  if (weaponDie > 0) out.weaponDie = weaponDie;
+
+  /**
+   * ⚠ THE ABILITY IS NAMED IN THE ATTACK STRING, so it is read there rather than guessed from the
+   * weapon's properties. `@ATK` is a COMBINED bonus (modifier + proficiency) and cannot be split
+   * without the proficiency, so a sheet using it contributes no `abilityMod` at all.
+   */
+  const token = /@(STR|DEX|CON|INT|WIS|CHA)\b/i.exec(String(a.metadata?.attack ?? ""));
+  if (token) {
+    const mod = Number(resolvedFormulaText(`@${token[1].toUpperCase()}`, actor));
+    if (Number.isFinite(mod)) out.abilityMod = mod;
+  }
+
+  /**
+   * WHICH HAND IT TAKES. `BASE_WEAPONS` states the category ("Melee One-Handed", "Melee Two-Handed",
+   * "Melee Versatile") and tags `versatile` / `light`, so both gates are stated fields.
+   */
+  const twoHanded = category.includes("two-handed") || tags.includes("versatile");
+  const oneHanded = category.includes("one-handed");
+  const hitsPerTurn = p.attacks * p.hitChance;
+  if (twoHanded) out.eligibleTwoHandedHits = hitsPerTurn;
+  else if (oneHanded) out.eligibleTwoHandedHits = 0;
+  if (oneHanded) out.eligibleOneHandedHits = hitsPerTurn;
+  else if (twoHanded) out.eligibleOneHandedHits = 0;
+
+  if (tags.includes("light")) { out.legalLightAttack = 1; out.legalExtraAttack = 1; }
+  else if (category.includes("melee")) { out.legalLightAttack = 0; out.legalExtraAttack = 0; }
+
+  /** WHAT IT DEALS — Piercer and Slasher, gated on the type the sheet prints. */
+  if (damageType) {
+    out.eligiblePiercingAttacks = damageType.includes("piercing") ? p.attacks : 0;
+    out.eligibleSlashingAttacks = damageType.includes("slashing") ? p.attacks : 0;
+    out.eligiblePhysicalHitCount =
+      /piercing|slashing|bludgeoning/.test(damageType) ? hitsPerTurn : 0;
+  }
+
+  return out;
+}
+
+/**
+ * ⚠ IS THE BUDGET STILL FREE — AND THIS IS ALSO THE DOUBLE-COUNT GUARD.
+ *
+ * Ten of the blocked rows ask `reactionAvailable` or `bonusActionAvailable`. The honest answer is not
+ * "yes, everyone has one": since 0.8.75.4 a character's authored reaction goes to the tracer, which
+ * spends the one Reaction a turn on it. A feat priced as though the Reaction were still free would be
+ * paid on a budget something else already took, and the same round would be sold twice.
+ *
+ * So the budget is available only when nothing on the sheet that DEALS DAMAGE already claims it. A
+ * purely defensive reaction (Shield) does not compete for the damage the feat is pricing, and sustain
+ * owns it elsewhere.
+ */
+function budgetFree(actor: ActorLikeForFeats, slot: "reaction" | "bonus"): number {
+  const claimed = allActions(actor).some(a => {
+    if (!isWorn(a)) return false;
+    if (!(a.economyCost ?? []).includes(slot)) return false;
+    return Boolean(String(a.metadata?.damage ?? "").trim()) || Boolean(a.metadata?.attack);
+  });
+  return claimed ? 0 : 1;
+}
+
 export function featContextFromActor(
   actor: ActorLikeForFeats,
   targetAC: number | undefined,
 ): Record<string, number | boolean> {
   const out: Record<string, number | boolean> = { shieldEquipped: shieldEquipped(actor) };
   if (targetAC === undefined || !Number.isFinite(targetAC)) return out;
+  /**
+   * ⚠ THE ECONOMY KEYS DO NOT NEED A WEAPON, so they are set before the profile is asked for. A
+   * caster with no readable attack still has a Reaction, and ten of the blocked rows want to know.
+   */
+  out.reactionAvailable = budgetFree(actor, "reaction");
+  out.bonusActionAvailable = budgetFree(actor, "bonus");
+  for (const id of ["str", "dex", "con", "int", "wis", "cha"]) {
+    const mod = Number(resolvedFormulaText(`@${id.toUpperCase()}`, actor));
+    if (Number.isFinite(mod)) out[`${id.toUpperCase()}_mod`] = mod;
+  }
+  const maxHp = Number(actor.stats?.hp?.max);
+  if (Number.isFinite(maxHp) && maxHp > 0) out.maxHp = maxHp;
+
   const p = attackProfile(actor, targetAC);
   if (!p) return out;
-  return { ...out, ...p, targetAC };
+  const facts = bestSource ? statedFacts(actor, bestSource, p) : {};
+  return { ...out, ...p, ...facts, targetAC };
 }
