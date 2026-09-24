@@ -293,6 +293,20 @@ export type ActorActionMetadata = {
   concentration?: string;
   /** How long the effect lasts, e.g. "1 minute", "Concentration, up to 10 min", "Instantaneous". Display only. */
   duration?: string;
+  /**
+   * AN EFFECT THAT KEEPS DEALING DAMAGE WHILE ITS TARGET KEEPS FAILING THE SAVE.
+   *
+   * Christopher, 2026-09-23: *"ensnaring strike isnt a spell action its a bonus action that continues to
+   * do the weapon damage if the target fails the STR save."* The first half is `castingTimeType`; this is
+   * the second. Without it the spell was worth ONE hit's dice and nothing after, which is not what the
+   * spell does and is a large part of why a Ranger read low.
+   *
+   * ⚠ `damage` ABSENT MEANS THE WEAPON'S OWN DAMAGE — that is the shape he described, and it is why the
+   * field is optional rather than defaulting to the action's own dice. `timing` is the printed one: a
+   * save at the END of the target's turns leaves the first turn standing, a save at the START does not.
+   * `maxTurns` is the printed maximum, capped by the encounter horizon where the text says "1 minute".
+   */
+  ongoingDamage?: { repeat: "save-ends"; timing?: "start" | "end"; damage?: string; maxTurns?: number };
   withModifier?: string;
   additive?: string;
   critThreshold?: number;

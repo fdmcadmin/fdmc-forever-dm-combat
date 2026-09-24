@@ -226,6 +226,7 @@ export function actionFromEditorDraft(draft: PcActionDraft, existingAction?: Act
     ...(draft.weaponBuffDamage?.trim() ? { weaponBuffDamage: draft.weaponBuffDamage.trim() } : {}),
     ...(draft.weaponBuffAttack?.trim() ? { weaponBuffAttack: draft.weaponBuffAttack.trim() } : {}),
     ...(draft.turnRider?.kind ? { turnRider: draft.turnRider } : {}),
+    ...(draft.ongoingDamage?.repeat ? { ongoingDamage: draft.ongoingDamage } : {}),
     /**
      * ⚠ THE TAG, NOT `additive`. The scanner accepts either, but `additive` already carries
      * `resourceName` — writing "reroll" into it would erase which pool the action spends. The

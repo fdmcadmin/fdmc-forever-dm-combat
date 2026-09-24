@@ -75,6 +75,12 @@ export type ResourceSpendingAction = {
    */
   successDamage?: string;
   /**
+   * AN EFFECT THAT KEEPS DEALING DAMAGE WHILE ITS TARGET KEEPS FAILING — see
+   * `ActorActionMetadata.ongoingDamage`. An absent `damage` means the WEAPON's damage, which is
+   * Ensnaring Strike's own shape and is resolved by the caller that knows what the weapon is.
+   */
+  ongoing?: { repeat: "save-ends"; timing?: "start" | "end"; damage?: string; maxTurns?: number };
+  /**
    * ⚠ WHICH OF THE THREE CHANCE CASES THIS IS. Christopher, 2026-09-07:
    *   · `rider`        spent only AFTER the hit lands, so its value is NOT discounted again
    *   · `spell-action` spent before the roll resolves, so its value is already expected
@@ -300,6 +306,9 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
       || Boolean(printedLimit)
       || m.spellSlotMode === "freeCast";
 
+    // Structured, so it is read off the raw metadata rather than the string-shaped view above.
+    const ongoingSpec = ((action.metadata ?? {}) as Record<string, unknown>).ongoingDamage as
+      ResourceSpendingAction["ongoing"] | undefined;
     if (spendsResource) {
       const trigger: ResourceSpendingAction["trigger"] = m.attack
         ? "spell-action"
@@ -319,6 +328,7 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
         ...(m.attack ? { attack: String(m.attack) } : {}),
         ...(m.saveDc ? { saveDc: String(m.saveDc) } : {}),
         ...(m.successDamage ? { successDamage: String(m.successDamage) } : {}),
+        ...(ongoingSpec ? { ongoing: ongoingSpec } : {}),
         trigger,
         /**
          * An authored `economyCost` of "bonus", "reaction" or "bond" says plainly that this does
@@ -326,9 +336,25 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
          * spell is that it costs the Action — pricing it as free would add it on top of the
          * routine, which row 43 forbids in as many words.
          */
+        /**
+         * ⚠ AND A SPELL'S PRINTED CASTING TIME IS A STATEMENT TOO.
+         *
+         * Christopher, 2026-09-23: *"ensnaring strike isnt a spell action its a bonus action."* A sheet
+         * that authored the casting time and left `economyCost` unset fell into the default above and
+         * was charged the whole at-will routine — row 43's marginal-damage rule, applied to a spell
+         * that displaces nothing. On a two-attack character that is the difference between a Bonus
+         * Action spell being worth its dice and being worth its dice MINUS a full round of swinging,
+         * which can price it below zero and drop it out of the schedule entirely.
+         *
+         * `castingTimeType` is the printed line, not an inference from prose, so it is read before the
+         * default is reached. An explicit `economyCost` still outranks it: that is the card's own
+         * economy and it is what the table actually spends.
+         */
         costsTheAction: (action.economyCost as string[] | undefined)?.length
           ? (action.economyCost as string[]).includes("main")
-          : true,
+          : m.castingTimeType !== undefined
+            ? m.castingTimeType === "action" || m.castingTimeType === "ritual"
+            : true,
       });
       continue;
     }

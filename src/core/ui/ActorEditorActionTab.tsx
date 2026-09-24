@@ -147,6 +147,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     weaponBuffDamage: action.metadata?.weaponBuffDamage,
     weaponBuffAttack: action.metadata?.weaponBuffAttack,
     turnRider: action.metadata?.turnRider,
+    ongoingDamage: action.metadata?.ongoingDamage,
     isRerollSource: action.metadata?.additive === "reroll" || (action.tags ?? []).includes("reroll") || undefined,
     rerollMethod: action.metadata?.rerollMethod as RerollMethod | undefined,
   };
@@ -570,6 +571,44 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           damage rider (the Tier 3 weapons). Arming rather than rolling is the point — Hew was
           authored as its own action with greataxe dice baked in, so it was wrong the moment
           the character swung anything else. A claimed chip uses whatever is in hand. */}
+      {/* KEEPS DEALING DAMAGE WHILE THE TARGET KEEPS FAILING.
+          Christopher, 2026-09-23: *"ensnaring strike isnt a spell action its a bonus action that
+          continues to do the weapon damage if the target fails the STR save."* Leave the damage blank
+          and it deals the WEAPON's damage, which is that spell's own shape. The checker prices the
+          turns with the same BR075-BR077 rule it uses for a monster's save-ends effect. */}
+      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" checked={Boolean(draft.ongoingDamage)}
+            onChange={e => set("ongoingDamage", e.target.checked ? { repeat: "save-ends", timing: "end" } : undefined)} />
+          ⏳ Keeps dealing damage until the target saves
+          <span style={{ color: "#555", fontSize: 10 }}>— needs a save DC above</span>
+        </label>
+        {draft.ongoingDamage && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+            <label style={{ fontSize: 12, flex: "1 1 150px" }}>
+              Damage each turn <span style={{ color: "#555", fontSize: 10 }}>— blank = the weapon's</span>
+              <input type="text" value={draft.ongoingDamage.damage ?? ""} placeholder="blank for the weapon's damage"
+                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, damage: e.target.value || undefined })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 130px" }}>
+              The save comes
+              <select value={draft.ongoingDamage.timing ?? "end"}
+                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, timing: e.target.value as "start" | "end" })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+                <option value="end">at the END of its turns</option>
+                <option value="start">at the START of its turns</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 110px" }}>
+              Most turns <span style={{ color: "#555", fontSize: 10 }}>— blank = the fight</span>
+              <input type="number" min={1} value={draft.ongoingDamage.maxTurns ?? ""}
+                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, maxTurns: e.target.value ? Number(e.target.value) : undefined })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+          </div>
+        )}
+      </div>
       {draft.tab !== "spell" && (
         <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
           <label style={{ fontSize: 12, display: "block" }}>

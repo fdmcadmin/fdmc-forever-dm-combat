@@ -110,6 +110,8 @@ export type PcActionDraft = {
    *  draft (`turnRider: action.metadata?.turnRider`), so a field the draft narrows is a field the round
    *  trip drops. `cost` is what an extra attack spends: Hew's Bonus Action, or nothing. */
   turnRider?: { kind: "extraAttack" | "damage"; damage?: string; label?: string; cost?: ActionCost[] };
+  /** Keeps dealing damage while the target keeps failing — see `ActorActionMetadata.ongoingDamage`. */
+  ongoingDamage?: { repeat: "save-ends"; timing?: "start" | "end"; damage?: string; maxTurns?: number };
   /** This feature can reroll a d20 — surfaced in the reroll picker (Lucky, Bend Luck). */
   isRerollSource?: boolean;
   /** Throw it again, or use the other side of the die (21 - roll). Chosen, never inferred. */

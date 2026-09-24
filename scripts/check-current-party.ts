@@ -598,5 +598,126 @@ console.log("\nA zone's +N to its allies' saves, against the CHOSEN party");
     !metrics.unlinked.some(u => /Frenzied Blow/.test(u)), metrics.unlinked.join(" | "));
 }
 
+/**
+ * ENSNARING STRIKE IS A BONUS ACTION THAT KEEPS DEALING THE WEAPON'S DAMAGE.
+ *
+ * Christopher, 2026-09-23: *"ensnaring strike isnt a spell action its a bonus action that continues to do
+ * the weapon damage if the target fails the STR save."* Two separate faults in one sentence:
+ *
+ *   1. ECONOMY. A sheet that authored the printed casting time and left `economyCost` unset fell into the
+ *      "a spell costs the Action" default, so row 43's marginal rule subtracted a whole at-will round from
+ *      a spell that displaces nothing. On a two-attack character that can price it below zero.
+ *   2. DURATION. The read priced the landing and stopped, so a spell that holds a body for several of its
+ *      turns was worth one hit's dice.
+ *
+ * ⚠ THE TURNS COME FROM `saveEndsActiveTurns` — the same BR075-BR077 pricing the monster side has used
+ * since 0.8.56.0, so a PC's save-ends effect and a monster's are counted by one rule, not two.
+ */
+{
+  console.log("\nA bonus-action spell that keeps dealing damage");
+
+  const weapon = {
+    id: "bow", label: "Longbow", actionKind: "attack", economyCost: ["main"], logMode: "default",
+    metadata: { attack: "1d20+@DEX+@PROF", damage: "1d8+@DEX", damageType: "Piercing", range: "150/600 ft" },
+  };
+  const ensnaring = (extra: Record<string, unknown>) => ({
+    id: "ens", label: "Ensnaring Strike", actionKind: "spell", logMode: "default",
+    metadata: {
+      spellLevel: 1, saveDc: "STR DC 15", damage: "1d6", damageType: "Piercing",
+      castingTimeType: "bonus",
+      details: "The next time you hit a creature with a weapon attack, it makes a Strength save or is Restrained.",
+      ...extra,
+    },
+  });
+
+  const ranger = (spell: unknown) => ({
+    id: "ranger", kind: "player", name: "Ranger", level: 7, attacksPerAction: 2,
+    stats: { ac: 16, hp: { current: 58, max: 58 }, speed: "30 ft." },
+    abilityScores: {
+      str: { score: 12 }, dex: { score: 18 }, con: { score: 14 },
+      int: { score: 10 }, wis: { score: 16 }, cha: { score: 10 },
+    },
+    tabs: { main: [weapon], spells: [spell], resources: [resource("slots1", "Spell Slots L1", "spellSlot", 4)] },
+  }) as never;
+
+  /* ── 1. the economy ─────────────────────────────────────────────────────────────────── */
+  const spendOf = (a: unknown) => actorAsCreature(a as never).spends.find(s => s.label === "Ensnaring Strike");
+
+  ok("a printed Bonus Action casting time is not charged the Action",
+    spendOf(ranger(ensnaring({}))) ?.costsTheAction === false,
+    String(spendOf(ranger(ensnaring({})))?.costsTheAction));
+
+  const asAction = ensnaring({ castingTimeType: "action" });
+  ok("...and a printed Action casting time still is",
+    spendOf(ranger(asAction))?.costsTheAction === true,
+    String(spendOf(ranger(asAction))?.costsTheAction));
+
+  const explicit = { ...ensnaring({}), economyCost: ["main"] };
+  ok("...while an explicit economyCost still outranks the printed line",
+    spendOf(ranger(explicit))?.costsTheAction === true,
+    String(spendOf(ranger(explicit))?.costsTheAction));
+
+  const unstated = ensnaring({ castingTimeType: undefined });
+  ok("...and a spell that states neither is still read as costing the Action",
+    spendOf(ranger(unstated))?.costsTheAction === true,
+    String(spendOf(ranger(unstated))?.costsTheAction));
+
+  /* ── 2. the duration ────────────────────────────────────────────────────────────────── */
+  const ongoing = ensnaring({ ongoingDamage: { repeat: "save-ends", timing: "end" } });
+  const spec = spendOf(ranger(ongoing))?.ongoing;
+  ok("the ongoing effect reaches the spend", spec?.repeat === "save-ends", JSON.stringify(spec));
+
+  const dprOfParty = (a: unknown) => {
+    const m = currentPartyMetrics([a as never], target as never);
+    return m.round1Dpr + m.round2Dpr + m.round3Dpr + m.round4PlusDpr;
+  };
+  const flat = dprOfParty(ranger(ensnaring({})));
+  const held = dprOfParty(ranger(ongoing));
+  ok("an effect that keeps dealing damage is worth more than one that lands once",
+    held > flat + 1e-6, `${flat.toFixed(2)} -> ${held.toFixed(2)}`);
+
+  const metrics = currentPartyMetrics([ranger(ongoing) as never], target as never);
+  ok("...and the read says how long it held and what it dealt",
+    metrics.estimated.some(e => /holds for .* of the target's turns/.test(e)),
+    metrics.estimated.filter(e => /Ensnaring/.test(e)).join(" | "));
+  ok("...naming the weapon's own damage, because no damage of its own was stated",
+    metrics.estimated.some(e => /the weapon's own damage/.test(e)));
+
+  /**
+   * ⚠ MUTATION: A TOUGHER TARGET HOLDS FOR FEWER TURNS. The value has to follow the save, or the
+   * duration is a constant wearing a formula's clothes.
+   */
+  const strongRoster = [
+    { template: { stats: { ac: 15 }, abilities: [
+      { label: "STR", value: "22 (+6)" }, { label: "DEX", value: "20 (+5)" },
+      { label: "CON", value: "20 (+5)" }, { label: "INT", value: "18 (+4)" },
+      { label: "WIS", value: "18 (+4)" }, { label: "CHA", value: "18 (+4)" }] }, quantity: 3 },
+  ];
+  const strongTarget = targetFromRoster(strongRoster as never, 1)!;
+  const vsStrong = currentPartyMetrics([ranger(ongoing) as never], strongTarget as never);
+  const vsStrongTotal = vsStrong.round1Dpr + vsStrong.round2Dpr + vsStrong.round3Dpr + vsStrong.round4PlusDpr;
+  ok("mutation: a target with better saves shakes it off sooner and is worth less",
+    vsStrongTotal < held - 1e-6, `weak ${held.toFixed(2)} vs strong ${vsStrongTotal.toFixed(2)}`);
+
+  /** ⚠ MUTATION: stated damage of its own is used instead of the weapon's. */
+  const ownDice = ensnaring({ ongoingDamage: { repeat: "save-ends", timing: "end", damage: "1d6" } });
+  const stated = currentPartyMetrics([ranger(ownDice) as never], target as never);
+  /**
+   * ⚠ AND A DM CAN AUTHOR IT. A field only settable by hand-editing JSON is the three-gates trap
+   * `check:itemriders` was written for: the reader works, and nothing can reach it.
+   */
+  {
+    const editorSrc = (await import("node:fs")).readFileSync("src/core/ui/ActorEditorActionTab.tsx", "utf8");
+    const adapter = (await import("node:fs")).readFileSync("src/core/ui/pcActionAdapters.ts", "utf8");
+    ok("the editor offers it", editorSrc.includes("Keeps dealing damage until the target saves"));
+    ok("...with the weapon's damage as the blank default", editorSrc.includes("blank for the weapon's damage"));
+    ok("...the draft reads it back", editorSrc.includes("ongoingDamage: action.metadata?.ongoingDamage,"));
+    ok("...and the adapter writes it", adapter.includes("...(draft.ongoingDamage?.repeat ? { ongoingDamage: draft.ongoingDamage } : {}),"));
+  }
+  ok("mutation: an effect that states its own damage does not claim the weapon's",
+    stated.estimated.every(e => !/the weapon's own damage/.test(e)),
+    stated.estimated.filter(e => /Ensnaring/.test(e)).join(" | "));
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

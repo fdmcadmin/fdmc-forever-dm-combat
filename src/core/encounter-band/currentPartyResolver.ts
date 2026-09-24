@@ -48,6 +48,8 @@ import { reachOfFeature } from "./reachability";
 import { parseCreature } from "./parseCreature";
 import { traceCreature } from "./actionTrace";
 import { damageExpressionAverage } from "./damageExpression";
+// BR075-BR077, shared with the monster side so a save-ends effect is counted one way only.
+import { saveEndsActiveTurns, repeatFailChance } from "./durationPricing";
 import { attackHitProbability } from "./checkerV2";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { scoresFromTemplate } from "../monsters/creator/monsterCreatorModel";
@@ -279,6 +281,13 @@ export function currentPartyMetrics(
       needsInput.push(`${actor.name} — at-will actions could not be scheduled`);
     }
     const atWillFor = (i: number) => atWillRound[Math.min(i, atWillRound.length - 1)] ?? 0;
+    /**
+     * The best single swing this character has — what "the weapon's damage" means for an ongoing
+     * effect that deals it. The same ordering the scheduler uses to fill a routine.
+     */
+    const bestAtWillDamage = ((creature.actions ?? []) as Array<{ roll?: string; damage?: string }>)
+      .filter(a => Boolean(a.roll))
+      .reduce((best, a) => Math.max(best, damageExpressionAverage(a.damage)), 0);
     // A character with no melee swing contributes 0 — it is part of the party's mix, not absent from it.
     meleeAttackShares.push(actorMeleeSwings > 0 && atWillFor(0) > 0
       ? (actorMeleeDamage / actorMeleeSwings) / atWillFor(0)
@@ -425,6 +434,40 @@ export function currentPartyMetrics(
           ? average / 2
           : damageExpressionAverage(resolved(spend.successDamage, actor));
         value = Math.max(0, average * (1 - saved) + onSuccess * saved - displaced);
+
+        /**
+         * ⚠ AN EFFECT THAT KEEPS DEALING DAMAGE WAS WORTH EXACTLY ONE HIT.
+         *
+         * Christopher, 2026-09-23: *"ensnaring strike isnt a spell action its a bonus action that
+         * continues to do the weapon damage if the target fails the STR save."* The read priced the
+         * first landing and stopped, so a spell that holds a body for several of its turns was worth
+         * its dice once.
+         *
+         * The turns come from `saveEndsActiveTurns` — the same BR075-077 pricing the monster side has
+         * used since 0.8.56.0, so a PC's save-ends effect and a monster's are counted the same way
+         * rather than by two rules that can disagree. The FIRST landing is already in `value` above;
+         * this adds the turns AFTER it, which is why turn one is dropped from the total.
+         *
+         * ⚠ AND AN ABSENT `damage` MEANS THE WEAPON'S. That is the shape he described, and the weapon
+         * is this character's own best at-will swing — resolved here because this is where it is known.
+         */
+        if (spend.ongoing?.repeat === "save-ends") {
+          const perTurn = spend.ongoing.damage
+            ? damageExpressionAverage(resolved(spend.ongoing.damage, actor))
+            : bestAtWillDamage;
+          const cap = Math.max(1, Math.floor(spend.ongoing.maxTurns ?? roundsPerFight));
+          const { expectedTurns } = saveEndsActiveTurns(
+            spend.ongoing.timing === "start" ? "start" : "end",
+            repeatFailChance(dc, target.saveBonus),
+            cap,
+          );
+          /** Turn one is the landing itself, already priced; only what it holds beyond that is new. */
+          const extraTurns = Math.max(0, expectedTurns - 1);
+          if (perTurn > 0 && extraTurns > 0) {
+            value += perTurn * extraTurns * (1 - saved);
+            estimated.push(`${actor.name} — ${spend.label}: holds for ${expectedTurns.toFixed(2)} of the target's turns against a +${target.saveBonus.toFixed(1)} save, so ${extraTurns.toFixed(2)} turns beyond the landing are counted at ${perTurn.toFixed(1)} damage each${spend.ongoing.damage ? "" : " — the weapon's own damage, because the effect deals that"}.`);
+          }
+        }
       } else {
         needsInput.push(`${actor.name} — ${spend.label}: neither an attack roll nor a save DC, and not a rider`);
         continue;
