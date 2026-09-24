@@ -9,6 +9,7 @@
 import { FEAT_PRICING, featPricing } from "../src/modules/dnd-5e/featPricing";
 import { priceFeat, priceFeats, evaluateExpression } from "../src/modules/dnd-5e/featEvaluator";
 import { partyFeatsFromActors } from "../src/modules/dnd-5e/featsFromActors";
+import { featContextFromActor } from "../src/modules/dnd-5e/featContextFromActor";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -230,6 +231,32 @@ console.log("\nEquipment and the fight reach the feat context");
   ok("Great Weapon Master prices from the character's own weapon",
     !priced.needsInput.some(n => n.feat === "Great Weapon Master") && priced.dpr > 0,
     `dpr ${priced.dpr.toFixed(2)} · still missing: ${priced.needsInput.map(n => n.missing.join(",")).join(" | ") || "nothing"}`);
+
+  /**
+   * ⚠ A REROLL FEAT ASKS ONE QUESTION NOW, NOT TWO.
+   *
+   * Christopher, 2026-09-23: *"feat pricing such as lucky is there show how is the item reroll not
+   * priced the same"*. Lucky's expression is `luckPointsUsedOnAttacks*attackRerollGain` and BOTH were
+   * unsupplied. The second is arithmetic the app can do — what one reroll of this character's own
+   * attack is worth — and `rerollPricing` is the same rule the checker uses for an item's charges.
+   * The first is a real allocation (a point can go to a save instead) and is still asked for.
+   */
+  {
+    const blindLucky = priceFeat("Lucky", {} as never);
+    ok("Lucky asked for the reroll's value and the allocation",
+      blindLucky?.dpr.ok === false && blindLucky.dpr.missing.includes("attackRerollGain"),
+      JSON.stringify(blindLucky?.dpr));
+    const ctx = featContextFromActor({
+      tabs: { main: [{ label: "Greataxe", tags: ["martial", "heavy"], metadata: { attack: "+9", damage: "1d12 + 5" } }] },
+    } as never, 17);
+    ok("...the context now supplies what one reroll is worth",
+      typeof ctx.attackRerollGain === "number" && (ctx.attackRerollGain as number) > 0,
+      String(ctx.attackRerollGain));
+    const withGain = priceFeat("Lucky", ctx as never);
+    ok("...leaving only the allocation, which is the DM's to state",
+      withGain?.dpr.ok === false && withGain.dpr.missing.join(",") === "luckPointsUsedOnAttacks",
+      JSON.stringify(withGain?.dpr));
+  }
 
   /**
    * ⚠ MUTATION: THE SAME CHARACTER LEADING WITH A WEAPON THAT IS NOT HEAVY.

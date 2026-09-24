@@ -335,7 +335,19 @@ export function resourceLedgerFromActor(
     const m = (pool.action.metadata ?? {}) as Record<string, unknown>;
     const text = `${label} ${String(m.details ?? "")} ${String((pool.action as { description?: string }).description ?? "")}`;
     const heals = m.outcomeMode === "healing" || readsAsHealing(text);
-    const damages = !heals && Boolean(String(m.damage ?? "").trim());
+    /**
+     * ⚠ A REROLL IS OFFENCE, AND IT CARRIES NO DAMAGE TO PROVE IT.
+     *
+     * Christopher, 2026-09-23: *"how is the item reroll not priced the same"* as Lucky. `damages` is a
+     * test for dice, and a reroll source has none — the Unfinished Thorn's charges landed in `other`,
+     * where nothing schedules them, so the item was worth zero however many charges it held. What a
+     * reroll does is convert a miss into a hit, which is damage arriving by a different door; see
+     * `rerollPricing`. The flag is the sheet's own (`additive: "reroll"` or the `reroll` tag), not a
+     * reading of the item's prose.
+     */
+    const rerolls = !heals
+      && (m.additive === "reroll" || ((pool.action as { tags?: string[] }).tags ?? []).includes("reroll"));
+    const damages = !heals && (rerolls || Boolean(String(m.damage ?? "").trim()));
 
     rows.push({
       actor: who, resource: label, kind: "itemCharge", chargeKey: pool.key,

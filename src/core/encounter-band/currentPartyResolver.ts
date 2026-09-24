@@ -50,6 +50,10 @@ import { traceCreature } from "./actionTrace";
 import { damageExpressionAverage } from "./damageExpression";
 // BR075-BR077, shared with the monster side so a save-ends effect is counted one way only.
 import { saveEndsActiveTurns, repeatFailChance } from "./durationPricing";
+// RULE ZERO: the card's own reroll reader, so the checker prices exactly what the table can press.
+import { getRerollSources } from "../state/rerollSources";
+import { itemChargeKey } from "../state/itemCharges";
+import { rerollGain } from "./rerollPricing";
 import { attackHitProbability } from "./checkerV2";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { scoresFromTemplate } from "../monsters/creator/monsterCreatorModel";
@@ -285,9 +289,14 @@ export function currentPartyMetrics(
      * The best single swing this character has — what "the weapon's damage" means for an ongoing
      * effect that deals it. The same ordering the scheduler uses to fill a routine.
      */
-    const bestAtWillDamage = ((creature.actions ?? []) as Array<{ roll?: string; damage?: string }>)
+    const bestAtWill = ((creature.actions ?? []) as Array<{ roll?: string; damage?: string }>)
       .filter(a => Boolean(a.roll))
-      .reduce((best, a) => Math.max(best, damageExpressionAverage(a.damage)), 0);
+      .reduce<{ roll?: string; damage?: string } | undefined>(
+        (best, a) => (damageExpressionAverage(a.damage) > damageExpressionAverage(best?.damage) ? a : best),
+        undefined);
+    const bestAtWillDamage = damageExpressionAverage(bestAtWill?.damage);
+    /** The bonus on that same swing — what a reroll is rerolling. */
+    const bestAtWillBonus = flatBonus(bestAtWill?.roll);
     // A character with no melee swing contributes 0 — it is part of the party's mix, not absent from it.
     meleeAttackShares.push(actorMeleeSwings > 0 && atWillFor(0) > 0
       ? (actorMeleeDamage / actorMeleeSwings) / atWillFor(0)
@@ -480,6 +489,64 @@ export function currentPartyMetrics(
      * rule and it is why the certified profile declines. A character takes one Action a turn, so a
      * round accepts one resource use however many are available.
      */
+    /**
+     * ⚠ A REROLL IS A RESOURCE THAT BUYS ACCURACY, AND IT WAS WORTH NOTHING.
+     *
+     * Christopher, 2026-09-23: *"ok but feat pricing such as lucky is there show how is the item reroll
+     * not priced the same"*. It carries no damage of its own, so it never became a spend at all — the
+     * Unfinished Thorn's charges, a Stabilized Band, a Luck point: zero, however many the sheet held.
+     *
+     * ⚠ AND THE SOURCES COME FROM `getRerollSources`, NOT FROM A SECOND SCAN. It is the same reader the
+     * card's reroll picker uses, so what the checker prices is exactly what the table can press —
+     * including the method, which is the whole of the arithmetic (see `rerollPricing`).
+     */
+    for (const src of getRerollSources(actor)) {
+      /**
+       * ⚠ THE DM'S OWN OVERRIDE IS NOT A CHARACTER RESOURCE. `getRerollSources` always offers three
+       * "DM Approved" entries so a DM can grant a reroll at the table. They belong to nobody, cost
+       * nothing and are sized by nothing — counting them would invent damage, and ADVISING about them
+       * would put three permanent "link this" notes on every character in the party, which is the
+       * exact noise that made the app look like it could not read sheets it reads perfectly well.
+       */
+      if (src.kind === "dm") continue;
+      const key = src.spendActionId ? itemChargeKey(src.spendActionId) : undefined;
+      const row = key !== undefined ? ledger.rows.find(r => r.chargeKey === key) : undefined;
+      if (!row) {
+        unlinked.push(`${actor.name} — ${src.label}: can reroll a d20, but no pool on this sheet sizes it${src.costLabel ? ` (it prints "${src.costLabel}")` : ""}, so it is left out of the total. Give it a charge count or link it to a Resources row.`);
+        continue;
+      }
+      const uses = row.offense / RESOURCE_DAY.fightsPerLongRest;
+      if (!(uses > 0)) continue;
+      if (bestAtWillBonus === undefined || !(bestAtWillDamage > 0)) {
+        needsInput.push(`${actor.name} — ${src.label}: rerolls a d20, but this character has no readable at-will attack for it to rescue`);
+        continue;
+      }
+      const gain = rerollGain({
+        method: src.method,
+        attackBonus: bestAtWillBonus,
+        targetAc: target.ac,
+        perHitDamage: bestAtWillDamage,
+        ...(src.bonusDice ? { bonusDice: src.bonusDice } : {}),
+      });
+      if (!gain) {
+        needsInput.push(`${actor.name} — ${src.label}: adds dice to a roll but does not say which, so what it rescues cannot be counted`);
+        continue;
+      }
+      /**
+       * ⚠ `rider`, BECAUSE IT IS SPENT AFTER THE ROLL IS SEEN. The gain is already the expected value of
+       * a use — discounting it by hit chance again would charge it for the miss it exists to undo.
+       */
+      priced.push({
+        spend: {
+          id: src.id, label: src.label, tab: src.kind === "item" ? "equipment" : "feats",
+          trigger: "rider", costsTheAction: false,
+        },
+        value: gain.value,
+        uses,
+      });
+      estimated.push(`${actor.name} — ${src.label}: counted as accuracy, not dice — ${gain.basis}, worth ${gain.value.toFixed(1)} a use against AC ${target.ac.toFixed(0)}. A use spent on a hit to fish for a critical is not counted.`);
+    }
+
     priced.sort((a, b) => b.value - a.value);
     let round = 0;
     for (const entry of priced) {

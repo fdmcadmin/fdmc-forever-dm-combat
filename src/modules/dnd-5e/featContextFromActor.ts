@@ -33,6 +33,7 @@
 import { damageExpressionAverage } from "../../core/encounter-band/damageExpression";
 import { resolveFormulaVars } from "../../core/state/resolveFormulaVars";
 import { attackHitProbability } from "../../core/encounter-band/checkerV2";
+import { rerollGain } from "../../core/encounter-band/rerollPricing";
 
 type ActionLike = {
   label?: string;
@@ -169,6 +170,8 @@ export type AttackProfile = {
   onceHit: number;
   /** 1 when the weapon this profile came from prints the Heavy property. Great Weapon Master's gate. */
   heavyWeaponEquipped: number;
+  /** Expected damage from rerolling one of this attack's misses — the workbook's `attackRerollGain`. */
+  attackRerollGain: number;
 };
 
 /**
@@ -228,6 +231,18 @@ export function attackProfile(actor: ActorLikeForFeats, targetAC: number): Attac
        * swinging the rapier; a greataxe left in the pack does not earn Great Weapon Master its damage.
        */
       heavyWeaponEquipped: isHeavyWeapon(a) ? 1 : 0,
+      /**
+       * ⚠ WHAT ONE REROLL OF THIS ATTACK IS WORTH — the workbook's `attackRerollGain`, and the
+       * reason Lucky reported NEEDS_INPUT forever. It is not a new model: `rerollPricing` is the
+       * same arithmetic the checker uses for an item's reroll charges, so a feat's reroll and an
+       * item's are priced by one rule.
+       *
+       * Lucky still asks for `luckPointsUsedOnAttacks`, which is a genuine allocation — points can
+       * go to a save or an enemy's attack roll instead — and is not this file's to decide.
+       */
+      attackRerollGain: rerollGain({
+        method: "reroll", attackBonus, targetAc: targetAC, perHitDamage,
+      })?.value ?? 0,
     };
     if (!best || profile.hitChance * profile.perHitDamage * profile.attacks
       > best.hitChance * best.perHitDamage * best.attacks) best = profile;

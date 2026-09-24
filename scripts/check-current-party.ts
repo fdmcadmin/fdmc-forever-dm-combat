@@ -28,6 +28,7 @@ import { parseCreature } from "../src/core/encounter-band/parseCreature";
 import { traceCreature } from "../src/core/encounter-band/actionTrace";
 import { resourceLedgerFromActor, RESOURCE_DAY } from "../src/core/encounter-band/resourceLedger";
 import { currentPartyMetrics, targetFromRoster } from "../src/core/encounter-band/currentPartyResolver";
+import { rerollGain } from "../src/core/encounter-band/rerollPricing";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -717,6 +718,112 @@ console.log("\nA zone's +N to its allies' saves, against the CHOSEN party");
   ok("mutation: an effect that states its own damage does not claim the weapon's",
     stated.estimated.every(e => !/the weapon's own damage/.test(e)),
     stated.estimated.filter(e => /Ensnaring/.test(e)).join(" | "));
+}
+
+/**
+ * A REROLL IS A RESOURCE THAT BUYS ACCURACY.
+ *
+ * Christopher, 2026-09-23: *"ok but feat pricing such as lucky is there show how is the item reroll not
+ * priced the same"*. It was not priced at all. A reroll source carries no damage of its own, so the
+ * adapter dropped it and the ledger filed its charges under `other`, where nothing schedules them: the
+ * Unfinished Thorn was worth zero however many charges it held.
+ *
+ * ⚠ THE METHOD IS THE ARITHMETIC. Throwing the die again, using the other side of it, and adding a d4 to
+ * the roll already made are three different numbers, and `rerollPricing` keeps them apart. The sources
+ * come from `getRerollSources` — the card's own picker — so the checker prices what the table can press.
+ */
+{
+  console.log("\nA reroll buys accuracy, and it is counted");
+
+  /** need 11+ on a 1d20+9 against AC 20: hit 0.50, so a reroll rescues 0.25 of the swings. */
+  const axe = {
+    id: "atk-axe", label: "Greataxe", actionKind: "attack", economyCost: ["main"], logMode: "default",
+    metadata: { attack: "1d20+9", damage: "20", damageType: "Slashing" },
+  };
+  const thorn = (extra: Record<string, unknown>) => ({
+    id: "equip-thorn", label: "Unfinished Thorn", actionKind: "equipment", economyCost: [], logMode: "default",
+    tags: ["reroll"],
+    metadata: {
+      additive: "reroll", rerollMethod: "reroll",
+      charges: { max: 2, reset: "shortRest" },
+      details: "Spend a charge to reroll a d20.",
+      ...extra,
+    },
+  });
+
+  const bearer = (rows: unknown[]) => ({
+    id: "thornbearer", kind: "player", name: "Thornbearer", level: 7, attacksPerAction: 1,
+    stats: { ac: 17, hp: { current: 60, max: 60 }, speed: "30 ft." },
+    abilityScores: {
+      str: { score: 18 }, dex: { score: 12 }, con: { score: 14 },
+      int: { score: 10 }, wis: { score: 12 }, cha: { score: 10 },
+    },
+    tabs: { main: [axe], equipment: rows },
+  }) as never;
+
+  const ac20 = targetFromRoster([{ template: { stats: { ac: 20 }, abilities: [
+    { label: "STR", value: "16 (+3)" }, { label: "DEX", value: "12 (+1)" },
+    { label: "CON", value: "14 (+2)" }, { label: "INT", value: "10 (+0)" },
+    { label: "WIS", value: "12 (+1)" }, { label: "CHA", value: "10 (+0)" }] }, quantity: 3 }] as never, 1)!;
+
+  /** ⚠ THE LEDGER HAS TO CALL IT OFFENCE, or its uses are never offered to the scheduler. */
+  const led = resourceLedgerFromActor(bearer([thorn({})]));
+  const row = led.rows.find(r => r.kind === "itemCharge");
+  ok("a reroll item's charges are offence, not 'other'", row?.offense === row?.totalUses && (row?.offense ?? 0) > 0,
+    `${row?.offense} of ${row?.totalUses}`);
+
+  const withThorn = currentPartyMetrics([bearer([thorn({})]) as never], ac20 as never);
+  const without = currentPartyMetrics([bearer([]) as never], ac20 as never);
+  const total = (m: { round1Dpr: number; round2Dpr: number; round3Dpr: number; round4PlusDpr: number }) =>
+    m.round1Dpr + m.round2Dpr + m.round3Dpr + m.round4PlusDpr;
+  ok("the item is worth something now", total(withThorn) > total(without) + 1e-6,
+    `${total(without).toFixed(2)} -> ${total(withThorn).toFixed(2)}`);
+  ok("...and the read says what it counted and what it did not",
+    withThorn.estimated.some(e => /counted as accuracy, not dice/.test(e))
+    && withThorn.estimated.some(e => /fish for a critical is not counted/.test(e)),
+    withThorn.estimated.filter(e => /Thorn/.test(e)).join(" | "));
+
+  /**
+   * ⚠ THE METHODS ARE DIFFERENT NUMBERS. Against a 11+, throwing again rescues (1−h)·h = 0.25 of the
+   * swings; the other side of the die rescues naturals 1-10, which is 0.50 of them. Reading one as
+   * the other is the whole reason `rerollMethod` exists.
+   */
+  ok("throwing the die again rescues a quarter of the swings",
+    Math.abs((rerollGain({ method: "reroll", attackBonus: 9, targetAc: 20, perHitDamage: 20 })?.convertChance ?? 0) - 0.25) < 1e-9,
+    String(rerollGain({ method: "reroll", attackBonus: 9, targetAc: 20, perHitDamage: 20 })?.convertChance));
+  ok("...the other side of the die rescues half of them",
+    Math.abs((rerollGain({ method: "flip", attackBonus: 9, targetAc: 20, perHitDamage: 20 })?.convertChance ?? 0) - 0.5) < 1e-9,
+    String(rerollGain({ method: "flip", attackBonus: 9, targetAc: 20, perHitDamage: 20 })?.convertChance));
+  /** +1d4 on a roll needing 11+: it rescues naturals 7-10, weighted by the face — 10 of 80 outcomes. */
+  ok("...and adding a d4 rescues what a d4 can reach",
+    Math.abs((rerollGain({ method: "bonus", attackBonus: 9, targetAc: 20, perHitDamage: 20, bonusDice: "1d4" })?.convertChance ?? 0) - 10 / 80) < 1e-9,
+    String(rerollGain({ method: "bonus", attackBonus: 9, targetAc: 20, perHitDamage: 20, bonusDice: "1d4" })?.convertChance));
+
+  /** ⚠ MUTATION: an easier target leaves fewer misses to rescue, so the same charge is worth less. */
+  const ac10 = targetFromRoster([{ template: { stats: { ac: 10 }, abilities: [
+    { label: "STR", value: "16 (+3)" }, { label: "DEX", value: "12 (+1)" },
+    { label: "CON", value: "14 (+2)" }, { label: "INT", value: "10 (+0)" },
+    { label: "WIS", value: "12 (+1)" }, { label: "CHA", value: "10 (+0)" }] }, quantity: 3 }] as never, 1)!;
+  const easy = rerollGain({ method: "reroll", attackBonus: 9, targetAc: ac10.ac, perHitDamage: 20 })!;
+  const hard = rerollGain({ method: "reroll", attackBonus: 9, targetAc: ac20.ac, perHitDamage: 20 })!;
+  ok("mutation: fewer misses to rescue is worth less", easy.value < hard.value - 1e-9,
+    `AC ${ac10.ac} ${easy.value.toFixed(2)} vs AC ${ac20.ac} ${hard.value.toFixed(2)}`);
+
+  /**
+   * ⚠ AND THE DM'S OWN OVERRIDE IS NOT ADVISED ABOUT. `getRerollSources` always offers three "DM
+   * Approved" entries; advising on them would put three permanent "link this" notes on every
+   * character in the party, which is the noise that made the app look unable to read its own sheets.
+   */
+  ok("the DM's own reroll override raises no advice",
+    withThorn.unlinked.every(u => !/DM Approved/.test(u)),
+    withThorn.unlinked.join(" | "));
+
+  /** ⚠ MUTATION: a reroll with no pool to size it is unlinked wiring, not a silent zero. */
+  const unsized = currentPartyMetrics(
+    [bearer([thorn({ charges: undefined })]) as never], ac20 as never);
+  ok("mutation: a reroll nothing sizes is reported, not dropped",
+    unsized.unlinked.some(u => /Unfinished Thorn/.test(u)) || unsized.needsInput.some(u => /Unfinished Thorn/.test(u)),
+    [...unsized.unlinked, ...unsized.needsInput].join(" | "));
 }
 
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
