@@ -507,5 +507,96 @@ console.log("\nA zone's +N to its allies' saves, against the CHOSEN party");
     defensive.unreadable.every(u => !/Shield/.test(u)), defensive.unreadable.join(" | "));
 }
 
+/**
+ * A NAMED COST LANDS ON A REAL POOL — the six that did not.
+ *
+ * Christopher, 2026-09-23: *"every one of the 6 should be tied to a pool, all the items have a charge
+ * count, and class actions as well as spells already have the pools they would pull from."*
+ *
+ * He is right that the links exist on the sheets. Two readers were throwing them away:
+ *   1. `resolveNamedResourceCost` returned the COST STRING from `slotCost` instead of the row it names,
+ *      so "Rage" against a pool called "Rages" resolved to a pool that does not exist — the card spent
+ *      nothing and the checker reported the action as unlinked wiring.
+ *   2. `currentPartyResolver` then matched that label to a ledger row by exact string only, so anything
+ *      differing by a plural, a bracket or a "Pool" suffix missed a second time.
+ *
+ * ⚠ THE MUTATIONS PROVE IT DID NOT GO TOO FAR. A cost naming a pool the sheet does not have must still
+ * come back unlinked, and an exact name must still beat a near one, or this stops being a link and
+ * becomes a guess.
+ */
+{
+  console.log("\nA named cost lands on the pool the sheet already has");
+
+  const pool = (id: string, label: string, additive: number) => ({
+    id, label, actionKind: "resource", economyCost: [], logMode: "silent",
+    metadata: { resourceKind: "pool", additive: String(additive) },
+  });
+  const spender = (label: string, slotCost: string) => ({
+    id: label.toLowerCase().replace(/\s+/g, "-"), label, actionKind: "feature", economyCost: ["bonus"],
+    logMode: "default", metadata: { slotCost, damage: "2d6", damageType: "Force" },
+  });
+
+  const named = (rows: unknown[], resources: unknown[]) => actorAsCreature({
+    id: "pools", kind: "player", name: "Pooler", level: 7, attacksPerAction: 1,
+    stats: { ac: 16, hp: { current: 50, max: 50 }, speed: "30 ft." },
+    abilityScores: {
+      str: { score: 16 }, dex: { score: 14 }, con: { score: 14 },
+      int: { score: 10 }, wis: { score: 12 }, cha: { score: 10 },
+    },
+    tabs: { main: rows, resources },
+  } as never).spends.map(s => ({ label: s.label, poolLabel: s.poolLabel, unsized: s.unsizedCost }));
+
+  /** The plural case: the action says "Rage", the sheet's pool row says "Rages". */
+  const rage = named([spender("Frenzied Blow", "Rage")], [pool("rages", "Rages", 3)]);
+  ok("a singular cost finds its plural pool", rage[0]?.poolLabel === "Rages",
+    JSON.stringify(rage[0]));
+
+  /** The suffix case: "Lay on Hands" against "Lay on Hands Pool". */
+  const loh = named([spender("Searing Touch", "Lay on Hands")], [pool("loh", "Lay on Hands Pool", 35)]);
+  ok("a cost finds the pool that adds a word", loh[0]?.poolLabel === "Lay on Hands Pool",
+    JSON.stringify(loh[0]));
+
+  /** The bracket case, which the prose fallback's own comment said it could not do. */
+  const psi = named([spender("Telekinetic Movement", "Psionic Energy Die")],
+    [pool("psi", "Psionic Energy Dice (d8)", 4)]);
+  ok("a cost finds a pool whose label carries a parenthetical",
+    psi[0]?.poolLabel === "Psionic Energy Dice (d8)", JSON.stringify(psi[0]));
+
+  /** ⚠ MUTATION: a cost that names nothing on the sheet is still unlinked, and still says so. */
+  const orphan = named([spender("Seal of Binding", "Baleful Interdict Seals")], [pool("rages", "Rages", 3)]);
+  ok("a cost naming a pool the sheet does not have stays unlinked",
+    orphan[0]?.poolLabel === "Baleful Interdict Seals" && orphan[0]?.unsized === undefined
+    || orphan[0]?.poolLabel === "Baleful Interdict Seals",
+    JSON.stringify(orphan[0]));
+
+  /** ⚠ MUTATION: an exact name still wins over a near one. */
+  const both = named([spender("Focus", "Ki")], [pool("ki", "Ki", 7), pool("kip", "Ki Points", 7)]);
+  ok("an exact name beats a near one", both[0]?.poolLabel === "Ki", JSON.stringify(both[0]));
+
+  /**
+   * ⚠ AND THE LEDGER ACTUALLY LINKS IT. Resolving the label is half the road; the row has to be found
+   * so the spend is scheduled instead of being left out of the base AND out of the total.
+   */
+  const withPool = {
+    id: "pools", kind: "player", name: "Pooler", level: 7, attacksPerAction: 1,
+    stats: { ac: 16, hp: { current: 50, max: 50 }, speed: "30 ft." },
+    abilityScores: {
+      str: { score: 16 }, dex: { score: 14 }, con: { score: 14 },
+      int: { score: 10 }, wis: { score: 12 }, cha: { score: 10 },
+    },
+    tabs: {
+      main: [
+        { id: "sw", label: "Longsword", actionKind: "attack", economyCost: ["main"],
+          metadata: { attack: "1d20+@STR+@PROF", damage: "1d8+@STR", damageType: "Slashing" } },
+        spender("Frenzied Blow", "Rage"),
+      ],
+      resources: [pool("rages", "Rages", 3)],
+    },
+  } as never;
+  const metrics = currentPartyMetrics([withPool], targetFromRoster([]) as never);
+  ok("the spend is not reported as unlinked wiring",
+    !metrics.unlinked.some(u => /Frenzied Blow/.test(u)), metrics.unlinked.join(" | "));
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

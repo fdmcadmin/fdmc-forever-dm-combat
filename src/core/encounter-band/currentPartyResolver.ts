@@ -326,11 +326,37 @@ export function currentPartyMetrics(
      * adapter got with the whole action in hand. `actorAsCreature` already resolved it and put the
      * answer on `poolLabel`; using that is the same match rather than a second opinion.
      */
+    /**
+     * ⚠ AND THE LAST HOP IS A NAME, SO IT GETS THE SAME NORMALISATION THE FIRST ONE DID.
+     *
+     * Christopher, 2026-09-23: *"every one of the 6 should be tied to a pool, all the items have a
+     * charge count, and class actions as well as spells already have the pools they would pull
+     * from."* `resolveNamedResourceCost` now lands a named cost on a real Resources row, which
+     * fixes the card and most of this. What was left is the ledger's own labelling: an item pool is
+     * named after its ACTION and a class pool after its row, so a spend whose label differs by a
+     * plural, a bracket or a "Pool" suffix still missed — and a missed row is not "unreadable", it
+     * is a link the sheet has and the reader threw away.
+     */
+    const loose = (value: string) => value
+      .toLowerCase()
+      .replace(/\bdice\b/g, "die")
+      .replace(/\b(\w{3,}?)s\b/g, "$1")
+      .replace(/[()]/g, " ")
+      .replace(/\b(?:pool|points?|uses?|charges?)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     const rowFor = (spend: ResourceSpendingAction) => ledger.rows.find(r =>
       (spend.chargeKey !== undefined && r.chargeKey === spend.chargeKey)
       || (spend.spellLevel !== undefined && r.tier === spend.spellLevel)
       || (spend.poolLabel !== undefined
-        && r.resource.trim().toLowerCase() === spend.poolLabel.trim().toLowerCase()));
+        && r.resource.trim().toLowerCase() === spend.poolLabel.trim().toLowerCase()))
+      /** Only once the exact pass has found nothing, so an exact name always wins over a near one. */
+      ?? ledger.rows.find(r => {
+        if (spend.poolLabel === undefined) return false;
+        const want = loose(spend.poolLabel);
+        const have = loose(r.resource);
+        return want.length > 2 && have.length > 2 && (want === have || have.includes(want) || want.includes(have));
+      });
 
     const priced: Array<{ spend: ResourceSpendingAction; value: number; uses: number; dc?: number }> = [];
     for (const spend of spends) {

@@ -87,10 +87,52 @@ export function resolveNamedResourceCost(
    * the prefix keeps every real pool name working (none of them begins "No Slot" or "Cantrip")
    * and stops this one class of string being mistaken for one.
    */
+  /**
+   * ⚠ ONE DIE IS SPENT FROM A POOL OF DICE, and an exact string match cannot see that.
+   *
+   * A cost names what one USE takes, so it is written singular — "1 Psionic Energy Die". A pool is
+   * named for what it HOLDS, so it is plural. Matching stays WHOLE-WORD and symmetric, both sides
+   * getting the same treatment, so this loosens the spelling and not the meaning. `dice`→`die` is
+   * spelled out because it is an irregular this vocabulary uses in both directions; the trailing-s
+   * rule covers the regular cases; brackets go because "Psionic Energy Dice (d8)" is the same pool
+   * as "Psionic Energy Dice".
+   *
+   * Hoisted above the `slotCost` branch, which now needs it too.
+   */
+  const normalise = (value: string) => value
+    .toLowerCase()
+    .replace(/\bdice\b/g, "die")
+    .replace(/\b(\w{3,}?)s\b/g, "$1")
+    .replace(/[()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
   const slotCost = action.metadata?.slotCost?.trim();
   const saysNoSlot = slotCost !== undefined && /^(?:cantrip|no slot)\b/i.test(slotCost);
   if (slotCost && !saysNoSlot && !/^L\d/i.test(slotCost)) {
-    return slotCost;
+    /**
+     * ⚠ A NAMED COST IS A POINTER AT A ROW, AND IT HAS TO LAND ON ONE.
+     *
+     * Christopher, 2026-09-23: *"every one of the 6 should be tied to a pool ... class actions as
+     * well as spells already have the pools they would pull from."* They do — and this branch
+     * returned the cost STRING rather than the row it names. "Rage" against a pool labelled
+     * "Rages", or "Lay on Hands" against "Lay on Hands Pool", resolved to a pool that does not
+     * exist: the card spent nothing when clicked, and the checker left the action out of the base
+     * AND out of the total, reporting it as unlinked wiring.
+     *
+     * The raw string is still returned when nothing matches, so a sheet whose named cost genuinely
+     * has no Resources row behaves exactly as before.
+     */
+    const wanted = slotCost.toLowerCase();
+    const exact = resourceLabels.find(l => l.trim().toLowerCase() === wanted);
+    if (exact) return exact;
+    const loose = normalise(slotCost);
+    const near = resourceLabels.find(l => normalise(l) === loose);
+    if (near) return near;
+    /** Longest first, so "Psionic Energy Dice (d8)" beats a bare "Energy" on a sheet carrying both. */
+    const sorted = [...resourceLabels].filter(l => l.trim().length > 2).sort((a, b) => b.length - a.length);
+    const containing = sorted.find(l => normalise(l).includes(loose) || loose.includes(normalise(l)));
+    return containing ?? slotCost;
   }
   if (slotCost) return undefined; // an explicit Cantrip / No Slot / L1 is not a named pool
 
@@ -113,12 +155,6 @@ export function resolveNamedResourceCost(
    * It cannot see a parenthetical in the label ("Psionic Energy Dice (d8)"), and widening it far
    * enough to would start matching pools the action never meant.
    */
-  const normalise = (value: string) => value
-    .toLowerCase()
-    .replace(/\bdice\b/g, "die")
-    .replace(/\b(\w{3,}?)s\b/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
   const proseNormalised = normalise(prose);
   // Longest label first so "Spell Slots L1" wins over a bare "Spell" style label.
   const candidates = [...resourceLabels]
