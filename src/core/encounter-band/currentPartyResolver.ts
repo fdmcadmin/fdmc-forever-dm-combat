@@ -54,6 +54,8 @@ import { saveEndsActiveTurns, repeatFailChance } from "./durationPricing";
 import { getRerollSources } from "../state/rerollSources";
 import { itemChargeKey } from "../state/itemCharges";
 import { rerollGain } from "./rerollPricing";
+// RULE ZERO: the summon system built for exactly these three bodies — see `summon.ts`.
+import { materializeSummon } from "../monsters/summon";
 import { attackHitProbability } from "./checkerV2";
 import { resolveFormulaVars } from "../state/resolveFormulaVars";
 import { scoresFromTemplate } from "../monsters/creator/monsterCreatorModel";
@@ -245,7 +247,7 @@ export function currentPartyMetrics(
   const meleeAttackShares: number[] = [];
 
   for (const actor of actors) {
-    const { creature, spends, unreadable, assumptions } = actorAsCreature(actor);
+    const { creature, spends, summons, unreadable, assumptions } = actorAsCreature(actor);
     for (const u of unreadable) needsInput.push(`${actor.name} — ${u}`);
     for (const a of assumptions) estimated.push(`${actor.name} — ${a}`);
 
@@ -576,6 +578,83 @@ export function currentPartyMetrics(
         round++;
       }
       damagePerDay += entry.value * entry.uses * RESOURCE_DAY.fightsPerLongRest;
+    }
+
+    /**
+     * ⚠ BODIES FIGHTING BESIDE THE PARTY — BR099, and the read had no handling for any of it.
+     *
+     * Christopher, 2026-09-23: *"the beast of the land is a constant not a timed summon and it can be
+     * revived while it also has the ability to do force damage"*; *"the artificer cannon is a summon but
+     * as a class that should always have access to spell slots ... would almost always have the cannon
+     * out"*; and the Covenant bond *"has a action that summons and then buffs with the summon lasting 2
+     * round so its a cycle"*.
+     *
+     * The workbook states the price and this is it verbatim — BR099: *"Summon value = expected active
+     * rounds × summoned BODY_DPR ..."*. The body is built by `materializeSummon` and swung by the same
+     * `traceCreature` every other creature in this app goes through, so a summoned body is priced the
+     * way a monster is and not by a second model.
+     *
+     * ⚠ WHAT IS NOT PRICED, AND IS NAMED INSTEAD: the summon's own EHP (it soaks hits that would have
+     * hit the party, which is sustain and belongs to the sustain pass), and the Covenant cycle's
+     * SCHEDULING — Christopher: *"that AI would come from the Tactical AI"*. A two-round body recast on
+     * a cycle is counted for the rounds its duration covers, not for a cadence invented here.
+     */
+    for (const body of summons) {
+      const materialized = materializeSummon(body.spec, {
+        level: Number(actor.level ?? 1),
+        proficiencyBonus: Number(actor.proficiencyBonus ?? 0) || undefined,
+        name: actor.name,
+      }, []);
+      if (!materialized?.body) {
+        needsInput.push(`${actor.name} — ${body.sourceLabel}: calls a body the checker cannot build${materialized?.problems?.length ? ` (${materialized.problems.join("; ")})` : ""}`);
+        continue;
+      }
+
+      let bodyDpr = 0;
+      try {
+        const traced = traceCreature(parseCreature(materialized.body) as never, target as never, roundsPerFight) as unknown as
+          { rounds: Array<{ totalExpectedDamage?: number }> };
+        bodyDpr = traced.rounds.length > 0
+          ? traced.rounds.reduce((n, r) => n + clamp0(r.totalExpectedDamage ?? 0), 0) / traced.rounds.length
+          : 0;
+      } catch {
+        needsInput.push(`${actor.name} — ${body.sourceLabel}: the summoned body's own actions could not be read`);
+        continue;
+      }
+      const bodies = Math.max(1, Number(materialized.count) || 1);
+      if (!(bodyDpr > 0)) {
+        estimated.push(`${actor.name} — ${body.sourceLabel}: the body it calls deals no readable damage, so it adds nothing to the party's offence. Whatever it soaks is sustain, which this pass does not own.`);
+        continue;
+      }
+
+      /**
+       * ⚠ HOW MANY ROUNDS IT IS ACTUALLY OUT. A printed duration caps it; a body with no duration that
+       * costs nothing is simply THERE — the Beast of the Land, which is the case he named first — and a
+       * body that spends something is out for as long as its duration says, as often as the ledger can
+       * pay for it.
+       */
+      const duration = Math.max(1, Math.min(roundsPerFight, Number(body.spec.durationRounds) || roundsPerFight));
+      let activeRounds = duration;
+      if (!body.free) {
+        const row = rowFor({
+          id: body.sourceId, label: body.sourceLabel, tab: body.tab,
+          trigger: "spell-action", costsTheAction: true,
+        } as ResourceSpendingAction);
+        const casts = row ? row.offense / RESOURCE_DAY.fightsPerLongRest : 0;
+        if (!(casts > 0)) {
+          unlinked.push(`${actor.name} — ${body.sourceLabel}: calls a body but no pool on this sheet sizes what it costs, so it is left out of the total.`);
+          continue;
+        }
+        activeRounds = Math.min(roundsPerFight, duration * casts);
+      }
+
+      const bodyPerRound = bodyDpr * bodies;
+      for (let r = 0; r < roundsPerFight; r++) {
+        const share = Math.max(0, Math.min(1, activeRounds - r));
+        if (share <= 0) break;
+        perRound[r] += bodyPerRound * share;
+      }
+      estimated.push(`${actor.name} — ${body.sourceLabel}: ${bodies > 1 ? `${bodies} bodies ` : "a body "}worth ${bodyPerRound.toFixed(1)} a round, out for ${activeRounds.toFixed(1)} of ${roundsPerFight} rounds${body.free ? " — it costs nothing, so it is simply there" : ""}. Its own HP is not counted here; what a summon soaks is sustain. ${body.spec.acts === "summoner-turn" ? "It acts on this character's turn, so it adds no turn of its own." : "It acts on its own initiative."}`);
     }
 
     /**

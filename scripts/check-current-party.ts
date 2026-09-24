@@ -826,5 +826,111 @@ console.log("\nA zone's +N to its allies' saves, against the CHOSEN party");
     [...unsized.unlinked, ...unsized.needsInput].join(" | "));
 }
 
+/**
+ * A BODY FIGHTING BESIDE THE PARTY IS COUNTED — BR099, and the read had no handling for any of it.
+ *
+ * Christopher, 2026-09-23: *"the beast of the land is a constant not a timed summon and it can be revived
+ * while it also has the ability to do force damage"*; *"the artificer cannon is a summon but as a class
+ * that should always have access to spell slots ... would almost always have the cannon out"*; and the
+ * Covenant bond *"has a action that summons and then buffs with the summon lasting 2 round so its a
+ * cycle but that AI would come from the Tactical AI"*.
+ *
+ * BR099 states the price: *"Summon value = expected active rounds × summoned BODY_DPR ..."*. The body is
+ * built by `materializeSummon` and swung by the same `traceCreature` every creature in this app goes
+ * through, so a summoned body is priced the way a monster is and not by a second model.
+ *
+ * ⚠ THE ACTION THAT CALLS ONE USUALLY HAS NO DICE, which is exactly why this was invisible: the adapter's
+ * `if (!damage && !m.attack) continue` dropped every summoning action before anything could look at it.
+ */
+{
+  console.log("\nA summoned body is counted, for as long as it is out");
+
+  const cannonBody = {
+    templateId: "cannon", name: "Eldritch Cannon",
+    stats: { kind: "construct", ac: 18, maxHp: 25, speed: "15 ft.", attacksPerTurn: 1, size: "Tiny", classification: "standard", proficiencyBonus: 3, defenses: [] },
+    abilities: [
+      { label: "STR", value: "10 (+0)" }, { label: "DEX", value: "10 (+0)" },
+      { label: "CON", value: "10 (+0)" }, { label: "INT", value: "10 (+0)" },
+      { label: "WIS", value: "10 (+0)" }, { label: "CHA", value: "10 (+0)" },
+    ],
+    actions: [{ name: "Force Ballista", kind: "attack", roll: "1d20+7", damage: "2d8", damageType: "Force" }],
+    traits: [], reactions: [],
+  };
+
+  const summoner = (extra: Record<string, unknown>, resources: unknown[] = []) => ({
+    id: "artificer", kind: "player", name: "Artificer", level: 9, attacksPerAction: 1,
+    proficiencyBonus: 4,
+    stats: { ac: 18, hp: { current: 70, max: 70 }, speed: "30 ft." },
+    abilityScores: {
+      str: { score: 10 }, dex: { score: 14 }, con: { score: 16 },
+      int: { score: 20 }, wis: { score: 12 }, cha: { score: 10 },
+    },
+    tabs: {
+      main: [{ id: "club", label: "Club", actionKind: "attack", economyCost: ["main"],
+        metadata: { attack: "1d20+@DEX+@PROF", damage: "1d4+@DEX", damageType: "Bludgeoning" } }],
+      features: [{
+        id: "cannon", label: "Eldritch Cannon", actionKind: "feature", economyCost: ["bonus"],
+        metadata: { summon: { name: "Eldritch Cannon", inline: cannonBody, acts: "own-initiative" }, ...extra },
+      }],
+      resources,
+    },
+  }) as never;
+
+  /** ⚠ THE ADAPTER HAS TO SEE IT AT ALL — the guard that dropped it is the whole bug. */
+  const read = actorAsCreature(summoner({}));
+  ok("a summoning action reaches the read", read.summons.length === 1,
+    JSON.stringify(read.summons.map(s => s.sourceLabel)));
+  ok("...and one that costs nothing is marked as simply being there",
+    read.summons[0]?.free === true);
+  ok("...it is not also in the turn routine",
+    (read.creature.actions as Array<{ name?: string }>).every(a => a.name !== "Eldritch Cannon"));
+
+  const totalOf = (m: { round1Dpr: number; round2Dpr: number; round3Dpr: number; round4PlusDpr: number }) =>
+    m.round1Dpr + m.round2Dpr + m.round3Dpr + m.round4PlusDpr;
+
+  const withCannon = currentPartyMetrics([summoner({}) as never], target as never);
+  const noCannon = currentPartyMetrics([{
+    ...(summoner({}) as unknown as { tabs: Record<string, unknown> }),
+    tabs: { ...(summoner({}) as unknown as { tabs: Record<string, unknown[]> }).tabs, features: [] },
+  } as never], target as never);
+  ok("the body adds damage the party did not have", totalOf(withCannon) > totalOf(noCannon) + 1e-6,
+    `${totalOf(noCannon).toFixed(2)} -> ${totalOf(withCannon).toFixed(2)}`);
+  ok("...and the read says what it counted and what it did not",
+    withCannon.estimated.some(e => /out for .* rounds/.test(e))
+    && withCannon.estimated.some(e => /what a summon soaks is sustain/.test(e)),
+    withCannon.estimated.filter(e => /Cannon/.test(e)).join(" | "));
+
+  /**
+   * ⚠ A PRINTED DURATION CAPS IT — the Covenant bond's two rounds. A body out for two rounds of a
+   * four-round fight is worth half what one that never leaves is worth.
+   */
+  const twoRound = currentPartyMetrics([summoner({ summon: {
+    name: "Bond Creature", inline: cannonBody, acts: "summoner-turn", durationRounds: 2,
+  } }) as never], target as never);
+  ok("mutation: a two-round body is worth less than one that stays",
+    totalOf(twoRound) < totalOf(withCannon) - 1e-6,
+    `2 rounds ${totalOf(twoRound).toFixed(2)} vs constant ${totalOf(withCannon).toFixed(2)}`);
+  ok("...and the read says it acts on the summoner's turn",
+    twoRound.estimated.some(e => /acts on this character's turn/.test(e)),
+    twoRound.estimated.filter(e => /Bond/.test(e)).join(" | "));
+
+  /**
+   * ⚠ A BODY THAT COSTS SOMETHING NEEDS A POOL TO PAY FOR IT. Unsized is unlinked wiring — the same
+   * answer the rest of this resolver gives — not a silent zero and not a free companion.
+   */
+  const costly = currentPartyMetrics([summoner({ slotCost: "Charges", summon: {
+    name: "Eldritch Cannon", inline: cannonBody, acts: "own-initiative",
+  } }) as never], target as never);
+  ok("mutation: a body whose cost nothing sizes is reported, not counted",
+    costly.unlinked.some(u => /Eldritch Cannon/.test(u)),
+    costly.unlinked.join(" | "));
+
+  /** ⚠ AND A CALL THAT NAMES NO BODY AT ALL IS A QUESTION, never a guess at one. */
+  const bodiless = currentPartyMetrics([summoner({ summon: { name: "Something" } }) as never], target as never);
+  ok("a summon with neither a template nor a body asks rather than inventing one",
+    bodiless.needsInput.some(u => /cannot build/.test(u)),
+    bodiless.needsInput.join(" | "));
+}
+
 console.log(failures === 0 ? "\nAll assertions passed." : `\n${failures} assertion(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

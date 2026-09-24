@@ -35,6 +35,7 @@ import { readsAsHealing } from "../../modules/dnd-5e/slotCapability";
 import { featPricing } from "../../modules/dnd-5e/featPricing";
 import { damageExpressionAverage } from "./damageExpression";
 import { standingStylesOf, styleRidesAction } from "../rules/weaponStyles";
+import type { SummonSpec } from "../monsters/summon";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
 type AbilityId = (typeof ABILITIES)[number];
@@ -99,11 +100,31 @@ export type ResourceSpendingAction = {
   costsTheAction: boolean;
 };
 
+/** A body this character can put on the board — see `ActorActionMetadata.summon` and BR099. */
+export type SummonedBody = {
+  /** The action that calls it, so its cost can be found in the ledger. */
+  sourceId: string;
+  sourceLabel: string;
+  tab: string;
+  spec: SummonSpec;
+  /** True when calling it spends nothing — a companion that is simply THERE. */
+  free: boolean;
+};
+
 export type ActorAsCreature = {
   /** At-will only — the shape `parseCreature` and `traceCreature` consume. */
   creature: MainMonsterTemplate;
   /** Everything excluded from the base, for `resourceLedger` to price. */
   spends: ResourceSpendingAction[];
+  /**
+   * ⚠ BODIES THIS CHARACTER BRINGS — and the read had NO handling at all.
+   *
+   * Christopher, 2026-09-23: *"the beast of the land is a constant not a timed summon and it can be
+   * revived"*, *"the artificer cannon ... would almost always have the cannon out"*, and the Covenant
+   * bond *"has a action that summons and then buffs with the summon lasting 2 round so its a cycle"*.
+   * Three bodies fighting beside the party, each worth nothing in every fight the checker priced.
+   */
+  summons: SummonedBody[];
   /** Anything that carries damage and could not be classified, named rather than dropped. */
   unreadable: string[];
   /**
@@ -137,6 +158,9 @@ const POSITIONAL_REQUIREMENT = new RegExp(
   ].join("|"),
   "i",
 );
+
+/** A stated frequency — "2/LR", "1 per encounter". A body that prints one is not simply there. */
+const PRINTED_LIMIT = /\d+\s*(?:\/|per\s+)\s*(?:LR|SR|day|turn|round|encounter|long rest|short rest)\b/i;
 
 function resolved(text: string | undefined, actor: Actor): string | undefined {
   if (!text) return undefined;
@@ -223,6 +247,7 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
    * printed "this does not use your reaction" disclaimers honoured.
    */
   const reactions: MainMonsterTemplate["reactions"] = [];
+  const summons: SummonedBody[] = [];
   /** This actor's own pool labels — what `resolveNamedResourceCost` matches a cost against. */
   const poolRefs = ((actor.tabs?.resources ?? []) as unknown as Array<{ id?: string; label?: string }>)
     .filter(x => x?.label).map(x => ({ id: x.id, label: String(x.label) }));
@@ -260,6 +285,24 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
      * rather than two that can disagree. Sustain is owned by `partyHealingFromActors`.
      */
     const healText = `${label} ${m.details ?? ""} ${(action as { description?: string }).description ?? ""}`;
+    /**
+     * ⚠ A SUMMON IS READ BEFORE THE DAMAGE GUARDS, because the body IS the damage and the action
+     * that calls it usually has none of its own. `if (!damage && !m.attack) continue` dropped every
+     * one of them — the cannon, the Beast, the Covenant bond-creature — before anything could look.
+     */
+    const summonSpec = ((action.metadata ?? {}) as Record<string, unknown>).summon as SummonSpec | undefined;
+    if (summonSpec) {
+      summons.push({
+        sourceId: String(action.id ?? label), sourceLabel: label, tab, spec: summonSpec,
+        // Nothing named, nothing levelled, no charge, no printed limit: it is simply there.
+        free: !(spellLevel > 0
+          || m.resourceId
+          || itemChargesFor(action as never)
+          || resolveNamedResourceCost(action as never, poolRefs as never)
+          || PRINTED_LIMIT.test(`${m.slotCost ?? ""} ${m.cost ?? ""}`)),
+      });
+      continue;
+    }
     if (m.outcomeMode === "healing" || readsAsHealing(healText)) continue;
     if (!damage && !m.attack) continue;
 
@@ -298,7 +341,9 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
      * "Action" carry no frequency and are untouched.
      */
     const limitText = `${m.slotCost ?? ""} ${m.cost ?? ""}`;
-    const printedLimit = limitText.match(/\d+\s*(?:\/|per\s+)\s*(?:LR|SR|day|turn|round|encounter|long rest|short rest)\b/i)?.[0];
+    // One pattern, shared with the summon branch — a second copy of "what a stated frequency looks
+    // like" is the drift this file's other shared readers exist to prevent.
+    const printedLimit = limitText.match(PRINTED_LIMIT)?.[0];
     const spendsResource = spellLevel > 0
       || Boolean(m.resourceId)
       || Boolean(itemPool)
@@ -550,5 +595,5 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
     reactions,
   } as never;
 
-  return { creature, spends, unreadable, assumptions };
+  return { creature, spends, summons, unreadable, assumptions };
 }
