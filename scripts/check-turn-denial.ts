@@ -187,9 +187,19 @@ console.log("\n7. concentrated control: each later turn stands only while the ho
     ({ id, name: id, quantity: 1, baseHp: hp, flatHpPerBody: true, dpr: all(5), pcTurnDenials: held(concentration) as never, conSave });
   const totalLost = (rs: Round[]) => rs.slice(0, 5).reduce((s, r) => s + (r.pcTurnsLost ?? 0), 0);
 
-  // The party kills a decoy FIRST, so nothing is dealt to the caster: the hold is 1 and nothing changes.
-  const plainDecoy = run([body("Decoy", 100000), caster("Caster", 100000, false)]);
-  const concDecoy = run([body("Decoy", 100000), caster("Caster", 100000, true)]);
+  /**
+   * The party is busy with something else, so nothing is dealt to the caster: the hold is 1 and
+   * nothing changes.
+   *
+   * ⚠ THE DECOY HAS TO EARN THE PARTY'S ATTENTION NOW. It used to be enough to write it first,
+   * because the authored order WAS the kill order. Since the Tactical AI landed, the party picks by
+   * threat — and a caster that holds a PC every round is worth 10 a turn of it, so the party quite
+   * correctly went for the caster and broke the concentration this assertion needs intact. A decoy
+   * hitting for 40 outranks it, which is what "the party hits something else" has to mean now.
+   */
+  const decoy = (id: string): RosterGroup => ({ ...body(id, 100000), dpr: all(40) });
+  const plainDecoy = run([decoy("Decoy"), caster("Caster", 100000, false)]);
+  const concDecoy = run([decoy("Decoy"), caster("Caster", 100000, true)]);
   ok("while the party hits something else, a concentrated hold costs exactly what it printed",
     near(totalLost(plainDecoy), totalLost(concDecoy)), `${totalLost(plainDecoy).toFixed(3)} vs ${totalLost(concDecoy).toFixed(3)}`);
 

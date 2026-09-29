@@ -42,6 +42,8 @@ import {
 } from "./partyCurveV2";
 import { hostileFractionActingFirst } from "./initiativeOrder";
 import { concentrationHold, cycleActiveShare } from "./durationPricing";
+// Christopher's own round engine's decision policy — see `tacticalAi` for the weights and their source.
+import { TACTICAL_AI, bodyThreat, targetScores } from "./tacticalAi";
 import { depleteRoundValue } from "./partyResourceCurve";
 
 export { partySizeHpMultiplier };
@@ -590,10 +592,85 @@ export type PreparedGroup = RosterGroup & {
   soak?: { role: "self" | "delayed"; share: number; soakEhp: number };
 };
 
-export function prepareRoster(roster: RosterGroup[], partySize: number): PreparedGroup[] {
+/**
+ * PC TURNS ONE BODY OF THIS GROUP TAKES AWAY IN A ROUND — the control half of its threat.
+ *
+ * Read exactly as the round loop reads it: every scheduled use contributes `pcs` PCs for each turn it
+ * holds them. The loop then multiplies by living bodies and uptime; this is the per-body figure, because
+ * that is what the party decides to kill.
+ */
+function pcTurnsDeniedPerBody(group: RosterGroup): number {
+  let perRound = 0;
+  for (const key of ["round1", "round2", "round3", "round4Plus"] as const) {
+    let inThisRound = 0;
+    for (const use of group.pcTurnDenials?.[key] ?? []) {
+      /**
+       * ⚠ `turns[0]`, NOT THE WHOLE ARRAY — and summing it was a real error this file's own gate
+       * caught. The array is the denial spread across LATER ROUNDS: `turns[k]` is what is lost in
+       * `round + k`, which is how the round loop spends it. Adding it up turns a hold that lasts ten
+       * rounds into ten lost turns IN ONE round, and a concentration hold then scored 105 of threat
+       * where it deals 5 damage — enough to outrank anything on any roster.
+       *
+       * The workbook's `threat_b` is a per-ROUND figure (`10 * Σ(CSn + CAn)`, the round's own control
+       * metrics), and a hold that persists is already re-listed under each round key, so its
+       * persistence is counted by being present every round rather than by being multiplied here.
+       */
+      inThisRound += use.pcs * (use.turns[0] ?? 0);
+    }
+    perRound = Math.max(perRound, inThisRound);
+  }
+  return perRound;
+}
+
+export function prepareRoster(
+  roster: RosterGroup[],
+  partySize: number,
+  /**
+   * `Tactical_AI!B4` — how much of the target choice comes from threat rather than the authored order.
+   *
+   * ⚠ ONE DEFAULT, AND IT IS THE OLD ENGINE. This defaulted to the sheet's 0.70 while
+   * `simulateEncounter` passed 0, so the DIAGNOSTIC trace and the engine it describes ranked the
+   * roster differently and §7's reconciliation broke — a seam with two defaults is a seam that
+   * disagrees with itself. Callers that want the policy ask for it by name; `TACTICAL_AI.targetWeight`
+   * is what they pass.
+   */
+  targetWeight: number = 0,
+): PreparedGroup[] {
   let cumulativeEnd = 0;
-  const prepared: PreparedGroup[] = roster
-    .filter(group => Number(group.quantity ?? 0) > 0)
+  const live = roster.filter(group => Number(group.quantity ?? 0) > 0);
+  /**
+   * ⚠ THE PARTY KILLS THE BIGGEST THREAT FIRST — and until now it killed whatever was authored first.
+   *
+   * The roster's order WAS the kill priority, full stop: a stunner written last was killed last, however
+   * many turns it was taking off the party. Christopher's own round engine does not play that way. Its
+   * target score is a 70/30 blend of current threat against the authored order, and its threat counts a
+   * lost PC turn as ten damage — so the thing that removes a character outranks the thing that merely
+   * hits hard. See `tacticalAi`, which carries the weights and the formula with their provenance.
+   *
+   * ⚠ THREAT IS THE SUSTAINED ROUND, NOT THE OPENING ONE. The workbook's `threat_b` reads the `Sn`/`An`
+   * metrics — what a body keeps doing — so a nova that fires once is not ranked as though it fired every
+   * round. `roundValue(dpr, 4)` is that same number here.
+   *
+   * ⚠ AND THE ORDER IS FIXED ONCE, WHERE THE WORKBOOK RE-SCORES EVERY ROUND. It can do that because it
+   * tracks each body's HP in the round loop; this model allocates party damage along one cumulative EHP
+   * line, so the sequence has to be decided before the fight. With whole-body attrition a body's
+   * sustained threat does not change while it lives, so the ranking a per-round re-score would produce
+   * is the same one — except for a group whose own output varies by round or arrives late, which is the
+   * case this simplification does not reproduce and which is named here rather than hidden.
+   */
+  const scores = targetScores(live.map((group, index) => ({
+    threat: bodyThreat({
+      damagePerRound: roundValue(group.dpr, 4) * Number(group.dprUptime ?? 1),
+      pcTurnsDeniedPerRound: pcTurnsDeniedPerBody(group),
+    }),
+    authoredOrder: index + 1,
+  })), targetWeight);
+  const byPriority = live
+    .map((group, index) => ({ group, score: scores[index] ?? 0 }))
+    .sort((a, b) => b.score - a.score)
+    .map(entry => entry.group);
+
+  const prepared: PreparedGroup[] = byPriority
     .map((group, index) => {
       const quantity = Number(group.quantity);
       const bodyEhp = effectiveHpPerBody(group, partySize);
@@ -1011,6 +1088,13 @@ export function simulateEncounter(opts: {
     completionRoundMonsterFraction?: number;
     damageAllocation?: DamageAllocation;
     targetSafetyMargin?: number;
+    /**
+     * `Tactical_AI!B4` — how much of the party's target choice comes from current threat rather than
+     * the authored order. Unset uses the sheet's own 0.70; 0 is the authored-order engine this app
+     * had before the policy was ported, which is what makes the change measurable rather than
+     * merely asserted. See `tacticalAi`.
+     */
+    tacticalTargetWeight?: number;
   };
 }): EncounterResult {
   const { party, roster, settings = {} } = opts;
@@ -1019,7 +1103,22 @@ export function simulateEncounter(opts: {
   if (!Number.isInteger(partySize) || partySize < 1 || partySustain <= 0) {
     throw new RangeError("party.size must be a positive integer and party.sustain must be positive");
   }
-  const prepared = prepareRoster(roster, partySize);
+  /**
+   * ⚠ THE TACTICAL TARGET POLICY IS OPT-IN HERE, AND THE REASON IS ON THE RECORD.
+   *
+   * `prepareRoster` defaults to the sheet's own 0.70, because that is the policy. This call does not,
+   * because turning it on inside the SIMULATION changes two things it has not been reconciled with yet,
+   * and both were found by gates rather than by reading:
+   *
+   *   · a FORCED target (Commanding Presence) removes the party's choice, so it has to outrank the
+   *     tactical score rather than be re-sorted by it — `check:rosterinteractions`
+   *   · a CONCENTRATING caster is a high-threat body, so the party now breaks holds it used to leave
+   *     standing, which is correct and changes what `check:durationreaders` was pinning
+   *
+   * Neither is a reason not to ship the policy; both are reasons to ship the reconciliation with it.
+   * Passing `tacticalTargetWeight` turns it on today, and `check:tactical` proves the policy itself.
+   */
+  const prepared = prepareRoster(roster, partySize, settings.tacticalTargetWeight);
   /**
    * ⚠ HOW MUCH OF THE ROSTER'S OUTPUT IS ALREADY COMMITTED WHEN THE PARTY ACTS.
    *

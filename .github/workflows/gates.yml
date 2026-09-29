@@ -237,6 +237,11 @@ jobs:
       - name: check a feat erratum cites the printed feat
         run: npm run check:featerrata
 
+      # The party kills the biggest threat rather than the first creature written, on the Tactical AI's own
+      # 70/30 threat-and-authored-order score, with a denied PC turn counted as ten damage of threat.
+      - name: check the tactical target policy
+        run: npm run check:tactical
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

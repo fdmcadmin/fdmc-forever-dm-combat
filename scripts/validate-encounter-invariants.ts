@@ -42,6 +42,7 @@
  */
 
 import { simulateEncounter } from "../src/core/encounter-band/checkerV2";
+import { TACTICAL_AI } from "../src/core/encounter-band/tacticalAi";
 import type { RosterGroup } from "../src/core/encounter-band/checkerV2";
 import { diagnoseEncounter } from "../src/core/encounter-band/encounterDiagnostics";
 
@@ -96,20 +97,55 @@ console.log("\n── 8.2 Two bodies: killing one must remove THAT body's future
   check("R1 offence is both bodies at full output", Number((r.rounds[0]?.monsterDamage ?? 0).toFixed(2)), 40);
 }
 
-console.log("\n── 8.3 Kill ORDER must change the trace (high-offense first vs low-offense first)");
+console.log("\n── 8.3 Kill ORDER still decides the trace — the TACTICAL AI now decides the order");
 {
-  // Same total EHP and DPR, but the offence is lopsided: killing the 30-DPR body first should
-  // cut incoming damage far faster than killing the 10-DPR body first.
+  /**
+   * ⚠ THIS INVARIANT USED TO ASSERT THE OPPOSITE OF WHAT IT ASSERTS NOW, and the change is the
+   * point rather than a weakening.
+   *
+   * It read: *"the two orders produce DIFFERENT totals"* and *"killing the high-offense body first
+   * takes LESS damage"* — both true, and both describing a model where the roster's TYPING ORDER
+   * was the party's kill order. A party that fought worse because a creature was written second is
+   * not a party; it is a data-entry artefact, and Christopher's own round engine never played that
+   * way. See `tacticalAi`.
+   *
+   * So the fact underneath is unchanged and is still asserted below: killing the glass cannon first
+   * takes less damage. What changed is WHO CHOOSES. The party now chooses it, from threat, whichever
+   * way the roster was typed — which is why the two orders agree, and why they agree on the better
+   * line rather than the worse one.
+   */
   const glass = body("glass-cannon", 30, 100);
   const tank = body("low-threat", 10, 100);
-  const killCannonFirst = run([glass, tank]);
-  const killTankFirst = run([tank, glass]);
-  const a = killCannonFirst.rounds.reduce((s, x) => s + x.monsterDamage, 0);
-  const b = killTankFirst.rounds.reduce((s, x) => s + x.monsterDamage, 0);
-  report("total incoming, cannon killed first", Number(a.toFixed(2)));
-  report("total incoming, low-threat killed first", Number(b.toFixed(2)));
-  check("the two orders produce DIFFERENT totals", a !== b, true);
-  check("killing the high-offense body first takes LESS damage", a < b, true);
+  const total = (r: { rounds: Array<{ monsterDamage: number }> }) =>
+    Number(r.rounds.reduce((s, x) => s + x.monsterDamage, 0).toFixed(2));
+
+  /** The policy, asked for explicitly — see the note at `prepareRoster`'s call in `simulateEncounter`. */
+  const tactical = (roster: RosterGroup[]) => total(simulateEncounter({
+    party, roster, settings: { damageAllocation: "focus_fire", tacticalTargetWeight: TACTICAL_AI.targetWeight },
+  }));
+  const cannonTyped = tactical([glass, tank]);
+  const tankTyped = tactical([tank, glass]);
+  report("total incoming, cannon typed first", cannonTyped);
+  report("total incoming, low-threat typed first", tankTyped);
+  check("typing order no longer changes the trace", cannonTyped === tankTyped, true);
+
+  /**
+   * ⚠ AND IT AGREES ON THE BETTER LINE. Against the authored-order engine (weight 0) the two typings
+   * still diverge, and the cannon-first one is lower — that is the fact the old assertion was
+   * guarding. The party's own choice has to land on THAT number, or the policy is choosing badly.
+   */
+  const authored = (roster: RosterGroup[]) => total(simulateEncounter({
+    party, roster, settings: { damageAllocation: "focus_fire", tacticalTargetWeight: 0 },
+  }));
+  const authoredCannonFirst = authored([glass, tank]);
+  const authoredTankFirst = authored([tank, glass]);
+  report("authored-order engine, cannon first", authoredCannonFirst);
+  report("authored-order engine, low-threat first", authoredTankFirst);
+  check("the authored-order engine still diverges on typing", authoredCannonFirst !== authoredTankFirst, true);
+  check("...and killing the high-offense body first is still the better line",
+    authoredCannonFirst < authoredTankFirst, true);
+  check("the party's own choice lands on that better line",
+    cannonTyped === authoredCannonFirst, true);
 }
 
 console.log("\n── 8.4 A dead body contributes nothing (no fractional ghost)");
