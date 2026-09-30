@@ -484,6 +484,40 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           `category` is the subkind the library groups by ("Melee One-Handed", "Heavy
           Armor"); `sourceType` marks where it came from, which drives the act-grouped
           library sections; `mastery` is the 2024 weapon-mastery property. */}
+      {/**
+        * ⚠ A CHASSIS HAS ALREADY ANSWERED ALL THREE OF THESE.
+        *
+        * Christopher, 2026-09-29: *"a templet needs to replace most of the sections on the creator since
+        * having all the extra boxes just seems to be redundent because we have already determined the
+        * category, the source, and the mastery"*.
+        *
+        * He is describing the rule this form already follows twice: the weapon dice and the AC box sit
+        * behind `!draft.chassis`, because *"a chassis is not a variation on a fixed item — it IS the
+        * item"*. A Gift does not pin a form — *"the gifts dont hold one form as a chassis they match a
+        * category such as 2 had heavy, 1 hand str, 1h light, 2 h ranged 1 hand ranged and such"* — so the
+        * CATEGORIES are the chassis's own list, the mastery is inherited from whichever base weapon the
+        * chosen form resolves to, and a Gift's source is the Act that bestows it. Three boxes asking the
+        * DM to retype what the chassis states is the fixed-item fallacy one block lower down.
+        *
+        * ⚠ AND THE BOXES STAY FOR EVERYTHING ELSE — 66 items in the library set a category and 59 set a
+        * mastery. This hides them where they are already answered, not everywhere.
+        */}
+      {draft.chassis ? (
+        <div style={{ fontSize: 12, border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px", background: "#13131f" }}>
+          <span style={{ color: "#d7b36a" }}>The chosen form decides this item's category and mastery.</span>
+          <div style={{ marginTop: 4, color: "#8a8aa0", lineHeight: 1.5 }}>
+            {(draft.chassis.categories ?? []).length > 0
+              ? <>Matches <strong style={{ color: "#c9c9dd" }}>{(draft.chassis.categories ?? []).join(" or ")}</strong>
+                {draft.chassis.ability ? <> using <strong style={{ color: "#c9c9dd" }}>{draft.chassis.ability}</strong></> : null}
+                {(draft.chassis.requireTags ?? []).length > 0
+                  ? <> and must be <strong style={{ color: "#c9c9dd" }}>{(draft.chassis.requireTags ?? []).join(" + ")}</strong></> : null}
+                {(draft.chassis.anyOfTags ?? []).length > 0
+                  ? <> and must be <strong style={{ color: "#c9c9dd" }}>{(draft.chassis.anyOfTags ?? []).join(" or ")}</strong></> : null}.</>
+              : <>Matches whichever form is chosen above.</>}
+            {" "}Its mastery comes from that form's base weapon and is never typed here.
+          </div>
+        </div>
+      ) : (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
         <label style={{ fontSize: 12 }}>Category
           <input type="text" value={draft.category ?? ""} onChange={e => set("category", e.target.value || undefined)}
@@ -510,6 +544,7 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
         </label>
         )}
       </div>
+      )}
 
       {/* What spending a charge actually DOES. Without this an item can carry uses that
           resolve to nothing but a log line. */}
@@ -581,12 +616,11 @@ function ItemForm({ initial, preset, onSave, onCancel }: {
           once ItemMechanicsFields landed it also showed TWICE on a weapon. The focus block now
           lives in that shared component behind `allows("spellFocus")`, which is the only place
           it belongs. */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-        <label style={{ fontSize: 12 }}>Session
-          <input type="text" value={draft.session ?? ""} onChange={e => set("session", e.target.value || undefined)}
-            placeholder="Session 4" style={input} />
-        </label>
-      </div>
+      {/* ⚠ SESSION IS NOT ASKED FOR ANY MORE. Christopher, 2026-09-29: *"session should not be here
+          because nothing is set on session timing"*. Nothing schedules by it, gates an Act on it, or shows
+          it on a card — `parseSessionField` only sorts the library's own grouping, which the Act already
+          does. The FIELD stays on `EquipmentItem`, so the six items that carry one keep what they have;
+          what goes is the box that invited a seventh. */}
       <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
         <input type="checkbox" checked={draft.isUsable} onChange={e => set("isUsable", e.target.checked)} />
         Has usable action (shows Use button)
