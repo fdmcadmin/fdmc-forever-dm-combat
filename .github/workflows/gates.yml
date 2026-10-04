@@ -242,6 +242,11 @@ jobs:
       - name: check the tactical target policy
         run: npm run check:tactical
 
+      # A Feywild Gift offers the forms the loot document lists by name, not a category-and-tag filter
+      # somebody derived from its description — the two disagree in both directions.
+      - name: check a Gift offers the document's own forms
+        run: npm run check:giftforms
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

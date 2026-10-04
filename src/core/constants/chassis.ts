@@ -16,6 +16,21 @@ import { BASE_WEAPONS, type BaseWeaponSeed } from "./baseWeapons";
 export type ChassisAbility = "STR" | "DEX" | "any";
 
 export type ChassisSpec = {
+  /**
+   * THE FORMS THIS GIFT MAY TAKE, STATED OUTRIGHT — and it outranks every filter below.
+   *
+   * The loot document v14 lists each Gift's eligible forms by name ("DM NOTE GIFT FORMS", *"The
+   * seven weapon lists cover all 38 weapons in the SRD 5.2.1 Weapons table"*), and those lists do
+   * not describe a filter. Winter's Mercy is *"two-handed melee"* and its forms are Greatclub,
+   * Greataxe, Greatsword, Maul, Battleaxe, Warhammer and War Pick — two of which are Versatile and
+   * one of which is One-Handed, while Glaive, Halberd and Pike are excluded despite being exactly
+   * the heavy two-handers a category-and-tag filter would reach for.
+   *
+   * ⚠ SO A FILTER CANNOT EXPRESS THEM, AND GUESSING ONE GETS THE LIST WRONG. An earlier pass
+   * derived Winter's Mercy as `Melee Two-Handed + heavy` from its description; the document's own
+   * list disagrees in both directions. Where the document states the forms, they are stated here.
+   */
+  formIds?: string[];
   /** Legal categories. Empty/absent = any category. */
   categories?: string[];
   /** Which ability the form must use. "any" leaves it to the form. */
@@ -78,6 +93,18 @@ export function isVersatileForm(form: BaseWeaponSeed): boolean {
 /** Every base weapon a chassis will accept. */
 export function matchingForms(spec: ChassisSpec | undefined): BaseWeaponSeed[] {
   if (!spec) return [];
+  /**
+   * ⚠ A STATED LIST IS THE ANSWER, NOT A STARTING POINT. When the document names the forms, the
+   * filters are not consulted at all — running both would let a stale `categories` quietly remove a
+   * form the document grants. Order follows the document's own list so the picker reads like it.
+   * A named form the base table does not carry is skipped rather than invented: v14 lists Musket
+   * and Pistol, and says they apply *"when firearms are available"*, which this table is not.
+   */
+  if (spec.formIds?.length) {
+    return spec.formIds
+      .map(id => BASE_WEAPONS.find(form => form.id === id))
+      .filter((form): form is BaseWeaponSeed => Boolean(form));
+  }
   return BASE_WEAPONS.filter(form => {
     if (spec.categories?.length && !spec.categories.includes(form.category)) return false;
     if (spec.ability && spec.ability !== "any" && formAbility(form) !== spec.ability) return false;

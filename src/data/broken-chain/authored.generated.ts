@@ -5482,10 +5482,19 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "isUsable": true,
     "sourceEncounter": "A3 Gate II: Open Clearing",
     "chassis": {
-      "categories": [
-        "Melee One-Handed"
+      "categories": [],
+      "ability": "any",
+      "formIds": [
+        "base-longsword",
+        "base-battleaxe",
+        "base-warhammer",
+        "base-war-pick",
+        "base-mace",
+        "base-flail",
+        "base-morningstar"
       ],
-      "ability": "STR"
+      "requireTags": [],
+      "anyOfTags": []
     },
     "grantsProficiency": true,
     "pbToDamage": true,
@@ -5507,19 +5516,26 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "A3 Gate III: Veilscar Hollow"
     ],
     "chassisBonusDice": "1d6",
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-last-measure",
     "name": "Gift of Winter's Mercy",
     "chassis": {
-      "categories": [
-        "Melee Two-Handed"
+      "categories": [],
+      "ability": "any",
+      "requireTags": [],
+      "formIds": [
+        "base-greatclub",
+        "base-greataxe",
+        "base-greatsword",
+        "base-maul",
+        "base-battleaxe",
+        "base-warhammer",
+        "base-war-pick"
       ],
-      "ability": "STR",
-      "requireTags": [
-        "heavy"
-      ]
+      "anyOfTags": []
     },
     "description": "A fine blue edge gleams along this heavy weapon of winter-pale wood. The grip grows cold when its wielder is wounded.",
     "type": "weapon",
@@ -5544,16 +5560,23 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       }
     ],
     "chassisBonusDice": "1d6",
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-long-watch",
     "name": "Gift of Hartseeker",
     "chassis": {
-      "categories": [
-        "Ranged Two-Handed"
+      "categories": [],
+      "ability": "any",
+      "formIds": [
+        "base-shortbow",
+        "base-longbow",
+        "base-light-crossbow",
+        "base-heavy-crossbow"
       ],
-      "ability": "DEX"
+      "requireTags": [],
+      "anyOfTags": []
     },
     "description": "Golden veins trace the limbs and grip of this wooden hunting weapon. When drawn or raised, they form the outline of a running hart.",
     "type": "weapon",
@@ -5578,19 +5601,27 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       }
     ],
     "chassisBonusDice": "1d6",
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-open-hand",
     "name": "Gift of Rimefang",
     "chassis": {
-      "categories": [
-        "Melee One-Handed"
+      "categories": [],
+      "ability": "any",
+      "requireTags": [],
+      "formIds": [
+        "base-dagger",
+        "base-dagger-str",
+        "base-handaxe",
+        "base-javelin",
+        "base-light-hammer",
+        "base-spear",
+        "base-trident",
+        "base-dart"
       ],
-      "ability": "STR",
-      "requireTags": [
-        "thrown"
-      ]
+      "anyOfTags": []
     },
     "description": "This throwing weapon is carved from frost-pale wood. A thin blue trail follows it through the air and back to its wielder.",
     "type": "weapon",
@@ -5615,20 +5646,30 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       }
     ],
     "chassisBonusDice": "1d6",
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-quiet-step",
     "name": "Gift of Thornrunner",
     "chassis": {
-      "categories": [
-        "Melee One-Handed"
+      "categories": [],
+      "ability": "any",
+      "anyOfTags": [],
+      "formIds": [
+        "base-club",
+        "base-dagger",
+        "base-dagger-str",
+        "base-sickle",
+        "base-scimitar",
+        "base-scimitar-str",
+        "base-shortsword",
+        "base-shortsword-str",
+        "base-rapier",
+        "base-rapier-str",
+        "base-whip"
       ],
-      "ability": "DEX",
-      "anyOfTags": [
-        "finesse",
-        "light"
-      ]
+      "requireTags": []
     },
     "description": "Golden light traces an unbroken path through the wood of this slender weapon, from its grip to its striking end.",
     "type": "weapon",
@@ -5652,19 +5693,26 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       }
     ],
     "chassisBonusDice": "1d6",
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-standing-line",
     "name": "Gift of Winterwatch",
     "chassis": {
-      "categories": [
-        "Melee Two-Handed"
+      "categories": [],
+      "ability": "any",
+      "requireTags": [],
+      "formIds": [
+        "base-glaive",
+        "base-halberd",
+        "base-lance",
+        "base-pike",
+        "base-quarterstaff",
+        "base-spear",
+        "base-trident"
       ],
-      "ability": "STR",
-      "requireTags": [
-        "reach"
-      ]
+      "anyOfTags": []
     },
     "description": "Bands of blue light encircle the grips of this long wooden weapon. Its shadow resembles a bare tree across a winter road.",
     "type": "weapon",
@@ -5692,7 +5740,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
       "max": 1,
       "reset": "shortRest"
     },
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-deep-root",
@@ -5721,7 +5770,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "riders": [],
     "chassisBonusDice": "1d6",
     "spellFocusMagicActionDamage": "1d6+@PROF",
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-gift-of-the-turning-season",
@@ -5747,7 +5797,8 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "boundWeaponBonus": 2,
     "boundWeaponHitDamage": "1d6+@PROF",
     "weaponOrSpellChoice": true,
-    "revisedAt": "2026-09-16T12:41:00.000Z"
+    "revisedAt": "2026-09-16T12:41:00.000Z",
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
   },
   {
     "id": "tbc-rimestone-pauldron",
@@ -7460,10 +7511,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-564c768e-185132";
+export const AUTHORED_DIGEST = "fnv1a-7806876e-195419";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-09-30T00:56:16.115Z";
+export const AUTHORED_AT = "2026-10-04T17:31:57.503Z";
 
 /** The merge is hand-written and lives beside this file — the fold rewrites this one. */
 export { mergeAuthored } from "./mergeAuthored";
