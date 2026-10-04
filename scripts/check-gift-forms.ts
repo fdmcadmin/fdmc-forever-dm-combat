@@ -35,6 +35,13 @@ const DOCUMENT: Record<string, string[]> = {
   "Gift of Winterwatch": ["Glaive", "Halberd", "Lance", "Pike", "Quarterstaff", "Spear", "Trident"],
   "Gift of Rimefang": ["Dagger", "Dagger (STR)", "Handaxe", "Javelin", "Light Hammer", "Spear", "Trident", "Dart"],
   "Gift of Hartseeker": ["Shortbow", "Longbow", "Light Crossbow", "Heavy Crossbow"],
+  /**
+   * v14's seventh weapon Gift, and the app carried its predecessor. There is no Gift of First Light
+   * in v14 — its two-handed staff focus folded into Duskthorn, whose staff v14 makes "a magic
+   * Quarterstaff" — so the item was renamed IN PLACE, keeping `tbc-gift-of-the-deep-root` so its
+   * encounter links and any character already holding it survived.
+   */
+  "Gift of Briarwink": ["Blowgun", "Hand Crossbow", "Sling", "Dart", "Dagger", "Dagger (STR)", "Handaxe", "Light Hammer"],
 };
 
 console.log("A Gift's forms are the document's list\n");

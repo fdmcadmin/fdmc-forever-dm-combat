@@ -5745,16 +5745,25 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
   },
   {
     "id": "tbc-gift-of-the-deep-root",
-    "name": "Gift of First Light",
+    "name": "Gift of Briarwink",
     "chassis": {
       "requireTags": [],
-      "categories": []
+      "categories": [],
+      "formIds": [
+        "base-blowgun",
+        "base-hand-crossbow",
+        "base-sling",
+        "base-dart",
+        "base-dagger",
+        "base-dagger-str",
+        "base-handaxe",
+        "base-light-hammer"
+      ],
+      "anyOfTags": [],
+      "ability": "any"
     },
-    "description": "Warm amber light fills the branching crown of this living wooden staff. Tiny buds open along its grain as a spell is cast.",
-    "isSpellFocus": true,
-    "spellFocusAttack": "+2",
-    "spellFocusDamage": "+2",
-    "spellFocusSaveDc": "+2",
+    "description": "Small amber buds stud this compact wooden weapon. They flash like watchful eyes when a foe draws near.",
+    "isSpellFocus": false,
     "type": "weapon",
     "isUsable": true,
     "act": "Act 3",
@@ -5766,17 +5775,28 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     "pbToDamage": true,
     "chassisBonus": 2,
     "attunementRequired": true,
-    "mechanicsText": "You have a +2 bonus to attack and damage rolls made with this magic weapon. On a hit, add your Proficiency Bonus to the damage roll, and the weapon deals an extra 1d6 damage of its normal type. While attuned to the weapon, you are proficient with it. Spellcasting Focus. You can use this staff as a Spellcasting Focus for your spells. While holding it in both hands, you gain a +2 bonus to spell attack rolls, spell damage and healing rolls, and spell save DCs for spells you cast through it. You can release one hand to provide the spell's components without losing any of the staff's benefits, returning that hand to the staff when the casting is complete. First Light. While holding this staff in both hands, whenever you take the Magic action, add 1d6 plus your Proficiency Bonus to each damage or healing roll you make as part of that action.",
-    "riders": [],
+    "mechanicsText": "You are proficient with this magic weapon while attuned to it. You have a +2 bonus to attack and damage rolls made with it. Each hit deals extra damage equal to 1d6 plus your Proficiency Bonus, of the weapon’s normal damage type. Close Quarters. An enemy within 5 feet of you doesn’t impose Disadvantage on your ranged attack rolls with this weapon. Briar’s Bite. Once on each of your turns, when you hit a creature within 15 feet with a ranged attack using this weapon, the attack deals an extra 1d6 damage of the weapon’s type. Returning. If this weapon has the Thrown property, it returns to an empty hand immediately after you make a ranged attack by throwing it. If neither hand is free, it falls in your space.",
+    "riders": [
+      {
+        "id": "rider-briars-bite",
+        "label": "Briar’s Bite",
+        "cadence": "perTurn",
+        "formula": "1d6",
+        "condition": "Once on each of your turns: a ranged attack with this weapon hits a creature within 15 feet"
+      }
+    ],
     "chassisBonusDice": "1d6",
-    "spellFocusMagicActionDamage": "1d6+@PROF",
     "revisedAt": "2026-09-16T12:41:00.000Z",
-    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses."
+    "dmNote": "The forest bestows one Feywild Gift on each character in Act 3. Weapon Gifts take a permanent mundane form from their listed category. Gift of First Light is a Quarterstaff used as a two-handed focus; Gift of Duskthorn is a weapon charm. Keep the weapon's normal dice, properties, and attack ability; Weapon Mastery requires a feature that grants it. A damage or healing roll receives the Gifts' PB + 1d6 benefit only once, even if both a weapon attack and a Magic action qualify. Extra damage matches a damage type of the triggering attack or effect. For a roll shared by several targets, use the modified total for every target. Magic-action bonuses apply to rolls resolved as part of that action, not later damage from an ongoing effect. Cantrip Weaving is part of the Attack action. Both focuses can channel cantrips and spells without Material components. Their +2 bonuses apply while wielded; use the higher bonus if another item grants a bonus to the same roll or save DC. For a weapon attack made through a spell, use the Gift's +2 weapon bonus rather than also adding its +2 spell bonus. On a Critical Hit, double damage dice, including added dice, but not fixed bonuses.",
+    "spellFocusAttack": "+2",
+    "spellFocusDamage": "+2",
+    "spellFocusSaveDc": "+2",
+    "spellFocusMagicActionDamage": "1d6+@PROF"
   },
   {
     "id": "tbc-gift-of-the-turning-season",
     "name": "Gift of Duskthorn",
-    "description": "This small thorn of winter-pale wood hangs from a loop of silver root. When fastened to a weapon, blue light spreads from the charm along its surface.",
+    "description": "Winter-pale wood and silver root hold a blue-lit thorn surrounded by amber buds. Blue light follows the bearer’s strikes; warm light blooms as a spell takes shape.",
     "isSpellFocus": true,
     "spellFocusAttack": "+2",
     "spellFocusDamage": "+2",
@@ -5790,9 +5810,9 @@ export const AUTHORED_EQUIPMENT: EquipmentItem[] = [
     ],
     "grantsProficiency": true,
     "attunementRequired": true,
-    "mechanicsText": "Weapon Charm. As a Magic Action, you can attach the charm to a weapon or remove it. A weapon can have only one weapon charm attached at a time. The attached weapon is magical. You must be attuned to the charm to use its properties; any attunement required for the weapon's own properties is separate. Feywild Armament. While the charm is attached, you are proficient with the weapon and gain a +2 bonus to attack and damage rolls made with it. If the weapon already grants such a bonus, use the higher bonus. Thorn and Spell. When you attune to the charm, and at the start of each of your turns, choose one of the following benefits. It lasts until you choose again. Thorn: each hit with the attached weapon deals extra damage equal to 1d6 plus your Proficiency Bonus, of the weapon's normal damage type. Spell: while wielding the attached weapon, add 1d6 plus your Proficiency Bonus to each damage or healing roll you make as part of a Magic action. Spellcasting Focus. You can use the attached weapon as a Spellcasting Focus for your spells. While wielding it, you gain a +2 bonus to spell attack rolls, spell damage and healing rolls, and spell save DCs for spells you cast through it. Cantrip Weaving. Once on each of your turns, when you take an Attack action that allows at least two attacks, you can cast a cantrip you know in place of one attack. The cantrip must have a casting time of an action and be cast through the attached weapon. Only one cantrip can be cast as part of that action.",
+    "mechanicsText": "Bound Focus. The staff is a magic Quarterstaff. As a Magic action, you can bind the charm or wrap to one weapon, making it magical, or remove it. The weapon can’t be another Feywild Gift or hold another Duskthorn. Any attunement it requires is separate. The handwraps make your damaging Unarmed Strikes magical. Feywild Armament. You are proficient with the staff or bound weapon. You gain a +2 bonus to attack and damage rolls with it, or with your damaging Unarmed Strikes while wearing the handwraps. Each hit deals extra damage equal to 1d6 plus your Proficiency Bonus, of the attack’s normal damage type. Spellcasting Focus. You can use Duskthorn as a Spellcasting Focus for spells from any class while holding a focus form, wielding the staff or bound weapon, or wearing the holy symbol or handwraps. For spells cast through it, you gain a +2 bonus to spell attack rolls, spell damage and healing rolls, and your spell save DC. Cantrip Weaving. Once on each of your turns, when you take the Attack action and can make at least two attacks, you can replace one attack with a cantrip you know. The cantrip must have a casting time of an action and be cast through Duskthorn. You can cast only one cantrip as part of that Attack action. Thornwoven Cantrip. When a cantrip you cast through Duskthorn deals damage as part of its casting, you can add 1d6 to the damage dealt to one creature. This applies to only one instance of damage per casting. The extra damage is of a type dealt by that instance. You can’t add this die to a hit that already gains the extra 1d6 from Feywild Armament. First Light Bloom. Once on each of your turns, when you take a Magic action, roll 3d6 and add twice your Proficiency Bonus. Add the total to one instance of damage dealt or Hit Points restored to one creature as part of that action. Extra damage is of a type dealt by that instance. If the action deals no immediate damage and restores no Hit Points, you can instead grant that total as Temporary Hit Points to yourself or one willing creature you can see within 30 feet. These Temporary Hit Points last until the start of your next turn. First Light Bloom can accompany Thornwoven Cantrip. Cantrip Weaving uses the Attack action, so it doesn’t trigger First Light Bloom. None of these properties disables Feywild Armament. ACT 3 CONVERGENCE INPUTS Act 3 adds Tactical and Continuity to the Component Tags. The full six-player reward pool contains eight inputs: Tactical ×2, Continuity ×2, Offensive ×2, Cleanse ×1, and Defense ×1. All are usable standalone Wondrous Items and require no attunement. Crosspath Token Wondrous item · Convergence Input · A3 A pale vein divides this forked blackwood token. Immediately after Initiative is rolled, before the first turn begins, you can use one of the following properties. Once you use either property, you can’t use either again until you finish a Long Rest. Cross the Path. Choose a hostile creature you can see that is ahead of you in the Initiative order. Your turn moves to immediately after that creature’s turn. No other creature’s position changes. First Working. Choose yourself or one willing ally you can see within 30 feet. The chosen creature’s next level 1 or 2 spell cast before the end of the first round is cast at its lowest level without expending a spell slot. It must know or have prepared the spell. Tags: A3 · Tactical Rootbound Thread Wondrous item · Convergence Input · A3 Green-gold root fiber is braided around a dark inner strand. When you fail a Constitution saving throw to maintain Concentration, you can succeed instead. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Continuity Bloodbriar Seed Wondrous item · Convergence Input · A3 Two hooked veins cross this red-black seed. They glow in turn when nearby blows land. After you damage a hostile creature, you can mark it until the end of the current round. The next time an ally other than you hits the marked creature with a weapon or spell attack before then, the attack deals an extra 2d8 damage of one type it deals. The mark then ends. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Offensive Mirrorbark Scale Wondrous item · Convergence Input · A3 Reflections appear slightly early in the polished grain of this small bark scale. When a hostile creature hits you with an attack, before damage is rolled, you can take a Reaction to force it to reroll the attack. The attacker must use the new result. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Defense Branchcall Marker Wondrous item · Convergence Input · A3 Branching paths cover a thin disc of living wood. Two routes brighten when the disc is turned. When a creature you can see within 30 feet ends its turn, you can take a Reaction to let yourself and one willing ally you can see within 30 feet each move up to 10 feet without provoking Opportunity Attacks. Your ally doesn’t need to take a Reaction. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Tactical Held-Echo Knot Wondrous item · Convergence Input · A3 This knot of silver bark-fiber remains taut after it is released. When a hostile creature’s Reaction prevents a limited-use, non-spell class feature you used from affecting any target, you can regain one use or resource point spent on that feature. The knot can’t restore spellcasting resources. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Continuity Veilwash Leaf Wondrous item · Convergence Input · A3 Warm yellow and icy blue light flow in opposite directions through this translucent leaf. As a Magic action, you can touch a willing creature and end one instance of the Blinded, Deafened, Paralyzed, or Poisoned condition on it. The source of the condition remains and can impose it again. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Cleanse Thornwake Splinter Wondrous item · Convergence Input · A3 A point of amber-red light glows at the tip of this dark thorn. When you damage a creature with a weapon or spell attack, you can deal an extra 2d8 damage to that creature. Choose one of the damage types dealt by the attack for this extra damage. Once you use this property, you can’t use it again until you finish a Long Rest. Tags: A3 · Offensive ACT 4 ELEMENTAL WASTES · Ruined A4 drops & Catalysts This document covers Act 4 loot only through the final Level 11→12 drop immediately before the Unmarked Ranger. The Unmarked Ranger, Entity, and Unbound Presence are outside this loot cutoff. All party sizes receive the same eight Ruined A4 components in the same encounter order. Catalyst quantity scales by party size. Each A4 is a standalone Convergence input with one normal Component Tag; the Act 4 tables below list when each one enters party inventory. ACT 4 DROP DELIVERY Seq. Level Source Ruined A4 Catalyst 1 9 First required Act 4 fight Movement — Blinkstep — 2 9 Second required Act 4 fight Defense — Deferred Wound — 3 9→10 Phoenix Offensive — Rupture Catalyst · all party sizes 4 10 First required Level 10 fight Utility — Applied Insight — 5 10 Second required Level 10 fight Stability — True Ground — 6 10→11 Elemental level fight Cleanse — Condition Vessel Catalyst · all party sizes 7 11 Construct / Ward outpost entrance Tactical — Threat Positioning Catalyst · 5P+ — 11 Djinn chamber No A4 Catalyst · 4P+ · removing it triggers room 8 11 Required outpost/cavern fight Continuity — Preserved Reaction Catalyst · 6P 9 11→12 Final level fight before UR No A4 Catalyst · all party sizes Pacing rule reflected here: Level 9 has two required fights before the Phoenix level encounter; Level 10 has two required fights before the Elemental level encounter; Level 11 has at least the Construct and the required outpost/cavern fight before the final Level 11→12 encounter. The optional Djinn combat never counts toward that minimum.",
     "riders": [],
-    "spellFocusMagicActionDamage": "1d6+@PROF",
+    "spellFocusMagicActionDamage": "3d6+@PROF+@PROF",
     "attachesToWeapon": true,
     "boundWeaponBonus": 2,
     "boundWeaponHitDamage": "1d6+@PROF",
@@ -7511,10 +7531,10 @@ export const AUTHORED_ENCOUNTERS: EncounterDefinition[] = [
  * generated file the untouched output of a real export?" — and it is also what the encounter
  * library seed version keys off, so a publish still re-seeds a browser.
  */
-export const AUTHORED_DIGEST = "fnv1a-7806876e-195419";
+export const AUTHORED_DIGEST = "fnv1a-3313fab5-202171";
 
 /** When the fold script last wrote this file. */
-export const AUTHORED_AT = "2026-10-04T17:31:57.503Z";
+export const AUTHORED_AT = "2026-10-04T17:57:03.143Z";
 
 /** The merge is hand-written and lives beside this file — the fold rewrites this one. */
 export { mergeAuthored } from "./mergeAuthored";

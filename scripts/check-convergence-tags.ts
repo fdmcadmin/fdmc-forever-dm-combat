@@ -244,9 +244,23 @@ console.log("\n1d. the v11 sweep — every item, Act 1 to the last Act 4 drop");
   ok("the seven weapon Gifts add 1d6 on every hit", weaponGifts.length === 7 && weaponGifts.every(g => g.chassisBonusDice === "1d6"),
     weaponGifts.filter(g => g.chassisBonusDice !== "1d6").map(g => g.name).join(", "));
 
+  /**
+   * ⚠ v14 REPLACED THIS ITEM, AND ONLY HALF OF IT CAN STILL BE ASKED HERE.
+   *
+   * The v14 loot document has no Gift of First Light: its two-handed staff focus folded into
+   * Duskthorn, whose staff v14 makes "a magic Quarterstaff", and the item was renamed in place to
+   * Gift of Briarwink — a compact ranged weapon — keeping `tbc-gift-of-the-deep-root` so its
+   * encounter links survived.
+   *
+   * This view answers "was v11 transcribed correctly?", and v11's own fields are still here: the
+   * name, the chosen Quarterstaff form, the Magic-action extra. What it can no longer answer is
+   * which forms the chassis OFFERS, because a chassis merges field by field and the authored v14
+   * list wins in both views — `matchingForms` returns Briarwink's eight. Asserting the quarterstaff
+   * among them would be asserting that v14 had not happened.
+   */
   const firstLight = byName("Gift of First Light");
-  ok("Gift of First Light is a Quarterstaff", firstLight?.chassis?.formId === "base-quarterstaff"
-    && matchingForms(firstLight.chassis).some(f => f.id === "base-quarterstaff"), JSON.stringify(firstLight?.chassis));
+  ok("v11's Gift of First Light states the Quarterstaff as its chosen form",
+    firstLight?.chassis?.formId === "base-quarterstaff", JSON.stringify(firstLight?.chassis?.formId));
   ok("...that adds 1d6 + PB to Magic-action damage and healing", firstLight?.spellFocusMagicActionDamage === "1d6+@PROF");
 
   /** v11: Duskthorn is a CHARM bound to a weapon the character carries — the Last Word bind model, not a chassis. */

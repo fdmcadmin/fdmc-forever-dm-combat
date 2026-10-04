@@ -106,17 +106,28 @@ console.log("\n2. every weapon Gift adds 1d6 on a hit, and a crit doubles it");
   ok("two-handed, the versatile die grows and the extra die stays", two.damage === "1d8+1d6+@STR+2+@PROF", two.damage);
   ok("MUTATION: with no extra dice there is no 1d6", composeChassisAttack(staff, "1h", 2, true).damage === "1d6+@STR+2+@PROF");
 
-  const firstLight = resolveChassisItem(item("Gift of First Light"));
-  ok("Gift of First Light resolves to a Quarterstaff that rolls it", firstLight.damage === "1d6+1d6+@STR+2+@PROF", String(firstLight.damage));
+  /**
+   * ⚠ THE FIXTURE MOVED; THE MECHANISM DID NOT. This block used Gift of First Light, which the v14
+   * loot document does not have — its two-handed staff focus folded into Duskthorn, whose staff v14
+   * makes "a magic Quarterstaff", and the item itself was renamed to Gift of Briarwink.
+   *
+   * What is being proved here is the CHASSIS resolution and the grip switch, not that one Gift is a
+   * staff. v14 lists Quarterstaff among Gift of Winterwatch's forms, so Winterwatch takes one as its
+   * chosen form and every number below is unchanged: a Gift's +2, PB-to-damage and extra 1d6 are the
+   * same on all seven weapon Gifts.
+   */
+  const asStaff = { ...item("Gift of Winterwatch"), chassis: { ...item("Gift of Winterwatch").chassis, formId: "base-quarterstaff" } } as EquipmentItem;
+  const staffGift = resolveChassisItem(asStaff);
+  ok("a Gift whose chosen form is a Quarterstaff rolls it", staffGift.damage === "1d6+1d6+@STR+2+@PROF", String(staffGift.damage));
 
   /**
-   * ⚠ THE GRIP SWITCH NEVER REACHED THE ROLL. First Light is a two-handed focus; in both hands the Quarterstaff is
-   * a d8. The switch wrote `grip` on the equipment row and the attack row kept the dice it was attached with.
+   * ⚠ THE GRIP SWITCH NEVER REACHED THE ROLL. A Quarterstaff is versatile; in both hands it is a d8.
+   * The switch wrote `grip` on the equipment row and the attack row kept the dice it was attached with.
    */
-  const attackRow = itemToAttackAction(item("Gift of First Light"));
-  const equipRow = itemToAction(item("Gift of First Light"), true);
+  const attackRow = itemToAttackAction(asStaff);
+  const equipRow = itemToAction(asStaff, true);
   const twoHanded = regripAttackRow(attackRow, equipRow.metadata ?? {}, "2h");
-  ok("taking First Light in both hands re-rolls its attack row on the d8", twoHanded.metadata?.damage === "1d8+1d6+@STR+2+@PROF"
+  ok("taking it in both hands re-rolls its attack row on the d8", twoHanded.metadata?.damage === "1d8+1d6+@STR+2+@PROF"
     && twoHanded.metadata?.crit === "2d8+2d6+@STR+2+@PROF", `${twoHanded.metadata?.damage} / ${twoHanded.metadata?.crit}`);
   ok("MUTATION: the row as attached is still the one-handed d6", attackRow.metadata?.damage === "1d6+1d6+@STR+2+@PROF");
   const app = codeOf("src/App.tsx");
@@ -186,13 +197,32 @@ console.log("\n4. the rules the card applies");
   ok("Spell: the weapon keeps its +1 and loses the Thorn dice", spellMode.attack === "+1" && spellMode.damage === "+1", JSON.stringify(spellMode));
 
   const duskRow = sheet().equipment[1];
-  const firstLightRow = itemToAction(item("Gift of First Light"), true);
+  /**
+   * ⚠ A STANDALONE FOCUS IS BUILT HERE RATHER THAN LOOKED UP, because v14 left the library without
+   * one. Gift of First Light was the only focus that both stood on its own and carried a
+   * Magic-action extra; v14 replaced it with Gift of Briarwink (a compact ranged weapon, no focus at
+   * all) and folded the staff into Duskthorn, which is a CHARM and so answers the mode question
+   * instead. The contrast being proved — a charm is live only through its bound weapon, a standalone
+   * focus is live on its own and its extra is unconditional — is still real, so it keeps a fixture.
+   */
+  const standaloneFocus = itemToAction(
+    { ...item("Rootknot Staff"), spellFocusMagicActionDamage: "1d6+@PROF" } as EquipmentItem, true);
   ok("the charm is a focus only through its bound, equipped weapon",
     focusIsLive(duskRow, sheet()) && !focusIsLive(duskRow, sheet({ weaponEquipped: false })));
-  ok("...a staff is a focus on its own", focusIsLive(firstLightRow, { equipment: [firstLightRow] }));
+  ok("...a staff is a focus on its own", focusIsLive(standaloneFocus, { equipment: [standaloneFocus] }));
+  /**
+   * ⚠ THIS READS THE DOCUMENT VIEW, SO IT ASSERTS THE DOCUMENT'S NUMBER — and the document layer is
+   * still v11. `LIB` is `CAMPAIGN_DOCUMENT_EQUIPMENT`, which deliberately treats the author export as
+   * OLDER than the revision so a check cannot hold the DM's own authoring to the document. v14 raises
+   * First Light Bloom to 3d6 + twice Proficiency and that IS what the app serves
+   * (`BROKEN_CHAIN_EQUIPMENT_LIBRARY`), because the authored layer is newer; the v11 revision file is
+   * what this view reads, and until a v14 revision exists it answers 1d6 + PB. Both are correct for
+   * the layer they describe.
+   */
   ok("Duskthorn's Magic-action extra only in Spell — never both halves on one roll",
-    focusMagicActionDamage(duskRow, "spell") === "1d6+@PROF" && focusMagicActionDamage(duskRow, "weapon") === undefined);
-  ok("First Light's is always on", focusMagicActionDamage(firstLightRow, "weapon") === "1d6+@PROF");
+    focusMagicActionDamage(duskRow, "spell") === "1d6+@PROF" && focusMagicActionDamage(duskRow, "weapon") === undefined,
+    `spell=${JSON.stringify(focusMagicActionDamage(duskRow, "spell"))} weapon=${JSON.stringify(focusMagicActionDamage(duskRow, "weapon"))}`);
+  ok("a standalone focus's is always on", focusMagicActionDamage(standaloneFocus, "weapon") === "1d6+@PROF");
 
   const focus = { damage: "+2", magicActionDamage: "1d6+@PROF" };
   ok("a +2 focus on an action-cast spell adds +2 and 1d6 + PB",
