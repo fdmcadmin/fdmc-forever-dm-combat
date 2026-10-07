@@ -35,6 +35,7 @@ import { readsAsHealing } from "../../modules/dnd-5e/slotCapability";
 import { featPricing } from "../../modules/dnd-5e/featPricing";
 import { damageExpressionAverage } from "./damageExpression";
 import { standingStylesOf, styleRidesAction } from "../rules/weaponStyles";
+import { attackRowIsLive, attackRowIsStowed } from "../rules/equippedAttacks";
 import type { SummonSpec } from "../monsters/summon";
 
 const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
@@ -266,9 +267,25 @@ export function actorAsCreature(actor: Actor): ActorAsCreature {
    */
   const styleRows = new Map<string, MainMonsterTemplate["actions"]>();
 
+  /** The equipment tab, so an attack row can be asked whether its weapon is actually in hand. */
+  const equipmentRows = (actor.tabs?.equipment ?? []) as Array<{ id: string; metadata?: { equipped?: boolean } }>;
+
   for (const { tab, action } of actionsOf(actor)) {
     const m = md(action);
     const label = String(action.label ?? "(unnamed)");
+    /**
+     * ⚠ A STOWED WEAPON IS NOT SWUNG. Christopher, 2026-10-06: *"only having the actions of weapons
+     * that are equipped on the character sheets"*. The attack row is written when the item is
+     * ATTACHED and carries no `equipped` of its own, so until now a spare greataxe in the bag was
+     * read as this character's weapon — and being the biggest damage on the sheet, it was usually
+     * the one the routine swung.
+     */
+    if (!attackRowIsLive(action as { id: string }, equipmentRows)) {
+      if (attackRowIsStowed(action as { id: string }, equipmentRows)) {
+        assumptions.push(`${label} (${tab}): stowed, so it is not swung. Equip it and it returns to the routine.`);
+      }
+      continue;
+    }
     const damage = resolved(String(m.damage ?? ""), actor);
     const isSpell = action.actionKind === "spell" || m.spellLevel !== undefined;
     const spellLevel = Number(m.spellLevel ?? 0) || 0;

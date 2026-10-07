@@ -1,5 +1,6 @@
 import { savingThrowModifier } from "../rules/dnd5e";
 import { isRangedAttackAction, isTwoHandedAttack, isWeaponAttackAction, styleRidesAction as buffMatchesAttack } from "../rules/weaponStyles";
+import { attackRowIsLive } from "../rules/equippedAttacks";
 import { usableHealing } from "../rules/healingResolution";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { appendBonusDie, applyAdvantage, scaleUpcastRider, type RollMode } from "../dice/diceFormula";
@@ -1376,6 +1377,8 @@ export function ActorCard({
    * no way to roll it. The key format lives in this file, so it is supplied from this file.
    */
   const oaWeaponAttacks = useMemo(() => (actor.tabs.main ?? [])
+    // A stowed weapon is not available for an Opportunity Attack or an extra-attack rider either.
+    .filter(a => attackRowIsLive(a, actor.tabs.equipment ?? []))
     .filter(a => a.actionKind !== "spell" && /[0-9]+d[0-9]+/i.test(a.metadata?.attack ?? ""))
     .map(a => ({ id: a.id, label: a.label, readiedKey: makeReadiedKey("main", a.id) })), [actor.tabs.main]);
   // Upcast riders are folded in HERE, at the single point the tab's actions are handed to
@@ -1637,6 +1640,17 @@ export function ActorCard({
   const activeActions = useMemo(
     () => tabContents(actor, activeTab)
       .filter((action) => !isPinnedReactionAction(action))
+      /**
+       * ⚠ A STOWED WEAPON HAS NO ATTACK TO OFFER. Christopher, 2026-10-06: *"only having the actions
+       * of weapons that are equipped on the character sheets, so if someone unequips it it removes
+       * the actions"*. The `atk-` row is written when the item is ATTACHED and carries no `equipped`
+       * of its own, so every weapon in the bag showed a swing whether or not it was in hand.
+       *
+       * Hidden rather than deleted: the row keeps whatever is armed on it — a once-per-turn rider, a
+       * bound charm, the chosen grip — through a stow and a draw. `equippedAttacks` is the same rule
+       * the encounter checker reads, so the card and the read cannot disagree about what is in hand.
+       */
+      .filter((action) => attackRowIsLive(action, actor.tabs.equipment ?? []))
       .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(withCantripTier(action)))))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
     [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters, convergenceById]

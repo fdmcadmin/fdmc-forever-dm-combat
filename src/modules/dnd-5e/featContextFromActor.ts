@@ -33,9 +33,12 @@
 import { damageExpressionAverage } from "../../core/encounter-band/damageExpression";
 import { resolveFormulaVars } from "../../core/state/resolveFormulaVars";
 import { attackHitProbability } from "../../core/encounter-band/checkerV2";
+import { attackRowIsLive, type EquipmentRowLike } from "../../core/rules/equippedAttacks";
 import { rerollGain } from "../../core/encounter-band/rerollPricing";
 
 type ActionLike = {
+  /** Needed to find an attack row's `equip-` twin — see `attackRowIsLive`. */
+  id?: string;
   label?: string;
   /** What the row spends — read for whether a Bonus Action or Reaction is still free. */
   economyCost?: string[];
@@ -75,15 +78,27 @@ function allActions(actor: ActorLikeForFeats): ActionLike[] {
   return [...(actor.actions ?? []), ...fromTabs];
 }
 
-/** Worn means EQUIPPED, and an action that says nothing is worn — the same read `offHandBlocker` uses. */
-const isWorn = (a: ActionLike): boolean => a.metadata?.equipped !== false;
+/** The rows that actually carry `equipped` — an attack row's twin lives here. */
+const equipmentRowsOf = (actor: ActorLikeForFeats): ActionLike[] =>
+  ((actor.tabs ?? {}).equipment ?? []) as ActionLike[];
+
+/**
+ * Worn means EQUIPPED, and an action that says nothing is worn — the same read `offHandBlocker` uses.
+ *
+ * ⚠ AN ATTACK ROW SAYS NOTHING, WHICH IS WHY IT NEEDS ITS TWIN. `itemToAttackAction` writes no
+ * `equipped` at all, so `undefined !== false` passed and a STOWED weapon still competed to be this
+ * character's representative attack — and being the biggest number on the sheet, it usually won.
+ * `attackRowIsLive` asks the `equip-` row that actually carries the flag.
+ */
+const isWorn = (a: ActionLike, equipment: readonly EquipmentRowLike[] = []): boolean =>
+  a.metadata?.equipped !== false && attackRowIsLive(a as { id: string }, equipment);
 
 /**
  * ⚠ THE SHIELD IS FOUND BY SLOT, WHICH IS WHY THE SLOT FIX HAD TO LAND FIRST. Before items derived
  * a slot from their type this returned false for a character visibly holding the Marrow Shield.
  */
 export function shieldEquipped(actor: ActorLikeForFeats): boolean {
-  return allActions(actor).some(a => isWorn(a) && a.metadata?.slot === "shield");
+  return allActions(actor).some(a => isWorn(a, equipmentRowsOf(actor)) && a.metadata?.slot === "shield");
 }
 
 /**
@@ -196,7 +211,7 @@ export type AttackProfile = {
  */
 export function attackProfile(actor: ActorLikeForFeats, targetAC: number): AttackProfile | undefined {
   const candidates = allActions(actor)
-    .filter(a => isWorn(a) && !a.metadata?.spell && a.metadata?.attack && a.metadata?.damage);
+    .filter(a => isWorn(a, equipmentRowsOf(actor)) && !a.metadata?.spell && a.metadata?.attack && a.metadata?.damage);
   if (candidates.length === 0) return undefined;
 
   let best: AttackProfile | undefined;
@@ -353,7 +368,7 @@ function statedFacts(actor: ActorLikeForFeats, a: ActionLike, p: AttackProfile):
  */
 function budgetFree(actor: ActorLikeForFeats, slot: "reaction" | "bonus"): number {
   const claimed = allActions(actor).some(a => {
-    if (!isWorn(a)) return false;
+    if (!isWorn(a, equipmentRowsOf(actor))) return false;
     if (!(a.economyCost ?? []).includes(slot)) return false;
     return Boolean(String(a.metadata?.damage ?? "").trim()) || Boolean(a.metadata?.attack);
   });

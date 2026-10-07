@@ -247,6 +247,11 @@ jobs:
       - name: check a Gift offers the document's own forms
         run: npm run check:giftforms
 
+      # A stowed weapon has no attack — on the card, in the Opportunity Attack picker, in the encounter
+      # checker and in feat pricing, by one shared rule rather than four readings of `equipped`.
+      - name: check a stowed weapon offers no attack
+        run: npm run check:equippedattacks
+
       # Every convergence item says where it came from — A1-A4 on inputs, T1-T4 on outputs — and
       # the label survives being attached to a character and read back by the editor.
       - name: check the convergence act and tier labels

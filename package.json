@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.75.13",
+  "version": "0.8.75.14",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -84,6 +84,7 @@
     "check:featerrata": "npx tsx scripts/check-feat-errata.ts",
     "check:tactical": "npx tsx scripts/check-tactical-ai.ts",
     "check:giftforms": "npx tsx scripts/check-gift-forms.ts",
+    "check:equippedattacks": "npx tsx scripts/check-equipped-attacks.ts",
     "audit:sheets": "npx tsx scripts/audit-actor-sheets.ts",
     "fix:checks": "npx tsx scripts/fix-frozen-checks.ts",
     "check:wiring": "npx tsx scripts/check-wiring.ts",
