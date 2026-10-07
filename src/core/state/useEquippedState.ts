@@ -24,8 +24,9 @@ import { safeStorage } from "../utils/safeStorage";
 const EQUIPPED_CHANNEL = "forever-dm-combat:equipped-state:v1";
 const EQUIPPED_STORAGE_KEY = "fdmc.equipped.state.v1";
 
-/** actorId → (equipment action id → worn). */
-export type EquippedMap = Record<string, Record<string, boolean>>;
+/** actorId → (equipment action id → worn). Declared with the pure rule it belongs to. */
+export type { EquippedMap } from "./equippedOverlay";
+import type { EquippedMap } from "./equippedOverlay";
 
 function readStored(): EquippedMap {
   try {
@@ -117,21 +118,46 @@ export function useEquippedState() {
     });
   }, []);
 
-  return { equippedByActorId, isEquipped, setEquipped };
+  /**
+   * RE-POINT THE OVERLAY AT THE DOCUMENT — what the character editor's save has to do.
+   *
+   * Christopher, 2026-10-07: *"the equip and unequip is not hitting the character editor so its not
+   * changing the cards"*. The overlay WINS over `metadata.equipped` by design, and nothing ever took
+   * it back down — so once an item had an entry here, the editor could set that item equipped or
+   * stowed all day and the card went on showing the overlay's answer. Iskarn's editor said Gift of
+   * Oakheart was unequipped while his card showed it worn, and his Flail the other way about.
+   *
+   * ⚠ IT SETS RATHER THAN CLEARS, and the broadcast is why. `onMessage` MERGES per actor, so a
+   * message can add or overwrite a key but can never remove one — a clear would heal this window
+   * and leave every other window holding the stale entry. Writing the document's own values is a
+   * change the merge can carry, and it leaves overlay and document saying the same thing.
+   */
+  const syncOverlayToDocument = useCallback((
+    actorId: string,
+    equipmentRows: readonly { id: string; metadata?: { equipped?: boolean } }[],
+  ) => {
+    if (equipmentRows.length === 0) return;
+    const fromDocument: Record<string, boolean> = {};
+    for (const row of equipmentRows) fromDocument[row.id] = row.metadata?.equipped !== false;
+    setEquippedByActorId(current => {
+      const next: EquippedMap = {
+        ...current,
+        [actorId]: { ...(current[actorId] ?? {}), ...fromDocument },
+      };
+      persist(next);
+      if (OBR.isAvailable) {
+        void OBR.broadcast.sendMessage(
+          EQUIPPED_CHANNEL,
+          { type: "replace", state: { [actorId]: fromDocument } },
+          { destination: "ALL" },
+        ).catch(() => undefined);
+      }
+      return next;
+    });
+  }, []);
+
+  return { equippedByActorId, isEquipped, setEquipped, syncOverlayToDocument };
 }
 
-/**
- * Apply the overlay to a character's equipment tab.
- *
- * Pure, so the card and the stat derivation can share one answer about what is worn.
- */
-export function applyEquippedOverlay<T extends { id: string; metadata?: { equipped?: boolean } }>(
-  items: T[],
-  overlay: Record<string, boolean> | undefined,
-): T[] {
-  if (!overlay || Object.keys(overlay).length === 0) return items;
-  return items.map(item => {
-    const worn = overlay[item.id];
-    return worn === undefined ? item : { ...item, metadata: { ...item.metadata, equipped: worn } };
-  });
-}
+/** The pure overlay rule lives in a leaf file so headless callers need no browser — see there. */
+export { applyEquippedOverlay } from "./equippedOverlay";

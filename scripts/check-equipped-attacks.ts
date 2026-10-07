@@ -12,6 +12,7 @@
  * contest for feat pricing and went on being swung by `actorAsCreature` in the encounter checker.
  */
 import { attackRowIsLive, attackRowIsStowed, owningEquipmentId } from "../src/core/rules/equippedAttacks";
+import { applyEquippedOverlay } from "../src/core/state/equippedOverlay";
 import { actorAsCreature } from "../src/core/encounter-band/actorAsCreature";
 import { attackProfile } from "../src/modules/dnd-5e/featContextFromActor";
 
@@ -139,12 +140,62 @@ console.log("\n3. feat pricing reads the weapon in hand");
 console.log("\n4. the card reads the same rule");
 {
   const card = (await import("node:fs")).readFileSync("src/core/ui/ActorCard.tsx", "utf8");
-  ok("the Actions tab filters on it",
-    card.includes("attackRowIsLive(action, actor.tabs.equipment ?? [])"));
+  /** WHICH rows it filters is asserted in §5, against the overlaid list the card actually renders. */
+  ok("the Actions tab filters on it", card.includes(".filter((action) => attackRowIsLive("));
   ok("...and so do the Opportunity Attack and extra-attack pickers",
-    card.includes("attackRowIsLive(a, actor.tabs.equipment ?? [])"));
+    card.includes(".filter(a => attackRowIsLive("));
   ok("...from the shared rule, not a second copy",
     card.includes('from "../rules/equippedAttacks"') && !card.includes("function attackRowIsLive"));
+}
+
+console.log("\n5. the overlay is what the card shows, so it is what the card gates on");
+{
+  /**
+   * ⚠ `useEquippedState` WINS OVER THE DOCUMENT, BY DESIGN. It is a synced map so a toggle reaches
+   * every card at once instead of waiting for a document push. 0.8.75.14 gated the Actions tab on
+   * the RAW document, so the Actions tab and the equipment list beside it could disagree about the
+   * same weapon — the row saying "Equipped" while its attack stayed hidden.
+   */
+  const docSaysStowed = [{ id: "equip-axe", metadata: { equipped: false } }];
+  const overlaySaysWorn = applyEquippedOverlay(docSaysStowed, { "equip-axe": true });
+  ok("the overlay can bring a stowed weapon back",
+    attackRowIsLive({ id: "atk-axe" }, overlaySaysWorn) && !attackRowIsLive({ id: "atk-axe" }, docSaysStowed));
+
+  const docSaysWorn = [{ id: "equip-axe", metadata: { equipped: true } }];
+  const overlaySaysStowed = applyEquippedOverlay(docSaysWorn, { "equip-axe": false });
+  ok("...and can stow one the document calls worn",
+    !attackRowIsLive({ id: "atk-axe" }, overlaySaysStowed) && attackRowIsLive({ id: "atk-axe" }, docSaysWorn));
+
+  const card = (await import("node:fs")).readFileSync("src/core/ui/ActorCard.tsx", "utf8");
+  ok("the card gates on the overlaid rows, not the raw tab",
+    card.includes("attackRowIsLive(action, carriedWithOverlay)")
+    && card.includes("attackRowIsLive(a, carriedWithOverlay)")
+    && !card.includes("attackRowIsLive(action, actor.tabs.equipment"));
+  ok("...and the equipment list it renders is the SAME list",
+    card.includes("const allCarried = carriedWithOverlay;"));
+}
+
+console.log("\n6. saving the character editor re-points the overlay at the document");
+{
+  /**
+   * ⚠ NOTHING EVER TOOK THE OVERLAY BACK DOWN. Once an item had an entry, the editor could set it
+   * equipped or stowed all day and the card went on showing the overlay's answer — Iskarn's editor
+   * said Gift of Oakheart was unequipped while his card showed it worn, and his Flail the reverse.
+   */
+  const editor = (await import("node:fs")).readFileSync("src/core/ui/ActorEditor.tsx", "utf8");
+  ok("every save re-points it", editor.includes("syncOverlayToDocument(edited.id, edited.tabs?.equipment ?? [])"));
+  ok("...from the shared hook, not a second store", editor.includes("useEquippedState()"));
+
+  const store = (await import("node:fs")).readFileSync("src/core/state/useEquippedState.ts", "utf8");
+  /**
+   * ⚠ IT SETS RATHER THAN CLEARS. `onMessage` MERGES per actor, so a broadcast can add or overwrite
+   * a key but never remove one — a clear would heal this window and leave every other window holding
+   * the stale entry.
+   */
+  ok("the helper writes the document's own values",
+    store.includes("fromDocument[row.id] = row.metadata?.equipped !== false;"));
+  ok("...and broadcasts them, so other windows follow",
+    store.includes("state: { [actorId]: fromDocument }"));
 }
 
 console.log(failures === 0

@@ -1007,6 +1007,19 @@ export function ActorCard({
   const [activeTab, setActiveTab] = useState<TabId>("main");
   // Shared worn-state, synced like readied actions rather than pushed like a document.
   const { equippedByActorId, setEquipped } = useEquippedState();
+  /**
+   * ⚠ WHAT THE CHARACTER IS WEARING RIGHT NOW — the document WITH the overlay on top.
+   *
+   * `useEquippedState` is an overlay: a synced map that wins over `metadata.equipped` so a toggle
+   * shows on every card at once instead of waiting for a document push. 0.8.75.14 gated the Actions
+   * tab on the RAW document, so the Actions tab and the equipment list beside it could disagree
+   * about the same weapon — the card saying "Equipped" while its attack stayed hidden. Every reader
+   * on this card takes the overlaid rows.
+   */
+  const carriedWithOverlay = useMemo(
+    () => applyEquippedOverlay(actor.tabs.equipment ?? [], equippedByActorId[actor.id]),
+    [actor.tabs.equipment, equippedByActorId, actor.id],
+  );
   const [debuffsOpen, setDebuffsOpen] = useState(false);
   const [absCheckOpen, setAbsCheckOpen] = useState(false);
   const [resolvedReadiedKeysByActorId, setResolvedReadiedKeysByActorId] = useState<Record<string, string[]>>(() => readActorCardSessionSnapshot().resolvedReadiedKeysByActorId ?? {});
@@ -1378,7 +1391,7 @@ export function ActorCard({
    */
   const oaWeaponAttacks = useMemo(() => (actor.tabs.main ?? [])
     // A stowed weapon is not available for an Opportunity Attack or an extra-attack rider either.
-    .filter(a => attackRowIsLive(a, actor.tabs.equipment ?? []))
+    .filter(a => attackRowIsLive(a, carriedWithOverlay))
     .filter(a => a.actionKind !== "spell" && /[0-9]+d[0-9]+/i.test(a.metadata?.attack ?? ""))
     .map(a => ({ id: a.id, label: a.label, readiedKey: makeReadiedKey("main", a.id) })), [actor.tabs.main]);
   // Upcast riders are folded in HERE, at the single point the tab's actions are handed to
@@ -1576,7 +1589,7 @@ export function ActorCard({
    * Syncing it the same way readied actions sync is what makes a toggle appear on every card
    * at once instead of waiting for a push — see useEquippedState.
    */
-  const allCarried = applyEquippedOverlay(actor.tabs.equipment ?? [], equippedByActorId[actor.id]);
+  const allCarried = carriedWithOverlay;
 
   /**
    * EVERY carried item can be equipped or unequipped.
@@ -1650,7 +1663,7 @@ export function ActorCard({
        * bound charm, the chosen grip — through a stow and a draw. `equippedAttacks` is the same rule
        * the encounter checker reads, so the card and the read cannot disagree about what is in hand.
        */
-      .filter((action) => attackRowIsLive(action, actor.tabs.equipment ?? []))
+      .filter((action) => attackRowIsLive(action, carriedWithOverlay))
       .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(withCantripTier(action)))))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
     [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters, convergenceById]

@@ -1,4 +1,5 @@
 import type { BondTemplate } from "../types/bond";
+import { useEquippedState } from "../state/useEquippedState";
 import { BOND_METAMORPHOSIS_STAGE, BOND_STAGE_NAMES, bondStageForLevel } from "../types/bond";
 import { chooseBondPath, resolveBond } from "../rules/bondProgress";
 // The fourteen bonds are MOD content; the editor is engine. They arrive here the same way the
@@ -1031,6 +1032,8 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
 // ─── Main editor ──────────────────────────────────────────────────────────────
 
 export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, submitLabel = "Submit for DM Approval", ownerOptions = [], companionOptions = [] }: ActorEditorProps) {
+  // The card's worn-state overlay — re-pointed at the document whenever this editor saves.
+  const { syncOverlayToDocument } = useEquippedState();
   const actor = actorProp ?? createBlankActor();
   const [activeTab, setActiveTab] = useState<EditorTab>("profile");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => actorToProfileDraft(actor));
@@ -1139,6 +1142,16 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
   // Save wrapper: once a character is truly saved, clear its pending draft.
   function finalizeSave(edited: Actor, saveMode: ActorEditorSaveMode) {
     if (activeDraftId) removePendingDraft("actor", activeDraftId);
+    /**
+     * ⚠ THE CARD READS AN OVERLAY, AND THE EDITOR HAS JUST OVERRULED IT.
+     *
+     * `useEquippedState` wins over `metadata.equipped` so a toggle reaches every card at once. It
+     * also meant the editor could never change what a card showed for an item that had ever been
+     * toggled — Christopher, 2026-10-07: *"the equip and unequip is not hitting the character editor
+     * so its not changing the cards"*. Saving is the moment the document becomes the answer again,
+     * so the overlay is re-pointed at what was just saved.
+     */
+    syncOverlayToDocument(edited.id, edited.tabs?.equipment ?? []);
     onSave(edited, saveMode);
   }
 
