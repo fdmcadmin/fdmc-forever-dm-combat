@@ -1890,6 +1890,42 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
     });
   }
 
+  /**
+   * EQUIP OR STOW FROM THE EDITOR — the fallback when the card's own toggle does not take.
+   *
+   * Christopher, 2026-10-07: *"give me a button on the character editor to toggle equipment items
+   * as a fallback incase it doesnt trigger on the character sheet"*.
+   *
+   * ⚠ IT WRITES THE DRAFT, NOT THE LIVE CHARACTER, and that is deliberate. This editor hands its
+   * changes up through `onChange` into the wizard's working copy; the character is written when the
+   * editor SAVES, and saving is also what re-points the worn-state overlay at the document
+   * (`syncOverlayToDocument`). So a toggle here reaches the cards on save, and Cancel discards it
+   * cleanly — which it could not do if this pushed to every card the moment it was pressed.
+   *
+   * ⚠ AND IT HONOURS THE SLOT RULE, because a fallback that can build an illegal kit is a worse
+   * problem than the one it works around. Putting on a second body piece takes the first off, the
+   * same way `performEquipToggle` does it on the card.
+   */
+  function toggleEquippedItem(action: ActorAction) {
+    const nowWorn = action.metadata?.equipped === false;   // it is stowed, so this puts it on
+    const slot = action.metadata?.slot as EquipmentSlot | undefined;
+    const capacity = slot ? (SLOT_CAPACITY[slot] ?? 1) : 0;
+    // Oldest first, so a third ring displaces the one worn longest rather than a random one.
+    const wornInSlot = nowWorn && slot
+      ? equippedActions.filter(a => a.id !== action.id && a.metadata?.equipped !== false
+        && a.metadata?.slot === slot)
+      : [];
+    const displace = new Set(wornInSlot.slice(0, Math.max(0, wornInSlot.length - capacity + 1)).map(a => a.id));
+
+    onChange({
+      equipment: equippedActions.map(a => {
+        if (a.id === action.id) return { ...a, metadata: { ...a.metadata, equipped: nowWorn } };
+        if (displace.has(a.id)) return { ...a, metadata: { ...a.metadata, equipped: false } };
+        return a;
+      }),
+    });
+  }
+
   function detachItem(actionId: string) {
     const itemId = actionId.replace(/^equip-/, "");
     const detached = equippedActions.find(a => a.id === actionId);
@@ -2062,9 +2098,21 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
                   )}
                 </div>
               </div>
-              {/* Equipping is the PLAYER's, on their own sheet's CARRIED panel — this editor
-                  builds the kit, it doesn't decide what is worn right now. The row still
-                  SHOWS the state above so the DM can see it. */}
+              {/* ⚠ THIS COMMENT USED TO SAY THE OPPOSITE: *"Equipping is the PLAYER's, on their own
+                  sheet's CARRIED panel — this editor builds the kit, it doesn't decide what is worn
+                  right now."* That held until the card's toggle could fail to reach the document, and
+                  then there was no second way in. The card remains the normal place to equip; this is
+                  the fallback, and it takes effect when the editor saves. */}
+              <button type="button" onClick={() => toggleEquippedItem(action)}
+                style={{ fontSize: 11, padding: "3px 8px", borderRadius: 3, cursor: "pointer", flexShrink: 0,
+                  background: isUnequipped ? "#1a1a1a" : "#2a6e2a22",
+                  border: `1px solid ${isUnequipped ? "#333" : "#2a6e2a55"}`,
+                  color: isUnequipped ? "#888" : "#4caf50" }}
+                title={isUnequipped
+                  ? "Equip it. Takes effect on the cards when this editor is saved."
+                  : "Stow it. Takes effect on the cards when this editor is saved."}>
+                {isUnequipped ? "Equip" : "Equipped"}
+              </button>
               {canEditItem(actionToItem(action, action.id.replace(/^equip-/, ""))) ? (
                 <button type="button" onClick={() => editAttachedItem(action)}
                   style={{ fontSize: 11, padding: "3px 8px", background: "transparent", border: "1px solid #4a4a6e", borderRadius: 3, color: "#9d8cff", cursor: "pointer" }}

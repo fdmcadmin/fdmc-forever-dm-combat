@@ -198,6 +198,34 @@ console.log("\n6. saving the character editor re-points the overlay at the docum
     store.includes("state: { [actorId]: fromDocument }"));
 }
 
+console.log("\n7. the character editor can equip and stow as a fallback");
+{
+  /**
+   * Christopher, 2026-10-07: *"give me a button on the character editor to toggle equipment items as
+   * a fallback incase it doesnt trigger on the character sheet"*. The card stays the normal place to
+   * equip; this is the second way in when its toggle does not reach the document.
+   */
+  const bag = (await import("node:fs")).readFileSync("src/core/ui/EquipmentBagEditor.tsx", "utf8");
+  ok("each attached row offers the toggle", bag.includes("onClick={() => toggleEquippedItem(action)}"));
+  ok("...labelled for the state it is in", bag.includes('{isUnequipped ? "Equip" : "Equipped"}'));
+  /**
+   * ⚠ IT WRITES THE DRAFT. This editor hands changes up through `onChange`; the character is written
+   * when the editor SAVES, which is also what re-points the worn-state overlay. Pushing to every card
+   * on the press would leave Cancel unable to undo it.
+   */
+  ok("...through onChange, so Cancel can still discard it",
+    bag.includes("function toggleEquippedItem") && bag.includes("onChange({"));
+  /**
+   * ⚠ AND IT HONOURS THE SLOT RULE. A fallback that can put two body pieces on is a worse problem
+   * than the one it works around — verified in the DOM: equipping a body-slot robe took the worn
+   * plate off, while equipping a slotless Gift displaced nothing.
+   */
+  ok("...and takes off what shares the slot, as the card does",
+    bag.includes("SLOT_CAPACITY[slot]") && bag.includes("displace.has(a.id)"));
+  ok("the superseded comment is gone, not left contradicting the code",
+    !bag.includes("it doesn't decide what is worn right now. The row still"));
+}
+
 console.log(failures === 0
   ? "\nOK — a stowed weapon is gone from the card and from the read"
   : `\n${failures} FAILED`);
