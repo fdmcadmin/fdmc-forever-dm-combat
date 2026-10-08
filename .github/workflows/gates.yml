@@ -385,3 +385,6 @@ jobs:
 
       - name: check focus Gifts, weapon charms + retired items
         run: npm run check:giftfocus
+
+      - name: check weapon mastery picks a WEAPON, not a property
+        run: npm run check:mastery

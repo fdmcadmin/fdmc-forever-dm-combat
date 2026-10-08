@@ -3,7 +3,19 @@ import { actionCostLabels } from "../types/actionEconomy";
 import type { ActionCost } from "../types/actionEconomy";
 import { isInertAction } from "../types/tabs";
 import { effectKindLabel } from "../constants/itemTypeCapabilities";
+import { WEAPON_MASTERIES, type WeaponMasteryName } from "../constants/weaponMastery";
 import type { ActorAction } from "../types/tabs";
+
+/**
+ * The mastery's rules text for the ⚔ tooltip, from the ONE table that holds it.
+ *
+ * `masteryActive` is a plain string on the metadata — the type layer cannot promise it names a
+ * real property — so an unrecognised value degrades to no extra text rather than "undefined".
+ */
+function masteryRulesLine(mastery: string): string {
+  const summary = WEAPON_MASTERIES[mastery as WeaponMasteryName]?.summary;
+  return summary ? `\n\n${summary}` : "";
+}
 
 type ActionButtonProps = {
   action: ActorAction;
@@ -209,6 +221,20 @@ export function ActionButton({
                 title={`Convergence ${action.metadata.convergence.role ?? "item"}${action.metadata.convergence.mechanicalTag ? ` · ${action.metadata.convergence.mechanicalTag}` : ""}`}
                 aria-label="convergence item"
               > ◈</span>
+            )}
+            {/* ⚔ marks a weapon this character HAS WEAPON MASTERY WITH right now — their own
+                Long Rest pick, not the weapon's authored property. The two were indistinguishable
+                before: every handaxe in the game reads "Mastery: Vex" on its stat line, so the
+                one fact a player needs mid-swing — do I have it on THIS weapon — was readable
+                only by cross-checking a list on another tab. The mark rides both the equipment
+                entry and the attack row, because the swing is where it matters.
+                Same span as ⚡ and ◈ above, for the same display:block reason. */}
+            {action.metadata?.masteryActive && (
+              <span
+                className="action-label-mastery-flag"
+                title={`Weapon Mastery — ${action.metadata.masteryActive} is ACTIVE on this weapon (your Long Rest pick).${masteryRulesLine(action.metadata.masteryActive)}`}
+                aria-label={`weapon mastery active: ${action.metadata.masteryActive}`}
+              > ⚔{action.metadata.masteryActive}</span>
             )}
           </span>
           {costs.length > 0 && (

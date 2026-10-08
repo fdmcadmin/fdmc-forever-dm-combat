@@ -572,6 +572,18 @@ export type ActorActionMetadata = {
   itemType?: string;
   /** Weapon mastery property carried with the item so the round-trip does not drop it. */
   mastery?: string;
+  /**
+   * THE MASTERY THIS CHARACTER ACTUALLY HAS WITH THIS WEAPON, if they have picked it.
+   *
+   * ⚠ NOT THE SAME FIELD AS `mastery`, and the difference is the whole point. `mastery` is what
+   * the WEAPON is — a handaxe is Vex whoever is holding it, and it is authored on the item.
+   * This says the WIELDER has mastery with it right now, which is a Long Rest choice made on
+   * the card and true of one character at a time.
+   *
+   * Stamped by the card's `withMasteryMark`, never authored and never persisted on the actor:
+   * it is derived from the player's live picks, so a baked copy must not carry one.
+   */
+  masteryActive?: string;
   /** What an item's effect dice MEAN — "damage" | "healing" | "temp" | "reduction". The last
    *  three all resolve through the  outcome mode (HP the bearer keeps) but are named
    *  separately so the roll button never calls a reduction "Roll Damage". */

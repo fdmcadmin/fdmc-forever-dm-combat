@@ -43,9 +43,11 @@ import { AbilityScoreRow } from "./AbilityScoreRow";
 import { WalletPanel } from "./WalletPanel";
 import { PartyPurseRow } from "./PartyPurseRow";
 import {
-  MASTERY_PROPERTIES, MASTERY_BLURB, masteryCount, normalizeMasteryChoices,
-  type MasteryProperty,
+  activeMasteryByItemId, masteryCount, masteryWeaponOptions, normalizeMasteryWeapons,
 } from "../rules/weaponMastery";
+// The mastery property's own rules text. ONE table, the same one the item editor and the attack
+// row's information line already read — see RULE 0.
+import { WEAPON_MASTERIES } from "../constants/weaponMastery";
 import { characterLevel, classLevels, castingAbilityForClass } from "../rules/multiclass";
 import { withCompanionBondRider, withGeneratedBondActions } from "../rules/bondActions";
 // The fourteen bonds and this campaign's stage gates are MOD content. They reach the engine's
@@ -586,6 +588,29 @@ function hasStatusTrackers(status: ActorStatusTrackerState) {
   return Boolean(status.strDrain || status.lifeDrain);
 }
 
+/**
+ * How many weapon masteries this character may have active.
+ *
+ * Class and level give the base; a feat adds to it. A feat grants a mastery by carrying
+ * `masteryGrant` in its metadata — an explicit field, never inferred from a feat's NAME,
+ * because "Weapon Master" is a title and titles are not data.
+ *
+ * ⚠ MODULE-LEVEL BECAUSE THE TAB NEEDS IT TOO. `getVisibleTabs` has to know whether the
+ * resources tab holds anything, and the mastery picker lives there — see the note in it.
+ */
+function masteryLimitForActor(actor: Actor): number {
+  const featGrants = [...(actor.tabs.feats ?? []), ...(actor.tabs.features ?? [])]
+    .reduce((n, a) => n + (Number(a.metadata?.masteryGrant) || 0), 0);
+  return masteryCount({
+    className: actor.className,
+    level: characterLevel(actor),
+    // Per-class levels when multiclassed: a Fighter 4 / Wizard 6 gets four levels of
+    // Fighter, so three masteries — not the five that total level would hand them.
+    classLevels: classLevels(actor),
+    featGrants,
+  });
+}
+
 function getVisibleTabs(actor: Actor, status: ActorStatusTrackerState): TabId[] {
   return orderedTabs.filter((tabId) => {
     if (tabId === "notes") {
@@ -594,6 +619,23 @@ function getVisibleTabs(actor: Actor, status: ActorStatusTrackerState): TabId[] 
 
     if (tabId === "status") {
       return hasStatusTrackers(status);
+    }
+
+    /**
+     * ⚠ THE RESOURCES TAB ALSO HOLDS THE WEAPON MASTERY PICKER, AND AN EMPTY TAB HID IT.
+     *
+     * The picker sits under the rest buttons because re-choosing it IS what you do when you
+     * rest. But this gate counts ROWS, and a martial can be owed masteries with none: a Rogue
+     * gets two at level 1 and has no resource pool to its name — Sneak Attack is a feature and
+     * Cunning Action spends a Bonus Action, so neither is a row here. The tab vanished, and
+     * with it the only control for a choice the rules say that character makes every Long Rest.
+     *
+     * Same shape as `status` above: the tab is shown because a thing on it is live, not because
+     * something was authored into it. Verified in the DOM — a Fighter with an empty resources
+     * array showed MAIN / CHECKS / EQUIPMENT / NOTES and no way to reach the picker at all.
+     */
+    if (tabId === "resources" && masteryLimitForActor(actor) > 0) {
+      return true;
     }
 
     // Via tabContents, so a character whose only entries are feats still gets the tab.
@@ -1466,44 +1508,32 @@ export function ActorCard({
   );
 
   /**
-   * How many mastery properties this character may have active.
-   *
-   * Class and level give the base; a feat adds to it. A feat grants a mastery by carrying
-   * `masteryGrant` in its metadata — an explicit field, never inferred from a feat's NAME,
-   * because "Weapon Master" is a title and titles are not data.
+   * How many weapons this character may have mastery with. ONE implementation, shared with
+   * `getVisibleTabs` — the tab that holds the picker has to ask the same question.
    */
-  const masteryLimit = useMemo(() => {
-    const featGrants = [...(actor.tabs.feats ?? []), ...(actor.tabs.features ?? [])]
-      .reduce((n, a) => n + (Number(a.metadata?.masteryGrant) || 0), 0);
-    return masteryCount({
-      className: actor.className,
-      level: characterLevel(actor),
-      // Per-class levels when multiclassed: a Fighter 4 / Wizard 6 gets four levels of
-      // Fighter, so three masteries — not the five that total level would hand them.
-      classLevels: classLevels(actor),
-      featGrants,
-    });
-  }, [actor.className, actor.level, actor.classes, actor.tabs.feats, actor.tabs.features]);
+  const masteryLimit = useMemo(
+    () => masteryLimitForActor(actor),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- masteryLimitForActor reads exactly these
+    [actor.className, actor.level, actor.classes, actor.tabs.feats, actor.tabs.features],
+  );
 
   /**
-   * The properties chosen right now. A local preference like the pinned pools: the rules
-   * re-choose it every Long Rest, so it is the most volatile thing on the sheet and does not
-   * belong in the actor's authored data.
+   * The WEAPONS chosen right now, by base-weapon form id. A local preference like the pinned
+   * pools: the rules re-choose it every Long Rest, so it is the most volatile thing on the
+   * sheet and does not belong in the actor's authored data.
+   *
+   * ⚠ A NEW KEY, AND DELIBERATELY. The old one held PROPERTY names ("Vex", "Graze"), and there
+   * is no honest conversion — Vex is on eight weapons, so picking one for the player would be
+   * inventing a decision that is theirs. Reading under a new key leaves the old value inert
+   * instead of half-interpreting it; see `normalizeMasteryWeapons`.
    */
-  const masteryKey = `fdmc.card.masteries.${actor.id}`;
-  const [masteryChoices, setMasteryChoices] = useState<MasteryProperty[]>(() => {
+  const masteryKey = `fdmc.card.masteryWeapons.${actor.id}`;
+  const [masteryPicks, setMasteryPicks] = useState<string[]>(() => {
     try {
-      return normalizeMasteryChoices(JSON.parse(safeStorage().getItem(masteryKey) ?? "[]"), 8);
+      const raw = JSON.parse(safeStorage().getItem(masteryKey) ?? "[]");
+      return Array.isArray(raw) ? raw.map(String) : [];
     } catch { return []; }
   });
-  function toggleMastery(p: MasteryProperty) {
-    setMasteryChoices(prev => {
-      const next = prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p];
-      const capped = normalizeMasteryChoices(next, masteryLimit);
-      try { safeStorage().setItem(masteryKey, JSON.stringify(capped)); } catch { /* private mode */ }
-      return capped;
-    });
-  }
 
   /**
    * Pools the PLAYER has pinned to the at-a-glance strip, by resource id.
@@ -1650,6 +1680,62 @@ export function ActorCard({
   const t4Items = sendableItems.filter(a => isT4Singular(a.metadata?.tier) && a.metadata?.equipped !== false);
   const t4Full = t4.full;
 
+  /**
+   * WEAPON MASTERY — the weapons this character could have it with, and the ones they picked.
+   *
+   * ⚠ THE OPTIONS COME FROM THE BAG, which is why this sits here rather than beside
+   * `masteryLimit`: it needs `allCarried`. One option per distinct base weapon FORM, so two
+   * daggers are one pick and both light up — `masteryWeaponOptions` owns that rule.
+   */
+  const masteryOptions = useMemo(() => masteryWeaponOptions(allCarried), [allCarried]);
+
+  /**
+   * The picks, filtered to what is still legal and capped at the entitlement.
+   *
+   * Derived rather than stored so a weapon given away, sold or stowed elsewhere between
+   * sessions cannot leave a pick marking nothing while still counting against the limit.
+   */
+  const masteryWeapons = useMemo(
+    () => normalizeMasteryWeapons(masteryPicks, masteryOptions, masteryLimit),
+    [masteryPicks, masteryOptions, masteryLimit],
+  );
+
+  /**
+   * Set one of the X dropdowns. `index` is the slot, `formId` the weapon chosen ("" clears it).
+   *
+   * Written against the NORMALIZED list, not the raw stored one, so a stale entry that has
+   * already fallen out cannot come back when a neighbouring slot is changed.
+   */
+  function chooseMasteryWeapon(index: number, formId: string) {
+    const next = [...masteryWeapons];
+    if (formId) next[index] = formId;
+    else next.splice(index, 1);
+    const capped = normalizeMasteryWeapons(next.filter(Boolean), masteryOptions, masteryLimit);
+    setMasteryPicks(capped);
+    try { safeStorage().setItem(masteryKey, JSON.stringify(capped)); } catch { /* private mode */ }
+  }
+
+  /** Item id → the mastery that is live on it. Empty when nothing is picked. */
+  const activeMasteryItems = useMemo(
+    () => activeMasteryByItemId(masteryOptions, masteryWeapons),
+    [masteryOptions, masteryWeapons],
+  );
+
+  /**
+   * MARK THE WEAPON THE CHARACTER HAS MASTERY WITH, on its equipment entry AND its attack row.
+   *
+   * Christopher: the property belongs *"where the weapon is swung rather than only in a resource
+   * list."* Both rows are generated from one item and share its id — `equip-<id>` and
+   * `atk-<id>` — so stripping the prefix is what pairs them, the same move `withConvergenceMark`
+   * and `boundCharms` make. Keyed off the EQUIPMENT row's `chassis`/base id because the attack
+   * row carries neither; see `masteryWeaponOptions`.
+   */
+  function withMasteryMark(action: ActorAction): ActorAction {
+    const mastery = activeMasteryItems.get(action.id.replace(/^equip-/, "").replace(/^atk-/, ""));
+    if (!mastery) return action;
+    return { ...action, metadata: { ...action.metadata, masteryActive: mastery } };
+  }
+
   const activeActions = useMemo(
     () => tabContents(actor, activeTab)
       .filter((action) => !isPinnedReactionAction(action))
@@ -1664,9 +1750,9 @@ export function ActorCard({
        * the encounter checker reads, so the card and the read cannot disagree about what is in hand.
        */
       .filter((action) => attackRowIsLive(action, carriedWithOverlay))
-      .map((action) => withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(withCantripTier(action)))))),
+      .map((action) => withMasteryMark(withConvergenceMark(withItemChargeCount(withTwoWeaponFighting(withUpcastRiders(withCantripTier(action))))))),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- withUpcastRiders reads castLevelByActionKey
-    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters, convergenceById]
+    [actor.tabs, activeTab, castLevelByActionKey, twoWeaponByActorId, resourceCounters, convergenceById, activeMasteryItems]
   );
 
   const readiedLabelMap = useMemo(() => {
@@ -6060,45 +6146,88 @@ export function ActorCard({
           )}
 
           {/* WEAPON MASTERY — a choice with a cadence, not a feature.
-              The 2024 rules let a martial re-pick which mastery properties are active when
+              The 2024 rules let a martial re-pick which weapons they have mastery with when
               they finish a Long Rest, which is why this sits directly under the rest buttons
               rather than in Features: it is the thing you do WHEN you rest. Authoring it as
               static "Weapon Mastery - Vex (Handaxe)" rows froze a decision the rules expect to
               be revisited, and added a row per weapon nobody could change at the table.
               The count comes from class and level; a feat can add one. At zero the whole block
-              stays out of the way — a Wizard should see nothing here. */}
+              stays out of the way — a Wizard should see nothing here.
+
+              ⚠ X DROPDOWNS OVER THE WEAPONS, NOT A PICKER OVER THE EIGHT PROPERTIES. This was
+              eight chips — Cleave, Graze, Nick … — and asked the player to choose two, which is
+              backwards: a mastery is a property a WEAPON has, so the choice is which weapons you
+              have mastery with and the property follows. Christopher: *"you have to choose a
+              weapon for that mastery not the type so someone could have vex but it be on a short
+              sword instead of a short bow."* The property is DERIVED and shown, never chosen. */}
           {masteryLimit > 0 && (
             <div style={{ padding: "8px 12px", borderBottom: "1px solid #2a2a3e" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                 <span style={{ fontSize: 10, color: "#8a8aa0", letterSpacing: 1, textTransform: "uppercase" }}>
                   Weapon Mastery
                 </span>
-                <span style={{ fontSize: 10, color: masteryChoices.length === masteryLimit ? "#4caf50" : "#666" }}>
-                  {masteryChoices.length}/{masteryLimit} chosen
+                <span style={{ fontSize: 10, color: masteryWeapons.length === masteryLimit ? "#4caf50" : "#666" }}>
+                  {masteryWeapons.length}/{masteryLimit} chosen
                 </span>
                 <span style={{ fontSize: 9, color: "#444", marginLeft: "auto" }}>re-choose on a Long Rest</span>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {MASTERY_PROPERTIES.map(p => {
-                  const on = masteryChoices.includes(p);
-                  // Full at the limit: the remaining options go quiet rather than vanishing,
-                  // so the player can still read what they did not take.
-                  const full = !on && masteryChoices.length >= masteryLimit;
-                  return (
-                    <button key={p} type="button" disabled={full}
-                      onClick={() => toggleMastery(p)}
-                      title={`${p} — ${MASTERY_BLURB[p]}${full ? "\n\nAlready at your limit; drop one first." : ""}`}
-                      style={{
-                        fontSize: 11, padding: "2px 9px", borderRadius: 10, cursor: full ? "default" : "pointer",
-                        background: on ? "rgba(123,104,238,0.18)" : "transparent",
-                        border: `1px solid ${on ? "#7b68ee" : "#2a2a3e"}`,
-                        color: on ? "#9d8cff" : full ? "#3a3a4e" : "#777",
-                      }}>
-                      {p}
-                    </button>
-                  );
-                })}
-              </div>
+              {masteryOptions.length === 0 ? (
+                /* Nothing in the bag resolves to a 2024 base weapon, so there is nothing to
+                   have mastery WITH. Said plainly rather than shown as empty dropdowns: the
+                   fix is to attach a weapon, and the player cannot guess that from a blank. */
+                <div style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                  No carried weapon resolves to a 2024 base weapon — attach one, or give a
+                  homebrew weapon a base-weapon chassis, and it becomes pickable here.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {Array.from({ length: masteryLimit }, (_, i) => {
+                    const chosenId = masteryWeapons[i] ?? "";
+                    const chosen = masteryOptions.find(o => o.formId === chosenId);
+                    // A weapon already spent on another slot is not offered again — mastery
+                    // attaches to a weapon TYPE, so picking the same one twice buys nothing.
+                    const taken = new Set(masteryWeapons.filter((_, j) => j !== i));
+                    const summary = chosen ? WEAPON_MASTERIES[chosen.mastery]?.summary : undefined;
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <select
+                          value={chosenId}
+                          onChange={e => chooseMasteryWeapon(i, e.target.value)}
+                          style={{
+                            flex: 1, minWidth: 0, fontSize: 11, padding: "3px 6px", borderRadius: 4,
+                            background: "#1a1a2e", color: chosenId ? "#ccc" : "#666",
+                            border: `1px solid ${chosenId ? "#7b68ee55" : "#2a2a3e"}`,
+                          }}>
+                          <option value="">— choose a weapon —</option>
+                          {masteryOptions.filter(o => !taken.has(o.formId)).map(o => (
+                            <option key={o.formId} value={o.formId}>
+                              {/* The ITEM is what the player recognises, the FORM is what the
+                                  mastery comes from, so both are named: "Frostedge (Rapier)".
+                                  The form is dropped when an item already carries its name —
+                                  "Handaxe, Thornback Hatchet (Handaxe)" says Handaxe twice, and
+                                  a plain Handaxe should not read "Handaxe (Handaxe)". */}
+                              {o.itemLabels.includes(o.formName)
+                                ? o.itemLabels.join(", ")
+                                : `${o.itemLabels.join(", ")} (${o.formName})`}
+                              {" — "}{o.mastery}
+                            </option>
+                          ))}
+                        </select>
+                        {/* THE DERIVED PROPERTY, shown rather than chosen. */}
+                        <span
+                          title={summary ?? "Pick a weapon; its mastery property is set by the 2024 weapon table."}
+                          style={{
+                            fontSize: 10, minWidth: 54, textAlign: "right", flexShrink: 0,
+                            color: chosen ? "#9d8cff" : "#3a3a4e",
+                            cursor: summary ? "help" : "default",
+                          }}>
+                          {chosen ? chosen.mastery : "—"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

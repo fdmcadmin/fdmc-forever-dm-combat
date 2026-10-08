@@ -7077,3 +7077,21 @@ body,
 :root[data-fdmc-display="lite"] label {
   touch-action: manipulation;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   WEAPON MASTERY MARK — the WIELDER has mastery with this weapon
+
+   Stamped on the equipment entry AND the attack row by the card, from the player's own
+   Long Rest pick. It is NOT the weapon's authored property: every handaxe in the game
+   reads "Mastery: Vex" on its stat line, so the mark has to read as a different kind of
+   fact or it adds nothing. Purple is the card's "this is yours, and it is live" colour —
+   the same hue the readied state and the mastery dropdowns use.
+   ────────────────────────────────────────────────────────────────────────────── */
+.action-label-mastery-flag {
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9d8cff;
+  white-space: nowrap;
+}
