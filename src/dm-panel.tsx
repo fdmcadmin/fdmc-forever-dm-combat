@@ -633,6 +633,8 @@ function DmPanelApp() {
   // Equipment loot-pool create flow: preset tag + a signal that re-opens the creator.
   const [equipPreset, setEquipPreset] = useState<string | undefined>(lootEncounterParam);
   const [equipCreateSignal, setEquipCreateSignal] = useState(0);
+  /** Bumped by the toolbar Send Loot button — opens the library panel search-and-send flow. */
+  const [equipSendSignal, setEquipSendSignal] = useState(0);
   // P-UX4 Phase 5: Library "+ Create Monster" trigger (bump opens the band picker).
   const [monsterCreateSignal, setMonsterCreateSignal] = useState(0);
 
@@ -1341,8 +1343,22 @@ function DmPanelApp() {
                   style={{ fontSize: 12, padding: "4px 12px", background: "#351616", border: "1px solid #6e2a2a", borderRadius: 5, color: "#e08a8a", cursor: "pointer", fontWeight: 600 }}>+ Create Monster</button>
               )}
               {libraryTab === "equipment" && (
-                <button type="button" onClick={() => setEquipCreateSignal(s => s + 1)}
-                  style={{ fontSize: 12, padding: "4px 12px", background: "#2a2510", border: "1px solid #6e5a20", borderRadius: 5, color: "#e0c060", cursor: "pointer", fontWeight: 600 }}>+ Create Equipment</button>
+                <>
+                  <button type="button" onClick={() => setEquipCreateSignal(s => s + 1)}
+                    style={{ fontSize: 12, padding: "4px 12px", background: "#2a2510", border: "1px solid #6e5a20", borderRadius: 5, color: "#e0c060", cursor: "pointer", fontWeight: 600 }}>+ Create Equipment</button>
+                  {/*
+                    ⚠ THE WAY IN TO LOOT DISTRIBUTION. Sending an item was only ever a per-row
+                    button, so the DM had to already know which group an item was filed under and
+                    expand it before any send control appeared. Christopher, 2026-10-09: *"there
+                    isnt a way to open a loot panel for loot distribution."*
+
+                    It sits beside Create because the two are the pair of things a DM opens this
+                    tab to do: build something, or give something away.
+                  */}
+                  <button type="button" onClick={() => setEquipSendSignal(s => s + 1)}
+                    title="Search every item in your library and the campaign, then send one to a player's seat. A template asks which weapon it becomes before it goes."
+                    style={{ fontSize: 12, padding: "4px 12px", background: "#16351f", border: "1px solid #2a6e3f", borderRadius: 5, color: "#7be08a", cursor: "pointer", fontWeight: 600 }}>🎁 Send Loot</button>
+                </>
               )}
               <span style={{ fontSize: 10, color: "#555" }}>Library = load &amp; edit what exists · use <strong style={{ color: "#7b68ee" }}>+ Create</strong> to build something new.</span>
             </div>
@@ -1422,6 +1438,7 @@ function DmPanelApp() {
                   autoCreate={createParam === "equipment" || Boolean(lootEncounterParam)}
                   presetEncounter={equipPreset}
                   createSignal={equipCreateSignal}
+                  sendSignal={equipSendSignal}
                   hideCreate
                 />
               )}

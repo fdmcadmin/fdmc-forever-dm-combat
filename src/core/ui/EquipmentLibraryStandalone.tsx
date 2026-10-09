@@ -978,11 +978,21 @@ type EquipmentLibraryStandaloneProps = {
   presetEncounter?: string;
   /** Bump this to (re)open the New Item form externally (e.g. "Create loot for encounter"). */
   createSignal?: number;
+  /**
+   * Bumping this opens the SEND panel — search the library, pick an item, send it to a seat.
+   *
+   * ⚠ THERE WAS NO WAY IN. Sending existed only as a per-row "Loot" button, which means you had
+   * to already have found the item, with the right group expanded, before the app would show you
+   * a send control at all. Christopher, 2026-10-09: *"there isnt a way to open a loot panel for
+   * loot distribution."* A signal rather than a boolean, matching `createSignal`: the toolbar
+   * button lives in dm-panel and this is how it reaches in.
+   */
+  sendSignal?: number;
   /** Hide the in-panel create button — manage-only view (toolbar carries the create buttons). */
   hideCreate?: boolean;
 };
 
-export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot, onDeliverLootBundle, onSendGold, autoCreate = false, presetEncounter, createSignal, hideCreate = false }: EquipmentLibraryStandaloneProps) {
+export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests, onExternalConvergenceApprove, onExternalConvergenceDeny, onDeliverLoot, onDeliverLootBundle, onSendGold, autoCreate = false, presetEncounter, createSignal, sendSignal, hideCreate = false }: EquipmentLibraryStandaloneProps) {
   const [campaignLib, setCampaignLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("campaign"));
   const [poolBuilderOpen, setPoolBuilderOpen] = useState(false);
   const [dmLib, setDmLib] = useState<EquipmentItem[]>(() => loadEquipmentLibrary("dm"));
@@ -1003,6 +1013,14 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
    * ticked, never automatically on every send.
    */
   const [saveFormedToCampaign, setSaveFormedToCampaign] = useState(false);
+  /**
+   * The SEND panel's own search, open when non-null.
+   *
+   * Deliberately a step IN FRONT of the existing send dialog rather than a second copy of it:
+   * picking here sets `lootTarget` and hands over to the panel that already knows how to ask a
+   * template for its form, pick a seat and report a refusal. One send path, two ways to reach it.
+   */
+  const [sendPicker, setSendPicker] = useState<{ search: string } | null>(null);
   /**
    * Is this the author's own install? Read once on mount — author mode is granted by proving a
    * GitHub identity and does not change while a panel is open.
@@ -1064,6 +1082,12 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     if (!createSignal) return;
     setEditingItem("new");
   }, [createSignal]);
+
+  // External "open the send panel" trigger — see the sendSignal prop.
+  useEffect(() => {
+    if (!sendSignal) return;
+    setSendPicker({ search: "" });
+  }, [sendSignal]);
 
   function toggleGroup(id: string) {
     setExpandedGroups(prev => {
@@ -1519,6 +1543,73 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
           </button>
         </div>
         <p style={{ margin: 0, fontSize: 11, color: "#555" }}>Target: <strong style={{ color: "#aaa" }}>{seatLabel}</strong></p>
+      </div>
+    );
+  }
+
+  /**
+   * SEND AN ITEM TO A SEAT — search the whole library, pick one, hand it over.
+   *
+   * ⚠ THE ENTRY POINT THAT DID NOT EXIST. Sending was only ever a per-row button, so finding the
+   * thing you wanted to give away meant knowing which group it was filed under and expanding that
+   * group first. Christopher: *"there isnt a way to open a loot panel for loot distribution."*
+   *
+   * Searches BOTH libraries at once — the DM's own items and the campaign/Broken Chain set — over
+   * the same fields the bag editor's picker matches on, so "vex", "bow" or "rimecleaver" all find
+   * their item without the DM having to know which field holds the word.
+   */
+  if (sendPicker && !lootTarget) {
+    const q = sendPicker.search.trim().toLowerCase();
+    const pool = [...loadEquipmentLibrary("dm"), ...loadEquipmentLibrary("campaign")];
+    const matches = q.length === 0 ? [] : pool.filter(item => {
+      const haystack = [item.name, item.type, item.category, item.mastery, item.tier, item.act, ...(item.tags ?? [])]
+        .filter(Boolean).join(" ").toLowerCase();
+      return q.split(/\s+/).every(term => haystack.includes(term));
+    }).slice(0, 40);
+    return (
+      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10, height: "100%", overflow: "hidden" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0 }}>Send Item to Seat</h3>
+          <button type="button" onClick={() => setSendPicker(null)}
+            style={{ padding: "4px 12px", background: "transparent", border: "1px solid #444", borderRadius: 5, color: "#888", cursor: "pointer", fontSize: 12 }}>
+            Cancel
+          </button>
+        </div>
+        {seats.length === 0 ? (
+          /* Nothing to send TO. Said here rather than at the end of the flow, after the DM has
+             searched for and chosen an item they then cannot give to anybody. */
+          <p style={{ margin: 0, fontSize: 12, color: "#e0b34a" }}>
+            ⚠ No player seats yet — claim or assign one in Seats &amp; Tokens first.
+          </p>
+        ) : (
+          <>
+            <input type="text" autoFocus value={sendPicker.search}
+              onChange={e => setSendPicker({ search: e.target.value })}
+              placeholder="Search every item — name, type, tag, mastery, act…"
+              style={{ width: "100%", padding: "7px 9px", borderRadius: 5, border: "1px solid #444", background: "#111", color: "#fff", fontSize: 13 }} />
+            <p style={{ margin: 0, fontSize: 11, color: "#555" }}>
+              {q.length === 0
+                ? `${pool.length} items across your library and the campaign. Type to search.`
+                : `${matches.length} match${matches.length === 1 ? "" : "es"}${matches.length === 40 ? " (showing the first 40)" : ""}`}
+            </p>
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+              {matches.map(item => (
+                <button key={item.id} type="button"
+                  onClick={() => { setLootTarget({ item, seatId: seats[0]?.seatId ?? "" }); setSendPicker(null); }}
+                  style={{ textAlign: "left", padding: "7px 10px", background: "#161622", border: "1px solid #2a2a3e", borderRadius: 6, color: "#ddd", cursor: "pointer" }}>
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>{item.name}</span>
+                  <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>{item.category ?? item.type}</span>
+                  {/* A template is flagged in the LIST, so the DM knows a form is coming before
+                      they commit to the item rather than being asked after. */}
+                  {item.chassis && (
+                    <span style={{ fontSize: 10, color: "#e0b34a", marginLeft: 6 }}>template · picks a form</span>
+                  )}
+                  {item.isLocked && <span style={{ fontSize: 10, color: "#4a4a5e", marginLeft: 6 }}>🔒 campaign</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     );
   }

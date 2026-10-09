@@ -167,7 +167,29 @@ console.log("\n7. the single-item send asks a template which weapon it is");
     /loadEquipmentLibrary\("campaign"\)\.filter\(i => i\.id !== copy\.id\)/.test(lib));
 }
 
-console.log("\n8. campaign loot is read-only without author mode");
+console.log("\n8. there is a WAY IN to loot distribution");
+{
+  /**
+   * ⚠ SENDING EXISTED ONLY AS A PER-ROW BUTTON, which meant the DM had to already know which
+   * group an item was filed under and expand it before any send control appeared at all.
+   * Christopher, 2026-10-09: *"there isnt a way to open a loot panel for loot distribution."*
+   */
+  ok("the toolbar has a Send Loot button", panel.includes("🎁 Send Loot")
+    && /setEquipSendSignal\(s => s \+ 1\)/.test(panel));
+  ok("...and it reaches the library panel", /sendSignal=\{equipSendSignal\}/.test(panel));
+  ok("the library opens its send picker on that signal",
+    /if \(!sendSignal\) return;[\s\S]{0,60}setSendPicker/.test(lib));
+  ok("the picker searches BOTH libraries", /loadEquipmentLibrary\("dm"\), \.\.\.loadEquipmentLibrary\("campaign"\)/.test(lib));
+  /**
+   * It hands over to the EXISTING send dialog rather than duplicating it, so a template picked
+   * here goes through the same form question and the same refusal reporting.
+   */
+  ok("...and hands over to the one send dialog", /setLootTarget\(\{ item, seatId: seats\[0\]\?\.seatId \?\? "" \}\); setSendPicker\(null\);/.test(lib));
+  ok("a template is flagged in the results list", lib.includes("template · picks a form"));
+  ok("no seats is said up front, not after choosing", lib.includes("No player seats yet"));
+}
+
+console.log("\n9. campaign loot is read-only without author mode");
 {
   ok("the unlock control is gated on author mode", /authorOn \? \(/.test(lib) && lib.includes("isAuthorMode"));
   ok("a locked item still READS, it just cannot be rewritten", lib.includes("Campaign item — read-only"));
