@@ -573,6 +573,15 @@ export type ActorActionMetadata = {
   /** Weapon mastery property carried with the item so the round-trip does not drop it. */
   mastery?: string;
   /**
+   * The item makes its bearer proficient with it — @PROF applies even untrained.
+   *
+   * ⚠ Carried because it was NOT, and every v14 Gift grants it. Absent here, the grant existed
+   * on the library item and vanished the moment the item was attached to a character.
+   */
+  grantsProficiency?: boolean;
+  /** WHAT IT DOES, as authored. Distinct from `description`, which is campaign flavour. */
+  mechanicsText?: string;
+  /**
    * THE MASTERY THIS CHARACTER ACTUALLY HAS WITH THIS WEAPON, if they have picked it.
    *
    * ⚠ NOT THE SAME FIELD AS `mastery`, and the difference is the whole point. `mastery` is what

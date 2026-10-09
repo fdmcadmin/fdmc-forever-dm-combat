@@ -1071,6 +1071,25 @@ export function itemToAction(item: EquipmentItem, equipped: boolean): ActorActio
        * the guess was written back over the real type every time.
        */
       itemType: item.type,
+      /**
+       * ⚠ THE GIFT'S PROFICIENCY GRANT DIED AT THE DOOR. This was never written to metadata at
+       * all, so `grantsProficiency` existed on the library item, was read by the editor, and was
+       * gone the instant the item was attached to anybody. Every v14 Gift carries it — *"While
+       * attuned to the weapon, you are proficient with it"* — so every Gift handed to a
+       * character silently lost the half that makes it usable by a class that lacks the weapon.
+       *
+       * Same shape as the riders at 0.8.40.6 and `saveDc` below: a field honoured in the editor
+       * and dropped by the round-trip.
+       */
+      grantsProficiency: item.grantsProficiency,
+      /**
+       * ⚠ AND THE RULES TEXT ITSELF. `description` above already prefers `mechanicsText`, so the
+       * TEXT reached the card — but the FIELD did not, and `actionToItem` reads `description`
+       * back into `description`. Editing an item on a character therefore collapsed its
+       * mechanics text into its flavour text and left `mechanicsText` empty, so the next save
+       * published an item whose mechanics had become its description.
+       */
+      mechanicsText: item.mechanicsText,
       mastery: item.mastery,
       effectKind: item.effectKind,
       armorType: item.armorType,
@@ -1746,31 +1765,82 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       const item = allItems.find(i => i.id === itemId || `equip-${i.id}` === a.id);
       if (!item) return a;
 
-      // Re-derive as fresh snapshot if statEffects are missing or logMode is stale.
       // Carry the CURRENT equipped state through: this refresh is about stale library data,
       // and rebuilding at the default would silently re-equip something the player stowed.
       const fresh = itemToAction(item, a.metadata?.equipped !== false);
-      const needsRefresh =
-        a.metadata?.statEffects === undefined ||
-        a.logMode !== fresh.logMode ||
-        a.hasDefinedUse !== fresh.hasDefinedUse ||
-        // Convergence identity used to stop at the library, so anything attached before this
-        // is carrying none. Without it the ◈ cannot render and the player has no way to know
-        // the item is a forge input — re-snapshot it from the library on the way in.
-        (Boolean(item.convergence) && a.metadata?.convergence === undefined);
+
+      /**
+       * ⚠ THIS MIGRATION USED TO REPLACE THE ROW WITH THE LIBRARY'S COPY, AND IT NEVER STOPPED.
+       *
+       * Two faults compounding, and together they discarded every in-place edit a character
+       * had ever been given.
+       *
+       *   1. THE SENTINEL WAS NOT A SENTINEL. Staleness was read as `statEffects === undefined`,
+       *      meaning "attached before the snapshot model existed". But `bakeStatEffects` returns
+       *      undefined for any item with no AC and no stat effects — which is EVERY WEAPON. So
+       *      the test was permanently true for weapons and the migration re-fired on every
+       *      mount, forever. It now asks whether the library actually HAS something this row is
+       *      missing, which is self-terminating: once baked, there is nothing left to bake.
+       *
+       *   2. IT REPLACED RATHER THAN PATCHED. `return needsRefresh ? fresh : a` threw away the
+       *      character's row and substituted the library item. The four conditions below each
+       *      want ONE field back; none of them wants the row rebuilt. So they are applied as a
+       *      patch over the row that is already there.
+       *
+       * The cost was everything `editAttachedItem` exists to protect — Christopher, 2026-10-08:
+       * picking a chassis form on the character, leaving the Equipment tab and coming back
+       * showed the blank template again, *"it reverts before save, and it also reverts after the
+       * save."* A Gift's chosen form, a +1 earned on a blade, a rider, a rename: all of it lived
+       * only on the actor, and all of it was overwritten by a generic library row on the next
+       * mount of this component.
+       *
+       * ⚠ AND THE FILE ALREADY SAID SO, eight lines above `itemToAction`: *"metadata.statEffects
+       * is baked at attach time — actor is self-contained. Library changes do NOT silently alter
+       * already-equipped items."* That was the contract. This is the code that broke it.
+       */
+      const staleStatEffects =
+        a.metadata?.statEffects === undefined && fresh.metadata?.statEffects !== undefined;
+      const staleLogMode = a.logMode !== fresh.logMode;
+      const staleDefinedUse = a.hasDefinedUse !== fresh.hasDefinedUse;
+      // Convergence identity used to stop at the library, so anything attached before this
+      // is carrying none. Without it the ◈ cannot render and the player has no way to know
+      // the item is a forge input — take that ONE field from the library on the way in.
+      const staleConvergence = Boolean(item.convergence) && a.metadata?.convergence === undefined;
+      const needsRefresh = staleStatEffects || staleLogMode || staleDefinedUse || staleConvergence;
 
       if (needsRefresh) equipChanged = true;
 
-      // If this is a weapon, ensure it has an attack action in main tab
-      if (item.attack || item.damage) {
-        const atkId = `atk-${item.id}`;
+      /**
+       * Ensure a weapon has its rollable attack row.
+       *
+       * ⚠ BUILT FROM THE CHARACTER'S ROW, NOT THE LIBRARY ITEM. A chassis Gift is a SHAPE in the
+       * library and a specific weapon on the character: the library copy has no form, so no
+       * dice, so `item.attack` is empty and the row this used to build was either missing
+       * entirely or built at the generic template's (non-existent) dice. The actor's row is the
+       * one that knows which weapon this became.
+       */
+      const own = actionToItem(a, itemId);
+      if (own.attack || own.damage) {
+        const atkId = `atk-${itemId}`;
         if (!newMain.some(m => m.id === atkId)) {
-          newMain.push(itemToAttackAction(item));
+          newMain.push(itemToAttackAction(own));
           mainChanged = true;
         }
       }
 
-      return needsRefresh ? fresh : a;
+      if (!needsRefresh) return a;
+      // PATCH, never replace — only the fields that are actually stale are taken from the
+      // library. Everything else is the character's and stays theirs.
+      return {
+        ...a,
+        ...(staleLogMode ? { logMode: fresh.logMode } : {}),
+        ...(staleDefinedUse ? { hasDefinedUse: fresh.hasDefinedUse } : {}),
+        metadata: {
+          ...a.metadata,
+          ...(staleStatEffects ? { statEffects: fresh.metadata?.statEffects } : {}),
+          ...(staleConvergence ? { convergence: fresh.metadata?.convergence } : {}),
+        },
+      };
     });
 
     const updates: { equipment?: ActorAction[]; main?: ActorAction[] } = {};
@@ -1823,6 +1893,17 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
       type: (m.itemType as EquipmentItem["type"] | undefined)
         ?? ((m.attack || m.damage) ? "weapon" : "gear"),
       mastery: m.mastery as EquipmentItem["mastery"],
+      /**
+       * ⚠ HOME AGAIN, or opening the editor deletes them — the round-trip rule stated above.
+       *
+       * `saveDc` was written to metadata and never read back, so a magic item that threatens a
+       * save lost its DC the moment a player opened their own copy and saved. `grantsProficiency`
+       * and `mechanicsText` had the matching hole on the way OUT; all three are closed together
+       * because they fail the same way and are invisible until someone edits an item.
+       */
+      saveDc: m.saveDc,
+      grantsProficiency: m.grantsProficiency as boolean | undefined,
+      mechanicsText: m.mechanicsText as string | undefined,
       effectKind: m.effectKind as EffectKind | undefined,
       tier: m.tier,
       armorType: m.armorType as EquipmentItem["armorType"],
@@ -1950,7 +2031,40 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
         k => (libraryItem as Record<string, unknown>)[k] !== (carried as Record<string, unknown>)[k]);
 
       if (!libraryItem || diverged) {
-        upsertItem(carried);
+        /**
+         * ⚠ A DETACHED CAMPAIGN ITEM GOES TO THE PERSONAL LIBRARY UNDER ITS OWN ID — IT USED TO
+         * OVERWRITE THE CAMPAIGN ENTRY FOR THE WHOLE TABLE.
+         *
+         * `upsertItem` writes a DM entry under the SAME id, and `loadEquipmentLibrary` gives DM
+         * items priority over campaign items with that id. So banking a diverged copy did not
+         * preserve it beside the original — it SHADOWED the original everywhere.
+         *
+         * The case that makes it obvious is the one Christopher hit: detach a Gift that has been
+         * shaped into a handaxe and the campaign's generic template silently becomes a handaxe
+         * for every future character, because the shadow outranks it. A chassis always diverges
+         * (the template carries no dice and the shaped copy does), so this fired every time.
+         *
+         * Christopher, 2026-10-08: *"if a item is detached that is set from the campaign it goes
+         * into the personal library."* It does — as a SEPARATE entry. The campaign row is left
+         * exactly as authored, and a shaped copy is named for the form it was shaped into so the
+         * two are telling apart at a glance.
+         *
+         * An item the campaign does not own (a player's own build, or a DM item they already
+         * edited) still banks under its own id: that one IS theirs to rewrite.
+         */
+        const fromCampaign = loadEquipmentLibrary("campaign").some(i => i.id === itemId);
+        if (fromCampaign) {
+          const form = findForm(carried.chassis?.formId);
+          upsertItem({
+            ...carried,
+            id: `${itemId}--own-${form?.id ?? "copy"}`,
+            name: form ? `${carried.name} (${form.name})` : carried.name,
+            // Banked for the DM to reuse, so it is theirs to edit — never re-locked.
+            isLocked: false,
+          });
+        } else {
+          upsertItem(carried);
+        }
         refreshLibrary();
       }
     }

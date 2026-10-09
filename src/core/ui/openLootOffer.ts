@@ -46,6 +46,22 @@ export type OpenLootOffer = {
   offerId: string;
   /** Item ids still up for grabs. A pick removes one; empty = the pool is exhausted. */
   remainingItemIds: string[];
+  /**
+   * THE ITEMS AS THEY WERE SENT — not as the library holds them.
+   *
+   * ⚠ THE POOL USED TO BE IDS ALONE, AND THAT THREW AWAY THE DM'S CHOICES. A chassis Gift is a
+   * SHAPE in the library and becomes a specific weapon only when it is handed over, which is why
+   * the loot builder asks for a form before it will send. That pick lands on the COPY being
+   * offered — and then every reader rebuilt the item from the library by id, so the formed copy
+   * was discarded twice over: once on each re-broadcast after a pick, and again when the claim
+   * was attached. The player always received the blank template.
+   *
+   * Christopher, 2026-10-08: the only route that worked was writing the form onto the campaign
+   * entry, sending, and deleting it again — because the library was the only layer anything read.
+   *
+   * Optional for records written before this existed; `offeredItem` falls back to the catalogue.
+   */
+  offeredItems?: EquipmentItem[];
   /** Recipients IN PICK ORDER (order is meaningless when `ordered` is false). */
   recipients: LootRecipient[];
   /** Index into `recipients` of whose pick it is. >= length = every seat has had its turn. */
@@ -69,6 +85,26 @@ export type OpenLootOffer = {
 
 /** A player who doesn't want anything passes, so an AFK seat can't stall the whole round. */
 export const LOOT_PASS_ID = "__pass__";
+
+/**
+ * THE ITEM AS IT WAS OFFERED, by id — the one authority on what is being handed over.
+ *
+ * Reads the sent pool first and the catalogue only as a fallback, because the two disagree on
+ * exactly the thing that matters: the library's copy of a Gift has no chosen form, and the
+ * offered copy does. Every reader goes through here so none of them can quietly re-resolve an
+ * item back into its template.
+ *
+ * `catalogue` covers offers recorded before `offeredItems` existed, and anything the DM added
+ * to a pool by id alone.
+ */
+export function offeredItem(
+  offer: Pick<OpenLootOffer, "offeredItems"> | null | undefined,
+  itemId: string,
+  catalogue: readonly EquipmentItem[] = [],
+): EquipmentItem | undefined {
+  return offer?.offeredItems?.find(i => i.id === itemId)
+    ?? catalogue.find(i => i.id === itemId);
+}
 
 const OPEN_LOOT_OFFER_KEY = "fdmc.dm.openLootOffer.v1";
 
@@ -198,8 +234,10 @@ export function claimFromOpenOffer(
  * because the round is over (stock gone, or the last seat has had its turn).
  */
 export async function broadcastOfferState(offer: OpenLootOffer, closed: boolean, catalogue: EquipmentItem[]) {
+  // ⚠ THE SENT POOL WINS OVER THE CATALOGUE — see `offeredItem`. Re-resolving by id from the
+  // library here is what replaced a formed Gift with its blank template on every pick.
   const remaining = offer.remainingItemIds
-    .map(id => catalogue.find(i => i.id === id))
+    .map(id => offeredItem(offer, id, catalogue))
     .filter((i): i is EquipmentItem => Boolean(i));
   const picker = currentPicker(offer);
   for (const r of offer.recipients) {

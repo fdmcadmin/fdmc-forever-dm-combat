@@ -388,3 +388,6 @@ jobs:
 
       - name: check weapon mastery picks a WEAPON, not a property
         run: npm run check:mastery
+
+      - name: check loot reaches the character as the thing that was sent
+        run: npm run check:loot

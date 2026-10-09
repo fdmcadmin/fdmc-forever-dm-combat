@@ -11,7 +11,7 @@ import { parseActField, parseSessionField } from "../campaign/actTags";
 import { loadConvergenceInbox, removeFromConvergenceInbox, isConvergenceRequest } from "../state/convergenceInbox";
 import { SELECTABLE_ITEM_TYPES, itemTypeAllows } from "../constants/itemTypeCapabilities";
 import OBR from "@owlbear-rodeo/sdk";
-import { matchingForms } from "../constants/chassis";
+import { matchingForms, findForm } from "../constants/chassis";
 import { LootPoolBuilder } from "./LootPoolBuilder";
 import { ChassisFields } from "./ChassisFields";
 import { ChargesFields } from "./ChargesFields";
@@ -20,10 +20,45 @@ import { loadEquipmentLibrary, saveEquipmentLibrary, exportEquipmentLibrary, imp
 import type { FdmcSeat } from "../seats/seatTypes";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 import { useModuleUnlock, ModuleUnlockPrompt } from "../campaign/moduleUnlock";
+import { isAuthorMode } from "../campaign/authorMode";
 import { COIN_TYPES, COIN_LABEL, COIN_ABBR, formatCopperPrice, type CoinType } from "../currency/currency";
 import { PARTY_WALLET_SEAT_ID } from "../table-state/fdmcRoomLiveState";
 import { WEAPON_MASTERY_NAMES } from "../constants/weaponMastery";
 import { saveOpenLootOffer, loadOpenLootOffer, currentPicker, skipCurrentPicker, closeOpenOffer, OPEN_LOOT_OFFER_CHANGED, type OpenLootOffer } from "./openLootOffer";
+import { resolveChassisItem } from "./EquipmentBagEditor";
+
+/**
+ * What a shaped template is called once it has a form — "Gift of Oakheart (Handaxe)".
+ *
+ * The form's name rather than the DM's typing, so two copies of the same Gift in the same shape
+ * can never end up filed under two different names.
+ */
+function formedItemName(item: EquipmentItem, formId: string | undefined): string {
+  const form = findForm(formId);
+  return form ? `${item.name} (${form.name})` : item.name;
+}
+
+/**
+ * A chassis item frozen into ONE weapon, as its own campaign entry.
+ *
+ * ⚠ BESIDE THE TEMPLATE, NEVER OVER IT. Christopher, 2026-10-08: *"a new locked item beside the
+ * template"* — the generic entry has to survive, because the next character may take the same
+ * Gift as a scimitar. A derived id keeps the two apart and makes a second save of the same shape
+ * idempotent rather than duplicating.
+ *
+ * The dice are baked through `resolveChassisItem` so the entry reads as a real weapon in the
+ * list, and `chassis.formId` is kept so everything downstream still resolves it the usual way.
+ */
+function formedCampaignCopy(item: EquipmentItem, formId: string): EquipmentItem {
+  const formed = resolveChassisItem({ ...item, chassis: { ...item.chassis, formId } });
+  return {
+    ...formed,
+    id: `${item.id}--${formId}`,
+    name: formedItemName(item, formId),
+    // Locked: it is campaign loot now, and a player holding one must not be able to rewrite it.
+    isLocked: true,
+  };
+}
 // ─── Loot broadcast types ─────────────────────────────────────────────────────
 
 /** DM sends a single item directly (existing flow) */
@@ -930,9 +965,11 @@ type EquipmentLibraryStandaloneProps = {
   onExternalConvergenceApprove?: (req: ConvergenceRequest, outputItemId: string) => Promise<void>;
   onExternalConvergenceDeny?: (req: ConvergenceRequest) => Promise<void>;
   /** Called by DM panel to attach item to actor + push to seat before notifying player */
-  onDeliverLoot?: (seatId: string, item: EquipmentItem, message: string) => Promise<void>;
+  /** Returns WHY the delivery could not land, or null when it did — see dm-panel.deliveryTargetProblem. */
+  onDeliverLoot?: (seatId: string, item: EquipmentItem, message: string) => Promise<string | null | void>;
   /** Called by DM panel to attach MULTIPLE items to one seat's actor in a single push (boss haul). */
-  onDeliverLootBundle?: (seatId: string, items: EquipmentItem[], message: string) => Promise<void>;
+  /** Returns WHY the delivery could not land, or null when it did. */
+  onDeliverLootBundle?: (seatId: string, items: EquipmentItem[], message: string) => Promise<string | null | void>;
   /** Called by DM panel to grant currency to a seat's primary actor. mode "add" = adjust, "set" = absolute; coin defaults to gp. */
   onSendGold?: (seatId: string, amount: number, mode: "add" | "set", coin?: CoinType) => void;
   /** Open the New Item form immediately on mount (toolbar "+ Equipment" create flow). */
@@ -958,6 +995,19 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
   // Broken Chain section is a click-to-open drawer; the lock prompt lives inside it.
   const [brokenChainOpen, setBrokenChainOpen] = useState(false);
   const [lootTarget, setLootTarget] = useState<{ item: EquipmentItem; seatId: string } | null>(null);
+  /**
+   * File the shaped copy in the campaign library as well as sending it.
+   *
+   * OFF by default: sending is the common act and filing is the deliberate one. Christopher chose
+   * "formed copy only" for what lands on the character — the library is written only when this is
+   * ticked, never automatically on every send.
+   */
+  const [saveFormedToCampaign, setSaveFormedToCampaign] = useState(false);
+  /**
+   * Is this the author's own install? Read once on mount — author mode is granted by proving a
+   * GitHub identity and does not change while a panel is open.
+   */
+  const authorOn = isAuthorMode();
   // `seatIds` is the guest list AND the running order: boss loot often goes to some seats and
   // not others, while a merchant usually opens to the whole party starting at seat 1.
   const [lootOffer, setLootOffer] = useState<{ items: EquipmentItem[]; seatIds: string[]; mode: "boss-mid" | "boss-final" | "merchant" } | null>(null);
@@ -1106,10 +1156,21 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     if (cart.length === 0 || !cartSeatId) return;
     const label = `${cart.length} item${cart.length === 1 ? "" : "s"}`;
     const message = `${label} delivered.`;
+    // Same rule as handleSendLoot: a refused delivery is reported and the cart is KEPT, so the
+    // DM can fix the seat and send the same items rather than rebuilding the list.
+    let problem: string | null | void = null;
     if (onDeliverLootBundle) {
-      await onDeliverLootBundle(cartSeatId, cart, message);
+      problem = await onDeliverLootBundle(cartSeatId, cart, message);
     } else if (onDeliverLoot) {
-      for (const it of cart) await onDeliverLoot(cartSeatId, it, `${it.name} delivered.`);
+      for (const it of cart) {
+        problem = await onDeliverLoot(cartSeatId, it, `${it.name} delivered.`) ?? problem;
+        if (typeof problem === "string" && problem) break;
+      }
+    }
+    if (typeof problem === "string" && problem) {
+      setDeliveryProblem(problem);
+      setTimeout(() => setDeliveryProblem(null), 10000);
+      return;
     }
     setRecentDelivery(`Sent ${label} to ${seats.find(s => s.seatId === cartSeatId)?.label ?? cartSeatId}`);
     setCart([]);
@@ -1136,7 +1197,20 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     if (!lootTarget || !OBR.isAvailable) return;
     const message = lootMessage.trim() || `${lootTarget.item.name} delivered.`;
     if (onDeliverLoot) {
-      await onDeliverLoot(lootTarget.seatId, lootTarget.item, message);
+      /**
+       * ⚠ A REFUSED DELIVERY NOW SAYS SO AND KEEPS THE DIALOG OPEN.
+       *
+       * This used to `await` and then unconditionally report success — closing the dialog and
+       * printing "Sent X to Y" whether or not anything had been attached. When the seat did not
+       * resolve, the handler did nothing at all, so the DM was told it worked, the player was
+       * told it worked, and the item existed nowhere.
+       */
+      const problem = await onDeliverLoot(lootTarget.seatId, lootTarget.item, message);
+      if (typeof problem === "string" && problem) {
+        setDeliveryProblem(problem);
+        setTimeout(() => setDeliveryProblem(null), 10000);
+        return;
+      }
     } else {
       const delivery: LootDelivery = {
         type: "fdmc:loot-delivery",
@@ -1147,10 +1221,27 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
       };
       await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, delivery, { destination: "REMOTE" });
     }
-    setRecentDelivery(`Sent ${lootTarget.item.name} to ${seats.find(s => s.seatId === lootTarget.seatId)?.label ?? lootTarget.seatId}`);
+    /**
+     * File the shaped copy, if asked — AFTER the send has succeeded, never before.
+     *
+     * ⚠ MERGED, NOT RE-SEEDED. The campaign library is shared ground: module loot and the base
+     * weapon set live in the same store, so it is read, the one id is replaced, and the rest is
+     * written back untouched. Replacing the array wholesale would take every co-resident with it.
+     */
+    const formId = lootTarget.item.chassis?.formId;
+    let filed = "";
+    if (saveFormedToCampaign && formId) {
+      const copy = formedCampaignCopy(lootTarget.item, formId);
+      const camp = loadEquipmentLibrary("campaign").filter(i => i.id !== copy.id);
+      saveEquipmentLibrary([...camp, copy], "campaign");
+      refreshLibrary();
+      filed = ` · filed “${copy.name}” in the campaign library`;
+    }
+    setRecentDelivery(`Sent ${lootTarget.item.name} to ${seats.find(s => s.seatId === lootTarget.seatId)?.label ?? lootTarget.seatId}${filed}`);
     setLootTarget(null);
     setLootMessage("");
-    setTimeout(() => setRecentDelivery(null), 4000);
+    setSaveFormedToCampaign(false);
+    setTimeout(() => setRecentDelivery(null), 6000);
   }
 
   /**
@@ -1292,6 +1383,9 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
     saveOpenLootOffer({
       offerId,
       remainingItemIds: opts.items.map(i => i.id),
+      // THE COPIES AS SENT, forms and all. The ids above are the stock ledger; these are what
+      // each id MEANS, and without them a claim re-resolves to the library's template.
+      offeredItems: opts.items,
       recipients,
       turnIndex: 0,
       ordered,
@@ -1437,6 +1531,59 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
           <p style={{ margin: "0 0 4px", fontWeight: 500 }}>{lootTarget.item.name}</p>
           <p style={{ margin: 0, fontSize: 12, color: "#888" }}>{lootTarget.item.type} · {lootTarget.item.description?.slice(0, 60)}</p>
         </div>
+
+        {/*
+          ⚠ A TEMPLATE IS ASKED WHICH WEAPON IT IS, HERE, BEFORE IT GOES.
+
+          Christopher, 2026-10-08: *"if it is a template item it needs to ask what form to send it
+          as instead of having to go to the encounter it drops and trying to send it as a blank
+          template and then adjusting it on the character sheet."* The staged loot builder has
+          always asked; this single-item send never did, so the only way to hand over a shaped
+          Gift was to write the form onto the campaign entry and delete it afterwards.
+
+          The pick lands on the COPY being sent. The library entry stays generic, so the next
+          character can take the same Gift as something else.
+        */}
+        {lootTarget.item.chassis && (
+          <div style={{ background: "#161622", borderRadius: 8, padding: 12, border: `1px solid ${lootTarget.item.chassis.formId ? "#7b68ee55" : "#5a4a1a"}`, display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{ fontSize: 12 }}>
+              <span style={{ color: lootTarget.item.chassis.formId ? "#9d8cff" : "#e0b34a" }}>
+                {lootTarget.item.chassis.formId ? "Form" : "Pick a form — this is a template"}
+              </span>
+              <select
+                value={lootTarget.item.chassis.formId ?? ""}
+                onChange={e => setLootTarget(t => t ? {
+                  ...t,
+                  item: { ...t.item, chassis: { ...t.item.chassis!, formId: e.target.value || undefined } },
+                } : null)}
+                style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, background: "#111", color: "#fff",
+                         border: `1px solid ${lootTarget.item.chassis.formId ? "#444" : "#5a4a1a"}` }}>
+                <option value="">— choose a weapon —</option>
+                {matchingForms(lootTarget.item.chassis).map(f => (
+                  <option key={f.id} value={f.id}>{f.name}{f.mastery ? ` — ${f.mastery}` : ""}</option>
+                ))}
+              </select>
+            </label>
+            {/*
+              SAVE THE SHAPED COPY AS ITS OWN CAMPAIGN ENTRY, beside the template rather than over
+              it. Christopher: *"there should be a option to save into my campaign as the locked
+              form."* One entry per form actually handed out — "Gift of Oakheart (Handaxe)" —
+              while the generic template stays for the next character.
+            */}
+            <label style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 7, color: lootTarget.item.chassis.formId ? "#aaa" : "#555" }}>
+              <input type="checkbox" disabled={!lootTarget.item.chassis.formId}
+                checked={saveFormedToCampaign && Boolean(lootTarget.item.chassis.formId)}
+                onChange={e => setSaveFormedToCampaign(e.target.checked)} />
+              Also save to my campaign library as a locked item
+              {lootTarget.item.chassis.formId && (
+                <span style={{ color: "#666" }}>
+                  — “{formedItemName(lootTarget.item, lootTarget.item.chassis.formId)}”
+                </span>
+              )}
+            </label>
+          </div>
+        )}
+
         <label style={{ fontSize: 12 }}>
           Send to seat:
           <select value={lootTarget.seatId} onChange={e => setLootTarget({ ...lootTarget, seatId: e.target.value })}
@@ -1451,8 +1598,17 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
             style={{ display: "block", width: "100%", marginTop: 4, padding: "6px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
         </label>
         <div style={{ display: "flex", gap: 8 }}>
+          {/* A template with no form is refused rather than sent blank — the same guard the
+              staged builder uses, for the same reason: it arrives as a shape nobody can use. */}
           <button type="button" onClick={() => void handleSendLoot()}
-            style={{ flex: 1, padding: "8px", background: "#2a6e2a", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 500 }}>
+            disabled={Boolean(lootTarget.item.chassis && !lootTarget.item.chassis.formId)}
+            title={lootTarget.item.chassis && !lootTarget.item.chassis.formId
+              ? "Pick a form first — a template sent without one arrives as a shape the player cannot use."
+              : "Send this item to the seat"}
+            style={{ flex: 1, padding: "8px", border: "none", borderRadius: 6, fontWeight: 500,
+              background: lootTarget.item.chassis && !lootTarget.item.chassis.formId ? "#333" : "#2a6e2a",
+              color: lootTarget.item.chassis && !lootTarget.item.chassis.formId ? "#777" : "#fff",
+              cursor: lootTarget.item.chassis && !lootTarget.item.chassis.formId ? "default" : "pointer" }}>
             ▶ Send Loot
           </button>
           <button type="button" onClick={() => setLootTarget(null)}
@@ -1973,12 +2129,33 @@ export function EquipmentLibraryStandalone({ seats, externalConvergenceRequests,
               </button>
             )}
             {item.isLocked ? (
-              /* TODO: remove at 0.9.0 alpha lock */
-              <button type="button" onClick={() => handleUnlockItem(item)}
-                style={{ fontSize: 10, padding: "2px 7px", background: "transparent", border: "1px solid #5a4a1a", borderRadius: 3, color: "#e07b3988", cursor: "pointer" }}
-                title="Unlock for DM editing — creates a custom copy (pre-alpha only)">
-                🔓
-              </button>
+              /**
+               * ⚠ CAMPAIGN LOOT IS READ-ONLY UNLESS THIS IS THE AUTHOR'S INSTALL.
+               *
+               * Christopher, 2026-10-08: *"unless the author mode is enabled the equipment and the
+               * monsters of the library should be locked from editing."* This button is how a
+               * locked campaign item became editable, and it was open to every DM — which is how
+               * the campaign entry for a Gift ended up being rewritten to hand one out, the
+               * workaround that started this whole thread.
+               *
+               * The item is still fully VISIBLE and still fully SENDABLE; what author mode gates
+               * is AUTHORING. A DM who wants their own version detaches one from a character or
+               * builds it in My Library, and neither touches the campaign row.
+               *
+               * This is the gate the existing "TODO: remove at 0.9.0 alpha lock" was waiting for.
+               */
+              authorOn ? (
+                <button type="button" onClick={() => handleUnlockItem(item)}
+                  style={{ fontSize: 10, padding: "2px 7px", background: "transparent", border: "1px solid #5a4a1a", borderRadius: 3, color: "#e07b3988", cursor: "pointer" }}
+                  title="Unlock for editing — creates a custom copy. Shown because author mode is on.">
+                  🔓
+                </button>
+              ) : (
+                <span style={{ fontSize: 10, color: "#4a4a5e" }}
+                  title="Campaign item — read-only. Send it as-is, or build your own in My Library. Editing campaign loot needs author mode.">
+                  🔒
+                </span>
+              )
             ) : (
               <>
                 {/*

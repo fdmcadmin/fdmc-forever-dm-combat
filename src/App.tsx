@@ -88,8 +88,8 @@ import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { obrSend } from "./core/utils/obrReady";
-import { loadEquipmentLibrary, itemToAction, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
-import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID } from "./core/ui/openLootOffer";
+import { loadEquipmentLibrary, itemToAction, itemToAttackAction, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
+import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID, offeredItem, loadOpenLootOffer } from "./core/ui/openLootOffer";
 import { FDMC_ACCENTS } from "./core/constants/theme";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
 import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
@@ -1214,7 +1214,13 @@ export default function App() {
       // still hands the turn on so one AFK seat can't stall the round.
       const allItems = [...loadEquipmentLibrary("campaign"), ...loadEquipmentLibrary("dm")];
       const isPass = msg.chosenItemId === LOOT_PASS_ID;
-      const item = isPass ? undefined : allItems.find(i => i.id === msg.chosenItemId);
+      /**
+       * ⚠ THE OFFERED COPY, NOT THE LIBRARY'S. This read `allItems.find(...)` and attached that,
+       * so a Gift the DM had shaped into a handaxe in the loot builder arrived as the unformed
+       * chassis every single time — the pick was made, broadcast, displayed to the player, and
+       * then discarded at the moment it was turned into equipment. See `offeredItem`.
+       */
+      const item = isPass ? undefined : offeredItem(loadOpenLootOffer(), msg.chosenItemId, allItems);
       if (!isPass && !item) return;
       const itemLabel = item?.name ?? "that";
 
@@ -1293,9 +1299,24 @@ export default function App() {
       // unasked, and an attuned one would claim a slot the player never agreed to spend.
       const equipAction = itemToAction(item, false);
 
+      /**
+       * ⚠ AND ITS ATTACK ROW, WHICH THIS PATH NEVER WROTE.
+       *
+       * A weapon is TWO rows — `equip-<id>` in the bag and `atk-<id>` on the main tab — and
+       * every other delivery path writes both (`handleDeliverLoot`, `attachItem`). This one
+       * added the bag row alone, so a weapon won from a loot offer could be carried, equipped
+       * and never swung: no attack, no damage, nothing to roll. Since 0.8.75.14 a stowed weapon
+       * legitimately hides its attack, which made the absence look like the stow rule working.
+       */
+      const newMain = [...(actor.tabs.main ?? [])];
+      if (item.attack || item.damage) {
+        const atkEntry = itemToAttackAction(item);
+        if (!newMain.some(a => a.id === atkEntry.id)) newMain.push(atkEntry);
+      }
+
       const updatedActor = {
         ...actor,
-        tabs: { ...actor.tabs, equipment: [...(actor.tabs.equipment ?? []), equipAction] },
+        tabs: { ...actor.tabs, equipment: [...(actor.tabs.equipment ?? []), equipAction], main: newMain },
       };
 
       // Save and broadcast — pass freshLibrary so push doesn't use stale ref

@@ -396,12 +396,56 @@ function DmPanelApp() {
     }
   }
 
-  async function handleDeliverLoot(seatId: string, item: EquipmentItem, message: string) {
-    const seat = seats[seatId];
+  /**
+   * THE SEAT A DELIVERY IS FOR, and the RESOLVED character sitting in it.
+   *
+   * ⚠ TWO FAULTS LIVED IN THE THREE LINES THIS REPLACES, and between them they are why loot sent
+   * straight to a seat arrived nowhere.
+   *
+   *   1. `seats[seatId]` READS THE LOCAL CONFIG ONLY. A seat a player claimed lives in ROOM LIVE
+   *      STATE and need not be in this DM's localStorage at all — `pushActorsToSeat` has always
+   *      known that and falls back (`seatsRef.current[id] ?? liveStateRef.current.seats?.[id]`,
+   *      useSeatSystem.ts). These handlers did not, so for such a seat `seat` was undefined,
+   *      `actor` was undefined, and the whole attach block was SKIPPED IN SILENCE — while the
+   *      code below still broadcast `fdmc:loot-attached`, telling the player it had worked.
+   *      Christopher, 2026-10-08: *"nothing arrives at all."*
+   *
+   *   2. `actorLibrary[actorId]` IS THE UNRESOLVED BASE. `upsertActorInLibrary` documents that
+   *      every caller must hand it a COMPLETE, already-resolved actor, because it mirrors what it
+   *      is given into the override. Passing base+item therefore wrote base-equipment-plus-one
+   *      over an override that held the character's real bag. The convergence handler seventy
+   *      lines below already resolves correctly; these did not.
+   *
+   * One helper, so a delivery can never again disagree with the push that follows it.
+   */
+  function resolveSeatTarget(seatId: string) {
+    const seat = seats[seatId] ?? roomLiveState.seats?.[seatId];
     const actorId = seat?.primaryActorId;
-    const actor = actorId ? actorLibrary[actorId] : undefined;
+    if (!seat || !actorId) return null;
+    const actor = resolveActorFromLibrary(actorId, actorLibrary, actorOverrides, roomLiveState);
+    return actor ? { seat, actor } : null;
+  }
 
-    if (actor) {
+  /**
+   * Why a delivery could not land, as a sentence for the DM — or null when it can.
+   *
+   * ⚠ RETURNED, NOT SWALLOWED. The old handlers simply did nothing when the seat did not
+   * resolve, and then told the PLAYER the item had arrived. A delivery that cannot happen has
+   * to say so on the DM side, which is the only side that can fix it.
+   */
+  function deliveryTargetProblem(seatId: string): string | null {
+    const seat = seats[seatId] ?? roomLiveState.seats?.[seatId];
+    if (!seat) return `seat "${seatId}" is not in this room`;
+    if (!seat.primaryActorId) return `seat "${seatId}" has no primary character — assign one in Seats & Tokens`;
+    return resolveSeatTarget(seatId) ? null : `seat "${seatId}" points at a character that is not in the library`;
+  }
+
+  async function handleDeliverLoot(seatId: string, item: EquipmentItem, message: string): Promise<string | null> {
+    const problem = deliveryTargetProblem(seatId);
+    if (problem) return `${item.name} was NOT delivered — ${problem}.`;
+    const actor = resolveSeatTarget(seatId)!.actor;
+
+    {
       // Delivered loot lands in the bag — see itemToAction. The player equips it.
       const equipEntry = itemToAction(item, false);
       const newEquipment = [...(actor.tabs.equipment ?? []), equipEntry];
@@ -431,13 +475,17 @@ function DmPanelApp() {
         message,
       }, { destination: "REMOTE" });
     }
+
+    return null;
   }
 
   // Boss haul — attach SEVERAL items to one seat's primary actor in a single push.
-  async function handleDeliverLootBundle(seatId: string, items: EquipmentItem[], message: string) {
-    const seat = seats[seatId];
-    const actorId = seat?.primaryActorId;
-    const actor = actorId ? actorLibrary[actorId] : undefined;
+  async function handleDeliverLootBundle(seatId: string, items: EquipmentItem[], message: string): Promise<string | null> {
+    const problem = deliveryTargetProblem(seatId);
+    if (problem && items.length > 0) {
+      return `${items.length} item${items.length === 1 ? "" : "s"} were NOT delivered — ${problem}.`;
+    }
+    const actor = problem ? undefined : resolveSeatTarget(seatId)!.actor;
     if (actor && items.length > 0) {
       const newEquipment = [...(actor.tabs.equipment ?? [])];
       const newMain = [...(actor.tabs.main ?? [])];
@@ -462,6 +510,8 @@ function DmPanelApp() {
         message,
       }, { destination: "REMOTE" });
     }
+
+    return null;
   }
 
   // Grant currency to a seat's primary actor. mode "add" = adjust the coin; "set" = absolute. coin defaults to gp.
@@ -474,7 +524,9 @@ function DmPanelApp() {
         : patchPartyCoins(roomLiveState, setCoin(getPartyCoins(roomLiveState), coin, amount)));
       return;
     }
-    const seat = seats[seatId];
+    // Same two faults as the loot handlers above — a claimed seat known only to the room could
+    // not be paid, and the failure was silent. See `resolveSeatTarget`.
+    const seat = seats[seatId] ?? roomLiveState.seats?.[seatId];
     const actorId = seat?.primaryActorId;
     if (!actorId) return;
     if (mode === "add") {
