@@ -5,6 +5,10 @@ import { DamageTypePicker } from "./DamageTypePicker";
 import { SaveDcComposer } from "./SaveDcComposer";
 import { tabAccent } from "./tabVisuals";
 import { resolveOutcomeMode } from "../types/tabs";
+import {
+  actionModeAllows, advancedSummaryText, capabilityLabel, strandedCapabilities,
+  type ActionCapability,
+} from "../constants/actionCapabilities";
 import type { ActorAction, TabId } from "../types/tabs";
 
 // Human heading per tab so the editor reads as a labeled section, not a raw list.
@@ -204,16 +208,25 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
    * action itself rather than how it resolves, and re-typing those on every mode change would
    * be its own bug. Nothing is written until Save.
    */
+  /**
+   * ⚠ CHANGING THE MODE NO LONGER DESTROYS WHAT WAS TYPED.
+   *
+   * This used to blank `attackBonus`, `saveDc`, `damage`, `damageType` and `critDamage` on every
+   * single mode change, silently. Two things were wrong with that.
+   *
+   *   1. IT THREW AWAY WORK ON A MISCLICK. Someone exploring the dropdown — which is exactly what
+   *      a new DM or player does, and exactly who this pass is for — lost everything they had
+   *      written, with nothing said and no way back.
+   *   2. IT WIPED THE SHARED BOX. Damage and healing are one field, so switching Attack → Healing
+   *      deleted dice that the new mode uses just as much as the old one did.
+   *
+   * Christopher, 2026-10-11, choosing between keeping and clearing: keep, and warn. So the values
+   * stay, `strandedCapabilities` names any the new mode will never read, and "Clear them" is one
+   * click when that is what was meant. Keep or clear is the author's call; what the app owes them
+   * is knowing — see the stranded banner below the chooser.
+   */
   function changeRollMode(next: PcRollMode) {
-    setDraft(d => d.rollMode === next ? d : {
-      ...d,
-      rollMode: next,
-      attackBonus: undefined,
-      saveDc: undefined,
-      damage: undefined,
-      damageType: undefined,
-      critDamage: undefined,
-    });
+    setDraft(d => d.rollMode === next ? d : { ...d, rollMode: next });
     setErrors([]);
   }
 
@@ -235,10 +248,60 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
     onSave(action);
   }
 
-  const showAttackFields = draft.rollMode === "attack";
-  const showSaveFields = draft.rollMode === "save";
-  const showCheckFields = draft.rollMode === "check";
-  const showDamageField = ["attack", "save", "damageOnly", "triggered", "healing", "additive"].includes(draft.rollMode);
+  /**
+   * ⚠ WHAT THIS MODE ASKS FOR COMES FROM THE TABLE NOW, not from four hand-written booleans.
+   *
+   * This form had forty inputs and exactly four of them conditional, so a player writing Cure
+   * Wounds walked past attack formulas, crit behaviour, weapon buffs and reroll settings to
+   * reach a healing die. `ACTION_CAPABILITIES` is the same shape `ITEM_TYPE_CAPABILITIES` has
+   * had since 0.7.9.15 — one table, read by every editor, so the two axes cannot drift.
+   *
+   * Nothing is REMOVED: everything the mode does not ask for is still authorable under Advanced
+   * below, and nothing stops saving. Only the default view changes.
+   */
+  const allows = (c: ActionCapability) => actionModeAllows(draft.rollMode, c);
+  const showAttackFields = allows("attackFormula");
+  const showSaveFields = allows("saveDc");
+  const showCheckFields = allows("checkFormula");
+  // Healing stores its dice in the same field; the LABEL is what changes — see capabilityLabel.
+  const showDamageField = allows("damageFormula") || allows("healingFormula");
+  const isHealingDice = allows("healingFormula") && !allows("damageFormula");
+
+  /**
+   * Mode-specific values this mode will never read.
+   *
+   * Kept, never silently dropped — a mode changed by accident must not destroy typed work — but
+   * named out loud, because a value nothing rolls must not ride invisibly into the saved action.
+   */
+  const stranded = strandedCapabilities(draft);
+
+  /**
+   * Does anything in the Advanced block already hold a value?
+   *
+   * ⚠ IF SO IT OPENS ON ITS OWN. Collapsing a section that is doing work would mean opening an
+   * existing action and being shown less than it actually does — the editor quietly disagreeing
+   * with the card. Folding is for fields nobody has touched.
+   */
+  const hasAdvancedValues = Boolean(
+    draft.armedAttackFormula || draft.armedAttackDamage || draft.turnRider
+    || draft.weaponBuffDamage || draft.weaponBuffAttack || draft.isRerollSource
+    || draft.combatStyleAttack || draft.combatStyleDamage || draft.combatStyleTarget,
+  );
+
+  /** Clear every stranded field in one go — the "I meant to change mode" button. */
+  function clearStranded() {
+    for (const c of stranded) {
+      if (c === "attackFormula" || c === "checkFormula") set("attackBonus", undefined);
+      else if (c === "saveDc") { set("saveDc", undefined); set("saveAbility", undefined); }
+      else if (c === "damageFormula" || c === "healingFormula") set("damage", undefined);
+      else if (c === "damageType") set("damageType", undefined);
+      else if (c === "critDamage") set("critDamage", undefined);
+      else if (c === "range") set("range", undefined);
+      else if (c === "ongoingDamage") set("ongoingDamage", undefined);
+      else if (c === "explodingDamage") set("explodingDamage", undefined);
+      else if (c === "attackRolls") set("attackRolls", undefined);
+    }
+  }
 
   return (
     <div className="action-form" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, background: "#1a1a2e", borderRadius: 8 }}>
@@ -271,12 +334,16 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
         {/* EXPLODING DAMAGE DICE. Same detector shape as the crit rider that grants Great
             Weapon Master its extra attack — watch the result, and when it hits the trigger,
             add one more. The difference is WHICH die is watched: GWM reads the d20, this
-            reads the damage die. Dice+ rolls exploding natively. */}
-        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
-          <input type="checkbox" checked={Boolean(draft.explodingDamage)}
-            onChange={e => set("explodingDamage", e.target.checked || undefined)} />
-          Exploding damage dice <span style={{ color: "#667" }}>— on a max damage die, roll another and add it</span>
-        </label>
+            reads the damage die. Dice+ rolls exploding natively.
+            ⚠ Only asked of a mode that HAS damage dice — there is nothing to explode on a
+            passive, a utility or a healing roll. */}
+        {allows("explodingDamage") && (
+          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <input type="checkbox" checked={Boolean(draft.explodingDamage)}
+              onChange={e => set("explodingDamage", e.target.checked || undefined)} />
+            Exploding damage dice <span style={{ color: "#667" }}>— on a max damage die, roll another and add it</span>
+          </label>
+        )}
 
       <label style={{ fontSize: 12 }}>
         Category (group heading in card)
@@ -321,6 +388,33 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
         </label>
       </div>
 
+      {/**
+        * ⚠ VALUES THIS MODE WILL NEVER READ, SAID OUT LOUD.
+        *
+        * The two wrong answers here are deleting them and ignoring them. Deleting means a mode
+        * switched by accident — or while someone is still working out what they are building —
+        * destroys typed work. Ignoring means an attack formula rides along inside a healing
+        * action, invisible on the form and present in the export, which is exactly the failure
+        * Christopher named elsewhere: *"why is stuff like this hiding in a json for export, this
+        * leads to reading these wrong."*
+        *
+        * So: kept, named, and clearable in one click. Keep or clear is the author's call; what
+        * the app owes them is knowing.
+      */}
+      {stranded.length > 0 && (
+        <div style={{ background: "#2a2010", border: "1px solid #6e5a20", borderRadius: 5, padding: "6px 9px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11, color: "#e0b85a" }}>
+            ⚠ {stranded.length} field{stranded.length === 1 ? "" : "s"} still {stranded.length === 1 ? "has" : "have"} a value this mode ignores
+            <span style={{ color: "#8a7a4a" }}> — {stranded.map(capabilityLabel).join(", ")}</span>
+          </span>
+          <button type="button" onClick={clearStranded}
+            title="Clear these fields. Nothing else is touched, and you can retype them or switch back."
+            style={{ marginLeft: "auto", fontSize: 11, padding: "2px 9px", background: "transparent", border: "1px solid #6e5a20", borderRadius: 3, color: "#e0b85a", cursor: "pointer" }}>
+            Clear them
+          </button>
+        </div>
+      )}
+
       {showAttackFields && (
         <FormulaInput
           label="Attack Formula"
@@ -358,11 +452,16 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
 
       {showDamageField && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {/*
+            ⚠ THE SAME BOX, ASKED HONESTLY. Healing and damage share one draft field, and this
+            said "Damage Formula" to everyone — including the player writing Cure Wounds, who was
+            being told the app had nothing for them. One label, decided by the mode.
+          */}
           <FormulaInput
-            label="Damage Formula"
+            label={capabilityLabel(isHealingDice ? "healingFormula" : "damageFormula")}
             value={draft.damage ?? ""}
             onChange={v => set("damage", v || undefined)}
-            placeholder="2d6+@STR"
+            placeholder={isHealingDice ? "2d8+@WIS" : "2d6+@STR"}
             showVars={["@STR","@DEX","@CON","@INT","@WIS","@CHA","@SPELL"]}
           />
           {/* WHICH CLASS CASTS THIS. Only worth asking when the character HAS more than one
@@ -396,13 +495,16 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
               component. This block was the only one of its kind, so the spell editor — where
               every spell in the game is actually authored — simply had nothing. Two copies would
               have drifted the first time either side changed; there is one. */}
-          <DamageTypePicker
-            value={draft.damageType}
-            onChange={v => set("damageType", v)}
-            text={draft.description}
-            isHealing={draft.rollMode === "healing"}
-          />
-          {draft.rollMode === "attack" && (
+          {/* Not asked on a healing roll — nothing is being typed. */}
+          {allows("damageType") && (
+            <DamageTypePicker
+              value={draft.damageType}
+              onChange={v => set("damageType", v)}
+              text={draft.description}
+              isHealing={isHealingDice}
+            />
+          )}
+          {allows("critDamage") && (
             <FormulaInput
               label="Crit Damage"
               value={draft.critDamage ?? ""}
@@ -414,12 +516,54 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
         </div>
       )}
 
-      <label style={{ fontSize: 12 }}>
-        Range
-        <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value)}
-          placeholder="5 ft, 120 ft..."
-          style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
-      </label>
+      {/* ⚠ ONLY A SAVE CAN "SAVE-END". Moved into the main flow from the advanced pile: when the
+          mode IS a save this is a first-class question (Ensnaring Strike), and when it is not,
+          there is no save for the target to make and the control was pure noise. */}
+      {allows("ongoingDamage") && (
+      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" checked={Boolean(draft.ongoingDamage)}
+            onChange={e => set("ongoingDamage", e.target.checked ? { repeat: "save-ends", timing: "end" } : undefined)} />
+          ⏳ Keeps dealing damage until the target saves
+          <span style={{ color: "#555", fontSize: 10 }}>— needs a save DC above</span>
+        </label>
+        {draft.ongoingDamage && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+            <label style={{ fontSize: 12, flex: "1 1 150px" }}>
+              Damage each turn <span style={{ color: "#555", fontSize: 10 }}>— blank = the weapon's</span>
+              <input type="text" value={draft.ongoingDamage.damage ?? ""} placeholder="blank for the weapon's damage"
+                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, damage: e.target.value || undefined })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 130px" }}>
+              The save comes
+              <select value={draft.ongoingDamage.timing ?? "end"}
+                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, timing: e.target.value as "start" | "end" })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
+                <option value="end">at the END of its turns</option>
+                <option value="start">at the START of its turns</option>
+              </select>
+            </label>
+            <label style={{ fontSize: 12, flex: "1 1 110px" }}>
+              Most turns <span style={{ color: "#555", fontSize: 10 }}>— blank = the fight</span>
+              <input type="number" min={1} value={draft.ongoingDamage.maxTurns ?? ""}
+                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, maxTurns: e.target.value ? Number(e.target.value) : undefined })}
+                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+            </label>
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* An additive rides someone else's roll, so it has no delivery of its own to describe. */}
+      {allows("range") && (
+        <label style={{ fontSize: 12 }}>
+          Range
+          <input type="text" value={draft.range ?? ""} onChange={e => set("range", e.target.value)}
+            placeholder="5 ft, 120 ft..."
+            style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
+        </label>
+      )}
 
       <label style={{ fontSize: 12 }}>
         Description / Details
@@ -500,6 +644,33 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
       )}
 
       {/**
+        * ADVANCED — everything the chosen mode does not ask for.
+        *
+        * ⚠ FOLDED, NOT REMOVED. Christopher, 2026-10-11: the builder has *"too much options for
+        * both new DMs and players who are not used to working with it"* — and the design note
+        * that came with it is explicit that this is *"simplifying creation, not reducing what the
+        * app can do."* Every control below still works, still saves, and is one click away. What
+        * changed is that a player writing Cure Wounds no longer walks past an armed-attack
+        * builder, a weapon-buff pair and a reroll-method picker to reach a healing die.
+        *
+        * These are the MODE-AGNOSTIC fields (see `MODE_AGNOSTIC_FIELDS`): a once-per-turn rider
+        * on a healing spell is a legitimate build, so none of them is ever reported as stranded.
+        * Mode-SPECIFIC fields are gated individually above, and warned about when they hold a
+        * value the mode will never read.
+        *
+        * Open by default when something inside is already set, so editing an existing action
+        * never hides what that action already does.
+      */}
+      <details open={hasAdvancedValues}>
+        <summary style={{ fontSize: 12, color: "#9d8cff", cursor: "pointer", userSelect: "none", padding: "2px 0" }}>
+          Advanced
+          {/* Built from MODE_AGNOSTIC_FIELDS so the promise and the contents cannot drift. */}
+          <span style={{ color: "#555", fontSize: 10, marginLeft: 6 }}>
+            — {advancedSummaryText()}
+          </span>
+        </summary>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+      {/**
         * ARMS A REPEATABLE ATTACK — the Flame Blade shape.
         *
         * ⚠ THE CAST AND THE SWING ARE TWO DIFFERENT COSTS. Christopher: *"flame blade is different
@@ -571,44 +742,6 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           damage rider (the Tier 3 weapons). Arming rather than rolling is the point — Hew was
           authored as its own action with greataxe dice baked in, so it was wrong the moment
           the character swung anything else. A claimed chip uses whatever is in hand. */}
-      {/* KEEPS DEALING DAMAGE WHILE THE TARGET KEEPS FAILING.
-          Christopher, 2026-09-23: *"ensnaring strike isnt a spell action its a bonus action that
-          continues to do the weapon damage if the target fails the STR save."* Leave the damage blank
-          and it deals the WEAPON's damage, which is that spell's own shape. The checker prices the
-          turns with the same BR075-BR077 rule it uses for a monster's save-ends effect. */}
-      <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
-        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-          <input type="checkbox" checked={Boolean(draft.ongoingDamage)}
-            onChange={e => set("ongoingDamage", e.target.checked ? { repeat: "save-ends", timing: "end" } : undefined)} />
-          ⏳ Keeps dealing damage until the target saves
-          <span style={{ color: "#555", fontSize: 10 }}>— needs a save DC above</span>
-        </label>
-        {draft.ongoingDamage && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
-            <label style={{ fontSize: 12, flex: "1 1 150px" }}>
-              Damage each turn <span style={{ color: "#555", fontSize: 10 }}>— blank = the weapon's</span>
-              <input type="text" value={draft.ongoingDamage.damage ?? ""} placeholder="blank for the weapon's damage"
-                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, damage: e.target.value || undefined })}
-                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
-            </label>
-            <label style={{ fontSize: 12, flex: "1 1 130px" }}>
-              The save comes
-              <select value={draft.ongoingDamage.timing ?? "end"}
-                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, timing: e.target.value as "start" | "end" })}
-                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}>
-                <option value="end">at the END of its turns</option>
-                <option value="start">at the START of its turns</option>
-              </select>
-            </label>
-            <label style={{ fontSize: 12, flex: "1 1 110px" }}>
-              Most turns <span style={{ color: "#555", fontSize: 10 }}>— blank = the fight</span>
-              <input type="number" min={1} value={draft.ongoingDamage.maxTurns ?? ""}
-                onChange={e => set("ongoingDamage", { ...draft.ongoingDamage!, maxTurns: e.target.value ? Number(e.target.value) : undefined })}
-                style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }} />
-            </label>
-          </div>
-        )}
-      </div>
       {draft.tab !== "spell" && (
         <div style={{ border: "1px solid #2a2a3e", borderRadius: 6, padding: "6px 8px" }}>
           <label style={{ fontSize: 12, display: "block" }}>
@@ -757,6 +890,8 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>E.g. Archery → Attack +2 · Ranged. (Two-Weapon Fighting isn't a bonus — author the off-hand attack in the Bonus tab without the ability mod. Great Weapon Fighting's reroll isn't auto — use a flat bonus or a reminder.)</span>
         </div>
       )}
+        </div>
+      </details>
 
       {errors.length > 0 && (
         <div style={{ background: "#5a1a1a", borderRadius: 4, padding: "6px 10px" }}>

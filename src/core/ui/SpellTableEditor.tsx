@@ -11,6 +11,29 @@
 import { useState } from "react";
 import { readDamageTypeChoice } from "../rules/damageTypeChoice";
 import { DamageTypePicker } from "./DamageTypePicker";
+import { actionModeAllows, capabilityLabel, type ActionCapability } from "../constants/actionCapabilities";
+import type { PcRollMode } from "./pcActionTypes";
+
+/**
+ * The mode a spell authored before this field existed must have meant.
+ *
+ * ⚠ READ FROM STATED FIELDS, NEVER FROM THE NAME OR THE TEXT. A spell with a to-hit is an
+ * attack; one with a DC is a save; one with neither but with dice resolves on its own. Guessing
+ * "Cure" means healing from the title is the kind of inference that mis-tagged armour slots.
+ * A healing spell with no damage type reads as damageOnly here, which asks for exactly the same
+ * two fields — dice and range — so the author sees no difference until they say otherwise.
+ */
+/** Does this spell's chosen mode ask for that field? One table, shared with the action editor. */
+function spellAllows(row: { outcomeMode: PcRollMode }, capability: ActionCapability): boolean {
+  return actionModeAllows(row.outcomeMode, capability);
+}
+
+function deriveSpellMode(r: { attack?: string; saveDc?: string; damage?: string }): PcRollMode {
+  if (r.attack?.trim()) return "attack";
+  if (r.saveDc?.trim()) return "save";
+  if (r.damage?.trim()) return "damageOnly";
+  return "utility";
+}
 import { FormulaInput } from "./FormulaInput";
 import { SaveDcComposer } from "./SaveDcComposer";
 import type { ActorAction } from "../types/tabs";
@@ -35,6 +58,19 @@ type SpellRow = {
   attackRollsPerLevel: string;
   slotCost: string;                     // display label: "Cantrip", "Pact Slot", "L1–L5", etc.
   consumesSlot: boolean;
+  /**
+   * WHAT THIS SPELL DOES — the same question the action editor asks, and the one the spell
+   * editor never did.
+   *
+   * ⚠ EVERY SPELL IN THE GAME IS AUTHORED ON THIS SCREEN, and it showed an attack formula, a
+   * save DC, crit dice, exploding dice and a damage type to all of them at once. Someone
+   * writing Cure Wounds met the entire combat vocabulary before reaching a healing die.
+   *
+   * Derived for rows authored before it existed (see `deriveSpellMode`), so nothing has to be
+   * re-authored and no existing spell changes behaviour: the mode decides what is ASKED, and
+   * the fields it hides keep their values.
+   */
+  outcomeMode: PcRollMode;
   attack: string;
   saveDc: string;
   damage: string;
@@ -234,6 +270,9 @@ function actionToRow(action: ActorAction): SpellRow {
     upcastNote: recoveredUpcast,
     slotCost: action.metadata?.slotCost ?? (baseLevel === 0 ? "Cantrip" : `L${baseLevel}`),
     consumesSlot: baseLevel > 0,
+    outcomeMode: deriveSpellMode({
+      attack: action.metadata?.attack, saveDc: action.metadata?.saveDc, damage: action.metadata?.damage,
+    }),
     attack: action.metadata?.attack ?? "",
     saveDc: action.metadata?.saveDc ?? "",
     damage: action.metadata?.damage ?? "",
@@ -273,6 +312,8 @@ function makeBlankRow(): SpellRow {
     attackRollsPerLevel: "",
     slotCost: "",
     consumesSlot: true,
+    // A new spell starts by being ASKED what it does, rather than shown everything at once.
+    outcomeMode: "damageOnly",
     attack: "",
     saveDc: "",
     damage: "",
@@ -583,8 +624,25 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                 )}
               </label>
 
+              {/* ⚠ WHAT IT DOES, ASKED FIRST. Everything below is gated on this answer — the
+                  same `ACTION_CAPABILITIES` table the action editor reads, so a spell and an
+                  action asking the same question cannot drift apart. */}
+              <label style={{ fontSize: 11, gridColumn: "span 2" }}>
+                What this spell does
+                <select value={row.outcomeMode}
+                  onChange={e => setRow(idx, { outcomeMode: e.target.value as PcRollMode })}
+                  style={{ ...inputStyle, marginTop: 2 }}>
+                  <option value="attack">Attack Roll — roll to hit, damage on a hit</option>
+                  <option value="save">Saving Throw — the target rolls against your DC</option>
+                  <option value="healing">Healing — restores hit points</option>
+                  <option value="damageOnly">Damage, no roll — it just lands</option>
+                  <option value="utility">Utility — resolves on use, rolls nothing</option>
+                </select>
+              </label>
+
               {/* Roll fields */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, gridColumn: "span 2" }}>
+                {spellAllows(row, "attackFormula") && (
                 <FormulaInput
                   label="Attack Formula"
                   value={row.attack}
@@ -592,6 +650,7 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                   placeholder="1d20+@SPELL"
                   showVars={["@STR","@DEX","@SPELL","@WIS","@CHA","@PROF"]}
                 />
+                )}
                 {/* WHICH CLASS CASTS THIS SPELL. Only asked when the character has more than one
                     class. @SPELL resolves through that class's ability, so a Wizard/Cleric gets
                     INT on one spell and WIS on the next instead of one stat for every spell. */}
@@ -615,35 +674,42 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                 {/* TOGGLES, NOT A TYPED BOX — the same composer the action editor uses. The 8
                     is constant in every save DC, so authoring it is ceremony, and a typed
                     number freezes at the level it was written with nothing to flag it stale. */}
-                <SaveDcComposer
-                  saveDc={row.saveDc}
-                  onSaveDc={v => setRow(idx, { saveDc: v })}
-                  saveAbility={row.saveAbility}
-                  onSaveAbility={v => setRow(idx, { saveAbility: v })}
-                />
+                {spellAllows(row, "saveDc") && (
+                  <SaveDcComposer
+                    saveDc={row.saveDc}
+                    onSaveDc={v => setRow(idx, { saveDc: v })}
+                    saveAbility={row.saveAbility}
+                    onSaveAbility={v => setRow(idx, { saveAbility: v })}
+                  />
+                )}
                 {/* Sorcerous Burst is the shape this exists for, and it is a SPELL — so the
                     control has to be here, not only on the action editor. Same detector as the
                     crit rider that grants GWM its extra attack; the difference is which die is
                     watched. */}
-                <label style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6, gridColumn: "span 2" }}>
-                  <input type="checkbox" checked={row.explodingDamage}
-                    onChange={e => setRow(idx, { explodingDamage: e.target.checked })} />
-                  Exploding damage dice <span style={{ color: "#667" }}>— on a max damage die, roll another and add it</span>
-                </label>
+                {spellAllows(row, "explodingDamage") && (
+                  <label style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 6, gridColumn: "span 2" }}>
+                    <input type="checkbox" checked={row.explodingDamage}
+                      onChange={e => setRow(idx, { explodingDamage: e.target.checked })} />
+                    Exploding damage dice <span style={{ color: "#667" }}>— on a max damage die, roll another and add it</span>
+                  </label>
+                )}
+                {/* Healing and damage share this box; only the question changes. */}
                 <FormulaInput
-                  label="Damage"
+                  label={capabilityLabel(row.outcomeMode === "healing" ? "healingFormula" : "damageFormula")}
                   value={row.damage}
                   onChange={v => setRow(idx, { damage: v })}
-                  placeholder="8d6 fire"
+                  placeholder={row.outcomeMode === "healing" ? "2d8+@CASTMOD" : "8d6 fire"}
                   showVars={["@STR","@DEX","@WIS","@CHA","@CASTMOD","@PROF","@MAIN"]}
                 />
-                <FormulaInput
-                  label="Crit / Upcast Damage"
-                  value={row.crit}
-                  onChange={v => setRow(idx, { crit: v })}
-                  placeholder="16d6 fire"
-                  showVars={["@STR","@WIS","@CHA"]}
-                />
+                {spellAllows(row, "critDamage") && (
+                  <FormulaInput
+                    label="Crit / Upcast Damage"
+                    value={row.crit}
+                    onChange={v => setRow(idx, { crit: v })}
+                    placeholder="16d6 fire"
+                    showVars={["@STR","@WIS","@CHA"]}
+                  />
+                )}
                 {/* ⚠ THE FIELD THAT WAS NOT HERE. Every spell in the game is authored on this
                     screen, and it offered no way to say what the spell DEALS — so the encounter
                     checker, weighting a creature's fire resistance by how much fire the party
@@ -651,13 +717,15 @@ export function SpellTableEditor({ actions, onChange, classRows = [] }: SpellTab
                     Christopher: *"i still cant just pick a damage tpye like for spells like i can
                     from actions."* Same control the action editor uses, literally — see
                     `DamageTypePicker`, which both now share so they cannot drift apart again. */}
-                <DamageTypePicker
-                  value={row.damageType || undefined}
-                  onChange={v => setRow(idx, { damageType: v ?? "" })}
-                  text={row.details}
-                  options={row.damageTypeOptions}
-                  onOptions={v => setRow(idx, { damageTypeOptions: v })}
-                />
+                {spellAllows(row, "damageType") && (
+                  <DamageTypePicker
+                    value={row.damageType || undefined}
+                    onChange={v => setRow(idx, { damageType: v ?? "" })}
+                    text={row.details}
+                    options={row.damageTypeOptions}
+                    onOptions={v => setRow(idx, { damageTypeOptions: v })}
+                  />
+                )}
                 <label style={{ fontSize: 11 }}>
                   Range
                   <input type="text" value={row.range} onChange={e => setRow(idx, { range: e.target.value })}
