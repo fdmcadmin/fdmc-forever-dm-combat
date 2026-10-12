@@ -203,11 +203,6 @@ export function ChassisFields({ draft, set, libraryItems = [] }: Props) {
           </label>
 
           <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
-            <input type="checkbox" checked={Boolean(draft.grantsProficiency)}
-              onChange={e => set("grantsProficiency", e.target.checked || undefined)} />
-            Grants proficiency <span style={{ color: "#666", fontSize: 10 }}>— @PROF applies even untrained</span>
-          </label>
-          <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
             <input type="checkbox" checked={Boolean(draft.pbToDamage)}
               onChange={e => set("pbToDamage", e.target.checked || undefined)} />
             Adds Proficiency Bonus to damage
@@ -264,6 +259,25 @@ export function ChassisFields({ draft, set, libraryItems = [] }: Props) {
             )}
           </div>
         )}
+
+        {/**
+          * ⚠ GRANTS PROFICIENCY IS NOT A CHASSIS FIELD, AND LIVING INSIDE THE CHASSIS BOX MADE IT
+          * UNREACHABLE FOR HALF THE ITEMS THAT NEED IT.
+          *
+          * Every v14 Gift prints *"While attuned to the weapon, you are proficient with it"* — and
+          * not every Gift is a chassis. Gift of Duskthorn is a weapon CHARM, so the adaptive box
+          * never opens for it and the tick simply did not exist on the form. Christopher,
+          * 2026-10-12: *"all of the gifts should be set to have the proficiency box checked"* — on
+          * Duskthorn there was nothing to check.
+          *
+          * It is a property of the ITEM (does holding this make you proficient with it), exactly
+          * like attunement, so it belongs out here with the fields every type can carry.
+        */}
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <input type="checkbox" checked={Boolean(draft.grantsProficiency)}
+            onChange={e => set("grantsProficiency", e.target.checked || undefined)} />
+          Grants proficiency <span style={{ color: "#666", fontSize: 10 }}>— @PROF applies even untrained</span>
+        </label>
 
         {/**
           * RIDERS — the conditional extras, deliberately player-toggled.

@@ -47,3 +47,4 @@ npm-debug.log*
 # built. They live one level up in candidates/0.6.0-clean-rebuild/_specs/ and must stay
 # out of the repository: shipping the method alongside the product gives it away.
 _specs/
+public/__probe/

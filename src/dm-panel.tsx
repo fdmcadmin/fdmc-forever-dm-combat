@@ -84,7 +84,7 @@ import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
 import { BROKEN_CHAIN_MONSTER_LIBRARY } from "./data/broken-chain/monsterLibrary";
 import type { Actor } from "./core/types/actor";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
-import { loadEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, itemToAction, itemToAttackAction, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, seedCampaignEquipmentLibrary, seedBaseWeapons, repairEquipmentLibraries, itemToAction, itemToAttackAction, itemYieldsAttackRow, type EquipmentItem } from "./core/ui/EquipmentBagEditor";
 import { BROKEN_CHAIN_EQUIPMENT_LIBRARY, RETIRED_EQUIPMENT_IDS } from "./data/broken-chain/equipmentLibrary";
 import { EquipmentLibraryStandalone, ConvergenceApprovalPanel, isConvergenceRequest, type ConvergenceRequest } from "./core/ui/EquipmentLibraryStandalone";
 import { loadConvergenceInbox, removeFromConvergenceInbox } from "./core/state/convergenceInbox";
@@ -451,7 +451,7 @@ function DmPanelApp() {
       const newEquipment = [...(actor.tabs.equipment ?? []), equipEntry];
       // Weapons also get a rollable attack action in the main (Actions) tab
       const newMain = [...(actor.tabs.main ?? [])];
-      if (item.attack || item.damage) {
+      if (itemYieldsAttackRow(item)) {
         const atkEntry = itemToAttackAction(item);
         if (!newMain.some(a => a.id === atkEntry.id)) {
           newMain.push(atkEntry);
@@ -491,7 +491,7 @@ function DmPanelApp() {
       const newMain = [...(actor.tabs.main ?? [])];
       for (const item of items) {
         newEquipment.push(itemToAction(item, false));
-        if (item.attack || item.damage) {
+        if (itemYieldsAttackRow(item)) {
           const atkEntry = itemToAttackAction(item);
           if (!newMain.some(a => a.id === atkEntry.id)) newMain.push(atkEntry);
         }

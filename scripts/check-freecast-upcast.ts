@@ -79,6 +79,30 @@ console.log("\n2. and the picker offers those levels");
     /mode === "pact"/.test(code));
   ok("...and the base level reports the FREE pool rather than a slot count",
     /mode === "freeCast" && level === base/.test(code));
+
+  /**
+   * ⛔ BUT A SPENT FREE USE MUST NOT MAKE THE BASE LEVEL UNCASTABLE.
+   *
+   * The spend path was always right: `consumeActionResources` takes the free use and, when the
+   * pool is empty, FALLS THROUGH to the ordinary slot. The picker disagreed — it reported the base
+   * level from the free pool ALONE, and `SpellLevelPicker` disables any level whose remaining is
+   * 0. So the one cast the engine would have happily paid for from a slot was the one the UI
+   * refused.
+   *
+   * Christopher, 2026-10-12: *"lightstone has cure wounds at lvl 1 free cast but cant use other
+   * lvl 1 slots after the free cast"* — four L1 slots in hand and a dead L1 chip, while upcasting
+   * worked because L2+ read the real pools all along.
+   *
+   * ⚠ A PICKER THAT OFFERS LESS THAN THE ENGINE WILL SPEND IS THE WORSE WAY TO BE WRONG: it
+   * refuses a cast that would have succeeded, and nothing on screen says why.
+   *
+   * Verified in the DOM with the real sheet: Cure Wounds free use at 0 → L1 reads 4/4, enabled.
+   */
+  ok("...and falls back to the SLOT once the free uses are gone",
+    card.includes("if (freeLeft > 0) return { level, remaining: freeLeft, max: poolMax };")
+    && card.includes("Free uses gone"));
+  ok("...so the base level is dead only when BOTH sources are empty",
+    !code.includes("return { level, remaining: resourceCounters?.[pool.id] ?? poolMax, max: poolMax };"));
 }
 
 console.log("\n3. and the cost column belongs to the author");

@@ -12,7 +12,7 @@
  * places did it, and a fourth did it to the character's whole row on a timer.
  */
 import type { OpenLootOffer } from "../src/core/ui/openLootOffer";
-import { itemToAction, itemToAttackAction, resolveChassisItem, type EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
+import { itemToAction, itemToAttackAction, itemYieldsAttackRow, resolveChassisItem, type EquipmentItem } from "../src/core/ui/EquipmentBagEditor";
 import { readFileSync } from "node:fs";
 
 /**
@@ -66,6 +66,38 @@ console.log("1. the offered copy outranks the library");
   ok("an offer with no stored copies falls back to the catalogue",
     offeredItem({ offeredItems: undefined }, "gift-oakheart", catalogue)?.id === "gift-oakheart");
   ok("an unknown id resolves to nothing", offeredItem(offer, "nope", catalogue) === undefined);
+}
+
+console.log("\n1b. a shaped Gift YIELDS AN ATTACK ROW");
+{
+  /**
+   * ⛔ THE GUARD READ THE UNRESOLVED ITEM, SO NO GIFT EVER GOT A SWING.
+   *
+   * Seven call sites wrote `if (item.attack || item.damage)` before building the `atk-` row.
+   * True for an ordinary weapon; FALSE BY CONSTRUCTION for a chassis, which carries no dice
+   * until `resolveChassisItem` composes them from the chosen form. `itemToAction` resolves
+   * internally, so the EQUIPMENT row came out perfect — and the guard beside it said "not a
+   * weapon" and skipped the attack row entirely.
+   *
+   * Measured on Iskarn's live sheet, 2026-10-12: Gift of Oakheart formed as a battleaxe, dice
+   * `1d20+@PROF+@STR+2` baked onto its equipment entry, Mastery Topple — and no `atk-` row in
+   * either the base or the override, while every other weapon he carries has one.
+   */
+  ok("the RAW chassis item looks dice-less — which is what the old guard asked",
+    !template.attack && !template.damage);
+  ok("...but the shaped one yields an attack row", itemYieldsAttackRow(shaped));
+  ok("...and an unformed template still does not", !itemYieldsAttackRow(template));
+  ok("a plain weapon is unaffected",
+    itemYieldsAttackRow({ id: "w", name: "Flail", type: "weapon", description: "", isUsable: true,
+      attack: "1d20+@PROF+@STR", damage: "1d8+@STR" } as unknown as EquipmentItem));
+  ok("non-weapons still yield nothing",
+    !itemYieldsAttackRow({ id: "g", name: "Rope", type: "gear", description: "", isUsable: false } as unknown as EquipmentItem));
+
+  /** ⚠ EVERY call site must ask the helper — one left raw is one path that still drops the row. */
+  for (const [file, src] of [["App.tsx", app], ["dm-panel.tsx", panel], ["EquipmentBagEditor.tsx", bag]] as const) {
+    ok(`${file} has no raw attack-row guard left`,
+      !/\b(item|edited|own)\.attack \|\| \1\.damage/.test(src.replace(/^\s*\*.*$/gm, "")));
+  }
 }
 
 console.log("\n2. a shaped Gift is a real weapon");

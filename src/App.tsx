@@ -88,7 +88,7 @@ import { MonsterActorCard, MONSTER_ECONOMY_CHANNEL, type MonsterEconomyBroadcast
 import { readTokenBinding } from "./core/tokens/tokenBinding";
 // Token context menu is registered by the background page (src/background.ts), not here.
 import { obrSend } from "./core/utils/obrReady";
-import { loadEquipmentLibrary, itemToAction, itemToAttackAction, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
+import { loadEquipmentLibrary, itemToAction, itemToAttackAction, itemYieldsAttackRow, SLOT_CAPACITY, type EquipmentSlot } from "./core/ui/EquipmentBagEditor";
 import { claimFromOpenOffer, broadcastOfferState, LOOT_PASS_ID, offeredItem, loadOpenLootOffer } from "./core/ui/openLootOffer";
 import { FDMC_ACCENTS } from "./core/constants/theme";
 import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout";
@@ -1309,7 +1309,7 @@ export default function App() {
        * legitimately hides its attack, which made the absence look like the stow rule working.
        */
       const newMain = [...(actor.tabs.main ?? [])];
-      if (item.attack || item.damage) {
+      if (itemYieldsAttackRow(item)) {
         const atkEntry = itemToAttackAction(item);
         if (!newMain.some(a => a.id === atkEntry.id)) newMain.push(atkEntry);
       }

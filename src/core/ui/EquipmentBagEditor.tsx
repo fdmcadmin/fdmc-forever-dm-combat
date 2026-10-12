@@ -893,6 +893,30 @@ export function resolveChassisItem(item: EquipmentItem): EquipmentItem {
 }
 
 /**
+ * DOES THIS ITEM PRODUCE A ROLLABLE ATTACK ROW?
+ *
+ * ⚠ ASK THE RESOLVED ITEM, NEVER THE RAW ONE — AND THAT IS WHY GIFTS ARRIVED UNSWINGABLE.
+ *
+ * Every site that attaches an item wrote `if (item.attack || item.damage)` before building the
+ * `atk-` row. For an ordinary weapon that is true. For a CHASSIS it is false by construction: a
+ * template carries no dice at all, and the dice only exist once `resolveChassisItem` composes
+ * them from the chosen form. `itemToAction` resolves internally, so the EQUIPMENT row came out
+ * right — and the guard beside it, reading the unresolved item, said "not a weapon" and skipped
+ * the attack row entirely.
+ *
+ * The result is an item that is visibly a weapon, correctly formed, with real dice on its
+ * equipment entry, and nothing on the main tab to swing. Christopher, 2026-10-12: Iskarn's Gift
+ * of Oakheart is a `base-battleaxe` with `1d20+@PROF+@STR+2` baked in and no `atk-` row anywhere
+ * in either layer — *"the weapon action refuses to"* work, because it was never written.
+ *
+ * ⚠ SEVEN CALL SITES HAD THE SAME LINE. One helper, so the next one cannot get it wrong.
+ */
+export function itemYieldsAttackRow(item: EquipmentItem): boolean {
+  const resolved = resolveChassisItem(item);
+  return Boolean(resolved.attack || resolved.damage);
+}
+
+/**
  * ⚠ `equipped` IS REQUIRED, AND THAT IS THE POINT.
  *
  * It defaulted to TRUE, so `attachItem` — the DM putting a library item on a character — omitted
@@ -1820,7 +1844,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
        * one that knows which weapon this became.
        */
       const own = actionToItem(a, itemId);
-      if (own.attack || own.damage) {
+      if (itemYieldsAttackRow(own)) {
         const atkId = `atk-${itemId}`;
         if (!newMain.some(m => m.id === atkId)) {
           newMain.push(itemToAttackAction(own));
@@ -1862,7 +1886,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
     const newEquipment = [...equippedActions, itemToAction(item, false)];
     const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
     // Weapons also get a rollable attack action in the main (Actions) tab
-    if (item.attack || item.damage) {
+    if (itemYieldsAttackRow(item)) {
       const atkEntry = itemToAttackAction(item);
       if (!mainActions.some(a => a.id === atkEntry.id)) {
         updates.main = [...mainActions, atkEntry];
@@ -2108,7 +2132,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
     const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
     const atkId = `atk-${itemId}`;
     const hadAttack = mainActions.some(a => a.id === atkId);
-    if (edited.attack || edited.damage) {
+    if (itemYieldsAttackRow(edited)) {
       updates.main = hadAttack
         ? mainActions.map(a => a.id === atkId ? itemToAttackAction(edited) : a)
         : [...mainActions, itemToAttackAction(edited)];
@@ -2140,7 +2164,7 @@ export function EquipmentBagEditor({ equippedActions, mainActions, onChange, pla
         ? itemToAction(item, a.metadata?.equipped !== false)
         : a);
       const updates: { equipment: ActorAction[]; main?: ActorAction[] } = { equipment: newEquipment };
-      if (item.attack || item.damage) {
+      if (itemYieldsAttackRow(item)) {
         updates.main = mainActions.map(a => a.id === `atk-${item.id}` ? itemToAttackAction(item) : a);
       }
       onChange(updates);

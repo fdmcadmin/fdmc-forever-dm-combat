@@ -4130,17 +4130,39 @@ export function ActorCard({
 
     return levels.map(level => {
       /**
-       * ⚠ THE BASE LEVEL OF A FREE CAST IS NOT A SLOT, so it must not report one. The spend path
-       * takes it from the action's own named pool (`consumeNamedResource(actorId, action.label)`)
-       * and only falls through to a slot ABOVE that level. Showing the L1 slot count against the
-       * free cast would tell a player they have four when they have one.
+       * ⚠ THE BASE LEVEL OF A FREE CAST REPORTS WHATEVER THE NEXT CAST WILL ACTUALLY SPEND.
+       *
+       * The free use is not a slot, so while uses remain this shows the pool — showing the L1
+       * slot count there would tell a player they have four when they have one.
+       *
+       * ⚠ BUT WHEN THE POOL IS EMPTY IT MUST FALL TO THE SLOT, AND IT DID NOT. The picker
+       * disables a level whose `remaining` is 0, so a spent free use made the base level
+       * UNCASTABLE — Christopher, 2026-10-12: *"if a character has a free usage of a spell they
+       * cant use other spell slots at that lvl after the free usage is used but can upcast it
+       * (lightstone has cure wounds at lvl 1 free cast but cant use other lvl 1 slots after the
+       * free cast)."* Lights Stone had four L1 slots and a dead L1 chip.
+       *
+       * The spend path has always been right about this — `consumeActionResources` spends the
+       * free use, and on `outcome !== "spent"` falls through to the slot branch. The picker was
+       * the half that disagreed, and a picker that offers less than the engine will spend is
+       * the worse of the two to be wrong: it refuses a cast that would have worked.
+       *
+       * So the rule here is the spend path's rule, read back: free use while it lasts, then the
+       * slot for that level. Disabled only when BOTH are gone, which is the one genuinely
+       * uncastable case.
        */
       if (mode === "freeCast" && level === base) {
         const pool = (actor.tabs.resources ?? []).find(r => r.label.trim().toLowerCase() === action.label.trim().toLowerCase());
-        if (!pool) return { level, remaining: null, max: null };
-        const parsed = Number.parseInt(pool.metadata?.additive ?? "", 10);
+        const parsed = Number.parseInt(pool?.metadata?.additive ?? "", 10);
         const poolMax = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-        return { level, remaining: resourceCounters?.[pool.id] ?? poolMax, max: poolMax };
+        const freeLeft = pool ? (resourceCounters?.[pool.id] ?? poolMax) : 0;
+        if (freeLeft > 0) return { level, remaining: freeLeft, max: poolMax };
+        // Free uses gone — this cast comes out of the ordinary slot, so report that instead.
+        const res = slotResourceForLevel(level);
+        if (!res) return pool ? { level, remaining: 0, max: poolMax } : { level, remaining: null, max: null };
+        const slotParsed = Number.parseInt(res.metadata?.additive ?? "", 10);
+        const slotMax = Number.isFinite(slotParsed) && slotParsed > 0 ? slotParsed : 0;
+        return { level, remaining: resourceCounters?.[res.id] ?? slotMax, max: slotMax };
       }
 
       const res = slotResourceForLevel(level);
