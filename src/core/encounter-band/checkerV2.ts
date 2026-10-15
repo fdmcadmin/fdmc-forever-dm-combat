@@ -44,6 +44,8 @@ import { hostileFractionActingFirst } from "./initiativeOrder";
 import { concentrationHold, cycleActiveShare } from "./durationPricing";
 // Christopher's own round engine's decision policy — see `tacticalAi` for the weights and their source.
 import { TACTICAL_AI, bodyThreat, targetScores } from "./tacticalAi";
+import { simulateTacticalEncounter, type TacticalMember } from "./tacticalSimulation";
+import type { BodyDiagnostic } from "./encounterDiagnostics";
 import { depleteRoundValue } from "./partyResourceCurve";
 
 export { partySizeHpMultiplier };
@@ -376,6 +378,8 @@ export function resolveStateTrigger(
 // ─── Effective HP ─────────────────────────────────────────────────────────────
 
 export type RosterGroup = {
+  /** Derived automatic targeting inputs, not DM-authored targeting instructions. */
+  tactical?: { meleeOnly: boolean; areaShare: Partial<RoundProfile>; vsPcDpr?: Partial<RoundProfile>[]; prevention?: Partial<RoundProfile> };
   id?: string;
   name?: string;
   quantity: number;
@@ -944,6 +948,7 @@ export function partyRoundEquivalent(
 export type DamageAllocation = "focus_fire" | "spread_evenly";
 
 export type SimulationRound = {
+  tactical?: { healed: number; sustainAtStart: number; party: { id: string; name: string; hp: number; tempHp: number; healingLeft: number; damageReceived: number }[]; bodies: BodyDiagnostic[] };
   round: number;
   partyPotential: number;
   pcsStart: number;
@@ -1066,6 +1071,7 @@ export function bondArrangement(
 export function simulateEncounter(opts: {
   party: {
     size: number; sustain: number; dpr: Partial<RoundProfile>;
+    members?: TacticalMember[];
     /**
      * The party's initiative modifier — the DEX line. Read from the chosen characters when there
      * are any (`partyDefenceFromActors`), otherwise the defence curve's DEX average.
@@ -1095,9 +1101,12 @@ export function simulateEncounter(opts: {
      * merely asserted. See `tacticalAi`.
      */
     tacticalTargetWeight?: number;
+    /** Explicit legacy mode exists for arithmetic regression checks only. */
+    tactical?: boolean;
   };
 }): EncounterResult {
   const { party, roster, settings = {} } = opts;
+  if (settings.tactical === true) return simulateTacticalEncounter(opts);
   const partySize = Number(party.size);
   const partySustain = Number(party.sustain);
   if (!Number.isInteger(partySize) || partySize < 1 || partySustain <= 0) {

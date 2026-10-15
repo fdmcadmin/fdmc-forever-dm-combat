@@ -156,7 +156,6 @@ const KNOWN_ORPHANS: readonly string[] = [
 
 const KNOWN_SCRIPT_ONLY: readonly string[] = [
   // ⚠ EACH OF THESE IS PROVEN BY A GATE AND CALLED BY NOTHING THE DM CAN REACH.
-  "core/encounter-band/encounterDiagnostics.ts",       // validate:invariants only
   "core/ui/reactionEconomyAudit.ts",                   // check:reactions only
   "modules/the-broken-chain/actors/actorHelpers.ts",   // check:partyfit / check:healing only
   // The SRD modules used to sit here — 335 creatures proven by a gate and reachable by nothing.
@@ -314,6 +313,12 @@ orphanExports.sort(); scriptOnlyExports.sort();
  * nothing a DM touches can reach. Removing one is progress; adding one is a deliberate edit.
  */
 const KNOWN_SCRIPT_ONLY_EXPORTS: readonly string[] = [
+  /**
+   * The checker AI pass wired the TYPE (checkerV2 imports BodyDiagnostic), which took the module
+   * off the script-only list — but the FUNCTION is still reached only by validate:invariants and
+   * check:checker-planning. Listed by name rather than left hiding behind a module-level entry.
+   */
+  "core/encounter-band/encounterDiagnostics.ts → diagnoseEncounter",
   // Reached by probe-storage-fallback through import(); counted since 0.8.63.0 taught this gate to read dynamic imports.
   "core/utils/safeStorage.ts → storageGet",
   "core/utils/safeStorage.ts → storageMode",
@@ -355,6 +360,12 @@ const KNOWN_SCRIPT_ONLY_EXPORTS: readonly string[] = [
  * a stale entry FAILS this gate, so the ledger cannot drift out of date either.
  */
 const KNOWN_ORPHAN_EXPORTS: readonly string[] = [
+  /**
+   * ⚠ NOT NEWLY DEAD — NEWLY VISIBLE. While the whole module was script-only its exports were
+   * never scrutinised individually; wiring the type exposed that nothing calls this. The
+   * diagnostic text it renders has no surface, so either a panel should print it or it should go.
+   */
+  "core/encounter-band/encounterDiagnostics.ts → formatDiagnostic",
   "core/campaign/actTags.ts → byCampaignOrder",
   "core/campaign/authorExport.ts → verifyCampaignProvenance",
   "core/campaign/authorMode.ts → verifyAuthorKey",

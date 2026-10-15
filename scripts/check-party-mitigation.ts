@@ -254,8 +254,27 @@ console.log("\nOne Reaction per character (Action Timing rows 13 and 22)");
     !("displacedByBond" in (full as unknown as Record<string, unknown>)));
 
   const panelSrc = readFileSync(resolve(ROOT, "src/core/encounter-band/EncounterDifficultyPanel.tsx"), "utf8");
-  ok("the panel adds bond mitigation AND the class reaction together",
-    /mitigationPerRound:\s*bondArrange\.mitigation\s*\+\s*\(classMitigation\?\.reactionPerRound/.test(panelSrc));
+  /**
+   * ⚠ BOTH ARE STILL ADDED — the SUM MOVED, THE RULE DID NOT.
+   *
+   * This asserted one expression in the panel (`bondArrange.mitigation + classMitigation?.…`).
+   * The tactical pass moved the arithmetic into the round loop, where the bond and the class
+   * reaction are added to the SAME `defense` total, per living body:
+   *
+   *     for (const p of pcs) if (p.hp > 0) defense += p.reactionReduction      // the class one
+   *     if (p.bond.kind === "reduction") defense += amount                     // the bond
+   *
+   * ⚠ AND THAT IS STRICTLY BETTER THAN THE LINE IT REPLACES. Per-body means a DOWNED PC stops
+   * contributing their reaction, which a single party-wide sum could never express. The thing
+   * this gate has always been here to stop — a bond displacing a class reaction, or either being
+   * silently dropped — is still stopped, and is still proven by the behavioural assertions above.
+   */
+  const sim = readFileSync(resolve(ROOT, "src/core/encounter-band/tacticalSimulation.ts"), "utf8");
+  ok("the class reaction and the bond are added to the same defence total",
+    sim.includes("defense += Math.max(0, p.reactionReduction ?? 0)")
+    && sim.includes('if (p.bond.kind === "reduction") defense += amount'));
+  ok("...per LIVING body, so a downed PC stops contributing their reaction",
+    sim.includes("for (const p of pcs) if (p.hp > 0) defense +="));
   ok("...and passes no bond figure into the class pricer",
     !/bondPerActor/.test(panelSrc));
 

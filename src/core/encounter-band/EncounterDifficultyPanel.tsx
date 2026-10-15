@@ -1,3 +1,4 @@
+import { checkPlannedEncounter } from "./checkerPlanning";
 /**
  * EncounterDifficultyPanel — the encounter checker, running the WORKBOOK's model.
  *
@@ -59,10 +60,6 @@ const MODES: { id: PartyEquipmentMode; label: string; blurb: string }[] = [
   { id: "wotcStandard", label: "Standard", blurb: "Generic 4-player progression. No assumed magic items; Convergence ignored. Use this when the table is not running The Broken Chain." },
   { id: "brokenChain", label: "Broken Chain", blurb: "Campaign gear overlay included — the projected campaign loot distribution is part of this curve." },
 ];
-const ALLOCATIONS: { id: DamageAllocation; label: string; blurb: string }[] = [
-  { id: "focus_fire", label: "Focus fire", blurb: "Sequential damage packing against equal per-PC pools. Projects the MOST individual downs for a given damage total." },
-  { id: "spread_evenly", label: "Spread evenly", blurb: "Even allocation across equal per-PC pools. Every standing PC is damaged before anyone falls." },
-];
 
 const box: React.CSSProperties = {
   background: "#0d0d14", border: "1px solid #2a2a3e", borderRadius: 6, padding: "8px 10px",
@@ -92,7 +89,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
   const [partySize, setPartySize] = useState<number>(4);
   const [partyLevel, setPartyLevel] = useState<number>(GENERIC_CHECKER_LEVELS.minimum);
   const [equipmentMode, setEquipmentMode] = useState<PartyEquipmentMode>("wotcStandard");
-  const [allocation, setAllocation] = useState<DamageAllocation>("focus_fire");
   const [targetSafetyMargin, setTargetSafetyMargin] = useState<number>(1);
   /**
    * ⚠ AC AND SAVES ARE NOW READ, NOT ASKED FOR. v7 ships `party_defense_curve` — an average AC and
@@ -143,6 +139,20 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     [players, partySize, chosenActorIds],
   );
   const resolved = chosen.length === partySize;
+  const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
+  const planning = useMemo(() => {
+    try {
+    const entries = (encounter?.entries ?? []).map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count), bodies: e.bodies }))
+      .filter(e => Boolean(e.template)) as Parameters<typeof checkPlannedEncounter>[0]["entries"];
+    if (!entries.length || (players.length > 0 && !resolved)) return { value: null, error: "" };
+    if (entries.length !== encounter?.entries.length) throw new Error("An encounter creature is missing from the library.");
+    return { value: checkPlannedEncounter({ entries, library: monsterLibrary, actors: resolved ? chosen as never[] : [],
+      level: partyLevel, size: partySize, mode: equipmentMode, arrivingResources: arrivingSpent,
+      arrivingSustain: arrivingSpent, acOverride, saveOverride, targetSafetyMargin }), error: "" };
+    } catch (error) { return { value: null, error: error instanceof Error ? error.message : "Unable to price this encounter" }; }
+  }, [encounter, monsterLibrary, chosen, resolved, players.length, partyLevel, partySize, equipmentMode, arrivingSpent, acOverride, saveOverride, targetSafetyMargin]);
+  const planned = planning.value;
+
 
   /**
    * ⚠ THE CURVE IS THE FALLBACK NOW, NOT THE ANSWER.
@@ -157,8 +167,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * actual characters with actual armour are sitting in the roster.
    */
   const actorDefence = useMemo(
-    () => (resolved ? partyDefenceFromActors(chosen as never[]) : null),
-    [chosen, resolved],
+    () => planned?.plan?.defence ?? (resolved ? partyDefenceFromActors(chosen as never[]) : null),
+    [chosen, resolved, planned],
   );
   /**
    * ⚠ WHAT THE PARTY'S BONDS STOP. Christopher: *"almost every bond has some version of damage
@@ -230,7 +240,6 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     [chosen, resolved],
   );
 
-  const encounter = encounters.find(e => e.id === encounterId) ?? encounters[0];
   const fightInputs = useMemo(() => {
     const entries = (encounter?.entries ?? [])
       .map(e => ({ template: monsterLibrary.find(m => m.templateId === e.templateId), quantity: Math.max(1, e.count) }))
@@ -300,18 +309,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * actor can do."* This is that. Until it existed the offence side of the comparison was the
    * certified line for this party's SIZE, which made the delta a row compared with itself.
    */
-  const currentParty = useMemo(() => {
-    if (!resolved || !partyTarget) return null;
-    try {
-      return currentPartyMetrics(chosen as never[], partyTarget, {
-        /* The party does not arrive fresh, and the read side has to know that too. */
-        arrivingSpent,
-        // The same role resolution the ledger uses — bond first, then the class's own lean.
-        leanFor: (a: unknown) => bondTemplateForActor(a as never, BROKEN_CHAIN_BOND_TEMPLATES)?.resourceLean
-          ?? classResourceLean(a as never),
-      });
-    } catch { return null; }
-  }, [chosen, resolved, partyTarget, arrivingSpent]);
+  const currentParty = planned?.plan?.metrics ?? null;
 
   // Memoised: it is a dependency of the roster, and a fresh object every render would rebuild the roster every render.
   const readPcTurnValue = useMemo(() => (currentParty && currentParty.round1Dpr > 0
@@ -324,6 +322,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
     : undefined), [currentParty, partySize]);
 
   const roster = useMemo(() => {
+    if (planned) return planned.built;
     if (!encounter) return { roster: [], assumptions: [] };
     const entries = encounter.entries
       .map(entry => ({
@@ -371,7 +370,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         Number(Boolean(b.killOrderFirst)) - Number(Boolean(a.killOrderFirst)) || a.baseHp * a.quantity - b.baseHp * b.quantity),
       assumptions: built.assumptions,
     };
-  }, [encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs, readPcTurnValue, currentParty]);
+  }, [planned, encounter, monsterLibrary, partyLevel, targetAc, targetSave, partySize, equipmentMode, partyDamageMix, fightInputs, readPcTurnValue, currentParty]);
 
   /**
    * WHAT THE HOSTILE SIDE IS DOING, so the accuracy bonds stop reading as unpriceable.
@@ -513,12 +512,13 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * `partyResourceCurve`.
    */
   const profile = useMemo(() => {
+    if (planned) return planned.midpoint;
     try {
       return resolvePartyProfile({
         level: partyLevel, size: partySize, equipmentMode: bondBaselineMode, arrivingSpent,
       });
     } catch { return null; }
-  }, [partyLevel, partySize, bondBaselineMode, arrivingSpent]);
+  }, [planned, partyLevel, partySize, bondBaselineMode, arrivingSpent]);
 
   /**
    * ⚠ FEATS LAND ON THE LINES THAT ALREADY EXIST, not on a panel of their own.
@@ -566,7 +566,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * roster, or a sheet the adapter threw on — and the published curve for this party's SIZE is
    * standing in. The two must never be shown the same way: one is a reading, the other is a line.
    */
-  const offenceSource: "read" | "certified" = currentParty && currentParty.round1Dpr > 0 ? "read" : "certified";
+  const offenceSource: "read" | "certified" = currentParty ? "read" : "certified";
 
   /**
    * WHAT THIS PARTY CAN ABSORB — ONE FIGURE, READ BY BOTH SURFACES.
@@ -587,10 +587,10 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    * instead, where it can be compared.
    */
   const partySustain = useMemo(
-    () => profile
+    () => planned ? planned.sustain : profile
       ? profile.sustain * (classMitigation?.multiplier ?? 1) + partyFeats.partyEhp + partyHealing.total
       : 0,
-    [profile, classMitigation, partyFeats, partyHealing],
+    [planned, profile, classMitigation, partyFeats, partyHealing],
   );
 
   const benchmark = useMemo(() => {
@@ -613,7 +613,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
       midpoint: { round1: profile.dpr.round1, round2: profile.dpr.round2, round3: profile.dpr.round3,
         round4Plus: profile.dpr.round4Plus, sustain: profile.sustain },
       level: partyLevel,
-      mode: bondBaselineMode,
+      mode: equipmentMode,
       // Like for like: the current side is this size's profile, so the line must be too.
       partySize,
       current: {
@@ -622,76 +622,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
         sustain: partySustain,
       },
     });
-  }, [profile, resolved, partyLevel, bondBaselineMode, partySize, partyFeats, currentParty, offenceSource, partySustain]);
+  }, [profile, resolved, partyLevel, equipmentMode, bondBaselineMode, partySize, partyFeats, currentParty, offenceSource, partySustain]);
 
-  const result = useMemo<EncounterResult | null>(() => {
-    if (roster.roster.length === 0 || !profile) return null;
-    try {
-      return simulateEncounter({
-        party: {
-          size: profile.size,
-          /**
-           * ⚠ THE SAME FIGURE THE ROW ABOVE IS RATED FROM — see `partySustain`.
-           *
-           * This read `profile.sustain * classMitigation` alone: the resistance multiplier but
-           * NOT the feat EHP and NOT the healing the panel had already read off the sheets. So
-           * the fight was simulated against a smaller party than the difficulty row described,
-           * and every survivor count and clear round came out of that smaller one.
-           *
-           * A resistance is effective HP and belongs here rather than in the clock — the
-           * certified line is the 4,096-party field, whose parties are abstract and carry no
-           * typed responses, so the multiplier adds something the baseline genuinely lacks, the
-           * same way feat EHP does. It is 1.0 when nothing is stated. All of that is still true;
-           * it is simply true in one place now.
-           */
-          sustain: partySustain,
-          /**
-           * ⚠ THE SIMULATION MUST SWING THE SAME PARTY THE PANEL SAYS IT READ.
-           *
-           * This was `profile.dpr` — the certified curve — while the caption beside it reported
-           * `currentPartyMetrics`. Christopher: *"explain why the R1 shows 138 damage, but the
-           * party shows able to do only 94.3."* Because they were two different parties on one
-           * screen: the round table, the clear round, the survivor counts and the margin were all
-           * computed from the published line while the delta above them compared the read one.
-           *
-           * The read figures win when they exist, because they are this table's characters. When
-           * they cannot be read the certified line stands in, and `offenceSource` says which.
-           */
-          dpr: offenceSource === "read" && currentParty
-            ? { round1: currentParty.round1Dpr, round2: currentParty.round2Dpr,
-              round3: currentParty.round3Dpr, round4Plus: currentParty.round4PlusDpr }
-            : profile.dpr,
-          /**
-           * ⚠ THE DEX LINE, AND IT IS THE SAME LINE TWICE. Initiative is a DEX check, so the
-           * party's place in the body order is the DEX average from whichever source the panel is
-           * already trusting for saves — the chosen characters when there are any, the published
-           * curve otherwise. Deriving a second opinion of the party's DEX here is exactly the
-           * drift this file keeps paying for.
-           */
-          initiative: actorDefence?.initiative ?? saves.dex,
-          /**
-           * Counted once — see `bondArrangement` for the bond half. The class half is already
-           * NET of each character's bond (`partyMitigationFromActors` subtracts it per actor,
-           * because one Reaction cannot be spent twice), so these add without double-counting.
-           */
-          mitigationPerRound: bondArrange.mitigation + (classMitigation?.reactionPerRound ?? 0),
-        },
-        roster: roster.roster,
-        settings: { damageAllocation: allocation, targetSafetyMargin },
-      });
-    } catch {
-      return null;
-    }
-    /**
-     * ⚠ `bondMitigation` AND `actorDefence` BELONG HERE EXPLICITLY. The AC and save values reach
-     * the simulation THROUGH `roster`, so changing the chosen party already re-ran this by way of
-     * that dependency. Mitigation and initiative do not — they are party inputs that touch no
-     * roster figure, so without naming them a party could gain a Guardian and the fight would not
-     * re-price until something unrelated moved.
-     */
-    // ⚠ `classMitigation` REACHES NO ROSTER FIGURE EITHER, so it must be named or a party that
-    // states a resistance would not re-price the fight until something else moved.
-  }, [roster, profile, allocation, targetSafetyMargin, bondMitigation, classMitigation, currentParty, offenceSource, actorDefence, saves.dex, partySustain]);
+  const result = planned?.result ?? null;
 
   /**
    * What the fight costs, as a share of a FULL party's sustain — and where that leaves a party
@@ -700,11 +633,13 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
    */
   const partyClock = useMemo(() => {
     if (!result || !profile) return { thisFight: 0, cumulative: 0 };
-    const fullSustain = profile.sustain / Math.max(0.01, 1 - arrivingSpent);
-    const spent = result.rounds.reduce((s, r) => s + (r.monsterDamage ?? 0), 0);
+    const fullSustain = planned?.fullSustain ?? profile.sustain / Math.max(0.01, 1 - arrivingSpent);
+    const end = result.rounds.at(-1)?.tactical;
+    const remaining = end?.party.reduce((n, p) => n + p.hp + p.healingLeft, 0);
+    const spent = remaining === undefined ? result.rounds.reduce((s, r) => s + r.monsterDamage, 0) : Math.max(0, partySustain - remaining);
     const thisFight = fullSustain > 0 ? spent / fullSustain : 0;
     return { thisFight, cumulative: arrivingSpent + thisFight };
-  }, [result, profile, arrivingSpent]);
+  }, [result, profile, arrivingSpent, planned, partySustain]);
 
   const fatal = result?.fatalRound ?? null;
   /**
@@ -883,18 +818,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                 </div>
               </div>
 
-              <div style={{ marginBottom: 10 }}>
-                <label style={label}>Damage allocation</label>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {ALLOCATIONS.map(a => (
-                    <button key={a.id} type="button" title={a.blurb}
-                      onClick={() => setAllocation(a.id)} style={chip(allocation === a.id)}>
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
+              <p style={{fontSize: 11, color: "#aab"}}>Targeting: automatic Tactical AI</p>
+              {planning.error && <p role="alert" style={{ color: "#ff9999", fontSize: 11 }}>{planning.error}</p>}
+              {planned && <p style={{ color: "#aab", fontSize: 11 }}>{planned.basis}. Automatic targeting; abstract reach and spacing. Future build choices are estimated.</p>}
               {isProjectedLevel(partyLevel) && (
                 <div style={{ ...box, borderColor: "#8a6a2a", marginBottom: 8, fontSize: 10, color: "#c9a227" }}>
                   ⚠ PROJECTED — levels 17–20 carry no field samples and are extrapolated.
@@ -953,8 +879,8 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                             {" +"}{partyFeats.dpr.toFixed(1)}{" from feats"}
                           </span>
                         )}
-                        {" · sustain "}{profile.sustain.toFixed(0)}
-                        {partyFeats.partyEhp > 0 && (
+                        {" · sustain "}{partySustain.toFixed(0)}
+                        {!planned && partyFeats.partyEhp > 0 && (
                           <span style={{ color: "#7be08a" }} title={partyFeats.matched.map(m => `${m.actor}: ${m.feats.join(", ")}`).join(" · ")}>
                             {" +"}{partyFeats.partyEhp.toFixed(0)}{" healing from feats"}
                           </span>
@@ -1107,7 +1033,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                               from BC actor state INCLUDING active legal Bonds, so on that side the
                               honest sentence is the opposite one.
                             */
-                            const bm = bondArrange;
+                            const bm = planned?.plan ? { reason: "available branch; Tactical AI chooses once per round" } : bondArrange;
                             return (
                               <span style={{ color: "#777", marginLeft: 8 }}
                                 title="Bonds are counted once: either inside the sustain denominator or on the combat clock, never both. Toggling bonds off must move the clock exactly once.">
@@ -1136,7 +1062,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                           */}
                           <span style={{ color: "#777", marginLeft: 8 }}
                             title={offenceSource === "read"
-                              ? "R1..R4+ are these characters' own at-will routine plus their resource uses, scheduled best-first one per round against this fight's bodies. Feats are not added on top — they are already inside the actions that were scheduled. Sustain is still the certified floor plus read healing."
+                              ? "R1..R4+ use the saved actions and reserved resources, projected to the selected planning level. Sustain is projected character HP plus readable dedicated healing, with typed resistance counted once. Future build choices and day-resource usage are estimates."
                               : "resolvePartyProfile reads a level and a party size, not your characters. Offence is the certified curve for this size; only feats, healing, defence, bond mitigation and hit chance are read from the chosen actors. A near-zero delta means 'this size's line, plus what we can read', not 'your party is exactly average'."}>
                             {offenceSource === "read"
                               ? `· offence read from these ${partySize} characters — at-will + scheduled resources`
@@ -1158,10 +1084,10 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                         against a sustain figure that excluded this. So it sits beneath the
                         published number where both can be read, and the band stays arguable.
                       */}
-                      {partyHealing.total > 0 && (
+                      {planned && planned.members.some(p => (p.healing ?? 0) > 0) && (
                         <div style={{ fontSize: 10, color: "#6a8a6a", marginTop: 2 }}>
-                          {"+ healing "}<strong style={{ color: "#7fbf7f" }}>{partyHealing.total}</strong>
-                          {" HP not in that sustain — "}
+                          {"Healing available: "}<strong style={{ color: "#7fbf7f" }}>{planned.members.reduce((n, p) => n + (p.healing ?? 0), 0).toFixed(0)}</strong>
+                          {" HP included in sustain; spent only when healing is used. Saved-sheet sources: "}
                           {partyHealing.sources.map(s => `${s.actor} ${s.label} ${s.amount}`).join(" · ")}
                           {". Same-encounter pools only; hit dice are short-rest recovery and already counted."}
                         </div>
@@ -1199,9 +1125,9 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                   {bondMitigation && (bondMitigation.sources.length > 0 || bondMitigation.withoutBond.length > 0
                     || bondMitigation.bondWithoutMitigation.length > 0) && (
                     <div style={{ ...box, marginBottom: 8, fontSize: 10 }}>
-                      <span style={{ color: "#8a8aa0" }}>BONDS PREVENT </span>
+                      <span style={{ color: "#8a8aa0" }}>BOND DEFENSE AVAILABLE </span>
                       <strong style={{ color: "#7fbf7f" }}>{bondMitigation.perRound.toFixed(1)} HP</strong>
-                      <span style={{ color: "#555" }}> per round · already taken off the clock above</span>
+                      <span style={{ color: "#555" }}> per round before level projection · used when the defensive branch is chosen</span>
                       {bondMitigation.sources.length > 0 && (
                         <div style={{ marginTop: 3, color: "#777", lineHeight: 1.5 }}>
                           {bondMitigation.sources.map(s =>
@@ -1226,7 +1152,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                         <div style={{ marginTop: 4, paddingTop: 4, borderTop: "1px solid #2a2a3e", color: "#e0b070", lineHeight: 1.45 }}>
                           {bondMitigation.unpriced.length} bond effect{bondMitigation.unpriced.length === 1 ? "" : "s"} real but NOT priced —
                           {" "}{[...new Set(bondMitigation.unpriced.map(u => u.reason))].join(", ")}.
-                          {" "}The party is stronger than this figure, never weaker.
+                          {" "}Effects outside the numeric model remain listed for review.
                         </div>
                       )}
                     </div>
@@ -1318,7 +1244,7 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                       It now says which of the two it actually used, and only claims an entry when
                       the DM has genuinely overridden one. */}
                   <div style={{ fontSize: 9, color: "#666", marginBottom: 6 }}>
-                    Survivor counts are model projections under {allocation === "focus_fire" ? "focus fire" : "even spread"}, not observed outcomes.
+                    Survivor counts are projections from individual HP and automatic targeting, not observed outcomes.
                     {" "}Every attack was resolved against AC {Number(targetAc.toFixed(2))}{acOverride === null ? "" : " (your override)"}
                     {" "}and every save against a +{Number(targetSave.toFixed(2))}{saveOverride === null ? "" : " (your override)"} bonus
                     {defenceBasis === "override"

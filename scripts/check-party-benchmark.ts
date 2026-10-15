@@ -126,9 +126,12 @@ console.log("\nThe rated party and the simulated party are the same party");
   const code = panel.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 
   ok("the panel derives ONE party sustain", /const partySustain = useMemo/.test(code));
-  const readers = code.match(/sustain: partySustain\b/g) ?? [];
-  ok("...and both the benchmark and the simulation read it", readers.length === 2,
-    `${readers.length} reader(s)`);
+  const shared = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "..",
+    "src/core/encounter-band/checkerPlanning.ts"), "utf8");
+  ok("benchmark and simulation share the planned sustain and result",
+    /planned \? planned.sustain/.test(code) && /sustain: partySustain/.test(code)
+    && /const result = planned\?\.result/.test(code)
+    && /simulateEncounter\(\{ party: \{ size, sustain, dpr, members/.test(shared));
 
   /**
    * ⚠ AND NEITHER REBUILDS IT. `profile.sustain * …` beside a `sustain:` key is the shape that

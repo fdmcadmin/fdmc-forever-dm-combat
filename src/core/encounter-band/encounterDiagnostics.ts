@@ -110,7 +110,7 @@ export function diagnoseEncounter(
 
   for (const row of result.rounds) {
     const damageBefore = row.cumulativePartyDamage - row.partyDamage;
-    const bodies: BodyDiagnostic[] = prepared.map(group => {
+    const bodies: BodyDiagnostic[] = row.tactical?.bodies ?? prepared.map(group => {
       const aliveAtStart = livingBodies(group, damageBefore);
       const aliveAtEnd = livingBodies(group, row.cumulativePartyDamage);
       const bodyDpr = roundValue(group.dpr, row.round);
@@ -142,7 +142,7 @@ export function diagnoseEncounter(
     rounds.push({
       round: row.round,
       pcsStanding: row.pcsStart,
-      partySustainRemaining: Math.max(0, partySustain - (row.cumulativeMonsterDamage - row.monsterDamage)),
+      partySustainRemaining: row.tactical?.sustainAtStart ?? Math.max(0, partySustain - (row.cumulativeMonsterDamage - row.monsterDamage)),
       partyPotential: row.partyPotential,
       partyDamage: row.partyDamage,
       cumulativePartyDamage: row.cumulativePartyDamage,
