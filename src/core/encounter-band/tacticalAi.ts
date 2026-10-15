@@ -106,3 +106,21 @@ export function targetScores(
     return weight * n * threat / maxThreat + (1 - weight) * authored + 0.00001 * authored;
   });
 }
+
+/** Reach is derived from the current action/party lanes, never a required DM target list. */
+export function focusShares(pcs: ReadonlyArray<{ hp: number; maxHp: number; ac: number;
+  reach: number; guardian?: boolean }>): number[] {
+  const legal = pcs.map((p, i) => ({ p, i })).filter(({ p }) => p.hp > 0 && p.reach > 0);
+  const result = pcs.map(() => 0);
+  if (!legal.length) return result;
+  const vulnerability = (p: typeof pcs[number]) => 0.65 * (1 - p.hp / Math.max(1, p.maxHp)) + 0.35 * (1 - p.ac / 24);
+  const guardians = legal.filter(({ p }) => p.guardian);
+  const candidates = guardians.length ? guardians : legal;
+  const best = Math.max(...candidates.map(({ p }) => vulnerability(p)));
+  const winners = candidates.filter(({ p }) => Math.abs(vulnerability(p) - best) < 1e-9);
+  const weight = guardians.length ? TACTICAL_AI.guardianChallengeShare : TACTICAL_AI.focusFireWeight;
+  const totalReach = legal.reduce((s, { p }) => s + p.reach, 0);
+  for (const { p, i } of legal) result[i] = (1 - weight) * p.reach / totalReach;
+  for (const { i } of winners) result[i] += weight / winners.length;
+  return result;
+}

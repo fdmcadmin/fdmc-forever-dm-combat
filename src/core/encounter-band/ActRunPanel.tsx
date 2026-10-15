@@ -1,3 +1,5 @@
+import { carryTacticalState, resourceCostForFight, type PlanningMemberState } from "./actTacticalState";
+import { checkPlannedEncounter } from "./checkerPlanning";
 /**
  * ACT RUN — compose a sequence of your own fights and see how the party fares across it.
  *
@@ -102,6 +104,11 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
   useEffect(() => { saveActRuns(runs); }, [runs]);
 
   const run = runs.find(r => r.id === activeId);
+  const players = useMemo(() => (actors as Array<{id: string; name: string; kind: string}>).filter(a => a.kind === "player"), [actors]);
+  const [chosenIds, setChosenIds] = useState<string[]>([]);
+  const chosen = players.length === (run?.partySize ?? 4) ? players : players.filter(a => chosenIds.includes(a.id));
+  const partyReady = players.length === 0 || chosen.length === (run?.partySize ?? 4);
+
 
   /**
    * What this party deals, by damage type — read only when the roster is UNAMBIGUOUS.
@@ -180,7 +187,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
         const f = Math.max(0, Math.min(1, run.shortRestRecovery));
         return { fraction: f, resourceFraction: f, source: "override" };
       }
-      const derived = shortRestRecoveryFromActors(actors as never[], fullSustain);
+      const derived = shortRestRecoveryFromActors(chosen as never[], fullSustain);
       if (derived) {
         const dice = (derived.perActor ?? []).map(a => `${a.actor} ${a.pools}`).join(" · ");
         const pools = derived.resources.length > 0
@@ -205,11 +212,16 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
      */
     let spentSustain = 0;
     let spentResources = 0;
+    let memberState: PlanningMemberState | undefined;
+    let stopped = false;
+    const hitDiceLeft: Record<string, number> = {};
     return resolved.map(step => {
       const encounter = encounters.find(e => e.id === step.encounterId);
       const arrivingSpent = spentSustain;
       const arrivingResources = spentResources;
+      if (stopped) return { id: step.id, missing: false as const, blocked: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
       if (!encounter) {
+        stopped = true;
         return { id: step.id, missing: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
       }
       try {
@@ -217,90 +229,49 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
           .map(entry => ({
             template: monsterLibrary.find(m => m.templateId === entry.templateId),
             quantity: Math.max(1, entry.count),
+            bodies: entry.bodies,
           }))
-          .filter((e): e is { template: MainMonsterTemplate; quantity: number } => Boolean(e.template));
+          .filter((e): e is typeof e & { template: MainMonsterTemplate } => Boolean(e.template));
+        if (entries.length !== encounter.entries.length) throw new Error("Missing creature in this encounter");
         if (entries.length === 0) {
+          stopped = true;
           return { id: step.id, missing: false as const, empty: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
         }
-        // Party AC and save bonus come from the published defence curve for the run's mode — the
-        // same two numbers the difficulty panel takes, derived the same way (the save bonus is the
-        // mean of the six ability rows). Nothing here invents a party defence.
-        // The denominator follows the same arrangement the clock does — see `bondArrangement`.
-        const defence = partyDefenceAt(step.partyLevel, bondArrange.baselineMode);
-        const saveBonus = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
-        // The full library, not just this fight — a summoned creature is never already on the field.
-        /**
-         * ⚠ A RUN PRICES AGAINST THE BALANCED CENTRE LINE'S ACCURACY — the certified curve's own
-         * actors resolved against this fight's AC. A run never had a party hit chance at all, so a −3
-         * zone or a persistent disadvantage defence read differently here than on the fight panel.
-         */
-        const runMode = run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard";
-        const built = rosterFromTemplates(entries, step.partyLevel, {
-          ac: defence.ac, saveBonus, partySize, damageMix: partyDamageMix,
-          hitChance: centerLineHitChance(step.partyLevel, runMode, partySize, meanTargetAc(entries)),
-          partyAttackShare: centerLineAttackShare(step.partyLevel, runMode, partySize),
-          partySaveDcs: centerLineSaveDcs(step.partyLevel, runMode, partySize),
-          // One melee swing of the centre party — what a target-substitution Reaction moves. See Cold Counsel.
-          partyMeleeAttackShare: centerLineMeleeAttackShare(step.partyLevel, runMode, partySize),
-          partyAccuracySource: "center",
-          // One PC's turn in the run's own party — what a stun costs, and what a creature weighs choosing one.
-          pcTurnValue: pcTurnValueAt(step.partyLevel, partySize, runMode),
-        }, monsterLibrary);
-        // Weakest bodies first — the same kill priority the difficulty panel simulates.
-        // A passive forced target leads regardless of HP — the weakest-first sort must not undo it.
-        const roster = [...built.roster].sort((a, b) =>
-          Number(Boolean(b.killOrderFirst)) - Number(Boolean(a.killOrderFirst)) || a.baseHp * a.quantity - b.baseHp * b.quantity);
-        const full = resolvePartyProfile({ level: step.partyLevel, size: partySize });
-        /**
-         * ⚠ THE RUN NEVER DEPLETED ITS DAMAGE, ONLY ITS HIT POINTS.
-         *
-         * This passed `customSustain` and nothing else, so every fight in a run was fought at
-         * FRESH round-1 damage however deep into the block it was — the same fault the difficulty
-         * panel had. `arrivingSpent` is the input `resolvePartyProfile` already takes for it, and
-         * the resource clock is what belongs there: damage runs out when slots do, not when hit
-         * points do.
-         */
-        const profile = (arrivingSpent > 0 || arrivingResources > 0)
-          ? resolvePartyProfile({
-            level: step.partyLevel, size: partySize,
-            arrivingSpent: arrivingResources,
-            customSustain: full.sustain * (1 - arrivingSpent),
-          })
-          : full;
-        const result = simulateEncounter({
-          party: {
-            size: profile.size, sustain: profile.sustain, dpr: profile.dpr,
-            // Counted once — see `bondArrangement`.
-            mitigationPerRound: bondArrange.mitigation,
-          },
-          roster,
-        });
-        // What the fight actually took out of the party, as a share of a FULL pool — so the
-        // fractions stay comparable across a block however depleted the party already was.
-        const taken = result.rounds[result.rounds.length - 1]?.cumulativeMonsterDamage ?? 0;
-        const cost = full.sustain > 0 ? taken / full.sustain : 0;
-        const rest = recoveryFor(full.sustain);
-        /**
-         * ⚠ THE SAME CARRY RULE, RUN ONCE PER CLOCK. `nextArrivalSpent` is gated and correct for
-         * one clock, so it is called twice rather than reimplemented for two — a Long rest still
-         * zeroes both, a skipped rest still carries both, and only the short-rest give-back
-         * differs between them.
-         *
-         * The resource clock advances by the same fight cost, because a fight that took 30% of the
-         * party's hit points is a fight in which they spent about that much of their kit; nothing
-         * published measures the two separately, and inventing a second cost would be exactly the
-         * unpublished exchange rate this pass keeps refusing to make up.
-         */
-        spentSustain = nextArrivalSpent(spentSustain, cost, step.restTaken, rest.fraction);
-        spentResources = nextArrivalSpent(spentResources, cost, step.restTaken, rest.resourceFraction);
-        return { id: step.id, missing: false as const, arrivingSpent, arrivingResources, result, cost, rest };
+        if (!partyReady) return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
+        const planned = checkPlannedEncounter({ entries, library: monsterLibrary, actors: chosen as never[],
+          level: step.partyLevel, size: partySize, mode: run?.partyMode === "Broken Chain" ? "brokenChain" : "wotcStandard",
+          arrivingResources, arrivingSustain: arrivingSpent, memberState });
+        const result = planned.result;
+        if (!result) return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
+        const last = result.rounds.at(-1)!;
+        const remaining = last.tactical?.party.reduce((n, p) => n + p.hp + p.healingLeft, 0) ?? 0;
+        const cost = Math.max(0, planned.sustain - remaining) / Math.max(1, planned.fullSustain);
+        const rest = recoveryFor(planned.fullSustain);
+        const recoveryCapacity: Record<string, number> = {};
+        for (const member of planned.members) {
+          const actor = (chosen as never as import("../types/actor").Actor[]).find(a => a.id === member.id);
+          const rawHp = actor?.stats.hp.max ?? 0;
+          const recovered = actor ? shortRestRecoveryFromActors([actor], Math.max(1, rawHp))?.recoveredHp : undefined;
+          recoveryCapacity[member.id] = recovered !== undefined ? recovered / Math.max(1, rawHp) : SHORT_REST_RECOVERY;
+        }
+        memberState = carryTacticalState(planned.members, result, step.restTaken, hitDiceLeft,
+          recoveryCapacity, run?.shortRestRecovery);
+        spentSustain = 1 - planned.members.reduce((n, p) => n + p.maxHp * memberState![p.id].hpFraction, 0)
+          / Math.max(1, planned.members.reduce((n, p) => n + p.maxHp, 0));
+        const resourceCost = resourceCostForFight(planned.plan?.metrics.schedule, result.rounds.length, spentResources);
+        spentResources = nextArrivalSpent(spentResources, resourceCost, step.restTaken, rest.resourceFraction);
+        stopped = result.fatalRound !== null || result.completionRound === null;
+        return { id: step.id, missing: false as const, arrivingSpent, arrivingResources, result, cost, rest,
+          endingSpent: spentSustain, endingResources: spentResources };
+
       } catch {
+        stopped = true;
         return { id: step.id, missing: false as const, failed: true as const, arrivingSpent, arrivingResources, result: null, cost: 0 };
       }
     });
     // ⚠ `bondMitigation` IS A PARTY INPUT AND REACHES NO ROSTER FIGURE, so it must be named here
     // or a party gaining a Guardian would not re-price the run until something else moved.
-  }, [resolved, encounters, monsterLibrary, run?.partySize, run?.shortRestRecovery, run?.partyMode, partyDamageMix, bondMitigation]);
+  }, [resolved, encounters, monsterLibrary, run?.partySize, run?.shortRestRecovery, run?.partyMode, partyDamageMix, bondMitigation, actors, chosenIds, partyReady]);
 
   const pricedById = useMemo(() => new Map(priced.map(p => [p.id, p])), [priced]);
 
@@ -457,6 +428,13 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
             </label>
           </div>
 
+          <p style={{fontSize: 11, color: partyReady ? "#aab" : "#edb55a"}}>
+            {players.length ? (partyReady ? "Selected party is projected to each fight’s planning level." : `Choose exactly ${run.partySize} players (${chosen.length} selected). Add players if needed.`) : "No saved players: using the selected-level population estimate."}
+            {" Automatic targeting; reach and spacing are modeled without a map. Day resources use the scheduled-use estimate, not an exact slot inventory. Hit Dice recovery is finite between long rests."}
+          </p>
+          {players.length > (run.partySize ?? 4) && <div>{players.map(a => <label key={a.id} style={{fontSize: 11, marginRight: 10}}>
+            <input type="checkbox" checked={chosenIds.includes(a.id)} onChange={e => setChosenIds(ids => e.target.checked ? [...ids, a.id] : ids.filter(id => id !== a.id))} />{a.name}
+          </label>)}</div>}
           {/* Add a fight — only from encounters that exist. */}
           <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
             <select value={addId} onChange={e => setAddId(e.target.value)} style={{ ...input, flex: 1 }}>
@@ -512,7 +490,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
                     title={missing ? "This encounter no longer exists in your library." : s.encounterId}>
                     {s.name}{missing ? " — missing" : ""}
                   </span>
-                  <input type="number" value={s.partyLevel} onChange={e => patchStep(s.id, { partyLevel: Math.max(1, Number(e.target.value) || 1) })}
+                  <input type="number" value={s.partyLevel} onChange={e => patchStep(s.id, { partyLevel: Math.min(20, Math.max(1, Math.round(Number(e.target.value) || 1))) })}
                     title="Party level for this fight" style={{ ...input, width: 42, textAlign: "center" }} />
                   <select value={s.restType} onChange={e => {
                       const rt = e.target.value as RestType;
@@ -547,7 +525,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
                       {REST_STATUSES.filter(x => x !== "—").map(x => <option key={x}>{x}</option>)}
                     </select>
                   )}
-                  <input type="number" value={s.levelAfter} onChange={e => patchStep(s.id, { levelAfter: Math.max(1, Number(e.target.value) || 1) })}
+                  <input type="number" value={s.levelAfter} onChange={e => patchStep(s.id, { levelAfter: Math.min(20, Math.max(1, Math.round(Number(e.target.value) || 1))) })}
                     title="Level after this fight and its rest — set higher than the party level to make it a level gate"
                     style={{ ...input, width: 42, textAlign: "center", color: s.levelAfter > s.partyLevel ? "#4caf50" : "#fff" }} />
                   {s.restType !== "None" ? (
@@ -570,6 +548,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
                     if (!p) return null;
                     if (p.missing) return <span style={{ fontSize: 10, color: "#ff9999", width: 168, textAlign: "right" }}>no encounter</span>;
                     if ("empty" in p && p.empty) return <span style={{ fontSize: 10, color: "#e9a66a", width: 168, textAlign: "right" }}>no creatures</span>;
+                    if ("blocked" in p && p.blocked) return <span style={{ fontSize: 10, color: "#e9a66a", width: 168 }}>blocked by earlier fight</span>;
                     if (!p.result) return <span style={{ fontSize: 10, color: "#666", width: 168, textAlign: "right" }}>not priced</span>;
                     const r = p.result;
                     const cleared = r.completionRound !== null;
@@ -605,7 +584,7 @@ export function ActRunPanel({ encounters, monsterLibrary, actors = [] }: ActRunP
             const unresolved = rated.filter(p => p.result!.fatalRound === null && p.result!.completionRound === null);
             const last = priced[priced.length - 1];
             const worst = rated.reduce((a, b) => (b.arrivingSpent > a.arrivingSpent ? b : a));
-            const finalSpent = last ? Math.min(1, last.arrivingSpent + last.cost) : 0;
+            const finalSpent = [...priced].reverse().find(p => "endingSpent" in p)?.endingSpent ?? 0;
             return (
               <div style={{ marginTop: 8, padding: "7px 9px", background: "#12131c", border: `1px solid ${wipes.length ? "#5a1a1a" : "#262638"}`, borderRadius: 4 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>

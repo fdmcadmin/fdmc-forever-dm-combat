@@ -1,3 +1,4 @@
+import type { SaveAbility } from "./partyDefenceCurve";
 import type { PartyDamageMix } from "./partyDamageMix";
 
 /**
@@ -84,6 +85,7 @@ export function damageExpressionAverage(expr: string | undefined): number {
  * average table.
  */
 export type PartyDefence = {
+  members?: Array<{ ac: number; saves: Record<SaveAbility, number> }>;
   ac: number;
   saveBonus: number;
   /**

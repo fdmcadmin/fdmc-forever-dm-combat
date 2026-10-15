@@ -394,3 +394,6 @@ jobs:
 
       - name: check the outcome mode decides which fields are asked
         run: npm run check:actioncaps
+
+      - name: check the shared checker planner and tactical round loop
+        run: npm run check:planning

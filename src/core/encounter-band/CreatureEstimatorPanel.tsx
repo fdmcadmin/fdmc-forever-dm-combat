@@ -1,3 +1,4 @@
+import { checkPlannedEncounter } from "./checkerPlanning";
 /**
  * CREATURE ESTIMATOR — the workbook v4 "Creature Estimator" sheet, as its own tool.
  *
@@ -47,6 +48,7 @@ const hintStyle: React.CSSProperties = {
 export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: MainMonsterTemplate[] }) {
   const [open, setOpen] = useState(false);
   const [templateId, setTemplateId] = useState<string>("");
+  const [levelOverride, setLevelOverride] = useState<number | null>(null);
   const [refBand, setRefBand] = useState<CreatorBandId>("mid");
   const [refMode, setRefMode] = useState<PartyEquipmentMode>("wotcStandard");
   const [desiredCr, setDesiredCr] = useState<number | undefined>(undefined);
@@ -74,11 +76,20 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
    * finished mirror prices through the same path as everything else — no special case, no exemption.
    */
   const unbuiltTemplate = Boolean(template?.isTemplate);
+  const tacticalPlanning = useMemo(() => {
+    try {
+    if (!template || unbuiltTemplate) return { value: null, error: "" };
+    const level = levelOverride ?? (CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1]).referenceLevel;
+    return { value: checkPlannedEncounter({ entries: [{ template, quantity: 1 }], library: monsterLibrary, level, size: 4, mode: refMode }), error: "" };
+    } catch (error) { return { value: null, error: error instanceof Error ? error.message : "Unable to price this creature" }; }
+  }, [template, unbuiltTemplate, refBand, levelOverride, refMode, monsterLibrary]);
+  const tacticalCheck = tacticalPlanning.value;
+
 
   const estimate = useMemo(() => {
     if (!template || unbuiltTemplate) return null;
     const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
-    const defence = partyDefenceAt(band.referenceLevel, refMode);
+    const defence = partyDefenceAt((levelOverride ?? band.referenceLevel), refMode);
     const saveAverage = (defence.str + defence.dex + defence.con + defence.int + defence.wis + defence.cha) / 6;
 
     /**
@@ -102,7 +113,7 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
      * is. That is a feature of the model, not drift.
      */
     const noted: RosterAssumption[] = [];
-    const profile = creatureProfile(template, band.referenceLevel, {
+    const profile = creatureProfile(template, (levelOverride ?? band.referenceLevel), {
       ac: defence.ac, saveBonus: saveAverage,
       saves: { str: defence.str, dex: defence.dex, con: defence.con, int: defence.int, wis: defence.wis, cha: defence.cha },
     }, noted);
@@ -121,7 +132,7 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
       saveDc: profile.saveDc,
       desiredCr,
     });
-  }, [template, unbuiltTemplate, refBand, refMode, desiredCr]);
+  }, [template, unbuiltTemplate, refBand, levelOverride, refMode, desiredCr]);
 
   /**
    * THE COVERAGE GATE, on the panel that hands out the number.
@@ -159,7 +170,7 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
   const readerReport = useMemo<ReaderReport | null>(() => {
     if (!template || unbuiltTemplate) return null;
     const refBandRow = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
-    const d = partyDefenceAt(refBandRow.referenceLevel, refMode);
+    const d = partyDefenceAt((levelOverride ?? refBandRow.referenceLevel), refMode);
     try {
       return composeReaders(template, {
         saves: { str: d.str, dex: d.dex, con: d.con, int: d.int, wis: d.wis, cha: d.cha },
@@ -167,10 +178,10 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
         horizonTurns: 4,
       });
     } catch { return null; }
-  }, [template, unbuiltTemplate, refBand, refMode]);
+  }, [template, unbuiltTemplate, refBand, levelOverride, refMode]);
 
   const band = CREATOR_BANDS.find(b => b.id === refBand) ?? CREATOR_BANDS[1];
-  const defence = partyDefenceAt(band.referenceLevel, refMode);
+  const defence = partyDefenceAt((levelOverride ?? band.referenceLevel), refMode);
 
   return (
     <div style={{ ...box, marginTop: 10 }}>
@@ -203,9 +214,14 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
             </div>
             <div style={{ flex: 1, minWidth: 150 }}>
               <span style={labelStyle}>Rated against</span>
-              <select value={refBand} onChange={e => setRefBand(e.target.value as CreatorBandId)} style={inputStyle}>
+              <select value={refBand} onChange={e => { setRefBand(e.target.value as CreatorBandId); setLevelOverride(null); }} style={inputStyle}>
                 {CREATOR_BANDS.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
               </select>
+            </div>
+            <div style={{ width: 90 }}>
+              <span style={labelStyle}>Planning level</span>
+              <input type="number" min={1} max={20} value={levelOverride ?? band.referenceLevel} style={inputStyle}
+                onChange={e => setLevelOverride(Math.max(1, Math.min(20, Number(e.target.value) || 1)))} />
             </div>
             <div style={{ width: 120 }}>
               <span style={labelStyle}>Party</span>
@@ -223,7 +239,7 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
           </div>
 
           <p style={{ ...hintStyle, marginTop: 6 }}>
-            L{band.referenceLevel} party · AC <strong style={{ color: "#99a" }}>{defence.ac}</strong>
+            L{(levelOverride ?? band.referenceLevel)} party · AC <strong style={{ color: "#99a" }}>{defence.ac}</strong>
             {" "}· saves STR {defence.str} DEX {defence.dex} CON {defence.con} INT {defence.int} WIS {defence.wis} CHA {defence.cha}
           </p>
 
@@ -249,6 +265,8 @@ export function CreatureEstimatorPanel({ monsterLibrary }: { monsterLibrary: Mai
             </div>
           )}
 
+          {tacticalPlanning.error && <p role="alert" style={hintStyle}>{tacticalPlanning.error}</p>}
+          {tacticalCheck?.result && <p style={hintStyle}>Automatic tactical check versus 4 PCs at level {levelOverride ?? band.referenceLevel}: completion round {tacticalCheck.result.completionRound ?? "not cleared"}; {tacticalCheck.result.standingAtCompletion ?? tacticalCheck.result.rounds.at(-1)?.standing ?? 0} standing. Uses the same encounter engine; abstract reach and spacing.</p>}
           {template && estimate && (
             <>
               {/* THE RESOLVER GATE, above the number it qualifies. A DM who reads the CR and

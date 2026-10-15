@@ -428,6 +428,7 @@ export type CreatureProfile = {
   saveDc: number;
   /** The PC turns its schedule takes away, per round — charged on the party's clock. See `turnDenial.ts`. */
   pcTurnDenials: NonNullable<RosterGroup["pcTurnDenials"]>;
+  tactical: NonNullable<RosterGroup["tactical"]>;
 };
 
 /**
@@ -462,6 +463,24 @@ export function creatureProfile(
     out.push({ creature: parsed.name, flag: a.flag, field: a.field, detail: a.detail });
   }
   const r = trace.rounds;
+  const roundKeys = ["round1", "round2", "round3", "round4Plus"] as const;
+  const areaShare = Object.fromEntries(roundKeys.map((key, i) => {
+    const scheduled = r[i]?.scheduled ?? [];
+    const areaDamage = scheduled.filter(s => s.targets > 1 || parsed.features.some(f => f.name === s.feature && f.isArea))
+      .reduce((n, s) => n + s.expectedDamage, 0);
+    return [key, Math.min(1, areaDamage / Math.max(1e-9, r[i]?.totalExpectedDamage ?? 0))];
+  }));
+  const damaging = parsed.features.filter(f => f.damage || f.attackBonus !== undefined || f.saveDc !== undefined);
+  const tactical = {
+    // Only restrict reach when every readable damaging option explicitly has melee reach.
+    meleeOnly: damaging.length > 0 && damaging.every(f => (f.reachFt ?? 0) > 0 && !f.rangeFt && !f.isArea),
+    areaShare,
+    vsPcDpr: target.members?.map(member => {
+      const personal = traceCreature(parsed, { ...target, ...member,
+        saveBonus: Object.values(member.saves).reduce((n, v) => n + v, 0) / 6 }, 4);
+      return Object.fromEntries(roundKeys.map((key, i) => [key, personal.rounds[i]?.totalExpectedDamage ?? 0]));
+    }),
+  };
   const dpr = {
     round1: r[0]?.totalExpectedDamage ?? 0,
     round2: r[1]?.totalExpectedDamage ?? 0,
@@ -521,6 +540,7 @@ export function creatureProfile(
     attackBonus: parsed.features.reduce((best, f) => Math.max(best, f.attackBonus ?? 0), 0),
     saveDc: parsed.features.reduce((best, f) => Math.max(best, f.saveDc ?? 0), 0),
     pcTurnDenials,
+    tactical,
   };
 }
 
@@ -652,6 +672,7 @@ export function rosterFromTemplates(
       acMultiplier: profile.acMultiplier,
       traitFactors,
       dpr,
+      tactical: profile.tactical,
       damageUptime: template.stats.damageUptime ?? 1,
       ...(Object.keys(profile.pcTurnDenials).length ? { pcTurnDenials: profile.pcTurnDenials } : {}),
       /**

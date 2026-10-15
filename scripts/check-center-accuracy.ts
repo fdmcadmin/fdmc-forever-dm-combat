@@ -81,8 +81,16 @@ console.log("\n2b. how much of it lands inside 5 ft — for a target-substitutio
   ok("the fight panel supplies it for the unchosen party, and the chosen party's own for a chosen one",
     panelCode.includes("partyMeleeAttackShare: center ? centerLineMeleeAttackShare(partyLevel, equipmentMode, partySize) : undefined")
     && panelCode.includes("partyMeleeAttackShare: fightInputs.partyMeleeAttackShare ?? currentParty?.delivery.meleeAttackShare"));
-  ok("the act run supplies it too",
-    code("src/core/encounter-band/ActRunPanel.tsx").includes("partyMeleeAttackShare: centerLineMeleeAttackShare(step.partyLevel, runMode, partySize)"));
+  /**
+   * ⚠ THE ACT RUN ASKS THROUGH THE SHARED PLANNER NOW, so the centre-line fallback is asserted
+   * where it actually lives. The guarantee is unchanged and deliberately re-stated: a run with no
+   * chosen party is still priced against the balanced centre line rather than against nothing.
+   * This used to be a line in ActRunPanel; `checkPlannedEncounter` owns it for all three panels.
+   */
+  const planner = code("src/core/encounter-band/checkerPlanning.ts");
+  ok("the act run supplies it too — through the shared planner",
+    planner.includes("partyMeleeAttackShare: m?.delivery.meleeAttackShare ?? centerLineMeleeAttackShare(level, mode, size)")
+    && code("src/core/encounter-band/ActRunPanel.tsx").includes("checkPlannedEncounter("));
 }
 
 console.log("\n3. the checker uses it when nobody is chosen");
@@ -90,7 +98,14 @@ const panel = code("src/core/encounter-band/EncounterDifficultyPanel.tsx");
 ok("the fight panel falls back to the centre line", /chosenHit \?\? centerLineHitChance\(partyLevel, equipmentMode, partySize, targetAC\)/.test(panel));
 ok("...and passes its share and DCs into the roster", /partyAttackShare: fightInputs\.partyAttackShare/.test(panel) && /partySaveDcs: fightInputs\.partySaveDcs/.test(panel));
 const run = code("src/core/encounter-band/ActRunPanel.tsx");
-ok("the act run prices against it too", /hitChance: centerLineHitChance\(step\.partyLevel, runMode, partySize, meanTargetAc\(entries\)\)/.test(run));
+/**
+ * ⚠ SAME RELOCATION: the run prices against the centre line through the planner it now calls.
+ * The guarantee is unchanged — a run with no chosen party is priced against the balanced centre
+ * line, never against nothing — it simply lives in `checkPlannedEncounter` for all three panels.
+ */
+ok("the act run prices against it too — through the shared planner",
+  code("src/core/encounter-band/checkerPlanning.ts").includes("centerLineHitChance(level, mode, size, target.ac)")
+  && run.includes("checkPlannedEncounter("));
 
 const d = partyDefenceAt(8, "brokenChain");
 const court = ["Blackbough Reeve", "Gloam Harrow", "Brandwing"].map(n => L.find(t => t.name === n) as MainMonsterTemplate);
@@ -115,7 +130,21 @@ ok("  (mutation) without the centre's DCs the saves side is named, not priced",
 
 console.log("\n4. a passive forced target survives the panels' weakest-first sort");
 ok("the fight panel keeps killOrderFirst in front", /Number\(Boolean\(b\.killOrderFirst\)\) - Number\(Boolean\(a\.killOrderFirst\)\)/.test(panel));
-ok("the act run keeps killOrderFirst in front", /Number\(Boolean\(b\.killOrderFirst\)\) - Number\(Boolean\(a\.killOrderFirst\)\)/.test(run));
+/**
+ * ⚠ AND THE RUN KEEPS IT IN FRONT EVERY ROUND, NOT ONCE.
+ *
+ * The line this replaces checked a single pre-sort of the roster. The shared tactical layer
+ * re-ranks threat each round, so a printed forced target now has to survive EVERY re-rank rather
+ * than just the first ordering — a stronger guarantee than the one it replaces, and the one the
+ * act run relies on now that it plans through `checkPlannedEncounter`.
+ */
+{
+  const sim = code("src/core/encounter-band/tacticalSimulation.ts");
+  ok("the act run keeps killOrderFirst in front — re-ranked every round",
+    sim.includes("Number(Boolean(b.s.g.killOrderFirst)) - Number(Boolean(a.s.g.killOrderFirst))")
+    && sim.includes("const compulsory = ranked.find(s => s.g.killOrderFirst)")
+    && run.includes("checkPlannedEncounter("));
+}
 const acre = ["Demonic Reaver", "Breaker", "Demon Knight of Punishment"].map(n => L.find(t => t.name === n) as MainMonsterTemplate)
   .map(t => t.name !== "Demon Knight of Punishment" ? t : ({ ...t,
     reactions: (t.reactions ?? []).filter(a => a.name !== "Commanding Presence"),

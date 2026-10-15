@@ -145,10 +145,15 @@ const read = (p: string) => readFileSync(resolve(ROOT, p), "utf8");
   ok("...where the read turn is the read party's round ÷ its size, memoised",
     /const readPcTurnValue = useMemo\(\(\) => \(currentParty && currentParty\.round1Dpr > 0/.test(panel)
       && /round2: currentParty\.round2Dpr \/ Math\.max\(1, partySize\)/.test(panel));
-  ok("...and the read party is computed BEFORE the roster that needs it",
-    panel.indexOf("const currentParty = useMemo") > 0 && panel.indexOf("const currentParty = useMemo") < panel.indexOf("const roster = useMemo"));
+  const shared = read("src/core/encounter-band/checkerPlanning.ts");
+  ok("the shared planner reads the party before building the creature roster",
+    shared.indexOf("const plan =") < shared.indexOf("const built ="));
+  ok("the shared planner values lost turns from projected actor damage per PC",
+    /pcTurnValue: m \? \{ round1: dpr.round1 \/ size/.test(shared));
 }
-ok("the act run passes its run's (it simulates on the curve, so the curve is its party)", /pcTurnValue: pcTurnValueAt\(/.test(read("src/core/encounter-band/ActRunPanel.tsx")));
+ok("the act and encounter panels call the same planner",
+  /checkPlannedEncounter\(/.test(read("src/core/encounter-band/ActRunPanel.tsx")) &&
+  /checkPlannedEncounter\(/.test(read("src/core/encounter-band/EncounterDifficultyPanel.tsx")));
 
 // ── 6. an area catches as many PCs for control as for damage ────────────────────────────────────
 console.log("\n6. an area control effect counts the same PCs its damage does");
