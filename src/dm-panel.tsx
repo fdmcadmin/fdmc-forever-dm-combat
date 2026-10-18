@@ -314,6 +314,10 @@ function DmPanelApp() {
           try { safeStorage().setItem(LEVEL_UP_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
           return next;
         });
+        // Receipt, from the surface that recorded it — see the App.tsx listener for why.
+        void OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:level-up-received", actorId: msg.actorId, seatId: msg.seatId,
+        }, { destination: "REMOTE" }).catch(() => undefined);
       }
       if (isConvergenceRequest(msg)) {
         setPendingConvergenceRequests(prev => {
