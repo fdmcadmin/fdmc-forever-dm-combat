@@ -8,6 +8,7 @@
  */
 
 import React, { useMemo } from "react";
+import { CrashScreen } from "./core/ui/CrashScreen";
 import OBR from "@owlbear-rodeo/sdk";
 import ReactDOM from "react-dom/client";
 import { LevelUpWorkspace } from "./core/ui/LevelUpWorkspace";
@@ -65,7 +66,9 @@ function LevelUpPopout() {
 function mount() {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <LevelUpPopout />
+      <CrashScreen surface="Level-up">
+        <LevelUpPopout />
+      </CrashScreen>
     </React.StrictMode>
   );
 }

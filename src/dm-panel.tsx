@@ -14,6 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { CrashScreen } from "./core/ui/CrashScreen";
 import { migrateEncounterNames } from "./core/campaign/migrateEncounterNames";
 import { repairDuplicateResistance } from "./core/campaign/repairDuplicateResistance";
 import { migrateFeatsIntoFeatures } from "./core/campaign/migrateFeatsIntoFeatures";
@@ -1521,7 +1522,9 @@ function DmPanelApp() {
 function mountDmPanel() {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <DmPanelApp />
+      <CrashScreen surface="DM panel">
+        <DmPanelApp />
+      </CrashScreen>
     </React.StrictMode>
   );
 }

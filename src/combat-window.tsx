@@ -16,6 +16,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CrashScreen } from "./core/ui/CrashScreen";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { MonsterActorCard } from "./core/ui/MonsterActorCard";
@@ -446,7 +447,9 @@ function mountCombatWindow() {
   if (!root) return;
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
-      <CombatWindowApp />
+      <CrashScreen surface="Combat window">
+        <CombatWindowApp />
+      </CrashScreen>
     </React.StrictMode>
   );
 }

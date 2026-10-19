@@ -8,6 +8,7 @@
  */
 
 import React from "react";
+import { CrashScreen } from "./core/ui/CrashScreen";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { MonsterActorCard } from "./core/ui/MonsterActorCard";
@@ -71,7 +72,9 @@ function mountMonsterPopout() {
   if (!root) return;
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
-      <MonsterPopoutApp />
+      <CrashScreen surface="Monster card">
+        <MonsterPopoutApp />
+      </CrashScreen>
     </React.StrictMode>
   );
 }

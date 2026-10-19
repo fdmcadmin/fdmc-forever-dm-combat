@@ -18,6 +18,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { CrashScreen } from "./core/ui/CrashScreen";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
 import { FDMC_CHANNELS } from "./core/constants/channels";
@@ -224,7 +225,9 @@ function mountPlayerTracker() {
   if (!root) return;
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
-      <PlayerTrackerApp />
+      <CrashScreen surface="Player tracker">
+        <PlayerTrackerApp />
+      </CrashScreen>
     </React.StrictMode>
   );
 }

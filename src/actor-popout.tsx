@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { CrashScreen } from "./core/ui/CrashScreen";
 import OBR from "@owlbear-rodeo/sdk";
 import ReactDOM from "react-dom/client";
 import { ActorCard, FDMC_ACTOR_TURN_RESET_CHANNEL } from "./core/ui/ActorCard";
@@ -500,7 +501,9 @@ function ActorPopout() {
 function mountActorPopout() {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <ActorPopout />
+      <CrashScreen surface="Character sheet">
+        <ActorPopout />
+      </CrashScreen>
     </React.StrictMode>
   );
 }
