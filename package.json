@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.78.0",
+  "version": "0.8.78.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -114,8 +114,7 @@
   "check:mastery": "npx tsx scripts/check-weapon-mastery.ts",
   "check:loot": "npx tsx scripts/check-loot-delivery.ts",
   "check:actioncaps": "npx tsx scripts/check-action-capabilities.ts",
-  "check:planning": "npx tsx scripts/check-checker-planning.ts",
-  "check:levelup": "npx tsx scripts/check-levelup-outbox.ts"
+  "check:planning": "npx tsx scripts/check-checker-planning.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

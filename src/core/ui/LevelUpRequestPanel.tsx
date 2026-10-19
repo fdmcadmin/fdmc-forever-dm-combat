@@ -4,7 +4,6 @@ import type { Actor } from "../types/actor";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
 // The editor loads when a level-up is opened, not with every player's window — see runtime-shell/lazyPanels.
 import { LazyActorEditor as ActorEditor, PanelLoading } from "../runtime-shell/lazyPanels";
-import { recordLevelUpSubmission, type PendingLevelUpStep } from "../state/levelUpOutbox";
 
 // ─── Broadcast types ──────────────────────────────────────────────────────────
 
@@ -24,79 +23,6 @@ export type LevelUpResponse = {
   approved: boolean;
   reason?: string;
 };
-
-/**
- * SUBMIT A LEVEL-UP — record it, then send it.
- *
- * ⚠ ONE HELPER, BECAUSE THERE ARE TWO SUBMIT SITES. `LevelUpRequestPanel` and `LevelUpWorkspace`
- * each built this request by hand; the moment one of them learns to save a step and the other
- * does not, a player's work survives from one screen and vanishes from the other — and which
- * screen they used is not something anyone would think to ask about.
- *
- * ⚠ THE RECORD IS WRITTEN FIRST, DELIBERATELY. The failure being fixed is "it reported success
- * and nothing had happened", so the step must not depend on the send: if the broadcast throws,
- * or the tab closes mid-send, the player still has their level-up and a Resubmit button.
- *
- * Returns whether the SEND succeeded. That is not whether anyone HEARD it — only the receipt
- * (`fdmc:level-up-received`) can say that, which is exactly why it exists.
- */
-export async function submitLevelUpRequest(
-  actor: { id: string; name: string },
-  seatId: string,
-  proposedActor: Actor,
-): Promise<boolean> {
-  const request: LevelUpRequest = {
-    type: "fdmc:level-up-request",
-    actorId: actor.id,
-    actorName: actor.name,
-    seatId,
-    proposedActor,
-    requestedAt: new Date().toISOString(),
-  };
-  recordLevelUpSubmission(request);
-  if (!OBR.isAvailable) return true; // offline dev — the step is saved either way
-  try {
-    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, request, { destination: "REMOTE" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Send a saved step again, unchanged. The record is re-stamped so "last tried" stays honest. */
-export async function resubmitLevelUpStep(step: PendingLevelUpStep): Promise<boolean> {
-  recordLevelUpSubmission(step.request);
-  if (!OBR.isAvailable) return true;
-  try {
-    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, step.request, { destination: "REMOTE" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * A GM window telling the player it has the request.
- *
- * ⚠ THE ONE SIGNAL THE PROTOCOL WAS MISSING. Approval and rejection both came back; RECEIPT
- * never did, so a request sent into a closed GM app looked exactly like one sitting in a queue.
- * The player had no way to tell "waiting on my DM" from "nobody ever heard this", which is the
- * difference between being patient and needing to resubmit.
- *
- * Sent by every surface that RECORDS a request, so a receipt means it is genuinely written down
- * — not merely that some window was awake.
- */
-export type LevelUpReceived = {
-  type: "fdmc:level-up-received";
-  actorId: string;
-  seatId: string;
-};
-
-export function isLevelUpReceived(msg: unknown): msg is LevelUpReceived {
-  if (!msg || typeof msg !== "object") return false;
-  const m = msg as { type?: unknown; actorId?: unknown };
-  return m.type === "fdmc:level-up-received" && typeof m.actorId === "string";
-}
 
 export function isLevelUpRequest(msg: unknown): msg is LevelUpRequest {
   return Boolean(
@@ -268,26 +194,37 @@ export function LevelUpRequestPanel({ actor, seatId, onClose }: LevelUpRequestPa
   async function handlePropose(proposedActor: Actor) {
     setSubmitStatus("sending");
 
-    // Records the step, then sends — see submitLevelUpRequest.
-    const sent = await submitLevelUpRequest(actor, seatId, proposedActor);
-    if (!sent) { setSubmitStatus("idle"); return; }
+    const request: LevelUpRequest = {
+      type: "fdmc:level-up-request",
+      actorId: actor.id,
+      actorName: actor.name,
+      seatId,
+      proposedActor,
+      requestedAt: new Date().toISOString(),
+    };
+
+    if (OBR.isAvailable) {
+      try {
+        await OBR.broadcast.sendMessage(
+          FDMC_SEAT_BROADCAST_CHANNEL,
+          request,
+          { destination: "REMOTE" }
+        );
+      } catch {
+        setSubmitStatus("idle");
+        return;
+      }
+    }
+
     setSubmitStatus("sent");
   }
 
   if (submitStatus === "sent") {
     return (
       <div style={{ padding: 24, textAlign: "center", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
-        <p style={{ color: "#7b68ee", fontSize: 16, margin: 0 }}>Level-up sent.</p>
-        {/**
-          * ⚠ IT NO LONGER CLAIMS SOMEONE IS READING IT. This said "Your DM is reviewing the
-          * changes" the instant the broadcast left — true only if a GM window happened to be
-          * open, and flatly false otherwise, which is the case that sent level-ups into the
-          * void. What IS true at this moment is that the step is saved; whether anyone heard it
-          * is answered by the receipt, on the card.
-          */}
+        <p style={{ color: "#7b68ee", fontSize: 16, margin: 0 }}>Level-up request sent!</p>
         <p style={{ fontSize: 12, color: "#888", margin: 0 }}>
-          It is saved on your card until your DM answers it. If they were offline, your card
-          will say so and offer a Resubmit — nothing is lost either way.
+          Your DM is reviewing the changes. Your card will update when approved.
         </p>
         <button
           type="button"
