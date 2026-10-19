@@ -397,3 +397,6 @@ jobs:
 
       - name: check the shared checker planner and tactical round loop
         run: npm run check:planning
+
+      - name: check a submitted level-up survives a closed GM app
+        run: npm run check:levelup

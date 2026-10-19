@@ -16,7 +16,7 @@ import { useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { Actor } from "../types/actor";
 import { FDMC_SEAT_BROADCAST_CHANNEL } from "../seats/seatTypes";
-import type { LevelUpRequest } from "./LevelUpRequestPanel";
+import { submitLevelUpRequest } from "./LevelUpRequestPanel";
 import { ActorEditor } from "./ActorEditor";
 import {
   loadLevelPresets,
@@ -39,22 +39,13 @@ type LevelUpWorkspaceProps = {
 type Mode = "list" | "edit";
 type EditorIntent = "preset" | "submit";
 
+/**
+ * ⚠ THE SECOND SUBMIT SITE, NOW DEFERRING TO THE FIRST. This built the request by hand, so it
+ * would have kept sending into the void after the panel learned to save a step — and which
+ * screen a player used is not something anyone would think to ask about.
+ */
 async function broadcastLevelUpRequest(actor: Actor, seatId: string, proposed: Actor): Promise<boolean> {
-  const request: LevelUpRequest = {
-    type: "fdmc:level-up-request",
-    actorId: actor.id,
-    actorName: actor.name,
-    seatId,
-    proposedActor: proposed,
-    requestedAt: new Date().toISOString(),
-  };
-  if (!OBR.isAvailable) return true; // offline dev — treat as sent
-  try {
-    await OBR.broadcast.sendMessage(FDMC_SEAT_BROADCAST_CHANNEL, request, { destination: "REMOTE" });
-    return true;
-  } catch {
-    return false;
-  }
+  return submitLevelUpRequest(actor, seatId, proposed);
 }
 
 /**

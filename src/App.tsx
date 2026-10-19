@@ -95,7 +95,11 @@ import { MONSTER_POPOUT_HP_CHANNEL } from "./core/monster-state/useMonsterPopout
 import { monsterHpFromPatch } from "./core/monster-state/monsterHpPatch";
 import { MonsterSelector } from "./core/ui/MonsterSelector";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
-import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
+import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, isLevelUpReceived, resubmitLevelUpStep, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
+import {
+  LEVEL_UP_OUTBOX_CHANGED, clearLevelUpStep, levelUpStepFor, markLevelUpDelivered,
+  markLevelUpRejected, type PendingLevelUpStep,
+} from "./core/state/levelUpOutbox";
 import { resolveActor } from "./core/table-state/actorHydrationBoundary";
 import { useDmSeatSystem, usePlayerSeatSystem } from "./core/seats/useSeatSystem";
 import {
@@ -505,6 +509,17 @@ export default function App() {
           try { safeStorage().setItem(FDMC_STORAGE_KEYS.pendingLevelUpRequests, JSON.stringify(next)); } catch { /* ignore */ }
           return next;
         });
+        /**
+         * ⚠ ACKNOWLEDGE RECEIPT, right where it is WRITTEN DOWN.
+         *
+         * Sent after the store above, not on merely hearing the broadcast, so a receipt means
+         * the request is durable on this side — not that a window happened to be awake for an
+         * instant. Without this the player cannot tell a queued request from one that reached
+         * nobody, which is the whole failure being fixed.
+         */
+        void obrSend(FDMC_SEAT_BROADCAST_CHANNEL, {
+          type: "fdmc:level-up-received", actorId: msg.actorId, seatId: msg.seatId,
+        }, { destination: "REMOTE" });
       }
     });
   }, [isDmMode]);
@@ -2065,6 +2080,16 @@ export default function App() {
   // called conditionally inside the panel's render IIFE (rules-of-hooks).
   const [convergenceSelected, setConvergenceSelected] = useState<string[]>([]);
   const [showLevelUpRequest, setShowLevelUpRequest] = useState(false);
+  /**
+   * The level-up step this character is waiting on, if any.
+   *
+   * ⚠ RE-READ ON BOTH SIGNALS. The card and the level-up window are frequently two different
+   * windows, so a submit in one has to show up in the other: `storage` fires in OTHER windows
+   * and the custom event covers the one that did the writing. The same pairing the loot offer
+   * uses, for the same reason.
+   */
+  const [levelUpStep, setLevelUpStep] = useState<PendingLevelUpStep | null>(null);
+  const [resubmitting, setResubmitting] = useState(false);
   const [levelUpRejectionToast, setLevelUpRejectionToast] = useState<string | null>(null);
   // A save-forcing action fired; pick which combatants must roll, then broadcast the call.
   const [pendingSave, setPendingSave] = useState<{ source: string; action: string; save: string } | null>(null);
@@ -2136,6 +2161,30 @@ export default function App() {
         setLevelUpRejectionToast(text);
         addEntry({ actorName: "DM", actionName: "Level-Up Rejected", tabId: "system", message: text });
         setTimeout(() => setLevelUpRejectionToast(null), 8000);
+        /**
+         * ⚠ THE STEP IS KEPT, NOT CLEARED. The toast already says *"you can revise and
+         * resubmit"* — and before this there was nothing left to revise, because the player's
+         * work only ever existed in the message that was refused. Marking it keeps the build
+         * they made, with the DM's reason attached to it.
+         */
+        const rejectedId = (msg as { actorId?: string }).actorId;
+        if (rejectedId) markLevelUpRejected(rejectedId, reason);
+      }
+      /**
+       * RECEIPT — a GM window has written the request down.
+       *
+       * This is the signal that distinguishes "my DM has it and is thinking" from "that went
+       * nowhere", which is the question the player could not answer at all before.
+       */
+      if (isLevelUpReceived(msg) && (msg as { seatId?: string }).seatId === claimedSeatId) {
+        markLevelUpDelivered(msg.actorId);
+      }
+      /** Approved — the step has done its job and goes. */
+      if ((msg as { type?: unknown }).type === "fdmc:level-up-response"
+        && (msg as { seatId?: string }).seatId === claimedSeatId
+        && (msg as { approved?: boolean }).approved) {
+        const approvedId = (msg as { actorId?: string }).actorId;
+        if (approvedId) clearLevelUpStep(approvedId);
       }
     });
   }, [isDmMode, refreshFromRoom, claimedSeatId]);
@@ -3258,6 +3307,23 @@ export default function App() {
   // ─────────────────────────────────────────────────────────────────────────
 
   const actorToShow = selectedActor ?? actors[0];
+
+  /**
+   * Keep the pending level-up step in step with storage — see `levelUpStep`.
+   *
+   * Reads on mount too, which is the case that matters: a player who submitted, closed the tab
+   * and came back has their step waiting rather than a card that has forgotten it.
+   */
+  useEffect(() => {
+    const read = () => setLevelUpStep(levelUpStepFor(actorToShow?.id));
+    read();
+    window.addEventListener(LEVEL_UP_OUTBOX_CHANGED, read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener(LEVEL_UP_OUTBOX_CHANGED, read);
+      window.removeEventListener("storage", read);
+    };
+  }, [actorToShow?.id]);
   if (!actorToShow) return null;
 
   const hp = getActorHp(actorToShow.id);
@@ -4196,6 +4262,68 @@ export default function App() {
         </div>
         );
       })()}
+
+      {/**
+        * ── THE PENDING LEVEL-UP STEP ──
+        *
+        * ⚠ THE PLAYER USED TO BE TOLD A THING THAT WAS NOT TRUE. Submitting showed *"Your DM is
+        * reviewing the changes"* whether or not any DM window existed to review them — and
+        * nothing was saved, so a request sent into a closed GM app was simply gone, along with
+        * the build that went into it. Christopher, 2026-10-18: *"it goes into the void."*
+        *
+        * Three honest states instead, and each says what to DO:
+        *   pending   — sent, nobody has confirmed hearing it. Resubmit is right there.
+        *   delivered — a GM window wrote it down. Nothing to do but wait.
+        *   rejected  — the DM said no, and why; the build is kept so it can be revised.
+        */}
+      {isPlayerMode && levelUpStep && actorToShow && (
+        <div style={{
+          margin: "6px 10px", padding: "7px 10px", borderRadius: 6, fontSize: 12,
+          display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+          background: levelUpStep.status === "rejected" ? "#2a1010" : levelUpStep.status === "delivered" ? "#10210f" : "#2a2010",
+          border: `1px solid ${levelUpStep.status === "rejected" ? "#6e2a2a" : levelUpStep.status === "delivered" ? "#2a6e2a55" : "#6e5a20"}`,
+        }}>
+          <span style={{ color: "#aaa" }}>
+            <strong style={{ color: "#ddd" }}>{levelUpStep.request.actorName}</strong>
+            {" → Level "}{levelUpStep.request.proposedActor.level}
+          </span>
+          {levelUpStep.status === "delivered" ? (
+            <span style={{ color: "#7be08a" }}>✓ Delivered — waiting on your DM.</span>
+          ) : levelUpStep.status === "rejected" ? (
+            <span style={{ color: "#ff9999" }}>
+              ✕ Your DM sent this back{levelUpStep.reason ? `: “${levelUpStep.reason}”` : "."} Revise it and send again.
+            </span>
+          ) : (
+            <span style={{ color: "#e0b85a" }}>
+              ⚠ Not confirmed — your DM's app may have been closed. Your level-up is saved here.
+            </span>
+          )}
+          <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+            {/* Manual only, by Christopher's choice — nothing re-sends on its own. */}
+            {levelUpStep.status !== "delivered" && (
+              <button type="button" disabled={resubmitting}
+                onClick={() => {
+                  setResubmitting(true);
+                  void resubmitLevelUpStep(levelUpStep).finally(() => setResubmitting(false));
+                }}
+                title="Send this same level-up to your DM again. Nothing about it changes."
+                style={{ fontSize: 11, padding: "2px 10px", background: "#7b68ee", border: "none", borderRadius: 3, color: "#fff", cursor: resubmitting ? "default" : "pointer" }}>
+                {resubmitting ? "Sending…" : "Resubmit"}
+              </button>
+            )}
+            <button type="button" onClick={() => void openLevelUpWindow()}
+              style={{ fontSize: 11, padding: "2px 10px", background: "transparent", border: "1px solid #444", borderRadius: 3, color: "#aaa", cursor: "pointer" }}>
+              Revise
+            </button>
+            {/* Discarding is the player's own call, and the only way to drop an unapproved step. */}
+            <button type="button" onClick={() => clearLevelUpStep(levelUpStep.request.actorId)}
+              title="Forget this level-up. It is not sent to your DM and cannot be recovered."
+              style={{ fontSize: 11, padding: "2px 8px", background: "transparent", border: "1px solid #5a1a1a", borderRadius: 3, color: "#ff9999", cursor: "pointer" }}>
+              Discard
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* ── Player level-up request panel ── */}
       {isPlayerMode && showLevelUpRequest && actorToShow && (
