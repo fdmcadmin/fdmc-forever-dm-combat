@@ -209,7 +209,30 @@ export type AttackProfile = {
  * ⚠ AND SPELLS ARE NOT WEAPON ATTACKS. Great Weapon Master is a heavy-weapon feat; a cast never
  * benefits from Extra Attack and must not set the profile.
  */
+/**
+ * ⚠ BOTH READS BELOW ARE MEMOISED, because the checker asks for them over and over with the same
+ * character and the same target AC. `partyFeatsFromActors` was 180ms per call almost entirely
+ * inside `featContextFromActor`, and it re-ran on every party-size swap because its memo depends
+ * on the fight profile; `attackProfile` is asked once per character by `planningParty` and again
+ * per character by the accuracy strip.
+ *
+ * Both are pure functions of the actor and the target AC — no clock, no party size, no state — and
+ * both results are read, never written (the feat context is spread into a new object; the attack
+ * profile is read field by field). Keyed on the actor OBJECT, so a re-resolved actor is a new key
+ * and a stale sheet can never be served; keyed then on the AC, because that is the only other input.
+ */
+const ATTACK_PROFILE_CACHE = new WeakMap<object, Map<number, AttackProfile | undefined>>();
+
 export function attackProfile(actor: ActorLikeForFeats, targetAC: number): AttackProfile | undefined {
+  let byAc = ATTACK_PROFILE_CACHE.get(actor as object);
+  if (!byAc) { byAc = new Map(); ATTACK_PROFILE_CACHE.set(actor as object, byAc); }
+  if (byAc.has(targetAC)) return byAc.get(targetAC);
+  const built = buildAttackProfile(actor, targetAC);
+  byAc.set(targetAC, built);
+  return built;
+}
+
+function buildAttackProfile(actor: ActorLikeForFeats, targetAC: number): AttackProfile | undefined {
   const candidates = allActions(actor)
     .filter(a => isWorn(a, equipmentRowsOf(actor)) && !a.metadata?.spell && a.metadata?.attack && a.metadata?.damage);
   if (candidates.length === 0) return undefined;
@@ -375,7 +398,22 @@ function budgetFree(actor: ActorLikeForFeats, slot: "reaction" | "bonus"): numbe
   return claimed ? 0 : 1;
 }
 
+const FEAT_CONTEXT_CACHE = new WeakMap<object, Map<number | undefined, Record<string, number | boolean>>>();
+
 export function featContextFromActor(
+  actor: ActorLikeForFeats,
+  targetAC: number | undefined,
+): Record<string, number | boolean> {
+  let byAc = FEAT_CONTEXT_CACHE.get(actor as object);
+  if (!byAc) { byAc = new Map(); FEAT_CONTEXT_CACHE.set(actor as object, byAc); }
+  const hit = byAc.get(targetAC);
+  if (hit) return hit;
+  const built = buildFeatContextFromActor(actor, targetAC);
+  byAc.set(targetAC, built);
+  return built;
+}
+
+function buildFeatContextFromActor(
   actor: ActorLikeForFeats,
   targetAC: number | undefined,
 ): Record<string, number | boolean> {

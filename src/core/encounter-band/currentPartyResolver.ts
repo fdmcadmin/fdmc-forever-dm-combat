@@ -207,6 +207,52 @@ function saveChance(saveBonus: number, dc: number): number {
   return Math.min(0.95, Math.max(0.05, (21 + saveBonus - dc) / 20));
 }
 
+/**
+ * READING A CHARACTER SHEET IS EXPENSIVE, AND THE CHECKER DOES IT OVER AND OVER FOR NOTHING.
+ *
+ * Measured in the live DM panel, 2026-10-21: one party-size click cost **3.1 seconds** as a single
+ * synchronous block. `checkPlannedEncounter` was 1175ms with four characters chosen and **2ms**
+ * with none, so the whole cost is reading the party. Per actor, `currentPartyMetrics` is 46–135ms,
+ * and `planningParty` calls it THREE ways each time: once over the whole party, once per actor,
+ * and once more per actor with bonds stripped to price bond offence.
+ *
+ * ⚠ AND THE RESULT DOES NOT DEPEND ON PARTY SIZE. The maths below reads `target.ac`,
+ * `target.saveBonus` and `target.saves` — never `target.partySize`, which is the only field that
+ * changes when the DM clicks 3P/4P/5P/6P. Verified against the live party: metrics are
+ * byte-identical across all four sizes for every character. Every size click was re-reading four
+ * sheets, twice each, to produce exactly the numbers it already had.
+ *
+ * So results are cached on what the maths ACTUALLY reads. Two properties make this safe:
+ *
+ *   · THE ACTORS ARE THE KEY, BY IDENTITY. A changed character is a NEW object (the resolve memo
+ *     rebuilds it), so an edited sheet cannot hit a stale entry — the cache misses by construction
+ *     rather than by remembering to invalidate it.
+ *   · THE TARGET FIELDS ARE NAMED, NOT STRINGIFIED. Keying on the whole target would include
+ *     `partySize` and defeat the point; `check:partyfit` holds the invariance that justifies
+ *     leaving it out, so if these metrics ever DO learn to read party size, that gate fails rather
+ *     than this cache going quietly wrong.
+ */
+const ACTOR_IDS = new WeakMap<Actor, number>();
+let nextActorId = 1;
+function actorKey(a: Actor): number {
+  let id = ACTOR_IDS.get(a);
+  if (id === undefined) { id = nextActorId++; ACTOR_IDS.set(a, id); }
+  return id;
+}
+
+const LEAN_IDS = new WeakMap<object, number>();
+let nextLeanId = 1;
+function leanKey(fn: unknown): number {
+  if (typeof fn !== "function") return 0;
+  let id = LEAN_IDS.get(fn as object);
+  if (id === undefined) { id = nextLeanId++; LEAN_IDS.set(fn as object, id); }
+  return id;
+}
+
+const METRICS_CACHE = new Map<string, CurrentPartyMetrics | null>();
+/** Bounded: the DM clicks through a handful of states, not thousands. */
+const METRICS_CACHE_MAX = 128;
+
 export function currentPartyMetrics(
   actors: readonly Actor[],
   target: ResolvedTarget,
@@ -228,6 +274,24 @@ export function currentPartyMetrics(
   } = {},
 ): CurrentPartyMetrics | null {
   if (actors.length === 0) return null;
+
+  /**
+   * The cache key: every input the maths below actually reads — and NOT `target.partySize`,
+   * which it does not. See the note above `ACTOR_IDS` for why that is safe and what holds it so.
+   *
+   * ⚠ A NULL TARGET IS LEGAL AND IS NOT CACHED. `targetFromRoster([])` returns null for an empty
+   * roster and the tracer below already tolerates it (`check:party` reads a sheet that way), so
+   * no key is built for it — nothing is cached rather than crashing on the way to the cache.
+   */
+  const cacheKey = target ? [
+    actors.map(actorKey).join(","),
+    target.ac, target.saveBonus,
+    target.saves.str, target.saves.dex, target.saves.con,
+    target.saves.int, target.saves.wis, target.saves.cha,
+    opts.rounds ?? "", opts.arrivingSpent ?? 0, leanKey(opts.leanFor),
+  ].join("|") : null;
+  if (cacheKey !== null && METRICS_CACHE.has(cacheKey)) return METRICS_CACHE.get(cacheKey) ?? null;
+
   const roundsPerFight = opts.rounds ?? RESOURCE_DAY.roundsPerFight;
   /** Share of the day already gone. Clamped, because a caller can hand this anything. */
   const spent = Math.min(1, Math.max(0, Number(opts.arrivingSpent ?? 0) || 0));
@@ -674,7 +738,8 @@ export function currentPartyMetrics(
   const r = (i: number) => atWill[(["round1", "round2", "round3", "round4Plus"] as const)[Math.min(i, 3)]]
     + (perRound[i] ?? 0);
 
-  return {
+  /** One return path, so the store is here. Bounded by eviction — see METRICS_CACHE_MAX. */
+  const computed: CurrentPartyMetrics = {
     round1Dpr: r(0), round2Dpr: r(1), round3Dpr: r(2), round4PlusDpr: r(3),
     fiveRoundSustain: sustain,
     delivery: {
@@ -695,4 +760,17 @@ export function currentPartyMetrics(
     unlinked,
     estimated,
   };
+
+  /**
+   * ⚠ EVICT OLDEST FIRST, so a long session cannot grow this without bound. A DM moves through a
+   * handful of states — four party sizes, twenty levels, a few encounters — not thousands.
+   */
+  if (cacheKey !== null) {
+    if (METRICS_CACHE.size >= METRICS_CACHE_MAX) {
+      const oldest = METRICS_CACHE.keys().next().value;
+      if (oldest !== undefined) METRICS_CACHE.delete(oldest);
+    }
+    METRICS_CACHE.set(cacheKey, computed);
+  }
+  return computed;
 }

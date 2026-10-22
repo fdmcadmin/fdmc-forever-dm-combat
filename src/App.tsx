@@ -2819,7 +2819,29 @@ export default function App() {
           equipment: { width: 640, height: 780 },
           maintenance: { width: 560, height: 640 },
         };
-        const { width, height } = sizes[panel] ?? { width: 660, height: 800 };
+        const asked = sizes[panel] ?? { width: 660, height: 800 };
+        /**
+         * ⚠ NEVER ASK FOR MORE ROOM THAN THE SCREEN HAS.
+         *
+         * These heights are hand-picked per panel (640–860) and were requested unconditionally.
+         * On a display — or an OBR window — shorter than the number asked for, the request cannot
+         * be honoured as written, and what the popover does with the remainder is OBR's business
+         * rather than ours. Christopher, 2026-10-21: *"the windows have a massive box below the
+         * app for any of the dm windows"*, and *"it doesnt happen inside your browser but the room
+         * that is open inside my ORB app still has the large box."*
+         *
+         * ⚠ THIS IS NOT A CONFIRMED FIX FOR THAT BOX, AND IT IS NOT CLAIMED AS ONE. The app's own
+         * layout was measured at exactly these popover dimensions and fills them correctly — the
+         * shell is `height: 100vh` with a `flex: 1` scrolling body, header 42px + content 818px =
+         * 860 to the pixel, no gap. The empty area could not be reproduced outside OBR, so its
+         * cause is above this code. What IS wrong here, independently, is asking for height a
+         * screen may not have; clamping removes that variable.
+         *
+         * The widths were already clamped for POSITION below and are left alone.
+         */
+        const available = Math.max(360, (window.screen?.availHeight ?? window.innerHeight) - 48);
+        const { width } = asked;
+        const height = Math.min(asked.height, available);
         // Close ALL other DM panels first — enforce one DM panel at a time
         // (actor card stays independent). When create= is set we also close the
         // target panel so it reopens fresh and the create flow actually triggers.

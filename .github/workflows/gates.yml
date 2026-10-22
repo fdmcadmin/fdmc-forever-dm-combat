@@ -403,3 +403,6 @@ jobs:
 
       - name: check no React hook runs below an early return
         run: npm run check:hooks
+
+      - name: check the party read cache keeps party size out of its key
+        run: npm run check:partyreadcache

@@ -226,7 +226,30 @@ function styleCadence(label: string): "per-hit" | "once-per-turn" {
   return "once-per-turn";
 }
 
+/**
+ * Shaping a character into a creature is the single most expensive read in the checker: 61–186ms
+ * per character, against ~1ms each for `parseCreature` and `traceCreature` downstream. It was
+ * being paid twice per character per interaction — once inside `currentPartyMetrics`' whole-party
+ * aggregate and again in that character's individual read — so a four-character party spent over a
+ * second rebuilding shapes it had just built, on every party-size swap and every character tick.
+ *
+ * It is a pure function of the actor and nothing else: no target, no round count, no clock. Both
+ * consumers treat the result as read-only (`parseCreature` spreads its argument before touching
+ * it, `materializeSummon` never writes to the spec), so handing back the same shape is the same
+ * answer, not a shared mutable. Keyed on the actor OBJECT, so a re-resolved actor — a new object
+ * out of `resolveActorFromLibrary` — correctly builds afresh and a stale sheet can never be served.
+ */
+const AS_CREATURE_CACHE = new WeakMap<Actor, ActorAsCreature>();
+
 export function actorAsCreature(actor: Actor): ActorAsCreature {
+  const cached = AS_CREATURE_CACHE.get(actor);
+  if (cached) return cached;
+  const built = buildActorAsCreature(actor);
+  AS_CREATURE_CACHE.set(actor, built);
+  return built;
+}
+
+function buildActorAsCreature(actor: Actor): ActorAsCreature {
   const md = (a: Record<string, unknown>) => (a.metadata ?? {}) as Record<string, string | number | undefined>;
   const spends: ResourceSpendingAction[] = [];
   const unreadable: string[] = [];

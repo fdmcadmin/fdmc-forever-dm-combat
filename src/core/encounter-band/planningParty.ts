@@ -18,6 +18,24 @@ const keys = ["round1", "round2", "round3", "round4Plus"] as const;
 const metricKeys = ["round1Dpr", "round2Dpr", "round3Dpr", "round4PlusDpr"] as const;
 const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
 
+/**
+ * The bond-stripped read below prices what a bond is worth by subtracting a second metrics
+ * pass from the first. That second pass needs a bond-less actor, and spreading a fresh one
+ * per call defeats the identity-keyed cache in currentPartyMetrics — every planner run paid
+ * for a full recomputation per bonded character. The clone is derived purely from the actor,
+ * so caching it against that actor object is safe: a re-resolved actor is a new object and
+ * gets its own clone.
+ */
+const BOND_STRIPPED = new WeakMap<Actor, Actor>();
+function bondStripped(actor: Actor): Actor {
+  let clone = BOND_STRIPPED.get(actor);
+  if (!clone) {
+    clone = { ...actor, tabs: { ...actor.tabs, bond: [] } };
+    BOND_STRIPPED.set(actor, clone);
+  }
+  return clone;
+}
+
 export function planningParty(actors: readonly Actor[], target: ResolvedTarget, level: number,
   mode: PartyEquipmentMode, arrivingResources = 0, arrivingSustain = arrivingResources, incoming: Parameters<typeof partyMitigationFromActors>[1] = {}) {
   if (!actors.length) return null;
@@ -74,7 +92,7 @@ export function planningParty(actors: readonly Actor[], target: ResolvedTarget, 
     const weapon = attackProfile(actor, target.ac);
     const bond = partyBondMitigationFromActors([actor]);
     const best = bond?.sources.reduce<(NonNullable<typeof bond>)["sources"][number] | undefined>((a, b) => !a || b.amount > a.amount ? b : a, undefined);
-    const withoutBond = best ? currentPartyMetrics([{ ...actor, tabs: { ...actor.tabs, bond: [] } }], target,
+    const withoutBond = best ? currentPartyMetrics([bondStripped(actor)], target,
       { arrivingSpent: arrivingResources, leanFor: classResourceLean }) : null;
     const bondOffense = {} as RoundProfile;
     keys.forEach((k, i) => bondOffense[k] = withoutBond ? Math.max(0, read[metricKeys[i]] - withoutBond[metricKeys[i]]) * ratio(from.dpr[k], to.dpr[k]) : 0);
