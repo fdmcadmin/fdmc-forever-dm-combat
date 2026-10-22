@@ -41,7 +41,8 @@ export type FdmcActorLiveState = {
 export type FdmcMonsterLiveState = {
   instanceId: string;
   initiative: number | null;
-  hp?: { current: number; max: number; temp: number };
+  /** `bonusMax` is the temporary MAXIMUM increase (Aid and friends) — see normalizeHp. */
+  hp?: { current: number; max: number; temp: number; bonusMax?: number };
 };
 
 // ─── Recent event ring buffer ─────────────────────────────────────────────────
@@ -120,11 +121,34 @@ function safeNumber(val: unknown, fallback: number): number {
   return typeof val === "number" && Number.isFinite(val) ? val : fallback;
 }
 
-function normalizeHp(val: unknown): { current: number; max: number; temp: number } {
+/**
+ * ⚠ TEMPORARY MAXIMUM HP DIED HERE, TWICE OVER.
+ *
+ * Christopher, 2026-10-21: *"any attempt to add temp MAX hp is rejected and defaults to the
+ * current max hp."* `HitPoints.bonusMax` exists for exactly this — Aid, Heroes' Feast, a
+ * long-rest ritual — and `gainBonusMaxHp` on the card writes it correctly. It was this layer
+ * that threw it away, in two separate places:
+ *
+ *   1. THIS NORMALISER DROPPED THE FIELD. The returned shape was `{ current, max, temp }`, so
+ *      `bonusMax` was gone the moment HP passed through room state — which is every time, since
+ *      that is where live HP lives.
+ *   2. AND IT CLAMPED TO THE WRONG CEILING. `Math.min(current, max)` uses the AUTHORED max, so
+ *      even had the field survived, the extra hit points it grants were trimmed straight back
+ *      off. Gaining +10 max and +10 current landed on the old max exactly — which is what
+ *      "defaults to the current max hp" looks like from the outside.
+ *
+ * ⚠ ADDITIVE, AND NO EXISTING HP MOVES. A record with no `bonusMax` reads as 0, the effective
+ * max equals the authored max, and the clamp is byte-for-byte the previous behaviour. The field
+ * is omitted entirely when it is zero, so the room payload does not grow for the ordinary case —
+ * room metadata is 16KB for every extension at this table combined.
+ */
+function normalizeHp(val: unknown): { current: number; max: number; temp: number; bonusMax?: number } {
   const h = (val && typeof val === "object" ? val : {}) as Partial<HitPoints>;
   const max = safeNumber(h.max, 1);
-  const current = Math.max(0, Math.min(safeNumber(h.current, max), max));
-  return { current, max, temp: Math.max(0, safeNumber(h.temp, 0)) };
+  const bonusMax = Math.max(0, safeNumber(h.bonusMax, 0));
+  // The ceiling is the EFFECTIVE max — see `effectiveMaxHp`, which owns this rule.
+  const current = Math.max(0, Math.min(safeNumber(h.current, max), max + bonusMax));
+  return { current, max, temp: Math.max(0, safeNumber(h.temp, 0)), ...(bonusMax > 0 ? { bonusMax } : {}) };
 }
 
 function normalizeTracker(val: unknown): FdmcStatusTracker {
@@ -243,7 +267,12 @@ export function patchActorHp(state: FdmcRoomLiveState, actorId: string, hp: HitP
     ...state,
     actorLiveState: {
       ...state.actorLiveState,
-      [actorId]: { ...current, hp: { current: hp.current, max: hp.max, temp: hp.temp ?? 0 } },
+      // ⚠ CARRIES bonusMax. This rebuilt the object from three fields, so a temporary maximum
+      // was discarded on the way into room state — the write succeeded and the value vanished.
+      [actorId]: { ...current, hp: {
+        current: hp.current, max: hp.max, temp: hp.temp ?? 0,
+        ...((hp.bonusMax ?? 0) > 0 ? { bonusMax: hp.bonusMax } : {}),
+      } },
     },
   });
 }

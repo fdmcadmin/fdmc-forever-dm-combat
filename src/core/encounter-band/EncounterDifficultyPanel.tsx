@@ -1278,8 +1278,18 @@ export function EncounterDifficultyPanel({ encounters, monsterLibrary, actors = 
                   </details>
                 </>
               ) : (
+                /**
+                 * ⚠ SAY WHICH THING IS MISSING. This read "no readable creatures" for every empty
+                 * result, including the commonest one by far — a party part-selected. Christopher
+                 * picked three of four and was told his ENCOUNTER was broken; the panel had
+                 * already said, two lines above, that it was waiting on the fourth. Two
+                 * contradictory messages on one screen, and the wrong one is the one that sends
+                 * someone off to check their monster library.
+                 */
                 <p style={{ fontSize: 11, color: "#8a6a2a", fontStyle: "italic" }}>
-                  This encounter has no readable creatures yet.
+                  {players.length > 0 && !resolved
+                    ? `Waiting on the party — ${chosen.length} of ${partySize} characters chosen. Nothing is priced until all ${partySize} are ticked.`
+                    : "This encounter has no readable creatures yet."}
                 </p>
               )}
             </>

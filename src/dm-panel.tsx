@@ -31,7 +31,19 @@ const APP_VERSION = appManifest.version;
 
 const DM_LIBRARY_UPDATED_CHANNEL = FDMC_CHANNELS.dmLibraryUpdated;
 
+/**
+ * Same-window signal that the DM library changed.
+ *
+ * ⚠ FIRED BEFORE THE OBR GUARD, AND THAT MATTERS. The broadcast below reaches OTHER windows;
+ * this reaches THIS one, which is where the balance panels live. Without it, memoising their
+ * props would mean a creature the DM edits in this very window never reaches the checker — the
+ * precedence rule `resolveMonsterLibrary` exists for, quietly stopped applying. "The write is
+ * the signal", as the loot offer and the level-up outbox already do it.
+ */
+export const DM_LIBRARY_CHANGED_LOCAL = "fdmc:dm-library-changed";
+
 function broadcastLibraryUpdate() {
+  try { window.dispatchEvent(new CustomEvent(DM_LIBRARY_CHANGED_LOCAL)); } catch { /* no DOM */ }
   if (!OBR.isAvailable) return;
   void OBR.broadcast.sendMessage(DM_LIBRARY_UPDATED_CHANNEL, { type: "library-updated" }, { destination: "REMOTE" });
 }
@@ -640,6 +652,47 @@ function DmPanelApp() {
   const [equipCreateSignal, setEquipCreateSignal] = useState(0);
   /** Bumped by the toolbar Send Loot button — opens the library panel search-and-send flow. */
   const [equipSendSignal, setEquipSendSignal] = useState(0);
+
+  /**
+   * ⚠ STABLE IDENTITIES FOR THE THREE BALANCE PANELS — THIS IS WHAT MADE THE CHECKER FREEZE.
+   *
+   * These were computed INLINE in the JSX: `encounters={loadEncounterLibrary()}` and
+   * `monsterLibrary={resolveMonsterLibrary(...).library}`, five call sites between them. Each
+   * call returns a NEW ARRAY, so every render of this panel handed the children brand-new props,
+   * and `monsterLibrary` sits in the encounter checker's planning dependency array.
+   *
+   * ⚠ THE COST IS NOT IN BUILDING THEM — `resolveMonsterLibrary` is 0.1ms for 380 creatures. It
+   * is that a fresh identity invalidates the memo behind it, so `checkPlannedEncounter` — the
+   * full tactical simulation, ~100ms once four real characters are chosen — re-ran on EVERY
+   * render of this window. Click a party-size button and the whole fight is re-simulated before
+   * the button can even repaint.
+   *
+   * ⚠ AND IT PREDATES THE AI PORT. The inline calls were here at 0.8.76.1; what changed at
+   * 0.8.77.0 is how much work hangs off them. A latent inefficiency that was survivable became
+   * an unresponsive window the moment the memo behind it grew a round-by-round simulation.
+   * Christopher, 2026-10-21: *"it freezes when i try to check the 4th pc and i have to close the
+   * window"*, and *"major lag when trying to swap party sizes."*
+   *
+   * `libraryRefreshKey` is what re-reads them when the DM actually edits a creature or an
+   * encounter — the precedence rule `resolveMonsterLibrary` exists for is unchanged, it is just
+   * applied when something changes rather than sixty times a second.
+   */
+  const [libraryRefreshKey, setLibraryRefreshKey] = useState(0);
+  useEffect(() => {
+    const bump = () => setLibraryRefreshKey(k => k + 1);
+    // This window's own edits…
+    window.addEventListener(DM_LIBRARY_CHANGED_LOCAL, bump);
+    // …and another window's, which arrive over the channel.
+    const off = OBR.isAvailable
+      ? OBR.broadcast.onMessage(DM_LIBRARY_UPDATED_CHANNEL, bump)
+      : undefined;
+    return () => { window.removeEventListener(DM_LIBRARY_CHANGED_LOCAL, bump); off?.(); };
+  }, []);
+  const balanceEncounters = useMemo(() => loadEncounterLibrary(), [libraryRefreshKey]);
+  const balanceMonsterLibrary = useMemo(
+    () => resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library,
+    [libraryRefreshKey],
+  );
   // P-UX4 Phase 5: Library "+ Create Monster" trigger (bump opens the band picker).
   const [monsterCreateSignal, setMonsterCreateSignal] = useState(0);
 
@@ -1074,8 +1127,8 @@ function DmPanelApp() {
           <div style={{ padding: "10px 14px", overflowY: "auto" }}>
             {/* A run references the DM's OWN encounters. Nothing about a run is bundled. */}
             <ActRunPanel
-              encounters={loadEncounterLibrary()}
-              monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library}
+              encounters={balanceEncounters}
+              monsterLibrary={balanceMonsterLibrary}
               actors={actors}
             />
             {/* ⚠ THE CHECKER PRICES THE LIBRARY AS IT ACTUALLY IS, not as it shipped. Both of
@@ -1083,11 +1136,11 @@ function DmPanelApp() {
                 priced at its shipped stats — the same fault 0.7.32 fixed a layer down.
                 `resolveMonsterLibrary` is the one place the precedence rule lives. */}
             <EncounterDifficultyPanel
-              encounters={loadEncounterLibrary()}
-              monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library}
+              encounters={balanceEncounters}
+              monsterLibrary={balanceMonsterLibrary}
               actors={actors}
             />
-            <CreatureEstimatorPanel monsterLibrary={resolveMonsterLibrary(BROKEN_CHAIN_MONSTER_LIBRARY).library} />
+            <CreatureEstimatorPanel monsterLibrary={balanceMonsterLibrary} />
             {/* Gate 7 of the portability spec, as a control rather than a hand-edited build.
                 Author-only: deliberately breaking a capability is not something a player should
                 be able to do to their own table. */}
