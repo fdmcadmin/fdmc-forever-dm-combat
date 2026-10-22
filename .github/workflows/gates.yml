@@ -400,3 +400,6 @@ jobs:
 
       - name: check a submitted level-up survives a closed GM app
         run: npm run check:levelup
+
+      - name: check no React hook runs below an early return
+        run: npm run check:hooks

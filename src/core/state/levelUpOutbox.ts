@@ -126,11 +126,13 @@ function write(outbox: Outbox): void {
   try { window.dispatchEvent(new CustomEvent(LEVEL_UP_OUTBOX_CHANGED)); } catch { /* no DOM */ }
 }
 
-/** The step this character is waiting on, or null. */
-export function levelUpStepFor(actorId: string | undefined): PendingLevelUpStep | null {
-  if (!actorId) return null;
-  return loadLevelUpOutbox()[actorId] ?? null;
-}
+/**
+ * ⚠ `levelUpStepFor(actorId)` WAS HERE AND IS DELETED, because the hooks fix removed its only
+ * caller. Subscribing per-character is what put a `useEffect` below five early returns and threw
+ * React #310; the app now holds the whole outbox and looks a character up at render time, which
+ * needs no helper. A one-line convenience with no caller is how a module starts carrying two ways
+ * to do the same thing — `check:wiring` caught it the moment it went unused.
+ */
 
 /**
  * Record a submission. Overwrites any existing step for that character — see the one-per-character

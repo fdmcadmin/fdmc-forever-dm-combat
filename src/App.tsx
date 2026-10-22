@@ -97,7 +97,7 @@ import { MonsterSelector } from "./core/ui/MonsterSelector";
 import type { ActorEditorSaveMode } from "./core/ui/ActorEditor";
 import { LevelUpApprovalPanel, LevelUpRequestPanel, isLevelUpRequest, isLevelUpReceived, resubmitLevelUpStep, type LevelUpRequest } from "./core/ui/LevelUpRequestPanel";
 import {
-  LEVEL_UP_OUTBOX_CHANGED, clearLevelUpStep, levelUpStepFor, markLevelUpDelivered,
+  LEVEL_UP_OUTBOX_CHANGED, clearLevelUpStep, loadLevelUpOutbox, markLevelUpDelivered,
   markLevelUpRejected, type PendingLevelUpStep,
 } from "./core/state/levelUpOutbox";
 import { resolveActor } from "./core/table-state/actorHydrationBoundary";
@@ -2088,8 +2088,40 @@ export default function App() {
    * and the custom event covers the one that did the writing. The same pairing the loot offer
    * uses, for the same reason.
    */
-  const [levelUpStep, setLevelUpStep] = useState<PendingLevelUpStep | null>(null);
+  /**
+   * THE WHOLE OUTBOX, NOT ONE CHARACTER'S STEP — and the subscription lives UP HERE.
+   *
+   * ⚠ THIS CRASHED THE APP ON LAUNCH, AND IT IS WORTH BEING PRECISE ABOUT WHY. The first version
+   * of this subscribed with `useEffect(..., [actorToShow?.id])`, placed beside `actorToShow` in
+   * the main render — which is BELOW five early returns (`isRoleLoading`, an unknown viewer role,
+   * a viewer seat, a player with no card, and an empty actor list). A hook after an early return
+   * is a CONDITIONAL hook: on a render that takes one of those branches React sees one fewer hook
+   * than it saw last time, and throws #310 — *"Rendered more hooks than during the previous
+   * render"*. The GM screen came up blank on launch.
+   *
+   * ⚠ MOVING IT UP IS NOT ENOUGH ON ITS OWN — it also had to stop depending on `actorToShow`,
+   * which does not exist this high in the component. So the state is the whole outbox, keyed by
+   * actor, and the per-character step is DERIVED at render time (`levelUpStep` below, a plain
+   * lookup and not a hook). That makes the subscription unconditional and its dependency list
+   * empty, which is what the rules of hooks actually require.
+   *
+   * ⚠ AND `npm run build` CANNOT CATCH THIS. The build is `tsc -b && vite build`; nothing runs
+   * eslint, so `react-hooks/rules-of-hooks` never looked. Eighty-three gates passed on a change
+   * that would not start. `check:hooks` now covers exactly this.
+   */
+  const [levelUpOutbox, setLevelUpOutbox] = useState<Record<string, PendingLevelUpStep>>(() => loadLevelUpOutbox());
   const [resubmitting, setResubmitting] = useState(false);
+  useEffect(() => {
+    const read = () => setLevelUpOutbox(loadLevelUpOutbox());
+    read();
+    // `storage` fires in OTHER windows; the custom event covers the one that did the writing.
+    window.addEventListener(LEVEL_UP_OUTBOX_CHANGED, read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener(LEVEL_UP_OUTBOX_CHANGED, read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
   const [levelUpRejectionToast, setLevelUpRejectionToast] = useState<string | null>(null);
   // A save-forcing action fired; pick which combatants must roll, then broadcast the call.
   const [pendingSave, setPendingSave] = useState<{ source: string; action: string; save: string } | null>(null);
@@ -3309,21 +3341,10 @@ export default function App() {
   const actorToShow = selectedActor ?? actors[0];
 
   /**
-   * Keep the pending level-up step in step with storage — see `levelUpStep`.
-   *
-   * Reads on mount too, which is the case that matters: a player who submitted, closed the tab
-   * and came back has their step waiting rather than a card that has forgotten it.
+   * This character's pending step — a LOOKUP, not a hook, so it is safe below the early returns.
+   * The subscription that keeps `levelUpOutbox` fresh lives with the other hooks; see it for why.
    */
-  useEffect(() => {
-    const read = () => setLevelUpStep(levelUpStepFor(actorToShow?.id));
-    read();
-    window.addEventListener(LEVEL_UP_OUTBOX_CHANGED, read);
-    window.addEventListener("storage", read);
-    return () => {
-      window.removeEventListener(LEVEL_UP_OUTBOX_CHANGED, read);
-      window.removeEventListener("storage", read);
-    };
-  }, [actorToShow?.id]);
+  const levelUpStep: PendingLevelUpStep | null = actorToShow ? levelUpOutbox[actorToShow.id] ?? null : null;
   if (!actorToShow) return null;
 
   const hp = getActorHp(actorToShow.id);
