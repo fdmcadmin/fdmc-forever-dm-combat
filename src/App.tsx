@@ -2502,6 +2502,20 @@ export default function App() {
     return [...partyCombatants, ...playerMonsterCombatants];
   }, [actors, monsterCandidates, playerMonsters, partyRoster, roomLiveState, isDmMode, getActorInitiative, liveHpByActorId, activeSummons]);
 
+  /**
+   * Whose turn is running right now, for the log facts a reaction needs.
+   *
+   * ⚠ RESOLVED FROM THE ROSTER, NOT FROM `actors`. The turn owner is very often a MONSTER — which
+   * is the whole point of recording it — and a monster is not in the actor library.
+   */
+  const activeTurnOwner = useMemo(() => {
+    const id = roomLiveState.combat.activeActorId;
+    if (!id) return undefined;
+    const found = allCombatants.find(c => c.id === id);
+    return found ? { id: found.id, name: found.name } : undefined;
+  }, [allCombatants, roomLiveState.combat.activeActorId]);
+
+
   // ── DM: broadcast the player-safe party roster (actor combatants only — never monster
   // HP) so every PC's tracker shows ally HP. Re-broadcasts when the party's HP / init /
   // active / death state changes; also replies to a late joiner's request.
@@ -4907,6 +4921,7 @@ export default function App() {
         combatActive={roomLiveState.combat.phase === "combat"}
         onConsumeActionResources={(action, castLevel) => consumeAndRemember(actorToShow.id, actorToShow.name, action, actorToShow.tabs.resources ?? [], castLevel)}
         onActionRollSettled={(action, settled) => handleActionRollSettled(actorToShow.id, actorToShow.name, action, settled)}
+        turnOwner={activeTurnOwner}
         onSummonBody={(action, slotLevel) => handleSummonBody(actorToShow.id, action, slotLevel)}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
@@ -5315,6 +5330,7 @@ export default function App() {
                 combatActive={roomLiveState.combat.phase === "combat"}
                 onConsumeActionResources={(action, castLevel) => consumeAndRemember(focusedActorId, focusedActor.name, action, focusedActor.tabs.resources ?? [], castLevel)}
                 onActionRollSettled={(action, settled) => handleActionRollSettled(focusedActorId, focusedActor.name, action, settled)}
+                turnOwner={activeTurnOwner}
                 onSummonBody={(action, slotLevel) => handleSummonBody(focusedActorId, action, slotLevel)}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}

@@ -131,6 +131,16 @@ console.log("\nMonster turns");
    * something the character did on its own.
    */
   ok("...attributed to whose turn it happened on", app.includes("turnOwnerId: owner!.id"));
+  /**
+   * A reaction interjects into someone ELSE's turn by definition, so the log has to say whose —
+   * otherwise an Opportunity Attack during Brandwing's turn reads as the character's own action.
+   */
+  const card = read("src/core/ui/ActorCard.tsx");
+  ok("a use records which economy it came from", card.includes("function economyFacts"));
+  ok("...tagging a reaction as one", card.includes('costs.includes("reaction") ? "reaction"'));
+  ok("...and whose turn it interrupted", card.includes("turnOwnerId: turnOwner.id"));
+  ok("...only when it is genuinely someone else's turn", card.includes("turnOwner.id !== actor.id"));
+  ok("the turn owner is resolved from the roster, so a monster counts", app.includes("const activeTurnOwner"));
   ok("a monster's turn ends under its own name", app.includes("allCombatants.find(c => c.id === currentId)")
     && !app.includes('message: "Monster turn ends."'));
 }

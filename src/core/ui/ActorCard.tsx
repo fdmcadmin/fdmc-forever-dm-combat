@@ -172,6 +172,16 @@ type ActorCardProps = {
    */
   onActionRollSettled?: (action: ActorAction, settled: "committed" | "rerolled") => void;
   /**
+   * Whose turn is currently running, when that is someone other than this character.
+   *
+   * ⚠ THIS IS WHAT MAKES A REACTION READ AS PART OF THE MONSTER'S TURN. Christopher, 2026-10-25:
+   * *"the monsters turns are now showing combat actions but [should] show character reactions and
+   * damage taken."* A reaction interjects into someone else's turn by definition, and the log had
+   * no way to say whose — so an Opportunity Attack during Brandwing's turn was filed as though the
+   * character had taken it on their own.
+   */
+  turnOwner?: { id: string; name: string };
+  /**
    * A summon-bearing action was used — put its body on the combat chart.
    *
    * ⚠ SEPARATE FROM `onConsumeActionResources` ON PURPOSE. That one is gated on the action not
@@ -1017,6 +1027,7 @@ export function ActorCard({
   onSetGrip,
   onConsumeActionResources,
   onActionRollSettled,
+  turnOwner,
   onSummonBody,
   onSaveCall,
   coins,
@@ -3997,6 +4008,29 @@ export function ActorCard({
     );
   }
 
+  /**
+   * The structured half of a use: which economy it came out of, and whose turn it happened on.
+   *
+   * `CombatLogFacts` has carried `sourceKind` and `turnOwnerId`/`turnOwnerName` since it was
+   * written — `sourceKind` documented as what "stops [reactions] being credited to the turn
+   * owner", and the turn owner recorded "only when that differs from the actor". Nothing populated
+   * either, so the log could not tell a reaction from an action, and a monster's turn showed none
+   * of the party's answers to it.
+   */
+  function economyFacts(costs: ActionCost[]) {
+    const kind = costs.includes("reaction") ? "reaction"
+      : costs.includes("bonus") ? "bonus"
+      : costs.includes("free") ? "free"
+      : "action";
+    // Only recorded when it is genuinely someone else's turn — see the field's own note.
+    const elsewhere = turnOwner && turnOwner.id !== actor.id;
+    return {
+      sourceKind: kind as "action" | "bonus" | "reaction" | "free",
+      actorId: actor.id,
+      ...(elsewhere ? { turnOwnerId: turnOwner.id, turnOwnerName: turnOwner.name } : {}),
+    };
+  }
+
   function createReadiedMessage(action: ActorAction, costs: ActionCost[], readiedKey: string) {
     const actionLabel = getActionLogLabel(action);
     // Only a slot can be swapped — a free action displaces nothing.
@@ -4707,6 +4741,7 @@ export function ActorCard({
         pendingKey: makePendingLogKey(actor.id, readiedKey),
         supersedePendingKeys: getSupersededPendingLogKeys(costs, readiedKey),
         message,
+        ...economyFacts(costs),
       });
       return;
     }
@@ -4779,6 +4814,7 @@ export function ActorCard({
       pendingKey: makePendingLogKey(actor.id, readiedKey),
       supersedePendingKeys: getSupersededPendingLogKeys(costs, readiedKey),
       message,
+      ...economyFacts(costs),
     });
   }
 
