@@ -13,6 +13,19 @@ export type CombatLogEntryTone = "combat" | "table-note" | "system";
 export type CombatLogFacts = {
   /** Stable id of whoever ACTED. Names collide and get renamed; totals need an id. */
   actorId?: string;
+  /**
+   * WHO rolled it, as opposed to which character it was rolled FOR.
+   *
+   * Christopher, 2026-10-25: *"there is no indicator of which character the dm rolls from or if a
+   * player is controlling multiple characters."* `actorName` answers which character; these answer
+   * which person, and which seat they were sitting in — the only way to tell two characters run
+   * from one seat apart, or a DM's roll from the player's own. Stamped at the sink by
+   * `createEntry`; see `logIdentity.ts`.
+   */
+  rolledByRole?: "dm" | "co-dm" | "player" | "unknown";
+  rolledByName?: string;
+  rolledBySeatId?: string;
+  rolledBySeatLabel?: string;
   /** Which side acted. The summary groups by this so "who carried the fight" is a party
    *  question and is not won by the boss simply because it swung the hardest. */
   actorSide?: "party" | "monster";

@@ -197,6 +197,60 @@ console.log("\n6. the wiring — the card stamps both rows");
     && card.includes("WEAPON_MASTERIES"));
 }
 
+/**
+ * AN AUTHORED WEAPON THAT STATES ITS OWN MASTERY IS NOT ALLOWED TO BE INVISIBLE.
+ *
+ * Christopher, 2026-10-25: *"the current weapon masteries are not showing all weapons attached to
+ * a character, right now lightstone only shows the fail while he has frostedge in his bag."*
+ *
+ * Frostedge is an authored campaign Longsword with `mastery: "Sap"` as a stated field. Its id is
+ * `tbc-frostedge`, it is not a chassis, and nothing on it named a base form — so the picker's two
+ * resolution routes (a `base-` id, a chosen chassis form) both found nothing and the weapon was
+ * skipped, leaving only his Flail.
+ */
+{
+  const flail = { id: "equip-base-flail", label: "Flail" };
+  const frostedge = { id: "equip-tbc-frostedge", label: "Frostedge", metadata: { mastery: "Sap" } };
+  const tagged = { id: "equip-tbc-frostedge", label: "Frostedge", metadata: { mastery: "Sap", baseFormId: "base-longsword" } };
+  const longsword = { id: "equip-base-longsword", label: "Longsword" };
+
+  const bare = masteryWeaponOptions([flail, frostedge]);
+  ok("an authored weapon's stated mastery is offered", bare.some(o => o.itemIds.includes("tbc-frostedge")),
+    bare.map(o => o.formId).join(" "));
+  ok("...carrying its own stated mastery", bare.find(o => o.itemIds.includes("tbc-frostedge"))?.mastery === "Sap");
+  ok("...and it is pickable, so the choice survives a reload",
+    normalizeMasteryWeapons(["item:tbc-frostedge"], bare, 3).includes("item:tbc-frostedge"));
+
+  /**
+   * ⚠ A MASTERY IS NOT A WEAPON TYPE. The first cut grouped a stated-mastery weapon with any
+   * carried form sharing that mastery — and Sap is on the Flail as well as the Longsword, so
+   * Frostedge folded itself into the Flail and the picker read "Flail: base-flail, tbc-frostedge".
+   * Two different weapon types are two picks; inventing a shared one both misreported the weapon
+   * and under-charged the choice.
+   */
+  ok("an untagged weapon does NOT fold into an unrelated form that shares its mastery",
+    !bare.find(o => o.formId === "base-flail")?.itemIds.includes("tbc-frostedge"),
+    JSON.stringify(bare.find(o => o.formId === "base-flail")?.itemIds));
+
+  const withTag = masteryWeaponOptions([flail, tagged]);
+  ok("baseFormId makes it read as the weapon type it is",
+    withTag.some(o => o.formId === "base-longsword" && o.itemIds.includes("tbc-frostedge")),
+    withTag.map(o => o.formId).join(" "));
+
+  const both = masteryWeaponOptions([flail, tagged, longsword]);
+  const ls = both.find(o => o.formId === "base-longsword");
+  ok("a tagged weapon and a plain one of that type are ONE pick",
+    Boolean(ls && ls.itemIds.includes("tbc-frostedge") && ls.itemIds.includes("base-longsword")),
+    JSON.stringify(ls?.itemIds));
+  ok("...and picking it lights up both",
+    activeMasteryByItemId(both, normalizeMasteryWeapons(["base-longsword"], both, 3)).get("tbc-frostedge") === "Sap");
+
+  const library = readFileSync("src/data/broken-chain/equipmentLibrary.ts", "utf8");
+  const idAt = library.indexOf('"id": "tbc-frostedge"');
+  ok("Frostedge is tagged as a longsword in the library",
+    idAt >= 0 && library.slice(idAt, idAt + 900).includes('"baseFormId": "base-longsword"'));
+}
+
 console.log(failures === 0
   ? "\nOK — the choice is a weapon, the property is derived, and the swing is marked"
   : `\n${failures} FAILED`);

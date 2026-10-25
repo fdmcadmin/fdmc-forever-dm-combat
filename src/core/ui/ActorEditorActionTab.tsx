@@ -142,6 +142,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     source: action.category,
     visibility: action.logMode === "silent" ? "hidden" : "player",
     initiativeBonus: action.metadata?.initiativeBonus,
+    initiativeAdvantage: action.metadata?.initiativeAdvantage,
     acBonus: (action.metadata?.statEffects ?? [])
       .filter(e => e.type === "addAC")
       .reduce((sum, e) => sum + (e.value ?? 0), 0) || undefined,
@@ -598,6 +599,29 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
               style={{ display: "block", width: "100%", marginTop: 2, padding: "4px 8px", borderRadius: 4, border: "1px solid #444", background: "#111", color: "#fff" }}
             />
             <span style={{ fontSize: 10, color: "#555", marginTop: 2, display: "block" }}>Adds to this actor's initiative roll formula. Use only for feats/features that grant an initiative bonus.</span>
+          </label>
+          {/*
+            ADVANTAGE ON INITIATIVE — a tick, not a number.
+            Christopher, 2026-10-25: *"there needs to be a setting on the character sheet that you
+            can check for advantage on initiative."* Kept beside the bonus because that is where a
+            DM looks for it, and deliberately NOT folded into it: 2d20 keeping the higher is not
+            worth any fixed number of points. A spell cast in the moment uses the toggle beside the
+            roll instead; this is for the standing grant.
+          */}
+          <label style={{ fontSize: 12, display: "flex", alignItems: "flex-start", gap: 7, gridColumn: "1 / -1" }}>
+            <input
+              type="checkbox"
+              checked={Boolean(draft.initiativeAdvantage)}
+              onChange={e => set("initiativeAdvantage", e.target.checked ? true : undefined)}
+              style={{ marginTop: 2 }}
+            />
+            <span>
+              Advantage on Initiative
+              <span style={{ fontSize: 10, color: "#555", display: "block" }}>
+                Rolls 2d20 and keeps the higher. For a feature that grants it permanently; a one-off
+                before a fight is the ⚡ toggle beside the tracker's roll button.
+              </span>
+            </span>
           </label>
         </div>
       )}

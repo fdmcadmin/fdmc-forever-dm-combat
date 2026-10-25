@@ -1,4 +1,6 @@
 import { useState } from "react";
+// Who rolled it, rendered after which character it was rolled for.
+import { describeRoller } from "./logIdentity";
 import { actionCostLabels } from "../types/actionEconomy";
 import type { CombatLogEntry } from "../types/combatLog";
 import { summarizeEncounter, type CombatantTotals } from "./encounterSummary";
@@ -105,6 +107,18 @@ function formatCosts(entry: CombatLogEntry) {
   return entry.actionCosts.map((cost) => actionCostLabels[cost]).join(" + ");
 }
 
+/**
+ * The person behind an entry — "Chris — DM", "Sam — player, Seat 2" — or nothing when the window
+ * that wrote it never identified anyone (outside Owlbear, or before the viewer id resolved).
+ */
+function rollerLabel(entry: CombatLogEntry): string | undefined {
+  return describeRoller({
+    role: entry.rolledByRole ?? "unknown",
+    ...(entry.rolledByName ? { name: entry.rolledByName } : {}),
+    ...(entry.rolledBySeatLabel ? { seatLabel: entry.rolledBySeatLabel } : {}),
+  });
+}
+
 function formatSource(entry: CombatLogEntry) {
   if (entry.tabId === "system") {
     return "System";
@@ -197,6 +211,14 @@ export function CombatLog({ entries, onClear }: CombatLogProps) {
                 <p className="log-line">{entry.message}</p>
                 <p className="log-meta">
                   {entry.timestamp} · {entry.actorName} · {formatToneLabel(entry)} · {formatSource(entry)}
+                  {/*
+                    WHO ROLLED IT, after which character it was rolled for.
+                    Christopher, 2026-10-25: *"there is no indicator of which character the dm rolls
+                    from or if a player is controlling multiple characters."* `actorName` above is
+                    the character; this is the person and their seat. Only rendered when the window
+                    actually identified someone — see `describeRoller`.
+                  */}
+                  {rollerLabel(entry) && <> · rolled by {rollerLabel(entry)}</>}
                 </p>
               </article>
             ))}

@@ -406,3 +406,6 @@ jobs:
 
       - name: check the party read cache keeps party size out of its key
         run: npm run check:partyreadcache
+
+      - name: check who rolled, initiative advantage, and giving a resource back
+        run: npm run check:rollerinit

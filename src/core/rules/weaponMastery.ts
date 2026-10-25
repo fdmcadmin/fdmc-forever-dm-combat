@@ -31,7 +31,7 @@
  */
 
 import { findForm } from "../constants/chassis";
-import type { WeaponMasteryName } from "../constants/weaponMastery";
+import { WEAPON_MASTERY_NAMES, type WeaponMasteryName } from "../constants/weaponMastery";
 
 /**
  * How many masteries a class has active, by class level.
@@ -117,7 +117,16 @@ export function masteryCount(opts: {
 export type MasteryWeaponRow = {
   id: string;
   label: string;
-  metadata?: { chassis?: { formId?: string } };
+  metadata?: {
+    chassis?: { formId?: string };
+    /**
+     * The base weapon this authored item is BUILT ON, when it is not a chassis and its id does
+     * not name a form. Explicit, because the type cannot be read off a name or a rules paragraph.
+     */
+    baseFormId?: string;
+    /** The mastery the item itself states. Authored campaign weapons carry this. */
+    mastery?: string;
+  };
 };
 
 /** One pickable weapon: the base form, its mastery, and the carried items that resolve to it. */
@@ -150,7 +159,33 @@ export type MasteryWeaponOption = {
 function formForRow(row: MasteryWeaponRow) {
   const itemId = row.id.replace(/^equip-/, "");
   const own = itemId.startsWith("base-") ? findForm(itemId) : undefined;
-  return own ?? findForm(row.metadata?.chassis?.formId);
+  // `baseFormId` is the third route: an authored weapon saying which base weapon it IS.
+  return own ?? findForm(row.metadata?.chassis?.formId) ?? findForm(row.metadata?.baseFormId);
+}
+
+/** The mastery a row STATES for itself, when it resolves to no base form. */
+function statedMastery(row: MasteryWeaponRow): WeaponMasteryName | undefined {
+  const named = row.metadata?.mastery?.trim();
+  if (!named) return undefined;
+  return (WEAPON_MASTERY_NAMES as readonly string[]).includes(named) ? named as WeaponMasteryName : undefined;
+}
+
+/**
+ * The option key for a weapon that states a mastery but resolves to no base form.
+ *
+ * ⚠ KEYED BY THE ITEM, AND DELIBERATELY NOT BY THE MASTERY. The first cut of this grouped such a
+ * weapon with any carried form sharing its mastery, and that is wrong: a mastery is not a weapon
+ * type. Sap is on the Flail AND the Longsword, so Lights Stone's Frostedge — a Longsword — folded
+ * itself into his Flail and the picker read "Flail: base-flail, tbc-frostedge". Two different
+ * weapon types are two picks under the 2024 rules, so inventing a shared one both misreported the
+ * weapon and under-charged the choice.
+ *
+ * An item-keyed option is the honest fallback: it is pickable, it is named after itself, and it
+ * claims nothing about what kind of weapon it is. To have it GROUP with the longswords — one pick
+ * covering both — the item says so with `baseFormId`, which is a stated field and not a guess.
+ */
+function statedKey(itemId: string): string {
+  return `item:${itemId}`;
 }
 
 /**
@@ -171,26 +206,53 @@ function formForRow(row: MasteryWeaponRow) {
  */
 export function masteryWeaponOptions(rows: readonly MasteryWeaponRow[]): MasteryWeaponOption[] {
   const byForm = new Map<string, MasteryWeaponOption>();
-  for (const row of rows) {
-    const form = formForRow(row);
-    if (!form?.mastery) continue;
-    const itemId = row.id.replace(/^equip-/, "");
-    const existing = byForm.get(form.id);
-    if (existing) {
-      if (!existing.itemIds.includes(itemId)) {
-        existing.itemIds.push(itemId);
-        existing.itemLabels.push(row.label);
-      }
-    } else {
-      byForm.set(form.id, {
-        formId: form.id,
-        formName: form.name,
-        mastery: form.mastery,
-        itemIds: [itemId],
-        itemLabels: [row.label],
-      });
+  const add = (key: string, option: () => MasteryWeaponOption, itemId: string, label: string) => {
+    const existing = byForm.get(key);
+    if (!existing) { byForm.set(key, option()); return; }
+    if (!existing.itemIds.includes(itemId)) {
+      existing.itemIds.push(itemId);
+      existing.itemLabels.push(label);
     }
+  };
+
+  // Pass 1: rows that resolve to a real base form. Unchanged, and still the preferred answer.
+  const stated: { row: MasteryWeaponRow; mastery: WeaponMasteryName }[] = [];
+  for (const row of rows) {
+    const itemId = row.id.replace(/^equip-/, "");
+    const form = formForRow(row);
+    if (form?.mastery) {
+      const mastery = form.mastery;
+      add(form.id, () => ({
+        formId: form.id, formName: form.name, mastery,
+        itemIds: [itemId], itemLabels: [row.label],
+      }), itemId, row.label);
+      continue;
+    }
+    /**
+     * ⚠ A WEAPON THAT STATES ITS OWN MASTERY IS NOT ALLOWED TO BE INVISIBLE.
+     *
+     * Christopher, 2026-10-25: *"the current weapon masteries are not showing all weapons attached
+     * to a character, right now lightstone only shows the fail while he has frostedge in his bag"*.
+     *
+     * Frostedge is an authored campaign Longsword carrying `mastery: "Sap"` as a stated field. Its
+     * id is `tbc-frostedge`, it is not a chassis, and nothing on it named a base form — so both
+     * routes above resolved nothing and the picker skipped it, leaving only his Flail. The item's
+     * own stated mastery is the honest answer, and it is a FIELD, never read off the name or the
+     * rules paragraph.
+     */
+    const own = statedMastery(row);
+    if (own) stated.push({ row, mastery: own });
   }
+
+  // Pass 2: the stated-mastery weapons, each as its own option. See `statedKey`.
+  for (const { row, mastery } of stated) {
+    const itemId = row.id.replace(/^equip-/, "");
+    add(statedKey(itemId), () => ({
+      formId: statedKey(itemId), formName: row.label, mastery,
+      itemIds: [itemId], itemLabels: [row.label],
+    }), itemId, row.label);
+  }
+
   return [...byForm.values()].sort((a, b) => a.formName.localeCompare(b.formName));
 }
 

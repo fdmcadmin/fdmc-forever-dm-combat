@@ -240,7 +240,7 @@ function ActorPopout() {
    */
   const { summonBody } = useActiveSummonsState(actorList, roomLiveState.combat.round);
   const { addEntry, removePendingEntries } = useCombatLog();
-  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, consumeItemCharge, restoreItemCharge, spendResource } = useResourceCounterState(actorList);
+  const { counters, resetActorResources, consumeSpellSlot, consumeNamedResource, consumeItemCharge, restoreItemCharge, spendResource, restoreResource } = useResourceCounterState(actorList);
   const { status: diceBridgeStatus, lastEvent: diceBridgeLastEvent, sendRollRequest, sendDicePlusRollRequest, sendMockRollResult } = useOwlbearDiceBridge();
 
   if (!actor) {
@@ -421,6 +421,10 @@ function ActorPopout() {
         onSpendResource={(rid, amt) => {
           const r = spendResource(actor.id, rid, amt);
           addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} spends ${amt} from ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"} left).` : `⚠ ${actor.name} has nothing left in ${r.label ?? "that pool"}.` });
+        }}
+        onRestoreResource={(rid, amt) => {
+          const r = restoreResource(actor.id, rid, amt);
+          addEntry({ actorName: actor.name, actionName: r.label ?? "Resource", tabId: "resources", message: r.outcome === "spent" ? `${actor.name} regains ${amt} in ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"}).` : `${r.label ?? "That pool"} is already full.` });
         }}
         onSpendItemCharge={(action) => consumeActionResourcesOnCommit({ actorId: actor.id, actorName: actor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
         onRestoreItemCharge={(action) => { const r = restoreItemCharge(actor.id, action); addEntry({ actorName: actor.name, actionName: action.label, tabId: "equipment", message: `${actor.name} regains a charge on ${action.label} (${r.remaining}/${r.max ?? "?"}).` }); }}

@@ -215,6 +215,12 @@ export type ResourceKind = "spellSlot" | "pactSlot" | "freeCast" | "pool" | "tog
 export type CastingTimeType = "action" | "bonus" | "reaction" | "ritual" | "special";
 
 export type ActorActionMetadata = {
+  /**
+   * The base weapon an authored weapon is built on — `base-longsword`. Written by
+   * `itemToAction`; read by the weapon-mastery picker so an authored blade can group with the
+   * weapon TYPE it is, rather than standing alone. See `EquipmentItem.baseFormId`.
+   */
+  baseFormId?: string;
   attack?: string;
   damage?: string;
   /** Damage type for the damage formula — standard D&D type or a custom free-text value. */
@@ -399,6 +405,18 @@ export type ActorActionMetadata = {
   successDamage?: string;
   diceLabel?: string;
   initiativeBonus?: number;
+  /**
+   * This row grants ADVANTAGE on Initiative.
+   *
+   * Christopher, 2026-10-25: *"there needs to be a setting on the character sheet that you can
+   * check for advantage on initiative … since there are spells and class action/features that
+   * give advantage on these."*
+   *
+   * Separate from `initiativeBonus` because advantage is not a number: two d20s keeping the
+   * higher is not the same as any flat bonus, and adding one to the other would be wrong in both
+   * directions. Entered explicitly, exactly like the bonus — never inferred from a feature's name.
+   */
+  initiativeAdvantage?: boolean;
   /** Equipment-tab items only: false = carried but NOT equipped (its stat effects /
    *  AC / spell-focus bonuses stop applying). undefined/true = equipped. Lets a player
    *  unequip an item without removing it from the character. */

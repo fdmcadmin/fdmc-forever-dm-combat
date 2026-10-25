@@ -1,6 +1,8 @@
 import type { Actor } from "../types/actor";
 import type { ActorAction } from "../types/tabs";
 import { deriveActorStats } from "./deriveActorStats";
+// Advantage is 2d20kh1 — ONE helper owns that notation; see RULE 0.
+import { applyAdvantage } from "../dice/diceFormula";
 
 // ─── Initiative modifier — single source of truth ───────────────────────────────
 // Used by both the actor card's roll button (initiativeRollFormula) and the combat
@@ -27,8 +29,28 @@ export function getActorInitiativeModifier(actor: Actor): number {
   return deriveActorStats(actor).dex.modifier + getActorTraitInitiativeBonus(actor);
 }
 
-/** `1d20+N` initiative formula for an actor, N = effective initiative modifier. */
-export function initiativeRollFormula(actor: Actor): string {
+/**
+ * Does anything on this sheet grant ADVANTAGE on Initiative?
+ *
+ * Read from `metadata.initiativeAdvantage` on any row, the same way `initiativeBonus` is summed:
+ * value comes only from what was entered, with no hardcoded feature names. A permanent grant
+ * lives here; a one-off (a spell cast before the fight) is passed per roll instead — see the
+ * `advantage` argument below.
+ */
+export function getActorInitiativeAdvantage(actor: Actor): boolean {
+  return (Object.values(actor.tabs).flat() as ActorAction[]).some(action =>
+    (action.metadata as { initiativeAdvantage?: boolean } | undefined)?.initiativeAdvantage === true);
+}
+
+/**
+ * `1d20+N` initiative formula for an actor, N = effective initiative modifier.
+ *
+ * ⚠ ADVANTAGE IS AN OR, NOT AN OVERRIDE. A sheet that permanently grants it keeps it even when
+ * the caller passes nothing, and a situational grant (the toggle beside the roll) can turn it on
+ * for a character whose sheet does not. Nothing can turn a standing grant OFF by omission.
+ */
+export function initiativeRollFormula(actor: Actor, advantage = false): string {
   const total = getActorInitiativeModifier(actor);
-  return `1d20${total >= 0 ? `+${total}` : String(total)}`;
+  const flat = `1d20${total >= 0 ? `+${total}` : String(total)}`;
+  return (advantage || getActorInitiativeAdvantage(actor)) ? applyAdvantage(flat, "adv") : flat;
 }

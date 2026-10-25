@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 import type { AddCombatLogEntryInput, CombatLogEntry } from "../types/combatLog";
 import { safeStorage } from "../utils/safeStorage";
+import { currentLogRoller } from "./logIdentity";
 
 function createTimestamp() {
   return new Date().toLocaleTimeString([], {
@@ -123,18 +124,37 @@ function isCombatLogSyncMessage(data: unknown): data is CombatLogSyncMessage {
   return message.type === "add" || message.type === "removePending" || message.type === "clearPending" || message.type === "clearAll";
 }
 
+/**
+ * ⚠ IT WAS THROWING THE FACTS AWAY.
+ *
+ * `CombatLogFacts` — actorId, side, target, amount, category, sourceKind, turnOwner, round,
+ * naturalRoll, outcome — is declared on `AddCombatLogEntryInput` and documented as "all optional
+ * and purely additive", and this function listed the fields it copied one by one. Every fact a
+ * caller passed was dropped on the floor here, which is why an exported log carried nothing but
+ * prose and why `summary.combatants` came back empty with `rounds: 0` on a 215-entry export: the
+ * structured half the summary aggregates never reached an entry. Spreading the input is what makes
+ * the type's promise true.
+ */
 function createEntry(input: AddCombatLogEntryInput): CombatLogEntry {
+  const { supersedePendingKeys: _ignored, message, actionCosts, ...facts } = input;
+  const roller = currentLogRoller();
   return {
+    // Everything the caller supplied, facts included. Overridden below only where this function
+    // owns the value (id, timestamp) or has to apply a default.
+    ...facts,
     id: crypto.randomUUID(),
-    actorName: input.actorName,
-    actionName: input.actionName,
-    message: input.message ?? `${input.actorName} has readied ${input.actionName}.`,
-    rollResult: input.rollResult,
+    message: message ?? `${input.actorName} has readied ${input.actionName}.`,
     timestamp: createTimestamp(),
-    tabId: input.tabId,
-    actionCosts: input.actionCosts ?? [],
-    pendingKey: input.pendingKey,
+    actionCosts: actionCosts ?? [],
     tone: inferTone(input),
+    /**
+     * WHO rolled it. Stamped here so no call site has to remember — see `logIdentity.ts`. A
+     * caller that names a roller explicitly (replaying someone else's action) keeps its own.
+     */
+    rolledByRole: input.rolledByRole ?? roller.role,
+    ...(input.rolledByName ?? roller.name ? { rolledByName: input.rolledByName ?? roller.name } : {}),
+    ...(input.rolledBySeatId ?? roller.seatId ? { rolledBySeatId: input.rolledBySeatId ?? roller.seatId } : {}),
+    ...(input.rolledBySeatLabel ?? roller.seatLabel ? { rolledBySeatLabel: input.rolledBySeatLabel ?? roller.seatLabel } : {}),
   };
 }
 

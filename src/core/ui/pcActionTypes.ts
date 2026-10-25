@@ -93,6 +93,8 @@ export type PcActionDraft = {
   visibility?: PcActionVisibility;
   /** P5 F09 — initiative bonus contributed by this feature (e.g. Alert feat +5) */
   initiativeBonus?: number;
+  /** This row grants ADVANTAGE on Initiative — see ActorActionMetadata.initiativeAdvantage. */
+  initiativeAdvantage?: boolean;
   /** Feat/feature AC bonus — applied as an addAC stat effect (e.g. Dual Wielder +1). */
   acBonus?: number;
   /** Fighting style toggle — bonus to matching weapon attacks (Archery, TWF, GWF). */
@@ -156,6 +158,7 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.attackBonus !== undefined && String(draft.attackBonus).trim() ? { attackBonus: draft.attackBonus } : {}),
     ...(draft.saveAbility?.trim() ? { saveAbility: draft.saveAbility.trim() } : {}),
     ...(Number.isFinite(draft.initiativeBonus) ? { initiativeBonus: draft.initiativeBonus } : {}),
+    ...(draft.initiativeAdvantage ? { initiativeAdvantage: true } : {}),
     ...(draft.saveDc !== undefined && String(draft.saveDc).trim() ? { saveDc: draft.saveDc } : {}),
     ...(draft.checkAbility?.trim() ? { checkAbility: draft.checkAbility.trim() } : {}),
     ...(draft.damage?.trim() ? { damage: draft.damage.trim() } : {}),

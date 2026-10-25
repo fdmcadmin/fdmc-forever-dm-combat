@@ -1,7 +1,7 @@
 {
   "name": "forever-dm-combat",
   "private": true,
-  "version": "0.8.79.3",
+  "version": "0.8.80.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -117,7 +117,8 @@
     "check:planning": "npx tsx scripts/check-checker-planning.ts",
     "check:levelup": "npx tsx scripts/check-levelup-outbox.ts",
     "check:hooks": "npx tsx scripts/check-hooks.ts",
-    "check:partyreadcache": "npx tsx scripts/check-party-read-cache.ts"
+    "check:partyreadcache": "npx tsx scripts/check-party-read-cache.ts",
+    "check:rollerinit": "npx tsx scripts/check-roller-initiative-resources.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

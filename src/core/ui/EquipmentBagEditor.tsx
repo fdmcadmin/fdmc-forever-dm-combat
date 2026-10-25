@@ -335,6 +335,18 @@ export type EquipmentItem = {
   /** Weapon Mastery property (2024 rules). Picked in the equipment creator; its rules
    *  text is appended under Information on the generated attack. */
   mastery?: WeaponMasteryName;
+  /**
+   * The BASE WEAPON this item is built on — `base-longsword` — for an authored weapon that is
+   * not a chassis and whose id does not name a form.
+   *
+   * ⚠ WHAT IT IS FOR: weapon mastery attaches to a weapon TYPE, so the picker has to know that
+   * Frostedge IS a Longsword before it can charge one pick for the pair. Without it an authored
+   * weapon can still offer the mastery it states, but only as its own separate option.
+   *
+   * ⚠ STATED, NEVER INFERRED. The type is not read off the name or the rules paragraph — Sap is
+   * on the Flail as well as the Longsword, so a mastery does not identify a weapon either.
+   */
+  baseFormId?: string;
   /** Item tier from campaign module (e.g. "Tier 1", "Tier 2") */
   tier?: string;
   /** Act tag from source library */
@@ -849,11 +861,14 @@ export function repairItemType(item: EquipmentItem): EquipmentItem {
  * base form, a homebrew, an unformed chassis — and those keep the free choice.
  */
 export function inheritedMasteryFor(
-  item: { id?: string; chassis?: ChassisSpec },
+  item: { id?: string; chassis?: ChassisSpec; baseFormId?: string; mastery?: WeaponMasteryName },
 ): { mastery: WeaponMasteryName; source: string } | null {
   const own = item.id?.startsWith("base-") ? findForm(item.id) : undefined;
-  const form = own ?? findForm(item.chassis?.formId);
-  return form?.mastery ? { mastery: form.mastery, source: form.name } : null;
+  const form = own ?? findForm(item.chassis?.formId) ?? findForm(item.baseFormId);
+  if (form?.mastery) return { mastery: form.mastery, source: form.name };
+  // An authored weapon that states its own mastery and names no form still HAS one; it just
+  // owns it rather than inheriting it. Reported so the editor shows it instead of nothing.
+  return item.mastery ? { mastery: item.mastery, source: "this item" } : null;
 }
 
 /**
@@ -1115,6 +1130,8 @@ export function itemToAction(item: EquipmentItem, equipped: boolean): ActorActio
        */
       mechanicsText: item.mechanicsText,
       mastery: item.mastery,
+      // The weapon type behind an authored weapon — see `baseFormId` on EquipmentItem.
+      baseFormId: item.baseFormId,
       effectKind: item.effectKind,
       armorType: item.armorType,
       count: item.count,

@@ -145,6 +145,8 @@ type ActorCardProps = {
   resourceCounters?: Record<string, number>;
   /** Spend a variable amount from a pool resource (Lay on Hands, Ki, …). */
   onSpendResource?: (resourceActionId: string, amount: number) => void;
+  /** Put points BACK into a Resources-tab pool — the counterpart to onSpendResource. */
+  onRestoreResource?: (resourceActionId: string, amount: number) => void;
   /** Deduct one charge from an ITEM pool by hand — the equipment equivalent of onSpendResource. */
   onSpendItemCharge?: (action: ActorAction) => void;
   /** Give a charge back. The recharge gate for pools no rest refills — see restoreItemCharge. */
@@ -160,6 +162,15 @@ type ActorCardProps = {
   /** Consume an action's tagged resource on USE (for non-rolling activated abilities —
    *  additive riders / weapon buffs — that never reach the roll-commit consume path). */
   onConsumeActionResources?: (action: ActorAction, castLevel?: number) => void;
+  /**
+   * The roll for this action has been settled.
+   *
+   * `rerolled` = the result was thrown away before it ever became a hit or a miss, so whatever
+   * `onConsumeActionResources` spent is handed back. `committed` = it landed, and the cost stands.
+   * Christopher, 2026-10-25: *"the reroll button should be giving the resource back if the roll
+   * wasnt commited to hit or miss."*
+   */
+  onActionRollSettled?: (action: ActorAction, settled: "committed" | "rerolled") => void;
   /**
    * A summon-bearing action was used — put its body on the combat chart.
    *
@@ -997,6 +1008,7 @@ export function ActorCard({
   combatRound,
   resourceCounters,
   onSpendResource,
+  onRestoreResource,
   onSpendItemCharge,
   onRestoreItemCharge,
   partyMembers,
@@ -1004,6 +1016,7 @@ export function ActorCard({
   onToggleEquipped,
   onSetGrip,
   onConsumeActionResources,
+  onActionRollSettled,
   onSummonBody,
   onSaveCall,
   coins,
@@ -5306,6 +5319,19 @@ export function ActorCard({
       return;
     }
 
+    /**
+     * ⚠ EVERY OUTCOME PASSES THROUGH HERE, which is why the ledger is told here and not in the
+     * individual branches below. A reroll discards the roll before it is a hit or a miss, so the
+     * charge the action spent comes back; anything else settles it and the cost stands.
+     *
+     * The action is looked up by the committed roll's own id — the spend was recorded against that
+     * same id, so a card with two weapons cannot refund the wrong one.
+     */
+    const rolledAction = Object.values(actor.tabs).flat().find(a => a?.id === committedRoll.actionId);
+    if (rolledAction) {
+      onActionRollSettled?.(rolledAction, outcome === "reroll" ? "rerolled" : "committed");
+    }
+
     const resultText = formatCommittedRollTableResult();
     const isDcCheck = committedRoll.outcomeMode === "dc-check";
     const isAbilityCheck = committedRoll.outcomeMode === "ability-check";
@@ -5917,6 +5943,17 @@ export function ActorCard({
               outcomeMode: committedRoll.outcomeMode,
               sentAt: new Date().toISOString(),
             };
+            /**
+             * ⚠ THIS IS A REROLL TOO, and it does not pass through
+             * `handleChooseCommittedRollOutcome`. The die that was thrown is discarded here, so
+             * whatever the ACTION spent comes back — the same rule the reroll button follows.
+             *
+             * Deliberately not done for `flip`, `advantage` or `bonus` above: those all keep the
+             * original d20 (a flip re-faces it, the other two add to it), so the action was used
+             * exactly once and its cost stands.
+             */
+            const rerolledAction = Object.values(actor.tabs).flat().find(a => a?.id === committedRoll.actionId);
+            if (rerolledAction) onActionRollSettled?.(rerolledAction, "rerolled");
             onLog({
               actorName: actor.name,
               actionName: "Reroll",
@@ -6287,11 +6324,21 @@ export function ActorCard({
                       <span style={{ fontSize: 10, color: "#555", marginLeft: 6 }}>({kind})</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {/* Spend N by hand. Points pools (Lay on Hands, Ki…) always had this;
-                          spell slots and free casts now do too, as the manual fallback for
-                          when an auto-spend doesn't fire (unusual spell shapes, DM fiat,
-                          a cast made outside the card). Deduct only — never auto-heals. */}
-                      {hasCounter && onSpendResource && (kind === "pool" || kind === "counter" || kind === "spellSlot" || kind === "freeCast") && (
+                      {/*
+                        Adjust N by hand, EITHER WAY, on every pool that has a count.
+                        Christopher, 2026-10-25: *"i need all resources to be able to have a
+                        increase or spend since if the app burns more then one resource such as on
+                        a reroll … then a long rest doesnt have to be taken to be able to fix the
+                        issue."*
+
+                        ⚠ TWO THINGS WERE WRONG HERE. It deducted only, so the single way back
+                        from a double-charge was a Long Rest — which resets the whole sheet in the
+                        middle of an adventuring day. And the kind list silently excluded
+                        `pactSlot`: a Warlock's slots are the most spent-and-corrected resource at
+                        the table and had neither button. The gate is now simply "does it have a
+                        count", which is the only thing that decides whether a number can move.
+                      */}
+                      {hasCounter && (onSpendResource || onRestoreResource) && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                           <input
                             type="number" min={1} max={remaining} inputMode="numeric"
@@ -6305,17 +6352,33 @@ export function ActorCard({
                             style={{ width: 40, padding: "1px 4px", fontSize: 11, background: "#111", border: "1px solid #333", borderRadius: 3, color: "#ddd", textAlign: "center" }}
                           />
                           <button type="button"
-                            disabled={remaining <= 0}
+                            disabled={remaining <= 0 || !onSpendResource}
                             onClick={() => {
                               const n = Number.parseInt(resourceSpend[action.id] ?? "", 10);
                               if (!Number.isFinite(n) || n <= 0) return;
-                              onSpendResource(action.id, n);
+                              onSpendResource?.(action.id, n);
                               setResourceSpend(s => ({ ...s, [action.id]: "" }));
                             }}
                             style={{ fontSize: 10, padding: "2px 7px", background: remaining > 0 ? "#2a2a4e" : "#1a1a1a", border: "1px solid #7b68ee55", borderRadius: 3, color: remaining > 0 ? "#9d8cff" : "#555", cursor: remaining > 0 ? "pointer" : "default" }}
                             title="Spend this many points from the pool">
                             Spend
                           </button>
+                          {onRestoreResource && (
+                            <button type="button"
+                              disabled={remaining >= max}
+                              onClick={() => {
+                                const n = Number.parseInt(resourceSpend[action.id] ?? "", 10);
+                                // No number typed means "one back", which is the common case:
+                                // undoing a single mis-spend without reaching for the keyboard.
+                                const give = Number.isFinite(n) && n > 0 ? n : 1;
+                                onRestoreResource(action.id, give);
+                                setResourceSpend(s => ({ ...s, [action.id]: "" }));
+                              }}
+                              style={{ fontSize: 10, padding: "2px 7px", background: remaining < max ? "#2a3a2a" : "#1a1a1a", border: "1px solid #4caf5055", borderRadius: 3, color: remaining < max ? "#4caf50" : "#555", cursor: remaining < max ? "pointer" : "default" }}
+                              title={remaining >= max ? "This pool is already full" : "Give these points back to the pool (blank = one). Capped at the pool's max."}>
+                              Give
+                            </button>
+                          )}
                         </span>
                       )}
                       {hasCounter && (

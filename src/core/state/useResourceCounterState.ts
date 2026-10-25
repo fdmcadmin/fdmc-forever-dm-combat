@@ -32,6 +32,15 @@ export type ConsumeResult = {
   remaining?: number;
   /** Max charges for the resource. */
   max?: number;
+  /**
+   * The Resources-tab row that was actually spent.
+   *
+   * ⚠ WITHOUT THIS A SPEND CANNOT BE UNDONE. `consumeSpellSlot` and `consumeNamedResource` both
+   * RESOLVE a row from a level or a label — fuzzy matching that a refund cannot be trusted to
+   * repeat identically — and then reported only that row's label. A refund needs the id they
+   * landed on. Set wherever a row is spent.
+   */
+  resourceId?: string;
 };
 
 const STORAGE_KEY = "fdmc.resource.counters.v1";
@@ -233,7 +242,37 @@ export function useResourceCounterState(actors: Actor[]) {
       [actorId]: { ...(base[actorId] ?? {}), [resourceActionId]: current - applied },
     };
     broadcastAndPersist(next);
-    return { outcome: "spent", label, remaining: current - applied, max };
+    return { outcome: "spent", label, remaining: current - applied, max, resourceId: resourceActionId };
+  }, [actors]);
+
+  /**
+   * PUT POINTS BACK INTO A POOL — the counterpart to `spendResource`.
+   *
+   * ⚠ WITHOUT THIS, AN OVER-SPEND COST A LONG REST. Christopher, 2026-10-25: *"i need all
+   * resources to be able to have a increase or spend since if the app burns more then one resource
+   * such as on a reroll … then a long rest doesnt have to be taken to be able to fix the issue."*
+   * Spending has always been manual-correctable in one direction only, so the sole way back from a
+   * double-charge was to rest — which resets everything else with it, mid-adventuring-day.
+   *
+   * Clamped at the pool's own max, exactly as `restoreItemCharge` is: giving back more than was
+   * ever there is a different operation (that is what editing the sheet's max is for).
+   */
+  const restoreResource = useCallback((actorId: string, resourceActionId: string, amount = 1): ConsumeResult => {
+    const actor = actors.find(a => a.id === actorId);
+    const action = actor?.tabs.resources?.find(r => r.id === resourceActionId);
+    const label = action?.label;
+    const max = action ? getMaxFromAction(action) : undefined;
+    const base = freshBase();
+    const current = base[actorId]?.[resourceActionId] ?? max ?? 0;
+    const give = Math.max(0, Math.floor(amount));
+    if (give <= 0) return { outcome: "empty", label, remaining: current, max };
+    const next = max === undefined ? current + give : Math.min(max, current + give);
+    if (next === current) return { outcome: "empty", label, remaining: current, max };
+    broadcastAndPersist({
+      ...base,
+      [actorId]: { ...(base[actorId] ?? {}), [resourceActionId]: next },
+    });
+    return { outcome: "spent", label, remaining: next, max };
   }, [actors]);
 
   // ── Consume one charge from an item's own pool ────────────────────────────
@@ -431,7 +470,7 @@ export function useResourceCounterState(actors: Actor[]) {
     if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 
     decrementResource(actorId, matchingResource.id);
-    return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max };
+    return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max, resourceId: matchingResource.id };
   }, [actors, decrementResource]);
 
   // ── Consume named resource by label ──────────────────────────────────────
@@ -465,7 +504,7 @@ export function useResourceCounterState(actors: Actor[]) {
     if (current <= 0) return { outcome: "empty", label: matchingResource.label, remaining: 0, max };
 
     decrementResource(actorId, matchingResource.id);
-    return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max };
+    return { outcome: "spent", label: matchingResource.label, remaining: current - 1, max, resourceId: matchingResource.id };
   }, [actors, decrementResource, spendResource]);
 
   return {
@@ -474,6 +513,7 @@ export function useResourceCounterState(actors: Actor[]) {
     getMax,
     decrementResource,
     spendResource,
+    restoreResource,
     resetActorResources,
     findResourceByLabel,
     consumeSpellSlot,

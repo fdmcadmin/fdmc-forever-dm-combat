@@ -1,5 +1,5 @@
 import type { BondTemplate } from "../types/bond";
-import { useEquippedState } from "../state/useEquippedState";
+import { useEquippedState, applyEquippedOverlay } from "../state/useEquippedState";
 import { BOND_METAMORPHOSIS_STAGE, BOND_STAGE_NAMES, bondStageForLevel } from "../types/bond";
 import { chooseBondPath, resolveBond } from "../rules/bondProgress";
 // The fourteen bonds are MOD content; the editor is engine. They arrive here the same way the
@@ -1032,8 +1032,9 @@ function ProfileTab({ draft, onChange, ownerOptions, companionOptions = [], hasS
 // ─── Main editor ──────────────────────────────────────────────────────────────
 
 export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeMode = false, submitLabel = "Submit for DM Approval", ownerOptions = [], companionOptions = [] }: ActorEditorProps) {
-  // The card's worn-state overlay — re-pointed at the document whenever this editor saves.
-  const { syncOverlayToDocument } = useEquippedState();
+  // The card's worn-state overlay — READ into the draft below, and re-pointed at the document
+  // whenever this editor saves. Both halves are needed; see the draft initialiser.
+  const { syncOverlayToDocument, equippedByActorId } = useEquippedState();
   const actor = actorProp ?? createBlankActor();
   const [activeTab, setActiveTab] = useState<EditorTab>("profile");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => actorToProfileDraft(actor));
@@ -1044,7 +1045,30 @@ export function ActorEditor({ actor: actorProp, mode, onSave, onCancel, proposeM
    * sheet displays.
    */
   const editorClassRows = parseClassLevels(profileDraft.className, profileDraft.multiclassLevels);
-  const [tabsDraft, setTabsDraft] = useState<TabActionMap>(() => ({ ...actor.tabs }));
+  /**
+   * ⚠ THE DRAFT MUST START FROM WHAT IS ACTUALLY WORN, NOT FROM WHAT THE DOCUMENT SAYS.
+   *
+   * Christopher, 2026-10-25: *"it keeps unequiping on save of the library character screen"*, and
+   * *"the same thing is happening on rip where it unequips the items i save in the character
+   * editor"*.
+   *
+   * The card renders equipment through `applyEquippedOverlay`; this editor read `actor.tabs` raw.
+   * So the moment a player equipped anything in combat the two disagreed, and the editor was the
+   * one that was wrong — it showed the document's stale `equipped`. Saving then called
+   * `syncOverlayToDocument`, which broadcasts the DOCUMENT's values to every window, so a DM save
+   * of any field at all shoved the stale state back over the player's live equip. Frostedge and
+   * Ripsnarl's bag both came back unequipped for exactly this reason.
+   *
+   * Reading the overlay in closes the loop: the editor shows what is worn, so what it saves is
+   * what is worn, and a DM who deliberately stows something still wins — that is now a real edit
+   * rather than an accident of staleness.
+   */
+  const [tabsDraft, setTabsDraft] = useState<TabActionMap>(() => ({
+    ...actor.tabs,
+    ...(actor.tabs.equipment
+      ? { equipment: applyEquippedOverlay(actor.tabs.equipment, equippedByActorId[actor.id]) }
+      : {}),
+  }));
 
   /**
    * THE DM REFERENCE, COMPUTED OFF THE DRAFT RATHER THAN OFF THE SAVED ACTOR.

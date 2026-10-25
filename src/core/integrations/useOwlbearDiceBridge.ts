@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+// Who is at the keyboard — stamped onto every outgoing request; see the file's own header.
+import { currentLogRoller } from "../combat-log/logIdentity";
 import OBR from "@owlbear-rodeo/sdk";
 
 // How long a Dice+ roll request is considered "in flight" before a resend of the
@@ -30,6 +32,18 @@ export type DiceBridgeRollRequest = {
   outcomeMode: "attack-roll" | "ability-check" | "dc-check" | "triggered";
   critThreshold?: number;
   sentAt: string;
+  /**
+   * WHO sent it, as opposed to which character it is FOR.
+   *
+   * Christopher, 2026-10-25: *"there is no indicator of which character the dm rolls from or if a
+   * player is controlling multiple characters."* `actorName` is the character; these are the
+   * person and the seat. Stamped at the sink by the two send functions below — no call site sets
+   * them — so a request built anywhere in the app carries them. See `logIdentity.ts`.
+   */
+  rolledByRole?: "dm" | "co-dm" | "player" | "unknown";
+  rolledByName?: string;
+  rolledBySeatId?: string;
+  rolledBySeatLabel?: string;
 };
 
 export type DiceBridgeRollResult = {
@@ -370,7 +384,26 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
   // (The advisory Dice+ ready-probe was removed in 0.6.1.22 — rolls send immediately
   //  and fall back to manual entry, so the probe was dead weight.)
 
-  const sendRollRequest = useCallback(async (request: DiceBridgeRollRequest) => {
+  /**
+   * Attach the window's identity to an outgoing request, unless the caller named one.
+   *
+   * ⚠ AT THE SINK, NOT AT THE CALL SITES. There are dozens of places that build a request — every
+   * attack, save, check, reroll, advantage die and initiative roll — and threading the roller
+   * through all of them would rot at the first one someone forgot.
+   */
+  const withRoller = useCallback((request: DiceBridgeRollRequest): DiceBridgeRollRequest => {
+    const roller = currentLogRoller();
+    return {
+      ...request,
+      rolledByRole: request.rolledByRole ?? roller.role,
+      ...(request.rolledByName ?? roller.name ? { rolledByName: request.rolledByName ?? roller.name } : {}),
+      ...(request.rolledBySeatId ?? roller.seatId ? { rolledBySeatId: request.rolledBySeatId ?? roller.seatId } : {}),
+      ...(request.rolledBySeatLabel ?? roller.seatLabel ? { rolledBySeatLabel: request.rolledBySeatLabel ?? roller.seatLabel } : {}),
+    };
+  }, []);
+
+  const sendRollRequest = useCallback(async (rawRequest: DiceBridgeRollRequest) => {
+    const request = withRoller(rawRequest);
     if (!hasOwlbearWindow() || status !== "ready") {
       setLastEvent({
         kind: "error",
@@ -397,9 +430,10 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
       });
       return false;
     }
-  }, [status]);
+  }, [status, withRoller]);
 
-  const sendDicePlusRollRequest = useCallback(async (request: DiceBridgeRollRequest) => {
+  const sendDicePlusRollRequest = useCallback(async (rawRequest: DiceBridgeRollRequest) => {
+    const request = withRoller(rawRequest);
     if (!hasOwlbearWindow() || status !== "ready") {
       setLastEvent({
         kind: "error",
@@ -448,6 +482,18 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
           showResults: true,
           timestamp: Date.now(),
           source: FDM_DICE_PLUS_SOURCE,
+          /**
+           * ⚠ `playerName` ABOVE IS THE HUMAN; THESE SAY WHICH CHARACTER AND IN WHAT ROLE.
+           *
+           * Dice+ was told who clicked and what dice to roll, and nothing about whose sheet the
+           * roll came off — so a DM rolling from a party member's card, and one player running two
+           * characters, were indistinguishable in the dice feed. Extra keys are additive: a dice
+           * mod that does not read them is unaffected.
+           */
+          characterName: request.actorName,
+          characterId: request.actorId,
+          rolledByRole: request.rolledByRole,
+          rolledBySeatLabel: request.rolledBySeatLabel,
         },
         { destination: "ALL" }
       );

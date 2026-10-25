@@ -70,7 +70,11 @@ export type CombatTrackerProps = {
   onSetInitiative: (id: string, initiative: number) => void;
   /** Roll an actor's initiative through Dice+ (player-owned). The result writes back via
    *  onSetInitiative once Dice+ returns. Falls back to a local roll when absent/unavailable. */
-  onRollInitiative?: (combatantId: string) => void;
+  /**
+   * `advantage` is the situational grant — the ⚡ toggle beside the die. A sheet that grants
+   * advantage permanently does not need it; `initiativeRollFormula` ORs the two.
+   */
+  onRollInitiative?: (combatantId: string, advantage?: boolean) => void;
   /**
    * Send a summoned body away before the fight ends — dismissed, destroyed, or the DM ruling it
    * gone. Without this the only exits are dropping to 0 HP and End Combat, and a Steed has no
@@ -343,6 +347,13 @@ export function CombatTracker({
   const canSeeExactHp = (c: { id: string; ownerId?: string }) =>
     isDmMode || viewerActorIdSet.has(c.id) || (c.ownerId ? viewerActorIdSet.has(c.ownerId) : false);
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null);
+  /**
+   * combatantId -> advantage on THIS fight’s initiative roll, from the ⚡ toggle beside the die.
+   * Local and transient by design: a spell cast before the doors open is a fact about this
+   * opening, not about the character, so it never reaches the sheet. The standing grant is
+   * `metadata.initiativeAdvantage`, which `initiativeRollFormula` ORs with this.
+   */
+  const [initiativeAdvantage, setInitiativeAdvantage] = useState<Record<string, boolean>>({});
   const sorted = sortCombatants(combatants);
   const activeIndex = sorted.findIndex(c => c.id === activeId);
   // Everyone actually in the fight — excludes dead AND benched (negative initiative).
@@ -538,6 +549,32 @@ export function CombatTracker({
                       borderRadius: 3, color: "#7b68ee", padding: "1px 2px",
                     }}
                   />
+                  {/*
+                    ⚡ ADVANTAGE ON THIS ROLL — the situational half of initiative advantage.
+                    Christopher, 2026-10-25: *"or a button next to the roll that can be toggled
+                    since there are spells and class action/features that give advantage on these."*
+                    Held locally and forgotten after the fight: a spell cast before the doors open
+                    is a fact about this opening, not about the character, so it is never written to
+                    the sheet. The standing grant is the checkbox in the action editor.
+                  */}
+                  {(viewerActorIdSet.has(combatant.id) || isDmMode) && (phase === "setup" || phase === "initiative") && (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setInitiativeAdvantage(prev => ({ ...prev, [combatant.id]: !prev[combatant.id] })); }}
+                      title={initiativeAdvantage[combatant.id]
+                        ? "Advantage on this initiative roll — click to turn off"
+                        : "Give this initiative roll advantage (a spell or feature used before the fight)"}
+                      aria-pressed={Boolean(initiativeAdvantage[combatant.id])}
+                      style={{
+                        fontSize: 9, padding: "1px 3px", borderRadius: 3, cursor: "pointer",
+                        background: initiativeAdvantage[combatant.id] ? "#3a2a4e" : "#1a1a22",
+                        border: `1px solid ${initiativeAdvantage[combatant.id] ? "#c9a227" : "#333"}`,
+                        color: initiativeAdvantage[combatant.id] ? "#ffd700" : "#555",
+                      }}
+                    >
+                      ⚡
+                    </button>
+                  )}
                   {/* Roll initiative button — shown for own actors (player) or all in DM mode */}
                   {(viewerActorIdSet.has(combatant.id) || isDmMode) && (phase === "setup" || phase === "initiative") && (
                     <button
@@ -547,12 +584,15 @@ export function CombatTracker({
                         // Actors roll through Dice+ (player-owned, visible dice); the result
                         // writes initiative back via onSetInitiative. Monsters / no-bridge
                         // fall back to a local quick-roll for the DM.
+                        const adv = Boolean(initiativeAdvantage[combatant.id]);
                         if (combatant.kind === "actor" && onRollInitiative) {
-                          onRollInitiative(combatant.id);
+                          onRollInitiative(combatant.id, adv);
                           return;
                         }
-                        const roll = Math.floor(Math.random() * 20) + 1 + combatant.initiativeBonus;
-                        onSetInitiative(combatant.id, roll);
+                        // A monster's quick-roll honours the toggle too — keep the higher of two.
+                        const d20 = () => Math.floor(Math.random() * 20) + 1;
+                        const natural = adv ? Math.max(d20(), d20()) : d20();
+                        onSetInitiative(combatant.id, natural + combatant.initiativeBonus);
                       }}
                       title={combatant.kind === "actor" && onRollInitiative
                         ? `Roll Initiative (1d20${combatant.initiativeBonus >= 0 ? "+" : ""}${combatant.initiativeBonus}) through Dice+`

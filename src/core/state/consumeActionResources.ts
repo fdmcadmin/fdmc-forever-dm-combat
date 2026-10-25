@@ -165,6 +165,26 @@ export function resolveNamedResourceCost(
     ?? candidates.find(label => proseNormalised.includes(normalise(label)));
 }
 
+/**
+ * WHAT A COMMIT ACTUALLY SPENT, so it can be handed back.
+ *
+ * Christopher, 2026-10-25: *"the reroll button should be giving the resource back if the roll
+ * wasnt commited to hit or miss"* — and the resource meant is *"not the reroll resource but the
+ * resource that was used to commit the action in the first place."*
+ *
+ * This function resolved the spend through four branches of fuzzy matching (an item's own charge
+ * pool, a free-cast pool by label, a slot by level, a named cost by substring) and returned
+ * `void`, so the only way to reverse one was to re-run the same guesswork and hope it landed on
+ * the same row. Reporting the outcome is what makes a refund exact.
+ *
+ * ⚠ ADDITIVE. Every existing caller ignores the return and is unaffected.
+ */
+export type ActionResourceSpend =
+  /** An item's own charge pool — reversed with `restoreItemCharge` and the same action row. */
+  | { kind: "itemCharge"; actionId: string; label: string }
+  /** A Resources-tab row, by the id that was actually hit — reversed with `restoreResource`. */
+  | { kind: "resource"; resourceId: string; amount: number; label?: string };
+
 export function consumeActionResourcesOnCommit(params: {
   actorId: string;
   actorName: string;
@@ -179,7 +199,7 @@ export function consumeActionResourcesOnCommit(params: {
   resourceLabels?: readonly ResourceRef[];
   /** Level the spell is actually cast at — the player's upcast pick. Absent = as authored. */
   castLevel?: number;
-}): void {
+}): ActionResourceSpend | null {
   const { actorId, actorName, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log, resourceLabels = [], castLevel } = params;
 
   // 0. The action carries an item's own charge pool (Gapstep Boots 2 charges, Edge Alignment
@@ -194,7 +214,7 @@ export function consumeActionResourcesOnCommit(params: {
     } else if (r.outcome === "empty") {
       log({ actorName, actionName: action.label, tabId: "equipment", message: `⚠ ${actorName} has no charges left on ${action.label} — used without a charge.` });
     }
-    return;
+    return r.outcome === "spent" ? { kind: "itemCharge", actionId: action.id, label: action.label } : null;
   }
 
   // 1. Class-feature spell ("freeCast"): spends its dedicated N/long-rest resource
@@ -227,12 +247,12 @@ export function consumeActionResourcesOnCommit(params: {
       const r = consumeNamedResource(actorId, action.label);
       if (r.outcome === "spent") {
         log({ actorName, actionName: action.label, tabId: "spells", message: `${actorName} casts ${action.label} (class feature) — ${r.remaining}/${r.max ?? "?"} uses left.` });
-        return;
+        return r.resourceId ? { kind: "resource", resourceId: r.resourceId, amount: 1, label: r.label } : null;
       }
       if (authored <= 0) {
         // No slot to fall back to — the pool was the only source.
         log({ actorName, actionName: action.label, tabId: "spells", message: `⚠ ${actorName} has no ${action.label} uses left — cast without a charge.` });
-        return;
+        return null;
       }
       log({ actorName, actionName: action.label, tabId: "spells", message: `${actorName} has no ${action.label} uses left — casting from a spell slot instead.` });
     }
@@ -251,7 +271,7 @@ export function consumeActionResourcesOnCommit(params: {
     } else if (r.outcome === "empty") {
       log({ actorName, actionName: action.label, tabId: "spells", message: `⚠ ${actorName} has no Level ${lvl} slots left for ${action.label} — cast not slot-backed.` });
     }
-    return;
+    return r.outcome === "spent" && r.resourceId ? { kind: "resource", resourceId: r.resourceId, amount: 1, label: r.label } : null;
   }
 
   // 3. Any action with a slotCost that references a named resource
@@ -266,5 +286,9 @@ export function consumeActionResourcesOnCommit(params: {
     } else if (r.outcome === "empty") {
       log({ actorName, actionName: action.label, tabId: "resources", message: `⚠ ${actorName} is out of ${r.label ?? slotCost} — ${action.label} used without a charge.` });
     }
+    const spent = Math.max(1, Math.floor(action.metadata?.resourceCost ?? 1));
+    return r.outcome === "spent" && r.resourceId ? { kind: "resource", resourceId: r.resourceId, amount: spent, label: r.label } : null;
   }
+  // Nothing on this action spends anything.
+  return null;
 }

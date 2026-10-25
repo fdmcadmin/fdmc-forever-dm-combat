@@ -475,6 +475,7 @@ const BUNDLED_EQUIPMENT_LIBRARY: EquipmentItem[] = [
     "damage": "1d8+@STR+1",
     "crit": "2d8+@STR+1",
     "mastery": "Sap",
+    "baseFormId": "base-longsword",
     "act": "Act 2",
     "sourceEncounter": "ELITE QUEST REWARD",
     "charges": {"max":1,"reset":"shortRest"},

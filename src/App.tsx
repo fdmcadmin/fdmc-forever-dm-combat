@@ -71,7 +71,7 @@ import { parsePriceCopper, coinsToCopper, formatCopperPrice, formatCoins } from 
 import { useActorNotesState } from "./core/state/useActorNotesState";
 import { useActorStatusState } from "./core/state/useActorStatusState";
 import { useResourceCounterState } from "./core/state/useResourceCounterState";
-import { consumeActionResourcesOnCommit } from "./core/state/consumeActionResources";
+import { consumeActionResourcesOnCommit, type ActionResourceSpend } from "./core/state/consumeActionResources";
 import { offHandBlocker, regripAttackRow } from "./core/constants/chassis";
 import { checkEquip } from "./core/equipment/equipRules";
 import { ACTIVE_EQUIP_RULES } from "./modules/equipRuleRoster";
@@ -112,6 +112,8 @@ import {
   upsertActorInLibrary,
 } from "./core/seats/dmActorLibrary";
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
+// Who is at this keyboard — stamped onto every log entry and dice request.
+import { setLogRoller } from "./core/combat-log/logIdentity";
 import { DisplayModeToggle, useDisplayMode } from "./core/ui/useDisplayMode";
 import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
@@ -143,7 +145,7 @@ import {
 } from "./core/table-state/sharedTableState";
 import { DEFAULT_COMBAT_RULES_PROFILE } from "./core/types/committedRoll";
 import type { Actor } from "./core/types/actor";
-import { fullHeal } from "./core/types/actor";
+import { fullHeal, type HitPoints } from "./core/types/actor";
 import { wipePartyLocalData, buildClearedActorLiveState } from "./core/seats/wipePartyData";
 import { takeSnapshot, mirrorWallets } from "./core/state/autoBackup";
 import { brokenChainActors } from "./modules/the-broken-chain/actors/index";
@@ -1089,6 +1091,42 @@ export default function App() {
     resetActorStatuses,
   } = useActorStatusState(isDmMode ? bundledActors : seatActors);
 
+  /**
+   * TELL THE LOG AND THE DICE BRIDGE WHO IS AT THIS KEYBOARD.
+   *
+   * Christopher, 2026-10-25: *"there is no indicator of which character the dm rolls from or if a
+   * player is controlling multiple characters."* Set once per window and refreshed whenever the
+   * role or the seating changes; `createEntry` and the dice bridge stamp it onto everything that
+   * leaves, so no call site has to carry it. See `logIdentity.ts`.
+   *
+   * ⚠ THE SEAT IS THE HALF THAT ANSWERS THE SECOND QUESTION. Two characters run from one seat are
+   * told apart by the seat label, not by the role — both their rolls are "player".
+   */
+  useEffect(() => {
+    let cancelled = false;
+    const role = viewerRole === "dm" || viewerRole === "player" ? viewerRole : "unknown";
+    if (!OBR.isAvailable) {
+      setLogRoller({ role });
+      return;
+    }
+    void Promise.all([OBR.player.getId(), OBR.player.getName()])
+      .then(([id, name]) => {
+        if (cancelled) return;
+        const key = hashViewerId(id);
+        const binding = Object.values(roomLiveState.seatBindings).find(b => b.viewerSeatKey === key);
+        const seat = binding ? roomLiveState.seats[binding.seatId] : undefined;
+        setLogRoller({
+          // A co-dm seat reports itself as such; `viewerRole` folds it into "dm" for access, but
+          // the log should say which of the two it was.
+          role: seat?.seatMode === "co-dm" ? "co-dm" : role,
+          ...(name ? { name } : {}),
+          ...(seat ? { seatId: seat.seatId, seatLabel: seat.label } : {}),
+        });
+      })
+      .catch(() => { if (!cancelled) setLogRoller({ role }); });
+    return () => { cancelled = true; };
+  }, [viewerRole, roomLiveState.seatBindings, roomLiveState.seats]);
+
   // ── Resource counters (spell slots, class features) ───────────────────────
   const {
     counters,
@@ -1098,6 +1136,7 @@ export default function App() {
     restoreItemCharge,
     resetEncounterCharges,
     spendResource,
+    restoreResource,
     resetActorResources,
   } = useResourceCounterState(isDmMode ? dmActors : playerActors);
 
@@ -1110,6 +1149,112 @@ export default function App() {
     } else {
       addEntry({ actorName, actionName: r.label ?? "Resource", tabId: "resources", message: `⚠ ${actorName} has nothing left in ${r.label ?? "that pool"}.` });
     }
+  }
+
+  /**
+   * Put points back — the other half of `handleSpendResource`.
+   *
+   * ⚠ IT IS LOGGED LIKE A SPEND, deliberately. A pool going back up is a correction to a shared
+   * number, and a table that cannot see it happen has no way to tell a fixed double-charge from
+   * a resource nobody ever spent.
+   */
+  function handleRestoreResource(actorId: string, actorName: string, resourceActionId: string, amount: number) {
+    const r = restoreResource(actorId, resourceActionId, amount);
+    if (r.outcome === "spent") {
+      addEntry({ actorName, actionName: r.label ?? "Resource", tabId: "resources", message: `${actorName} regains ${amount} in ${r.label ?? "pool"} (${r.remaining}/${r.max ?? "?"}).` });
+    } else {
+      addEntry({ actorName, actionName: r.label ?? "Resource", tabId: "resources", message: `${r.label ?? "That pool"} is already full — nothing to give back.` });
+    }
+  }
+
+  /**
+   * DAMAGE TAKEN AND HEALING RECEIVED — logged, and attributed to WHOSE TURN IT HAPPENED ON.
+   *
+   * ⚠ HP CHANGES WERE NOT LOGGED AT ALL. Christopher, 2026-10-25: *"the monsters turns are now
+   * showing combat actions but [should] show character reactions and damage taken."* A monster's
+   * turn logged "Brandwing's turn." and then nothing: the card's HP control went straight to
+   * `setActorHp` with no log call, so the single most important thing that happens on a monster's
+   * turn — what it did to the party — left no trace. A 215-entry export contained not one damage
+   * line.
+   *
+   * ⚠ AND THE TURN OWNER IS THE HALF THAT MAKES IT READ AS THE MONSTER'S TURN. `CombatLogFacts`
+   * has carried `turnOwnerId`/`turnOwnerName` for exactly this since it was written — recorded
+   * "only when that differs from the actor" — so damage a character takes during Brandwing's turn
+   * is filed under Brandwing's turn rather than looking like something the character did.
+   */
+  /**
+   * WHAT EACH ACTION SPENT, UNTIL ITS ROLL IS SETTLED — the ledger a refund reads.
+   *
+   * Christopher, 2026-10-25: *"the reroll button should be giving the resource back if the roll
+   * wasnt commited to hit or miss"*, and the resource in question is *"not the reroll resource but
+   * the resource that was used to commit the action in the first place."*
+   *
+   * Using an action spends up front — that is correct, because the slot is gone whether or not the
+   * blow lands. What was wrong is that a roll thrown away before it ever became a hit or a miss
+   * ALSO kept the charge, so a rerolled cast cost two slots for one spell and the only way back
+   * was a Long Rest.
+   *
+   * ⚠ A REF, NOT STATE. Nothing renders from it, and it is written and read inside event handlers
+   * in the same tick — state would re-render the card on every spend for no visible reason.
+   */
+  const uncommittedSpendRef = useRef<Map<string, ActionResourceSpend>>(new Map());
+
+  /** Spend, and remember what was spent until the roll is settled. */
+  function consumeAndRemember(actorId: string, actorName: string, action: ActorAction, resourceLabels: readonly ActorAction[], castLevel?: number) {
+    const spend = consumeActionResourcesOnCommit({
+      actorId, actorName, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge,
+      log: addEntry, resourceLabels, castLevel,
+    });
+    if (spend) uncommittedSpendRef.current.set(`${actorId}:${action.id}`, spend);
+  }
+
+  /**
+   * The roll for this action has been settled — give the charge back, or let it stand.
+   *
+   * `rerolled` means the result was discarded before becoming a hit or a miss, so the spend is
+   * reversed. `committed` means it landed one way or the other and the cost stays paid.
+   */
+  function handleActionRollSettled(actorId: string, actorName: string, action: ActorAction, settled: "committed" | "rerolled") {
+    const key = `${actorId}:${action.id}`;
+    const spend = uncommittedSpendRef.current.get(key);
+    uncommittedSpendRef.current.delete(key);
+    if (!spend || settled === "committed") return;
+    const r = spend.kind === "itemCharge"
+      ? restoreItemCharge(actorId, action, 1)
+      : restoreResource(actorId, spend.resourceId, spend.amount);
+    if (r.outcome !== "spent") return;
+    addEntry({
+      actorName, actionName: action.label, tabId: "resources", tone: "combat",
+      message: `${actorName} gets back ${spend.kind === "itemCharge" ? "a charge on" : `${spend.amount} from`} ${r.label ?? action.label} — ${action.label} was rerolled before it became a hit or a miss (${r.remaining}/${r.max ?? "?"}).`,
+      actorId, category: "resource", amount: spend.kind === "itemCharge" ? 1 : spend.amount,
+      round: roomLiveState.combat.round,
+    });
+  }
+
+  function logActorHpChange(actorId: string, actorName: string, nextHp: HitPoints) {
+    const before = getActorHp(actorId);
+    if (!before) return;
+    const delta = (nextHp.current ?? 0) - (before.current ?? 0);
+    const tempDelta = (nextHp.temp ?? 0) - (before.temp ?? 0);
+    // Nothing moved: a max-HP edit or a no-op write is not a combat event.
+    if (delta === 0 && tempDelta === 0) return;
+    const owner = allCombatants.find(c => c.id === roomLiveState.combat.activeActorId);
+    const onSomeoneElsesTurn = Boolean(owner && owner.id !== actorId);
+    const took = delta < 0;
+    const amount = Math.abs(delta);
+    const message = delta === 0
+      ? `${actorName} ${tempDelta > 0 ? "gains" : "loses"} ${Math.abs(tempDelta)} temp HP.`
+      : `${actorName} ${took ? "takes" : "recovers"} ${amount} ${took ? "damage" : "HP"}${onSomeoneElsesTurn ? ` on ${owner!.name}'s turn` : ""}. HP ${before.current} → ${nextHp.current}.`;
+    addEntry({
+      actorName, actionName: took ? "Damage Taken" : "Healed", tabId: "system", tone: "combat", message,
+      actorId, actorSide: "party", amount: amount || Math.abs(tempDelta),
+      category: took ? "damage" : "healing",
+      round: roomLiveState.combat.round,
+      // Attribution is "inferred": the number was typed on a card, so the app knows WHEN it
+      // happened but was never told which attack caused it.
+      attribution: "inferred",
+      ...(onSomeoneElsesTurn ? { turnOwnerId: owner!.id, turnOwnerName: owner!.name } : {}),
+    });
   }
 
   // ── Combat log ────────────────────────────────────────────────────────────
@@ -2495,9 +2640,19 @@ export default function App() {
     // Log turn end
     const currentActor = actors.find(a => a.id === currentId);
     if (currentActor) {
-      addEntry({ actorName: currentActor.name, actionName: "Turn End", tabId: "system", message: `${currentActor.name} ends their turn.` });
+      addEntry({ actorName: currentActor.name, actionName: "Turn End", tabId: "system", message: `${currentActor.name} ends their turn.`, actorId: currentActor.id, actorSide: "party", category: "flow", round: roomLiveState.combat.round });
     } else if (currentId) {
-      addEntry({ actorName: "Monster", actionName: "Turn End", tabId: "system", message: "Monster turn ends." });
+      /**
+       * ⚠ IT SAID "Monster" — THE WORD, NOT THE CREATURE.
+       *
+       * This only ever searched `actors`, so every monster's turn ended as the anonymous line
+       * "Monster turn ends." while its turn had STARTED under its own name (`nextCombatant.name`,
+       * below). Reading a log back, a boss's turn opened as Brandwing and closed as "Monster".
+       * `allCombatants` already holds the name the turn started with.
+       */
+      const owner = allCombatants.find(c => c.id === currentId);
+      const name = owner?.name ?? "Monster";
+      addEntry({ actorName: name, actionName: "Turn End", tabId: "system", message: `${name} ends their turn.`, actorId: currentId, actorSide: "monster", category: "flow", round: roomLiveState.combat.round });
     }
 
     // Advance to next combatant
@@ -2687,10 +2842,16 @@ export default function App() {
   // tracker — and everyone's — updates. Only the sending instance holds the requestId.
   const pendingTrackerInitiativeRef = useRef<Map<string, { actorId: string; sentAt: number }>>(new Map());
 
-  async function handleRollActorInitiativeViaDicePlus(actorId: string) {
+  async function handleRollActorInitiativeViaDicePlus(actorId: string, advantage = false) {
     const actor = actors.find(a => a.id === actorId);
     if (!actor) return;
-    const formula = initiativeRollFormula(actor);
+    /**
+     * ⚠ THE FORMULA DECIDES, NOT THIS FUNCTION. `initiativeRollFormula` ORs the situational
+     * toggle with any standing grant on the sheet, so a character whose feature already gives
+     * advantage keeps it whether or not the ⚡ was pressed — see `getActorInitiativeAdvantage`.
+     */
+    const formula = initiativeRollFormula(actor, advantage);
+    const rolledWithAdvantage = formula.includes("2d20kh1");
     const requestId = `fdm-tracker-init-${Date.now()}-${actorId}-${Math.random().toString(36).slice(2, 8)}`;
     // Prune any rolls that were sent but never resolved (>60s) so the map can't grow.
     const cutoff = Date.now() - 60000;
@@ -2713,12 +2874,16 @@ export default function App() {
     if (!sent) {
       // No Dice+ bridge — fall back to a local roll so the actor still slots into order.
       pendingTrackerInitiativeRef.current.delete(requestId);
-      const roll = Math.floor(Math.random() * 20) + 1 + getActorInitiativeModifier(actor);
+      // The local fallback has to honour advantage too, or turning it on would silently do
+      // nothing whenever the bridge is down.
+      const d20 = () => Math.floor(Math.random() * 20) + 1;
+      const natural = rolledWithAdvantage ? Math.max(d20(), d20()) : d20();
+      const roll = natural + getActorInitiativeModifier(actor);
       handleSetCombatantInitiative(actorId, roll);
-      addEntry({ actorName: actor.name, actionName: "Initiative", tabId: "system", message: `${actor.name} rolls Initiative ${roll} (Dice+ unavailable — local roll).` });
+      addEntry({ actorName: actor.name, actionName: "Initiative", tabId: "system", message: `${actor.name} rolls Initiative ${roll}${rolledWithAdvantage ? " with advantage" : ""} (Dice+ unavailable — local roll).` });
       return;
     }
-    addEntry({ actorName: actor.name, actionName: "Initiative", tabId: "system", message: `${actor.name} rolls Initiative (${formula}) through Dice+.` });
+    addEntry({ actorName: actor.name, actionName: "Initiative", tabId: "system", message: `${actor.name} rolls Initiative (${formula})${rolledWithAdvantage ? " with advantage" : ""} through Dice+.` });
   }
 
   // Capture a tracker initiative result and write it to shared initiative.
@@ -4704,7 +4869,7 @@ export default function App() {
         combatRound={roomLiveState.combat.phase === "combat" ? roomLiveState.combat.round : undefined}
         diceBridgeStatus={diceBridgeStatus}
         diceBridgeLastEvent={diceBridgeLastEvent}
-        onHpChange={(nextHp) => void setActorHp(actorToShow.id, nextHp)}
+        onHpChange={(nextHp) => { logActorHpChange(actorToShow.id, actorToShow.name, nextHp); void setActorHp(actorToShow.id, nextHp); }}
         onResetHp={() => void setActorHp(actorToShow.id, fullHeal(actorToShow.stats.hp))}
         onReadyActionCosts={(costs, readiedKey) => readyActionCosts(actorToShow.id, costs, readiedKey)}
         onUnreadyAction={(readiedKey) => unreadyActionKey(actorToShow.id, readiedKey)}
@@ -4732,6 +4897,7 @@ export default function App() {
         onResetAllActorStatuses={() => resetActorStatuses(actorToShow)}
         resourceCounters={counters[actorToShow.id]}
         onSpendResource={(rid, amt) => handleSpendResource(actorToShow.id, actorToShow.name, rid, amt)}
+        onRestoreResource={(rid, amt) => handleRestoreResource(actorToShow.id, actorToShow.name, rid, amt)}
         onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
         onRestoreItemCharge={(a) => { const r = restoreItemCharge(actorToShow.id, a); addEntry({ actorName: actorToShow.name, actionName: a.label, tabId: "equipment", message: `${actorToShow.name} regains a charge on ${a.label} (${r.remaining}/${r.max ?? "?"}).` }); }}
         partyMembers={itemTransferTargets(actorToShow.id)}
@@ -4739,7 +4905,8 @@ export default function App() {
         onToggleEquipped={(action) => requestEquipToggle(actorToShow.id, action)}
         onSetGrip={(action, grip) => requestGripChange(actorToShow.id, action, grip)}
         combatActive={roomLiveState.combat.phase === "combat"}
-        onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: actorToShow.id, actorName: actorToShow.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (actorToShow.tabs.resources ?? []), castLevel })}
+        onConsumeActionResources={(action, castLevel) => consumeAndRemember(actorToShow.id, actorToShow.name, action, actorToShow.tabs.resources ?? [], castLevel)}
+        onActionRollSettled={(action, settled) => handleActionRollSettled(actorToShow.id, actorToShow.name, action, settled)}
         onSummonBody={(action, slotLevel) => handleSummonBody(actorToShow.id, action, slotLevel)}
         onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: actorToShow.name, action, save }); }}
         coins={roomLiveState.actorLiveState[actorToShow.id]?.coins ?? {}}
@@ -5089,7 +5256,7 @@ export default function App() {
                 combatRound={roomLiveState.combat.phase === "combat" ? roomLiveState.combat.round : undefined}
                 diceBridgeStatus={diceBridgeStatus}
                 diceBridgeLastEvent={diceBridgeLastEvent}
-                onHpChange={(nextHp) => void setActorHp(focusedActorId, nextHp)}
+                onHpChange={(nextHp) => { logActorHpChange(focusedActorId, focusedActor.name, nextHp); void setActorHp(focusedActorId, nextHp); }}
                 onResetHp={() => void setActorHp(focusedActorId, fullHeal(focusedActor.stats.hp))}
                 onReadyActionCosts={(costs, readiedKey) => readyActionCosts(focusedActorId, costs, readiedKey)}
                 onUnreadyAction={(readiedKey) => unreadyActionKey(focusedActorId, readiedKey)}
@@ -5138,6 +5305,7 @@ export default function App() {
                 onResetAllActorStatuses={() => resetActorStatuses(focusedActor)}
                 resourceCounters={counters[focusedActorId]}
                 onSpendResource={(rid, amt) => handleSpendResource(focusedActorId, focusedActor.name, rid, amt)}
+                onRestoreResource={(rid, amt) => handleRestoreResource(focusedActorId, focusedActor.name, rid, amt)}
                 onSpendItemCharge={(a) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action: a, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry, resourceLabels: [] })}
                 onRestoreItemCharge={(a) => { const r = restoreItemCharge(focusedActorId, a); addEntry({ actorName: focusedActor.name, actionName: a.label, tabId: "equipment", message: `${focusedActor.name} regains a charge on ${a.label} (${r.remaining}/${r.max ?? "?"}).` }); }}
                 partyMembers={itemTransferTargets(focusedActorId)}
@@ -5145,7 +5313,8 @@ export default function App() {
                 onToggleEquipped={(action) => requestEquipToggle(focusedActorId, action)}
                 onSetGrip={(action, grip) => requestGripChange(focusedActorId, action, grip)}
                 combatActive={roomLiveState.combat.phase === "combat"}
-                onConsumeActionResources={(action, castLevel) => consumeActionResourcesOnCommit({ actorId: focusedActorId, actorName: focusedActor.name, action, consumeSpellSlot, consumeNamedResource, consumeItemCharge, log: addEntry , resourceLabels: (focusedActor.tabs.resources ?? []), castLevel })}
+                onConsumeActionResources={(action, castLevel) => consumeAndRemember(focusedActorId, focusedActor.name, action, focusedActor.tabs.resources ?? [], castLevel)}
+                onActionRollSettled={(action, settled) => handleActionRollSettled(focusedActorId, focusedActor.name, action, settled)}
                 onSummonBody={(action, slotLevel) => handleSummonBody(focusedActorId, action, slotLevel)}
                 onSaveCall={(action, save) => { setSaveTargets(new Set()); setPendingSave({ source: focusedActor.name, action, save }); }}
                 coins={roomLiveState.actorLiveState[focusedActorId]?.coins ?? {}}
