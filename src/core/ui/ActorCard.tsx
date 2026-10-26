@@ -1,4 +1,6 @@
 import { savingThrowModifier } from "../rules/dnd5e";
+// The dice label helper, shared with the bridge so the feed can name the creature.
+import { labelDiceFormula as labeledDiceFormula } from "../dice/diceFormula";
 import { isRangedAttackAction, isTwoHandedAttack, isWeaponAttackAction, styleRidesAction as buffMatchesAttack } from "../rules/weaponStyles";
 import { attackRowIsLive } from "../rules/equippedAttacks";
 import { usableHealing } from "../rules/healingResolution";
@@ -520,33 +522,8 @@ function firstRollDiceLabel(action: ActorAction | null | undefined, fallbackLabe
   return label.replace(/[–—]/g, "-").replace(/[^a-zA-Z0-9 +_/-]/g, "").trim() || fallbackLabel;
 }
 
-function labeledDiceFormula(formula: string, label: string) {
-  const cleanFormula = formula.trim();
-
-  if (!cleanFormula) {
-    return cleanFormula;
-  }
-
-  if (cleanFormula.includes("#")) {
-    return cleanFormula;
-  }
-
-  // Dice+ also parses the text after "#" and throws on dice/math tokens (e.g. a label
-  // "Greataxe (dmg +2)" -> "Unexpected token: MATH"). Keep only readable words: strip
-  // dice terms, operators, parens, and bare numbers so the label can never break the roll.
-  const safeLabel = label
-    .replace(/\d*d\d+/gi, " ")
-    .replace(/[+\-*/#=<>()]/g, " ")
-    .replace(/\b\d+\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!safeLabel) {
-    return cleanFormula;
-  }
-
-  return `${cleanFormula} # ${safeLabel}`;
-}
+// The label helper moved to the dice leaf so the dice BRIDGE can use it too — one helper, per
+// RULE 0. Imported above under its original name, so every call site here is unchanged.
 
 
 

@@ -115,3 +115,62 @@ export function parseAbilityModifier(value: string): number {
   const score = Number.parseInt(value, 10);
   return Number.isFinite(score) ? Math.floor((score - 10) / 2) : 0;
 }
+
+/**
+ * Strip a label down to something Dice+ will not choke on.
+ *
+ * Dice+ parses the text after "#" and throws on dice or math tokens — a label like
+ * "Greataxe (dmg +2)" comes back as "Unexpected token: MATH". Keep readable words only.
+ */
+export function sanitizeDiceLabel(label: string): string {
+  return label
+    .replace(/\d*d\d+/gi, " ")
+    .replace(/[+\-*/#=<>()]/g, " ")
+    .replace(/\b\d+\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Append "# label" to a formula that has no label of its own. */
+export function labelDiceFormula(formula: string, label: string): string {
+  const cleanFormula = formula.trim();
+  if (!cleanFormula) return cleanFormula;
+  if (cleanFormula.includes("#")) return cleanFormula;
+  const safeLabel = sanitizeDiceLabel(label);
+  return safeLabel ? `${cleanFormula} # ${safeLabel}` : cleanFormula;
+}
+
+/**
+ * THE LABEL THE DICE FEED ACTUALLY SHOWS — who is rolling, and what with.
+ *
+ * Christopher, 2026-10-25, asking whether the dice log shows *"the creature who is rolling and the
+ * action instead of 'DM' did x"*. It did not. Dice+ renders two things: `playerName`, which is the
+ * HUMAN who clicked, and the dice notation. So every monster attack the DM rolled appeared in the
+ * feed as the DM rolling bare dice — the monster card sends its formula with no label at all — and
+ * one player running two characters got the same name for both.
+ *
+ * ⚠ THE STRUCTURED FIELDS ARE NOT ENOUGH ON THEIR OWN. `characterName` and `rolledByRole` are
+ * attached to the Dice+ message, but they are OUR keys: the dice extension does not read them, so
+ * nothing in them can reach the feed. The notation is the one field it is guaranteed to display,
+ * which is why the attribution has to live there as well.
+ *
+ * A formula that already carries a label keeps it and gains the character in front, so
+ * "Claw reroll" becomes "Brandwing Claw reroll" rather than losing the qualifier.
+ */
+export function diceFeedLabel(formula: string, characterName?: string, actionName?: string): string {
+  const cleanFormula = formula.trim();
+  if (!cleanFormula) return cleanFormula;
+  const who = sanitizeDiceLabel(characterName ?? "");
+  if (!who) return labelDiceFormula(cleanFormula, actionName ?? "");
+
+  const hash = cleanFormula.indexOf("#");
+  if (hash < 0) {
+    const what = sanitizeDiceLabel(actionName ?? "");
+    return `${cleanFormula} # ${what ? `${who} ${what}` : who}`;
+  }
+  const dice = cleanFormula.slice(0, hash).trimEnd();
+  const existing = cleanFormula.slice(hash + 1).trim();
+  // Already attributed (a reroll re-sent through here) — leave it alone.
+  if (existing.toLowerCase().startsWith(who.toLowerCase())) return cleanFormula;
+  return `${dice} # ${who}${existing ? ` ${existing}` : ""}`;
+}

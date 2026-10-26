@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 // Who is at the keyboard — stamped onto every outgoing request; see the file's own header.
 import { currentLogRoller } from "../combat-log/logIdentity";
+// The feed label — who is rolling and what with; see diceFormula.ts.
+import { diceFeedLabel } from "../dice/diceFormula";
 import OBR from "@owlbear-rodeo/sdk";
 
 // How long a Dice+ roll request is considered "in flight" before a resend of the
@@ -478,7 +480,13 @@ export function useOwlbearDiceBridge(onResult?: (result: DiceBridgeRollResult) =
           playerId,
           playerName,
           rollTarget: "everyone",
-          diceNotation: request.formula,
+          /**
+           * ⚠ THE NOTATION IS THE ONLY FIELD THE DICE FEED IS GUARANTEED TO SHOW, which is why the
+           * character and action go here and not only in the structured keys below. Dice+ renders
+           * `playerName` — the HUMAN — so a DM rolling a monster attack read as the DM rolling bare
+           * dice, and the monster card sends its formula with no label at all.
+           */
+          diceNotation: diceFeedLabel(request.formula, request.actorName, request.actionName),
           showResults: true,
           timestamp: Date.now(),
           source: FDM_DICE_PLUS_SOURCE,
