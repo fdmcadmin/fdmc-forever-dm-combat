@@ -340,6 +340,30 @@ console.log("\n9. the wiring, which is the half that was missing");
   ok("the combat window does too", win.includes("activeSummons,") && win.includes("useActiveSummonsState"));
   ok("using an action with a summon calls the handler", card.includes("onSummonBody?.(action,"));
   ok("...and the App binds that handler", app.includes("onSummonBody={"));
+
+  /**
+   * ⚠ A PLAYER’S SPELL COULD NOT DECLARE WHAT IT CALLS. Christopher, 2026-11-10: *"fix the spell
+   * for lightstone."* His Find Steed reads "summon an Otherworldly Steed … Choose Celestial, Fey,
+   * or Fiend" and its metadata carried NO `summon` — because nothing in the app could write one.
+   * `metadata.summon` existed, the card called `onSummonBody`, the tracker showed the body, and
+   * the middle of the chain had no author. The spell spent its free cast and placed nothing.
+   */
+  const editor = read("src/core/ui/ActorEditorActionTab.tsx");
+  const fields = read("src/core/ui/ActionSummonFields.tsx");
+  ok("a character action can be given a summon at all", editor.includes("<ActionSummonFields"));
+  ok("...pointing at a creature from the library, not guessed from the name", fields.includes("t.templateId"));
+  ok("...and the draft carries it back to metadata", read("src/core/ui/pcActionTypes.ts").includes("{ summon: draft.summon }"));
+
+  /**
+   * ⚠ THE FORM LIST IS BAKED ONTO THE ACTION, not read at cast time. The monster library is
+   * ~1.1MB and deliberately never loads for a player — but Find Steed is a PLAYER’s spell, so a
+   * library lookup on their card would find nothing and silently skip the choice.
+   */
+  ok("the editor bakes the form list onto the action", fields.includes("formChoices: choices"));
+  ok("...and the cast reads that, not the library", app.includes("const forms = spec.formChoices;"));
+  ok("...asking only when no form was fixed", app.includes("!spec.picks?.[forms.setId]?.length"));
+  ok("the choice is offered on the card", app.includes("pendingSummonForm &&"));
+  ok("...and placing the body carries the pick", app.includes("placeSummonedBody(choice.ownerId"));
   ok("...and so does the popout", popout.includes("onSummonBody={"));
   ok("ending combat clears every standing body", app.includes("clearSummons()"));
 

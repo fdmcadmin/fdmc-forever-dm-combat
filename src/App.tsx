@@ -116,6 +116,7 @@ import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatType
 import { setLogRoller } from "./core/combat-log/logIdentity";
 // The lair’s own tracker row — initiative 20, losing ties.
 import { lairRowsFor, isLairRowId } from "./core/monsters/lairCombatants";
+import type { ActionSetPicks } from "./core/monsters/actionSetPicks";
 import { DisplayModeToggle, useDisplayMode } from "./core/ui/useDisplayMode";
 import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
@@ -1049,18 +1050,47 @@ export default function App() {
    * The round it arrives on is the round the table is actually in; out of combat that is 1, which
    * is the honest answer for a Steed called on the road.
    */
-  function handleSummonBody(ownerId: string, action: ActorAction, slotLevel?: number) {
+  /**
+   * A summon whose form has not been chosen yet, waiting on the player.
+   *
+   * Christopher: the Steed's *"Choose Celestial, Fey, or Fiend"* is a decision made at the table
+   * on each casting, so an action left on "Ask when cast" stops here and asks. One left on a
+   * fixed form never reaches this.
+   */
+  const [pendingSummonForm, setPendingSummonForm] = useState<
+    { ownerId: string; action: ActorAction; slotLevel?: number; setId: string; label: string; options: string[] } | null
+  >(null);
+
+  /** Put the body on the field. Separated so the form chooser can finish a deferred call. */
+  function placeSummonedBody(ownerId: string, action: ActorAction, slotLevel: number | undefined, picks?: ActionSetPicks) {
     const spec = action.metadata?.summon;
     if (!spec) return;
+    const resolved = picks ? { ...spec, picks } : spec;
     summonBody({
       id: `summon:${ownerId}:${action.id}`,
       ownerId,
       actionId: action.id,
       // Copied, not referenced — the body on the field is the one that was called.
-      spec: JSON.parse(JSON.stringify(spec)) as typeof spec,
+      spec: JSON.parse(JSON.stringify(resolved)) as typeof spec,
       summonedOnRound: Math.max(1, roomLiveState.combat.round),
       ...(slotLevel !== undefined ? { slotLevel } : {}),
     });
+  }
+
+  function handleSummonBody(ownerId: string, action: ActorAction, slotLevel?: number) {
+    const spec = action.metadata?.summon;
+    if (!spec) return;
+    /**
+     * ⚠ ASK BEFORE PLACING when the creature has forms and none was authored. The template is the
+     * one source for what the forms ARE — reading them off the spell's text would be the
+     * inference this project does not do.
+     */
+    const forms = spec.formChoices;
+    if (forms && forms.options.length > 0 && !spec.picks?.[forms.setId]?.length) {
+      setPendingSummonForm({ ownerId, action, ...(slotLevel !== undefined ? { slotLevel } : {}), setId: forms.setId, label: forms.label, options: forms.options });
+      return;
+    }
+    placeSummonedBody(ownerId, action, slotLevel);
   }
 
   // ── Committed roll ────────────────────────────────────────────────────────
@@ -4334,6 +4364,72 @@ export default function App() {
       <SavePromptBanner />
 
       {/* ── Save target picker — choose which combatants must roll, then announce ── */}
+      {/*
+        CHOOSE THE FORM — the cast-time half of Find Steed.
+
+        Christopher: *"did we use the … 3 different styles and add that to the choice on the
+        action sheets."* The three form packages have existed on the Otherworldly Steed template
+        since summons landed, and `check:summons` proves all three; what was missing was anyone
+        asking. The options come from the action's own `formChoices`, baked in by the editor, so
+        this works on a player's card without the 1.1MB library it deliberately never loads.
+      */}
+      {pendingSummonForm && (
+        <div
+          role="dialog"
+          aria-label={`Choose a ${pendingSummonForm.label.toLowerCase()}`}
+          style={{
+            position: "fixed", inset: 0, zIndex: 9000, display: "flex",
+            alignItems: "center", justifyContent: "center", background: "#000a",
+          }}
+        >
+          <div style={{ background: "#14141c", border: "1px solid #3a3a52", borderRadius: 8, padding: 16, minWidth: 260, maxWidth: 360 }}>
+            <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#dfe4ff" }}>
+              {pendingSummonForm.action.label}
+            </p>
+            <p style={{ margin: "0 0 10px", fontSize: 11, color: "#8a8aa0" }}>
+              Choose a {pendingSummonForm.label.toLowerCase()} for the summoned creature.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {pendingSummonForm.options.map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => {
+                    const choice = pendingSummonForm;
+                    setPendingSummonForm(null);
+                    placeSummonedBody(choice.ownerId, choice.action, choice.slotLevel, { [choice.setId]: [option] });
+                    addEntry({
+                      actorName: actors.find(a => a.id === choice.ownerId)?.name ?? "Summoner",
+                      actionName: choice.action.label,
+                      tabId: "system",
+                      message: `${actors.find(a => a.id === choice.ownerId)?.name ?? "The caster"} calls a ${option} ${choice.label.toLowerCase()} with ${choice.action.label}.`,
+                    });
+                  }}
+                  style={{
+                    fontSize: 12, padding: "5px 11px", borderRadius: 4, cursor: "pointer",
+                    background: "#2a2a4e", border: "1px solid #7b68ee55", color: "#cdd7ff",
+                  }}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {/*
+              ⚠ CANCEL PUTS NOTHING ON THE FIELD. The resource was already spent by the use that
+              got here — backing out of the form is not a refund, and pretending otherwise would
+              hand back a slot the table watched be spent.
+            */}
+            <button
+              type="button"
+              onClick={() => setPendingSummonForm(null)}
+              style={{ marginTop: 10, fontSize: 11, padding: "3px 9px", background: "transparent", border: "1px solid #444", borderRadius: 4, color: "#888", cursor: "pointer" }}
+            >
+              Cancel — summon nothing
+            </button>
+          </div>
+        </div>
+      )}
+
       {pendingSave && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
           <div style={{ background: "#13131f", border: "1px solid #e0a85a", borderRadius: 10, padding: 16, width: "min(420px, 94vw)", maxHeight: "82vh", overflow: "auto" }}>

@@ -1,4 +1,5 @@
 import type { ActionCost } from "../types/actionEconomy";
+import type { SummonSpec } from "../monsters/summon";
 import type { RerollMethod } from "../state/rerollMethod";
 
 export type PcActionTab = "action" | "bonus" | "reaction" | "bond" | "spell" | "feature" | "resource" | "outOfCombat";
@@ -93,6 +94,8 @@ export type PcActionDraft = {
   visibility?: PcActionVisibility;
   /** P5 F09 — initiative bonus contributed by this feature (e.g. Alert feat +5) */
   initiativeBonus?: number;
+  /** What this action CALLS onto the field — Find Steed, an Eldritch Cannon. See ActionSummonFields. */
+  summon?: SummonSpec;
   /** This row grants ADVANTAGE on Initiative — see ActorActionMetadata.initiativeAdvantage. */
   initiativeAdvantage?: boolean;
   /** Feat/feature AC bonus — applied as an addAC stat effect (e.g. Dual Wielder +1). */
@@ -159,6 +162,7 @@ export function normalizePcActionDraft(draft: PcActionDraft, actorName = "actor"
     ...(draft.saveAbility?.trim() ? { saveAbility: draft.saveAbility.trim() } : {}),
     ...(Number.isFinite(draft.initiativeBonus) ? { initiativeBonus: draft.initiativeBonus } : {}),
     ...(draft.initiativeAdvantage ? { initiativeAdvantage: true } : {}),
+    ...(draft.summon ? { summon: draft.summon } : {}),
     ...(draft.saveDc !== undefined && String(draft.saveDc).trim() ? { saveDc: draft.saveDc } : {}),
     ...(draft.checkAbility?.trim() ? { checkAbility: draft.checkAbility.trim() } : {}),
     ...(draft.damage?.trim() ? { damage: draft.damage.trim() } : {}),

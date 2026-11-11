@@ -1,4 +1,6 @@
 import type { RerollMethod } from "../state/rerollMethod";
+// Attaching a summoned body to a character’s action — see the file’s own header.
+import { ActionSummonFields } from "./ActionSummonFields";
 import { useState } from "react";
 import { FormulaInput } from "./FormulaInput";
 import { DamageTypePicker } from "./DamageTypePicker";
@@ -143,6 +145,7 @@ function actionToEditorDraft(action: ActorAction, tabId: TabId): PcActionDraft {
     visibility: action.logMode === "silent" ? "hidden" : "player",
     initiativeBonus: action.metadata?.initiativeBonus,
     initiativeAdvantage: action.metadata?.initiativeAdvantage,
+    summon: action.metadata?.summon,
     acBonus: (action.metadata?.statEffects ?? [])
       .filter(e => e.type === "addAC")
       .reduce((sum, e) => sum + (e.value ?? 0), 0) || undefined,
@@ -625,6 +628,16 @@ function ActionForm({ tabId, initial, onSave, onCancel, resourceLabels = [], cla
           </label>
         </div>
       )}
+
+      {/*
+        WHAT THIS ACTION CALLS ONTO THE FIELD.
+
+        ⚠ THE FIELD NEVER EXISTED, which is why Lights Stone’s Find Steed summoned nothing: its
+        description says "Choose Celestial, Fey, or Fiend" and its metadata carried no `summon`,
+        because nothing in the app could write one. The engine was complete at both ends — the
+        card calls `onSummonBody`, the tracker shows the body — with no way to author the middle.
+      */}
+      <ActionSummonFields value={draft.summon} onChange={next => set("summon", next)} />
 
       {/* Spends resource — tag this action to a pool so using it deducts a charge
           (e.g. Vow of Enmity -> Channel Divinity). Spells use the slot level instead. */}

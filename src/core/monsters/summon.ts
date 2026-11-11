@@ -104,6 +104,18 @@ export type SummonSpec = {
   acts?: "own-initiative" | "summoner-turn";
   /** The slot this casting spent, for `@SLOT`. The Steed is entirely a function of it. */
   slotLevel?: number;
+  /**
+   * The forms this creature comes in, COPIED onto the action when the DM picks the creature.
+   *
+   * ⚠ SO THE CAST NEEDS NO LIBRARY. The monster library is ~1.1MB and deliberately never loads
+   * for a player ("a player never loads the library, with or without a summon on the field") — but
+   * Find Steed is a PLAYER’s spell, and its "Choose Celestial, Fey, or Fiend" happens on their
+   * card. Reading the options off the template at cast time would work only for the GM. The
+   * editor has the library, so it bakes the list here once and the card reads it for free.
+   *
+   * Absent = this creature has no forms, or the DM fixed one with `picks`.
+   */
+  formChoices?: { setId: string; label: string; options: string[] };
   /** Free text for the card — "requires a level 4+ slot to fly". */
   note?: string;
 };
