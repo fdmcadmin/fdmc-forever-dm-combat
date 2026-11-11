@@ -118,7 +118,8 @@
     "check:levelup": "npx tsx scripts/check-levelup-outbox.ts",
     "check:hooks": "npx tsx scripts/check-hooks.ts",
     "check:partyreadcache": "npx tsx scripts/check-party-read-cache.ts",
-    "check:rollerinit": "npx tsx scripts/check-roller-initiative-resources.ts"
+    "check:rollerinit": "npx tsx scripts/check-roller-initiative-resources.ts",
+    "check:lair": "npx tsx scripts/check-lair-tracker.ts"
   },
   "dependencies": {
     "@owlbear-rodeo/sdk": "^3.1.0",

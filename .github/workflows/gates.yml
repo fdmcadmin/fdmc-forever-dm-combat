@@ -409,3 +409,6 @@ jobs:
 
       - name: check who rolled, initiative advantage, and giving a resource back
         run: npm run check:rollerinit
+
+      - name: check the lair acts on 20, loses ties, and cannot repeat itself
+        run: npm run check:lair

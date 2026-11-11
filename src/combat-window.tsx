@@ -16,6 +16,8 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// The lair’s own row — initiative 20, losing ties.
+import { lairRowsFor } from "./core/monsters/lairCombatants";
 import { CrashScreen } from "./core/ui/CrashScreen";
 import ReactDOM from "react-dom/client";
 import OBR from "@owlbear-rodeo/sdk";
@@ -310,10 +312,17 @@ function CombatWindowApp() {
     for (const [id, live] of Object.entries(roomState.monsterLiveState)) initiativeByMonster[id] = live.initiative;
     const liveHpByActorId: Record<string, { current: number; max: number }> = {};
     for (const [id, live] of Object.entries(roomState.actorLiveState)) liveHpByActorId[id] = { current: live.hp.current, max: live.hp.max };
+    /**
+     * The lair gets its row here too, or the fight would show it in the DM panel and not in the
+     * window the DM actually runs combat from. Same rule as there: it goes quiet once every body
+     * carrying it is down.
+     */
+    const lairRows = lairRowsFor(roster, id => (roster.find(m => m.instanceId === id)?.currentHp ?? 1) <= 0);
     return sortCombatants(buildCombatants(
       actors, roster, roomState.combat.activeActorId,
       initiativeByActor, initiativeByMonster, false, liveHpByActorId,
       activeSummons,
+      lairRows,
     ));
   }, [actorsById, roster, roomState, activeSummons]);
 

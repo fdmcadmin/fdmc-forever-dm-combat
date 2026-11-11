@@ -10,6 +10,9 @@
  */
 
 import React, { useState } from "react";
+// The environment’s own row — initiative 20, losing ties. See lairCombatants.ts.
+import type { LairRow } from "../monsters/lairCombatants";
+import { legalLairOptions, type LairOption } from "../monsters/lair";
 import type { Actor } from "../types/actor";
 import type { MainEncounterMonsterInstance } from "../monsters/runtime/mainMonsterRuntime";
 import type { FdmcCombatPhase } from "../table-state/fdmcRoomLiveState";
@@ -23,7 +26,7 @@ import { getActorInitiativeModifier } from "../state/initiative";
 export type Combatant = {
   id: string;
   name: string;
-  kind: "actor" | "monster";
+  kind: "actor" | "monster" | "lair";
   initiative: number | null;
   /** Initiative modifier used for auto-roll. Actors: derived DEX modifier + trait
    *  bonuses (Alert, etc.). Monsters: DEX modifier parsed from ability scores. */
@@ -41,6 +44,18 @@ export type Combatant = {
    * A summoned body rather than a seated character — a Divine Steed, an Eldritch Cannon, the
    * Covenant bond-creature. Drives the "until round N" note and marks the row as temporary.
    */
+  /**
+   * THE ENVIRONMENT TAKING A TURN. Present only on a `lair` row.
+   *
+   * It has no HP, no initiative roll and no economy — it is a place, not a body. The options are
+   * the ones printed on the encounter sheet, and the row offers them on its turn.
+   */
+  lair?: {
+    sourceName: string;
+    options: LairOption[];
+    noRepeatConsecutive?: boolean;
+    note?: string;
+  };
   summon?: {
     /** The record's id, so the row can be dismissed. */
     recordId: string;
@@ -75,6 +90,11 @@ export type CombatTrackerProps = {
    * advantage permanently does not need it; `initiativeRollFormula` ORs the two.
    */
   onRollInitiative?: (combatantId: string, advantage?: boolean) => void;
+  /**
+   * The DM fired one of the lair's options. The tracker owns WHICH are legal this round (the
+   * no-repeat rule); the app owns what firing one means — logging it to the table.
+   */
+  onLairAction?: (combatantId: string, option: LairOption) => void;
   /**
    * Send a summoned body away before the fight ends — dismissed, destroyed, or the DM ruling it
    * gone. Without this the only exits are dropping to 0 HP and End Combat, and a Steed has no
@@ -119,7 +139,17 @@ export function sortCombatants(combatants: Combatant[]): Combatant[] {
     if (a.initiative !== null && b.initiative === null) return -1;
     if (a.initiative === null && b.initiative === null) return 0;
     // Higher initiative goes first
-    return (b.initiative ?? 0) - (a.initiative ?? 0);
+    const byCount = (b.initiative ?? 0) - (a.initiative ?? 0);
+    if (byCount !== 0) return byCount;
+    /**
+     * ⚠ A LAIR LOSES TIES, and it says so in print: every lair in the campaign reads "at
+     * initiative count 20 (losing ties)". Sorting on the number alone left a PC who rolled 20 and
+     * the lair in whatever order the roster happened to build them, which is the one ordering the
+     * sheet explicitly rules out.
+     */
+    const aLair = a.kind === "lair" ? 1 : 0;
+    const bLair = b.kind === "lair" ? 1 : 0;
+    return aLair - bLair;
   });
 }
 
@@ -159,6 +189,12 @@ export function buildCombatants(
    * opinion here is how a body ends up on the field one round after the tracker says it left.
    */
   summons: readonly ResolvedSummon[] = [],
+  /**
+   * The lair rows for this fight, already resolved by the caller — one per lair, not per body.
+   * Resolved outside for the same reason `summons` is: which creatures still stand is the
+   * roster's business, and this function has no opinion about it. See `lairCombatants.ts`.
+   */
+  lairs: readonly LairRow[] = [],
 ): Combatant[] {
   // Separate companions from main actors
   const companions = actors.filter(a => a.kind === "companion");
@@ -291,7 +327,29 @@ export function buildCombatants(
     .filter(s => s.acts !== "summoner-turn" || !mainActorIds.has(s.ownerId))
     .flatMap(s => summonRows(s).map(row => summonCombatant(row, initiativeByActorId[row.id] ?? null)));
 
-  return [...mainActorCombatants, ...orphanedCompanions, ...monsterCombatants, ...summonCombatants];
+  /**
+   * The lair rows. No HP and no initiative bonus: the count is fixed by the sheet, so there is
+   * nothing to roll and nothing to damage. `isDead` stays false — a lair is not a body, and
+   * marking it dead would sort it below the corpses.
+   */
+  const lairCombatants: Combatant[] = lairs.map(l => ({
+    id: l.id,
+    name: l.name,
+    kind: "lair" as const,
+    initiative: l.initiative,
+    initiativeBonus: 0,
+    hp: { current: 0, max: 0 },
+    isActive: l.id === activeId,
+    isDead: false,
+    lair: {
+      sourceName: l.sourceName,
+      options: l.lair.options,
+      ...(l.lair.noRepeatConsecutive ? { noRepeatConsecutive: true } : {}),
+      ...(l.lair.note ? { note: l.lair.note } : {}),
+    },
+  }));
+
+  return [...mainActorCombatants, ...orphanedCompanions, ...monsterCombatants, ...summonCombatants, ...lairCombatants];
 }
 
 // ─── HP condition color ───────────────────────────────────────────────────────
@@ -335,6 +393,7 @@ export function CombatTracker({
   onSelectCombatant,
   onSetInitiative,
   onRollInitiative,
+  onLairAction,
   onSwapInitiative,
   onDismissSummon,
   condensed = false,
@@ -354,6 +413,12 @@ export function CombatTracker({
    * `metadata.initiativeAdvantage`, which `initiativeRollFormula` ORs with this.
    */
   const [initiativeAdvantage, setInitiativeAdvantage] = useState<Record<string, boolean>>({});
+  /**
+   * lairRowId -> the option fired last round, for the rule every campaign lair prints: *"the same
+   * option cannot be used on consecutive rounds."* `legalLairOptions` has enforced it since lair
+   * support landed and had no caller — this is it.
+   */
+  const [lastLairOption, setLastLairOption] = useState<Record<string, string>>({});
   const sorted = sortCombatants(combatants);
   const activeIndex = sorted.findIndex(c => c.id === activeId);
   // Everyone actually in the fight — excludes dead AND benched (negative initiative).
@@ -532,7 +597,23 @@ export function CombatTracker({
               </span>
 
               {/* Initiative — editable for DM always; editable for player on their own actors during setup/initiative */}
-              {isDmMode || (viewerActorIdSet.has(combatant.id) && (phase === "setup" || phase === "initiative")) ? (
+              {combatant.kind === "lair" ? (
+                /**
+                 * ⚠ LOCKED, AND NOT ROLLABLE. The sheet fixes the count — "at initiative count 20
+                 * (losing ties)" — so there is no die to throw and no number to type. Rendering
+                 * the editable cell here would invite a DM to change the one value the encounter
+                 * already decided.
+                 */
+                <span
+                  title={`Lair actions act on initiative ${combatant.initiative}, losing ties. Fixed by the encounter sheet.`}
+                  style={{
+                    width: 26, fontSize: 12, textAlign: "center", flexShrink: 0,
+                    color: "#c9a227", fontWeight: 900, fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {combatant.initiative}
+                </span>
+              ) : isDmMode || (viewerActorIdSet.has(combatant.id) && (phase === "setup" || phase === "initiative")) ? (
                 <div style={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
                   <input
                     type="number"
@@ -748,7 +829,8 @@ export function CombatTracker({
                   see the abstracted condition (Healthy/Wounded/…) for party members they
                   don't control. Monster true HP stays DM-only (players get the bar only).
                   Condensed (B3): hidden — HP lives in the combat window / player overlay. */}
-              {!condensed && <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+              {/* ⚠ A LAIR HAS NO BODY, so it has no HP, no bar and nothing to mark down. */}
+              {!condensed && combatant.kind !== "lair" && <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                 {(isDmMode || combatant.kind === "actor") && (() => {
                   const temp = combatant.hp.temp ?? 0;
                   const displayCurrent = combatant.hp.current + temp;
@@ -779,6 +861,46 @@ export function CombatTracker({
                 </div>
               </div>}
             </div>
+
+            {/*
+              LAIR OPTIONS — the encounter sheet's own list, offered on the lair's turn.
+
+              ⚠ THE SHEET'S TEXT, NOT A RESOLVER. These options move bodies, obscure ground and
+              change cover; none of them is something this app can resolve for the table, and
+              inventing an outcome would be the auto-resolver the project does not build. The row
+              names each option, carries its save and its printed text, and logs the one that
+              fired. The DM adjudicates, as they already do for every zone effect.
+            */}
+            {combatant.kind === "lair" && combatant.lair && isActive && isDmMode && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center", padding: "3px 6px 5px 28px" }}>
+                {legalLairOptions(
+                  { options: combatant.lair.options, noRepeatConsecutive: combatant.lair.noRepeatConsecutive },
+                  lastLairOption[combatant.id],
+                ).map(option => (
+                  <button
+                    key={option.name}
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setLastLairOption(prev => ({ ...prev, [combatant.id]: option.name }));
+                      onLairAction?.(combatant.id, option);
+                    }}
+                    title={`${option.text}${option.save ? ` (${option.save})` : ""}`}
+                    style={{
+                      fontSize: 10, padding: "2px 7px", borderRadius: 3, cursor: "pointer",
+                      background: "#2a2416", border: "1px solid #c9a22755", color: "#e8c766",
+                    }}
+                  >
+                    {option.name}{option.save ? ` · ${option.save}` : ""}
+                  </button>
+                ))}
+                {combatant.lair.noRepeatConsecutive && lastLairOption[combatant.id] && (
+                  <span style={{ fontSize: 9, color: "#6a6a7a" }}>
+                    {lastLairOption[combatant.id]} fired last round — it cannot repeat.
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Companion sub-entries — act on owner's turn, inherit initiative.
                 The name is a button: a companion is never its own combatant in the

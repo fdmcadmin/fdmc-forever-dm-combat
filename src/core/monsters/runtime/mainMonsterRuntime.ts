@@ -542,6 +542,15 @@ export type MainEncounterMonsterInstance = MonsterCombatCandidate & {
    * hand. Optional, because a DM-built one-off creature belongs to no authored encounter.
    */
   encounterId?: string;
+  /**
+   * THE LAIR THIS CREATURE FIGHTS IN, carried down from its template.
+   *
+   * The template has always had it; the instance dropped it, so nothing on the combat roster could
+   * see that a fight HAS a lair — which is why the lair never reached the tracker and its notes
+   * still read "not yet playable from the tracker". Carried the same way `legendaryPerRound` and
+   * `encounterId` are. See `lair.ts`.
+   */
+  lair?: LairSpec;
   /** Challenge Rating — one source of this creature's proficiency bonus for saves. */
   cr?: number;
   /**
@@ -897,6 +906,8 @@ export function createEncounterMonsterInstance(template: MainMonsterTemplate, di
     skills: template.stats.skills,
     spellSlots: template.stats.spellSlots,
     legendaryPerRound: template.stats.legendaryPerRound,
+    // The lair is a fact about the FIGHT, and the roster is where the fight is assembled.
+    lair: template.lair,
     actionCounter: deriveMonsterActionCounter(template.actions, template.stats.attacksPerTurn),
     usedActionNames: [],
   };

@@ -114,6 +114,8 @@ import {
 import { FDMC_SEAT_BROADCAST_CHANNEL, hashViewerId } from "./core/seats/seatTypes";
 // Who is at this keyboard — stamped onto every log entry and dice request.
 import { setLogRoller } from "./core/combat-log/logIdentity";
+// The lair’s own tracker row — initiative 20, losing ties.
+import { lairRowsFor, isLairRowId } from "./core/monsters/lairCombatants";
 import { DisplayModeToggle, useDisplayMode } from "./core/ui/useDisplayMode";
 import { buildActorSeatColorMap, getSeatColor, withAlpha, MONSTER_COLOR } from "./core/seats/seatColors";
 import type { MonsterCombatCandidate, MonsterReaderAction } from "./core/monsters/MonsterJconScanner";
@@ -2468,15 +2470,24 @@ export default function App() {
 
     // DM: full roster — real HP for both party and monsters.
     if (isDmMode) {
+      const roster = monsterCandidates as MainEncounterMonsterInstance[];
+      /**
+       * ⚠ THE LAIR IS A ROW, AND IT WAS NOT ONE. Resolved here rather than inside
+       * `buildCombatants` for the same reason summons are: which bodies still stand is this
+       * roster’s business. A lair goes quiet once every body carrying it is down — the same
+       * `currentHp <= 0` the monster rows use for `isDead`.
+       */
+      const lairRows = lairRowsFor(roster, id => (roster.find(m => m.instanceId === id)?.currentHp ?? 1) <= 0);
       return buildCombatants(
         actors,
-        monsterCandidates as MainEncounterMonsterInstance[],
+        roster,
         roomLiveState.combat.activeActorId,
         initiativeByActor,
         initiativeByMonster,
         true,
         liveHpByActorId,
         activeSummons,
+        lairRows,
       );
     }
 
@@ -2691,6 +2702,16 @@ export default function App() {
       }
       setSelectedActorId(nextCombatant.id);
       setActiveMonsterInstanceId("");
+    } else if (nextCombatant.kind === "lair") {
+      /**
+       * ⚠ A LAIR IS NOT A MONSTER, and this branch used to be an `else` that assumed it was.
+       *
+       * The environment has no economy to reset, no card to front and no instance to broadcast
+       * about — sending it down the monster path would reset an economy keyed to an instance id
+       * that no creature owns, and open a monster card for a creature that is not there. It takes
+       * its turn, the DM picks an option from the row, and nothing else moves.
+       */
+      setActiveMonsterInstanceId("");
     } else {
       // Monster's turn starts — reset its economy now
       const nextInstanceId = nextCombatant.id;
@@ -2833,6 +2854,13 @@ export default function App() {
   }
 
   function handleSetCombatantInitiative(combatantId: string, initiative: number) {
+    /**
+     * ⚠ THE LAIR'S COUNT IS NOT NEGOTIABLE. Christopher asked for an entry that *"locks it at
+     * initiative 20"*, and the sheet agrees — "at initiative count 20 (losing ties)". The row
+     * renders no input, but this is the function every other path into initiative goes through
+     * (a shared-roster write, a future hotkey), so the lock lives here rather than only in the UI.
+     */
+    if (isLairRowId(combatantId)) return;
     if (actors.find(a => a.id === combatantId)) {
       void setActorInitiative(combatantId, initiative);
       // Propagate initiative to companions — companions act on owner's turn
@@ -4825,6 +4853,26 @@ export default function App() {
           }}
           onSetInitiative={handleSetCombatantInitiative}
           onRollInitiative={handleRollActorInitiativeViaDicePlus}
+          /**
+           * The lair acted. Logged like any other turn so the table sees WHICH option fired and
+           * what it does — the printed text, verbatim, because nothing here resolves it.
+           */
+          onLairAction={(combatantId, option) => {
+            const row = allCombatants.find(c => c.id === combatantId);
+            const who = row?.name ?? "The lair";
+            addEntry({
+              actorName: who,
+              actionName: option.name,
+              tabId: "system",
+              tone: "combat",
+              message: `${who} — ${option.name}. ${option.text}${option.save ? ` (${option.save})` : ""}`,
+              actorId: combatantId,
+              actorSide: "monster",
+              category: "flow",
+              round: roomLiveState.combat.round,
+              ...(option.save ? { outcome: "save-called" } : {}),
+            });
+          }}
           onSwapInitiative={(idA, idB) => {
             // Swap the initiative values of two combatants
             const initA = allCombatants.find(c => c.id === idA)?.initiative ?? null;
