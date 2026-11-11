@@ -174,3 +174,56 @@ export function diceFeedLabel(formula: string, characterName?: string, actionNam
   if (existing.toLowerCase().startsWith(who.toLowerCase())) return cleanFormula;
   return `${dice} # ${who}${existing ? ` ${existing}` : ""}`;
 }
+
+/**
+ * THE KEEP THE ROLLER DID NOT HONOUR — advantage that added both dice instead of taking the best.
+ *
+ * Christopher, 2026-11-10: *"the advantage on the DM side adds the dice instead of use the best of
+ * the rolls."*
+ *
+ * `applyAdvantage` sends the right thing: "1d20+7" goes out as "2d20kh1+7". What comes back is
+ * `result.totalValue`, and the app trusted it. When the roller does not implement `kh1` it rolls
+ * two d20s, keeps BOTH, and totals them — so a 6 and a 19 with +7 came back as 32 instead of 26.
+ * The natural roll was never wrong, because `findDicePlusNaturalRoll` already reads each die's
+ * `kept` flag and takes the max; only the total was.
+ *
+ * ⚠ THE FIX IS CONDITIONAL, AND THAT MATTERS. A roller that DOES honour the keep marks the dropped
+ * die `kept: false`, and its total is already right — correcting that one would break it in the
+ * other direction. So the total is only recomputed when the notation asked for a keep AND nothing
+ * came back marked as dropped, which is the exact signature of a roller that ignored it.
+ *
+ * This is the half of the contract the module header has always promised: *"If a future Dice+
+ * build rejects that notation, the only change needed is here + the result normalizer."*
+ */
+
+/** The keep a formula asks for — `2d20kh1` → `{ mode: "kh", count: 1 }`. Null when it asks none. */
+export function keepSpec(notation: string | undefined): { mode: "kh" | "kl"; count: number } | null {
+  if (!notation) return null;
+  const m = /\d*d\d+k(h|l)(\d*)/i.exec(notation);
+  if (!m) return null;
+  const count = m[2] ? Number.parseInt(m[2], 10) : 1;
+  return Number.isFinite(count) && count > 0 ? { mode: m[1].toLowerCase() === "l" ? "kl" : "kh", count } : null;
+}
+
+/**
+ * The total a keep-notation roll should have had.
+ *
+ * Returns `total` unchanged when there is nothing to fix: no keep asked for, the roller already
+ * dropped dice itself, or there were never more dice than the keep allows.
+ */
+export function correctedKeepTotal(
+  total: number,
+  notation: string | undefined,
+  dice: readonly { value?: number; kept?: boolean }[],
+): number {
+  const keep = keepSpec(notation);
+  if (!keep) return total;
+  // The roller honoured it — its own total already excludes the dropped dice.
+  if (dice.some(d => d.kept === false)) return total;
+  const values = dice.map(d => d.value).filter((v): v is number => typeof v === "number");
+  if (values.length <= keep.count) return total;
+  // Highest-first for kh, lowest-first for kl; everything past `count` was never meant to count.
+  const ordered = [...values].sort((a, b) => keep.mode === "kh" ? b - a : a - b);
+  const dropped = ordered.slice(keep.count).reduce((sum, v) => sum + v, 0);
+  return total - dropped;
+}

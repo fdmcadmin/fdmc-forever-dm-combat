@@ -28,6 +28,7 @@ import { readFileSync } from "node:fs";
 import type { Actor } from "../src/core/types/actor";
 import { initiativeRollFormula, getActorInitiativeAdvantage } from "../src/core/state/initiative";
 import { describeRoller } from "../src/core/combat-log/logIdentity";
+import { applyAdvantage, correctedKeepTotal } from "../src/core/dice/diceFormula";
 
 let failures = 0;
 const ok = (label: string, cond: boolean, detail = "") => {
@@ -87,6 +88,35 @@ console.log("\nAdvantage on initiative");
   ok("...and the no-bridge fallback keeps the higher of two",
     /adv \? Math\.max\(d20\(\), d20\(\)\) : d20\(\)/.test(tracker));
   ok("the app's own fallback does too", /rolledWithAdvantage \? Math\.max\(d20\(\), d20\(\)\) : d20\(\)/.test(read("src/App.tsx")));
+}
+
+// ── Advantage must KEEP the best die, not add both ───────────────────────────
+console.log("\nAdvantage keeps, it does not add");
+{
+  /**
+   * Christopher, 2026-11-10: *"the advantage on the DM side adds the dice instead of use the best
+   * of the rolls."* We send `2d20kh1`; a roller that does not implement the keep rolls two dice,
+   * keeps both and totals both, so 6 and 19 with +7 came back 32 instead of 26. The NATURAL roll
+   * was never wrong — it reads each die’s `kept` flag and takes the max — only the total was.
+   */
+  ok("advantage still goes out as keep-highest", applyAdvantage("1d20+7", "adv") === "2d20kh1+7", applyAdvantage("1d20+7", "adv"));
+  const rolled = (...v: number[]) => v.map(value => ({ value }));
+  ok("a roller that ignored the keep has its total corrected",
+    correctedKeepTotal(32, "2d20kh1+7", rolled(6, 19)) === 26, String(correctedKeepTotal(32, "2d20kh1+7", rolled(6, 19))));
+  ok("...and disadvantage keeps the WORST",
+    correctedKeepTotal(32, "2d20kl1+7", rolled(6, 19)) === 13, String(correctedKeepTotal(32, "2d20kl1+7", rolled(6, 19))));
+  /**
+   * ⚠ A ROLLER THAT HONOURS THE KEEP IS ALREADY RIGHT. Correcting that one would break it in the
+   * other direction, which is why the fix keys on `kept: false` being absent.
+   */
+  ok("a roller that honoured it is left alone",
+    correctedKeepTotal(26, "2d20kh1+7", [{ value: 19, kept: true }, { value: 6, kept: false }]) === 26);
+  ok("a plain roll is never touched", correctedKeepTotal(14, "1d20+7", rolled(7)) === 14);
+  // Keep 1 of 3 (Elvish Accuracy shape): 4 + 11 + 20 + 5 = 40 reported, 20 + 5 = 25 correct.
+  ok("...and it generalises past two dice", correctedKeepTotal(40, "3d20kh1+5", rolled(4, 11, 20)) === 25,
+    String(correctedKeepTotal(40, "3d20kh1+5", rolled(4, 11, 20))));
+  const bridge = read("src/core/integrations/useOwlbearDiceBridge.ts");
+  ok("the bridge corrects the total it reports", bridge.includes("correctedKeepTotal(reportedTotal"));
 }
 
 // ── 1. Who rolled it ─────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // Who is at the keyboard — stamped onto every outgoing request; see the file's own header.
 import { currentLogRoller } from "../combat-log/logIdentity";
 // The feed label — who is rolling and what with; see diceFormula.ts.
-import { diceFeedLabel } from "../dice/diceFormula";
+import { diceFeedLabel, correctedKeepTotal } from "../dice/diceFormula";
 import OBR from "@owlbear-rodeo/sdk";
 
 // How long a Dice+ roll request is considered "in flight" before a resend of the
@@ -194,11 +194,24 @@ function normalizeDicePlusRollResult(data: unknown): DiceBridgeRollResult | null
 
   const envelope = data as DicePlusRollResultEnvelope;
   const rollId = envelope.rollId ?? envelope.result?.rollId;
-  const total = envelope.result?.totalValue;
+  const reportedTotal = envelope.result?.totalValue;
 
-  if (!rollId || typeof total !== "number") {
+  if (!rollId || typeof reportedTotal !== "number") {
     return null;
   }
+
+  /**
+   * ⚠ THE TOTAL IS CORRECTED, THE NATURAL ROLL NEVER NEEDED TO BE. Christopher, 2026-11-10:
+   * *"the advantage on the DM side adds the dice instead of use the best of the rolls."* We send
+   * `2d20kh1`; a roller that does not implement the keep rolls both, keeps both and totals both.
+   * `findDicePlusNaturalRoll` was always right because it reads each die’s `kept` flag and takes
+   * the max — only `totalValue` carried the extra die. Corrected ONLY when the keep was asked for
+   * and nothing came back dropped; see `correctedKeepTotal`.
+   */
+  const d20Dice = (envelope.result?.groups ?? [])
+    .filter(g => g.diceType?.toLowerCase() === "d20")
+    .flatMap(g => Array.isArray(g.dice) ? g.dice : []);
+  const total = correctedKeepTotal(reportedTotal, envelope.result?.diceNotation, d20Dice);
 
   const naturalRoll = findDicePlusNaturalRoll(envelope.result?.groups);
   const resultText = typeof naturalRoll === "number" ? `nat ${naturalRoll} / total ${total}` : `total ${total}`;
